@@ -1,0 +1,119 @@
+{
+  "id": "ad-pingcastle",
+  "name": "PingCastle - AD Security Posture Assessment",
+  "command": "PingCastle.exe --healthcheck",
+  "description": "Evaluates the security posture of an Active Directory environment and produces a scored report based on the Capability Maturity Model Integration (CMMI) framework. The healthcheck mode assesses misconfigurations, vulnerability susceptibility, delegation issues, share permissions, and trust configurations. The scanner menu offers targeted checks: null sessions, LAPS/BitLocker status, SMB version, spooler service, ZeroLogon, local admin enumeration, and ACL issues.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Enumeration",
+  "subcategory": "Miscellaneous Misconfigurations",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "CPTS Module 13: Active Directory Enumeration & Attacks",
+  "tags": [
+    "active-directory",
+    "audit",
+    "security-posture",
+    "cmmi",
+    "misconfiguration",
+    "reporting"
+  ],
+  "mitre": [
+    "T1087.002",
+    "T1069.002"
+  ],
+  "exam": "exam-ok",
+  "tools": [
+    "PingCastle"
+  ],
+  "examples": [
+    {
+      "label": "View help menu",
+      "command": "PingCastle.exe --help"
+    },
+    {
+      "label": "Interactive mode (presents TUI menu)",
+      "command": "PingCastle.exe"
+    },
+    {
+      "label": "Run healthcheck (default — scored risk assessment)",
+      "command": "PingCastle.exe --healthcheck"
+    },
+    {
+      "label": "Target a specific DC",
+      "command": "PingCastle.exe --healthcheck --server ACADEMY-EA-DC01.INLANEFREIGHT.LOCAL"
+    },
+    {
+      "label": "Healthcheck all domains via trusts",
+      "command": "PingCastle.exe --healthcheck --server *.forest"
+    },
+    {
+      "label": "Run a specific scanner (e.g. localadmin, smb, spooler, zerologon)",
+      "command": "PingCastle.exe --scanner localadmin"
+    },
+    {
+      "label": "Aggregate multiple healthcheck reports",
+      "command": "PingCastle.exe --conso"
+    },
+    {
+      "label": "Build a map of interconnected domains",
+      "command": "PingCastle.exe --carto"
+    }
+  ],
+  "variations": [
+    {
+      "label": "Scanner options available via interactive TUI",
+      "command": "# 1-aclcheck  2-antivirus  3-computerversion  4-foreignusers\n# 5-laps_bitlocker  6-localadmin  7-nullsession  8-nullsession-trust\n# 9-oxidbindings  a-remote  b-share  c-smb  d-smb3querynetwork\n# e-spooler  f-startup  g-zerologon"
+    },
+    {
+      "label": "Export users or computers",
+      "command": "PingCastle.exe --export"
+    }
+  ],
+  "notes": "PingCastle produces an HTML report with risk scores across four categories: Stale Objects, Privileged Accounts, Trust Relationships, and Anomalies. Each category gets a 0-100 score (lower is better). The scanner modes provide targeted checks useful during both attack and reporting phases. The localadmin scanner enumerates which accounts have local admin on machines. The spooler scanner identifies hosts with Print Spooler enabled (PrintNightmare/Printer Bug targets). The zerologon scanner tests for CVE-2020-1472 susceptibility. Requires only a domain-joined host and any domain user credential. Reports can be aggregated across multiple domains with --conso for enterprise-wide assessments.",
+  "references": [
+    {
+      "title": "PingCastle Documentation",
+      "url": "https://www.pingcastle.com/documentation/"
+    },
+    {
+      "title": "PingCastle Download",
+      "url": "https://www.pingcastle.com/"
+    },
+    {
+      "title": "HTB Academy - Active Directory Enumeration & Attacks",
+      "url": "https://academy.hackthebox.com/module/details/143"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-group3r",
+      "rel": "alternative",
+      "note": "Group3r focuses specifically on GPO misconfigurations; PingCastle covers broader AD security posture."
+    },
+    {
+      "id": "ad-neo4j-bloodhound",
+      "rel": "alternative",
+      "note": "BloodHound maps attack paths graphically; PingCastle provides scored risk assessment for reporting."
+    }
+  ],
+  "defense": {
+    "why_it_works": "PingCastle reads AD objects, attributes, and configurations accessible to any authenticated domain user. Its value is in automated analysis — correlating misconfigurations, scoring risk, and presenting findings in a defensible framework. Attackers use it to quickly identify the highest-value misconfigurations; defenders use it to track security posture over time.",
+    "prerequisites": "Domain-joined Windows host with any valid domain user credentials. Network access to a domain controller (LDAP/ADWS).",
+    "impact": "T1087.002 Account Discovery: Domain Account + T1069.002 Permission Groups Discovery: Domain Groups. Comprehensive map of AD security weaknesses including stale objects, privileged account exposure, dangerous trust configurations, and anomalies.",
+    "detection": "LDAP and ADWS queries from workstations. PingCastle generates multiple queries across users, groups, trusts, and GPOs — similar traffic pattern to BloodHound but lower volume. Defender for Identity may flag reconnaissance activity.",
+    "artifacts": "LDAP/ADWS query logs on DCs. HTML report files on the running host.",
+    "prevention": "PingCastle reads data available to all authenticated users by design. Focus on fixing the issues it reports: remove stale accounts, enforce least privilege on privileged groups, review trust configurations, remediate anomalies.",
+    "evasion": "Run from a legitimate admin workstation during business hours. PingCastle is a legitimate security tool often used by defenders — its traffic pattern is less suspicious than custom scripts.",
+    "sources": [
+      "HTB M13",
+      "https://attack.mitre.org/techniques/T1087/002/"
+    ],
+    "misconfiguration": "Stale user/computer accounts, excessive privileged group membership, misconfigured trusts, GPO weaknesses, missing LAPS deployment, disabled SMB signing, enabled Print Spooler on DCs.",
+    "vulnerable_config": "# PingCastle healthcheck reveals common issues:\n# - Domain Admins group has 15 members (should be <5)\n# - 200 stale computer accounts (no logon in 90+ days)\n# - Forest trust with SID filtering disabled\n# - SMB signing not required on DCs",
+    "secure_config": "# Address PingCastle findings:\n# 1. Reduce DA membership to minimum required\n# 2. Disable/remove stale accounts (Get-ADComputer -Filter {LastLogonDate -lt (Get-Date).AddDays(-90)})\n# 3. Enable SID filtering on all trusts\n# 4. Require SMB signing (GPO: Microsoft network server: Digitally sign communications (always) = Enabled)\n# 5. Run PingCastle quarterly to track improvement scores"
+  }
+}

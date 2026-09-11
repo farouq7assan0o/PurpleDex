@@ -114,6 +114,14 @@
   },
   "variations": [
     {
+      "label": "New-PSSession (persistent reusable session)",
+      "command": "$sess = New-PSSession -ComputerName <host>\nEnter-PSSession -Session $sess"
+    },
+    {
+      "label": "Invoke-Command via saved session",
+      "command": "Invoke-Command -Session $sess -ScriptBlock { whoami }"
+    },
+    {
       "label": "Discover where you have PSRemoting admin",
       "command": "Find-PSRemotingLocalAdminAccess -Domain <domain> -Verbose"
     },

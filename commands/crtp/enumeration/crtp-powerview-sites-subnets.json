@@ -49,6 +49,10 @@
     {
       "label": "Forest + child domains",
       "command": "Get-ForestDomain"
+    },
+    {
+      "label": "Resolve-IPAddress (hostname to IP)",
+      "command": "Resolve-IPAddress -ComputerName <host>"
     }
   ],
   "examples": [

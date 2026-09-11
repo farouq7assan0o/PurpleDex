@@ -84,7 +84,7 @@
       "rel": "next"
     }
   ],
-  "notes": "AD module is pre-installed on DCs and RSAT machines. Load on regular machines: Import-Module ActiveDirectory",
+  "notes": "AD module is pre-installed on DCs and RSAT machines. Install RSAT on non-DC: Get-WindowsCapability -Name RSAT* -Online | Add-WindowsCapability -Online. LDAP matching rules: 1.2.840.113556.1.4.803 (bitwise AND — check if UAC flag is set), 1.2.840.113556.1.4.804 (bitwise OR — check if any flag in mask is set), 1.2.840.113556.1.4.1941 (LDAP_MATCHING_RULE_IN_CHAIN — recursive memberOf/member resolution for nested groups).",
   "references": [
     {
       "title": "CRTP - AD Module Enumeration",
@@ -124,6 +124,22 @@
     {
       "label": "Forest / global catalogs",
       "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
+    },
+    {
+      "label": "LDAP recursive memberOf (nested group resolution via 1.2.840.113556.1.4.1941)",
+      "command": "Get-ADGroup -LDAPFilter '(member:1.2.840.113556.1.4.1941:=<user_DN>)' | select Name"
+    },
+    {
+      "label": "LDAP recursive members of a group (1941)",
+      "command": "Get-ADUser -LDAPFilter '(memberOf:1.2.840.113556.1.4.1941:=<group_DN>)'"
+    },
+    {
+      "label": "LDAP bitwise OR filter (1.2.840.113556.1.4.804)",
+      "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.804:=<bitmask>)'"
+    },
+    {
+      "label": "Ping sweep via AD Module",
+      "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}"
     }
   ]
 }

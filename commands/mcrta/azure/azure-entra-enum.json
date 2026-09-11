@@ -57,6 +57,20 @@
       "command": "$res = Get-MgServicePrincipal -Filter \"DisplayName eq 'Microsoft Graph'\"; $res.AppRoles | Where-Object {$_.Id -eq '<AppRoleID>'} | ConvertTo-Json"
     }
   ],
+  "variations": [
+    {
+      "label": "Filter users by display name",
+      "command": "Get-MgUser -Filter \"startswith(displayName,'<prefix>')\" | ConvertTo-Json"
+    },
+    {
+      "label": "List service principals assigned to a directory role",
+      "command": "Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryRoleId <role_id> | ConvertTo-Json"
+    },
+    {
+      "label": "App delegated (OAuth2) permissions",
+      "command": "$app = Get-MgApplication -ApplicationId <app_obj_id>\n$app.Oauth2RequirePostResponse | ConvertTo-Json"
+    }
+  ],
   "notes": "Every Entra object has a unique objectId. Objects: Users, Groups (security/dynamic/M365), Devices (AAD-joined/hybrid/registered), Applications (+ service principals + managed identities). Directory roles = Entra admin roles (Global Admin, Application Admin, User Admin...) - distinct from ARM RBAC roles. getuserrealm.srf tells you (unauthenticated) whether a domain is Managed (Entra) or Federated. Enumerate app RequiredResourceAccess / OAuth2 permissions to find over-privileged apps to abuse.",
   "references": [
     {

@@ -56,6 +56,10 @@
       "command": "Invoke-BloodHound -CollectionMethod DCOnly -OutputDirectory C:\\Temp\\"
     },
     {
+      "label": "SharpHound stealth (exclude DCs to avoid MDI)",
+      "command": "SharpHound.exe --collectionmethods Group,GPOLocalGroup,Session,Trusts,ACL,Container,ObjectProps,SPNTargets,CertServices --excludedcs"
+    },
+    {
       "label": "Run as alternate user",
       "command": "Invoke-BloodHound -CollectionMethod All -LdapUsername <user> -LdapPassword '<password>'"
     }
@@ -82,7 +86,7 @@
       "rel": "alternative"
     }
   ],
-  "notes": "Key BH queries: 'Shortest Paths to Domain Admins', 'Computers with Unconstrained Delegation', 'Find Principals with DCSync Rights'. SOAPHound collects BloodHound-compatible data over AD Web Services (ADWS, TCP 9389) instead of raw LDAP - much stealthier than SharpHound. Build a cache first, then --bhdump.",
+  "notes": "Key BH queries: 'Shortest Paths to Domain Admins', 'Computers with Unconstrained Delegation', 'Find Principals with DCSync Rights'. Use --excludedcs to avoid MDI detection on DCs. Drop noisy methods (RDP, DCOM, PSRemote, LocalAdmin) for stealth — they connect to every host. LDAP-only methods (Group, GPOLocalGroup, Trusts, ACL, Container, ObjectProps, SPNTargets) are stealthiest. SOAPHound collects via ADWS (TCP 9389) instead of raw LDAP — stealthier. Build a cache first, then --bhdump.",
   "references": [
     {
       "title": "CRTP - BloodHound/SharpHound",
@@ -106,6 +110,14 @@
     "secure_config": "# Restrict SAMR enumeration:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# Via GPO:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network access: Restrict clients allowed to make remote calls to SAM\n\n# Remediate dangerous ACEs:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# WDAC: deny SharpHound.exe by hash"
   },
   "variations": [
+    {
+      "label": "SharpHound CE (Community Edition)",
+      "command": "SharpHound.exe --collectionmethods All"
+    },
+    {
+      "label": "SharpHound Legacy",
+      "command": "SharpHound.exe --collectionmethods All"
+    },
     {
       "label": "SOAPHound - build cache (ADWS, stealthy)",
       "command": "SOAPHound.exe --buildcache -c <cache_file>"

@@ -71,6 +71,24 @@
       "command": "Pacu (offseclab:imported-target) > services"
     }
   ],
+  "variations": [
+    {
+      "label": "set_keys (configure temp creds directly in Pacu)",
+      "command": "Pacu (offseclab:No Keys Set) > set_keys"
+    },
+    {
+      "label": "Enumerate EC2 instances and view results",
+      "command": "Pacu (offseclab:imported-target) > run ec2__enum\nPacu (offseclab:imported-target) > data EC2"
+    },
+    {
+      "label": "Scan for IAM privilege escalation paths",
+      "command": "Pacu (offseclab:imported-target) > run iam__privesc_scan"
+    },
+    {
+      "label": "Check current identity and permissions summary",
+      "command": "Pacu (offseclab:imported-target) > whoami"
+    }
+  ],
   "notes": "Pacu organizes data by AWS service (IAM, EC2, S3, etc.) in its SQLite database \u2014 use 'data IAM' or 'data EC2' to view collected data. Sessions persist across runs \u2014 re-running Pacu reconnects to the last session or you can activate a specific one with --activate-session. import_keys reads from the local ~/.aws/credentials file (aws configure profiles). The iam__enum_roles module works cross-account by attempting to update the AssumeRole trust policy of a role you control \u2014 if a role exists in the target account, the update succeeds. iam__enum_permissions uses a brute-force approach calling hundreds of AWS APIs and tracking which succeed vs. return AccessDenied. iam__bruteforce_permissions is a more aggressive alternative for permission discovery. Useful Pacu modules for Ch24-25: iam__enum_*, ec2__enum, s3__*, lambda__enum, rds__enum, ebs__enum_volumes_snapshots.",
   "references": [
     {

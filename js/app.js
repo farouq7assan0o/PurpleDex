@@ -33,6 +33,7 @@ class CommandManager {
         this.selectedCommand = null;
         this.mode = this.loadMode();       // 'red' | 'blue' | 'both'
         this.builderTab = 'attack';        // 'attack' | 'understand' | 'defend'
+        this._searchHits = {};             // { cardId: ['step 2', 'variation 3', ...] } — where the search matched
 
         this.init();
     }
@@ -502,8 +503,9 @@ class CommandManager {
     }
 
     // Relevance score for the free-text query against a card. 0 = no match.
+    // Also populates this._searchHits[cmd.id] with where the match was found.
     scoreCard(cmd, text) {
-        if (!text) return 1;                                   // no text -> everything passes (score neutral)
+        if (!text) { delete this._searchHits[cmd.id]; return 1; }
         const name = (cmd.name || '').toLowerCase();
         const cmdStr = (cmd.command || '').toLowerCase();
         const desc = (cmd.description || '').toLowerCase();
@@ -511,21 +513,38 @@ class CommandManager {
         const tools = (cmd.tools || []).map(t => t.toLowerCase());
         const mitre = (cmd.mitre || []).map(t => t.toLowerCase());
         let best = 0;
-        const bump = v => { if (v > best) best = v; };
-        if (name === text) bump(1000);
-        if (name.startsWith(text)) bump(600);
-        if (new RegExp('\\b' + text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(name)) bump(400);
-        if (name.includes(text)) bump(300);
-        if (tools.some(t => t === text)) bump(250);
-        if (tags.some(t => t === text)) bump(200);
-        if (tools.some(t => t.includes(text)) || tags.some(t => t.includes(text))) bump(180);
-        if (mitre.some(t => t.includes(text))) bump(160);
-        if (cmdStr.includes(text)) bump(90);
-        if (desc.includes(text)) bump(40);
+        const hits = [];
+        const bump = (v, where) => { if (v > best) best = v; if (where) hits.push(where); };
+        if (name === text) bump(1000, 'name');
+        else if (name.startsWith(text)) bump(600, 'name');
+        else if (new RegExp('\\b' + text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(name)) bump(400, 'name');
+        else if (name.includes(text)) bump(300, 'name');
+        if (tools.some(t => t === text) || tools.some(t => t.includes(text))) bump(250, 'tools');
+        if (tags.some(t => t === text) || tags.some(t => t.includes(text))) bump(200, 'tags');
+        if (mitre.some(t => t.includes(text))) bump(160, 'mitre');
+        if (cmdStr.includes(text)) bump(90, 'command');
+        // search steps, examples, and variations so sub-commands are findable
+        const steps = cmd.steps || [];
+        const examples = cmd.examples || [];
+        const variations = cmd.variations || [];
+        for (let i = 0; i < steps.length; i++) {
+            const s = ((steps[i].label || '') + ' ' + (steps[i].command || '')).toLowerCase();
+            if (s.includes(text)) { bump(70, 'step ' + (i + 1)); }
+        }
+        for (let i = 0; i < examples.length; i++) {
+            const e = examples[i];
+            const s = (typeof e === 'string' ? e : ((e && e.label) || '') + ' ' + ((e && e.command) || '')).toLowerCase();
+            if (s.includes(text)) { bump(60, 'example ' + (i + 1)); }
+        }
+        for (let i = 0; i < variations.length; i++) {
+            const s = ((variations[i].label || '') + ' ' + (variations[i].command || '')).toLowerCase();
+            if (s.includes(text)) { bump(50, 'variation ' + (i + 1)); }
+        }
+        if (desc.includes(text)) bump(40, 'description');
         const myNote = (this.userNotes[cmd.id] || '').toLowerCase();
-        if (myNote && myNote.includes(text)) bump(120);        // your own annotations are findable
-        // light typo tolerance: subsequence match in name (e.g. "krbroast" -> "kerberoast")
-        if (best === 0 && this.isSubsequence(text, name)) bump(15);
+        if (myNote && myNote.includes(text)) bump(120, 'your notes');
+        if (best === 0 && this.isSubsequence(text, name)) bump(15, 'name');
+        if (hits.length) this._searchHits[cmd.id] = hits; else delete this._searchHits[cmd.id];
         return best;
     }
 
@@ -706,10 +725,14 @@ class CommandManager {
         const examBadge = cmd.exam ? '<span class="exam-badge exam-' + this.esc(cmd.exam) + '" title="OSCP exam: ' + this.esc(cmd.exam) + '">' + this.esc(cmd.exam) + '</span>' : '';
         const noteDot = this.getUserNote(cmd.id) ? '<span class="note-dot" title="You have notes">&#9998;</span>' : '';
         const collDot = this.cardInAnyCollection(cmd.id) ? '<span class="coll-dot" title="In a collection"><i class="fas fa-bookmark"></i></span>' : '';
+        const matchHits = this._searchHits[cmd.id];
+        const matchBadges = matchHits ? '<div class="search-match-badges">' +
+            matchHits.map(h => '<span class="search-match-badge">' + this.esc(h) + '</span>').join('') + '</div>' : '';
         return '<div class="command-card type-border-' + this.esc(type) + sel + '" data-id="' + this.esc(cmd.id) + '">' +
             '<div class="card-header"><div class="card-title">' + teamDot + '<h3>' + this.hl(cmd.name) + '</h3>' + opsecBadge + examBadge + typeBadge + countBadge + noteDot + collDot + '</div>' +
             '<i class="' + starIcon + ' fa-star fav-star ' + fav + '" data-fav="' + this.esc(cmd.id) + '"></i></div>' +
             '<div class="card-cmd">' + this.hl(cmd.command) + '</div>' +
+            matchBadges +
             '<div class="req-badges">' + reqBadges + '</div>' +
             '<div class="tags">' + tags + '</div>' +
             '</div>';

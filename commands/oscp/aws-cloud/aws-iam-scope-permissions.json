@@ -66,6 +66,40 @@
       "command": "aws --profile target iam get-policy-version --policy-arn <arn> --version-id <v> | grep '\"iam\"'"
     }
   ],
+  "variations": [
+    {
+      "label": "List all IAM users",
+      "command": "aws --profile <profile> iam list-users"
+    },
+    {
+      "label": "List all IAM roles",
+      "command": "aws --profile <profile> iam list-roles"
+    },
+    {
+      "label": "List all IAM policies",
+      "command": "aws --profile <profile> iam list-policies --scope Local --only-attached"
+    },
+    {
+      "label": "Get group members",
+      "command": "aws --profile <profile> iam get-group --group-name <group_name>"
+    },
+    {
+      "label": "Get managed policy details",
+      "command": "aws --profile <profile> iam get-policy --policy-arn <policy_arn>"
+    },
+    {
+      "label": "Scope a role's permissions (managed + inline)",
+      "command": "aws --profile <profile> iam list-attached-role-policies --role-name <role_name>\naws --profile <profile> iam list-role-policies --role-name <role_name>\naws --profile <profile> iam get-role-policy --role-name <role_name> --policy-name <policy_name>"
+    },
+    {
+      "label": "Read inline policy on a user / group",
+      "command": "aws --profile <profile> iam get-user-policy --user-name <user> --policy-name <policy_name>\naws --profile <profile> iam get-group-policy --group-name <group> --policy-name <policy_name>"
+    },
+    {
+      "label": "List all managed policy versions",
+      "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>"
+    }
+  ],
   "notes": "IAM permissions can come from: (1) inline user policy, (2) managed policy directly attached to user, (3) group membership -> group inline or managed policies, (4) resource-based policies on services (S3, Lambda, etc.), (5) permission boundaries. Permission boundaries RESTRICT the maximum effective permissions \u2014 a boundary that allows only S3 means even if a policy grants EC2 access, the user cannot use EC2. Explicit Deny always overrides Allow regardless of source. AWS-managed policies (arn:aws:iam::aws:policy/) can be read via get-policy-version even by the subject user \u2014 they are public. Customer-managed policies (arn:aws:iam::<account_id>:policy/) require iam:GetPolicyVersion which may not be granted. Workaround: use get-account-authorization-details (see aws-iam-full-dump) if broader read permissions exist.",
   "references": [
     {

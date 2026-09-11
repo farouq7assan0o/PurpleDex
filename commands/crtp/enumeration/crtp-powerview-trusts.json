@@ -103,6 +103,10 @@
     {
       "label": "Forest trusts (external/forest)",
       "command": "Get-ForestTrust -Forest <forest>"
+    },
+    {
+      "label": "Get-DomainTrustMapping (recursive full trust map)",
+      "command": "Get-DomainTrustMapping"
     }
   ]
 }

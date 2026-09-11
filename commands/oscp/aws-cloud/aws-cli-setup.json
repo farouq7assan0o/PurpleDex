@@ -54,6 +54,16 @@
       "command": "sudo apt update && sudo apt install -y awscli"
     }
   ],
+  "variations": [
+    {
+      "label": "Configure stolen short-term (STS) credentials manually",
+      "command": "aws configure set aws_access_key_id <key_id> --profile <profile>\naws configure set aws_secret_access_key <secret> --profile <profile>\naws configure set aws_session_token <token> --profile <profile>\naws sts get-caller-identity --profile <profile>"
+    },
+    {
+      "label": "Stored credentials file location",
+      "command": "# Windows: C:\\Users\\<user>\\.aws\\credentials\n# Linux: /home/<user>/.aws/credentials\ncat ~/.aws/credentials"
+    }
+  ],
   "notes": "Access Key IDs starting with AKIA are long-term credentials (IAM user keys). AKIDs starting with ASIA are temporary STS credentials (from AssumeRole or instance metadata). The account ID is 12 digits and appears in the ARN as the 5th colon-separated segment: arn:aws:iam::<account_id>:user/<name>. sts get-access-key-info only requires a valid AWS profile (even your own attacker account) and returns the account ID the target AKID belongs to \u2014 useful for mapping which company/account a leaked key came from. Credentials are stored in ~/.aws/credentials (keys) and ~/.aws/config (region/output). Multiple profiles can coexist; switch with --profile.",
   "references": [
     {

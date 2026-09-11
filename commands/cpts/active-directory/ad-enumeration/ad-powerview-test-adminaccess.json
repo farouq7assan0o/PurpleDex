@@ -90,6 +90,18 @@
     {
       "label": "Across a host list",
       "command": "Get-DomainComputer | %{ Test-AdminAccess -ComputerName $_.dnshostname }"
+    },
+    {
+      "label": "Get-NetLocalGroupMember — enumerate local Administrators on a remote host",
+      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName Administrators"
+    },
+    {
+      "label": "Get-NetLocalGroupMember — check Remote Desktop Users",
+      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Desktop Users\""
+    },
+    {
+      "label": "Get-NetLocalGroupMember — check Remote Management Users (WinRM access)",
+      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Management Users\""
     }
   ],
   "steps": [

@@ -84,5 +84,15 @@
     "misconfiguration": "GenericAll/GenericWrite ACE on DA accounts/GPOs/DCs granted to non-admin groups. WriteDACL on domain object allows self-granting DCSync rights. Legacy admin delegation never cleaned up.",
     "vulnerable_config": "# Dangerous ACE \u2014 HelpDesk has GenericAll on a DA account:\nGet-ObjectAcl 'DomainAdmin1' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'GenericAll'}\n# Output: CORP\\HelpDesk \u2014 GenericAll \u2192 can reset DA password\n\n# WriteDACL on domain object:\nGet-ObjectAcl 'DC=corp,DC=local' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'WriteDacl'}",
     "secure_config": "# Remove dangerous ACE:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# Enable AD object auditing via GPO:\n# Computer Config \u2192 Windows Settings \u2192 Security Settings \u2192 Advanced Audit Policy\n# \u2192 DS Access \u2192 Audit Directory Service Changes: Success,Failure\n# Event 5136 fires on every AD object modification\n\n# Quarterly BloodHound ACL audit:\n# Query: 'Find Principals with DCSync Rights' / 'Find Dangerous Rights for Domain Users'"
-  }
+  },
+  "variations": [
+    {
+      "label": "ConvertTo-SID (name to SID)",
+      "command": "ConvertTo-SID '<domain>\\<user>'"
+    },
+    {
+      "label": "Convert-SidToName (SID to readable name)",
+      "command": "Convert-SidToName <sid>"
+    }
+  ]
 }

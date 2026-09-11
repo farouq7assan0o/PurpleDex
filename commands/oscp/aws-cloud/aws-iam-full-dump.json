@@ -51,6 +51,10 @@
       "command": "aws --profile target iam list-policies --scope Local --only-attached | tee policies.json"
     },
     {
+      "label": "List all IAM roles",
+      "command": "aws --profile target iam list-roles | tee roles.json"
+    },
+    {
       "label": "JMESPath - extract all usernames as a flat list",
       "command": "aws --profile target iam get-account-authorization-details --filter User --query \"UserDetailList[].UserName\""
     },

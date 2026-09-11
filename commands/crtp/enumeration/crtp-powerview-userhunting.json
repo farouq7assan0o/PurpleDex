@@ -121,6 +121,18 @@
     {
       "label": "Last user logged on to a host",
       "command": "Get-LastLoggedOn -ComputerName <host>"
+    },
+    {
+      "label": "Find-LocalAdminAccess (machines where current user is admin)",
+      "command": "Find-LocalAdminAccess"
+    },
+    {
+      "label": "Test-AdminAccess (test admin on a specific host)",
+      "command": "Test-AdminAccess -ComputerName <host>"
+    },
+    {
+      "label": "Get-NetLocalGroup (local groups on a machine)",
+      "command": "Get-NetLocalGroup -ComputerName <host>"
     }
   ]
 }

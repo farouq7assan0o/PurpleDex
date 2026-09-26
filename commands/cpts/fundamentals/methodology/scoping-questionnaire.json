@@ -33,15 +33,15 @@
   ],
   "examples": [
     {
-      "label": "Network scope — enumerate all CIDRs and excluded hosts",
+      "label": "Network scope - enumerate all CIDRs and excluded hosts",
       "command": "# Q: What IP ranges/CIDRs are in scope? Any excluded hosts (DC, prod DB)?"
     },
     {
-      "label": "Web scope — list all domains and authentication requirements",
+      "label": "Web scope - list all domains and authentication requirements",
       "command": "# Q: Which domains/subdomains? Are authenticated tests required? WAF in place?"
     },
     {
-      "label": "Engagement type — define test style and deliverables",
+      "label": "Engagement type - define test style and deliverables",
       "command": "# Q: Black/grey/white box? Evasion required? Report format (PTES/OWASP)?"
     }
   ],

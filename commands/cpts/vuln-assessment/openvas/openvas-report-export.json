@@ -23,7 +23,7 @@
   "source": "CPTS Module 06: Vulnerability Assessment",
   "examples": [
     {
-      "label": "CPTS Ch06 — convert GVM XML report to Excel",
+      "label": "CPTS Ch06 - convert GVM XML report to Excel",
       "command": "python3 -m openvasreporting -i report-2bf466b5-627d-4659-bea6-1758b43235b1.xml -f xlsx"
     },
     {
@@ -101,7 +101,7 @@
       "label": "Export -> XLSX (high+ only)"
     },
     {
-      "description": "Export from UI — XML format (for tool import)",
+      "description": "Export from UI - XML format (for tool import)",
       "command": "# Greenbone UI: Reports → select report → Export → XML format",
       "label": "Greenbone UI: Reports → select rep…"
     }

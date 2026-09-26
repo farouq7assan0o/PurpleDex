@@ -50,7 +50,7 @@
       "command": "hydra -L /usr/share/wordlists/dirb/others/names.txt -p '<password>' rdp://<ip>"
     },
     {
-      "label": "OSCP Ch15 — HTTP-POST form brute-force (^USER^ and ^PASS^ are replaced each attempt)",
+      "label": "OSCP Ch15 - HTTP-POST form brute-force (^USER^ and ^PASS^ are replaced each attempt)",
       "command": "hydra -l <user> -P /usr/share/wordlists/rockyou.txt <ip> http-post-form \"/<login_path>:username=^USER^&password=^PASS^:F=incorrect\""
     }
   ],

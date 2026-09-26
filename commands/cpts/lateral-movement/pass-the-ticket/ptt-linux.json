@@ -82,7 +82,7 @@
     {
       "id": "mimikatz-ptt",
       "rel": "alternative",
-      "note": "Windows PtT via Mimikatz kerberos::ptt — same attack, Windows side."
+      "note": "Windows PtT via Mimikatz kerberos::ptt - same attack, Windows side."
     },
     {
       "id": "pth-impacket",

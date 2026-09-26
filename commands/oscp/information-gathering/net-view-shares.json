@@ -2,7 +2,7 @@
   "id": "net-view-shares",
   "name": "Windows - net view Share Enumeration",
   "command": "net view \\\\<ip> /all",
-  "description": "Windows built-in command to list shared resources on a remote host. /all includes hidden administrative shares (ADMIN$, C$, IPC$). No extra tools required — runs from any authenticated Windows session.",
+  "description": "Windows built-in command to list shared resources on a remote host. /all includes hidden administrative shares (ADMIN$, C$, IPC$). No extra tools required - runs from any authenticated Windows session.",
   "type": "command",
   "platform": "windows",
   "requires": [
@@ -54,7 +54,7 @@
       "command": "net view"
     }
   ],
-  "notes": "net view uses SMB/NetBIOS to query the Server service on the remote host. Without /all, hidden shares (ending in $) are omitted. Shares of interest: C$ ADMIN$ (admin access indicator), SYSVOL NETLOGON (DC indicator), non-default shares (BACKUP, DATA, etc. — likely data stores). Authentication uses the current Windows session credentials. If access is denied, try after PtH or credential capture.",
+  "notes": "net view uses SMB/NetBIOS to query the Server service on the remote host. Without /all, hidden shares (ending in $) are omitted. Shares of interest: C$ ADMIN$ (admin access indicator), SYSVOL NETLOGON (DC indicator), non-default shares (BACKUP, DATA, etc. - likely data stores). Authentication uses the current Windows session credentials. If access is denied, try after PtH or credential capture.",
   "recommended": [
     {
       "id": "smb-share-enum",
@@ -64,7 +64,7 @@
     {
       "id": "nbtscan-netbios",
       "rel": "prereq",
-      "note": "nbtscan finds SMB hosts in a subnet — pipe those IPs into net view."
+      "note": "nbtscan finds SMB hosts in a subnet - pipe those IPs into net view."
     }
   ],
   "references": [
@@ -85,7 +85,7 @@
     "prerequisites": "An authenticated Windows session on any domain-joined or workgroup host. No elevated privileges needed to list non-hidden shares; admin shares require admin context.",
     "why_it_works": "net view queries the target host's Server service over SMB (port 445/139) using the NetrShareEnum RPC call. The Server service, which exposes shares, responds with the share list to any authenticated requester by default. With /all, the query returns all shares including those ending in $ (marked hidden in the browse list but still accessible).",
     "misconfiguration": "Default Windows configuration allows any authenticated user to enumerate shares on any reachable host. Admin shares (C$, ADMIN$) are enabled by default and indicate that the host responds to admin-level SMB. SYSVOL/NETLOGON shares confirm DC identity.",
-    "impact": "Reveals data share names (targets for credential hunting, sensitive file access). Identifies DCs via SYSVOL/NETLOGON presence. Admin shares confirm host is domain-joined and accepting SMB admin connections — a prerequisite for PsExec, WMI, and PTH attacks.",
+    "impact": "Reveals data share names (targets for credential hunting, sensitive file access). Identifies DCs via SYSVOL/NETLOGON presence. Admin shares confirm host is domain-joined and accepting SMB admin connections - a prerequisite for PsExec, WMI, and PTH attacks.",
     "detection": "Windows Security Event 5140 (network share was accessed) on the target when a share is opened (not just listed). Event 4624 (logon) type 3 (network) on the target when net view authenticates. SIEM: alert on rapid sequential share enumeration from a single source, especially from non-admin hosts.",
     "artifacts": "On target: Event 5140, Event 4624 type 3. On network: SMB NetrShareEnum RPC call visible in PCAP. SIEM: browsing activity from anomalous source.",
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5140\n| stats dc(Computer) as hosts by Account_Name, Source_Address, bin(_time, 10m)\n| where hosts>10",
@@ -93,7 +93,7 @@
     "sentinel_kql": "SecurityEvent\n| where EventID == 5140\n| summarize hosts=dcount(Computer) by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 10\n| sort by hosts desc\n// net view SMB share enumeration (one-to-many tree-connects)",
     "sigma_rules": "win_security_smb_share_enum_fanout (net view share discovery)",
     "prevention": "Disable NetBIOS over TCP/IP where not required. Enable SMB signing. Restrict NTLM to domain accounts only. Disable the Server service on hosts that do not need to share files. Monitor Event 5140 for unusual share browsing.",
-    "evasion": "net view is a Windows LOLBAS — indistinguishable from legitimate admin activity. Single queries to one host at a time avoid sequential-scan detection. Using during business hours blends with normal share browsing patterns.",
+    "evasion": "net view is a Windows LOLBAS - indistinguishable from legitimate admin activity. Single queries to one host at a time avoid sequential-scan detection. Using during business hours blends with normal share browsing patterns.",
     "sources": [
       "PEN-200 Ch 6",
       "MITRE T1135",

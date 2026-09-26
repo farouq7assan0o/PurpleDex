@@ -69,7 +69,7 @@
   "defense": {
     "why_it_works": "The Mail Masta plugin (1.0) passes a user-supplied path directly to include() without sanitization. An attacker provides a path traversal sequence to include local files such as /etc/passwd or wp-config.php.",
     "prerequisites": "Mail Masta plugin installed and activated. No open_basedir restriction. PHP include() with no path validation.",
-    "impact": "Read arbitrary local files: wp-config.php (database credentials), /etc/passwd, SSH keys — leading to credential theft and potential RCE.",
+    "impact": "Read arbitrary local files: wp-config.php (database credentials), /etc/passwd, SSH keys - leading to credential theft and potential RCE.",
     "detection": "GET requests to the plugin endpoint containing directory traversal sequences (../). WAF alert for LFI patterns. PHP error logs if path not found.",
     "artifacts": "Web server access logs (GET with ../../etc/passwd in parameter) | WAF alerts for path traversal | PHP error log entries",
     "splunk_spl": "index=web sourcetype=access_combined (uri_query=\\\"*/wp-content/plugins/mailmasta*\\\" OR uri_path=\\\"*/wp-content/plugins/mailmasta*\\\" OR uri_query=\\\"*pl=*\\\" OR uri_path=\\\"*pl=*\\\" OR uri_query=\\\"*/etc/passwd*\\\" OR uri_path=\\\"*/etc/passwd*\\\" OR uri_query=\\\"*php://filter*\\\" OR uri_path=\\\"*php://filter*\\\")\n| table _time, clientip, uri_path, uri_query, status",

@@ -25,7 +25,7 @@
   "source": "CPTS Module 06: Vulnerability Assessment",
   "examples": [
     {
-      "label": "CPTS Ch06 — scan example.com for weak TLS",
+      "label": "CPTS Ch06 - scan example.com for weak TLS",
       "command": "sslscan example.com"
     },
     {
@@ -106,7 +106,7 @@
       "label": "sslscan | grep -E"
     },
     {
-      "description": "openssl alternative — show cert chain and expiry",
+      "description": "openssl alternative - show cert chain and expiry",
       "command": "openssl s_client -connect <host>:<port> 2>/dev/null | openssl x509 -noout -dates -subject -issuer",
       "label": "openssl"
     }

@@ -25,7 +25,7 @@
   "source": "CPTS Module 06: Vulnerability Assessment",
   "examples": [
     {
-      "label": "CPTS Ch06 — full OpenVAS install + start",
+      "label": "CPTS Ch06 - full OpenVAS install + start",
       "command": "sudo apt-get update && sudo apt-get -y full-upgrade\nsudo apt-get install -y gvm\nsudo gvm-setup\nsudo gvm-start\n# Access https://127.0.0.1:9392"
     },
     {
@@ -33,7 +33,7 @@
       "command": "sudo gvm-check-setup"
     }
   ],
-  "notes": "Components: Greenbone Vulnerability Manager + Greenbone Security Assistant. Feeds: NVTs + CVEs. GVM (Greenbone Vulnerability Manager) is the open-source alternative to Nessus. gvm-setup takes 15-30 minutes on first run (downloads NVT/SCAP/CERT feeds). Admin password is printed at end of setup — save it. Web UI is at https://<ip>:9392 (port may vary). Also covered in: CPTS Ch06 (Vulnerability Assessment).",
+  "notes": "Components: Greenbone Vulnerability Manager + Greenbone Security Assistant. Feeds: NVTs + CVEs. GVM (Greenbone Vulnerability Manager) is the open-source alternative to Nessus. gvm-setup takes 15-30 minutes on first run (downloads NVT/SCAP/CERT feeds). Admin password is printed at end of setup - save it. Web UI is at https://<ip>:9392 (port may vary). Also covered in: CPTS Ch06 (Vulnerability Assessment).",
   "references": [
     {
       "title": "Greenbone / OpenVAS",

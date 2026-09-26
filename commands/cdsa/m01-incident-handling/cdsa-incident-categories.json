@@ -11,7 +11,7 @@
   "certifications": ["CDSA"],
   "source": "CDSA Module 01: Incident Handling Process",
   "tags": ["reference", "triage", "classification", "incident-types"],
-  "notes": "Category → Typical severity & response:\n• Ransomware — Critical; immediate isolation, offline backups, ransom policy.\n• Data Breach — High/Critical; legal/compliance notification, forensics, data audit.\n• Insider Threat — High; discreet investigation, preserve evidence before tipping off.\n• Phishing/BEC — Medium; user remediation, credential reset, mail rule review.\n• Unauthorized Access — High; scope how far pivot went, check lateral movement.\n• DoS/DDoS — Varies; rate-limit/null-route, coordinate with ISP.\n• APT/Long-term Intrusion — Critical; assume full network, extensive forensics.\n\nPyramid of Pain (hardest-to-replace IOC at top):\nTTP > Tools > Network/Host Artefacts > Domain > IP > Hash",
+  "notes": "Category → Typical severity & response:\n• Ransomware - Critical; immediate isolation, offline backups, ransom policy.\n• Data Breach - High/Critical; legal/compliance notification, forensics, data audit.\n• Insider Threat - High; discreet investigation, preserve evidence before tipping off.\n• Phishing/BEC - Medium; user remediation, credential reset, mail rule review.\n• Unauthorized Access - High; scope how far pivot went, check lateral movement.\n• DoS/DDoS - Varies; rate-limit/null-route, coordinate with ISP.\n• APT/Long-term Intrusion - Critical; assume full network, extensive forensics.\n\nPyramid of Pain (hardest-to-replace IOC at top):\nTTP > Tools > Network/Host Artefacts > Domain > IP > Hash",
   "mitre": ["T1486", "T1566", "T1078"],
   "examples": [
     {

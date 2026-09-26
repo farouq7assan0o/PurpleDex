@@ -81,9 +81,9 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "NFS exports can be misconfigured with the 'insecure' option, which 'is dangerous because users can use ports above 1024,' bypassing the OS restriction that only root can bind ports below 1024. The 'no_root_squash' option means 'all files created by root are kept with UID/GID 0,' allowing client-side root to access NFS-mounted files as root. 'root_squash' is the safer default — it assigns root UID/GID 0 to an anonymous UID, preventing remote root access.",
+    "why_it_works": "NFS exports can be misconfigured with the 'insecure' option, which 'is dangerous because users can use ports above 1024,' bypassing the OS restriction that only root can bind ports below 1024. The 'no_root_squash' option means 'all files created by root are kept with UID/GID 0,' allowing client-side root to access NFS-mounted files as root. 'root_squash' is the safer default - it assigns root UID/GID 0 to an anonymous UID, preventing remote root access.",
     "prerequisites": "Network access to NFS (TCP/UDP 2049 and rpcbind 111).",
-    "impact": "A list of exports and readable/writable files — especially where an 'insecure'/no_root_squash export misconfiguration exists.",
+    "impact": "A list of exports and readable/writable files - especially where an 'insecure'/no_root_squash export misconfiguration exists.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "showmount and mount requests in NFS/rpcbind logs; file-access records on exported shares.",
     "splunk_spl": "index=network (dest_port=2049 OR dest_port=111)\n| stats count by src_ip, dest_ip | where count>3\n\nindex=linux sourcetype=\"linux:auditd\" (comm=\"showmount\" OR comm=\"mount\")\n| table _time, host, proctitle",
@@ -96,8 +96,8 @@
       "MITRE T1046"
     ],
     "misconfiguration": "NFS exports are configured with overly permissive options: world-readable (accessible to any host), no_root_squash (remote root user maps to local root), or sync=off. Combined with SSH authorized_keys being writable in an exported directory, this can lead to full system compromise.",
-    "vulnerable_config": "# /etc/exports — dangerous NFS export:\n/home/user    *(rw,no_root_squash,no_all_squash,sync)\n# '*' = any host can mount\n# 'rw' = read+write\n# 'no_root_squash' = remote root = local root (critical misconfiguration)\n\n# If /home/user/.ssh is on an NFS share:\n# Attacker mounts the share, writes their public key to .ssh/authorized_keys\n# -> SSH in as that user without a password",
-    "secure_config": "# /etc/exports — hardened:\n/data/shared    10.10.1.0/24(ro,root_squash,all_squash,sync)\n# Specific subnet only, read-only, root_squash (remote root -> nobody)\n# all_squash: ALL remote users map to anonymous (anonuid/anongid)\n\n# For read-write shares where needed:\n/data/team      10.10.1.100(rw,root_squash,sync,secure)\n# 'root_squash' is the minimum — never use no_root_squash\n# 'secure' = require source port < 1024 (prevents non-root mounting tricks)\n\n# After editing /etc/exports:\nexportfs -ra  # reload exports\nexportfs -v   # verify what's published",
-    "evasion": "Mount read-only and copy only needed files; unmount after; no_root_squash abuse (SUID drop) leaves a file — remove it."
+    "vulnerable_config": "# /etc/exports - dangerous NFS export:\n/home/user    *(rw,no_root_squash,no_all_squash,sync)\n# '*' = any host can mount\n# 'rw' = read+write\n# 'no_root_squash' = remote root = local root (critical misconfiguration)\n\n# If /home/user/.ssh is on an NFS share:\n# Attacker mounts the share, writes their public key to .ssh/authorized_keys\n# -> SSH in as that user without a password",
+    "secure_config": "# /etc/exports - hardened:\n/data/shared    10.10.1.0/24(ro,root_squash,all_squash,sync)\n# Specific subnet only, read-only, root_squash (remote root -> nobody)\n# all_squash: ALL remote users map to anonymous (anonuid/anongid)\n\n# For read-write shares where needed:\n/data/team      10.10.1.100(rw,root_squash,sync,secure)\n# 'root_squash' is the minimum - never use no_root_squash\n# 'secure' = require source port < 1024 (prevents non-root mounting tricks)\n\n# After editing /etc/exports:\nexportfs -ra  # reload exports\nexportfs -v   # verify what's published",
+    "evasion": "Mount read-only and copy only needed files; unmount after; no_root_squash abuse (SUID drop) leaves a file - remove it."
   }
 }

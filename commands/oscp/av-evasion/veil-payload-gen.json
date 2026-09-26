@@ -2,7 +2,7 @@
   "id": "veil-payload-gen",
   "name": "Veil - On-Disk AV Evasion Payload",
   "command": "sudo veil",
-  "description": "Veil is a standalone framework that wraps shellcode in Python, PowerShell, C, and other language templates to defeat signature-based AV on disk. Where msfvenom -e is now reliably caught, Veil's language-native wrappers (and its use of OS-native interpreters to run the payload) can survive. On the OSCP exam Veil is an allowed standalone tool — not a Metasploit module.",
+  "description": "Veil is a standalone framework that wraps shellcode in Python, PowerShell, C, and other language templates to defeat signature-based AV on disk. Where msfvenom -e is now reliably caught, Veil's language-native wrappers (and its use of OS-native interpreters to run the payload) can survive. On the OSCP exam Veil is an allowed standalone tool - not a Metasploit module.",
   "type": "command",
   "platform": "linux",
   "requires": [
@@ -79,8 +79,8 @@
     "elastic_kql": "/* local operation; no target-side event */",
     "sentinel_kql": "// Veil generates an obfuscated payload on the attacker host; detect the artifact + C2 on the victim\n// No victim-side logs; detect the resulting exploit/payload when it is used against a target.",
     "sigma_rules": "no target-side rule (Veil generates an obfuscated payload on the attacker host; detect the artifact + C2 on the victim)",
-    "prevention": "EDR with behavioral detection — Veil payloads evade signature AV but behavioral EDR catches shellcode injection. AMSI for PowerShell wrappers. Application control (WDAC) prevents unknown executables. Network inspection for Meterpreter C2 protocol patterns. Email/web gateway malware scanning.\nAntivirus/Antimalware: Use AMSI on Windows 10+ to analyze commands after being processed/interpreted; auto-quarantine suspicious encoded files.\nAudit: Periodically review common fileless storage locations (Registry, WMI repository) for abnormal and malicious data.\nBehavior Prevention on Endpoint: Enable Windows 10+ ASR rules to prevent execution of potentially obfuscated payloads.",
-    "evasion": "Use custom shellcode (not Meterpreter) — avoids Meterpreter-specific signatures. Combine Veil with sleep+jitter and anti-sandbox. Generate for specific AV and test before delivery. Use process hollowing or injection rather than direct shellcode execution (different behavioral signature).",
+    "prevention": "EDR with behavioral detection - Veil payloads evade signature AV but behavioral EDR catches shellcode injection. AMSI for PowerShell wrappers. Application control (WDAC) prevents unknown executables. Network inspection for Meterpreter C2 protocol patterns. Email/web gateway malware scanning.\nAntivirus/Antimalware: Use AMSI on Windows 10+ to analyze commands after being processed/interpreted; auto-quarantine suspicious encoded files.\nAudit: Periodically review common fileless storage locations (Registry, WMI repository) for abnormal and malicious data.\nBehavior Prevention on Endpoint: Enable Windows 10+ ASR rules to prevent execution of potentially obfuscated payloads.",
+    "evasion": "Use custom shellcode (not Meterpreter) - avoids Meterpreter-specific signatures. Combine Veil with sleep+jitter and anti-sandbox. Generate for specific AV and test before delivery. Use process hollowing or injection rather than direct shellcode execution (different behavioral signature).",
     "sources": [
       "https://attack.mitre.org/techniques/T1027/",
       "https://attack.mitre.org/techniques/T1588/005/"

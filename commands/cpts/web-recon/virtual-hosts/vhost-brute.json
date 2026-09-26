@@ -27,11 +27,11 @@
   "source": "CPTS Module 05: Information Gathering - Web Edition",
   "examples": [
     {
-      "label": "Lab — port 81, HTB wordlist",
+      "label": "Lab - port 81, HTB wordlist",
       "command": "gobuster vhost -u http://inlanefreight.htb:81 -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain"
     },
     {
-      "label": "Lab — HTTPS target with self-signed cert",
+      "label": "Lab - HTTPS target with self-signed cert",
       "command": "gobuster vhost -u https://inlanefreight.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain -k"
     },
     {
@@ -78,8 +78,8 @@
   "defense": {
     "why_it_works": "Virtual host brute-forcing sends HTTP requests with different `Host:` header values to discover additional websites hosted on the same IP. Web servers using name-based virtual hosting return different content per `Host:` header, exposing admin panels, development sites, or internal applications not linked publicly.",
     "prerequisites": "A target IP/host known to serve name-based virtual hosts, and a wordlist of candidate host names.",
-    "impact": "Uncovers additional sites served from the same IP (admin panels, internal apps, staging) that don't resolve in public DNS — expanding the attack surface behind a single address.",
-    "detection": "Virtual host discovery can generate significant traffic and might be detected by intrusion detection systems (IDS) or web application firewalls (WAF). High-volume requests to a single IP with rapidly changing Host header values are a clear indicator of vhost scanning — this pattern is abnormal for legitimate browser traffic.\n\n[MITRE T1595.003 M1056] Monitor for suspicious network traffic that could indicate scanning, such as network packets with anomalous amounts of web server interactions exhibiting unusual or automated characteristics.",
+    "impact": "Uncovers additional sites served from the same IP (admin panels, internal apps, staging) that don't resolve in public DNS - expanding the attack surface behind a single address.",
+    "detection": "Virtual host discovery can generate significant traffic and might be detected by intrusion detection systems (IDS) or web application firewalls (WAF). High-volume requests to a single IP with rapidly changing Host header values are a clear indicator of vhost scanning - this pattern is abnormal for legitimate browser traffic.\n\n[MITRE T1595.003 M1056] Monitor for suspicious network traffic that could indicate scanning, such as network packets with anomalous amounts of web server interactions exhibiting unusual or automated characteristics.",
     "artifacts": "High-rate HTTP requests to one IP with varying Host headers appear in web server logs and commonly trigger WAF/IDS signatures.",
     "splunk_spl": "index=web sourcetype=access_combined\n| stats dc(host) as hosts count by clientip, bin(_time, 1m)\n| where hosts>20",
     "elastic_kql": "event.category:web AND source.ip:* AND url.domain:*",
@@ -93,11 +93,11 @@
     ],
     "misconfiguration": "Web application and infrastructure information is inadvertently exposed: verbose HTTP headers (Server, X-Powered-By) revealing exact version numbers, directory listing enabled on web servers, .git repositories or .env files accessible in the web root, robots.txt listing sensitive paths, and WHOIS data exposing internal contact details.",
     "vulnerable_config": "# Apache with version disclosure in headers:\n# HTTP response: Server: Apache/2.4.41 (Ubuntu)\n# X-Powered-By: PHP/7.4.3  <-- exact version, enables targeted exploit search\n\n# Directory listing enabled:\n# nginx: autoindex on;  <- any directory without index.html lists files\n# Apache: Options +Indexes\n\n# .git accessible from web root:\n# http://target.com/.git/config  -- exposes repo + credentials in config\n# http://target.com/.env  -- exposes DB_PASSWORD, API keys",
-    "secure_config": "# Apache — remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
+    "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
   },
   "variations": [
     {
-      "label": "Faster — increase threads",
+      "label": "Faster - increase threads",
       "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -t 50"
     },
     {
@@ -109,7 +109,7 @@
       "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -o vhosts.txt"
     },
     {
-      "label": "Combined — threads + ignore SSL + save",
+      "label": "Combined - threads + ignore SSL + save",
       "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -t 50 -k -o vhosts.txt"
     }
   ]

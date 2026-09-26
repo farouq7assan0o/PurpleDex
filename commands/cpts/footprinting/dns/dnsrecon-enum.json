@@ -59,7 +59,7 @@
       "command": "dnsrecon -d <domain> -t std -x /tmp/dns-<domain>.xml"
     }
   ],
-  "notes": "Run `-t std` first — if AXFR succeeds you get every record in one shot. Follow with `-t brt` against the NS servers found. Wildcard DNS (*.domain resolves to a single IP) can produce false positives in brute force; dnsrecon flags this automatically. Check MX, TXT/SPF, and NS records manually for third-party services and internal naming patterns. Also covered in: OSCP PEN-200 Chapter 6 (Information Gathering).",
+  "notes": "Run `-t std` first - if AXFR succeeds you get every record in one shot. Follow with `-t brt` against the NS servers found. Wildcard DNS (*.domain resolves to a single IP) can produce false positives in brute force; dnsrecon flags this automatically. Check MX, TXT/SPF, and NS records manually for third-party services and internal naming patterns. Also covered in: OSCP PEN-200 Chapter 6 (Information Gathering).",
   "opsec": "moderate",
   "mitre": [
     "T1590.002"
@@ -95,7 +95,7 @@
     {
       "id": "dns-subdomain-brute",
       "rel": "alternative",
-      "note": "dnsenum for subdomain brute force — similar capability."
+      "note": "dnsenum for subdomain brute force - similar capability."
     },
     {
       "id": "dns-dig-queries",
@@ -109,7 +109,7 @@
     }
   ],
   "defense": {
-    "why_it_works": "dnsrecon automates systematic DNS enumeration including zone transfer attempts against every name server, wildcard detection, and record-type sweeps that manual queries miss. Zone transfers (AXFR) from misconfigured servers expose every DNS record — providing a full map of the target's infrastructure in one query.",
+    "why_it_works": "dnsrecon automates systematic DNS enumeration including zone transfer attempts against every name server, wildcard detection, and record-type sweeps that manual queries miss. Zone transfers (AXFR) from misconfigured servers expose every DNS record - providing a full map of the target's infrastructure in one query.",
     "prerequisites": "A target domain name; network access to DNS (UDP/TCP 53).",
     "impact": "All DNS records for the zone: subdomains, internal hostnames, mail infrastructure, third-party services, and network topology hints.",
     "detection": "AXFR requests from unauthorized IPs are logged by most authoritative DNS servers and should alert. High-volume A record lookups from a single IP during brute force are visible in DNS query logs.",

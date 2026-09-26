@@ -36,7 +36,7 @@
       "command": "ls -l /usr/share/hashcat/rules"
     },
     {
-      "label": "OSCP Ch15 — preview mutations without cracking (pipe through --stdout to inspect candidates)",
+      "label": "OSCP Ch15 - preview mutations without cracking (pipe through --stdout to inspect candidates)",
       "command": "hashcat -r <rule_file> --stdout <wordlist>"
     }
   ],

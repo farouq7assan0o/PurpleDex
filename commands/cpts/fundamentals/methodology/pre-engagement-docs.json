@@ -33,15 +33,15 @@
   ],
   "examples": [
     {
-      "label": "Document 1 — NDA (sign first, before any discussion)",
+      "label": "Document 1 - NDA (sign first, before any discussion)",
       "command": "# Mutual NDA signed before sharing any scope details with client"
     },
     {
-      "label": "Document 4 — Rules of Engagement",
+      "label": "Document 4 - Rules of Engagement",
       "command": "# RoE defines: in-scope IPs, allowed techniques, emergency contacts, test hours"
     },
     {
-      "label": "Document 7 — Debriefing report (sign-off after findings walk-through)",
+      "label": "Document 7 - Debriefing report (sign-off after findings walk-through)",
       "command": "# Final meeting: walk through findings, get written acceptance, hand over report"
     }
   ],

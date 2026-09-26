@@ -45,15 +45,15 @@
       "command": "Get-DomainObjectACL -ResolveGUIDs -Identity 'damundsen' | ? {$_.SecurityIdentifier -eq (Convert-NameToSid wley)}"
     },
     {
-      "label": "Ch21 — Get-ObjectAcl on a user object (raw ACE output)",
+      "label": "Ch21 - Get-ObjectAcl on a user object (raw ACE output)",
       "command": "Get-ObjectAcl -Identity <username>"
     },
     {
-      "label": "Ch21 — filter GenericAll on a group (find full-control ACEs)",
+      "label": "Ch21 - filter GenericAll on a group (find full-control ACEs)",
       "command": "Get-ObjectAcl -Identity \"<group_name>\" | ? {$_.ActiveDirectoryRights -eq \"GenericAll\"} | select SecurityIdentifier,ActiveDirectoryRights"
     },
     {
-      "label": "Ch21 — pipeline-convert multiple SIDs to account names",
+      "label": "Ch21 - pipeline-convert multiple SIDs to account names",
       "command": "\"<SID1>\",\"<SID2>\" | Convert-SidToName"
     }
   ],
@@ -109,7 +109,7 @@
       "MITRE T1222.001"
     ],
     "misconfiguration": "Non-privileged users or groups have been granted sensitive AD object permissions (WriteDACL, GenericAll, GenericWrite, ForceChangePassword, AddMember, etc.) through misconfigured delegation, 'inherited from parent' ACEs copied at provisioning time, or direct one-off grants. Because AD ACEs are not surfaced in the normal GUI, these often persist for years.",
-    "vulnerable_config": "# Example: a help-desk group has ForceChangePassword on Domain Admins members\n# Found via BloodHound 'ForceChangePassword' edge, or PowerView:\nGet-ObjectAcl -Identity 'Domain Admins' -ResolveGUIDs |\n  Where-Object {$_.ActiveDirectoryRights -match 'ResetPassword'} |\n  Select-Object IdentityReference, ActiveDirectoryRights, ObjectType\n\n# Another dangerous pattern — GenericWrite on a user (enables targeted Kerberoasting):\nGet-ObjectAcl -Identity 'svc_sql' -ResolveGUIDs |\n  Where-Object {$_.ActiveDirectoryRights -match 'GenericWrite'}",
+    "vulnerable_config": "# Example: a help-desk group has ForceChangePassword on Domain Admins members\n# Found via BloodHound 'ForceChangePassword' edge, or PowerView:\nGet-ObjectAcl -Identity 'Domain Admins' -ResolveGUIDs |\n  Where-Object {$_.ActiveDirectoryRights -match 'ResetPassword'} |\n  Select-Object IdentityReference, ActiveDirectoryRights, ObjectType\n\n# Another dangerous pattern - GenericWrite on a user (enables targeted Kerberoasting):\nGet-ObjectAcl -Identity 'svc_sql' -ResolveGUIDs |\n  Where-Object {$_.ActiveDirectoryRights -match 'GenericWrite'}",
     "secure_config": "# 1. Run AD ACL audit quarterly (automated):\n# BloodHound: Mark all Domain Admins as 'High Value', find paths from low-priv users\n# PowerView batch:\nGet-DomainObjectAcl -ResolveGUIDs |\n  Where-Object {$_.ActiveDirectoryRights -match 'GenericAll|GenericWrite|WriteDACL|WriteOwner'} |\n  Where-Object {$_.IdentityReference -notmatch 'Domain Admins|Enterprise Admins|SYSTEM'} |\n  Export-Csv acl_review.csv\n\n# 2. Remove dangerous ACEs:\nRemove-DomainObjectAcl -TargetIdentity 'svc_sql' \\\n    -PrincipalIdentity 'helpdesk' -Rights GenericWrite\n\n# 3. Enable AD Protected Users group for privileged accounts\n# 4. Use tiered administration (Admin Tier 0/1/2) to limit blast radius"
   },
   "tools": [

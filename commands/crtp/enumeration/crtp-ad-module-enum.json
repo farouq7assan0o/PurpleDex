@@ -2,7 +2,7 @@
   "id": "crtp-ad-module-enum",
   "name": "AD Module Enumeration (Microsoft ActiveDirectory Module)",
   "command": "Get-ADDomain | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator",
-  "description": "Use the built-in Microsoft AD PowerShell module for LDAP-based enumeration. Stealthier than PowerView — uses legitimate AD admin tooling.",
+  "description": "Use the built-in Microsoft AD PowerShell module for LDAP-based enumeration. Stealthier than PowerView - uses legitimate AD admin tooling.",
   "platform": "windows",
   "category": "Active Directory",
   "subcategory": "Domain Enumeration",
@@ -84,7 +84,7 @@
       "rel": "next"
     }
   ],
-  "notes": "AD module is pre-installed on DCs and RSAT machines. Install RSAT on non-DC: Get-WindowsCapability -Name RSAT* -Online | Add-WindowsCapability -Online. LDAP matching rules: 1.2.840.113556.1.4.803 (bitwise AND — check if UAC flag is set), 1.2.840.113556.1.4.804 (bitwise OR — check if any flag in mask is set), 1.2.840.113556.1.4.1941 (LDAP_MATCHING_RULE_IN_CHAIN — recursive memberOf/member resolution for nested groups).",
+  "notes": "AD module is pre-installed on DCs and RSAT machines. Install RSAT on non-DC: Get-WindowsCapability -Name RSAT* -Online | Add-WindowsCapability -Online. LDAP matching rules: 1.2.840.113556.1.4.803 (bitwise AND - check if UAC flag is set), 1.2.840.113556.1.4.804 (bitwise OR - check if any flag in mask is set), 1.2.840.113556.1.4.1941 (LDAP_MATCHING_RULE_IN_CHAIN - recursive memberOf/member resolution for nested groups).",
   "references": [
     {
       "title": "CRTP - AD Module Enumeration",
@@ -92,17 +92,17 @@
     }
   ],
   "defense": {
-    "why_it_works": "The Microsoft ActiveDirectory PowerShell module communicates with DCs via LDAP/ADWS (port 9389) using the authenticated user's credentials. It is a signed Microsoft DLL — bypasses application allowlisting. Get-ADDomain, Get-ADUser, Get-ADGroup, Get-ADComputer return rich AD object data without elevated privileges.",
+    "why_it_works": "The Microsoft ActiveDirectory PowerShell module communicates with DCs via LDAP/ADWS (port 9389) using the authenticated user's credentials. It is a signed Microsoft DLL - bypasses application allowlisting. Get-ADDomain, Get-ADUser, Get-ADGroup, Get-ADComputer return rich AD object data without elevated privileges.",
     "prerequisites": "Domain user account. RSAT installed or AD module imported from DC. PowerShell execution. LDAP/ADWS access (ports 389/636/9389).",
-    "impact": "T1482 Domain Trust Discovery + T1069.002 Permission Groups Discovery + T1087.002 Account Discovery. Maps the full AD structure: users, groups, OUs, trusts, computers, GPOs — foundational data for attack path planning.",
-    "detection": "LDAP/ADWS queries from workstations (port 9389) — unusual for non-admins. Event 4662 for AD object access. MDI 'LDAP reconnaissance' alert. PowerShell Script Block Logging (Event 4104): Import-Module ActiveDirectory or Get-AD* commands.\nAdversary uses nltest, PowerShell, or Win32/.NET API to enumerate domain trust relationships (via DSEnumerateDomainTrusts, GetAllTrustRelationships, or LDAP queries), followed by discovery or authentication staging (DET0007/AN0016).\nDetection of adversary enumeration of domain or local group memberships via native tools such as net.exe, PowerShell, or WMI; may precede lateral movement or privilege escalation (DET0179/AN0507).\nGroup enumeration using 'id', 'groups', or 'getent group' commands on Linux, often followed by privilege escalation or SSH lateral movement (AN0508).\nGroup membership checks via 'dscl', 'dscacheutil', or 'id' on macOS, executed via terminal or automation scripts (AN0509).",
+    "impact": "T1482 Domain Trust Discovery + T1069.002 Permission Groups Discovery + T1087.002 Account Discovery. Maps the full AD structure: users, groups, OUs, trusts, computers, GPOs - foundational data for attack path planning.",
+    "detection": "LDAP/ADWS queries from workstations (port 9389) - unusual for non-admins. Event 4662 for AD object access. MDI 'LDAP reconnaissance' alert. PowerShell Script Block Logging (Event 4104): Import-Module ActiveDirectory or Get-AD* commands.\nAdversary uses nltest, PowerShell, or Win32/.NET API to enumerate domain trust relationships (via DSEnumerateDomainTrusts, GetAllTrustRelationships, or LDAP queries), followed by discovery or authentication staging (DET0007/AN0016).\nDetection of adversary enumeration of domain or local group memberships via native tools such as net.exe, PowerShell, or WMI; may precede lateral movement or privilege escalation (DET0179/AN0507).\nGroup enumeration using 'id', 'groups', or 'getent group' commands on Linux, often followed by privilege escalation or SSH lateral movement (AN0508).\nGroup membership checks via 'dscl', 'dscacheutil', or 'id' on macOS, executed via terminal or automation scripts (AN0509).",
     "artifacts": "Event 4104: Import-Module ActiveDirectory + Get-AD* | DC Event 4662: LDAP reads from workstation | MDI: LDAP reconnaissance alert | ADWS port 9389 connections in netflow | Zeek ldap.log: bulk query from non-admin",
     "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Import-Module ActiveDirectory*\" OR ScriptBlockText=\"*Get-ADDomain*\" OR ScriptBlockText=\"*Get-ADUser*\")\n| table _time, Computer, User, ScriptBlockText\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Object_Type=\"*domainDNS*\"\n| stats count by Account_Name, Computer",
     "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Module?ActiveDirectory* OR *Get-ADDomain* OR *Get-ADUser*)",
     "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Import-Module ActiveDirectory\",\"Get-ADDomain\",\"Get-ADUser\",\"Get-ADTrust\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
     "sigma_rules": "posh_ps_ad_module_recon, win_security_ldap_recon (4662 domainDNS reads)",
     "prevention": "PowerShell Constrained Language Mode (CLM) via WDAC/AppLocker. Script Block Logging + Module Logging (GPO). MDI deployment. Restrict LDAP/ADWS ports to admin hosts only.\nAudit: Map the trusts within existing domains/forests and keep trust relationships to a minimum.\nNetwork Segmentation: Employ network segmentation for sensitive domains.\nThis technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\nOperating System Configuration: Prevent administrator account enumeration via UAC (GPO: HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\CredUI\\EnumerateAdministrators).\nUser Account Management: Manage creation, modification, use, and permissions associated with user accounts.",
-    "evasion": "Use ADSI (.NET System.DirectoryServices) directly instead of AD module — same queries, different process signature. Query from a legitimate IT workstation. Use -Filter with small OUs to avoid volume anomalies.",
+    "evasion": "Use ADSI (.NET System.DirectoryServices) directly instead of AD module - same queries, different process signature. Query from a legitimate IT workstation. Use -Filter with small OUs to avoid volume anomalies.",
     "sources": [
       "https://attack.mitre.org/techniques/T1482/",
       "https://attack.mitre.org/techniques/T1069/002/",

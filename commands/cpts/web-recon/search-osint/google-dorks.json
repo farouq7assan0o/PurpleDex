@@ -24,7 +24,7 @@
   "source": "CPTS Module 05: Information Gathering - Web Edition",
   "examples": [
     {
-      "label": "CPTS Ch05 — find login pages",
+      "label": "CPTS Ch05 - find login pages",
       "command": "site:inlanefreight.com inurl:login"
     },
     {
@@ -40,7 +40,7 @@
       "command": "intitle:\"index of\" site:inlanefreight.com"
     }
   ],
-  "notes": "Operators: site:  inurl:  intitle:  intext:  filetype:/ext:  cache:  related:  AND/OR/NOT/-  ..range\nLogin pages: site:example.com (inurl:login OR inurl:admin)\nExposed files: site:example.com filetype:pdf  |  (filetype:xls OR filetype:docx)\nConfig files: site:example.com inurl:config.php  |  (ext:conf OR ext:cnf)\nBackups: site:example.com inurl:backup  |  filetype:sql\nMore: Google Hacking Database (exploit-db.com/google-hacking-database). Google dorking uses advanced search operators to find sensitive content indexed by search engines. Key operators: site: (restrict to domain), inurl: (URL contains), filetype:/ext: (file type), intitle: (page title), intext: (body text), cache: (cached version), - (exclude). Combine operators for precise targeting. Also covered in: CPTS Ch05 (Information Gathering – Web Edition).",
+  "notes": "Operators: site:  inurl:  intitle:  intext:  filetype:/ext:  cache:  related:  AND/OR/NOT/-  ..range\nLogin pages: site:example.com (inurl:login OR inurl:admin)\nExposed files: site:example.com filetype:pdf  |  (filetype:xls OR filetype:docx)\nConfig files: site:example.com inurl:config.php  |  (ext:conf OR ext:cnf)\nBackups: site:example.com inurl:backup  |  filetype:sql\nMore: Google Hacking Database (exploit-db.com/google-hacking-database). Google dorking uses advanced search operators to find sensitive content indexed by search engines. Key operators: site: (restrict to domain), inurl: (URL contains), filetype:/ext: (file type), intitle: (page title), intext: (body text), cache: (cached version), - (exclude). Combine operators for precise targeting. Also covered in: CPTS Ch05 (Information Gathering - Web Edition).",
   "references": [
     {
       "title": "Google Hacking Database",

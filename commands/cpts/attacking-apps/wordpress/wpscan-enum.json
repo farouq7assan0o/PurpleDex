@@ -73,7 +73,7 @@
   "defense": {
     "why_it_works": "WPScan queries WordPress-specific paths (/wp-json/wp/v2/users for users, plugin readme.txt for versions) and the WPScan Vulnerability Database, correlating findings against known CVEs.",
     "prerequisites": "HTTP access to the WordPress site. A WPScan API token is needed for CVE lookups but enumeration works without it.",
-    "impact": "Complete enumeration: WordPress version, all active plugins with CVE matches, themes, and registered usernames — providing the full attack surface in one command.",
+    "impact": "Complete enumeration: WordPress version, all active plugins with CVE matches, themes, and registered usernames - providing the full attack surface in one command.",
     "detection": "Rapid sequential requests to /wp-json/wp/v2/users, /readme.txt, plugin readme paths from one IP. User-Agent 'WPScan' in access logs.",
     "artifacts": "Web server access logs (WPScan UA, /wp-json/ requests) | WAF/IDS alerts for WPScan signatures",
     "splunk_spl": "index=web sourcetype=access_combined (uri_path=\\\"/wp-json/wp/v2/users\\\" OR uri_path=\\\"/?author=\\\" OR uri_path=\\\"/wp-content/plugins/\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",

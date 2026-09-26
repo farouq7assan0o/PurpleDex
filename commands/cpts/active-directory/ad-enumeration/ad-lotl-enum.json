@@ -4,7 +4,7 @@
   "type": "command",
   "platform": "windows",
   "command": "systeminfo",
-  "description": "Enumerate the AD environment using only built-in Windows commands and PowerShell cmdlets — no external tools required. Use when tools are blocked by AppLocker/AV or when operating stealthily. Covers host recon, WMIC, PowerShell downgrade, and firewall checks.",
+  "description": "Enumerate the AD environment using only built-in Windows commands and PowerShell cmdlets - no external tools required. Use when tools are blocked by AppLocker/AV or when operating stealthily. Covers host recon, WMIC, PowerShell downgrade, and firewall checks.",
   "opsec": "quiet",
   "category": "Enumeration",
   "subcategory": "Living Off the Land",
@@ -38,12 +38,12 @@
     {
       "label": "WMIC Domain Enum",
       "command": "wmic computersystem get Name,Domain,Manufacturer,Model,Username,Roles /format:List\nwmic ntdomain list /format:list\nwmic useraccount list /format:list\nwmic group list /format:list",
-      "description": "WMI-based domain enumeration using wmic.exe — fully native, produces no PowerShell logs"
+      "description": "WMI-based domain enumeration using wmic.exe - fully native, produces no PowerShell logs"
     },
     {
       "label": "PowerShell Downgrade (Evade Script Block Logging)",
       "command": "Get-host\npowershell.exe -version 2\nGet-host",
-      "description": "Downgrade to PS v2 — Script Block Logging (Event 4104) only works in PS v3+. After downgrade, PS commands are not logged. Confirm version with Get-host showing Version: 2.0"
+      "description": "Downgrade to PS v2 - Script Block Logging (Event 4104) only works in PS v3+. After downgrade, PS commands are not logged. Confirm version with Get-host showing Version: 2.0"
     },
     {
       "label": "Env & History Recon",
@@ -53,17 +53,17 @@
     {
       "label": "Host & Network Quick Check (CMD)",
       "command": "hostname\necho %USERDOMAIN%\necho %logonserver%\nipconfig /all\narp -a\nroute print\nwmic qfe get Caption,Description,HotFixID,InstalledOn",
-      "description": "Basic host fingerprinting from cmd.exe — domain, DC name, network adapters, ARP cache, routing table, installed patches"
+      "description": "Basic host fingerprinting from cmd.exe - domain, DC name, network adapters, ARP cache, routing table, installed patches"
     }
   ],
   "examples": [
     {
       "command": "systeminfo",
-      "label": "Full host info — OS, domain, hotfixes, RAM in one command"
+      "label": "Full host info - OS, domain, hotfixes, RAM in one command"
     },
     {
       "command": "wmic qfe get Caption,Description,HotFixID,InstalledOn",
-      "label": "List installed patches — look for missing CVEs"
+      "label": "List installed patches - look for missing CVEs"
     },
     {
       "command": "powershell.exe -version 2",
@@ -71,21 +71,21 @@
     },
     {
       "command": "Get-Content $env:APPDATA\\Microsoft\\Windows\\Powershell\\PSReadline\\ConsoleHost_history.txt",
-      "label": "Read PS history — often contains cleartext passwords or useful commands"
+      "label": "Read PS history - often contains cleartext passwords or useful commands"
     }
   ],
   "steps": [],
-  "notes": "=== WHEN TO USE LOTL ===\n- AppLocker blocks external tools\n- AV deletes dropped binaries\n- You need to stay under the radar (fewer alerts than pulling in Mimikatz)\n- Client restricts internet access from the host\n\n=== PS DOWNGRADE NOTES ===\n  powershell.exe -version 2 evades:\n  - Script Block Logging (Event 4104) — only works PS 3.0+\n  - Module Logging\n  BUT: the downgrade itself IS logged (Event 400 in Windows PowerShell log)\n  So a vigilant defender will see the downgrade attempt even if subsequent commands are dark\n\n=== WMIC vs POWERSHELL ===\n  wmic.exe: no PS logging, produces cmd.exe process only\n  net.exe: same — totally native\n  PowerShell: logged unless v2 downgrade\n\n=== USEFUL LOTL AD QUERIES ===\n  dsquery * -filter \"(objectClass=user)\" -attr sAMAccountName\n  net user /domain\n  net group 'Domain Admins' /domain\n  nltest /domain_trusts\n  ([adsisearcher]\"(&(objectCategory=person)(objectClass=user))\").FindAll() Also covered in: OSCP PEN-200 Chapter 21 (Active Directory Introduction and Enumeration).",
+  "notes": "=== WHEN TO USE LOTL ===\n- AppLocker blocks external tools\n- AV deletes dropped binaries\n- You need to stay under the radar (fewer alerts than pulling in Mimikatz)\n- Client restricts internet access from the host\n\n=== PS DOWNGRADE NOTES ===\n  powershell.exe -version 2 evades:\n  - Script Block Logging (Event 4104) - only works PS 3.0+\n  - Module Logging\n  BUT: the downgrade itself IS logged (Event 400 in Windows PowerShell log)\n  So a vigilant defender will see the downgrade attempt even if subsequent commands are dark\n\n=== WMIC vs POWERSHELL ===\n  wmic.exe: no PS logging, produces cmd.exe process only\n  net.exe: same - totally native\n  PowerShell: logged unless v2 downgrade\n\n=== USEFUL LOTL AD QUERIES ===\n  dsquery * -filter \"(objectClass=user)\" -attr sAMAccountName\n  net user /domain\n  net group 'Domain Admins' /domain\n  nltest /domain_trusts\n  ([adsisearcher]\"(&(objectCategory=person)(objectClass=user))\").FindAll() Also covered in: OSCP PEN-200 Chapter 21 (Active Directory Introduction and Enumeration).",
   "mitre": [
     "T1087.002",
     "T1016",
     "T1059.001"
   ],
   "defense": {
-    "why_it_works": "Built-in Windows binaries (wmic.exe, cmd.exe, netsh.exe, net.exe) are signed Microsoft tools that appear in normal admin activity — they generate far fewer alerts than dropped offensive tools. PowerShell v2 pre-dates Script Block Logging, so downgrading silences PS-based detection. All these techniques leverage functionality that cannot be removed without breaking core Windows functionality.",
+    "why_it_works": "Built-in Windows binaries (wmic.exe, cmd.exe, netsh.exe, net.exe) are signed Microsoft tools that appear in normal admin activity - they generate far fewer alerts than dropped offensive tools. PowerShell v2 pre-dates Script Block Logging, so downgrading silences PS-based detection. All these techniques leverage functionality that cannot be removed without breaking core Windows functionality.",
     "prerequisites": "Any authenticated foothold on a Windows host. No special privileges needed for most enumeration (systeminfo, ipconfig, PS history read).",
     "impact": "Full host and domain enumeration without triggering AV or script-based detection. PS history often reveals cleartext credentials or useful admin commands run by prior users.",
-    "detection": "Windows PowerShell log (Event 400/403) records PS session start/stop including version — downgrade to v2 is visible here. Sysmon Event 1 on wmic.exe with unusual command lines. EDR behavioral baselines flag wmic querying AD objects or net.exe enumerate domain users rapidly. PSReadLine history access can be detected by auditing file reads on ConsoleHost_history.txt via SACL (File Object Auditing 4663).",
+    "detection": "Windows PowerShell log (Event 400/403) records PS session start/stop including version - downgrade to v2 is visible here. Sysmon Event 1 on wmic.exe with unusual command lines. EDR behavioral baselines flag wmic querying AD objects or net.exe enumerate domain users rapidly. PSReadLine history access can be detected by auditing file reads on ConsoleHost_history.txt via SACL (File Object Auditing 4663).",
     "artifacts": "Windows PowerShell log (Event 400: HostVersion=2.0 shows downgrade). Sysmon process create for wmic.exe, net.exe. No network artifacts for local queries; LDAP traffic for AD-directed queries.",
     "splunk_spl": "index=sysmon EventCode=1 (Image=\\\"*net.exe\\\" OR Image=\\\"*net1.exe\\\" OR Image=\\\"*nltest.exe\\\" OR Image=\\\"*dsquery.exe\\\" OR Image=\\\"*whoami.exe\\\")\n| table _time, Computer, User, ParentImage, CommandLine",
     "elastic_kql": "event.code:\"1\" AND process.name:(net.exe OR net1.exe OR nltest.exe OR dsquery.exe OR whoami.exe)",
@@ -95,7 +95,7 @@
     "evasion": "Use cmd.exe native tools (net.exe, wmic, nltest) instead of PowerShell to avoid PS logging. Downgrade to v2 if PS is needed. Query AD via ADSI Searcher (built-in .NET, harder to detect than PowerView). Space queries out to avoid behavioral anomaly detection.",
     "vulnerable_config": "# PS v2 still installed (check):\nGet-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2\n# State: Enabled -> downgrade available\n\n# PSReadLine history contains cleartext creds (common):\nGet-Content $env:APPDATA\\Microsoft\\Windows\\Powershell\\PSReadline\\ConsoleHost_history.txt\n# Example output: Invoke-Command -ComputerName DC01 -Credential (Get-Credential admin / P@ssw0rd!)",
     "secure_config": "# Disable PS v2:\nDisable-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2Root\n\n# Clear PSReadLine history at session end (add to PS profile):\nRemove-Item (Get-PSReadLineOption).HistorySavePath -ErrorAction SilentlyContinue\n\n# Restrict PSReadLine history saves:\nSet-PSReadLineOption -HistorySaveStyle SaveNothing\n\n# SACL on history file to detect reads:\n# icacls $env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt /audit:Everyone:R",
-    "misconfiguration": "PowerShell v2 left installed (most Windows Server 2012R2+ systems have it by default). PSReadLine saves all commands to disk including those containing passwords. Script Block Logging enabled but v2 not removed — trivially bypassed.",
+    "misconfiguration": "PowerShell v2 left installed (most Windows Server 2012R2+ systems have it by default). PSReadLine saves all commands to disk including those containing passwords. Script Block Logging enabled but v2 not removed - trivially bypassed.",
     "sources": [
       "HTB M13",
       "MITRE T1087.002",
@@ -125,7 +125,7 @@
     {
       "id": "ad-net-commands",
       "rel": "alternative",
-      "note": "net.exe commands for AD enumeration — pure LOTL"
+      "note": "net.exe commands for AD enumeration - pure LOTL"
     },
     {
       "id": "ad-sharphound",

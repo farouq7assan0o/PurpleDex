@@ -105,6 +105,6 @@
       "MITRE T1068",
       "OWASP A06:2021"
     ],
-    "evasion": "Compile off-target and transfer only the final ELF; run once and clean it up; many public PoCs are unstable — verify the kernel/arch match before firing to avoid a panic."
+    "evasion": "Compile off-target and transfer only the final ELF; run once and clean it up; many public PoCs are unstable - verify the kernel/arch match before firing to avoid a panic."
   }
 }

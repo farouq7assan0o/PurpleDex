@@ -58,7 +58,7 @@
       "rel": "next"
     }
   ],
-  "notes": "Queries all machines — very noisy. Use -Stealth to reduce noise. Requires admin rights on targets for -CheckAccess to work.",
+  "notes": "Queries all machines - very noisy. Use -Stealth to reduce noise. Requires admin rights on targets for -CheckAccess to work.",
   "references": [
     {
       "title": "CRTP - User Hunting",
@@ -66,9 +66,9 @@
     }
   ],
   "defense": {
-    "why_it_works": "Find-DomainUserLocation uses NetSessionEnum and NetWkstaUserEnum RPC calls to query each host's active sessions, mapping which privileged users are currently logged on where. Exposes DA session locations — enabling targeted Pass-the-Hash or token impersonation on those hosts.",
+    "why_it_works": "Find-DomainUserLocation uses NetSessionEnum and NetWkstaUserEnum RPC calls to query each host's active sessions, mapping which privileged users are currently logged on where. Exposes DA session locations - enabling targeted Pass-the-Hash or token impersonation on those hosts.",
     "prerequisites": "Any domain user (NetSessionEnum accessible to all by default). PowerView. A host list (from Get-DomainComputer). SMB access (port 445) to target hosts.",
-    "impact": "T1033 System Owner/User Discovery + T1087.002 Account Discovery. Identifies which host a Domain Admin is currently logged on to — turns credential theft from guesswork to a targeted operation.",
+    "impact": "T1033 System Owner/User Discovery + T1087.002 Account Discovery. Identifies which host a Domain Admin is currently logged on to - turns credential theft from guesswork to a targeted operation.",
     "detection": "Rapid NetSessionEnum RPC calls (MSRPC \\PIPE\\srvsvc) to many hosts. Sysmon Event 3: rapid 445 connections to many hosts. Event 4104 SBL: Invoke-UserHunter / Find-DomainUserLocation. MDI: 'SMB session enumeration reconnaissance'.\nMonitor for execution of commands and arguments that may be used to gather system and network information (e.g., whoami, id, who, w, groups) particularly when chained with lateral movement behaviors. On Windows, monitor for process creation events for cmd.exe, PowerShell, and net.exe running user discovery commands. On Linux/macOS, monitor shell history and auditd for id, whoami, w, last commands. Correlate discovery activity with subsequent credential access or lateral movement.",
     "artifacts": "Sysmon Event 3: rapid 445 connections to many hosts | Event 4104: Find-DomainUserLocation | MDI: SMB session enum recon alert | Netflow: single source → many hosts TCP 445 in short window",
     "splunk_spl": "index=sysmon EventCode=3 DestinationPort=445\n| stats dc(DestinationIp) as hosts by SourceHostname, User\n| where hosts>20\n\nindex=wineventlog EventCode=4104 (ScriptBlockText=\"*Find-DomainUserLocation*\" OR ScriptBlockText=\"*Invoke-UserHunter*\")\n| table _time, Computer, User, ScriptBlockText",

@@ -1,0 +1,121 @@
+{
+  "id": "crtp-ad-filter-queries",
+  "name": "AD Module LDAP & Filter Queries (Advanced Enumeration)",
+  "command": "Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth",
+  "description": "High-value LDAP and AD Module filter queries for CRTP-style domain enumeration: AS-REP roastable accounts, unconstrained/constrained delegation, PASSWD_NOTREQD, adminCount=1 principals, Protected Users, and OU-scoped searches. These pinpoint the accounts worth attacking without dumping the whole directory.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP - Domain Enumeration (AD Module / PowerView)",
+  "tags": [
+    "enumeration",
+    "ldap",
+    "ad-module",
+    "powerview",
+    "delegation",
+    "filter-queries"
+  ],
+  "mitre": [
+    "T1087.002",
+    "T1018"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY FILTER QUERIES ===\nInstead of dumping every object, target the accounts that lead to compromise:\naccounts without pre-auth (AS-REP), delegation-enabled hosts, weak-flag accounts,\nand protected/high-value principals.\n\n=== AS-REP ROASTABLE (no pre-auth) ===\n  Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth\n  # PowerView:  Get-DomainUser -PreauthNotRequired\n\n=== UNCONSTRAINED DELEGATION (computers) ===\n  Get-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties TrustedForDelegation\n  # PowerView:  Get-DomainComputer -Unconstrained\n\n=== CONSTRAINED DELEGATION ===\n  Get-ADObject -Filter {msDS-AllowedToDelegateTo -like '*'} -Properties msDS-AllowedToDelegateTo\n  # PowerView:  Get-DomainUser -TrustedToAuth ; Get-DomainComputer -TrustedToAuth\n\n=== PASSWORD NOT REQUIRED (UAC PASSWD_NOTREQD) ===\n  Get-ADUser -Filter {UserAccountControl -band 32} -Properties UserAccountControl\n  # PowerView:  Get-DomainUser -UACFilter PASSWD_NOTREQD\n\n=== ADMINCOUNT = 1 (protected / historically privileged) ===\n  Get-ADUser -LDAPFilter '(adminCount=1)' -Properties adminCount\n  # PowerView:  Get-DomainUser -AdminCount\n\n=== PROTECTED USERS group members ===\n  Get-ADGroupMember -Identity 'Protected Users'\n\n=== DISABLED ACCOUNTS ===\n  Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.803:=2)'\n\n=== KERBEROASTABLE (has SPN) ===\n  Get-ADUser -LDAPFilter '(&(objectClass=user)(servicePrincipalName=*))' -Properties servicePrincipalName\n\n=== OU-SCOPED SEARCH ===\n  Get-ADUser -SearchBase 'OU=Servers,DC=<domain>' -Filter *\n\n=== TIP ===\nUse -Server <dc_fqdn> to target a specific DC, and pipe to select samaccountname to keep output tight.",
+  "examples": [
+    {
+      "label": "AS-REP roastable accounts",
+      "command": "Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth | select samaccountname"
+    },
+    {
+      "label": "Unconstrained delegation computers",
+      "command": "Get-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties TrustedForDelegation | select name"
+    },
+    {
+      "label": "Constrained delegation targets",
+      "command": "Get-ADObject -Filter {msDS-AllowedToDelegateTo -like '*'} -Properties msDS-AllowedToDelegateTo"
+    },
+    {
+      "label": "adminCount=1 principals",
+      "command": "Get-ADUser -LDAPFilter '(adminCount=1)' -Properties adminCount | select samaccountname"
+    }
+  ],
+  "references": [
+    {
+      "title": "CRTP - Domain Enumeration",
+      "url": "https://www.alteredsecurity.com/adlab"
+    },
+    {
+      "title": "Microsoft - Active Directory module cmdlets",
+      "url": "https://learn.microsoft.com/en-us/powershell/module/activedirectory/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "crtp-ad-module-enum",
+      "note": "General AD Module enumeration; these filters refine it to attack targets.",
+      "rel": "alternative"
+    },
+    {
+      "id": "crtp-kerberoasting",
+      "note": "The SPN filter feeds Kerberoasting.",
+      "rel": "next"
+    },
+    {
+      "id": "crtp-unconstrained-delegation",
+      "note": "The TrustedForDelegation filter feeds delegation abuse.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "LDAP allows any authenticated user to read most directory attributes, so targeted filters (UAC flags, delegation attributes, SPNs, adminCount) reveal the exact weak or privileged accounts an attacker should pursue.",
+    "prerequisites": "Any authenticated domain user and LDAP access to a DC.",
+    "impact": "Precise target selection - the enumeration that precedes AS-REP roasting, Kerberoasting, delegation abuse, and ACL attacks.",
+    "detection": "[MITRE T1087.002] Directory Service Access auditing (Event 4662) and, where enabled, verbose LDAP query logging (Event 1644 on the DC) showing repetitive filtered queries for delegation/UAC/SPN attributes from a workstation; unusual volume of AD Module / LDAP reads from a single host.",
+    "artifacts": "4662 object-access events on user/computer objects; 1644 LDAP query logs (if enabled); PowerShell 4104 script blocks referencing Get-ADUser/Get-DomainUser filters.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| stats count by Account_Name, Computer\n| where count>200\n\nindex=wineventlog source=\"WinEventLog:Microsoft-Windows-PowerShell/Operational\" EventCode=4104 ScriptBlockText=\"*DoesNotRequirePreAuth*\" OR ScriptBlockText=\"*TrustedForDelegation*\"\n| table _time, Computer, UserID, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.scriptblock.text:(*DoesNotRequirePreAuth* OR *TrustedForDelegation* OR *adminCount*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| summarize count() by Account, Computer, bin(TimeGenerated, 10m)\n| where count_ > 200\n| sort by count_ desc",
+    "sigma_rules": "posh_ps_ad_enumeration_filters, win_security_ldap_recon_high_volume",
+    "prevention": "You cannot block authenticated LDAP reads, so focus on detection and reducing attack surface: eliminate no-preauth and PASSWD_NOTREQD accounts, remove unnecessary delegation, empty adminCount residue, and deploy Microsoft Defender for Identity (flags reconnaissance). Enable LDAP query logging on DCs for high-value monitoring.",
+    "evasion": "Query a single attribute at a time and pace requests to stay under volume thresholds; use the AD Module (signed Microsoft binary) rather than noisier tools.",
+    "sources": [
+      "CRTP",
+      "MITRE T1087.002"
+    ],
+    "misconfiguration": "Accounts left with no pre-auth, PASSWD_NOTREQD, or unnecessary delegation; stale adminCount=1 residue - all trivially discoverable by filter.",
+    "vulnerable_config": "# These filters return non-empty results = weak targets exist:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true}\nGet-ADComputer -Filter {TrustedForDelegation -eq $true}\nGet-ADUser -Filter {UserAccountControl -band 32}   # PASSWD_NOTREQD",
+    "secure_config": "# Remediate the accounts the filters expose:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n# Remove unneeded delegation; audit adminCount=1 residue; enforce strong service-account passwords."
+  },
+  "tools": [
+    "ActiveDirectory-PowerShell",
+    "PowerView"
+  ],
+  "variations": [
+    {
+      "label": "Kerberoastable users (has SPN)",
+      "command": "Get-ADUser -LDAPFilter '(&(objectClass=user)(servicePrincipalName=*))' -Properties servicePrincipalName | select samaccountname"
+    },
+    {
+      "label": "Protected Users group members",
+      "command": "Get-ADGroupMember -Identity 'Protected Users'"
+    },
+    {
+      "label": "Disabled accounts (LDAP bitwise)",
+      "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.803:=2)' | select samaccountname"
+    },
+    {
+      "label": "OU-scoped user search",
+      "command": "Get-ADUser -SearchBase 'OU=Servers,DC=<domain>' -Filter * | select samaccountname"
+    },
+    {
+      "label": "PowerView equivalents",
+      "command": "Get-DomainUser -PreauthNotRequired; Get-DomainComputer -Unconstrained; Get-DomainUser -AdminCount"
+    }
+  ]
+}

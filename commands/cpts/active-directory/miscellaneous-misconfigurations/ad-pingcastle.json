@@ -39,7 +39,7 @@
       "command": "PingCastle.exe"
     },
     {
-      "label": "Run healthcheck (default — scored risk assessment)",
+      "label": "Run healthcheck (default - scored risk assessment)",
       "command": "PingCastle.exe --healthcheck"
     },
     {
@@ -101,17 +101,17 @@
     }
   ],
   "defense": {
-    "why_it_works": "PingCastle reads AD objects, attributes, and configurations accessible to any authenticated domain user. Its value is in automated analysis — correlating misconfigurations, scoring risk, and presenting findings in a defensible framework. Attackers use it to quickly identify the highest-value misconfigurations; defenders use it to track security posture over time.",
+    "why_it_works": "PingCastle reads AD objects, attributes, and configurations accessible to any authenticated domain user. Its value is in automated analysis - correlating misconfigurations, scoring risk, and presenting findings in a defensible framework. Attackers use it to quickly identify the highest-value misconfigurations; defenders use it to track security posture over time.",
     "prerequisites": "Domain-joined Windows host with any valid domain user credentials. Network access to a domain controller (LDAP/ADWS).",
     "impact": "T1087.002 Account Discovery: Domain Account + T1069.002 Permission Groups Discovery: Domain Groups. Comprehensive map of AD security weaknesses including stale objects, privileged account exposure, dangerous trust configurations, and anomalies.",
-    "detection": "LDAP and ADWS queries from workstations. PingCastle generates multiple queries across users, groups, trusts, and GPOs — similar traffic pattern to BloodHound but lower volume. Defender for Identity may flag reconnaissance activity.",
+    "detection": "LDAP and ADWS queries from workstations. PingCastle generates multiple queries across users, groups, trusts, and GPOs - similar traffic pattern to BloodHound but lower volume. Defender for Identity may flag reconnaissance activity.",
     "artifacts": "LDAP/ADWS query logs on DCs. HTML report files on the running host.",
     "splunk_spl": "index=sysmon EventCode=1 Image=\"*PingCastle*\"\n| table _time, Computer, User, CommandLine\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| stats count by Account_Name, Client_Address | where count>100",
     "elastic_kql": "event.code:\"1\" AND process.name:*PingCastle*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"PingCastle\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// PingCastle: broad AD health/attack-path scan (LDAP + SMB burst)",
     "sigma_rules": "proc_creation_win_pingcastle, win_security_ldap_recon",
     "prevention": "PingCastle reads data available to all authenticated users by design. Focus on fixing the issues it reports: remove stale accounts, enforce least privilege on privileged groups, review trust configurations, remediate anomalies.",
-    "evasion": "Run from a legitimate admin workstation during business hours. PingCastle is a legitimate security tool often used by defenders — its traffic pattern is less suspicious than custom scripts.",
+    "evasion": "Run from a legitimate admin workstation during business hours. PingCastle is a legitimate security tool often used by defenders - its traffic pattern is less suspicious than custom scripts.",
     "sources": [
       "HTB M13",
       "https://attack.mitre.org/techniques/T1087/002/"

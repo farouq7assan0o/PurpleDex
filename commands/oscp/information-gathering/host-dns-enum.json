@@ -45,17 +45,17 @@
       "label": "NS records"
     },
     {
-      "description": "Forward brute force — append prefix list to domain",
+      "description": "Forward brute force - append prefix list to domain",
       "command": "for ip in $(cat <wordlist>); do host $ip.<domain>; done",
       "label": "Subdomain loop (wordlist)"
     },
     {
-      "description": "Forward brute force — filter resolved hosts only",
+      "description": "Forward brute force - filter resolved hosts only",
       "command": "for ip in $(cat <wordlist>); do host $ip.<domain>; done | grep -v 'not found'",
       "label": "Subdomain loop (filter misses)"
     },
     {
-      "description": "Reverse sweep — PTR lookups across address range",
+      "description": "Reverse sweep - PTR lookups across address range",
       "command": "for ip in $(seq <start> <end>); do host <prefix>.$ip; done | grep -v 'not found'",
       "label": "Numeric range loop"
     },
@@ -83,7 +83,7 @@
       "command": "for ip in $(cat list.txt); do host $ip.megacorpone.com; done"
     },
     {
-      "label": "Forward brute force — show only resolved hosts",
+      "label": "Forward brute force - show only resolved hosts",
       "command": "for ip in $(cat list.txt); do host $ip.megacorpone.com; done | grep -v 'not found'"
     },
     {
@@ -95,7 +95,7 @@
       "command": "host 38.100.193.70"
     }
   ],
-  "notes": "host is a simple, clean DNS utility — good for quick record queries and loop-based brute force scripts. For forward brute force: build a wordlist of common hostnames (admin, mail, vpn, dev, test, staging, etc.) and iterate `host $prefix.<domain>`. Filter NXDOMAIN responses with `grep -v 'not found'`. For reverse sweeps: iterate a range of the last octet over the known netblock prefix and filter results. Reverse PTR records often reveal internal naming conventions (srv01, dc01, sql-prod) that expose infrastructure layout. TXT records may expose SPF sources (third-party services), DKIM selectors, or verification tokens revealing cloud providers. Chaining: host for quick forward/reverse lookups → dnsenum for comprehensive automated enumeration → nmap against discovered hosts.",
+  "notes": "host is a simple, clean DNS utility - good for quick record queries and loop-based brute force scripts. For forward brute force: build a wordlist of common hostnames (admin, mail, vpn, dev, test, staging, etc.) and iterate `host $prefix.<domain>`. Filter NXDOMAIN responses with `grep -v 'not found'`. For reverse sweeps: iterate a range of the last octet over the known netblock prefix and filter results. Reverse PTR records often reveal internal naming conventions (srv01, dc01, sql-prod) that expose infrastructure layout. TXT records may expose SPF sources (third-party services), DKIM selectors, or verification tokens revealing cloud providers. Chaining: host for quick forward/reverse lookups → dnsenum for comprehensive automated enumeration → nmap against discovered hosts.",
   "opsec": "moderate",
   "mitre": [
     "T1018",
@@ -134,12 +134,12 @@
     }
   ],
   "defense": {
-    "why_it_works": "DNS is an open directory by design. PTR records in reverse zones and subdomain brute force against public resolvers require no authentication — if DNS zones are not carefully curated, internal topology is exposed.",
+    "why_it_works": "DNS is an open directory by design. PTR records in reverse zones and subdomain brute force against public resolvers require no authentication - if DNS zones are not carefully curated, internal topology is exposed.",
     "prerequisites": "DNS resolver reachable. Target domain known. For reverse sweeps: netblock range known (from WHOIS).",
     "misconfiguration": "Reverse PTR zone populated with internal server names. Internal hostnames resolvable via public DNS. No DNS firewall/RPZ to block external subdomain brute force queries.",
     "vulnerable_config": "# Reverse zone exposing internal naming\n$ORIGIN 169.222.51.in-addr.arpa.\n200 PTR dc01.corp.megacorpone.com.\n201 PTR sql-prod.corp.megacorpone.com.",
     "secure_config": "# Remove PTR records for internal hosts from public-facing reverse zones\n# Use split-horizon DNS: internal zone has full records, external zone has only public IPs",
-    "impact": "Reveals internal hostname conventions, number of servers, server roles (dc, sql, vpn, mail) — accelerates lateral movement planning.",
+    "impact": "Reveals internal hostname conventions, number of servers, server roles (dc, sql, vpn, mail) - accelerates lateral movement planning.",
     "detection": "High NXDOMAIN rate from single source (subdomain brute force). Sequential PTR lookups across a /24 range. Both visible in DNS server query logs.",
     "artifacts": "DNS query logs, passive DNS databases recording the brute force patterns.",
     "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count by src_ip, bin(_time, 1m)\n| where count>50",

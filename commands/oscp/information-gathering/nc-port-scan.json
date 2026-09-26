@@ -61,7 +61,7 @@
       "command": "nc -nv -w 1 -z 192.168.50.152 22"
     }
   ],
-  "notes": "Flags: -n no DNS, -v verbose (open/closed message), -vv more verbose, -w <sec> timeout per connection, -z zero-I/O (scan mode), -u UDP. UDP scanning is inherently unreliable — no response usually means open|filtered; an ICMP port-unreachable means closed. Use nmap -sU for reliable UDP with retries. nc -z is best for confirming a single port you already suspect is open.",
+  "notes": "Flags: -n no DNS, -v verbose (open/closed message), -vv more verbose, -w <sec> timeout per connection, -z zero-I/O (scan mode), -u UDP. UDP scanning is inherently unreliable - no response usually means open|filtered; an ICMP port-unreachable means closed. Use nmap -sU for reliable UDP with retries. nc -z is best for confirming a single port you already suspect is open.",
   "recommended": [
     {
       "id": "nmap-tcp-connect-scan",
@@ -71,7 +71,7 @@
     {
       "id": "nmap-udp-scan",
       "rel": "alternative",
-      "note": "nmap -sU is more reliable for UDP — retries on no response and recognises ICMP unreachable."
+      "note": "nmap -sU is more reliable for UDP - retries on no response and recognises ICMP unreachable."
     }
   ],
   "references": [

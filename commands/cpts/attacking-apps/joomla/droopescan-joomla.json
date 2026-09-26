@@ -81,7 +81,7 @@
   "defense": {
     "why_it_works": "droopescan probes known Joomla paths for installed extensions, plugins, and themes, then cross-references versions with vulnerability databases. It also checks administrative URLs and identifies outdated core versions from manifest files.",
     "prerequisites": "HTTP access. No authentication required. Joomla running with default file layout.",
-    "impact": "Full extension inventory with CVE mapping — attacker knows which plugins have known RCE, LFI, or privilege escalation vulnerabilities before any login attempt.",
+    "impact": "Full extension inventory with CVE mapping - attacker knows which plugins have known RCE, LFI, or privilege escalation vulnerabilities before any login attempt.",
     "detection": "Rapid sequential GET requests to Joomla manifest paths from one IP. User-Agent matching known scanners.",
     "artifacts": "Access logs showing manifest/extension path enumeration | WAF alerts for scanner activity",
     "splunk_spl": "index=web sourcetype=access_combined (uri_path=\\\"/administrator/\\\" OR uri_path=\\\"/components/\\\" OR uri_path=\\\"/modules/\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",

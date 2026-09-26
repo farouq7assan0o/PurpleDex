@@ -74,7 +74,7 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "Adversaries abuse built-in command and scripting interpreters present on virtually all operating systems. Because these are legitimate system tools, their use is difficult to distinguish from normal administration — providing a low-noise execution path for running malicious commands or payloads.",
+    "why_it_works": "Adversaries abuse built-in command and scripting interpreters present on virtually all operating systems. Because these are legitimate system tools, their use is difficult to distinguish from normal administration - providing a low-noise execution path for running malicious commands or payloads.",
     "prerequisites": "Code execution on the target to launch a listener, and the bound port reachable through the firewall.",
     "impact": "An interactive command shell on the target, reachable by the attacker connecting inbound.",
     "detection": "Monitor for execution of scripting or command interpreters outside expected administrative time windows, from unusual user contexts, or with encoded/obfuscated arguments. Secondary execution events spawned from interpreters (e.g., a shell spawning another shell or a network tool) are particularly significant.",
@@ -88,8 +88,8 @@
     "sources": [
       "MITRE T1059"
     ],
-    "misconfiguration": "Outbound connections from servers are not filtered — any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
-    "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows — PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
-    "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows — PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
+    "misconfiguration": "Outbound connections from servers are not filtered - any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
+    "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows - PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
+    "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
   }
 }

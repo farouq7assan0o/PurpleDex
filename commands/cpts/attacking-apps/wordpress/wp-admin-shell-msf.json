@@ -75,7 +75,7 @@
     {
       "id": "gs-privesc-enum",
       "rel": "next",
-      "note": "Foothold on the Linux web host — start privesc enumeration"
+      "note": "Foothold on the Linux web host - start privesc enumeration"
     }
   ],
   "id": "wp-admin-shell-msf",
@@ -89,7 +89,7 @@
   ],
   "exam": "msf-one-machine",
   "defense": {
-    "why_it_works": "Metasploit's wp_admin_shell_upload module authenticates to WordPress with admin credentials, generates a malicious plugin containing a PHP Meterpreter stager, uploads it via the plugin installation API, and activates it — triggering the payload.",
+    "why_it_works": "Metasploit's wp_admin_shell_upload module authenticates to WordPress with admin credentials, generates a malicious plugin containing a PHP Meterpreter stager, uploads it via the plugin installation API, and activates it - triggering the payload.",
     "prerequisites": "Valid WordPress admin credentials. Plugin installation enabled (default). Network access from MSF host to WordPress.",
     "impact": "Full Meterpreter session on the web server as www-data. Enables post-exploitation: hashdump, lateral movement, file access, persistence.",
     "detection": "WordPress audit log: new plugin installed and activated by admin. New directory in /wp-content/plugins/ with random name. Outbound TCP from web server to attacker IP. WordFence new plugin alert.",

@@ -2,7 +2,7 @@
   "id": "ad-dcom-exec",
   "name": "AD Lateral Movement - DCOM Execution via MMC20.Application",
   "command": "$dcom = [System.Activator]::CreateInstance([type]::GetTypeFromProgID(\"MMC20.Application.1\",\"<target_ip>\"))\n$dcom.Document.ActiveView.ExecuteShellCommand(\"cmd\", $null, \"/c <payload>\", \"7\")",
-  "description": "Lateral movement using Distributed COM (DCOM) by instantiating the MMC20.Application COM object on a remote host. DCOM allows remote instantiation of COM objects over port 135 (RPC endpoint mapper) — when you have local admin on the target and credentials. The MMC20.Application object's Document.ActiveView.ExecuteShellCommand method executes arbitrary commands on the remote host in the security context of the logged-on user or the impersonated credentials. This is a stealthier alternative to psexec/wmiexec as MMC is a legitimate Windows binary.",
+  "description": "Lateral movement using Distributed COM (DCOM) by instantiating the MMC20.Application COM object on a remote host. DCOM allows remote instantiation of COM objects over port 135 (RPC endpoint mapper) - when you have local admin on the target and credentials. The MMC20.Application object's Document.ActiveView.ExecuteShellCommand method executes arbitrary commands on the remote host in the security context of the logged-on user or the impersonated credentials. This is a stealthier alternative to psexec/wmiexec as MMC is a legitimate Windows binary.",
   "type": "script",
   "platform": "windows",
   "requires": [
@@ -51,7 +51,7 @@
       "command": "# Excel.Application (requires Office)\n# ShellBrowserWindow\n# ShellWindows\n# Visio.Application\n# MMC20.Application.1  <- most reliable, no Office needed"
     }
   ],
-  "notes": "ExecuteShellCommand parameters: (1) command path, (2) directory (null = current), (3) arguments, (4) window state (7 = minimized/hidden). The '7' window state hides the spawned process window. Requires local admin rights on the target and RPC/DCOM access (port 135 + dynamic high ports 49152-65535). The spawned process inherits the security context of the connected user. Unlike PsExec, no service binary is created on the target — the command runs via MMC.exe which is a signed Microsoft binary. Detectable via DCOM authentication events (4624, type 3) and child processes spawned by mmc.exe. Must be run from a domain-joined Windows host or one with network access and appropriate credentials.",
+  "notes": "ExecuteShellCommand parameters: (1) command path, (2) directory (null = current), (3) arguments, (4) window state (7 = minimized/hidden). The '7' window state hides the spawned process window. Requires local admin rights on the target and RPC/DCOM access (port 135 + dynamic high ports 49152-65535). The spawned process inherits the security context of the connected user. Unlike PsExec, no service binary is created on the target - the command runs via MMC.exe which is a signed Microsoft binary. Detectable via DCOM authentication events (4624, type 3) and child processes spawned by mmc.exe. Must be run from a domain-joined Windows host or one with network access and appropriate credentials.",
   "references": [
     {
       "title": "OffSec PEN-200 - Lateral Movement in Active Directory",
@@ -70,7 +70,7 @@
     {
       "id": "ad-wmi-cim-exec",
       "rel": "alternative",
-      "note": "WMI/CIM lateral movement — similar technique but uses Win32_Process instead of DCOM COM objects."
+      "note": "WMI/CIM lateral movement - similar technique but uses Win32_Process instead of DCOM COM objects."
     },
     {
       "id": "smb-rce-psexec",
@@ -80,7 +80,7 @@
     {
       "id": "pth-impacket",
       "rel": "alternative",
-      "note": "impacket-wmiexec authenticates with NT hash — useful when you can't get cleartext creds."
+      "note": "impacket-wmiexec authenticates with NT hash - useful when you can't get cleartext creds."
     },
     {
       "id": "ad-mimikatz-sekurlsa",
@@ -94,9 +94,9 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "DCOM lets a client instantiate COM objects on a remote host over RPC (endpoint mapper 135 + dynamic ports). Objects like MMC20.Application expose methods (Document.ActiveView.ExecuteShellCommand) that spawn processes, so with local admin on the target an attacker instantiates the object remotely and calls that method to run code — using a signed, trusted DCOM path with nothing dropped to disk.",
+    "why_it_works": "DCOM lets a client instantiate COM objects on a remote host over RPC (endpoint mapper 135 + dynamic ports). Objects like MMC20.Application expose methods (Document.ActiveView.ExecuteShellCommand) that spawn processes, so with local admin on the target an attacker instantiates the object remotely and calls that method to run code - using a signed, trusted DCOM path with nothing dropped to disk.",
     "prerequisites": "Local admin on the target; RPC/DCOM reachable (135 + dynamic high ports); the DCOM object's launch/access permissions allow the calling user.",
-    "impact": "T1021.003 Remote Services: Distributed Component Object Model — remote code execution / lateral movement in the security context of the DCOM activation.",
+    "impact": "T1021.003 Remote Services: Distributed Component Object Model - remote code execution / lateral movement in the security context of the DCOM activation.",
     "detection": "Sysmon Event 1 / Event 4688: mmc.exe (or the DCOM server) spawning cmd.exe/powershell.exe with a network-logon parent. Event 4624 Type 3 immediately preceding process creation. DistributedCOM operational events (10028/10036). Anomalous RPC to 135 + ephemeral ports between workstations.",
     "prevention": "Restrict DCOM launch/activation permissions (dcomcnfg). Minimise local-admin sprawl. Host firewall to block inbound RPC/DCOM between workstations. Network segmentation and monitoring of lateral RPC.",
     "sources": [

@@ -24,7 +24,7 @@
   "source": "CPTS Module 05: Information Gathering - Web Edition",
   "examples": [
     {
-      "label": "CPTS Ch05 — fetch robots.txt to find hidden paths",
+      "label": "CPTS Ch05 - fetch robots.txt to find hidden paths",
       "command": "curl http://inlanefreight.com/robots.txt"
     },
     {
@@ -32,7 +32,7 @@
       "command": "curl https://example.com/.well-known/openid-configuration"
     }
   ],
-  "notes": "robots.txt (www.example.com/robots.txt): Disallow/Allow paths often point at admin/private areas; Sitemap: lists pages.\nWell-known URIs (/.well-known/): security.txt, change-password, openid-configuration, assetlinks.json, mta-sts.txt.\nFiles of interest: .bak, .old, web.config, settings.php, error_log, access_log; dirs like /files/. Also covered in: OSCP PEN-200 Chapter 8 (Introduction to Web Application Attacks). robots.txt Disallow entries reveal admin paths, backup dirs, staging areas. /.well-known/ URIs expose security policy (security.txt), auth endpoints (openid-configuration), and password-change flows. Always check both during web recon. Also covered in: CPTS Ch05 (Information Gathering – Web Edition).",
+  "notes": "robots.txt (www.example.com/robots.txt): Disallow/Allow paths often point at admin/private areas; Sitemap: lists pages.\nWell-known URIs (/.well-known/): security.txt, change-password, openid-configuration, assetlinks.json, mta-sts.txt.\nFiles of interest: .bak, .old, web.config, settings.php, error_log, access_log; dirs like /files/. Also covered in: OSCP PEN-200 Chapter 8 (Introduction to Web Application Attacks). robots.txt Disallow entries reveal admin paths, backup dirs, staging areas. /.well-known/ URIs expose security policy (security.txt), auth endpoints (openid-configuration), and password-change flows. Always check both during web recon. Also covered in: CPTS Ch05 (Information Gathering - Web Edition).",
   "references": [
     {
       "title": "IANA Well-Known URIs",

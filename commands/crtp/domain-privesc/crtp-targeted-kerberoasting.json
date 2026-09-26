@@ -83,7 +83,7 @@
       "rel": "next"
     }
   ],
-  "notes": "Any SPN value works — it just needs to exist to enable Kerberoasting. Always clean up to avoid detection.",
+  "notes": "Any SPN value works - it just needs to exist to enable Kerberoasting. Always clean up to avoid detection.",
   "references": [
     {
       "title": "CRTP - Targeted Kerberoasting",
@@ -91,10 +91,10 @@
     }
   ],
   "defense": {
-    "why_it_works": "If an attacker has GenericWrite or GenericAll over a user account, they can set an arbitrary SPN on that account (which doesn't already have one). This makes the account Kerberoastable — the attacker then requests a TGS for that SPN, gets the ticket encrypted with the account's NTLM hash, and cracks it offline. Useful for targeting high-privilege accounts with known weak passwords.",
+    "why_it_works": "If an attacker has GenericWrite or GenericAll over a user account, they can set an arbitrary SPN on that account (which doesn't already have one). This makes the account Kerberoastable - the attacker then requests a TGS for that SPN, gets the ticket encrypted with the account's NTLM hash, and cracks it offline. Useful for targeting high-privilege accounts with known weak passwords.",
     "prerequisites": "GenericWrite or GenericAll ACE over the target user account (identified via BloodHound/PowerView ACL enum). Rubeus or impacket-GetUserSPNs. Target account must not already have a SPN (or must not use AES-only encryption). PowerView to set the SPN.",
     "impact": "T1558.003 Kerberoasting. Converts a write ACE over a user into an offline hash crack opportunity. Particularly dangerous for accounts like help desk staff who have GenericWrite over admin accounts, or any account with a weak password and exploitable ACL path.",
-    "detection": "Event 4738 (user account changed) with SPN attribute modification — an SPN suddenly appearing on a user account that didn't have one is anomalous. Event 4769 for the newly added SPN shortly after Event 4738. MDI: SPN manipulation detection. SIEM correlation: 4738 SPN change + 4769 TGS for same account in short window.\nAnomalous Kerberos activity: forged or stolen tickets by correlating malformed fields in logon events, RC4-encrypted TGTs, or TGS requests without corresponding TGT requests; suspicious processes accessing LSASS memory for ticket extraction (DET0522/AN1443).\nSuspicious access to SSSD secrets database and Kerberos key material indicating ticket theft or replay; correlate anomalous file access with unusual Kerberos service ticket requests (AN1444).\nForging or replaying Kerberos tickets: monitor Unified Logs for anomalous kinit/klist activity and unusual authentication sequences (AN1445).",
+    "detection": "Event 4738 (user account changed) with SPN attribute modification - an SPN suddenly appearing on a user account that didn't have one is anomalous. Event 4769 for the newly added SPN shortly after Event 4738. MDI: SPN manipulation detection. SIEM correlation: 4738 SPN change + 4769 TGS for same account in short window.\nAnomalous Kerberos activity: forged or stolen tickets by correlating malformed fields in logon events, RC4-encrypted TGTs, or TGS requests without corresponding TGT requests; suspicious processes accessing LSASS memory for ticket extraction (DET0522/AN1443).\nSuspicious access to SSSD secrets database and Kerberos key material indicating ticket theft or replay; correlate anomalous file access with unusual Kerberos service ticket requests (AN1444).\nForging or replaying Kerberos tickets: monitor Unified Logs for anomalous kinit/klist activity and unusual authentication sequences (AN1445).",
     "artifacts": "Event 4738: ServicePrincipalName added to user account | Event 4769: TGS request for newly added SPN | MDI: 'Suspicious SPN was added to an account' | SIEM: 4738→4769 correlation within seconds for same account",
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 LDAP_Display_Name=\"servicePrincipalName\" Operation_Type=\"%%14674\"\n| table _time, Computer, Subject_Account_Name, Object_DN, Value\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17\n| stats count by Account_Name, Service_Name",
     "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"servicePrincipalName\"",

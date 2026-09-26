@@ -77,7 +77,7 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "The wpDiscuz comment plugin (< 7.0.5) validates uploaded file MIME types client-side only, trusting the Content-Type header. An attacker can upload a PHP webshell with .php extension — the server stores and executes it.",
+    "why_it_works": "The wpDiscuz comment plugin (< 7.0.5) validates uploaded file MIME types client-side only, trusting the Content-Type header. An attacker can upload a PHP webshell with .php extension - the server stores and executes it.",
     "prerequisites": "wpDiscuz plugin installed and activated. Comments enabled on at least one post. No server-side file-type enforcement.",
     "impact": "Unauthenticated RCE as the web server user (www-data). Full webshell access enabling data exfiltration, lateral movement, and persistence.",
     "detection": "POST request to wpdiscuz-ajax.php with a PHP file. New .php file in /wp-content/uploads/. Access log shows GET to newly created PHP file shortly after upload.",

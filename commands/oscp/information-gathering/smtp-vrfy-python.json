@@ -32,7 +32,7 @@
     {
       "id": "smtp-user-enum",
       "rel": "alternative",
-      "note": "smtp-user-enum tool automates VRFY/EXPN/RCPT TO across a wordlist — faster for bulk enumeration."
+      "note": "smtp-user-enum tool automates VRFY/EXPN/RCPT TO across a wordlist - faster for bulk enumeration."
     },
     {
       "id": "smtp-enum",
@@ -58,8 +58,8 @@
     "prerequisites": "Port 25 reachable from attacker. SMTP server with VRFY enabled (many modern MTAs disable it). Python3 on attacker host.",
     "why_it_works": "VRFY is an SMTP command from RFC 821 intended to verify a recipient address before sending. Many older Postfix, Sendmail, and Exchange configurations still respond to VRFY with 252 (user exists) or 550 (no such user). The script automates the raw socket exchange that a manual telnet session would require, making it trivial to script a wordlist loop.",
     "misconfiguration": "SMTP server configured with VRFY enabled (smtpd_discard_ehlo_keyword_address_maps not set in Postfix; sendmail NOVRFY feature not enabled). Exposed SMTP on port 25 without IP-based access restrictions.",
-    "vulnerable_config": "# Postfix main.cf — VRFY NOT disabled\n# (VRFY is enabled by default if this setting is absent)\n# smtpd_discard_ehlo_keywords = vrfy",
-    "secure_config": "# Postfix main.cf — disable VRFY\nsmtpd_discard_ehlo_keywords = vrfy expn\ndisable_vrfy_command = yes",
+    "vulnerable_config": "# Postfix main.cf - VRFY NOT disabled\n# (VRFY is enabled by default if this setting is absent)\n# smtpd_discard_ehlo_keywords = vrfy",
+    "secure_config": "# Postfix main.cf - disable VRFY\nsmtpd_discard_ehlo_keywords = vrfy expn\ndisable_vrfy_command = yes",
     "impact": "Enumerates valid email addresses / local Unix accounts on the SMTP server. Valid usernames feed password spraying, phishing, and Kerberos AS-REP roasting attacks.",
     "detection": "SMTP server access logs: repeated VRFY commands from a single IP. SIEM rule: >5 VRFY commands in 60 seconds from same source. Network IPS: VRFY flood signature.",
     "artifacts": "SMTP server mail.log (Postfix) or syslog entries showing VRFY commands with source IP. Network PCAP showing VRFY requests and 250/550 responses.",

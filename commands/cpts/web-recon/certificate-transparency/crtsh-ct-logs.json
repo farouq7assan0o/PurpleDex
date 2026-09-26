@@ -27,7 +27,7 @@
   "source": "CPTS Module 05: Information Gathering - Web Edition",
   "examples": [
     {
-      "label": "CPTS Ch05 — find dev subdomains from facebook.com CT logs",
+      "label": "CPTS Ch05 - find dev subdomains from facebook.com CT logs",
       "command": "curl -s \"https://crt.sh/?q=facebook.com&output=json\" | jq -r '.[] | select(.name_value | contains(\"dev\")) | .name_value' | sort -u"
     },
     {
@@ -35,7 +35,7 @@
       "command": "curl -s \"https://crt.sh/?q=inlanefreight.com&output=json\" | jq -r '.[].name_value' | sort -u"
     }
   ],
-  "notes": "API pattern: https://crt.sh/?q=<domain>&output=json . Also search Censys. CT logs are publicly auditable records of all issued TLS certificates. crt.sh aggregates them — filter by keyword (dev, staging, admin, api) to find non-obvious subdomains. The wildcard prefix query (%.<domain>) may return more results than exact match. Also covered in: CPTS Ch05 (Information Gathering – Web Edition).",
+  "notes": "API pattern: https://crt.sh/?q=<domain>&output=json . Also search Censys. CT logs are publicly auditable records of all issued TLS certificates. crt.sh aggregates them - filter by keyword (dev, staging, admin, api) to find non-obvious subdomains. The wildcard prefix query (%.<domain>) may return more results than exact match. Also covered in: CPTS Ch05 (Information Gathering - Web Edition).",
   "references": [
     {
       "title": "crt.sh",
@@ -72,11 +72,11 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "Certificate Transparency (CT) logs are public, append-only ledgers that record every SSL/TLS certificate issued by a Certificate Authority. Querying crt.sh exposes all certificates ever issued for a domain, revealing subdomains, infrastructure naming patterns, and historical data — without any direct interaction with the target.",
-    "prerequisites": "Only the target's root domain name. Fully passive — the query hits the public crt.sh database, never the target.",
-    "impact": "Reveals subdomains and internal naming conventions from issued certificates — including hosts that never resolve via DNS brute force — expanding the attack surface for the next phase.",
+    "why_it_works": "Certificate Transparency (CT) logs are public, append-only ledgers that record every SSL/TLS certificate issued by a Certificate Authority. Querying crt.sh exposes all certificates ever issued for a domain, revealing subdomains, infrastructure naming patterns, and historical data - without any direct interaction with the target.",
+    "prerequisites": "Only the target's root domain name. Fully passive - the query hits the public crt.sh database, never the target.",
+    "impact": "Reveals subdomains and internal naming conventions from issued certificates - including hosts that never resolve via DNS brute force - expanding the attack surface for the next phase.",
     "detection": "Very low detection risk: CT log queries are passive, targeting a public third-party database (crt.sh). The target organization has no visibility into who queries the logs. Defenders can however subscribe to CT log monitoring services to receive alerts when new certificates are issued for their domains, enabling early detection of unauthorized or rogue certificate issuance.\n\n[MITRE T1596.003 AN1963] Much of this activity may have a very high occurrence and associated false positive rate, as well as potentially taking place outside the visibility of the target organization, making detection difficult for defenders. Detection efforts may be focused on related stages of the adversary lifecycle, such as during Initial Access.",
-    "artifacts": "No artifacts on the target side — the request goes to crt.sh, not the organization's infrastructure. Nothing is logged by the victim.",
+    "artifacts": "No artifacts on the target side - the request goes to crt.sh, not the organization's infrastructure. Nothing is logged by the victim.",
     "splunk_spl": "# CT log query enumerates a domain's certificates/subdomains\n# No victim-side telemetry: the query targets crt.sh (Certificate Transparency), not the target's infrastructure.\n# Defensive option: subscribe to crt.sh (Certificate Transparency) monitoring to be alerted when your own assets appear.",
     "elastic_kql": "/* passive OSINT against crt.sh (Certificate Transparency); no target-side event to match */",
     "sentinel_kql": "// Passive reconnaissance against crt.sh (Certificate Transparency) - no target-side logs.\n// CT log query enumerates a domain's certificates/subdomains\n// The only defensive telemetry is external crt.sh (Certificate Transparency) monitoring of your own domains/assets.",
@@ -88,7 +88,7 @@
     ],
     "misconfiguration": "Web application and infrastructure information is inadvertently exposed: verbose HTTP headers (Server, X-Powered-By) revealing exact version numbers, directory listing enabled on web servers, .git repositories or .env files accessible in the web root, robots.txt listing sensitive paths, and WHOIS data exposing internal contact details.",
     "vulnerable_config": "# Apache with version disclosure in headers:\n# HTTP response: Server: Apache/2.4.41 (Ubuntu)\n# X-Powered-By: PHP/7.4.3  <-- exact version, enables targeted exploit search\n\n# Directory listing enabled:\n# nginx: autoindex on;  <- any directory without index.html lists files\n# Apache: Options +Indexes\n\n# .git accessible from web root:\n# http://target.com/.git/config  -- exposes repo + credentials in config\n# http://target.com/.env  -- exposes DB_PASSWORD, API keys",
-    "secure_config": "# Apache — remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
+    "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
   },
   "variations": [
     {

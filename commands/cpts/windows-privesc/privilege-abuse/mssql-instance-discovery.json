@@ -84,7 +84,7 @@
       "MITRE T1046",
       "MITRE T1082"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet — the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
   },
   "variations": [
     {

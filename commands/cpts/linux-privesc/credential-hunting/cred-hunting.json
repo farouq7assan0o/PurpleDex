@@ -36,15 +36,15 @@
       "command": "ls ~/.ssh"
     },
     {
-      "label": "OSCP Ch17 — check env vars for hardcoded credentials",
+      "label": "OSCP Ch17 - check env vars for hardcoded credentials",
       "command": "env"
     },
     {
-      "label": "OSCP Ch17 — inspect .bashrc for exported credential variables",
+      "label": "OSCP Ch17 - inspect .bashrc for exported credential variables",
       "command": "cat ~/.bashrc | grep -i 'pass\\|cred\\|secret\\|key\\|token'"
     },
     {
-      "label": "OSCP Ch17 — check if /etc/passwd is world-writable (quick LPE shortcut)",
+      "label": "OSCP Ch17 - check if /etc/passwd is world-writable (quick LPE shortcut)",
       "command": "ls -la /etc/passwd"
     }
   ],

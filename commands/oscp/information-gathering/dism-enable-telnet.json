@@ -52,7 +52,7 @@
       "command": "telnet 192.168.50.8 25"
     }
   ],
-  "notes": "Requires Administrator (UAC-elevated) CMD or PowerShell. Usually completes in seconds — no reboot required for TelnetClient. Once installed, use: telnet <ip> <port>. Interact manually: type commands, press Enter. Ctrl+] to open telnet prompt, then q to quit. For SMTP: connect, type VRFY <user> or EHLO <domain>. No cleanup needed unless restoring original system state: dism /online /Disable-Feature /FeatureName:TelnetClient.",
+  "notes": "Requires Administrator (UAC-elevated) CMD or PowerShell. Usually completes in seconds - no reboot required for TelnetClient. Once installed, use: telnet <ip> <port>. Interact manually: type commands, press Enter. Ctrl+] to open telnet prompt, then q to quit. For SMTP: connect, type VRFY <user> or EHLO <domain>. No cleanup needed unless restoring original system state: dism /online /Disable-Feature /FeatureName:TelnetClient.",
   "recommended": [
     {
       "id": "smtp-enum",
@@ -62,7 +62,7 @@
     {
       "id": "smtp-vrfy-python",
       "rel": "alternative",
-      "note": "Python SMTP VRFY script — automates user enumeration without needing TelnetClient."
+      "note": "Python SMTP VRFY script - automates user enumeration without needing TelnetClient."
     }
   ],
   "references": [
@@ -79,7 +79,7 @@
     "prerequisites": "Local administrator privileges on the Windows foothold. Internet or WSUS access may be required to download the feature payload if not cached locally.",
     "why_it_works": "DISM is a Windows signed utility for managing Windows Features and images. /online targets the running OS (as opposed to an offline WIM). The TelnetClient optional feature is distributed as part of Windows but disabled by default. Enabling it installs telnet.exe in system32 without requiring a restart.",
     "misconfiguration": "Local administrator credentials on a non-privileged host. Windows optional features enabled without WSUS/SCCM control, allowing arbitrary feature installation.",
-    "impact": "Gives the attacker an interactive TCP/UDP client for banner grabbing, manual protocol interaction, and port testing — useful when ncat/nc are blocked by AV but the Windows signing of telnet.exe avoids detection.",
+    "impact": "Gives the attacker an interactive TCP/UDP client for banner grabbing, manual protocol interaction, and port testing - useful when ncat/nc are blocked by AV but the Windows signing of telnet.exe avoids detection.",
     "detection": "Event 4688 (process creation): dism.exe with /Enable-Feature arguments. Windows Application Event Log: Feature installation events. PowerShell module logging if the PowerShell variant is used.",
     "artifacts": "telnet.exe appears in C:\\Windows\\System32\\. DISM logs written to C:\\Windows\\Logs\\DISM\\dism.log. Windows Application log: FeatureConfiguration event.",
     "splunk_spl": "index=sysmon EventCode=1 (Image=\"*dism.exe\" CommandLine=\"*TelnetClient*\") OR CommandLine=\"*Enable-WindowsOptionalFeature*Telnet*\"\n| table _time, Computer, User, CommandLine",
@@ -87,7 +87,7 @@
     "sentinel_kql": "DeviceProcessEvents\n| where (FileName =~ \"dism.exe\" and ProcessCommandLine has \"TelnetClient\") or ProcessCommandLine has \"Enable-WindowsOptionalFeature\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// enabling the Telnet client feature to reach a service",
     "sigma_rules": "proc_creation_win_dism_enable_telnet_client (optional-feature install)",
     "prevention": "Restrict DISM execution via AppLocker (block dism.exe for non-admin users, or require admin confirmation). Monitor Event 4688 for dism.exe /Enable-Feature invocations. Use WSUS to control which optional features can be installed.",
-    "evasion": "dism.exe is a signed Microsoft binary — AV/EDR usually allow it. Feature installation generates a log entry but no network connection unless fetching from Windows Update. Running in an elevated CMD session (rather than PowerShell) avoids PowerShell transcript logging.",
+    "evasion": "dism.exe is a signed Microsoft binary - AV/EDR usually allow it. Feature installation generates a log entry but no network connection unless fetching from Windows Update. Running in an elevated CMD session (rather than PowerShell) avoids PowerShell transcript logging.",
     "sources": [
       "PEN-200 Ch 6",
       "MS Docs"

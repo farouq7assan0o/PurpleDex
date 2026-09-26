@@ -73,7 +73,7 @@
   "defense": {
     "why_it_works": "Web-facing services expose version banners and default paths. Nmap service probes retrieve HTTP Server headers and SSL certificates, reliably fingerprinting CMS platforms, app servers, and middleware without authentication.",
     "prerequisites": "The target ports must be reachable; no credentials required. Banner grabbing works against any unfiltered TCP service.",
-    "impact": "Attacker maps the full application footprint — web servers, CMS versions, management interfaces — enabling precise CVE selection before attempting exploitation.",
+    "impact": "Attacker maps the full application footprint - web servers, CMS versions, management interfaces - enabling precise CVE selection before attempting exploitation.",
     "detection": "Log Nmap's TCP SYN + service-probe traffic (rapid sequential connections from one source IP across many ports). IDS signatures for Nmap version-scan probes (Snort SID 1-469). Host-based: correlate rapid new connections in netflow.",
     "artifacts": "IDS/IPS alerts for port scan patterns | Web server access logs showing version-probe GET requests | Firewall connection logs (high connection rate from single IP)",
     "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",

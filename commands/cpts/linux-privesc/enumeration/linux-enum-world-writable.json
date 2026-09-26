@@ -30,7 +30,7 @@
       "command": "find / -path /proc -prune -o -type f -perm -o+w 2>/dev/null"
     },
     {
-      "label": "OSCP Ch17 — find writable directories as current user",
+      "label": "OSCP Ch17 - find writable directories as current user",
       "command": "find / -writable -type d 2>/dev/null"
     }
   ],

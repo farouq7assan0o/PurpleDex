@@ -2,7 +2,7 @@
   "id": "oracle-tns-file-upload",
   "name": "Oracle TNS - File Upload via ODAT UTL_FILE",
   "command": "./odat.py utlfile -s <ip> -d <sid> -U <user> -P <password> --sysdba --putFile <remote_dir> <remote_filename> <file>",
-  "description": "Uploads a local file to the Oracle server filesystem using ODAT's utlfile module (Oracle UTL_FILE PL/SQL package). Writing to the web root drops a web-accessible file — use as a webshell delivery primitive.",
+  "description": "Uploads a local file to the Oracle server filesystem using ODAT's utlfile module (Oracle UTL_FILE PL/SQL package). Writing to the web root drops a web-accessible file - use as a webshell delivery primitive.",
   "type": "command",
   "platform": "linux",
   "category": "Enumeration",

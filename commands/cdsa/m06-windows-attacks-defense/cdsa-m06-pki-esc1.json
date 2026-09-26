@@ -1,8 +1,8 @@
 {
   "id": "cdsa-m06-pki-esc1",
-  "name": "PKI ESC1 — Misconfigured Certificate Template (SAN Abuse)",
+  "name": "PKI ESC1 - Misconfigured Certificate Template (SAN Abuse)",
   "command": ".\\Certify.exe find /vulnerable",
-  "description": "ESC1: certificate templates that allow requesters to specify a Subject Alternative Name (SAN) and grant enrollment to low-privileged users. Attacker requests a certificate with SAN set to Administrator (or any privileged account), then uses Rubeus to get a TGT as that account. No password needed. Detection: Events 4886/4887 on CA server — examine template name and SAN in issued certificates. Log volume high, requires filtering.",
+  "description": "ESC1: certificate templates that allow requesters to specify a Subject Alternative Name (SAN) and grant enrollment to low-privileged users. Attacker requests a certificate with SAN set to Administrator (or any privileged account), then uses Rubeus to get a TGT as that account. No password needed. Detection: Events 4886/4887 on CA server - examine template name and SAN in issued certificates. Log volume high, requires filtering.",
   "platform": "windows",
   "type": "attack-chain",
   "opsec": "quiet",
@@ -56,7 +56,7 @@
     {
       "id": "cdsa-m06-pki-esc8",
       "rel": "next",
-      "note": "ESC8: NTLM relay to ADCS HTTP endpoint — different vector, same goal."
+      "note": "ESC8: NTLM relay to ADCS HTTP endpoint - different vector, same goal."
     },
     {
       "id": "cdsa-m06-dcsync",
@@ -67,7 +67,7 @@
   "defense": {
     "why_it_works": "An ESC1 certificate template lets the enrollee supply the Subject Alternative Name, carries a Client Authentication/Smart Card Logon EKU, and permits low-privileged enrollment. So any domain user can request a certificate claiming to be Administrator and use it for Kerberos PKINIT.",
     "prerequisites": "A vulnerable template (Enrollee Supplies Subject + auth EKU + low-priv enrollment rights) and any domain user able to enroll.",
-    "impact": "A Kerberos TGT as any impersonated account (e.g., Administrator) with no password — a direct path to privileged access and, via the DC, domain compromise.",
+    "impact": "A Kerberos TGT as any impersonated account (e.g., Administrator) with no password - a direct path to privileged access and, via the DC, domain compromise.",
     "detection": "Event 4886 ('Certificate Services received a certificate request') and 4887 ('…approved…') on the CA. Alert when the SAN does not match the requester account, or when a template allowing SAN override + low-priv enrollment is used. certutil -view can list issued certificates for correlation.",
     "artifacts": "4886/4887 events on the CA where requester != SAN subject; Certify.exe request execution; a cert.pem/cert.pfx on the attacker host; Rubeus asktgt with /certificate.",
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Computer, Requester_Name, Attributes, Subject\n\nindex=sysmon EventCode=1 (Image=\"*Certify.exe\" OR CommandLine=\"*request*template*\")\n| table _time, Computer, User, CommandLine",
@@ -80,10 +80,10 @@
       "MITRE T1649",
       "SpecterOps AD CS research"
     ],
-    "misconfiguration": "An ADCS certificate template is misconfigured with ESC1 conditions: (1) 'Enrollee supplies subject' (CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT) is enabled, allowing the requester to specify any SAN (Subject Alternative Name) — including a Domain Admin UPN; (2) Low-privilege users (Domain Users, Authenticated Users) have Enroll or AutoEnroll rights on the template; (3) Client Authentication EKU is set. This lets any domain user request a certificate that authenticates as any other user.",
+    "misconfiguration": "An ADCS certificate template is misconfigured with ESC1 conditions: (1) 'Enrollee supplies subject' (CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT) is enabled, allowing the requester to specify any SAN (Subject Alternative Name) - including a Domain Admin UPN; (2) Low-privilege users (Domain Users, Authenticated Users) have Enroll or AutoEnroll rights on the template; (3) Client Authentication EKU is set. This lets any domain user request a certificate that authenticates as any other user.",
     "vulnerable_config": "# Certificate template properties (via Certify or ADCS MMC):\n# Template: UserWebAuth\n#   Subject Name: 'Supply in the request' (CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT = 1)\n#   EKU: Client Authentication (1.3.6.1.5.5.7.3.2)\n#   Enrollment: Domain Users (Enroll)\n# -> Any domain user can request a cert claiming UPN administrator@corp.local\n\n# Certify scan:\n# Certify.exe find /vulnerable\n# [+] ESC1: UserWebAuth  -- 'Supply in request', Domain Users Enroll, Client Auth",
     "secure_config": "# Fix CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT:\n# ADCS MMC -> Certificate Templates -> UserWebAuth -> Properties\n# Subject Name tab -> change 'Supply in the request' to\n#   'Build from this Active Directory information'\n\n# Remove broad enrollment rights:\n# Security tab -> remove 'Domain Users' -> add only the specific group that needs the cert\n\n# Enable CA Manager Approval for sensitive templates:\n# Issuance Requirements tab -> 'CA certificate manager approval' = checked\n# This requires a human review before each certificate is issued\n\n# Run Certify/PSPKIAudit quarterly to detect new vulnerable templates:\n# Invoke-PKIAudit\n\n# Enforce SID extension (Windows Server 2022+):\n# Prevents certificate from authenticating as another user even with alt SAN",
-    "evasion": "Request the certificate once and use it for the TGT; delete the local .pfx/.pem after; ESC relays are noisy — trigger the coercion briefly."
+    "evasion": "Request the certificate once and use it for the TGT; delete the local .pfx/.pem after; ESC relays are noisy - trigger the coercion briefly."
   },
   "steps": [
     {

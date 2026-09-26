@@ -33,15 +33,15 @@
   ],
   "examples": [
     {
-      "label": "Executive Summary — one page, business language, no CVEs",
+      "label": "Executive Summary - one page, business language, no CVEs",
       "command": "# Risk summary (Critical/High/Medium/Low counts) + top 3 findings in plain English"
     },
     {
-      "label": "Technical Findings — one section per vuln",
+      "label": "Technical Findings - one section per vuln",
       "command": "# Title | CVSS | Description | PoC Steps | Evidence (screenshots) | Remediation"
     },
     {
-      "label": "Attack Chain Narrative — tell the story",
+      "label": "Attack Chain Narrative - tell the story",
       "command": "# Initial foothold → lateral movement → DA compromise → timeline with timestamps"
     }
   ],

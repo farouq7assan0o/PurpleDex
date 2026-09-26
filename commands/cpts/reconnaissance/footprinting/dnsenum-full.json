@@ -27,7 +27,7 @@
   "source": "CPTS Module 04: Footprinting",
   "id": "dnsenum-full",
   "name": "DNSenum - Full DNS Enumeration",
-  "description": "Automated DNS enumeration: NS/MX/SOA discovery, AXFR zone-transfer attempts against all nameservers, and subdomain brute force — all in a single command.",
+  "description": "Automated DNS enumeration: NS/MX/SOA discovery, AXFR zone-transfer attempts against all nameservers, and subdomain brute force - all in a single command.",
   "command": "dnsenum --dnsserver <nameserver> --enum -p 0 -s 0 -o <outfile> -f <wordlist> <domain>",
   "variations": [
     {
@@ -52,11 +52,11 @@
       "command": "dnsenum --dnsserver 10.129.14.128 --enum -p 0 -s 0 -o subdomains.xml -f /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt inlanefreight.htb"
     },
     {
-      "label": "OSCP lab — enumerate target domain via internal DNS",
+      "label": "OSCP lab - enumerate target domain via internal DNS",
       "command": "dnsenum --dnsserver 192.168.50.151 --enum -p 0 -s 0 -f /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt megacorpone.com"
     }
   ],
-  "notes": "DNSenum automates DNS enumeration: NS record discovery, MX enumeration, AXFR attempts against all nameservers, and subdomain brute force — all in one run. Outputs clean results and can save to XML. Covers in one command what would require separate dig commands for NS, MX, SOA, AXFR, and brute force. Use --dnsserver to target a specific internal DNS server (critical in lab environments). -p 0 -s 0 disables Google scraping/Bing scraping (noise/accuracy concerns). Chaining: dnsenum as comprehensive first-pass DNS → review AXFR if successful → brute-forced subdomains become new scan targets → feed IPs to nmap. Also covered in: OSCP PEN-200 Chapter 6 (Information Gathering).",
+  "notes": "DNSenum automates DNS enumeration: NS record discovery, MX enumeration, AXFR attempts against all nameservers, and subdomain brute force - all in one run. Outputs clean results and can save to XML. Covers in one command what would require separate dig commands for NS, MX, SOA, AXFR, and brute force. Use --dnsserver to target a specific internal DNS server (critical in lab environments). -p 0 -s 0 disables Google scraping/Bing scraping (noise/accuracy concerns). Chaining: dnsenum as comprehensive first-pass DNS → review AXFR if successful → brute-forced subdomains become new scan targets → feed IPs to nmap. Also covered in: OSCP PEN-200 Chapter 6 (Information Gathering).",
   "opsec": "moderate",
   "mitre": [
     "T1018",
@@ -95,16 +95,16 @@
     {
       "id": "snmp-enum",
       "rel": "next",
-      "note": "Discovered IPs may expose SNMP — scan UDP 161 next."
+      "note": "Discovered IPs may expose SNMP - scan UDP 161 next."
     }
   ],
   "defense": {
-    "why_it_works": "DNS zone transfers (AXFR) are a legitimate replication mechanism — if not restricted to authorised secondary nameservers, any host can request a full dump of the zone. Subdomain brute force succeeds when domains resolve valid hosts that are not publicly advertised.",
+    "why_it_works": "DNS zone transfers (AXFR) are a legitimate replication mechanism - if not restricted to authorised secondary nameservers, any host can request a full dump of the zone. Subdomain brute force succeeds when domains resolve valid hosts that are not publicly advertised.",
     "prerequisites": "DNS server reachable on UDP/TCP 53. AXFR requires the target nameserver to allow zone transfers from the attacker's IP (misconfigured allow-transfer).",
     "misconfiguration": "Zone transfer unrestricted: `allow-transfer { any; };` in named.conf allows any IP to enumerate all records in the zone.",
-    "vulnerable_config": "# named.conf — unrestricted zone transfer\nzone \"megacorpone.com\" {\n  type master;\n  allow-transfer { any; };  // DANGEROUS — anyone can AXFR\n};",
-    "secure_config": "# named.conf — restrict AXFR to secondary nameservers only\nzone \"megacorpone.com\" {\n  type master;\n  allow-transfer { 192.168.1.2; };  // only your secondary NS\n};",
-    "impact": "Full internal DNS record dump reveals hostnames, internal IP addresses, mail servers, and service locations — dramatically accelerates reconnaissance.",
+    "vulnerable_config": "# named.conf - unrestricted zone transfer\nzone \"megacorpone.com\" {\n  type master;\n  allow-transfer { any; };  // DANGEROUS - anyone can AXFR\n};",
+    "secure_config": "# named.conf - restrict AXFR to secondary nameservers only\nzone \"megacorpone.com\" {\n  type master;\n  allow-transfer { 192.168.1.2; };  // only your secondary NS\n};",
+    "impact": "Full internal DNS record dump reveals hostnames, internal IP addresses, mail servers, and service locations - dramatically accelerates reconnaissance.",
     "detection": "AXFR requests visible in DNS server query logs (type=AXFR from unexpected source IPs). Subdomain brute force produces high NXDOMAIN rates from a single source IP.",
     "artifacts": "DNS server query logs, firewall connection logs on TCP/UDP 53.",
     "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count count(eval(reply_code=\\\"NXDOMAIN\\\")) as nx by src_ip, bin(_time, 1m)\n| where count>50 OR nx>30",

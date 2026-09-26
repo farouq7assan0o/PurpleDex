@@ -24,7 +24,7 @@
   "source": "CPTS Module 06: Vulnerability Assessment",
   "examples": [
     {
-      "label": "CPTS Ch06 — unauthenticated basic network scan workflow",
+      "label": "CPTS Ch06 - unauthenticated basic network scan workflow",
       "command": "# 1. New Scan → Basic Network Scan\n# 2. Name: 'Lab Scan', Targets: 10.10.10.0/24\n# 3. Discovery tab: adjust port range\n# 4. Save → Launch\n# 5. Review findings by severity: Critical/High/Medium/Low/Info"
     },
     {
@@ -32,7 +32,7 @@
       "command": "# Click finding → Plugin Details → see CVE IDs, CVSS score, solution"
     }
   ],
-  "notes": "Templates: Host Discovery, Basic Network Scan, Advanced Scan, Advanced Dynamic, Malware, Mobile Device, Web Application Tests, Credentialed Patch Audit, Badlock/Shellshock/DROWN detection.\nCredentialed auth - Windows: Password, Kerberos, LM/NTLM hash. Linux: Password, Public Key, Certificate, Kerberos. Also DB (Oracle/PostgreSQL/MySQL/MSSQL/...) and service (FTP/HTTP/IMAP/IPMI/Telnet).\nPlugin severities: Critical/High/Medium/Low/Info (plugins written in NASL). Safe checks recommended. Key Nessus scan types: Basic Network Scan (unauthenticated, broad), Advanced Scan (full control + credentials), Web Application Tests (web-focused), Credentialed Patch Audit (compliance-focused). Authenticated scans find significantly more findings — always use credentials when in scope. Also covered in: CPTS Ch06 (Vulnerability Assessment).",
+  "notes": "Templates: Host Discovery, Basic Network Scan, Advanced Scan, Advanced Dynamic, Malware, Mobile Device, Web Application Tests, Credentialed Patch Audit, Badlock/Shellshock/DROWN detection.\nCredentialed auth - Windows: Password, Kerberos, LM/NTLM hash. Linux: Password, Public Key, Certificate, Kerberos. Also DB (Oracle/PostgreSQL/MySQL/MSSQL/...) and service (FTP/HTTP/IMAP/IPMI/Telnet).\nPlugin severities: Critical/High/Medium/Low/Info (plugins written in NASL). Safe checks recommended. Key Nessus scan types: Basic Network Scan (unauthenticated, broad), Advanced Scan (full control + credentials), Web Application Tests (web-focused), Credentialed Patch Audit (compliance-focused). Authenticated scans find significantly more findings - always use credentials when in scope. Also covered in: CPTS Ch06 (Vulnerability Assessment).",
   "references": [
     {
       "title": "HTB Academy - Vulnerability Assessment",
@@ -71,7 +71,7 @@
       "label": "UI: New Scan → Basic Network Scan …"
     },
     {
-      "description": "Credentialed scan (Windows — provides domain access for deeper findings)",
+      "description": "Credentialed scan (Windows - provides domain access for deeper findings)",
       "command": "# UI: Advanced Scan → Credentials tab → Windows → set domain\\user + password → Launch",
       "label": "UI: add Windows creds"
     },

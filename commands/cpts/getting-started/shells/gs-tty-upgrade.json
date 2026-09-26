@@ -70,7 +70,7 @@
   "defense": {
     "why_it_works": "Unix shells (bash, sh, zsh, etc.) are present by default on Linux and macOS and control every aspect of a system. Certain commands require elevated privileges, but interactive shell access provides a powerful execution environment that attackers use for commands, file operations, pivoting, and spawning further processes.",
     "prerequisites": "A basic (non-interactive) shell already on the target, with python or script available.",
-    "impact": "A fully interactive TTY (job control, tab-completion, working sudo prompts) — improving control over the session.",
+    "impact": "A fully interactive TTY (job control, tab-completion, working sudo prompts) - improving control over the session.",
     "detection": "Monitor for Unix shell execution from unexpected parent processes (e.g., a web server or database process spawning bash). Flag shell activity following unusual network connections, file writes to web directories, or privilege escalation attempts.",
     "artifacts": "Spawning of python pty.spawn / script in process and command logs; network footprint unchanged (it reuses the existing shell).",
     "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*pty.spawn*\" OR proctitle=\"*script /dev/null*\" OR proctitle=\"*stty raw*\")\n| table _time, host, auid, proctitle",
@@ -82,7 +82,7 @@
       "MITRE T1059.004"
     ],
     "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
-    "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces — should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
+    "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
     "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services",
     "evasion": "Prefer encrypted/HTTPS callbacks, migrate out of the initial process quickly, and avoid signatured default payloads."
   }

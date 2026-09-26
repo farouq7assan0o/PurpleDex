@@ -19,7 +19,7 @@
     "platform",
     "cortex"
   ],
-  "notes": "HTB lab credentials: htb-analyst / P3n#31337@LOG\n\nKey TheHive concepts:\n• Alert — inbound detection from SIEM/sensor, not yet a case. Triage first.\n• Case — confirmed incident being actively investigated. Has tasks, IOCs, observables, timeline.\n• Observable — any IOC attached to a case (IP, hash, domain, filename). Cortex can auto-enrich.\n• Task — discrete action assigned to an analyst (e.g. 'collect forensic image from DEV-021').\n\nAlert lifecycle: Alert → Triage → Create Case → Assign Tasks → Investigate → Close.\n\nCortex integration: right-click any observable → Analyze → select analyser (VirusTotal, AbuseIPDB, etc.).\n\nCase severity: P1=Critical, P2=High, P3=Medium, P4=Low — set at case creation, adjust as scope expands.",
+  "notes": "HTB lab credentials: htb-analyst / P3n#31337@LOG\n\nKey TheHive concepts:\n• Alert - inbound detection from SIEM/sensor, not yet a case. Triage first.\n• Case - confirmed incident being actively investigated. Has tasks, IOCs, observables, timeline.\n• Observable - any IOC attached to a case (IP, hash, domain, filename). Cortex can auto-enrich.\n• Task - discrete action assigned to an analyst (e.g. 'collect forensic image from DEV-021').\n\nAlert lifecycle: Alert → Triage → Create Case → Assign Tasks → Investigate → Close.\n\nCortex integration: right-click any observable → Analyze → select analyser (VirusTotal, AbuseIPDB, etc.).\n\nCase severity: P1=Critical, P2=High, P3=Medium, P4=Low - set at case creation, adjust as scope expands.",
   "mitre": [
     "T1595",
     "T1071"

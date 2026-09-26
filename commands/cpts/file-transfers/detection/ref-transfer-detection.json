@@ -22,7 +22,7 @@
   "source": "CPTS Module 07: File Transfers",
   "examples": [
     {
-      "label": "Reference — certutil UA vs PowerShell UA",
+      "label": "Reference - certutil UA vs PowerShell UA",
       "command": "# certutil:  User-Agent: Microsoft-CryptoAPI/10.0\n# powershell: User-Agent: Mozilla/5.0 (Windows NT...) WindowsPowerShell/5.1\n# Spoof with: $UserAgent = [PSUserAgent]::Chrome"
     }
   ],
@@ -65,9 +65,9 @@
       "label": "- Unusual UA strings in proxy/web …"
     },
     {
-      "description": "Defender view — monitor with Sysmon Event ID 3 (network) + ID 1 (process)",
-      "command": "# Sysmon EID 1: process creation — look for:\n#   certutil.exe with -urlcache flag\n#   bitsadmin.exe with /transfer flag\n#   powershell.exe with WebClient/IEX\n# Sysmon EID 3: network connection from unusual process",
-      "label": "Sysmon EID 1: process creation — l…"
+      "description": "Defender view - monitor with Sysmon Event ID 3 (network) + ID 1 (process)",
+      "command": "# Sysmon EID 1: process creation - look for:\n#   certutil.exe with -urlcache flag\n#   bitsadmin.exe with /transfer flag\n#   powershell.exe with WebClient/IEX\n# Sysmon EID 3: network connection from unusual process",
+      "label": "Sysmon EID 1: process creation - l…"
     }
   ]
 }

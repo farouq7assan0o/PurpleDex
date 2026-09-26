@@ -31,11 +31,11 @@
       "command": "# net-creds / PCredz over live traffic or a pcap"
     },
     {
-      "label": "Process-args credential sniffing — watch for cleartext passwords in ps output",
+      "label": "Process-args credential sniffing - watch for cleartext passwords in ps output",
       "command": "watch -n 1 \"ps -aux | grep pass\"\n# Catches scripts/tools passing passwords on the command line, e.g.:\n# sshpass -p 'Lab123' ssh -t eve@127.0.0.1 'sleep 5;exit'"
     },
     {
-      "label": "sudo tcpdump on loopback — capture plaintext creds crossing localhost",
+      "label": "sudo tcpdump on loopback - capture plaintext creds crossing localhost",
       "command": "sudo tcpdump -i lo -A | grep \"pass\"\n# Works when tcpdump is in sudoers; captures local auth traffic"
     }
   ],

@@ -2,7 +2,7 @@
   "id": "ps-test-netconnection",
   "name": "PowerShell - Test-NetConnection Port Check",
   "command": "Test-NetConnection -Port <port> <ip>",
-  "description": "Windows PowerShell built-in for testing TCP connectivity to a specific port. Returns TcpTestSucceeded: True/False, the remote IP, and interface details. Available on all modern Windows hosts — no extra tools needed from a foothold.",
+  "description": "Windows PowerShell built-in for testing TCP connectivity to a specific port. Returns TcpTestSucceeded: True/False, the remote IP, and interface details. Available on all modern Windows hosts - no extra tools needed from a foothold.",
   "type": "command",
   "platform": "windows",
   "requires": [
@@ -52,7 +52,7 @@
       "command": "Test-NetConnection -Port 25 192.168.50.8"
     }
   ],
-  "notes": "TnC (tnc) is the built-in alias. Output fields: ComputerName, RemoteAddress, RemotePort, InterfaceAlias, SourceAddress, TcpTestSucceeded. Outputs to PowerShell objects — pipe to Select-Object or Where-Object for filtering. For scanning a range of ports use the ps-port-scan-loop card instead. Requires PowerShell 3+ (Windows 8 / Server 2012 onwards).",
+  "notes": "TnC (tnc) is the built-in alias. Output fields: ComputerName, RemoteAddress, RemotePort, InterfaceAlias, SourceAddress, TcpTestSucceeded. Outputs to PowerShell objects - pipe to Select-Object or Where-Object for filtering. For scanning a range of ports use the ps-port-scan-loop card instead. Requires PowerShell 3+ (Windows 8 / Server 2012 onwards).",
   "recommended": [
     {
       "id": "ps-port-scan-loop",
@@ -83,7 +83,7 @@
     "prerequisites": "Compromised Windows host with PowerShell available (all modern Windows). No elevated privileges required for outbound TCP tests.",
     "why_it_works": "Test-NetConnection uses the Windows TCP/IP stack to attempt a full TCP three-way handshake on the specified port. TcpTestSucceeded reflects whether the handshake completed. As a built-in PowerShell cmdlet backed by the NetTCPIP module, it is trusted, signed, and generates no unusual file system artefacts.",
     "misconfiguration": "Internal hosts with open ports not filtered by a host-based firewall. Windows hosts where PowerShell script block logging and module logging are not enabled.",
-    "impact": "Confirms reachable services on internal network hosts from a Windows foothold. Used to pivot after initial access — identify SMB, WinRM, RDP, and database ports on other hosts before launching attacks.",
+    "impact": "Confirms reachable services on internal network hosts from a Windows foothold. Used to pivot after initial access - identify SMB, WinRM, RDP, and database ports on other hosts before launching attacks.",
     "detection": "PowerShell script block logging (Event ID 4104) captures Test-NetConnection calls if module logging is enabled. Network: full TCP handshake (SYN/SYN-ACK/ACK) visible in PCAP; IPS rules on sequential port probes. Process: powershell.exe with arguments visible in Event 4688 (command-line auditing on).",
     "artifacts": "Windows Security Event 4688 (powershell.exe with -Port argument if command-line auditing enabled). PowerShell operational log. Network: TCP SYN to target host/port.",
     "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Test-NetConnection*\" OR ScriptBlockText=\"*Test-Connection*\")\n| stats count by Computer, User, bin(_time, 1m) | where count>10",
@@ -91,7 +91,7 @@
     "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"Test-NetConnection\",\"Test-Connection\")\n| summarize count() by DeviceName, InitiatingProcessAccountName, bin(Timestamp, 1m)\n| where count_ > 10\n| sort by count_ desc\n// Test-NetConnection used as a port/host sweep",
     "sigma_rules": "posh_ps_test_netconnection_sweep (PowerShell port scanning)",
     "prevention": "Enable PowerShell Constrained Language Mode. Enable script block logging (GPO: PowerShell → Turn on Script Block Logging). Network egress filtering to restrict which ports internal hosts can reach.",
-    "evasion": "tnc alias is shorter and may evade simple keyword-based detection. Single-port checks generate far less noise than a range scan. Test-NetConnection is a LOLBAS — same binary used for legitimate admin tasks.",
+    "evasion": "tnc alias is shorter and may evade simple keyword-based detection. Single-port checks generate far less noise than a range scan. Test-NetConnection is a LOLBAS - same binary used for legitimate admin tasks.",
     "sources": [
       "PEN-200 Ch 6",
       "MITRE T1046",

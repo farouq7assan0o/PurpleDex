@@ -71,7 +71,7 @@
     {
       "id": "gs-privesc-enum",
       "rel": "next",
-      "note": "Foothold on the Linux host — start privesc enumeration"
+      "note": "Foothold on the Linux host - start privesc enumeration"
     }
   ],
   "id": "drupalgeddon3-msf",

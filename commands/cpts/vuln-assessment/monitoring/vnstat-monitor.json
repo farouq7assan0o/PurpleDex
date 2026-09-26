@@ -23,7 +23,7 @@
   "source": "CPTS Module 06: Vulnerability Assessment",
   "examples": [
     {
-      "label": "CPTS Ch06 — monitor scan bandwidth impact",
+      "label": "CPTS Ch06 - monitor scan bandwidth impact",
       "command": "sudo apt install vnstat\nsudo vnstat -l -i eth0\n# Run before and during Nessus/OpenVAS scan to observe bandwidth usage"
     },
     {

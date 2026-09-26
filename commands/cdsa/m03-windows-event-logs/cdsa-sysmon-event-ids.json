@@ -2,7 +2,7 @@
   "id": "cdsa-sysmon-event-ids",
   "name": "Sysmon Event IDs - Detection Reference",
   "command": "Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath \"*[System[EventID=<ID>]]\"",
-  "description": "Complete Sysmon event ID reference for threat detection. Sysmon extends Windows logging with process, network, file, registry, and image-load telemetry — each event type maps to specific attack techniques.",
+  "description": "Complete Sysmon event ID reference for threat detection. Sysmon extends Windows logging with process, network, file, registry, and image-load telemetry - each event type maps to specific attack techniques.",
   "platform": "windows",
   "type": "cheatsheet",
   "opsec": "silent",
@@ -23,11 +23,11 @@
       "command": "Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath '*[System[EventID=3]]' | Select-Object TimeCreated, Message | Format-List"
     },
     {
-      "label": "Get Sysmon ImageLoad events (ID 7) — DLL hijack detection",
+      "label": "Get Sysmon ImageLoad events (ID 7) - DLL hijack detection",
       "command": "Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath '*[System[EventID=7]]' | Select-Object TimeCreated, Message | Format-List"
     },
     {
-      "label": "Get Sysmon ProcessAccess events (ID 10) — LSASS dump detection",
+      "label": "Get Sysmon ProcessAccess events (ID 10) - LSASS dump detection",
       "command": "Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath '*[System[EventID=10]]' | Select-Object TimeCreated, Message | Format-List"
     },
     {

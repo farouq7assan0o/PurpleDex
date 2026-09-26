@@ -40,11 +40,11 @@
       "command": "nc -lnvp 443"
     },
     {
-      "label": "OSCP Ch17 — check AppArmor status (may block sudo escapes)",
+      "label": "OSCP Ch17 - check AppArmor status (may block sudo escapes)",
       "command": "sudo aa-status"
     },
     {
-      "label": "OSCP Ch17 — check syslog for AppArmor denials if escape fails",
+      "label": "OSCP Ch17 - check syslog for AppArmor denials if escape fails",
       "command": "cat /var/log/syslog | grep tcpdump | grep apparmor"
     }
   ],

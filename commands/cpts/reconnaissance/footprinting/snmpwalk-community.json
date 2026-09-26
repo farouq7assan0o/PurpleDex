@@ -140,7 +140,7 @@
     "misconfiguration": "Community string left as default 'public'. No restriction on which OID subtrees are readable. SNMP accessible from any IP.",
     "vulnerable_config": "# snmpd.conf\nrocommunity public default   # world-readable, default string",
     "secure_config": "# Upgrade to SNMPv3 auth+priv, disable v1/v2c\ncreateUser monitor SHA 'Auth@Pass1!' AES 'Priv@Pass2!'\nrouser monitor authPriv .1\n# Remove all rocommunity/rwcommunity lines",
-    "impact": "Full system inventory: OS version, running processes, installed packages, network config, user accounts — enough to identify exploitable services without an active scanner.",
+    "impact": "Full system inventory: OS version, running processes, installed packages, network config, user accounts - enough to identify exploitable services without an active scanner.",
     "detection": "SNMP walk generates many GET-NEXT requests in rapid succession against all OIDs. Visible in network capture or SNMP agent logs as sequential OID traversal from a single source.",
     "artifacts": "Network traffic on UDP 161 with sequential OID requests. SNMP agent access log entries.",
     "splunk_spl": "index=network dest_port=161 protocol=udp\n| stats count dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where count>20 OR hosts>10",

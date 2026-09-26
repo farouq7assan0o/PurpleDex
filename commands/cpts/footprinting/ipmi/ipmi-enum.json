@@ -78,6 +78,10 @@
     "impact": "BMC version and, via the IPMI 2.0 RAKP hash-disclosure flaw, crackable password hashes leading to BMC (and host) takeover.",
     "detection": "Monitor UDP port 623 for unexpected IPMI traffic. Log all BMC authentication attempts and alert on repeated failures or incomplete RAKP exchanges (hash retrieval without successful login).\n\n[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "RAKP message exchanges in BMC logs; UDP 623 traffic in network monitoring.",
+    "splunk_spl": "index=network dest_port=623 protocol=udp\n| stats count by src_ip, dest_ip | where count>3",
+    "elastic_kql": "event.category:network AND destination.port:623",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 623\n| summarize count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| sort by count_ desc\n// IPMI enumeration / RAKP hash retrieval on UDP 623",
+    "sigma_rules": "net_ipmi_rakp_enumeration (IPMI 2.0 cipher-zero / RAKP probe)",
     "prevention": "Change all default BMC credentials immediately after deployment. Since the RAKP hash-disclosure flaw cannot be patched at the protocol level, implement network segmentation to restrict UDP 623 access to dedicated management networks and specific administrator IPs. Use very long, complex, unique passwords for BMC accounts to resist offline dictionary attacks.\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "sources": [
       "HTB M04",

@@ -5,12 +5,25 @@
   "description": "Use iptables packet counters to measure exactly how many packets an nmap scan sends and receives. Set ACCEPT rules on INPUT and OUTPUT for the target, reset counters with -Z, run the scan, then read the counters. Lets you compare scan types (SYN vs connect vs UDP) in terms of packet noise before running against real targets.",
   "type": "attack-chain",
   "platform": "linux",
-  "requires": ["local-access"],
-  "tools": ["iptables"],
-  "tags": ["iptables", "nmap", "verification", "packet-count", "scan-noise", "opsec"],
+  "requires": [
+    "local-access"
+  ],
+  "tools": [
+    "iptables"
+  ],
+  "tags": [
+    "iptables",
+    "nmap",
+    "verification",
+    "packet-count",
+    "scan-noise",
+    "opsec"
+  ],
   "category": "Enumeration",
   "subcategory": "Network Discovery",
-  "certifications": ["OSCP"],
+  "certifications": [
+    "OSCP"
+  ],
   "primary_cert": "OSCP",
   "source": "PEN-200 Chapter 06: Information Gathering",
   "opsec": "silent",
@@ -82,7 +95,13 @@
     "why_it_works": "iptables maintains per-rule packet and byte counters. -I inserts a rule at position 1 (top of chain) so all matching traffic is counted before any other rule can drop it. -Z zeroes the counters atomically across all chains, giving a clean baseline. -vn -L prints the counters in numeric form (no DNS resolution). Because the ACCEPT rules are on the attacker's local machine, they do not touch the target at all.",
     "impact": "No direct attack impact — this is a preparation and opsec-calibration technique. Knowing the packet cost of each scan type lets an operator choose the least-noisy option before engaging a real target.",
     "artifacts": "None on the target. On the attacker: iptables rules remain until flushed (iptables -D INPUT 1, iptables -D OUTPUT 1) or the host reboots.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"iptables\" proctitle=\"*-L*-v*\"\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.name:iptables AND process.args:(\"-L\" AND \"-v\")",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"iptables\" and SyslogMessage has_any (\"-L\",\"-nvL\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// reading iptables packet/byte counters for firewall-rule reconnaissance",
+    "sigma_rules": "lnx_auditd_iptables_enumeration (firewall rule/counter recon)",
     "prevention": "N/A — this is a local attacker-side technique. Defenders cannot prevent an operator from measuring their own scan traffic.",
-    "sources": ["PEN-200 Ch 6"]
+    "sources": [
+      "PEN-200 Ch 6"
+    ]
   }
 }

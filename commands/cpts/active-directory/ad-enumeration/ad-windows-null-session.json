@@ -64,6 +64,10 @@
     "impact": "A null-session foothold for RPC/SAMR enumeration.",
     "detection": "SMB tree-connects and share/RID enumeration (Event 5140/5145 with share auditing); anonymous/null binds and RID cycling against the DC.",
     "artifacts": "An anonymous IPC$ connection; subsequent RPC queries.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Account_Name=\"ANONYMOUS LOGON\"\n| table _time, Computer, Source_Network_Address",
+    "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and TargetUserName =~ \"ANONYMOUS LOGON\"\n| project TimeGenerated, Computer, IpAddress\n| sort by TimeGenerated desc\n// net use \\\\target\\IPC$ '' /u:'' null-session establishment",
+    "sigma_rules": "win_security_null_session_ipc (anonymous IPC$ connection)",
     "prevention": "AD is readable by any authenticated user by design, so prevention is limited - focus on DETECTION (Defender for Identity, LDAP/SMB anomaly monitoring), least privilege, disabling anonymous/null sessions, and REDUCING what's exposed (remove unnecessary SPNs, descriptions with secrets, over-shared folders).",
     "evasion": "Use built-in tools (net, AD module, dsquery) that blend with normal admin activity; throttle and scope collection; avoid the noisiest methods (full BloodHound sweeps, RID brute) where Defender for Identity is present.",
     "sources": [

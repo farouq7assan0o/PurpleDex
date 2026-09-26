@@ -105,6 +105,10 @@
     "impact": "Persisted reconnaissance data (-oA/-oN/-oX/-oG) for later analysis or exfiltration.",
     "detection": "[MITRE T1046] Monitor for Nmap output files written to disk (*.nmap, *.gnmap, *.xml) especially from non-administrator users or in unexpected directories. File creation events combined with prior network scanning activity indicate active reconnaissance.",
     "artifacts": "Output files on the attacker host — no additional victim-side evidence beyond the scan itself.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap scan with output saving (-oA)",
+    "sigma_rules": "net_port_scan_activity (nmap scan with output saving (-oA))",
     "sources": [
       "MITRE T1046"
     ],

@@ -62,6 +62,10 @@
     "impact": "A validated username list for spraying/roasting, gathered quietly.",
     "detection": "[MITRE T1087.002] a burst of Kerberos 4768 AS-REQs for many usernames; unknown users return distinct errors - a user-enumeration pattern (Defender for Identity flags it).",
     "artifacts": "4768 pre-auth requests for many names; distinct error patterns.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Result_Code=0x6\n| stats dc(Account_Name) as accts by Client_Address, bin(_time, 1m)\n| where accts>25",
+    "elastic_kql": "event.code:\"4768\" AND winlog.event_data.Status:\"0x6\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and Status == \"0x6\"\n| summarize accts=dcount(TargetUserName) by IpAddress, bin(TimeGenerated, 1m)\n| where accts > 25\n| sort by accts desc\n// kerbrute userenum: KDC_ERR_C_PRINCIPAL_UNKNOWN burst",
+    "sigma_rules": "win_security_kerberos_user_enumeration (kerbrute userenum)",
     "prevention": "Monitor for Kerberos enumeration patterns (Defender for Identity); the technique avoids 4625, so Kerberos-log analysis is key.",
     "evasion": "AS-REQ enumeration avoids 4625 (quieter than LDAP/SMB); throttle to avoid 4768 spikes.",
     "sources": [

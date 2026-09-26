@@ -73,6 +73,10 @@
     "impact": "Usable private keys granting SSH access as that user to this or other hosts — lateral movement without cracking a password.",
     "detection": "Monitor for process access to private key files in user profile paths (e.g., ~/.ssh/) followed by potential network connections or compression activity. Script-based access to key directories followed by unusual shell activity or outbound connections is especially significant.",
     "artifacts": "Access to ~/.ssh/id_* files; subsequent key-based SSH authentication entries; find/grep for key extensions in shell history.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" name=\"*/.ssh/id_*\"\n| where NOT match(exe, \"(?i)(ssh|ssh-agent|sshd)\")\n| table _time, host, auid, exe, name",
+    "elastic_kql": "event.category:file AND file.path:*/.ssh/id_* AND NOT process.name:(ssh OR sshd OR ssh-agent)",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"/.ssh/id_\"\n| where SyslogMessage !has \"sshd\"\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc",
+    "sigma_rules": "lnx_auditd_ssh_private_key_access (private key read by non-ssh process)",
     "prevention": "Ensure only authorized keys are allowed access and audit access lists regularly. When possible, store keys on separate cryptographic hardware (e.g., TPM) rather than on the local filesystem. Use strong passphrases for private keys to make offline cracking difficult. Restrict file and directory permissions on folders containing private keys.",
     "evasion": "Key-based authentication with a recovered private key looks identical to legitimate key auth — no password failures, no brute-force signature — so it blends with normal SSH activity.",
     "sources": [

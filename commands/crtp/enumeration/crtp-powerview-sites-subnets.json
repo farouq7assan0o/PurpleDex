@@ -122,6 +122,10 @@
     "misconfiguration": "None required - this is default AD behaviour. The exposure is inherent to the Configuration partition being readable by authenticated users.",
     "detection": "High LDAP query volume against the Configuration NC (CN=Sites, CN=Subnets) from a non-DC host. Event 1644 (LDAP query logging, if enabled) showing searches for site/subnet/nTDSDSA objects. MDE/MDI reconnaissance analytics: bursts of Configuration-partition reads from a workstation.",
     "artifacts": "DC LDAP logs (Event 1644) with searchBase = CN=Configuration | Sysmon Event 3 to 389/636 | Directory Service query bursts",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-DomainSite*\" OR ScriptBlockText=\"*Get-DomainSubnet*\")\n| table _time, Computer, User, ScriptBlockText\n\nindex=sysmon EventCode=3 (DestinationPort=389 OR DestinationPort=636)\n| stats count by SourceHostname, DestinationIp | where count>50",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainSite* OR *Get-DomainSubnet*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainSite\",\"Get-DomainSubnet\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_powerview_functions, win_security_ldap_recon (Configuration NC reads)",
     "prevention": "Cannot be prevented without breaking AD - these objects must be readable for clients to function. Focus on detection (LDAP query auditing, MDI) and on limiting what an attacker gains: strong segmentation, tiered admin, and monitoring the follow-on lateral movement.",
     "evasion": "Query a single object at a time; use the AD PowerShell module (ActiveDirectory\\Get-ADReplicationSite) which blends in with admin tooling better than PowerView; throttle queries.",
     "sources": [

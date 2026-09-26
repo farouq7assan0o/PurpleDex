@@ -89,6 +89,10 @@
     "impact": "T1552.005 Unsecured Credentials: Cloud Instance Metadata API + T1078.004 Valid Accounts: Cloud Accounts. Attacker operates as the instance SA across GCP APIs - privilege escalation and lateral movement into the project.",
     "detection": "Cloud Audit Logs: instance SA performing API calls inconsistent with the workload / from unusual sequences; token used for storage/IAM actions the app never does. VPC/SSRF: web requests to 169.254.169.254 or metadata.google.internal in app logs.",
     "artifacts": "Audit Log entries by the compute SA principal; app/web logs showing metadata requests.",
+    "splunk_spl": "index=gcp_audit sourcetype=\"google:gcp:audit\" protoPayload.methodName=\"v1.compute.instances.get\"\n| where like(protoPayload.request.fields, \"%metadata%\")\n| table _time, protoPayload.authenticationInfo.principalEmail, protoPayload.resourceName",
+    "elastic_kql": "cloud.provider:gcp AND event.action:v1.compute.instances.get AND message:*metadata*",
+    "sentinel_kql": "GCPAuditLogs\n| where protoPayload_authenticationInfo_principalEmail has \".gserviceaccount.com\"\n| summarize apis=make_set(methodName) by principalEmail=protoPayload_authenticationInfo_principalEmail, callerIp=protoPayload_requestMetadata_callerIp, bin(TimeGenerated, 10m)\n| sort by TimeGenerated desc\n// compute SA token used for API calls inconsistent with the workload; check app logs for metadata.google.internal hits",
+    "sigma_rules": "gcp_metadata_server_token_access",
     "prevention": "Attach a least-privilege, purpose-built service account (never leave the default Editor SA). Set restricted access scopes. Enable metadata concealment / use GKE Workload Identity so pods can't read the node SA token. Fix SSRF (block link-local 169.254.0.0/16 egress, allowlist). Monitor SA usage anomalies.",
     "evasion": "Use the short-lived token promptly, only for actions the SA normally performs, from the instance's expected context.",
     "sources": [

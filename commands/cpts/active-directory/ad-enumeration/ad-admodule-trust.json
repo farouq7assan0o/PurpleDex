@@ -72,6 +72,10 @@
     "impact": "A map of trusts to pivot across domains/forests.",
     "detection": "[MITRE T1087.002] Broad/bulk LDAP queries to the DC (Event 4662 directory-service access; Microsoft Defender for Identity reconnaissance alerts); one host reading large swaths of the directory in a short window.",
     "artifacts": "LDAP/trust queries for trustedDomain objects.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-ADTrust*\\\" OR ScriptBlockText=\\\"*Get-ADForest*\\\")\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ADTrust* OR *Get-ADForest*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-ADTrust\", \"Get-ADForest\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_admodule_recon, win_security_ldap_recon",
     "prevention": "AD is readable by any authenticated user by design, so prevention is limited - focus on DETECTION (Defender for Identity, LDAP/SMB anomaly monitoring), least privilege, disabling anonymous/null sessions, and REDUCING what's exposed (remove unnecessary SPNs, descriptions with secrets, over-shared folders).",
     "evasion": "Use built-in tools (net, AD module, dsquery) that blend with normal admin activity; throttle and scope collection; avoid the noisiest methods (full BloodHound sweeps, RID brute) where Defender for Identity is present.",
     "sources": [

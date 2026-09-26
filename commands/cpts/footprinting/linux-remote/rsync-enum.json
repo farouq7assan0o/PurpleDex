@@ -77,6 +77,10 @@
     "impact": "Listing and reading of exposed rsync modules when authentication is not configured.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "An rsync connection and module listing in the daemon's logs; unencrypted transfer traffic.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"rsync*\"\n| table _time, host, auid, proctitle\n\nindex=network dest_port=873\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "process.name:rsync* OR (event.category:network AND destination.port:873)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 873\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// rsync module enumeration on port 873",
+    "sigma_rules": "net_service_enumeration_rsync (rsync module enumeration on port 873)",
     "prevention": "Configure rsync to use SSH as its transport ('rsync -e ssh') to encrypt all transfers. Require authentication for all rsync modules in /etc/rsyncd.conf using 'auth users' and 'secrets file' directives. Restrict access to specific IPs using 'hosts allow'.\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "sources": [
       "HTB M04",

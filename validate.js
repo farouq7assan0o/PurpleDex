@@ -35,7 +35,8 @@ const MITRE_RE = /^T\d{4}(\.\d{3})?$/;   // T1003 or T1003.001
 const VALID_DEFENSE_KEYS = ['why_it_works', 'prerequisites', 'detection', 'prevention',
                             'evasion', 'impact', 'artifacts', 'sources',
                             'misconfiguration', 'vulnerable_config', 'secure_config',
-                            'code_review'];
+                            'code_review',
+                            'splunk_spl', 'elastic_kql', 'sigma_rules', 'sentinel_kql'];
 // card types that SHOULD carry defense content (completeness warning, not a hard error)
 const DEFENSE_TYPES = ['command', 'payload', 'attack-chain'];
 
@@ -298,12 +299,16 @@ for (const { data } of cards) {
 }
 // global defense coverage (across scoped cards)
 let defEligibleTotal = 0, defCoveredTotal = 0;
+let siemCoveredTotal = 0;  // eligible cards carrying at least one SIEM query field
+const SIEM_KEYS = ['splunk_spl', 'elastic_kql', 'sigma_rules', 'sentinel_kql'];
 for (const { data } of scopedCards) {
     if (!DEFENSE_TYPES.includes(data.type || 'command')) continue;
     defEligibleTotal++;
     const df = data.defense;
     if (df && typeof df === 'object' && VALID_DEFENSE_KEYS.some(k => k !== 'sources' && df[k]))
         defCoveredTotal++;
+    if (df && typeof df === 'object' && SIEM_KEYS.some(k => df[k]))
+        siemCoveredTotal++;
 }
 
 // ---------- placeholder audit (engagement-variable consistency) ----------
@@ -513,6 +518,9 @@ if (!opt.errorsOnly) {
     const defPct = defEligibleTotal ? Math.round(100 * defCoveredTotal / defEligibleTotal) : 0;
     const defColor = defPct >= 90 ? green : defPct >= 40 ? yellow : dim;
     console.log(`    defense (command/payload/chain): ${defColor(defCoveredTotal + '/' + defEligibleTotal + ' (' + defPct + '%)')}   ${dim('reference/cheatsheet/script skip')}`);
+    const siemPct = defEligibleTotal ? Math.round(100 * siemCoveredTotal / defEligibleTotal) : 0;
+    const siemColor = siemPct >= 90 ? green : siemPct >= 40 ? yellow : dim;
+    console.log(`    SIEM queries (splunk/elastic/sigma/sentinel): ${siemColor(siemCoveredTotal + '/' + defEligibleTotal + ' (' + siemPct + '%)')}   ${dim('at least one field')}`);
     // --strict: list eligible cards missing defense (the per-module "not shipped half-done" gate)
     if (opt.strict && defCoveredTotal < defEligibleTotal) {
         const miss = scopedCards.filter(c => DEFENSE_TYPES.includes(c.data.type || 'command') &&

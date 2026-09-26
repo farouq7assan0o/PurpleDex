@@ -93,6 +93,10 @@
     "impact": "Files transferred over HTTP(S) via UNC paths, using commonly-allowed web ports to bypass port-based filtering.",
     "detection": "WebDAV shows as HTTP PUT/GET to an external host and a mounted \\\\...\\DavWWWRoot; the WebClient service starting is itself a signal; new file on disk.",
     "artifacts": "HTTP PUT/PROPFIND to the attacker; a mapped DavWWWRoot; WebClient service start; the transferred file.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:System\" EventCode=7036 \"WebClient\" \"running\"\n| table _time, Computer\n\nindex=sysmon EventCode=11 TargetFilename=\"*DavWWWRoot*\"\n| table _time, Computer, Image, TargetFilename\n\nindex=proxy (method=PUT OR method=PROPFIND)\n| table _time, src_ip, dest_ip, method",
+    "elastic_kql": "http.request.method:(PUT OR PROPFIND) OR file.path:*DavWWWRoot*",
+    "sentinel_kql": "DeviceFileEvents\n| where FolderPath has \"DavWWWRoot\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, FolderPath\n| union (DeviceProcessEvents | where ProcessCommandLine has \"WebClient\" and ProcessCommandLine has \"start\" | project Timestamp, DeviceName, InitiatingProcessFileName=FileName, FolderPath=ProcessCommandLine)\n| sort by Timestamp desc\n// WebClient service start + PUT/PROPFIND to a mapped DavWWWRoot",
+    "sigma_rules": "win_webdav_webclient_service_start, net_webdav_propfind_external",
     "prevention": "[MITRE T1105 M1037] Web filtering/domain whitelisting; disable the WebClient service where not needed; alert on WebDAV method use and external UNC mounts.",
     "evasion": "WebDAV rides allowed web ports (80/443); use HTTPS and an allowed-looking domain to blend with normal web traffic.",
     "sources": [

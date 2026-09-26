@@ -69,6 +69,10 @@
     "impact": "Command execution as root (or another user) — full privilege escalation wherever the sudo rules allow.",
     "detection": "Correlate sudo executions (euid=0) with cases where tty_tickets is disabled or timestamp_timeout is actively abused. Detect NOPASSWD entries in /etc/sudoers followed by immediate privileged commands, or modifications to /etc/sudoers by non-root processes.",
     "artifacts": "sudo invocation logs ('sudo: user : COMMAND' in /var/log/auth.log); su session entries; TTY allocation records.",
+    "splunk_spl": "index=linux sourcetype=\"linux_secure\" (\"sudo:\" OR \"su:\")\n| rex \"sudo:\\s+(?<sudo_user>\\S+)\"\n| stats count by sudo_user, host\n\nindex=linux sourcetype=\"linux:auditd\" name=\"/etc/sudoers\" (a1=\"*O_WRONLY*\" OR key=\"sudoers_change\")\n| table _time, host, auid, exe",
+    "elastic_kql": "event.category:process AND process.name:(sudo OR su) AND event.outcome:success",
+    "sentinel_kql": "Syslog\n| where ProcessName in (\"sudo\",\"su\")\n| where SyslogMessage has \"COMMAND=\" or SyslogMessage has \"session opened\"\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc\n// also watch for /etc/sudoers modified by a non-root process",
+    "sigma_rules": "lnx_auth_sudo_su_usage, lnx_auditd_sudoers_modification",
     "prevention": "Ensure tty_tickets is enabled (default on macOS Sierra+) to prevent cross-terminal credential reuse. Set timestamp_timeout to 0 to require a password every time sudo is invoked. Strictly edit /etc/sudoers so that passwords are always required and users cannot spawn risky processes as higher-privilege users.",
     "evasion": "sudo/su usage is normal administrative behaviour; escalating with legitimately cached or granted sudo rights blends with day-to-day admin activity rather than triggering exploit-based alerts.",
     "sources": [

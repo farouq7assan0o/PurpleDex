@@ -86,6 +86,10 @@
     "impact": "Server version, databases, and users; with credentials, data access and possible file read/write.",
     "detection": "Monitor for processes performing network enumeration by correlating process creation, socket connections, and sequential destination IP probing within a time window. Unusual port scanning patterns or banner-grabbing activity from internal hosts can indicate post-compromise discovery.",
     "artifacts": "Connection and authentication attempts in MySQL logs; traffic to 3306.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"mysql*\"\n| table _time, host, auid, proctitle\n\nindex=network dest_port=3306\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "process.name:mysql* OR (event.category:network AND destination.port:3306)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 3306\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// MySQL banner/version enumeration on port 3306",
+    "sigma_rules": "net_service_enumeration_mysql (MySQL banner/version enumeration on port 3306)",
     "prevention": "Close unnecessary ports and services to prevent risk of discovery and potential exploitation. Use network intrusion detection/prevention systems to detect and prevent remote service scans. Ensure proper network segmentation to protect critical servers and devices.",
     "sources": [
       "MITRE T1046"

@@ -104,6 +104,10 @@
     "impact": "IP ranges, domains, topology, and operational details assembled from public/OSINT sources.",
     "detection": "Much of this activity takes place outside the visibility of the target organization and has a high false positive rate. Detection efforts are more effective when focused on related stages of the adversary lifecycle, such as during Initial Access.",
     "artifacts": "None on the target — passive OSINT queries third-party sources, not the victim's infrastructure.",
+    "splunk_spl": "# passive OSINT (crt.sh, WHOIS, search engines) targets third-party services.\n# No target-side telemetry; defensive option is external CT/brand monitoring.",
+    "elastic_kql": "/* passive OSINT; no target-side event to match */",
+    "sentinel_kql": "// Passive domain OSINT queries third-party services, not the target.\n// No victim-side logs; subscribe to Certificate Transparency / brand monitoring for your own assets.",
+    "sigma_rules": "no target-side rule (passive domain OSINT)",
     "prevention": "This technique cannot be easily mitigated with preventive controls since it is based on behaviors performed outside of enterprise defenses. Efforts should focus on minimizing the amount and sensitivity of network information available to external parties.",
     "sources": [
       "MITRE T1590"

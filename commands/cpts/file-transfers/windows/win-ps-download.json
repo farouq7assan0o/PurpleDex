@@ -103,6 +103,10 @@
     "impact": "Attacker tooling delivered to the target - or executed straight in memory via IEX (no disk artifact) - enabling privesc or lateral movement.",
     "detection": "The request carries PowerShell's default User-Agent (Mozilla/5.0 ... WindowsPowerShell/5.1...); Event 4688 / Sysmon 1 logs the cradle command line and script-block logging (4104) captures IEX. Detections (HTB M07): command-line deny-listing, User-Agent analysis, SIEM correlation.",
     "artifacts": "The downloaded file on disk (or in-memory execution with no file); the WindowsPowerShell UA in web/proxy logs; 4104 script-block entries; an outbound HTTP connection from powershell.exe.",
+    "splunk_spl": "index=sysmon EventCode=1 CommandLine=\"*DownloadFile*\" OR CommandLine=\"*DownloadString*\"\n| table _time, Computer, User, CommandLine\n\nindex=proxy http_user_agent=\"*WindowsPowerShell*\"\n| table _time, src_ip, dest, http_user_agent",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*DownloadFile* OR *DownloadString* OR *IEX*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"powershell.exe\",\"pwsh.exe\") and ProcessCommandLine has_any (\"DownloadFile\",\"DownloadString\",\"Net.WebClient\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// PowerShell default UA (Mozilla/5.0 ... WindowsPowerShell) in proxy logs",
+    "sigma_rules": "posh_ps_download_cradle_webclient (Net.WebClient DownloadFile/DownloadString)",
     "prevention": "[MITRE T1105 M1037 Filter Network Traffic] Use web content filtering to block risky file types (.exe) and whitelist domains (the module scenario shows GitHub/Dropbox/Drive blocked); [M1031 Network Intrusion Prevention] inspect and block transfers at IDS/IPS. Apply application control (WDAC/AppLocker) to block download cradles/LOLBins, and AV/EDR to catch known tooling.",
     "evasion": "Run IEX in memory to avoid a disk artifact; set a browser User-Agent (-UserAgent) to defeat UA analysis; use HTTPS and an allowed domain to blend with normal web traffic.",
     "sources": [

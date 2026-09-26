@@ -80,6 +80,10 @@
     "impact": "Crackable TGS hashes for offline cracking of service-account passwords.",
     "detection": "[MITRE T1558.003] Event 4769 (TGS requested) with RC4 encryption type (0x17) when AES is standard, or a burst of TGS requests for many SPNs from one source in a short window; a request for a honeypot SPN account is malicious by definition.",
     "artifacts": "A burst of 4769 requests; the hashes; Rubeus execution.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!=\"krbtgt\" Service_Name!=\"*$\"\n| stats dc(Service_Name) as spns by Account_Name, Client_Address, bin(_time, 5m)\n| where spns>3",
+    "elastic_kql": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:(krbtgt OR *$)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4769 and TicketEncryptionType == \"0x17\" and ServiceName != \"krbtgt\" and ServiceName !endswith \"$\"\n| summarize spns=dcount(ServiceName) by TargetUserName, IpAddress, bin(TimeGenerated, 5m)\n| where spns > 3\n| sort by spns desc",
+    "sigma_rules": "win_security_kerberoasting_activity (4769 RC4 for service accounts)",
     "prevention": "Use 100+ character passwords or gMSA for service accounts; disable RC4 (force AES); audit and remove unused SPNs; deploy honeypot SPN accounts to catch roasting; Defender for Identity flags mass TGS requests.",
     "evasion": "Rubeus can force an RC4 downgrade (/rc4opsec, /tgtdeleg) to obtain crackable tickets even where AES is preferred; request one SPN at a time to stay under the bulk-4769 threshold.",
     "sources": [

@@ -107,6 +107,10 @@
     "impact": "T1087.004 Account Discovery: Cloud Account + T1069.003 Permission Groups Discovery: Cloud Groups + T1526 Cloud Service Discovery. Full identity map of the tenant to plan privilege escalation.",
     "detection": "Entra audit / Microsoft Graph activity logs for bulk directory reads; Defender for Cloud Apps anomalous enumeration; unusual Graph API volume from one principal.",
     "artifacts": "Entra AuditLogs / MicrosoftGraphActivityLogs; high-volume directory read calls.",
+    "splunk_spl": "index=azure sourcetype=\"azure:activity\" (operationName=\"*list*\" OR operationName=\"*read*\")\n| stats count values(operationName) as ops by caller, callerIpAddress, bin(_time, 10m)\n| where count>20",
+    "elastic_kql": "event.dataset:azure.activitylogs AND azure.activitylogs.operation_name:(*list* OR *read*)",
+    "sentinel_kql": "AzureActivity\n| where OperationNameValue has_any (\"list\",\"read\")\n| summarize ops=dcount(OperationNameValue), count() by Caller, CallerIpAddress, bin(TimeGenerated, 10m)\n| where count_ > 20\n| sort by count_ desc\n// Entra ID (Azure AD) directory enumeration: bulk user/group/role/app reads",
+    "sigma_rules": "azure_resource_enumeration (Entra ID (Azure AD) directory enumeration: bulk user/group/role/app reads)",
     "prevention": "Restrict guest and member default directory permissions (Entra user settings / external collaboration). Least-privilege app permissions. Monitor Graph read volume. Use PIM for admin roles.",
     "evasion": "Throttle queries and scope filters to avoid bulk-read spikes; use a legitimate app's token.",
     "sources": [

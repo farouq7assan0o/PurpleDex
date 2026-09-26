@@ -97,6 +97,10 @@
     "impact": "Files fetched using whatever interpreter is available, routing around missing/blocked download tools.",
     "detection": "An interpreter process making an outbound HTTP connection is anomalous; command line (auditd/4688) shows the download one-liner; new file on disk; interpreter default UA.",
     "artifacts": "python/php/etc. in process logs with a URL; an outbound connection from the interpreter; the downloaded file.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE (proctitle=\"*urllib*urlretrieve*\" OR proctitle=\"*requests.get*\" OR proctitle=\"*urlopen*\")\n| table _time, host, auid, proctitle\n\nindex=sysmon EventCode=3 (Image=\"*python*\" OR Image=\"*php*\") DestinationPort=80 OR DestinationPort=443\n| table _time, Computer, Image, DestinationIp",
+    "elastic_kql": "process.name:(python* OR php OR ruby OR perl) AND process.command_line:(*urlretrieve* OR *urlopen* OR *requests.get*)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where InitiatingProcessFileName has_any (\"python\",\"php\",\"ruby\",\"perl\")\n| where RemotePort in (80, 443) and RemoteIPType == \"Public\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine, RemoteIP\n| sort by Timestamp desc\n// an interpreter making an outbound HTTP fetch is anomalous",
+    "sigma_rules": "proc_creation_interpreter_http_download (python/php one-liner urlretrieve)",
     "prevention": "[MITRE T1105 M1037 Filter Network Traffic] Use web content filtering to block risky file types (.exe) and whitelist domains (the module scenario shows GitHub/Dropbox/Drive blocked); [M1031 Network Intrusion Prevention] inspect and block transfers at IDS/IPS. Apply application control (WDAC/AppLocker) to block download cradles/LOLBins, and AV/EDR to catch known tooling.",
     "evasion": "Pipe into the interpreter to avoid a disk artifact; set a UA where the language allows; use HTTPS and allowed domains.",
     "sources": [

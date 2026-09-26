@@ -81,6 +81,10 @@
     "impact": "Validated SMB credentials and a map of where they work.",
     "detection": "Failed authentication bursts: Windows 4625 (failed logon) and 4771 (Kerberos pre-auth failed) at abnormal rate/volume; account lockouts (4740); many attempts from one source, or - for spraying - one password across many accounts. SIEM correlation on failed-logon spikes.",
     "artifacts": "SMB logon attempts (4625/4624 type 3) across many hosts from one source.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4625 OR EventCode=4624) Logon_Type=3\n| stats count(eval(EventCode=4625)) as fails dc(Computer) as hosts by Source_Network_Address\n| where fails>15 OR hosts>5",
+    "elastic_kql": "event.code:\"4625\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4625 and LogonType == 3\n| summarize fails=count(), hosts=dcount(Computer) by IpAddress, bin(TimeGenerated, 5m)\n| where fails > 15 or hosts > 5\n| sort by fails desc",
+    "sigma_rules": "win_security_smb_login_bruteforce (smb_login 4625 type 3 burst)",
     "prevention": "[MITRE T1110 M1032 Multi-factor Authentication] MFA defeats password guessing; [M1027 Password Policies] strong passwords + [M1036 Account Use Policies] lockout thresholds; alert on failed-logon spikes and impossible-travel.",
     "evasion": "Spray low-and-slow (one password, spaced attempts) to stay under lockout thresholds and volume alerts; distribute across source IPs; target accounts unlikely to be monitored.",
     "sources": [

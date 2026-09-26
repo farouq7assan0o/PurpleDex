@@ -74,6 +74,10 @@
     "impact": "The service banner/version, used to fingerprint the service and match CVEs.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "A connection that reads the banner in the service's own log and in network monitoring.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap banner grabbing (--script banner)",
+    "sigma_rules": "net_port_scan_activity (nmap banner grabbing (--script banner))",
     "prevention": "Configure services to suppress or reduce the verbosity of their banners. Remove exact version strings from service banners (e.g., ServerTokens Prod for Apache, set banner explicitly in vsftpd.conf) to limit version fingerprinting.\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "evasion": "A banner grab is a single short connection to one service — inherently low-noise; spacing grabs out and touching only needed services keeps the footprint minimal.",
     "sources": [

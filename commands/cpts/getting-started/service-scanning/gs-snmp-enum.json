@@ -76,6 +76,10 @@
     "impact": "System details from the SNMP MIB — running processes, network interfaces, installed software, sometimes credentials.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "SNMP GET/WALK requests to UDP 161 in network logs; the agent's access log where enabled.",
+    "splunk_spl": "index=network dest_port=161 protocol=udp\n| stats count dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where count>20 OR hosts>10",
+    "elastic_kql": "event.category:network AND destination.port:161 AND network.transport:udp",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 161\n| summarize probes=count(), hosts=dcount(RemoteIP) by LocalIP, bin(Timestamp, 1m)\n| where probes > 20 or hosts > 10\n| sort by probes desc\n// snmpwalk SNMP community/OID enumeration on UDP 161",
+    "sigma_rules": "net_snmp_enumeration_snmpwalk (SNMP community brute / OID walk)",
     "prevention": "Upgrade to SNMPv3 which adds authentication and encryption. Change all default community strings. Restrict SNMP access to authorized management hosts at the firewall (UDP 161/162).\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "sources": [
       "HTB M02",

@@ -74,6 +74,10 @@
     "impact": "Transparent subnet-level routing into internal networks - like a lightweight VPN through the foothold.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "An SSH session plus local routing/iptables changes; internal subnet traffic via the pivot.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (comm=\"sshuttle\" OR proctitle=\"*sshuttle*\")\n| table _time, host, auid, proctitle\n\nindex=linux sourcetype=\"linux:auditd\" comm=\"iptables\" ppid_comm=\"sshuttle\"\n| table _time, host, proctitle",
+    "elastic_kql": "process.name:sshuttle OR (process.name:iptables AND process.parent.name:sshuttle)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"sshuttle\" or (FileName =~ \"iptables\" and InitiatingProcessFileName =~ \"sshuttle\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// sshuttle: SSH session + local routing/iptables changes; internal subnet traffic via the pivot",
+    "sigma_rules": "proc_creation_lnx_sshuttle_vpn (sshuttle transparent proxy + iptables changes)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

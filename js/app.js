@@ -1020,14 +1020,29 @@ class CommandManager {
         const understandEmpty = isBlueCard
             ? 'Attack technique context not yet added.<br>Populate <code>defense.why_it_works</code> with the adversary methodology + root cause.'
             : 'Root-cause analysis not yet added for this technique.<br>Run the HTB module cross-check pass to populate this.';
-        const hasUnderstand = def.why_it_works || def.prerequisites || def.impact || def.misconfiguration;
+        const renderInterview = (items) => {
+            if (!Array.isArray(items) || !items.length) return '';
+            let h = '<div class="def-section"><div class="def-section-title dt-interview">🎤 Interview Q&A</div>' +
+                '<div class="interview-list">';
+            for (const item of items) {
+                const role = item.role || 'both';
+                const roleLabel = {soc:'SOC',pentest:'Pentest',both:'Both',grc:'GRC'}[role] || role;
+                h += '<div class="interview-item" onclick="this.classList.toggle(\'open\')">' +
+                    '<div class="interview-q"><span>' + this.esc(item.q) + '</span><span class="interview-role ' + role + '">' + roleLabel + '</span></div>' +
+                    '<div class="interview-a">' + this.esc(item.a) + '</div></div>';
+            }
+            h += '</div></div>';
+            return h;
+        };
+        const hasUnderstand = def.why_it_works || def.prerequisites || def.impact || def.misconfiguration || (Array.isArray(def.interview) && def.interview.length);
         const understandHtml =
             (hasUnderstand
                 ? defSection('🔑 Prerequisites — What Must Be True First', 'dt-prereq', def.prerequisites) +
                   defSection(understandTitle, 'dt-why', def.why_it_works) +
                   defSection('⚠️ The Misconfiguration / Vulnerable Pattern', 'dt-misconfig', def.misconfiguration) +
                   defCode('🔎 Spot It in Code Review (grep / red flags)', 'dt-misconfig', 'coderev', def.code_review) +
-                  defSection('🎯 Impact — What Success Grants', 'dt-impact', def.impact)
+                  defSection('🎯 Impact — What Success Grants', 'dt-impact', def.impact) +
+                  renderInterview(def.interview)
                 : '<div class="def-empty">' + understandEmpty + '</div>') +
             myNotesHtml;
 
@@ -1038,10 +1053,40 @@ class CommandManager {
         const sourcesHtml = (Array.isArray(def.sources) && def.sources.length)
             ? '<div class="def-sources">Sources: ' + def.sources.map(s => '<span class="def-source-chip">' + this.esc(s) + '</span>').join(' ') + '</div>'
             : '';
+        const renderDetection = (det) => {
+            if (!det) return '';
+            if (typeof det === 'string') return defSection('🔍 Detection', 'dt-detect', det);
+            let h = '<div class="def-section"><div class="def-section-title dt-detect">🔍 Detection</div>';
+            if (det.summary) h += '<div class="det-summary">' + this.esc(det.summary) + '</div>';
+            if (Array.isArray(det.event_ids) && det.event_ids.length) {
+                h += '<div class="det-event-row"><span class="det-event-label">Event IDs:</span>' +
+                    det.event_ids.map(id => '<span class="det-event-chip">' + this.esc(String(id)) + '</span>').join('') + '</div>';
+            }
+            const queryTypes = [
+                ['sysmon', 'Sysmon'],
+                ['splunk', 'Splunk'],
+                ['elastic', 'Elastic'],
+                ['sigma', 'Sigma']
+            ];
+            for (const [key, label] of queryTypes) {
+                if (!det[key]) continue;
+                const qid = cmd.id + '-det-' + key;
+                h += '<div class="det-query-block">' +
+                    '<div class="det-query-header"><span class="det-query-lang ' + key + '">' + label + '</span>' +
+                    '<button class="det-query-copy" onclick="navigator.clipboard.writeText(document.getElementById(\'' + qid + '\').textContent)">Copy</button></div>' +
+                    '<pre class="det-query-pre" id="' + qid + '">' + this.esc(det[key]) + '</pre></div>';
+            }
+            h += '</div>';
+            return h;
+        };
         const defendHtml =
-            (def.detection || def.prevention || def.evasion || def.artifacts || def.vulnerable_config || def.secure_config
-                ? defSection('🔍 Detection', 'dt-detect', def.detection) +
+            (def.detection || def.prevention || def.evasion || def.artifacts || def.vulnerable_config || def.secure_config || def.splunk_spl || def.elastic_kql || def.sigma_rules || def.sentinel_kql
+                ? renderDetection(def.detection) +
                   defSection('🧾 Artifacts / Forensic Evidence', 'dt-artifacts', def.artifacts) +
+                  (def.splunk_spl ? defCode('🔍 Splunk SPL', 'dt-splunk', 'spl', def.splunk_spl) : '') +
+                  (def.elastic_kql ? defCode('🔍 Elastic KQL', 'dt-elastic', 'kql', def.elastic_kql) : '') +
+                  (def.sentinel_kql ? defCode('🔍 Microsoft Sentinel (KQL)', 'dt-sentinel', 'kql', def.sentinel_kql) : '') +
+                  (def.sigma_rules ? defSection('🔍 Sigma Rules', 'dt-sigma', def.sigma_rules) : '') +
                   defCode('❌ Vulnerable Configuration / Code', 'dt-vuln-code', 'vuln', def.vulnerable_config) +
                   defCode('✅ Secure Configuration / Code', 'dt-secure-code', 'secure', def.secure_config) +
                   defSection('🛡 Prevention / Remediation', 'dt-prevent', def.prevention) +

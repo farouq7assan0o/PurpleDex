@@ -71,6 +71,10 @@
     "impact": "Bypass of source-port-based ACLs, reaching ports that would otherwise be filtered.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "Traffic sourced from port 53 (or another trusted port) toward unusual destination ports in firewall logs.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap --source-port scan (spoofs a trusted source port like 53/88)",
+    "sigma_rules": "net_port_scan_activity (nmap --source-port scan (spoofs a trusted source port like 53/88))",
     "prevention": "Do not create firewall allow rules based on source port alone. Configure IDS/IPS to properly inspect all traffic including packets sourced from port 53.\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "evasion": "Setting a trusted source port (--source-port 53/80/443) defeats firewalls that allow traffic from DNS/HTTP/HTTPS by port; pair with slow timing and fragmentation for stealthier probing.",
     "sources": [

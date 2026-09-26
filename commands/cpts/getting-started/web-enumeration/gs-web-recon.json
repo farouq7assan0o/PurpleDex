@@ -90,6 +90,10 @@
     "impact": "Server/framework/version identification and missing-security-header findings — informing exploit selection.",
     "detection": "[MITRE T1592] Detection has a very high false positive rate and much of the activity may occur outside the visibility of the target organization. Detection efforts are more effective when focused on related stages of the adversary lifecycle, such as during Initial Access.",
     "artifacts": "Normal-looking HTTP requests (largely passive); minimal footprint beyond standard access-log entries.",
+    "splunk_spl": "index=web sourcetype=access_combined\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+    "elastic_kql": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+    "sentinel_kql": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// whatweb application fingerprinting/enumeration (path burst, scanner UA)",
+    "sigma_rules": "web_app_scanner_whatweb (whatweb fingerprinting request pattern)",
     "prevention": "Configure web servers to suppress or generalize version information in response headers. Remove or obfuscate the Server header and framework-identifying headers to limit the fingerprinting data returned to clients.\n\n[MITRE T1592 M1056] This technique cannot be easily mitigated with preventive controls since it is based on behaviors performed outside of enterprise defenses. Efforts should focus on minimizing the amount and sensitivity of data available to external parties.",
     "evasion": "Passive fingerprinting (reading response headers and HTML) generates no more traffic than a normal page request and is indistinguishable from ordinary browsing.",
     "sources": [

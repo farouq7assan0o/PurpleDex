@@ -92,6 +92,10 @@
     "impact": "Metasploit traffic (and proxied tools) routed into the internal network via the session.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "Routes added in the MSF session; internal connections sourced from the pivot host; the Meterpreter C2.",
+    "splunk_spl": "index=network\n| stats dc(dest_ip) as internal by src_ip, bin(_time, 5m)\n| where internal>15\n// autoroute adds routes in the MSF session; internal connections appear sourced from the pivot",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemoteIPType == \"Private\"\n| summarize internal=dcount(RemoteIP) by DeviceName, bin(Timestamp, 5m)\n| where internal > 15\n| sort by internal desc\n// Meterpreter autoroute: many internal connections sourced from the pivot host",
+    "sigma_rules": "net_pivot_internal_fanout (Meterpreter autoroute east-west relay)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

@@ -66,6 +66,10 @@
     "impact": "An outbound-initiated relay bringing an internal service to the attacker (bypasses inbound firewalling).",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "A socat process making an outbound connection; the relayed internal traffic.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"socat\" proctitle=\"*TCP4-LISTEN*fork*TCP4*\"\n| table _time, host, auid, proctitle\n\nindex=sysmon EventCode=3 Image=\"*socat*\"\n| table _time, Computer, DestinationIp, DestinationPort",
+    "elastic_kql": "process.name:socat AND process.args:(*TCP4-LISTEN* AND *fork*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"socat\" and ProcessCommandLine has \"TCP4-LISTEN\" and ProcessCommandLine has \"fork\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// socat relaying an inbound handler connection back to the attacker",
+    "sigma_rules": "proc_creation_lnx_socat_reverse_relay (socat outbound reverse redirection)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

@@ -115,6 +115,10 @@
     "impact": "A directory listing and downloadable files (possibly credentials or sensitive data) plus the server version for CVE matching.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "An FTP connection and login command in the server log; plaintext control-channel traffic visible to sniffers.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"ftp*\"\n| table _time, host, auid, proctitle\n\nindex=network dest_port=21\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "process.name:ftp* OR (event.category:network AND destination.port:21)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 21\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// FTP banner/anonymous-login enumeration on port 21",
+    "sigma_rules": "net_service_enumeration_ftp (FTP banner/anonymous-login enumeration on port 21)",
     "prevention": "Disable anonymous FTP access. Enable TLS/SSL (FTPS) to encrypt credentials and data in transit. Set hide_ids=YES to prevent local usernames from appearing in directory listings, removing targets for brute-force. Deploy fail2ban to block IPs after repeated failed login attempts — described in the module as 'a standard implementation of any infrastructure.'\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "sources": [
       "HTB M04",

@@ -72,6 +72,10 @@
     "impact": "A crackable TGS hash for a user who had no SPN - cracking yields their password.",
     "detection": "[MITRE T1558.003] Event 5136 (servicePrincipalName added to a user) by a non-admin, immediately followed by a 4769 TGS request for that user, then the SPN removed.",
     "artifacts": "5136 SPN add/remove; a 4769 for the target; the extracted hash.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17\n| table _time, Account_Name, Service_Name, Client_Address\n| sort - _time\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136\n| where AttributeLDAPDisplayName=\"servicePrincipalName\"\n| table _time, SubjectUserName, ObjectDN, AttributeValue",
+    "elastic_kql": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\"\n\nevent.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:servicePrincipalName",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"servicePrincipalName\"\n| project TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeValue\n| sort by TimeGenerated desc\n// SPN added then removed around a 4769 TGS request for the same user",
+    "sigma_rules": "win_security_kerberoasting_activity, win_security_spn_modification",
     "prevention": "Audit write access to servicePrincipalName; alert on SPN changes on user accounts correlated with 4769; strong passwords defeat the crack.",
     "evasion": "Remove the SPN immediately after roasting; RC4 downgrade keeps the ticket crackable.",
     "sources": [

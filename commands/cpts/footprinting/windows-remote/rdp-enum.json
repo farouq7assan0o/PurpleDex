@@ -91,6 +91,10 @@
     "impact": "RDP version, NLA status, and certificate details — enabling CVE matching (e.g. BlueKeep) and spraying decisions.",
     "detection": "Monitor for processes performing network enumeration by correlating process creation, socket connections, and sequential destination IP probing within a time window. Unusual port scanning patterns or banner-grabbing activity from internal hosts can indicate post-compromise discovery.",
     "artifacts": "Connection attempts in the RDP/Security logs (Event 4625 on failed auth); traffic to 3389.",
+    "splunk_spl": "index=network dest_port=3389\n| stats count dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where count>10 OR hosts>5",
+    "elastic_kql": "event.category:network AND destination.port:3389",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 3389\n| summarize probes=count(), hosts=dcount(RemoteIP) by LocalIP, bin(Timestamp, 1m)\n| where probes > 10 or hosts > 5\n| sort by probes desc\n// RDP security-layer/NLA enumeration (rdp-sec-check / nmap rdp-* scripts)",
+    "sigma_rules": "net_rdp_enumeration (RDP fingerprinting on 3389)",
     "prevention": "Close unnecessary ports and services to prevent risk of discovery and potential exploitation. Use network intrusion detection/prevention systems to detect and prevent remote service scans. Ensure proper network segmentation to protect critical servers and devices.",
     "sources": [
       "MITRE T1046"

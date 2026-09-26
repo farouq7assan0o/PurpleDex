@@ -72,6 +72,10 @@
     "impact": "Crackable AS-REP hashes for offline cracking.",
     "detection": "[MITRE T1558.004] Event 4768 (AS-REQ) with Pre-Authentication Type 0 and RC4 encryption; a request for an account with pre-auth disabled; a honeypot no-preauth account request is malicious.",
     "artifacts": "4768 AS-REQs (pre-auth 0, RC4); the hashes; Rubeus execution.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x17 Pre_Authentication_Type=0\n| table _time, Account_Name, Client_Address, Service_Name\n\nindex=sysmon EventCode=1 (CommandLine=\"*asreproast*\" OR CommandLine=\"*Rubeus*\")\n| table _time, Computer, User, Image, CommandLine",
+    "elastic_kql": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\"\n\nevent.code:\"1\" AND process.command_line:(*asreproast* OR *Rubeus*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"0\"\n| project TimeGenerated, Computer, TargetUserName, IpAddress\n| union (DeviceProcessEvents | where ProcessCommandLine has \"asreproast\" | project TimeGenerated=Timestamp, Computer=DeviceName, TargetUserName=AccountName, IpAddress=\"\")\n| sort by TimeGenerated desc",
+    "sigma_rules": "win_security_kerberos_asrep_roasting, proc_creation_win_hktl_rubeus",
     "prevention": "Enable Kerberos pre-authentication (disable only when truly required); enforce 25+ character passwords for any account that must have it off; quarterly review of no-preauth accounts; Defender for Identity detects AS-REP roasting.",
     "evasion": "Rubeus defaults to RC4; target one account to avoid a 4768 spike.",
     "sources": [

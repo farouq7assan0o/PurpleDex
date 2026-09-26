@@ -78,6 +78,10 @@
     "impact": "Files move between attacker and target inside the RDP session, over an already-trusted encrypted channel.",
     "detection": "RDP drive redirection creates tsclient device-mount events; file copies to/from \\\\tsclient in the session; the RDP connection itself is expected but the redirected-drive activity is the signal.",
     "artifacts": "A tsclient mounted drive; file operations against \\\\tsclient\\...; RDP session logs.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=10\n| table _time, Computer, Account_Name, Source_Network_Address\n\nindex=sysmon EventCode=11 TargetFilename=\"*\\\\tsclient\\\\*\"\n| table _time, Computer, Image, TargetFilename",
+    "elastic_kql": "event.code:\"11\" AND file.path:*tsclient*",
+    "sentinel_kql": "DeviceFileEvents\n| where FolderPath has \"tsclient\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, FolderPath, ActionType\n| sort by Timestamp desc\n// RDP drive redirection: file operations against \\\\tsclient\\ inside the session",
+    "sigma_rules": "win_rdp_drive_redirection_tsclient (file transfer via mapped RDP drive)",
     "prevention": "Disable drive redirection via GPO where not needed (Do not allow drive redirection); restrict RDP to jump hosts; monitor tsclient mounts.",
     "evasion": "Traffic is inside the encrypted RDP channel and hard to inspect on the wire; using an existing legitimate RDP session blends with admin activity.",
     "sources": [

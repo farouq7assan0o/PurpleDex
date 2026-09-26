@@ -36,15 +36,15 @@
       "command": "ls ~/.ssh"
     },
     {
-      "label": "OSCP Ch17 \u2014 check env vars for hardcoded credentials",
+      "label": "OSCP Ch17 — check env vars for hardcoded credentials",
       "command": "env"
     },
     {
-      "label": "OSCP Ch17 \u2014 inspect .bashrc for exported credential variables",
+      "label": "OSCP Ch17 — inspect .bashrc for exported credential variables",
       "command": "cat ~/.bashrc | grep -i 'pass\\|cred\\|secret\\|key\\|token'"
     },
     {
-      "label": "OSCP Ch17 \u2014 check if /etc/passwd is world-writable (quick LPE shortcut)",
+      "label": "OSCP Ch17 — check if /etc/passwd is world-writable (quick LPE shortcut)",
       "command": "ls -la /etc/passwd"
     }
   ],
@@ -86,6 +86,10 @@
     "impact": "Credential discovery enables lateral movement (reuse across services), vertical escalation (database root access, sudo with found password), or pivoting to other hosts via SSH keys.",
     "detection": "Auditd: file open syscalls on sensitive paths (/var/www/html/wp-config.php, ~/.bash_history, ~/.ssh/id_rsa) by unexpected users. SIEM: alert on reads of config files by non-owner non-service users.",
     "artifacts": "Auditd log: open() on wp-config.php or .bash_history | File access audit trail | SSH audit log if key used",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (name=\"*wp-config.php\" OR name=\"*.bash_history\" OR name=\"*/.ssh/id_rsa\" OR name=\"*config*\")\n| where NOT match(exe, \"(?i)(httpd|nginx|apache)\")\n| table _time, host, auid, exe, name",
+    "elastic_kql": "event.category:file AND file.name:(wp-config.php OR .bash_history OR id_rsa) AND NOT user.name:root",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"wp-config.php\",\".bash_history\",\"id_rsa\",\"config\")\n| where SyslogMessage has_any (\"open\",\"find\",\"cat\")\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc",
+    "sigma_rules": "lnx_auditd_config_file_credential_hunt (find/read of config and history files)",
     "prevention": "Apply strict file permissions: wp-config.php chmod 640, owned by www-data. Never log credentials in bash history (set HISTFILE=/dev/null in sensitive scripts). Store secrets in a secrets manager (Vault, AWS Secrets Manager). Use SSH agent forwarding instead of copying private keys. Enable SELinux/AppArmor to restrict file access by process.",
     "misconfiguration": "wp-config.php is world-readable. Bash history files are world-readable. SSH private keys stored with permissions wider than 600. Config files containing credentials left in publicly readable web directories.",
     "vulnerable_config": "# World-readable wp-config.php\n-rw-r--r-- 1 www-data www-data 3014 /var/www/html/wp-config.php\n# Contains: define('DB_PASSWORD', 'ClearTextPass!');\n\n# World-readable bash_history\n-rw-rw-r-- 1 admin admin ~/.bash_history",

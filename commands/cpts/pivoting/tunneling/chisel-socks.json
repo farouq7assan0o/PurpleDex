@@ -142,6 +142,10 @@
     "impact": "A SOCKS proxy / port-forward over HTTP(S) into internal networks - works through web-only egress.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "The chisel process on the pivot; an HTTP(S) tunnel to the attacker; a SOCKS listener.",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\"*chisel*\" OR CommandLine=\"*--socks5*\" OR CommandLine=\"*chisel*server*\")\n| table _time, Computer, User, CommandLine\n\nindex=network\n| stats dc(dest_ip) as internal_hosts by src_ip | where internal_hosts>10",
+    "elastic_kql": "process.name:*chisel* OR process.command_line:(*chisel* OR *socks5*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"chisel\" or ProcessCommandLine has_any (\"chisel\",\"--socks5\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where InitiatingProcessFileName has \"chisel\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=strcat(RemoteIP,\":\",tostring(RemotePort)))\n| sort by Timestamp desc\n// chisel HTTP(S) tunnel + SOCKS listener on the pivot; east-west flows sourced from the pivot",
+    "sigma_rules": "proc_creation_hktl_chisel (SOCKS tunnel/forwarder), net_pivot_east_west_fanout",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

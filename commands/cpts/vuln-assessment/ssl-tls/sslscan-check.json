@@ -70,6 +70,10 @@
     "impact": "A list of SSL/TLS weaknesses - deprecated protocols, weak ciphers, certificate issues - as report findings and possible downgrade/MITM avenues.",
     "detection": "Low: a series of TLS handshake attempts with varying protocol/cipher parameters to one service. Visible in the server's TLS/connection logs but not strongly alerting. [MITRE T1595.002 AN1999] anomalous handshake patterns can be correlated in network monitoring.",
     "artifacts": "Multiple TLS handshakes/negotiations from one source to the service in connection logs.",
+    "splunk_spl": "index=network (dest_port=443 OR dest_port=8443)\n| stats count by src_ip, dest_ip, bin(_time, 1m)\n| where count>15",
+    "elastic_kql": "event.category:network AND destination.port:(443 OR 8443) AND network.protocol:tls",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (443, 8443)\n| summarize handshakes=count() by LocalIP, RemoteIP, bin(Timestamp, 1m)\n| where handshakes > 15\n| sort by handshakes desc\n// sslscan: many TLS handshakes with varying protocol/cipher params to one service",
+    "sigma_rules": "net_tls_cipher_enumeration (repeated handshakes with varying ciphers)",
     "prevention": "Disable deprecated protocols (SSLv2/3, TLS 1.0/1.1) and weak ciphers, and keep certificates valid - this hardens against both the finding and real downgrade attacks. [MITRE T1595.002 M1056].",
     "evasion": "Handshakes are few and low-noise; spacing them out keeps the footprint minimal.",
     "sources": [

@@ -83,6 +83,10 @@
     "impact": "The transferred file's contents are unreadable to network inspection/DLP, defeating signature and content-based detection.",
     "detection": "Detection shifts from payload to metadata: an encrypted flow to an unknown host, the openssl/encryption command line (auditd/4104), and the new file on disk; content inspection yields nothing.",
     "artifacts": "openssl / Invoke-AESEncryption command lines; an encrypted connection; the .aes/encrypted file.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*openssl enc*\" OR proctitle=\"*-aes256*\")\n| table _time, host, auid, proctitle\n\nindex=wineventlog EventCode=4104 ScriptBlockText=\"*Invoke-AESEncryption*\"\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "process.name:openssl AND process.args:enc OR (event.code:\"4104\" AND powershell.file.script_block_text:*AESEncryption*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"openssl enc\",\"-aes256\",\"Invoke-AESEncryption\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// content inspection yields nothing; detect the encryption command + an encrypted flow to an unknown host",
+    "sigma_rules": "proc_creation_openssl_enc_staging (payload encryption before transfer - T1027)",
     "prevention": "[MITRE T1105 M1031] IDS/IPS and egress filtering by destination/flow (since payload is opaque); alert on unusual encrypted flows to unknown hosts; EDR on the encryption tooling and the decrypted output.",
     "evasion": "This IS an evasion of content inspection/DLP; using a common TLS port and a valid-looking cert (openssl-generated) further blends the flow.",
     "sources": [

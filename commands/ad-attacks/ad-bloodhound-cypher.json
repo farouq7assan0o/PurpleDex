@@ -1,0 +1,59 @@
+{
+  "id": "ad-bloodhound-cypher",
+  "name": "BloodHound CE - Essential Cypher Queries",
+  "command": "MATCH (u:User {owned:true}) MATCH p=shortestPath((u)-[*1..]->(t:Group {highvalue:true})) RETURN p",
+  "description": "A set of high-value Cypher queries for BloodHound CE: find paths from owned users to high-value targets, list outbound control edges, Kerberoastable/AS-REP-roastable users, shadow-credential and RBCD opportunities, and DCSync principals. Paste into the BloodHound CE Cypher search box.",
+  "platform": "multi",
+  "type": "cheatsheet",
+  "opsec": "silent",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; BloodHound CE",
+  "tags": [
+    "bloodhound",
+    "cypher",
+    "enumeration",
+    "attack-path",
+    "reference"
+  ],
+  "mitre": [
+    "T1069.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== MARK OWNED FIRST ===\nRight-click a node -> Mark as Owned, or in Cypher:\n  MATCH (u:User {name:'<USER>@<DOMAIN>'}) SET u.owned=true\n\n=== 1. Shortest path from owned to high value ===\n  MATCH (u {owned:true}) MATCH p=shortestPath((u)-[*1..]->(t {highvalue:true})) RETURN p\n\n=== 2. All outbound object control from your user ===\n  MATCH p=(u:User {name:'<USER>@<DOMAIN>'})-[:GenericAll|GenericWrite|WriteDacl|WriteOwner|Owns|AddMember|ForceChangePassword|AddKeyCredentialLink*1..]->(n) RETURN p\n\n=== 3. Kerberoastable users ===\n  MATCH (u:User) WHERE u.hasspn=true RETURN u.name, u.serviceprincipalnames\n\n=== 4. AS-REP roastable users ===\n  MATCH (u:User) WHERE u.dontreqpreauth=true RETURN u.name\n\n=== 5. Shadow-cred opportunities (write over msDS-KeyCredentialLink) ===\n  MATCH p=(n)-[:GenericAll|GenericWrite|AddKeyCredentialLink]->(t) RETURN p\n\n=== 6. RBCD opportunities (write over a computer) ===\n  MATCH p=(n)-[:GenericAll|GenericWrite|WriteDacl|WriteOwner]->(c:Computer) RETURN p\n\n=== 7. Principals that can DCSync ===\n  MATCH p=(n)-[:DCSync|GetChanges|GetChangesAll|AllExtendedRights]->(d:Domain) RETURN p\n\n=== 8. Users with a path to Domain Admins ===\n  MATCH p=shortestPath((u:User)-[*1..]->(g:Group)) WHERE g.name STARTS WITH 'DOMAIN ADMINS' RETURN p LIMIT 25\n\n=== 9. Computers where Domain Users are local admin ===\n  MATCH p=(g:Group)-[:AdminTo]->(c:Computer) WHERE g.name STARTS WITH 'DOMAIN USERS' RETURN p\n\n=== 10. Sessions of high-value users ===\n  MATCH p=(c:Computer)-[:HasSession]->(u:User) WHERE u.highvalue=true RETURN p\n\n=== 11. Unconstrained delegation ===\n  MATCH (c) WHERE c.unconstraineddelegation=true RETURN c.name\n\n=== 12. Owned principals with local admin somewhere ===\n  MATCH p=(u {owned:true})-[:AdminTo|MemberOf*1..]->(c:Computer) RETURN p",
+  "examples": [
+    {
+      "label": "Mark your user as owned",
+      "command": "MATCH (u:User {name:'J.FLEISCHMAN@FLUFFY.HTB'}) SET u.owned=true"
+    },
+    {
+      "label": "Shortest path owned -> high value",
+      "command": "MATCH (u {owned:true}) MATCH p=shortestPath((u)-[*1..]->(t {highvalue:true})) RETURN p"
+    },
+    {
+      "label": "Shadow-credential opportunities",
+      "command": "MATCH p=(n)-[:GenericAll|GenericWrite|AddKeyCredentialLink]->(t) RETURN p"
+    }
+  ],
+  "references": [
+    {
+      "title": "BloodHound CE - Cypher",
+      "url": "https://bloodhound.specterops.io/analyze-data/bloodhound-gui/cypher-search"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Turn the control edges you found into concrete attacks.",
+      "rel": "next"
+    }
+  ],
+  "tools": [
+    "bloodhound"
+  ]
+}

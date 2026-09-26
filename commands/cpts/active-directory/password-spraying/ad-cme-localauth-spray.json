@@ -70,6 +70,10 @@
     "impact": "Hosts sharing the same local-admin password/hash - broad lateral movement.",
     "detection": "Failed-authentication bursts: Windows 4625 / Kerberos 4771; account lockouts (4740). Spraying = one password across MANY accounts (few failures each - a subtle, distributed pattern). Defender for Identity flags spraying.",
     "artifacts": "Local-account logon attempts across many hosts; 4625 (local) bursts.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4625 Logon_Type=3\n| where Account_Name=\"administrator\" OR Target_Domain_Name=Computer\n| stats dc(Computer) as hosts by Source_Network_Address\n| where hosts>5",
+    "elastic_kql": "event.code:\"4625\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4625 and LogonType == 3\n| where TargetUserName =~ \"administrator\"\n| summarize hosts=dcount(Computer) by IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 5\n| sort by hosts desc\n// local-admin pass-the-hash spray across many hosts",
+    "sigma_rules": "win_security_local_admin_pth_spray (4625 local-auth across many hosts)",
     "prevention": "[MITRE T1110.003 M1032 MFA] MFA defeats spraying; [M1027] strong/unique passwords + [M1036 Account Use Policies] lockout thresholds; alert on distributed failed logons and impossible travel.",
     "evasion": "Spray one password low-and-slow with delays to avoid lockouts and volume alerts; rotate source hosts; Kerberos-based spraying avoids 4625.",
     "sources": [

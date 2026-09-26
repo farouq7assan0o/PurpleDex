@@ -82,6 +82,10 @@
     "impact": "Loot exfiltrated via a scripting interpreter over a non-C2 channel.",
     "detection": "Interpreter making an unusual outbound connection with data; auditd command line; DLP/egress monitoring on the content.",
     "artifacts": "Interpreter process with an outbound POST; DLP hits; the source process's network connection.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE (proctitle=\"*requests.post*\" OR proctitle=\"*files=*open*\")\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.name:(python* OR php OR ruby) AND process.command_line:(*requests.post* OR *files\\=*)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where InitiatingProcessFileName has_any (\"python\",\"php\",\"ruby\")\n| where RemoteIPType == \"Public\" and ActionType == \"ConnectionSuccess\"\n| where InitiatingProcessCommandLine has_any (\"requests.post\",\"open(\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine, RemoteIP\n| sort by Timestamp desc\n// exfil: interpreter POSTing a local file to an external host (DLP on content)",
+    "sigma_rules": "proc_creation_interpreter_http_upload (python requests.post exfil - T1048.003)",
     "prevention": "[MITRE T1048 M1037] Egress filtering + DLP; restrict internet-reachable hosts; monitor interpreter network activity.",
     "evasion": "Encrypt/compress the data and exfil over HTTPS to blend and defeat DLP signatures.",
     "sources": [

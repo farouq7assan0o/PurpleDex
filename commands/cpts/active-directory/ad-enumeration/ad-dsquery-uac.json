@@ -68,6 +68,10 @@
     "impact": "Accounts with exploitable UAC flags (AS-REP roast, delegation, no-password).",
     "detection": "[MITRE T1087.002] Broad/bulk LDAP queries to the DC (Event 4662 directory-service access; Microsoft Defender for Identity reconnaissance alerts); one host reading large swaths of the directory in a short window.",
     "artifacts": "LDAP queries filtering on userAccountControl bits.",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\\\"*dsquery.exe\\\")\n| table _time, Computer, User, ParentImage, CommandLine",
+    "elastic_kql": "event.code:\"1\" AND process.name:(dsquery.exe)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"dsquery.exe\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// dsquery domain/host reconnaissance",
+    "sigma_rules": "proc_creation_win_dsquery_recon (native discovery utility)",
     "prevention": "AD is readable by any authenticated user by design, so prevention is limited - focus on DETECTION (Defender for Identity, LDAP/SMB anomaly monitoring), least privilege, disabling anonymous/null sessions, and REDUCING what's exposed (remove unnecessary SPNs, descriptions with secrets, over-shared folders).",
     "evasion": "Use built-in tools (net, AD module, dsquery) that blend with normal admin activity; throttle and scope collection; avoid the noisiest methods (full BloodHound sweeps, RID brute) where Defender for Identity is present.",
     "sources": [

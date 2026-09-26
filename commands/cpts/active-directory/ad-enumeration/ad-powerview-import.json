@@ -72,6 +72,10 @@
     "impact": "A powerful AD enumeration toolkit loaded in memory.",
     "detection": "[MITRE T1059.001] PowerView is a well-known offensive script - script-block logging (4104) and AMSI catch its functions; loading it is itself a signal.",
     "artifacts": "PowerView functions in 4104 logs; the script loaded in memory.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Import-Module*\\\" OR ScriptBlockText=\\\"*PowerView.ps1*\\\")\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Module* OR *PowerView.ps1*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Import-Module\", \"PowerView.ps1\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_powerview_recon, win_security_ldap_recon",
     "prevention": "Script-block logging + AMSI; constrained language mode; application control on script execution.",
     "evasion": "Load in memory (IEX) to avoid disk; rename/obfuscate functions to dodge AMSI/signatures.",
     "sources": [

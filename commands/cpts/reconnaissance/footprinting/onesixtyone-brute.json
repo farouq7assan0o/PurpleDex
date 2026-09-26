@@ -110,6 +110,10 @@
     "impact": "Valid community string provides read (or read-write) access to the full SNMP MIB — OS info, processes, interfaces, routing, installed software.",
     "detection": "High rate of SNMP GET requests with different community strings from a single source. SNMP agent logs (where enabled) record invalid community string attempts.",
     "artifacts": "Network captures on UDP 161 showing multiple community string attempts. SNMP daemon logs.",
+    "splunk_spl": "index=network dest_port=161 protocol=udp\n| stats count dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where count>20 OR hosts>10",
+    "elastic_kql": "event.category:network AND destination.port:161 AND network.transport:udp",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 161\n| summarize probes=count(), hosts=dcount(RemoteIP) by LocalIP, bin(Timestamp, 1m)\n| where probes > 20 or hosts > 10\n| sort by probes desc\n// onesixtyone SNMP community/OID enumeration on UDP 161",
+    "sigma_rules": "net_snmp_enumeration_onesixtyone (SNMP community brute / OID walk)",
     "prevention": "Upgrade to SNMPv3 with authentication and encryption. Block UDP 161 at perimeter firewall. Restrict SNMP to management VLAN with host-based firewall rules. Change default community strings.",
     "evasion": "Use correct defaults first (public/private) before brute forcing to minimise noise. Slow request rate to avoid threshold alerts.",
     "sources": [

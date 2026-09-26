@@ -64,6 +64,10 @@
     "impact": "A broad SMB/RPC enumeration of the domain.",
     "detection": "SMB tree-connects and share/RID enumeration (Event 5140/5145 with share auditing); anonymous/null binds and RID cycling against the DC.",
     "artifacts": "Null-session binds; SAMR/LSARPC queries; share listing.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4661\n| stats count by Account_Name, Client_Address\n\nindex=network (dest_port=445 OR dest_port=139)\n| stats count by src_ip | where count>10",
+    "elastic_kql": "event.category:network AND destination.port:(139 OR 445) AND source.ip:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (139, 445)\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 10\n| sort by conns desc\n// enum4linux: SMB/RPC null-session enumeration",
+    "sigma_rules": "net_smb_null_session_enum (enum4linux RPC/SMB enumeration)",
     "prevention": "AD is readable by any authenticated user by design, so prevention is limited - focus on DETECTION (Defender for Identity, LDAP/SMB anomaly monitoring), least privilege, disabling anonymous/null sessions, and REDUCING what's exposed (remove unnecessary SPNs, descriptions with secrets, over-shared folders).",
     "evasion": "Use built-in tools (net, AD module, dsquery) that blend with normal admin activity; throttle and scope collection; avoid the noisiest methods (full BloodHound sweeps, RID brute) where Defender for Identity is present.",
     "sources": [

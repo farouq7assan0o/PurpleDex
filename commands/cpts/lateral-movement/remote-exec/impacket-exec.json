@@ -112,6 +112,10 @@
     "impact": "Remote command execution as the account - lateral movement to the target.",
     "detection": "[MITRE T1021.002/T1047] psexec -> service creation (7045/4697) + ADMIN$ writes; wmiexec -> WMI process creation (Sysmon/Security 4688 with wmiprvse parent); 4624 type 3 + 4672; the semi-random output share/file.",
     "artifacts": "A new service (psexec) or WMI-spawned process; ADMIN$/C$ writes; 4624/4672 logons; command output files.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=7045 OR EventCode=4697)\n| where match(Service_Name, \"^[A-Za-z0-9]{8}$\")\n| table _time, Computer, Service_Name, Service_File_Name\n\nindex=sysmon EventCode=1 ParentImage=\"*wmiprvse.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+    "elastic_kql": "event.code:\"1\" AND process.parent.name:WmiPrvSE.exe AND process.name:(cmd.exe OR powershell.exe)",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"wmiprvse.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 7045 and ServiceName matches regex \"^[A-Za-z0-9]{8}$\" | project Timestamp=TimeGenerated, DeviceName=Computer, AccountName=SubjectUserName, FileName=ServiceName, ProcessCommandLine=ServiceFileName)\n| sort by Timestamp desc",
+    "sigma_rules": "proc_creation_win_wmiprvse_spawning_shell (wmiexec), win_security_impacket_psexec_service",
     "prevention": "Restrict lateral admin (LAPS, tiering); block workstation-to-workstation SMB/WMI; monitor service creation (7045) and remote WMI; strong credential hygiene.",
     "evasion": "wmiexec/atexec avoid the noisy service creation psexec makes; valid admin creds make logons look legitimate; clean up output files.",
     "sources": [

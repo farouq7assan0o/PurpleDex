@@ -71,6 +71,10 @@
     "impact": "Highly targeted password wordlist tailored to one individual — dramatically increases brute-force success probability for accounts belonging to that person. Particularly effective against accounts where the user chose the password based on personal information rather than using a password manager.",
     "detection": "CUPP runs locally on the attacker's machine — no network activity, no target-side detection. Detection opportunity is only in the subsequent brute-force phase when the generated wordlist is used against a target service.",
     "artifacts": "CUPP output wordlist file on attacker's disk (e.g., firstname.txt). No target-side artifacts.",
+    "splunk_spl": "index=* \"cupp\"\n| table _time, host, user, _raw\n// builds a targeted wordlist locally from OSINT; no target-side artifacts",
+    "elastic_kql": "process.name:cupp*",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"cupp\" or ProcessCommandLine has \"cupp\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// builds a targeted wordlist locally from OSINT; no target-side artifacts",
+    "sigma_rules": "no target-side telemetry (cupp runs on the attacker host)",
     "prevention": "Password manager use eliminates the personal-information pattern that CUPP exploits — randomly generated passwords contain no profiling data. User education: avoid personal details in passwords. Policy enforcement of minimum entropy (not just complexity) discourages predictable patterns. MFA as defence-in-depth since a correct password alone is insufficient.",
     "evasion": "CUPP runs offline — completely silent at the network and target level. Combine with hybrid wordlist filtering to reduce the generated list to only policy-compliant candidates before use in a brute-force attack.",
     "sources": [

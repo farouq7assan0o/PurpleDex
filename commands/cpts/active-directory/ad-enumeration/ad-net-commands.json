@@ -92,6 +92,10 @@
     "impact": "User/group enumeration using trusted built-ins that blend with admin activity.",
     "detection": "[MITRE T1087.002/T1069.002] net.exe with /domain in process logs (4688); the resulting LDAP/SAMR queries to the DC.",
     "artifacts": "net.exe /domain command lines; SAMR/LDAP queries.",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\\\"*net.exe\\\" OR Image=\\\"*net1.exe\\\")\n| table _time, Computer, User, ParentImage, CommandLine",
+    "elastic_kql": "event.code:\"1\" AND process.name:(net.exe OR net1.exe)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"net.exe\", \"net1.exe\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// net domain/host reconnaissance",
+    "sigma_rules": "proc_creation_win_net_recon (native discovery utility)",
     "prevention": "AD is readable by any authenticated user by design, so prevention is limited - focus on DETECTION (Defender for Identity, LDAP/SMB anomaly monitoring), least privilege, disabling anonymous/null sessions, and REDUCING what's exposed (remove unnecessary SPNs, descriptions with secrets, over-shared folders).",
     "evasion": "net.exe is a trusted built-in, so it blends far better than PowerView/BloodHound; single targeted queries avoid bulk-read alerts.",
     "sources": [

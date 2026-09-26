@@ -80,6 +80,10 @@
     "impact": "A TGT as the certificate's principal (often a privileged user/DC) - password-independent domain access.",
     "detection": "[MITRE T1649] Certificate-based Kerberos auth (PKINIT): 4768 with a certificate; on the CA, 4886/4887 certificate requests where the SAN != requester; abnormal certificate issuance; ntlmrelay to ADCS shows a relayed request from a non-DC IP.",
     "artifacts": "A PKINIT 4768 (certificate logon); the .pfx/TGT; Rubeus/gettgtpkinit execution.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Certificate_Thumbprint=\"*\"\n| table _time, Computer, Account_Name, Certificate_Thumbprint, Client_Address\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Computer, Requester_Name, Subject",
+    "elastic_kql": "event.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and isnotempty(CertificateThumbprint)\n| project TimeGenerated, Computer, TargetUserName, CertificateThumbprint, IpAddress\n| sort by TimeGenerated desc\n// PKINIT TGT request using a stolen/forged certificate",
+    "sigma_rules": "win_security_pkinit_certificate_logon (4768 with certificate), win_security_adcs_cert_request_san_mismatch",
     "prevention": "Harden ADCS templates (remove ENROLLEE_SUPPLIES_SUBJECT, require manager approval, restrict enrollment); enforce HTTPS + Extended Protection on web enrollment (ESC8); monitor 4886/4887 and PKINIT logons; restrict who can enroll.",
     "evasion": "Certificates are long-lived and reusable offline; PKINIT looks like smart-card logon, blending with legitimate certificate auth.",
     "sources": [

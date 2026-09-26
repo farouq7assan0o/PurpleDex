@@ -101,6 +101,10 @@
     "impact": "Files downloaded using a trusted, whitelisted binary - bypassing application control that blocks custom tooling.",
     "detection": "Each LOLBin has a signature: certutil's User-Agent is Microsoft-CryptoAPI, BITS is Microsoft BITS/7.8 (HTB M07); and a trusted binary making an outbound download to an external host is anomalous behaviour. 4688/Sysmon 1 command line (e.g. certutil -urlcache -f) is a high-fidelity indicator.",
     "artifacts": "The LOLBin's distinctive UA in proxy logs; certutil/bitsadmin command line with a URL; the downloaded file (and certutil's urlcache).",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\"*certutil.exe\" CommandLine=\"*urlcache*\") OR (Image=\"*bitsadmin.exe\" CommandLine=\"*transfer*\")\n| table _time, Computer, User, CommandLine\n\nindex=proxy (http_user_agent=\"Microsoft-CryptoAPI*\" OR http_user_agent=\"Microsoft BITS*\")\n| table _time, src_ip, dest, http_user_agent",
+    "elastic_kql": "event.code:\"1\" AND (process.name:certutil.exe AND process.args:*urlcache*) OR (process.name:bitsadmin.exe AND process.args:*transfer*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where (FileName =~ \"certutil.exe\" and ProcessCommandLine has \"urlcache\") or (FileName =~ \"bitsadmin.exe\" and ProcessCommandLine has \"transfer\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// certutil UA = Microsoft-CryptoAPI, BITS = Microsoft BITS/7.8",
+    "sigma_rules": "proc_creation_win_lolbin_certutil_download, proc_creation_win_bitsadmin_download",
     "prevention": "[MITRE T1105 M1037] Web filtering + domain whitelisting. Command-line deny-listing/alerting on known LOLBin download patterns (certutil -urlcache, bitsadmin /transfer); EDR behavioural rules; where feasible, block/monitor the LOLBins.",
     "evasion": "LOLBins evade application whitelisting by design; spoof the UA and use HTTPS to reduce network signal; clear certutil's urlcache to limit artifacts.",
     "sources": [

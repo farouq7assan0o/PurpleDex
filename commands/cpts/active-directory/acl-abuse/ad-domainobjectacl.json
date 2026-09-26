@@ -74,6 +74,10 @@
     "impact": "Self-granted DCSync rights, enabling extraction of all domain hashes - domain compromise.",
     "detection": "[MITRE T1222.001] Event 5136 (DACL modified on the domain object, adding the replication GUIDs) by a non-DA; followed by 4662 replication (DCSync).",
     "artifacts": "A 5136 ACL change adding replication rights; the subsequent DCSync 4662.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136\n| where like(AttributeLDAPDisplayName, \"nTSecurityDescriptor\")\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, OperationType\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where Properties=\"*1131f6aa*\" OR Properties=\"*1131f6ad*\"\n| where Account_Name!=\"*$\"\n| table _time, Account_Name, ObjectName",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:nTSecurityDescriptor\n\nevent.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| where ObjectDN startswith \"DC=\"\n| project TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeValue\n| sort by TimeGenerated desc\n// DACL modified on the domain object to add replication rights (DCSync grant)",
+    "sigma_rules": "win_security_dacl_modification, win_security_dcsync_replication_rights",
     "prevention": "Tightly restrict WriteDACL on the domain object; alert on 5136 DACL changes there and on new replication grants; monitor 4662.",
     "evasion": "Grant the right, DCSync quickly, then remove the ACE; all three actions are logged, so speed limits (not hides) exposure.",
     "sources": [

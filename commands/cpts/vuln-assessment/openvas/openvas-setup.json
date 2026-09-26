@@ -89,6 +89,10 @@
     "impact": "A severity-rated vulnerability report across the target range for exploitation planning.",
     "detection": "Same active-scan signature as any network scanner - a burst of probes across many hosts/ports. [MITRE T1595.002 AN1999] Monitor for anomalous traffic patterns and uncommon data flows; correlate with process/command-line monitoring. NVT traffic is IDS-recognisable.",
     "artifacts": "A burst of connections across hosts/ports from the scanner IP; NVT request signatures; authenticated logons from the scanner if credentialed.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 5m)\n| where ports>50 OR hosts>25",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP) by LocalIP, bin(Timestamp, 5m)\n| where ports > 50 or hosts > 25\n| sort by ports desc\n// OpenVAS/GVM NVT scan: broad probe burst; credentialed scans add scanner logons",
+    "sigma_rules": "net_vulnerability_scanner_sweep (OpenVAS NVT probe burst - IDS recognisable)",
     "prevention": "[MITRE T1595.002 M1056] Minimise exposed services/data; segment so only authorised scanners reach hosts; alert on scan bursts.",
     "evasion": "Tune the scan config and schedule/throttle scans to reduce noise and rate-based detection.",
     "sources": [

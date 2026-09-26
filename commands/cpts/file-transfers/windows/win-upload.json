@@ -86,6 +86,10 @@
     "impact": "Sensitive data (creds, config, NTDS.dit) leaves the environment - a confidentiality breach and a foothold for offline cracking.",
     "detection": "Outbound data flows to an external/unknown host - especially large or unusual for the source process - are the tell; DLP and egress monitoring flag uploads of sensitive file types; command line and UA as for downloads.",
     "artifacts": "An outbound POST/copy to the attacker; the source process making an unusual network connection; DLP hits on exfiltrated content.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-FileUpload*\" OR ScriptBlockText=\"*UploadFile*\" OR ScriptBlockText=\"*Invoke-RestMethod*-InFile*\")\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-FileUpload* OR *UploadFile* OR *InFile*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"Invoke-FileUpload\",\"UploadFile\",\"-InFile\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// outbound POST of a sensitive file to an external host (DLP/egress)",
+    "sigma_rules": "posh_ps_file_upload_exfil (Invoke-FileUpload / UploadFile - T1048.003)",
     "prevention": "[MITRE T1048 M1037 Filter Network Traffic] Egress filtering and DLP to detect/block exfil; [M1057 Data Loss Prevention] on sensitive file types; restrict which hosts can reach the internet.",
     "evasion": "Encrypt/compress and chunk the data to defeat DLP signatures; exfil over an allowed protocol (HTTPS/SMB) and blend with normal egress volume.",
     "sources": [

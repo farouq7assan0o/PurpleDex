@@ -98,6 +98,10 @@
     "impact": "A list of ACL-based privilege-escalation paths (who can act on what).",
     "detection": "[MITRE T1222.001] LDAP enumeration of object ACLs (4662; Defender for Identity recon); BloodHound collection.",
     "artifacts": "LDAP ACL queries; BloodHound/ADACLScanner output.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Find-InterestingDomainAcl*\\\" OR ScriptBlockText=\\\"*Get-ObjectAcl*\\\" OR ScriptBlockText=\\\"*ResolveGUIDs*\\\")\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Find-InterestingDomainAcl* OR *Get-ObjectAcl* OR *ResolveGUIDs*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Find-InterestingDomainAcl\", \"Get-ObjectAcl\", \"ResolveGUIDs\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_powerview_acl_recon, win_security_ldap_recon",
     "prevention": "Audit ACLs regularly (ADACLScanner/BloodHound) and remove non-standard ACEs; detection-focused since reads are built-in; enable Directory Service Access auditing.",
     "evasion": "A single scoped ACL read blends with normal LDAP; BloodHound stealth mode reduces the fan-out.",
     "sources": [

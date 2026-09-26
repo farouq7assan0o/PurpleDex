@@ -93,6 +93,10 @@
     "impact": "TCP connectivity (e.g. SSH, a SOCKS relay) tunnelled over ICMP where other protocols are blocked.",
     "detection": "[MITRE T1572] ICMP echo with large or patterned payloads and abnormal request/reply volume - normal pings are small and infrequent; payload inspection reveals encapsulated TCP.",
     "artifacts": "Oversized/high-volume ICMP flows to the attacker; the ptunnel-ng process.",
+    "splunk_spl": "index=network protocol=icmp\n| eval payload_len=len(icmp_data)\n| stats count avg(payload_len) as avg_len by src_ip, dest_ip\n| where avg_len>100 OR count>1000",
+    "elastic_kql": "network.transport:icmp AND network.bytes>1000",
+    "sentinel_kql": "CommonSecurityLog\n| where Protocol == \"ICMP\"\n| summarize flows=count(), bytes=sum(SentBytes) by SourceIP, DestinationIP, bin(TimeGenerated, 5m)\n| where bytes > 100000 or flows > 1000\n| sort by bytes desc\n// oversized/high-volume ICMP echo carrying encapsulated TCP (ptunnel-ng)",
+    "sigma_rules": "net_icmp_tunneling_ptunnel (large/patterned ICMP payloads - T1572)",
     "prevention": "[MITRE T1572 M1037] block or rate-limit outbound ICMP and inspect payloads; [M1031] IDS on ICMP tunneling patterns (payload size/entropy).",
     "evasion": "Small, paced ICMP payloads mimicking normal ping reduce detection; blend with expected monitoring-ping traffic.",
     "sources": [

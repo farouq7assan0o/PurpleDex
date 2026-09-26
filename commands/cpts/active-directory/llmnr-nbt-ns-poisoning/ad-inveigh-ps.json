@@ -66,6 +66,10 @@
     "impact": "NetNTLM hashes captured from within Windows for cracking/relay.",
     "detection": "[MITRE T1557.001] LLMNR/NBT-NS/mDNS responses from an unexpected host; a spoofed name-resolution answer; NetNTLM auth to an unknown host. Honeypot name-lookups (queries for non-existent hosts) that get answered reveal poisoning; Defender for Identity flags it. Inveigh runs as a PowerShell script (4104 script-block logging).",
     "artifacts": "Spoofed answers; captured hashes; Inveigh in 4104 logs.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-Inveigh*\" OR ScriptBlockText=\"*Inveigh*\")\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:*Inveigh*",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Inveigh\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_invoke_inveigh (LLMNR/NBNS poisoning via PowerShell)",
     "prevention": "Disable LLMNR, NBT-NS, and mDNS (GPO/registry); require SMB signing to block relay; segment; deploy honeytoken name-lookups to catch poisoners; enforce authenticated DNS.",
     "evasion": "In-memory execution and selective spoofing reduce artifacts; obfuscation dodges AMSI/script signatures.",
     "sources": [

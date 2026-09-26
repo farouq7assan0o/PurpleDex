@@ -72,6 +72,10 @@
     "impact": "Full enumeration of all domain accounts and groups with their RIDs and SID values. Most critically, reveals the domain SID string required for ExtraSids (child→parent) golden ticket attacks. Also exposes account names for password spraying and group membership for privilege mapping.",
     "detection": "Multiple sequential LsarLookupSids calls in rapid succession on port 445 — visible in SMB session logs and network captures. IDS signatures exist for SID brute-force enumeration patterns. Windows Security Event 4799 (security-enabled group membership enumerated) may fire depending on configuration. Network anomaly if source is a Linux host or non-admin workstation.",
     "artifacts": "SMB session on the DC from the attacker's IP; LSARPC pipe usage logged in Windows firewall/network logs; sequential RID resolution pattern in packet capture.",
+    "splunk_spl": "index=network (dest_port=445 OR dest_port=135)\n| stats count by src_ip, dest_ip | where count>20\n\nindex=wineventlog EventCode=4624 Account_Name=\"ANONYMOUS LOGON\"\n| table _time, Computer, Source_Network_Address",
+    "elastic_kql": "event.category:network AND destination.port:(135 OR 445)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| summarize count() by IpAddress, bin(TimeGenerated, 5m)\n| where count_ > 20\n| sort by count_ desc\n// lookupsid.py: LSARPC SID brute-forcing for RID cycling",
+    "sigma_rules": "net_lsarpc_sid_bruteforce (lookupsid RID cycling)",
     "prevention": "RestrictAnonymous registry value set to 2 (blocks null sessions). Firewall SMB port 445 inbound from non-domain workstations. SID filtering enabled on trust relationships to prevent SID-based privilege escalation. Audit cross-domain LSARPC access patterns.",
     "evasion": "Rate-limit queries to avoid burst pattern detection. Operate from a domain-joined host to appear as a legitimate admin workstation. The tool's output includes all info needed from a single authenticated session — not a sustained connection.",
     "sources": [

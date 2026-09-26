@@ -65,6 +65,10 @@
     "impact": "Compromised accounts using the sprayed password - often a domain foothold.",
     "detection": "Failed authentication bursts: Windows 4625 (failed logon) and 4771 (Kerberos pre-auth failed) at abnormal rate/volume; account lockouts (4740); many attempts from one source, or - for spraying - one password across many accounts. SIEM correlation on failed-logon spikes.",
     "artifacts": "One password attempted against many accounts (few failures per account); subtle 4625 pattern, minimal lockouts.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4625 OR EventCode=4771)\n| stats dc(Account_Name) as accts by Source_Network_Address, bin(_time, 5m)\n| where accts>10",
+    "elastic_kql": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4625, 4771)\n| summarize accts=dcount(TargetUserName), attempts=count() by IpAddress, bin(TimeGenerated, 5m)\n| where accts > 10\n| sort by accts desc\n// netexec smb <cidr> -p '<password>': one password across many accounts (subtle, few failures each)",
+    "sigma_rules": "win_security_password_spray_4625 (netexec SMB spray)",
     "prevention": "[MITRE T1110 M1032 Multi-factor Authentication] MFA defeats password guessing; [M1027 Password Policies] strong passwords + [M1036 Account Use Policies] lockout thresholds; alert on failed-logon spikes and impossible-travel.",
     "evasion": "Spray low-and-slow (one password, spaced attempts) to stay under lockout thresholds and volume alerts; distribute across source IPs; target accounts unlikely to be monitored.",
     "sources": [

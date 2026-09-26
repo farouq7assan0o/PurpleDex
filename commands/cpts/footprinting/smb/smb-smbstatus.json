@@ -77,6 +77,10 @@
     "impact": "Visibility into active SMB sessions and, critically, whether signing is disabled — identifying viable NTLM-relay targets.",
     "detection": "[MITRE T1049 AN0903] Detect usage of commands or binaries (netstat, PowerShell Get-NetTCPConnection) and WMI/API calls to enumerate local or remote network connections. [AN0904] Use of netstat, ss, lsof, or custom shell scripts to list current network connections — often paired with privilege escalation or staging activities.",
     "artifacts": "Local command execution on the SMB server; no network footprint against a remote target.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"smbstatus\"\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.name:smbstatus",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"smbstatus\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// smbstatus reads local Samba session/lock state (local recon, minimal signal)",
+    "sigma_rules": "lnx_auditd_smbstatus_local_recon (local Samba session enumeration)",
     "prevention": "Enable and require SMB signing server-wide: set 'smb2 security mode = required' in smb.conf (Samba/Linux) or via Group Policy on Windows (Microsoft network server: Digitally sign communications (always)).",
     "sources": [
       "HTB M04",

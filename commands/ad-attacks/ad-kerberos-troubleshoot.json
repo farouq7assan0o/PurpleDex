@@ -1,0 +1,62 @@
+{
+  "id": "ad-kerberos-troubleshoot",
+  "name": "Kerberos Error Reference (Every Common Error + Fix)",
+  "command": "# match your Kerberos error below and apply the fix",
+  "description": "Quick reference for the Kerberos errors you hit running impacket / certipy / Rubeus / evil-winrm from Linux against AD, and how to fix each one. Saves time chasing phantom failures during a chain.",
+  "platform": "multi",
+  "type": "reference",
+  "opsec": "silent",
+  "category": "Active Directory",
+  "subcategory": "Tooling",
+  "certifications": [
+    "CRTP",
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; common AD-from-Linux errors",
+  "tags": [
+    "kerberos",
+    "troubleshooting",
+    "errors",
+    "reference"
+  ],
+  "mitre": [],
+  "exam": "exam-ok",
+  "notes": "=== KRB_AP_ERR_SKEW (Clock skew too great) ===\n  Cause: host clock differs from the DC by > 5 min.\n  Fix:   sudo ntpdate <dc_ip>   (or wrap with faketime) -> ad-faketime-kerberos\n\n=== KDC_ERR_PREAUTH_REQUIRED ===\n  Meaning: the account requires pre-auth (NOT AS-REP roastable). Normal - move on.\n\n=== KDC_ERR_C_PRINCIPAL_UNKNOWN ===\n  Cause: username/realm wrong, or SPN/host does not exist.\n  Fix:   check the case and realm (UPPERCASE realm), verify the account/SPN exists,\n         use the FQDN not the IP for -spn/-target.\n\n=== KDC_ERR_S_PRINCIPAL_UNKNOWN ===\n  Cause: the target SPN does not exist (getST/S4U).\n  Fix:   confirm the SPN (setspn -q / Get-DomainUser -SPN); use cifs/<fqdn> exactly.\n\n=== KDC_ERR_PREAUTH_FAILED ===\n  Cause: wrong password/hash, or wrong etype.\n  Fix:   verify creds; for PtH use -hashes :<nthash>; try AES if RC4 is disabled.\n\n=== KRB_AP_ERR_MODIFIED ===\n  Cause: wrong service key / wrong SPN / wrong target host (ticket for another service).\n  Fix:   request the ticket for the exact SPN of the service you are hitting; use FQDN.\n\n=== KDC_ERR_ETYPE_NOSUPP ===\n  Cause: requested encryption type not supported (often RC4 disabled).\n  Fix:   use AES (-aesKey) or let the tool negotiate; regenerate the ticket.\n\n=== KDC_ERR_WRONG_REALM / referrals ===\n  Fix:   set the correct realm; for cross-domain, target the right DC (-dc-ip of that domain).\n\n=== 'KRB_AP_ERR_TKT_EXPIRED' ===\n  Fix:   ticket expired - request a fresh TGT (getTGT.py) and retry.\n\n=== NAME RESOLUTION (not a Kerberos error but breaks it) ===\n  Add the DC/host to /etc/hosts (IP  dc01.domain.local domain.local) so FQDNs resolve;\n  Kerberos is name-sensitive - use FQDNs, not IPs, for SPNs.\n\n=== GENERAL CHECKLIST ===\n  1. Clock in sync?  2. Realm UPPERCASE?  3. FQDN (not IP) for SPNs?  4. /etc/hosts set?\n  5. KRB5CCNAME exported?  6. Right etype (AES vs RC4)?",
+  "examples": [
+    {
+      "label": "Fix clock skew",
+      "command": "sudo ntpdate <dc_ip>"
+    },
+    {
+      "label": "Add DC to /etc/hosts for name resolution",
+      "command": "echo '<dc_ip> dc01.<domain> <domain>' | sudo tee -a /etc/hosts"
+    },
+    {
+      "label": "Export a ccache for -k / -no-pass tools",
+      "command": "export KRB5CCNAME=$(pwd)/user.ccache"
+    }
+  ],
+  "references": [
+    {
+      "title": "The Hacker Recipes - Kerberos",
+      "url": "https://www.thehacker.recipes/ad/movement/kerberos"
+    },
+    {
+      "title": "MIT Kerberos error codes",
+      "url": "https://web.mit.edu/kerberos/krb5-1.12/doc/appdev/refs/api/index.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-faketime-kerberos",
+      "note": "The clock-skew fix, in detail.",
+      "rel": "prereq"
+    }
+  ],
+  "tools": [
+    "impacket",
+    "certipy"
+  ]
+}

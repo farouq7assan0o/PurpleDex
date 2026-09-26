@@ -120,6 +120,10 @@
     "impact": "Valid usernames via VRFY/EXPN/RCPT TO, plus open-relay detection — feeding phishing and spraying.",
     "detection": "[MITRE T1087.002 AN0363] Adversary enumeration of domain accounts using net.exe, PowerShell, WMI, or LDAP queries from non-domain controllers or non-admin endpoints. [AN0364] Domain account enumeration using ldapsearch, samba tools (wbinfo -u), or winbindd lookups.",
     "artifacts": "VRFY/EXPN/RCPT commands in the mail server log; connection records to 25.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"smtp-user-enum*\"\n| table _time, host, auid, proctitle\n\nindex=network dest_port=25\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "process.name:smtp-user-enum* OR (event.category:network AND destination.port:25)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 25\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// SMTP VRFY/EXPN/RCPT user enumeration on port 25",
+    "sigma_rules": "net_service_enumeration_smtp-user-enum (SMTP VRFY/EXPN/RCPT user enumeration on port 25)",
     "prevention": "Disable VRFY and EXPN commands on public-facing SMTP servers to prevent user enumeration. Configure the server to reject relaying for unauthorized senders (eliminate open relay). Disable anonymous/unauthenticated SMTP login. Restrict SMTP access to known sending hosts where possible.\n\n[MITRE T1087.002 M1028] Prevent administrator accounts from being enumerated when an application is elevating through UAC. Configure via GPO: Computer Configuration > Administrative Templates > Windows Components > Credential User Interface: 'Enumerate administrator accounts on elevation' → Disabled.",
     "evasion": "Prefer RCPT TO-based user enumeration over VRFY/EXPN (which are more often logged or outright disabled), and throttle the attempt rate — bulk VRFY/RCPT bursts are the tell that triggers mail-server alerts.",
     "sources": [

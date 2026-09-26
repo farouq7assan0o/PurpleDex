@@ -93,6 +93,10 @@
     "impact": "A SOCKS proxy riding inside the RDP channel - pivoting that blends with legitimate RDP.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "The SocksOverRDP DLL/plugin; a SOCKS listener; traffic inside the RDP virtual channel.",
+    "splunk_spl": "index=sysmon EventCode=1 Image=\"*regsvr32.exe\" CommandLine=\"*SocksOverRDP*\"\n| table _time, Computer, User, CommandLine\n\nindex=sysmon EventCode=7 ImageLoaded=\"*SocksOverRDP*\"\n| table _time, Computer, ImageLoaded",
+    "elastic_kql": "event.code:\"1\" AND process.name:regsvr32.exe AND process.command_line:*SocksOverRDP*",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"regsvr32.exe\" and ProcessCommandLine has \"SocksOverRDP\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceImageLoadEvents | where FileName has \"SocksOverRDP\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=FolderPath)\n| sort by Timestamp desc\n// SOCKS tunnel inside the RDP virtual channel via the SocksOverRDP plugin",
+    "sigma_rules": "proc_creation_win_regsvr32_socksoverrdp (SOCKS-over-RDP DLL registration)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Traffic rides inside the encrypted RDP virtual channel, so it is hard to inspect and blends with a legitimate RDP session.",
     "sources": [

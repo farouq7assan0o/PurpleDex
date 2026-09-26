@@ -1,0 +1,67 @@
+{
+  "id": "ad-acl-decision-tree",
+  "name": "AD ACL Abuse Decision Tree (I have X right -> do Y)",
+  "command": "# map a BloodHound ACL edge to its abuse; see steps below",
+  "description": "Master reference: given an ACL edge from BloodHound (GenericAll, GenericWrite, WriteDACL, WriteOwner, ForceChangePassword, AddMember, AddKeyCredentialLink, etc.), which attack to run and which card covers it. Start here after BloodHound flags an outbound control edge.",
+  "platform": "multi",
+  "type": "reference",
+  "opsec": "silent",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; BloodHound ACL abuse",
+  "tags": [
+    "acl-abuse",
+    "decision-tree",
+    "bloodhound",
+    "dacl",
+    "reference"
+  ],
+  "mitre": [
+    "T1098",
+    "T1222"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ACL EDGE -> ATTACK -> CARD ===\n\nGenericAll (user):\n  - Shadow Credentials (stealth)          -> ad-shadow-credentials\n  - ForceChangePassword (loud)            -> ad-force-change-password\n  - Targeted Kerberoast (set SPN)         -> ad-targeted-kerberoast\n\nGenericAll / GenericWrite (computer):\n  - Shadow Credentials                    -> ad-shadow-credentials\n  - RBCD (msDS-AllowedToActOnBehalfOf...) -> ad-impacket-rbcd\n\nGenericAll / GenericWrite / AddMember (group):\n  - Add self to the group (re-auth!)      -> ad-genericall-group\n\nGenericWrite (user, no SPN):\n  - Targeted Kerberoast                   -> ad-targeted-kerberoast\n  - Shadow Credentials                    -> ad-shadow-credentials\n\nForceChangePassword (user):\n  - Reset the password (loud)             -> ad-force-change-password\n\nWriteDACL (object / domain):\n  - Grant self DCSync, then DCSync        -> ad-writedacl-linux\n  - Grant self GenericAll, then above\n\nWriteOwner (object):\n  - Set self as owner -> WriteDACL -> as above (WriteOwner then WriteDACL then abuse)\n\nWriteProperty msDS-KeyCredentialLink:\n  - Shadow Credentials                    -> ad-shadow-credentials\n\nWriteProperty servicePrincipalName (user):\n  - Targeted Kerberoast                   -> ad-targeted-kerberoast\n\nWriteProperty msDS-AllowedToActOnBehalfOfOtherIdentity (computer):\n  - RBCD                                  -> ad-impacket-rbcd\n\nAllowedToDelegate / control of a CA-managing account:\n  - ADCS ESC1 (enrollee SAN)              -> ad-esc1-certipy-linux\n  - ADCS ESC16 (CA drops SID extension)   -> ad-esc16-upn-manipulation\n\n=== ALWAYS ===\n  - Fix clock skew before any Kerberos/PKINIT step -> ad-faketime-kerberos\n  - Re-authenticate after group changes (membership is baked into your ticket).\n  - Clean up (remove SPNs, key credentials, ACEs, added members) to reduce IOCs.\n\n=== RULE OF THUMB ===\n  Write over a user with a writable msDS-KeyCredentialLink -> prefer Shadow Credentials\n  (stealthy, reversible) over ForceChangePassword (loud, disruptive).",
+  "examples": [
+    {
+      "label": "Enumerate outbound control edges for your user in BloodHound",
+      "command": "# BloodHound: mark your principal as Owned, then 'Reachable High Value Targets' / 'Outbound Object Control'"
+    },
+    {
+      "label": "Confirm an ACL from the CLI",
+      "command": "Get-DomainObjectAcl -Identity <target_account> -ResolveGUIDs | ? { $_.SecurityIdentifier -match $mySID }"
+    }
+  ],
+  "references": [
+    {
+      "title": "The Hacker Recipes - DACL abuse",
+      "url": "https://www.thehacker.recipes/ad/movement/dacl"
+    },
+    {
+      "title": "BloodHound - Edges",
+      "url": "https://bloodhound.specterops.io/resources/edges/overview"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-shadow-credentials",
+      "note": "Most common high-value abuse of write-over-user.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-writedacl-linux",
+      "note": "WriteDACL over the domain -> DCSync.",
+      "rel": "next"
+    }
+  ],
+  "tools": [
+    "bloodhound",
+    "bloodyAD",
+    "PowerView"
+  ]
+}

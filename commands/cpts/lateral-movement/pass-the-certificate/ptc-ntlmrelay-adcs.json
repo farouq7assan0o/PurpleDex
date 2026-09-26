@@ -75,6 +75,10 @@
     "impact": "A certificate for a privileged identity (often a DC) enabling PKINIT auth and DCSync - domain compromise.",
     "detection": "[MITRE T1649] Certificate-based Kerberos auth (PKINIT): 4768 with a certificate; on the CA, 4886/4887 certificate requests where the SAN != requester; abnormal certificate issuance; ntlmrelay to ADCS shows a relayed request from a non-DC IP. On the CA, a DomainController-template request sourced from the relay IP rather than the DC.",
     "artifacts": "A relayed cert request (4886/4887 from the relay IP); the issued cert; coercion + relay traffic.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| where Requester_Name!=\"*$\" OR Attributes=\"*DomainController*\"\n| table _time, Computer, Requester_Name, Attributes\n\nindex=suricata event_type=alert (alert.signature=\"*certsrv*\" OR alert.signature=\"*NTLM relay*\")\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.Attributes:*DomainController*",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4886, 4887)\n| project TimeGenerated, Computer, RequesterName, CertificateTemplate\n// relayed request: cert issued but RequesterName/IP does not match the enrolling principal\n| sort by TimeGenerated desc",
+    "sigma_rules": "win_security_adcs_esc8_ntlm_relay (relayed cert request to certsrv from non-DC IP)",
     "prevention": "Enforce HTTPS + Extended Protection for Authentication on ADCS web enrollment; disable it if unused; block coercion (patch/disable Spooler); Harden ADCS templates (remove ENROLLEE_SUPPLIES_SUBJECT, require manager approval, restrict enrollment); enforce HTTPS + Extended Protection on web enrollment (ESC8); monitor 4886/4887 and PKINIT logons; restrict who can enroll.",
     "evasion": "The certificate persists for years and is usable offline from any host, decoupling exploitation from the noisy relay step.",
     "sources": [

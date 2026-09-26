@@ -111,6 +111,10 @@
     "impact": "A valid company email for bypassing email verification elsewhere, staff-panel access via reused creds, and leaked passwords (e.g. VPN) enabling a network foothold - a stepping stone to internal access.",
     "detection": "Staff logins from unusual IPs/geos; a single account trying username then email; bulk ticket reads/exports; new external account registrations tied to a ticket email; spray attempts against the VPN shortly after portal access.",
     "artifacts": "osTicket auth logs (successful staff login, new IP); ticket-view/export events; VPN auth logs showing the leaked password; Dehashed queries are attacker-side (no target artifact).",
+    "splunk_spl": "index=web sourcetype=access_combined (uri_query=\\\"*/include/*\\\" OR uri_path=\\\"*/include/*\\\" OR uri_query=\\\"*ost-config.php*\\\" OR uri_path=\\\"*ost-config.php*\\\" OR uri_query=\\\"*.bak*\\\" OR uri_path=\\\"*.bak*\\\" OR uri_query=\\\"*.sql*\\\" OR uri_path=\\\"*.sql*\\\")\n| table _time, clientip, uri_path, uri_query, status",
+    "elastic_kql": "event.category:web AND (url.query:(*/include/* OR *ost-config.php* OR *.bak* OR *.sql*) OR url.path:(*/include/* OR *ost-config.php* OR *.bak* OR *.sql*))",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem has_any (\"/include/\", \"ost-config.php\", \".bak\", \".sql\") or csUriQuery has_any (\"/include/\", \"ost-config.php\", \".bak\", \".sql\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus\n| sort by TimeGenerated desc\n// osticket_exposure",
+    "sigma_rules": "web_osticket_exposure (malicious request pattern in web logs)",
     "prevention": "Enforce MFA on all external portals. Never send passwords through tickets. Ban corporate-email signups on third-party services. Enforce a strong AD/app password policy and force change-at-first-login. Limit what is exposed externally. [MITRE M1032, M1017, M1027]",
     "evasion": "Blend in: create a normal-looking ticket, authenticate with valid creds (looks legitimate), and pace VPN spraying under lockout thresholds (osTicket account lockout / VPN throttling).",
     "sources": [

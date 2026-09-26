@@ -80,6 +80,10 @@
     "impact": "Membership in a privileged group (e.g. a group with DA-equivalent rights) - escalation.",
     "detection": "[MITRE T1098] Event 4728/4732/4756 (member added to a security group) where the actor isn't an admin; a change to a privileged group.",
     "artifacts": "Group-membership-change events; the added account.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4728 OR EventCode=4732 OR EventCode=4756)\n| table _time, MemberName, MemberSid, TargetUserName, SubjectUserName, SubjectDomainName\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where Properties=\"*bf9679c0*\" AND AccessMask=\"0x2\"\n| table _time, Account_Name, ObjectName",
+    "elastic_kql": "event.code:(\"4728\" OR \"4732\" OR \"4756\")\n\nevent.code:\"4662\" AND winlog.event_data.Properties:*bf9679c0* AND winlog.event_data.AccessMask:\"0x2\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4728, 4732, 4756)\n| where SubjectUserName !endswith \"$\"\n| project TimeGenerated, Computer, SubjectUserName, MemberName, TargetUserName\n| sort by TimeGenerated desc\n// group membership added by a non-admin, especially to a privileged group",
+    "sigma_rules": "win_security_member_added_to_security_group",
     "prevention": "Audit group-write ACLs; alert on privileged-group membership changes (4728/4732); remove self after use is still logged.",
     "evasion": "Remove the membership after use to limit the window (the add is logged regardless); target a less-watched privileged group.",
     "sources": [

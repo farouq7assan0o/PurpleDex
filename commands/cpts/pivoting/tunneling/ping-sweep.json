@@ -84,6 +84,10 @@
     "impact": "A list of live internal hosts - the map for further pivoting and attack.",
     "detection": "[MITRE T1018] a burst of ICMP (or TCP) probes across an internal subnet sourced from the pivot; internal host-discovery pattern in east-west monitoring.",
     "artifacts": "ICMP/ARP probes across the internal range from the pivot; the discovered host list.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"ping\"\n| stats dc(proctitle) as targets by host, bin(_time, 1m)\n| where targets>20\n\nindex=network protocol=icmp\n| stats dc(dest_ip) as hosts by src_ip | where hosts>20",
+    "elastic_kql": "network.transport:icmp AND source.ip:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemoteIPType == \"Private\"\n| summarize hosts=dcount(RemoteIP) by DeviceName, bin(Timestamp, 1m)\n| where hosts > 20\n| sort by hosts desc\n// a burst of probes across an internal subnet from the pivot",
+    "sigma_rules": "net_internal_ping_sweep_discovery (ICMP host discovery from the pivot - T1018)",
     "prevention": "Internal segmentation and host-based firewalls; monitor east-west scanning; endpoint firewalls dropping unsolicited probes.",
     "evasion": "Use ARP or targeted TCP probes over ICMP where ICMP is monitored; slow the sweep to avoid burst detection.",
     "sources": [

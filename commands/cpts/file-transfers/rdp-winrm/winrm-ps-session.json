@@ -85,6 +85,10 @@
     "impact": "Files staged on the remote host via a trusted management protocol, often as part of lateral movement.",
     "detection": "WinRM logons (Event 4624 type 3 to 5985/5986) and PowerShell remoting operations; Copy-Item -ToSession and remoting cmdlets in script-block logs (4104); new file on the target.",
     "artifacts": "WinRM connection on 5985/5986; 4104 remoting entries; the transferred file; the authenticating account in 4624.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Copy-Item*-ToSession*\" OR ScriptBlockText=\"*-FromSession*\")\n| table _time, Computer, User, ScriptBlockText\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Process_Name=\"*wsmprovhost.exe\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Copy-Item* AND (*ToSession* OR *FromSession*))",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Copy-Item\" and ProcessCommandLine has_any (\"ToSession\",\"FromSession\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// WinRM (5985/5986) + Copy-Item -ToSession file transfer",
+    "sigma_rules": "posh_ps_copy_item_tosession (WinRM remoting file transfer)",
     "prevention": "Restrict WinRM to management subnets/jump hosts; strong credential hygiene (WinRM needs valid creds); monitor remoting and Copy-Item -ToSession; JEA to constrain what remoting can do.",
     "evasion": "WinRM is a legitimate admin channel, so with valid creds the transfer blends with normal management; traffic is encrypted (HTTPS on 5986).",
     "sources": [

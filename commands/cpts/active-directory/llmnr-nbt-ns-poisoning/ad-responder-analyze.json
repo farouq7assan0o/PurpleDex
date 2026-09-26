@@ -73,6 +73,10 @@
     "impact": "Reconnaissance of who is broadcasting what - targets for later poisoning - with no packets injected.",
     "detection": "Passive - Responder answers nothing, so there is little to detect; the underlying LLMNR/NBT-NS chatter is what enables it.",
     "artifacts": "None injected; a local capture of observed broadcasts.",
+    "splunk_spl": "index=suricata event_type=alert (alert.signature=\"*LLMNR*\" OR alert.signature=\"*NBNS*\")\n| table _time, src_ip, dest_ip, alert.signature\n// analyze mode is passive; detection relies on the broadcast LLMNR/NBT-NS chatter",
+    "elastic_kql": "event.category:network AND network.protocol:(llmnr OR nbns)",
+    "sentinel_kql": "CommonSecurityLog\n| where Activity has_any (\"llmnr\",\"nbns\")\n| project TimeGenerated, SourceIP, DestinationIP, Activity\n| sort by TimeGenerated desc\n// Responder -A only observes; no spoofed answers to detect on the wire",
+    "sigma_rules": "net_llmnr_nbns_broadcast_baseline (passive analysis leaves little to detect)",
     "prevention": "Disabling LLMNR/NBT-NS/mDNS removes the traffic to observe (and to poison); detection is otherwise infeasible for pure analyze mode.",
     "evasion": "Analyze mode is passive by nature - it injects nothing and is effectively undetectable on the wire.",
     "sources": [

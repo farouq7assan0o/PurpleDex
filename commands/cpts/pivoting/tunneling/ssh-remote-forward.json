@@ -75,6 +75,10 @@
     "impact": "A reverse tunnel bringing internal services/callbacks out to the attacker.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "A listening port on the SSH server; a session with -R; callbacks routed to the attacker.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"ssh\" proctitle=\"*-R*\"\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.name:ssh AND process.args:\"-R\"",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"ssh\" and ProcessCommandLine has \"-R \"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// SSH -R reverse forward exposing an internal service to the attacker",
+    "sigma_rules": "proc_creation_lnx_ssh_remote_forward (ssh -R reverse tunnel - T1572)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

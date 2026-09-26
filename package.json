@@ -11,6 +11,8 @@
     "coverage:all": "node coverage-all.js",
     "depth": "node depth-check.js",
     "chains": "node chain-health.js",
+    "check:drift": "node build-commands.js --check",
+    "guard": "node build-commands.js --check && node validate.js --errors-only && echo \"GUARD PASS: bundle in sync, schema valid\"",
     "check": "node build-commands.js && node validate.js --errors-only && node healthcheck.js --render && node coverage-report.js && echo \"ALL GATES PASS\""
   },
   "license": "MIT"

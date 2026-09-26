@@ -142,6 +142,10 @@
     "impact": "Reveals internal hostname conventions, number of servers, server roles (dc, sql, vpn, mail) — accelerates lateral movement planning.",
     "detection": "High NXDOMAIN rate from single source (subdomain brute force). Sequential PTR lookups across a /24 range. Both visible in DNS server query logs.",
     "artifacts": "DNS query logs, passive DNS databases recording the brute force patterns.",
+    "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count by src_ip, bin(_time, 1m)\n| where count>50",
+    "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
+    "sentinel_kql": "DnsEvents\n| summarize queries=count() by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50\n| sort by queries desc\n// host command DNS record enumeration",
+    "sigma_rules": "net_dns_enumeration (host command DNS record enumeration)",
     "prevention": "Split-horizon DNS. Remove PTR records for internal hosts from external reverse zones. Implement DNS firewall / Response Policy Zones to flag or block known brute-force patterns.",
     "evasion": "Use slow request rate to stay below NXDOMAIN threshold alerts. Query from multiple source IPs.",
     "sources": [

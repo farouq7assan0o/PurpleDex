@@ -83,6 +83,10 @@
     "impact": "The service name and version banner, used to fingerprint the service and match it against known CVEs.",
     "detection": "Monitor for processes performing network enumeration by correlating process creation, socket connections, and sequential destination IP probing within a time window. Unusual port scanning patterns or banner-grabbing activity from internal hosts can indicate post-compromise discovery.",
     "artifacts": "A TCP connection to the service port in firewall/IDS logs, and a connection entry in the service's own log.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (comm=\"nc\" OR comm=\"ncat\") proctitle=\"*-v*\"\n| table _time, host, proctitle",
+    "elastic_kql": "process.name:(nc OR ncat) AND process.args:*-v*",
+    "sentinel_kql": "DeviceNetworkEvents\n| where InitiatingProcessFileName in~ (\"nc\",\"ncat\")\n| summarize ports=dcount(RemotePort) by LocalIP, RemoteIP, bin(Timestamp, 1m)\n| sort by ports desc\n// netcat banner grabbing against service ports",
+    "sigma_rules": "proc_creation_netcat_banner_grab (nc -v service probing)",
     "prevention": "Close unnecessary ports and services to prevent risk of discovery and potential exploitation. Use network intrusion detection/prevention systems to detect and prevent remote service scans. Ensure proper network segmentation to protect critical servers and devices.",
     "sources": [
       "MITRE T1046"

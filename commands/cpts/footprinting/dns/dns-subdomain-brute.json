@@ -86,6 +86,10 @@
     "impact": "Discovery of internet-facing subdomains (dev, staging, admin, vpn) not linked publicly — new attack surface.",
     "detection": "Zone transfer attempts (DNS AXFR requests) from unauthorized IPs can be logged and alerted on. General DNS reconnaissance has a high false positive rate; detection efforts are more effective when focused on related Initial Access stages that follow the reconnaissance.",
     "artifacts": "A large burst of sequential DNS queries from one source against the target's nameservers — a clear enumeration signature.",
+    "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count count(eval(reply_code=\\\"NXDOMAIN\\\")) as nx by src_ip, bin(_time, 1m)\n| where count>50 OR nx>30",
+    "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
+    "sentinel_kql": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// subdomain brute force (NXDOMAIN burst)",
+    "sigma_rules": "net_dns_enumeration (subdomain brute force (NXDOMAIN burst))",
     "prevention": "Implement DNS zone transfer policies that enforce a validated list of servers permitted for AXFR transfers. Restrict zone transfers to authorized secondary DNS servers only. Remove DNS records for internal-only infrastructure from public-facing DNS.",
     "evasion": "Use a distributed resolver pool to spread queries across many source IPs and slow the rate below detection thresholds; passive DNS and CT-log sources find subdomains without any direct brute-force traffic against the target's nameservers.",
     "sources": [

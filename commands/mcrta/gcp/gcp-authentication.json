@@ -78,6 +78,10 @@
     "impact": "T1078.004 Valid Accounts: Cloud Accounts. API access to GCP at the identity's IAM privilege - the entry point for all GCP enumeration and attack.",
     "detection": "Cloud Audit Logs (Admin Activity / Data Access): authentication and API calls from new IPs/user agents; service-account key usage from unexpected locations; sudden use of a dormant SA. Login Challenge / MFA events for users.",
     "artifacts": "Cloud Audit Log entries (authenticationInfo.principalEmail, callerIp, userAgent); SA key-based API calls.",
+    "splunk_spl": "index=gcp sourcetype=\"google:gcp:audit\" protoPayload.methodName=\"*Authenticate*\" OR protoPayload.methodName=\"*tokeninfo*\"\n| stats count by protoPayload.authenticationInfo.principalEmail, protoPayload.requestMetadata.callerIp",
+    "elastic_kql": "event.dataset:gcp.audit AND gcp.audit.method_name:*Authenticate*",
+    "sentinel_kql": "GCPAuditLogs\n| where protoPayload_authenticationInfo_principalEmail != \"\"\n| summarize ips=make_set(protoPayload_requestMetadata_callerIp) by principalEmail=protoPayload_authenticationInfo_principalEmail, bin(TimeGenerated, 1h)\n| where array_length(ips) > 1\n| sort by TimeGenerated desc\n// gcloud auth from a new IP for a principal",
+    "sigma_rules": "gcp_authentication_new_ip (gcloud auth activate)",
     "prevention": "Prefer Workload Identity Federation / attached service accounts over downloadable SA keys; disable SA key creation via org policy (iam.disableServiceAccountKeyCreation). Enforce MFA/2SV and context-aware access for users. Rotate/limit key lifetime; alert on SA key usage anomalies.",
     "evasion": "Use a token or an existing SA key, call from an allowed region, and mimic the SA's normal API patterns.",
     "sources": [

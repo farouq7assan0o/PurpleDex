@@ -80,6 +80,10 @@
     "impact": "SOCKS/port-forward pivoting from Windows into internal networks.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "plink.exe with -D/-R in process logs; an SSH session from the Windows pivot; a SOCKS listener.",
+    "splunk_spl": "index=sysmon EventCode=1 Image=\"*plink*\" (CommandLine=\"*-D*\" OR CommandLine=\"*-R*\" OR CommandLine=\"*-L*\")\n| table _time, Computer, User, CommandLine\n\nindex=sysmon EventCode=3 Image=\"*plink*\" DestinationPort=22\n| table _time, Computer, DestinationIp",
+    "elastic_kql": "event.code:\"1\" AND process.name:plink* AND process.args:(\"-D\" OR \"-R\" OR \"-L\")",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"plink\" and ProcessCommandLine has_any (\"-D \",\"-R \",\"-L \")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// plink SSH tunnel from a Windows pivot + SOCKS listener",
+    "sigma_rules": "proc_creation_win_plink_tunnel (plink -D/-R/-L port forwarding)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

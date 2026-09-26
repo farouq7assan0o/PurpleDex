@@ -81,6 +81,10 @@
     "impact": "A map of privilege-escalation opportunities: writable sensitive files, misconfigured sudo, SUID/SGID binaries, scheduled tasks, and stored credentials.",
     "detection": "Automated enumeration scripts like LinPEAS run many commands associated with vulnerability identification and create significant 'noise' that may trigger antivirus or security monitoring software watching for these event patterns. In some cases this will prevent the script from running or trigger an alert that the system has been compromised.",
     "artifacts": "A burst of enumeration commands (whoami, id, uname, sudo -l, find / -perm) in shell history and process-creation logs; automated enum scripts (e.g. linpeas) touching many files rapidly.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE\n| transaction host maxpause=5s\n| eval cmds=mvcount(a1)\n| where cmds>30 OR match(proctitle, \"(?i)linpeas\")\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.name:(linpeas* OR linpeas.sh) OR process.command_line:*linpeas*",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"linpeas\",\"sudo -l\",\"find / -perm\")\n| summarize enum_cmds=count() by Computer, ProcessID, bin(TimeGenerated, 2m)\n| where enum_cmds > 30\n| sort by enum_cmds desc",
+    "sigma_rules": "lnx_auditd_linpeas_enum_burst (rapid whoami/id/uname/find enumeration)",
     "evasion": "Run individual manual enumeration commands instead of automated scripts to avoid generating the volume of suspicious events that triggers security tooling.",
     "sources": [
       "HTB M02"

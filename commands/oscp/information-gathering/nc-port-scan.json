@@ -5,17 +5,34 @@
   "description": "Netcat zero-I/O mode port scan. -z connects and immediately closes without sending data. -w sets a per-connection timeout in seconds. Faster than nmap for quick spot-checks when a full scanner is overkill or unavailable.",
   "type": "command",
   "platform": "linux",
-  "requires": ["network-access"],
-  "tools": ["nc", "netcat"],
-  "tags": ["port-scan", "enumeration", "nc", "netcat", "recon", "tcp", "udp"],
+  "requires": [
+    "network-access"
+  ],
+  "tools": [
+    "nc",
+    "netcat"
+  ],
+  "tags": [
+    "port-scan",
+    "enumeration",
+    "nc",
+    "netcat",
+    "recon",
+    "tcp",
+    "udp"
+  ],
   "category": "Enumeration",
   "subcategory": "Network Discovery",
-  "certifications": ["OSCP"],
+  "certifications": [
+    "OSCP"
+  ],
   "primary_cert": "OSCP",
   "source": "PEN-200 Chapter 06: Information Gathering",
   "opsec": "moderate",
   "exam": "exam-ok",
-  "mitre": ["T1046"],
+  "mitre": [
+    "T1046"
+  ],
   "variations": [
     {
       "label": "TCP single port",
@@ -78,8 +95,15 @@
     "impact": "Confirms which ports are open before running heavier scanners. UDP scanning reveals services like NTP (123) and SNMP (161) that nmap may miss on quick scans.",
     "detection": "Firewall/IPS logs showing sequential connection attempts from the same source IP. SYN packets without subsequent data (zero-I/O) are a pattern EDR and network sensors can flag. IDS rules for rapid sequential port probes from a single source.",
     "artifacts": "Network PCAP: SYN packets from attacker IP to target across sequential ports. Firewall deny/accept logs.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (comm=\"nc\" OR comm=\"ncat\") proctitle=\"*-z*\"\n| table _time, host, proctitle\n\nindex=network\n| stats dc(dest_port) as ports by src_ip, bin(_time, 1m) | where ports>15",
+    "elastic_kql": "process.name:(nc OR ncat) AND process.args:\"-z\"",
+    "sentinel_kql": "DeviceNetworkEvents\n| where InitiatingProcessFileName in~ (\"nc\",\"ncat\")\n| summarize ports=dcount(RemotePort) by LocalIP, RemoteIP, bin(Timestamp, 1m)\n| where ports > 15\n| sort by ports desc\n// nc -z port sweep",
+    "sigma_rules": "proc_creation_netcat_port_scan (nc -z connect scan)",
     "prevention": "Host-based firewall denying unsolicited inbound connections. Network IPS rate-limiting SYN packets per source. IDS alert on sequential port probes.",
     "evasion": "-w 1 keeps connections brief, reducing window for detection. Single-port nc checks for specific services generate less alerting than a range scan. nc lacks the timing and fragmentation evasion flags nmap has.",
-    "sources": ["PEN-200 Ch 6", "MITRE T1046"]
+    "sources": [
+      "PEN-200 Ch 6",
+      "MITRE T1046"
+    ]
   }
 }

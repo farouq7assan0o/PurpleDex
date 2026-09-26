@@ -76,6 +76,10 @@
     "impact": "Domain password hashes (incl. krbtgt) via DCSync - full domain compromise.",
     "detection": "[MITRE T1003.006] Event 4662 with the replication GUIDs from a non-DC principal; the preceding certificate/PKINIT logon.",
     "artifacts": "4662 replication events; the certificate-based logon that enabled it.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where Properties=\"*1131f6aa*\" AND Account_Name!=\"*$\"\n| table _time, Computer, Account_Name, Object_Name\n\nindex=wineventlog EventCode=4768 Certificate_Thumbprint=\"*\"\n| table _time, Computer, Account_Name, Certificate_Thumbprint",
+    "elastic_kql": "event.code:\"4662\" AND winlog.event_data.Properties:*1131f6aa* AND NOT user.name:*$",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| where Properties has \"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\"\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| sort by TimeGenerated desc\n// preceded by a certificate/PKINIT logon (4768 with a CertificateThumbprint)",
+    "sigma_rules": "win_security_dcsync_replication_rights (via pass-the-certificate PKINIT)",
     "prevention": "[MITRE T1003.006] restrict replication rights and DC identities; RPC firewall for replication; harden ADCS so DC certs can't be forged; monitor 4662.",
     "evasion": "The certificate path avoids touching LSASS/credentials on hosts; DCSync from a DC-identity looks like replication.",
     "sources": [

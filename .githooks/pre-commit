@@ -1,0 +1,20 @@
+#!/bin/sh
+# Pre-commit guard for command-reference.
+# Blocks a commit when js/commands.js is out of sync with the JSON source (commands/**),
+# or when the schema is invalid. This is the tripwire for the classic data-loss bug:
+# content that exists only in the compiled bundle (a hand edit) and not in the JSON source,
+# which a later rebuild silently erases.
+#
+# Enable once (does not run automatically until you do):
+#   git config core.hooksPath .githooks
+#
+# Bypass a single commit intentionally with:  git commit --no-verify
+
+npm run --silent guard
+status=$?
+if [ "$status" -ne 0 ]; then
+  echo ""
+  echo "pre-commit BLOCKED: run 'node build-commands.js' and move any hand edits into the JSON source, then re-commit."
+  exit 1
+fi
+exit 0

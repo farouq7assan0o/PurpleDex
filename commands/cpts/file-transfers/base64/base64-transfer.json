@@ -87,6 +87,10 @@
     "impact": "A file reconstructed on the target without any download tool or new network flow - bypasses egress controls entirely.",
     "detection": "No network transfer to catch; detection shifts to the shell/command line - a very long base64 string echoed and piped to base64 -d, or [Convert]::FromBase64String in PowerShell (4104), plus the new file on disk.",
     "artifacts": "A large base64 blob in shell history / 4104 logs; the decoded file on disk; no network artifact.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*base64*-d*\" OR proctitle=\"*base64 -d*\")\n| table _time, host, auid, proctitle\n\nindex=wineventlog EventCode=4104 ScriptBlockText=\"*FromBase64String*\"\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "process.command_line:(*base64* AND *-d*) OR (event.code:\"4104\" AND powershell.file.script_block_text:*FromBase64String*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"base64 -d\",\"FromBase64String\") or ProcessCommandLine has \"base64 --decode\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// no network transfer; the long base64 blob in the command line is the signal",
+    "sigma_rules": "proc_creation_base64_decode_pipe (base64 -d / FromBase64String staging - no network artifact)",
     "prevention": "Command-line and script-block logging to catch large base64 decode operations; file-integrity monitoring for new executables; EDR on the reconstructed file's execution.",
     "evasion": "This IS an evasion of network controls; splitting the blob and integrity-checking with md5sum avoids corruption, and decoding to a non-flagged path reduces AV attention.",
     "sources": [

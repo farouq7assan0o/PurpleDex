@@ -88,6 +88,10 @@
     "impact": "Reveals data share names (targets for credential hunting, sensitive file access). Identifies DCs via SYSVOL/NETLOGON presence. Admin shares confirm host is domain-joined and accepting SMB admin connections — a prerequisite for PsExec, WMI, and PTH attacks.",
     "detection": "Windows Security Event 5140 (network share was accessed) on the target when a share is opened (not just listed). Event 4624 (logon) type 3 (network) on the target when net view authenticates. SIEM: alert on rapid sequential share enumeration from a single source, especially from non-admin hosts.",
     "artifacts": "On target: Event 5140, Event 4624 type 3. On network: SMB NetrShareEnum RPC call visible in PCAP. SIEM: browsing activity from anomalous source.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5140\n| stats dc(Computer) as hosts by Account_Name, Source_Address, bin(_time, 10m)\n| where hosts>10",
+    "elastic_kql": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5140\n| summarize hosts=dcount(Computer) by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 10\n| sort by hosts desc\n// net view SMB share enumeration (one-to-many tree-connects)",
+    "sigma_rules": "win_security_smb_share_enum_fanout (net view share discovery)",
     "prevention": "Disable NetBIOS over TCP/IP where not required. Enable SMB signing. Restrict NTLM to domain accounts only. Disable the Server service on hosts that do not need to share files. Monitor Event 5140 for unusual share browsing.",
     "evasion": "net view is a Windows LOLBAS — indistinguishable from legitimate admin activity. Single queries to one host at a time avoid sequential-scan detection. Using during business hours blends with normal share browsing patterns.",
     "sources": [

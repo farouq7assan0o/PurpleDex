@@ -93,6 +93,10 @@
     "impact": "Remote system information and, with credentials, remote command execution.",
     "detection": "Monitor for processes performing network enumeration by correlating process creation, socket connections, and sequential destination IP probing within a time window. Unusual port scanning patterns or banner-grabbing activity from internal hosts can indicate post-compromise discovery.",
     "artifacts": "WinRM HTTP(S) requests and Windows logon events (4624) for the authenticating account.",
+    "splunk_spl": "index=network (dest_port=5985 OR dest_port=5986)\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "event.category:network AND destination.port:(5985 OR 5986)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (5985, 5986)\n| summarize count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where count_ > 5\n| sort by count_ desc\n// WinRM/WMI service enumeration on 5985/5986",
+    "sigma_rules": "net_winrm_enumeration (WinRM/WMI probing)",
     "prevention": "Close unnecessary ports and services to prevent risk of discovery and potential exploitation. Use network intrusion detection/prevention systems to detect and prevent remote service scans. Ensure proper network segmentation to protect critical servers and devices.",
     "sources": [
       "MITRE T1046"

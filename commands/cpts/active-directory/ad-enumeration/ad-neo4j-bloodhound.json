@@ -73,6 +73,10 @@
     "impact": "Visualised, queryable attack paths across the domain - offline analysis on the attacker box.",
     "detection": "Runs on the attacker host analysing already-collected data - no target interaction at this step.",
     "artifacts": "A local neo4j database of the collected graph; no victim-side artifact.",
+    "splunk_spl": "# neo4j/BloodHound GUI analysis runs on the attacker host against collected data.\n# No target-side telemetry at analysis time; detect the preceding SharpHound/bloodhound-python collection.",
+    "elastic_kql": "/* offline graph analysis; detect the collection phase (SharpHound LDAP burst) */",
+    "sentinel_kql": "// BloodHound/neo4j analysis is offline on the attacker host - no target-side logs.\n// Detect the collection phase: SecurityEvent EventID 4662 bulk LDAP reads from one source.",
+    "sigma_rules": "no target-side rule (offline BloodHound analysis; detect SharpHound collection)",
     "prevention": "Prevention is upstream (detect the collection); this analysis is offline and undetectable by the victim.",
     "sources": [
       "HTB M13",

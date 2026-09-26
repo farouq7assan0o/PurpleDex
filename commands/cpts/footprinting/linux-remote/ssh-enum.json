@@ -92,6 +92,10 @@
     "impact": "SSH version and supported authentication methods (and, on some versions, username enumeration) — informing brute-force or CVE matching.",
     "detection": "Monitor for processes performing network enumeration by correlating process creation, socket connections, and sequential destination IP probing within a time window. Unusual port scanning patterns or banner-grabbing activity from internal hosts can indicate post-compromise discovery.",
     "artifacts": "A connection and banner read in the sshd log; source IP recorded by sshd.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"ssh*\"\n| table _time, host, auid, proctitle\n\nindex=network dest_port=22\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "process.name:ssh* OR (event.category:network AND destination.port:22)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 22\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// SSH banner/algorithm/auth-method enumeration on port 22",
+    "sigma_rules": "net_service_enumeration_ssh (SSH banner/algorithm/auth-method enumeration on port 22)",
     "prevention": "Close unnecessary ports and services to prevent risk of discovery and potential exploitation. Use network intrusion detection/prevention systems to detect and prevent remote service scans. Ensure proper network segmentation to protect critical servers and devices.",
     "sources": [
       "MITRE T1046"

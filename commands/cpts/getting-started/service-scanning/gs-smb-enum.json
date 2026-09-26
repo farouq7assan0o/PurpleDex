@@ -75,6 +75,10 @@
     "impact": "A list of shares and readable files — often exposing credentials or sensitive data — plus the server version for CVE matching (e.g. EternalBlue).",
     "detection": "[MITRE T1135 AN0513] Process or script enumerates network shares via CLI (net view, net share, PowerShell Get-SmbShare/WMI) or OS APIs (NetShareEnum, srvsvc.NetShareEnumAll RPC) → bursts of outbound SMB/RPC connections (port 445/139) to many hosts within a short window → optional follow-on file listing or copy operations.",
     "artifacts": "SMB session-setup and tree-connect events (Windows 5140/5145 with share auditing enabled); a connection to 445 in network logs.",
+    "splunk_spl": "index=network (dest_port=445 OR dest_port=139)\n| stats count by src_ip | where count>10",
+    "elastic_kql": "event.category:network AND destination.port:(139 OR 445)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (139, 445)\n| summarize count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where count_ > 10\n| sort by count_ desc\n// SMB share/version enumeration (nmap smb-* / smbclient)",
+    "sigma_rules": "net_smb_enumeration (SMB share/OS discovery)",
     "prevention": "Enforce SMB signing — by default 'Message signing enabled but not required', which leaves sessions vulnerable to relay attacks. Require authentication for all shares, disable SMBv1, and audit share permissions to remove unnecessary access.\n\n[MITRE T1135 M1028] Enable Windows Group Policy setting 'Do Not Allow Anonymous Enumeration of SAM Accounts and Shares' to limit which users can enumerate network shares. Enforce least-privilege access to shares so only authorized users can list them.",
     "sources": [
       "HTB M02",

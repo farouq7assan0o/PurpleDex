@@ -74,6 +74,10 @@
     "impact": "The exact service and version on that port, for precise CVE matching.",
     "detection": "[MITRE T1046 AN1583] Monitor for protocol-specific probe sequences characteristic of version detection (unusual/malformed request strings followed by banner reads). Service version scanning generates distinct traffic patterns distinguishable from normal client connections.",
     "artifacts": "Version-probe payloads directed at the single port in IDS logs.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap -sV version detection on a single port",
+    "sigma_rules": "net_port_scan_activity (nmap -sV version detection on a single port)",
     "prevention": "[MITRE T1046] Minimize service banner verbosity to reduce information disclosure — configure services not to reveal version strings in banners. Remove or disable services that do not need to be exposed externally.",
     "evasion": "Probing a single known-open port with -sV is far quieter than a full -sV sweep across all ports — it minimises version-probe traffic and the associated IDS signature.",
     "sources": [

@@ -75,6 +75,10 @@
     "impact": "The full BloodHound attack-path graph, collected from Linux.",
     "detection": "[MITRE T1087.002] bulk LDAP queries (4662 / Defender for Identity) and SMB enumeration from one source; the JSON/zip output.",
     "artifacts": "Collected JSON/zip; mass LDAP + SMB queries.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Access_Mask=0x100\n| stats count by Account_Name, Client_Address, bin(_time, 5m)\n| where count>50\n\nindex=zeek sourcetype=\"zeek:ldap\"\n| stats count by id.orig_h | where count>100",
+    "elastic_kql": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| summarize reads=count() by SubjectUserName, IpAddress, bin(TimeGenerated, 5m)\n| where reads > 50\n| sort by reads desc\n// bloodhound.py: massive LDAP+SMB collection burst from a Linux host",
+    "sigma_rules": "win_security_ldap_recon (bloodhound-python bulk LDAP enumeration)",
     "prevention": "Defender for Identity recon detection; LDAP anomaly monitoring; least privilege.",
     "evasion": "Collect only needed methods (--collectionmethod) and throttle to reduce the query burst.",
     "sources": [

@@ -101,6 +101,10 @@
     "impact": "Access to services as the ticket's principal without a password (PtT).",
     "detection": "[MITRE T1550.003] Anomalous Kerberos activity: a TGS used without a preceding TGT the DC issued; tickets with unusual lifetimes/encryption (RC4 where AES is standard); 4768/4769 anomalies; a ticket used from an unexpected host.",
     "artifacts": "A ticket injected into the LSA session (klist shows it); service access as that principal.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769\n| join type=left Account_Name [search index=wineventlog EventCode=4768 | stats count by Account_Name]\n| where isnull(count)\n| table _time, Computer, Account_Name, Service_Name, Client_Address",
+    "elastic_kql": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| project rtime=TimeGenerated, Computer, TargetUserName, ServiceName, IpAddress\n| join kind=leftanti (SecurityEvent | where EventID == 4768 | project TargetUserName) on TargetUserName\n| sort by rtime desc\n// kerberos::ptt injects a ticket: TGS use without a DC-issued TGT, from an unexpected host",
+    "sigma_rules": "win_security_pass_the_ticket_anomaly (TGS without prior TGT), proc_creation_win_hktl_mimikatz_command_line",
     "prevention": "[MITRE T1550.003 M1026] limit privileged ticket exposure and reset krbtgt (twice) after compromise; enforce AES; monitor for forged/anomalous tickets; Protected Users group for sensitive accounts.",
     "evasion": "Passing a legitimately-stolen ticket produces no auth failures and reuses valid Kerberos - realistic ticket lifetimes/AES make it blend with normal traffic.",
     "sources": [

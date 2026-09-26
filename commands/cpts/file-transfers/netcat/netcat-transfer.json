@@ -86,6 +86,10 @@
     "impact": "Files moved over an arbitrary TCP port; with ncat --ssl the channel is encrypted.",
     "detection": "A raw TCP connection on an unusual port carrying file data; nc/ncat in process logs; new file on disk. Plain nc traffic is inspectable; ncat --ssl is not.",
     "artifacts": "An nc/ncat process; a connection on the chosen port; the transferred file.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (comm=\"nc\" OR comm=\"ncat\")\n| table _time, host, auid, proctitle\n\nindex=sysmon EventCode=3 Image=\"*nc*\"\n| table _time, Computer, DestinationIp, DestinationPort",
+    "elastic_kql": "process.name:(nc OR ncat) AND process.args:(*-l* OR *-p*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"nc\",\"ncat\",\"nc.exe\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where InitiatingProcessFileName in~ (\"nc\",\"ncat\") | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=strcat(RemoteIP, \":\", tostring(RemotePort)))\n| sort by Timestamp desc\n// raw TCP file transfer on an unusual port; plain nc is inspectable",
+    "sigma_rules": "proc_creation_netcat_file_transfer (nc listener/sender on a non-standard port)",
     "prevention": "[MITRE T1105 M1037] Egress filtering (restrict outbound ports); IDS/IPS on raw transfers; application control/EDR flagging nc/ncat execution.",
     "evasion": "Use a common-looking port (443) and ncat --ssl to encrypt and blend with TLS; short-lived connections reduce exposure.",
     "sources": [

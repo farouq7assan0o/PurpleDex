@@ -131,6 +131,10 @@
     "impact": "DNS records (A/MX/NS/TXT/CNAME) mapping the target's infrastructure and mail/hosting providers.",
     "detection": "Zone transfer attempts (DNS AXFR requests) from unauthorized IPs can be logged and alerted on. General DNS reconnaissance has a high false positive rate; detection efforts are more effective when focused on related Initial Access stages that follow the reconnaissance.",
     "artifacts": "DNS queries in resolver logs; high-volume querying stands out in the authoritative server's logs.",
+    "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count by src_ip, bin(_time, 1m)\n| where count>50",
+    "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
+    "sentinel_kql": "DnsEvents\n| summarize queries=count() by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50\n| sort by queries desc\n// dig record queries against the target's authoritative server",
+    "sigma_rules": "net_dns_enumeration (dig record queries against the target's authoritative server)",
     "prevention": "Implement DNS zone transfer policies that enforce a validated list of servers permitted for AXFR transfers. Restrict zone transfers to authorized secondary DNS servers only. Remove DNS records for internal-only infrastructure from public-facing DNS.",
     "evasion": "Spread queries over time and rotate source IPs to stay under server-side rate limits; use third-party passive-DNS databases (SecurityTrails, DNSDumpster) instead of direct queries to avoid generating traffic the target's DNS servers log.",
     "sources": [

@@ -81,6 +81,10 @@
     "impact": "Discovery of hidden directories, files, admin portals, or subdomains not linked publicly — fresh attack surface.",
     "detection": "Monitor for suspicious network traffic indicative of scanning: large quantities of 404 responses originating from a single source in a short time window, or sequential probing of directory paths. Web application firewalls can be configured to detect and rate-limit this pattern.",
     "artifacts": "A high volume of sequential HTTP 404s (or DNS queries) from one source in access logs; a non-browser user-agent; WAF/bot-detection alerts.",
+    "splunk_spl": "index=web sourcetype=access_combined\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+    "elastic_kql": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+    "sentinel_kql": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// gobuster application fingerprinting/enumeration (path burst, scanner UA)",
+    "sigma_rules": "web_app_scanner_gobuster (gobuster fingerprinting request pattern)",
     "prevention": "Remove or disable access to systems, resources, and infrastructure not explicitly required to be externally available. Minimize the amount and sensitivity of data and paths exposed to external parties. Ensure old and unused web paths are removed rather than just unlinked.",
     "evasion": "Slow the request rate, set a realistic user-agent, and spread requests over time to stay under WAF, rate-limit, and single-source-volume thresholds.",
     "sources": [

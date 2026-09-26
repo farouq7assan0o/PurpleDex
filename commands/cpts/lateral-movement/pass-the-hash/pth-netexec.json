@@ -87,6 +87,10 @@
     "impact": "Authenticated action across many hosts via PtH - fast lateral movement/triage.",
     "detection": "[MITRE T1550.002] Event 4624 Logon Type 3 with Authentication Package NTLM and LogonProcessName NtLmSsp, with NO preceding interactive logon for that account; the same NTLM hash authenticating from an unusual source; 4672 for privileged PtH.",
     "artifacts": "An NTLM network logon (4624 type 3) from netexec -H; a session as the target user without their plaintext password.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM Logon_Process=NtLmSsp\n| stats dc(Computer) as hosts by Account_Name, Source_Network_Address\n| where hosts>3",
+    "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM AND winlog.event_data.LogonProcessName:NtLmSsp",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"NTLM\" and LogonProcessName == \"NtLmSsp\"\n| summarize hosts=dcount(Computer) by TargetUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 3\n| sort by hosts desc\n// netexec -H sprays PtH across many hosts from one source",
+    "sigma_rules": "win_security_pass_the_hash_ntlm, net_smb_pth_fanout (netexec -H across hosts)",
     "prevention": "Enable Credential Guard and disable NTLM where possible; [MITRE T1550.002 M1026 Privileged Account Management] never reuse local-admin passwords (LAPS) so one hash doesn't unlock the network; restrict lateral admin logons; monitor NTLM auth.",
     "evasion": "PtH uses valid material so no password failures occur - it blends with normal NTLM auth; using an allowed source host and common hours reduces suspicion.",
     "sources": [

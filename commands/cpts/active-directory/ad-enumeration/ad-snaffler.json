@@ -73,6 +73,10 @@
     "impact": "A prioritised list of secret-bearing files across the domain's shares.",
     "detection": "[MITRE T1135/T1552.001] one host enumerating many shares and opening many files (SMB access spikes / 5145); Snaffler's fan-out pattern.",
     "artifacts": "Mass SMB share/file access from one host; the results log.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5140\n| stats dc(Computer) as hosts by Account_Name, Source_Address, bin(_time, 10m)\n| where hosts>10",
+    "elastic_kql": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5140\n| summarize hosts=dcount(Computer) by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 10\n| sort by hosts desc\n// Snaffler SMB share enumeration (one-to-many tree-connects)",
+    "sigma_rules": "win_security_smb_share_enum_fanout (Snaffler share discovery)",
     "prevention": "Least-privilege share ACLs; share-access auditing; alert on one-to-many share crawling; honeytoken files.",
     "evasion": "Throttle and scope the crawl to fewer shares to reduce the fan-out signature.",
     "sources": [

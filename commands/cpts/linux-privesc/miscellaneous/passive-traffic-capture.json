@@ -31,11 +31,11 @@
       "command": "# net-creds / PCredz over live traffic or a pcap"
     },
     {
-      "label": "Process-args credential sniffing \u2014 watch for cleartext passwords in ps output",
+      "label": "Process-args credential sniffing — watch for cleartext passwords in ps output",
       "command": "watch -n 1 \"ps -aux | grep pass\"\n# Catches scripts/tools passing passwords on the command line, e.g.:\n# sshpass -p 'Lab123' ssh -t eve@127.0.0.1 'sleep 5;exit'"
     },
     {
-      "label": "sudo tcpdump on loopback \u2014 capture plaintext creds crossing localhost",
+      "label": "sudo tcpdump on loopback — capture plaintext creds crossing localhost",
       "command": "sudo tcpdump -i lo -A | grep \"pass\"\n# Works when tcpdump is in sudoers; captures local auth traffic"
     }
   ],
@@ -80,6 +80,10 @@
     "impact": "Credential capture from unencrypted protocols: FTP passwords, HTTP Basic Auth, database connection strings, SMTP auth. Enables lateral movement and further escalation.",
     "detection": "tcpdump executed by non-root user (capability or sudo). Long-running capture process from low-privileged user. Auditd: capture of traffic on production interfaces by non-admin.",
     "artifacts": "Auditd: tcpdump/tcpdump executed by non-root | Process log: long-running packet capture | PCAP file written to disk by non-root user",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"tcpdump\"\n| where auid!=0\n| table _time, host, auid, exe, proctitle",
+    "elastic_kql": "process.name:(tcpdump OR tshark OR dumpcap) AND NOT user.name:root",
+    "sentinel_kql": "Syslog\n| where ProcessName == \"tcpdump\" or SyslogMessage has \"tcpdump\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// long-running packet capture launched by a non-admin (sudo/capability)",
+    "sigma_rules": "lnx_auditd_packet_capture_nonroot (tcpdump by a low-privileged user)",
     "prevention": "Migrate all services to encrypted protocols (HTTPS, SFTP, encrypted database connections). Remove tcpdump setuid bit and restrict via capabilities or sudo to specific use cases. Use network segmentation to isolate sensitive traffic. Deploy 802.1X to prevent passive sniffing on switched networks.",
     "misconfiguration": "Services still using cleartext protocols (FTP, HTTP, Telnet). tcpdump has setuid bit set or is granted via loose sudo rule, enabling non-root users to capture any traffic on the host.",
     "vulnerable_config": "# tcpdump setuid (risky)\n-rwsr-xr-x 1 root root /usr/bin/tcpdump\n\n# Cleartext FTP in use\n# FTP credentials visible in packet capture\n# No TLS on internal database connections",

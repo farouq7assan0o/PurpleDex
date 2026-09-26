@@ -119,6 +119,10 @@
     "impact": "A covert C2/tunnel that works where only DNS is allowed out - control and data exfil past strict egress filtering.",
     "detection": "[MITRE T1572] a high volume of DNS queries with long/encoded labels and unusual record types (TXT/NULL/CNAME) to one domain; high query entropy; a client resolving far more than baseline; DNS-tunneling signatures.",
     "artifacts": "Anomalous DNS query volume/entropy to the attacker domain; the dnscat2 client process.",
+    "splunk_spl": "index=dns sourcetype=\"stream:dns\" (record_type=TXT OR record_type=NULL OR record_type=CNAME)\n| eval qlen=len(query)\n| stats count avg(qlen) as avg_len by src_ip, query{}\n| where count>100 AND avg_len>40",
+    "elastic_kql": "dns.question.type:(TXT OR NULL OR CNAME) AND dns.question.name:*",
+    "sentinel_kql": "DnsEvents\n| where QueryType in (\"TXT\",\"NULL\",\"CNAME\")\n| extend qlen = strlen(Name)\n| summarize queries=count(), avg_len=avg(qlen) by ClientIP, bin(TimeGenerated, 5m)\n| where queries > 100 and avg_len > 40\n| sort by queries desc\n// high volume of long, high-entropy TXT/NULL queries to one domain = DNS tunneling",
+    "sigma_rules": "net_dns_tunneling_dnscat2 (long encoded labels, TXT/NULL burst - T1572)",
     "prevention": "[MITRE T1572 M1037 Filter Network Traffic] force internal clients through controlled resolvers and inspect DNS; [M1031] IDS/DNS-tunnel detection (entropy, volume, record-type analysis); block or sinkhole unknown authoritative domains.",
     "evasion": "Low-and-slow queries, common record types, and a benign-looking domain reduce the tunneling signature; DNS-over-HTTPS further hides it.",
     "sources": [

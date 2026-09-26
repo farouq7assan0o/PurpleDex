@@ -143,6 +143,10 @@
     "impact": "Full system inventory: OS version, running processes, installed packages, network config, user accounts — enough to identify exploitable services without an active scanner.",
     "detection": "SNMP walk generates many GET-NEXT requests in rapid succession against all OIDs. Visible in network capture or SNMP agent logs as sequential OID traversal from a single source.",
     "artifacts": "Network traffic on UDP 161 with sequential OID requests. SNMP agent access log entries.",
+    "splunk_spl": "index=network dest_port=161 protocol=udp\n| stats count dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where count>20 OR hosts>10",
+    "elastic_kql": "event.category:network AND destination.port:161 AND network.transport:udp",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 161\n| summarize probes=count(), hosts=dcount(RemoteIP) by LocalIP, bin(Timestamp, 1m)\n| where probes > 20 or hosts > 10\n| sort by probes desc\n// snmpwalk SNMP community/OID enumeration on UDP 161",
+    "sigma_rules": "net_snmp_enumeration_snmpwalk (SNMP community brute / OID walk)",
     "prevention": "Upgrade to SNMPv3. Disable SNMP if not used. Restrict SNMP to management VLAN. Audit snmpd.conf for world-readable community strings.",
     "evasion": "Query specific high-value OIDs individually rather than walking the full tree to reduce request volume.",
     "sources": [

@@ -104,6 +104,10 @@
     "impact": "Server version, instances, databases, and — with credentials or weak config — data access or command execution (xp_cmdshell).",
     "detection": "Monitor for processes performing network enumeration by correlating process creation, socket connections, and sequential destination IP probing within a time window. Unusual port scanning patterns or banner-grabbing activity from internal hosts can indicate post-compromise discovery.",
     "artifacts": "Connection and login attempts in SQL Server logs; traffic to 1433.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"mssqlclient*\"\n| table _time, host, auid, proctitle\n\nindex=network dest_port=1433\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "process.name:mssqlclient* OR (event.category:network AND destination.port:1433)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 1433\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// MSSQL enumeration on port 1433",
+    "sigma_rules": "net_service_enumeration_mssqlclient (MSSQL enumeration on port 1433)",
     "prevention": "Close unnecessary ports and services to prevent risk of discovery and potential exploitation. Use network intrusion detection/prevention systems to detect and prevent remote service scans. Ensure proper network segmentation to protect critical servers and devices.",
     "sources": [
       "MITRE T1046"

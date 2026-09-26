@@ -68,6 +68,10 @@
     "impact": "Native, trusted AD cmdlets ready for stealthy enumeration.",
     "detection": "[MITRE T1059.001] PowerShell module import / script-block logging (4104); loading of the AD module DLL.",
     "artifacts": "Module import in PowerShell logs; the ActiveDirectory module loaded.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Import-Module ActiveDirectory*\\\" OR ScriptBlockText=\\\"*addsadministration*\\\")\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Module ActiveDirectory* OR *addsadministration*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Import-Module ActiveDirectory\", \"addsadministration\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_admodule_recon, win_security_ldap_recon",
     "prevention": "Script-block + module logging; constrained language mode; the module itself is legitimate, so detection is behavioural.",
     "evasion": "The AD module is a signed Microsoft tool, so its cmdlets blend with admin activity better than third-party tools.",
     "sources": [

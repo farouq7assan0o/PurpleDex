@@ -72,6 +72,10 @@
     "impact": "The SPN inventory (roasting targets) gathered with a trusted built-in.",
     "detection": "[MITRE T1558.003] LDAP queries filtering on servicePrincipalName / userAccountControl (Event 4662; Defender for Identity recon); one host reading roastable-account attributes. setspn.exe execution in process logs (4688).",
     "artifacts": "setspn.exe command line; LDAP SPN query.",
+    "splunk_spl": "index=sysmon EventCode=1 Image=\"*setspn.exe\" CommandLine=\"*-Q*\"\n| table _time, Computer, User, CommandLine\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Properties=\"*servicePrincipalName*\"\n| table _time, Computer, Account_Name",
+    "elastic_kql": "event.code:\"1\" AND process.name:setspn.exe AND process.args:\"-Q\"",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"setspn.exe\" and ProcessCommandLine has \"-Q\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "proc_creation_win_setspn_query (setspn -Q SPN enumeration)",
     "prevention": "Use 100+ character passwords or gMSA for service accounts; disable RC4 (force AES); audit and remove unused SPNs; deploy honeypot SPN accounts to catch roasting; Defender for Identity flags mass TGS requests.",
     "evasion": "setspn.exe is a trusted built-in, blending better than PowerView/Rubeus.",
     "sources": [

@@ -74,6 +74,10 @@
     "impact": "NetNTLM hashes captured via a compiled tool that avoids PowerShell logging.",
     "detection": "[MITRE T1557.001] LLMNR/NBT-NS/mDNS responses from an unexpected host; a spoofed name-resolution answer; NetNTLM auth to an unknown host. Honeypot name-lookups (queries for non-existent hosts) that get answered reveal poisoning; Defender for Identity flags it. A non-PowerShell process emitting spoofed name-resolution answers.",
     "artifacts": "Spoofed answers; captured hashes; the Inveigh binary.",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\"*Inveigh*\" OR CommandLine=\"*Inveigh*\")\n| table _time, Computer, User, CommandLine\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM\n| table _time, Computer, Account_Name, Source_Network_Address",
+    "elastic_kql": "event.code:\"1\" AND process.command_line:*Inveigh*",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"Inveigh\" or ProcessCommandLine has \"Inveigh\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// a non-PowerShell process emitting spoofed LLMNR/NBNS answers",
+    "sigma_rules": "net_llmnr_nbns_poisoning (Inveigh spoofed name-resolution responses)",
     "prevention": "Disable LLMNR, NBT-NS, and mDNS (GPO/registry); require SMB signing to block relay; segment; deploy honeytoken name-lookups to catch poisoners; enforce authenticated DNS.",
     "evasion": "Compiled execution avoids PowerShell/AMSI logging; selective spoofing reduces the footprint.",
     "sources": [

@@ -117,6 +117,10 @@
     "secure_config": "# Restrict share ACLs to least privilege:\nGet-SmbShareAccess -Name 'IT'\nRevoke-SmbShareAccess -Name 'IT' -AccountName 'Authenticated Users' -Force\nGrant-SmbShareAccess -Name 'IT' -AccountName 'CORP\\IT-Staff' -AccessRight Read -Force\n# Remove secrets from shares; use a vault (LAPS/gMSA/CyberArk). Purge GPP cpassword (KB2962486).",
     "detection": "Mass SMB reads / directory enumeration across many shares from one host (Sysmon 3 + Windows 5140/5145 share-access auditing). MDI 'Data exfiltration/enumeration' analytics. Honeyfiles with named-pipe/canary alerts on access.",
     "artifacts": "Event 5140/5145 (network share access) bursts | Sysmon 3 to 445 many hosts | Access to canary/honeyfiles",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145 (Relative_Target_Name=\"*pass*\" OR Relative_Target_Name=\"*.config\" OR Relative_Target_Name=\"*.xml\")\n| stats dc(Computer) as hosts count by Account_Name, Source_Address\n| where hosts>5\n\nindex=wineventlog EventCode=4104 ScriptBlockText=\"*Find-InterestingDomainShareFile*\"\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"5145\" AND winlog.event_data.RelativeTargetName:(*pass* OR *.config OR *.xml OR *.vbs)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5145 and (RelativeTargetName has \"pass\" or RelativeTargetName endswith \".config\" or RelativeTargetName endswith \".xml\")\n| summarize hosts=dcount(Computer), count() by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 5\n| sort by count_ desc",
+    "sigma_rules": "posh_ps_powerview_share_file_hunt, win_security_share_file_enum (5145 bursts)",
     "prevention": "Least-privilege share ACLs; remove cleartext secrets from shares; deploy LAPS/gMSA; enable object-access auditing (5145); deploy honeyfiles; purge GPP cpassword.",
     "evasion": "Target a curated host/share list instead of the whole domain; filter by extension to reduce reads; run during business hours to blend with normal file activity.",
     "sources": [

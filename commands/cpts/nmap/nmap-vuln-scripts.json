@@ -85,6 +85,10 @@
     "impact": "A list of likely vulnerabilities matched to the running service versions, prioritising which exploits to attempt next.",
     "detection": "NSE vulnerability scripts generate distinctive scan traffic: rapid sequential probes, requests to known sensitive paths (e.g., /wp-login.php, /readme.html), and service-specific exploit checks. IDS/IPS signatures and WAF rules can detect and block these patterns.\n\n[MITRE T1595.002] Monitor and analyze traffic patterns for protocol anomalies that do not follow expected standards (extraneous packets, anomalous syntax). Monitor network data for uncommon data flows — processes utilizing the network that do not normally have network communication or have never been seen before are suspicious.",
     "artifacts": "A burst of vulnerability-probe requests (often exploit-like payloads) to the target — frequently IDS-signatured; the NSE/scanner scripts recognised by IDS.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap --script vuln NSE vulnerability probing",
+    "sigma_rules": "net_port_scan_activity (nmap --script vuln NSE vulnerability probing)",
     "prevention": "[MITRE T1595.002 M1056] This technique cannot be easily mitigated with preventive controls since it is based on behaviors performed outside of enterprise defenses. Efforts should focus on minimizing the amount and sensitivity of data available to external parties.",
     "sources": [
       "HTB M03",

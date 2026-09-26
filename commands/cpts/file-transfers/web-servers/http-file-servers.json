@@ -91,6 +91,10 @@
     "impact": "A staging point from which the target pulls tooling; pairs with any download method.",
     "detection": "Outbound HTTP from the target to an unusual/external IP hosting files; the download tool's request and UA in proxy logs; new file on disk on the target side.",
     "artifacts": "An outbound HTTP GET to the attacker's server; access-log entries on the attacker side; the fetched file on the target.",
+    "splunk_spl": "index=proxy OR index=network (dest_port=8000 OR dest_port=8080)\n| where match(uri_path, \"\\\\.(exe|sh|ps1|dll|bin)$\")\n| table _time, src_ip, dest_ip, uri_path\n\nindex=linux sourcetype=\"linux:auditd\" comm=\"wget\" OR comm=\"curl\"\n| table _time, host, proctitle",
+    "elastic_kql": "event.category:network AND destination.port:(8000 OR 8080) AND network.direction:outbound",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (8000, 8080, 8888) and RemoteIPType == \"Public\"\n| where InitiatingProcessFileName in~ (\"wget\",\"curl\",\"powershell.exe\",\"certutil.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort\n| sort by Timestamp desc\n// outbound GET to a python http.server hosting tools",
+    "sigma_rules": "net_download_from_python_http_server (fetch from an ad-hoc HTTP file server)",
     "prevention": "[MITRE T1105 M1037 Filter Network Traffic] Use web content filtering to block risky file types (.exe) and whitelist domains (the module scenario shows GitHub/Dropbox/Drive blocked); [M1031 Network Intrusion Prevention] inspect and block transfers at IDS/IPS. Apply application control (WDAC/AppLocker) to block download cradles/LOLBins, and AV/EDR to catch known tooling.",
     "evasion": "Serve over HTTPS on 443 from a domain that passes web filtering; the server itself is attacker-side so target-visible signal is just the download.",
     "sources": [

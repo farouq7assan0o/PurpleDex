@@ -95,6 +95,10 @@
     "impact": "User, group, and domain enumeration via MS-RPC (querydispinfo, enumdomusers) without credentials.",
     "detection": "[MITRE T1087.002 AN0363] Adversary enumeration of domain accounts using net.exe, PowerShell, WMI, or LDAP queries from non-domain controllers or non-admin endpoints. [AN0364] Domain account enumeration using ldapsearch, samba tools (wbinfo -u), or winbindd lookups.",
     "artifacts": "RPC bind and query operations in server logs; an anonymous SMB session record.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Account_Name=\"ANONYMOUS LOGON\"\n| table _time, Computer, Source_Network_Address",
+    "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and TargetUserName =~ \"ANONYMOUS LOGON\"\n| project TimeGenerated, Computer, IpAddress\n| sort by TimeGenerated desc\n// rpcclient MS-RPC enumeration over a null session",
+    "sigma_rules": "win_security_anonymous_logon_rpc_enum (rpcclient)",
     "prevention": "Disable null sessions and anonymous RPC access. Set 'restrict anonymous = 2' in smb.conf and ensure 'usershare allow guests = no' to prevent unauthenticated RPC binding.\n\n[MITRE T1087.002 M1028] Prevent administrator accounts from being enumerated when an application is elevating through UAC. Configure via GPO: Computer Configuration > Administrative Templates > Windows Components > Credential User Interface: 'Enumerate administrator accounts on elevation' → Disabled.",
     "sources": [
       "HTB M04",

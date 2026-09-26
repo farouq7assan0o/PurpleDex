@@ -113,6 +113,10 @@
     "impact": "T1592.002 Gather Victim Host Information: Software + T1140 Deobfuscate/Decode Information. Recovers hidden API endpoints, hardcoded secrets/keys/JWTs, and client-side logic - directly expands attack surface and can yield immediate credential/API access.",
     "detection": "Largely client-side (no server signal for beautifying). Follow-on requests to newly-discovered hidden endpoints may appear in access logs. Hardcoded-key reuse from a client can be detected by anomalous key usage.",
     "artifacts": "Requests to endpoints only referenced inside JS; use of API keys that were embedded in client code.",
+    "splunk_spl": "# JavaScript deobfuscation is offline analysis on the tester host (client-side JS retrieved from the app).\n# No server-side telemetry beyond the normal page/script GET requests.",
+    "elastic_kql": "/* offline JS analysis; only the normal script GET is logged server-side */",
+    "sentinel_kql": "// Deobfuscating client-side JavaScript is offline analysis on the tester host.\n// The only server-side trace is the ordinary GET for the .js file in W3CIISLog.",
+    "sigma_rules": "no target-side rule (offline JavaScript deobfuscation)",
     "prevention": "Never ship secrets/keys in client-side code - keep them server-side. Do not rely on obfuscation for security. Enforce all authorization server-side (client checks are advisory). Rotate any key ever exposed in client code. Scope client API keys minimally.",
     "evasion": "Purely local analysis - nothing to evade until you act on the findings; then throttle/scope requests to discovered endpoints.",
     "sources": [

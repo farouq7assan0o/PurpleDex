@@ -68,6 +68,10 @@
     "impact": "A portable vulnerability report (XLSX) for the assessment deliverable.",
     "detection": "None on the target side - the export is local to the scanner and generates no target traffic.",
     "artifacts": "The exported report file on the scanner host; no victim-side evidence.",
+    "splunk_spl": "# openvasreporting converts an existing scan XML to xlsx on the scanner host.\n# No target traffic is generated, so there is no victim-side telemetry.",
+    "elastic_kql": "/* local report export; no target-side event to match */",
+    "sentinel_kql": "// OpenVAS report export runs locally on the scanner and generates no target traffic.\n// The exported file exists only on the scanner host; no victim-side evidence.",
+    "sigma_rules": "no target-side rule (local OpenVAS report export)",
     "sources": [
       "HTB M06"
     ],

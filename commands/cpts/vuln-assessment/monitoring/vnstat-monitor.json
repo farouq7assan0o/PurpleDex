@@ -64,6 +64,10 @@
     "impact": "Awareness of scan bandwidth and footprint, helping the tester stay under rate-based detection thresholds and avoid disrupting the target network.",
     "detection": "None on the target - vnstat only reads local interface counters and sends nothing to the target.",
     "artifacts": "No victim-side evidence; a local vnstat database on the tester's host.",
+    "splunk_spl": "# vnstat reads local interface byte counters only.\n# No packets are sent to any target, so there is no victim-side telemetry.\n# Detect the sniffing position instead (promiscuous NIC, ARP/LLMNR poisoning).",
+    "elastic_kql": "/* vnstat is local interface accounting; no target-side event */",
+    "sentinel_kql": "// vnstat only reads local interface counters and transmits nothing.\n// No victim-side evidence; a local vnstat database exists on the tester's host.",
+    "sigma_rules": "no target-side rule (vnstat local traffic accounting)",
     "sources": [
       "HTB M06"
     ],

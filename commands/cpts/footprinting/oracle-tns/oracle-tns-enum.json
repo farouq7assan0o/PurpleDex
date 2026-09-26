@@ -96,6 +96,10 @@
     "impact": "SID/service names and, via well-known default credentials, database access.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "TNS listener connection and query entries in Oracle listener logs.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"tnscmd*\"\n| table _time, host, auid, proctitle\n\nindex=network dest_port=1521\n| stats count by src_ip, dest_ip | where count>5",
+    "elastic_kql": "process.name:tnscmd* OR (event.category:network AND destination.port:1521)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 1521\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// Oracle TNS listener enumeration on port 1521",
+    "sigma_rules": "net_service_enumeration_tnscmd (Oracle TNS listener enumeration on port 1521)",
     "prevention": "Change all default Oracle passwords immediately after installation — SYS, SYSTEM, DBSNMP, and all other built-in accounts. Oracle includes a built-in encryption mechanism for data transmission; ensure it is enabled. Audit and lock/disable unused Oracle accounts.\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "sources": [
       "HTB M04",

@@ -73,12 +73,16 @@ const ALIAS_TO_CANON = {};   // any alias OR canonical key -> canonical key
 for (const v of VAR_REGISTRY) {
     VAR_BY_KEY[v.key] = v;
     ALIAS_TO_CANON[v.key] = v.key;
-    for (const a of v.aliases) ALIAS_TO_CANON[a] = v.key;
+    ALIAS_TO_CANON[v.key.toUpperCase()] = v.key;
+    for (const a of v.aliases) {
+        ALIAS_TO_CANON[a] = v.key;
+        ALIAS_TO_CANON[a.toUpperCase()] = v.key;
+    }
 }
 
 /** Canonical key for any placeholder token, or null if it's not a registered engagement var. */
 function canonVar(token) {
-    return ALIAS_TO_CANON[token] || null;
+    return ALIAS_TO_CANON[token] || ALIAS_TO_CANON[token.toLowerCase()] || null;
 }
 
 /** All tokens (canonical + aliases) that map to a given canonical key. */

@@ -73,6 +73,10 @@
     "impact": "A fully interactive TTY (job control, tab-completion, working sudo prompts) — improving control over the session.",
     "detection": "Monitor for Unix shell execution from unexpected parent processes (e.g., a web server or database process spawning bash). Flag shell activity following unusual network connections, file writes to web directories, or privilege escalation attempts.",
     "artifacts": "Spawning of python pty.spawn / script in process and command logs; network footprint unchanged (it reuses the existing shell).",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*pty.spawn*\" OR proctitle=\"*script /dev/null*\" OR proctitle=\"*stty raw*\")\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.command_line:(*pty.spawn* OR *script?/dev/null* OR *stty?raw*)",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"pty.spawn\",\"script /dev/null\",\"stty raw\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// TTY upgrade of a reverse shell (python pty.spawn / script -qc)",
+    "sigma_rules": "lnx_auditd_tty_shell_upgrade",
     "prevention": "Use application control where appropriate to restrict which binaries can execute. On ESXi hosts, the execInstalledOnly feature prevents binaries from running unless packaged and signed as part of a vSphere installation bundle (VIB).",
     "sources": [
       "MITRE T1059.004"

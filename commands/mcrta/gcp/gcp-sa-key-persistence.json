@@ -74,6 +74,10 @@
     "impact": "T1098.001 Account Manipulation: Additional Cloud Credentials. Durable, MFA-independent access as the service account at its privilege - persistence and (if the SA is privileged) standing escalation.",
     "detection": "Cloud Audit Logs: google.iam.admin.v1.CreateServiceAccountKey events, especially on privileged SAs or from unexpected principals. Periodic review of 'keys list' for unknown keys. SCC key-age/anomaly findings.",
     "artifacts": "Audit Log CreateServiceAccountKey entries; new user-managed keys under the SA; the downloaded key.json.",
+    "splunk_spl": "index=gcp_audit sourcetype=\"google:gcp:audit\" protoPayload.methodName=\"google.iam.admin.v1.CreateServiceAccountKey\"\n| table _time, protoPayload.authenticationInfo.principalEmail, protoPayload.resourceName, protoPayload.request.keyAlgorithm",
+    "elastic_kql": "cloud.provider:gcp AND event.action:google.iam.admin.v1.CreateServiceAccountKey",
+    "sentinel_kql": "GCPAuditLogs\n| where methodName == \"google.iam.admin.v1.CreateServiceAccountKey\"\n| project TimeGenerated, principalEmail=protoPayload_authenticationInfo_principalEmail, resourceName, callerIp=protoPayload_requestMetadata_callerIp\n| sort by TimeGenerated desc\n// user-managed SA key created, especially on a privileged SA or from an unexpected principal",
+    "sigma_rules": "gcp_service_account_key_creation",
     "prevention": "Disable SA key creation org-wide (constraints/iam.disableServiceAccountKeyCreation) and use Workload Identity Federation / impersonation instead. Restrict Service Account Key Admin. Alert on CreateServiceAccountKey. Rotate and expire keys; inventory keys regularly.",
     "evasion": "Prefer token impersonation (no key artifact) where possible; name/time the key to blend with legitimate automation; delete after use if only short-term access is needed.",
     "sources": [

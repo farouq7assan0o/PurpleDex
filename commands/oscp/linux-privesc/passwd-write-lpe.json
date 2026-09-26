@@ -7,7 +7,7 @@
   "category": "Privilege Escalation",
   "subcategory": "Linux - Miscellaneous",
   "description": "When /etc/passwd is world-writable (rare misconfiguration, also exploitable via capability or SUID vim), generate a password hash with openssl passwd and append a root-equivalent entry. The new user gets uid=0 without modifying the existing root account.",
-  "notes": "Requires /etc/passwd to be world-writable (check: ls -la /etc/passwd or unix-privesc-check). Modern systems store passwords in /etc/shadow, but if /etc/passwd has a hash in the second field it overrides shadow lookup \u2014 old behaviour still honoured by Linux PAM. uid=0 gid=0 = root privileges regardless of username. Also covered in: OSCP PEN-200 Chapter 17 (Linux Privilege Escalation).",
+  "notes": "Requires /etc/passwd to be world-writable (check: ls -la /etc/passwd or unix-privesc-check). Modern systems store passwords in /etc/shadow, but if /etc/passwd has a hash in the second field it overrides shadow lookup — old behaviour still honoured by Linux PAM. uid=0 gid=0 = root privileges regardless of username. Also covered in: OSCP PEN-200 Chapter 17 (Linux Privilege Escalation).",
   "requires": [
     "local-access"
   ],
@@ -37,7 +37,7 @@
   "variations": [
     {
       "label": "Passwordless root entry (empty second field bypasses password check)",
-      "command": "echo \"root3::0:0:root:/root:/bin/bash\" >> /etc/passwd\nsu root3\n# No password required \u2014 instant root"
+      "command": "echo \"root3::0:0:root:/root:/bin/bash\" >> /etc/passwd\nsu root3\n# No password required — instant root"
     }
   ],
   "tools_used": [
@@ -87,8 +87,12 @@
     "impact": "Full root access via a new uid=0 account. Persistent backdoor account survives password resets of existing accounts.",
     "detection": "File integrity monitoring on /etc/passwd (AIDE, Tripwire, auditd -w /etc/passwd -p wa). New UID=0 account appearing outside of normal provisioning process. Auditd: write to /etc/passwd by non-root user.",
     "artifacts": "Auditd write event on /etc/passwd by non-root | FIM alert (unexpected /etc/passwd modification) | New uid=0 entry visible in passwd audit",
+    "splunk_spl": "index=linux sourcetype=\"syslog\" OR sourcetype=\"linux:audit\"\n| where (file_path=\"/etc/passwd\" OR file_path=\"/etc/shadow\") AND (action=\"write\" OR action=\"modify\")\n| table _time, host, user, file_path, action\n\nindex=linux sourcetype=\"linux:auditd\" type=SYSCALL comm=\"openat\" a1=\"/etc/passwd\"\n| where (a2 LIKE \"%O_WRONLY%\" OR a2 LIKE \"%O_RDWR%\")\n| table _time, hostname, auid, comm, exe",
+    "elastic_kql": "event.category:file AND file.path:(/etc/passwd OR /etc/shadow) AND event.action:modification",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"/etc/passwd\" and SyslogMessage has_any (\"write\",\"openat\",\"modif\")\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc\n// new uid=0 entry written to /etc/passwd by a non-root process",
+    "sigma_rules": "lnx_file_modification_etc_passwd",
     "prevention": "Ensure /etc/passwd permissions are 644 (root-owned, world-readable only). Monitor permissions with auditd or a FIM tool. Do not grant capabilities or SUID bits to editors that can reach /etc/passwd.",
-    "misconfiguration": "/etc/passwd permissions set to 666 (world-writable) \u2014 sometimes caused by scripts or misconfigurations during deployment.",
+    "misconfiguration": "/etc/passwd permissions set to 666 (world-writable) — sometimes caused by scripts or misconfigurations during deployment.",
     "vulnerable_config": "ls -la /etc/passwd\n# -rw-rw-rw- 1 root root 2178 Jan 10 12:34 /etc/passwd  <- VULNERABLE",
     "secure_config": "# Fix permissions\nchmod 644 /etc/passwd\nchown root:root /etc/passwd\n\n# Audit with auditd\nauditctl -w /etc/passwd -p wa -k passwd_changes\n\n# FIM baseline\naide --init && cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db",
     "sources": [

@@ -92,6 +92,10 @@
     "impact": "A SOCKS proxy into the internal network - reach hosts/services otherwise unrouteable from the attacker.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "A local SOCKS listener; a long-lived SSH session with -D; internal connections sourced from the pivot.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"ssh\" proctitle=\"*-D*\"\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.name:ssh AND process.args:\"-D\"",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"ssh\" and ProcessCommandLine has \"-D\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// long-lived SSH -D session + local SOCKS listener; internal flows sourced from the pivot",
+    "sigma_rules": "proc_creation_lnx_ssh_dynamic_socks (ssh -D SOCKS proxy - T1572)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

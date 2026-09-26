@@ -78,6 +78,10 @@
     "impact": "Files transferred securely on/off the target; the encryption defeats on-the-wire inspection.",
     "detection": "An SSH session on 22 to/from the host; scp process in logs; new file on disk. The transfer content is encrypted, so detection relies on process/auth logs, not payload inspection.",
     "artifacts": "An SSH/scp connection on 22; scp in process/auditd logs; the transferred file; the authenticating user in the SSH log.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" comm=\"scp\"\n| table _time, host, auid, proctitle\n\nindex=linux sourcetype=\"linux_secure\" \"sshd\" \"Accepted\"\n| table _time, host, user, src_ip",
+    "elastic_kql": "process.name:scp OR (event.category:network AND destination.port:22)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"scp\",\"sftp\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where RemotePort == 22 and RemoteIPType == \"Public\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=RemoteIP)\n| sort by Timestamp desc\n// content is encrypted; rely on scp process + SSH auth logs",
+    "sigma_rules": "proc_creation_lnx_scp_transfer (scp session on port 22)",
     "prevention": "Restrict SSH to management hosts and monitor auth logs; key management; alert on scp to/from unexpected hosts. Egress control on 22.",
     "evasion": "scp is encrypted and looks like ordinary SSH admin traffic; using valid creds/keys makes it blend with legitimate use.",
     "sources": [

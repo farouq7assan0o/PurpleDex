@@ -66,6 +66,10 @@
     "impact": "A host/service map of the AD environment.",
     "detection": "[MITRE T1046] scan probes across hosts/ports in firewall/IDS logs; internal scanning pattern.",
     "artifacts": "Scan probes; the host/service inventory.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap host-list scan across the AD subnet",
+    "sigma_rules": "net_port_scan_activity (nmap host-list scan across the AD subnet)",
     "prevention": "Segmentation and east-west IDS; alert on internal scanning; minimise reachable services.",
     "evasion": "Nmap timing/decoy options; scope to key ports to reduce noise.",
     "sources": [

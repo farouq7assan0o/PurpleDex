@@ -96,6 +96,10 @@
     "impact": "Reveals internal hostnames, IP addresses, mail server names, and TXT record metadata (SPF, domain verification tokens, internal notes). Builds target map for lateral movement and service attack prioritisation.",
     "detection": "DNS query logs on the server (Windows DNS debug logging or BIND query log). Windows client event: DNS Client Events log (source 'Microsoft-Windows-DNS-Client', Event ID 3006/3008 for lookup failures that leak what was queried). PowerShell script block logging if nslookup is wrapped in a script.",
     "artifacts": "nslookup.exe process creation logged by EDR and Windows Security Event 4688 (if command-line auditing enabled). Network: UDP/TCP 53 packets to DNS server visible in PCAP.",
+    "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count by src_ip, bin(_time, 1m)\n| where count>50",
+    "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
+    "sentinel_kql": "DnsEvents\n| summarize queries=count() by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50\n| sort by queries desc\n// nslookup DNS record enumeration from Windows",
+    "sigma_rules": "net_dns_enumeration (nslookup DNS record enumeration from Windows)",
     "prevention": "Enable DNS query logging on internal resolvers. Restrict which hosts can query internal DNS zones (DNS zone ACLs). Audit TXT and SRV records for sensitive notes.",
     "evasion": "nslookup is a LOLBAS — blends into normal Windows DNS activity. Single queries for specific records generate far less noise than a dnsrecon sweep. Using an authorised internal DNS server further normalises the traffic.",
     "sources": [

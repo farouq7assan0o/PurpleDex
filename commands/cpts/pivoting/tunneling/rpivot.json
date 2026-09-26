@@ -92,6 +92,10 @@
     "impact": "A SOCKS proxy into the internal network established via an outbound connection (bypasses inbound firewalling).",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "The rpivot client process; an outbound connection to the attacker; a SOCKS listener on the attacker side.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*server.py*--proxy-port*\" OR proctitle=\"*client.py*--server-ip*\")\n| table _time, host, auid, proctitle\n\nindex=network dest_port=9999\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "process.command_line:(*rpivot* OR (*proxy-port* AND *server-port*))",
+    "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"rpivot\",\"--proxy-port\",\"--server-ip\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// rpivot client making an outbound connection to the attacker's SOCKS server",
+    "sigma_rules": "proc_creation_rpivot_reverse_socks (client.py outbound to attacker SOCKS)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

@@ -63,6 +63,10 @@
     "impact": "Lockout/complexity policy for safe spraying.",
     "detection": "SMB tree-connects and share/RID enumeration (Event 5140/5145 with share auditing); anonymous/null binds and RID cycling against the DC.",
     "artifacts": "SMB/SAMR password-policy query.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4661 Object_Type=\"SAM_DOMAIN\"\n| table _time, Computer, Account_Name, Client_Address",
+    "elastic_kql": "event.code:\"4661\" AND winlog.event_data.ObjectType:\"SAM_DOMAIN\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4661 and ObjectType == \"SAM_DOMAIN\"\n| project TimeGenerated, Computer, SubjectUserName, IpAddress\n| sort by TimeGenerated desc\n// CME --pass-pol reads the domain password policy",
+    "sigma_rules": "win_security_password_policy_discovery (CME --pass-pol)",
     "prevention": "AD is readable by any authenticated user by design, so prevention is limited - focus on DETECTION (Defender for Identity, LDAP/SMB anomaly monitoring), least privilege, disabling anonymous/null sessions, and REDUCING what's exposed (remove unnecessary SPNs, descriptions with secrets, over-shared folders).",
     "evasion": "Use built-in tools (net, AD module, dsquery) that blend with normal admin activity; throttle and scope collection; avoid the noisiest methods (full BloodHound sweeps, RID brute) where Defender for Identity is present.",
     "sources": [

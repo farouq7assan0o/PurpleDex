@@ -73,7 +73,11 @@
     "misconfiguration": "IT teams often grant broad write access to SYSVOL or to individual GPO objects for operational convenience. Script paths in GPO startup/logon tasks may point to shares with weak permissions, allowing any domain user to replace the script.",
     "vulnerable_config": "# GPO Startup Script points to a world-writable share:\n# GPO: \\\\inlanefreight.local\\SYSVOL\\...\\scripts\\startup.bat\nicacls \\\\inlanefreight.local\\SYSVOL\\...\\scripts\\startup.bat\n# Output: Everyone:(F) — full control for all users",
     "secure_config": "# Restrict script path ACLs — only SYSTEM and Domain Admins\nicacls \\\\inlanefreight.local\\SYSVOL\\...\\scripts /inheritance:r /grant 'Domain Admins:(OI)(CI)F' SYSTEM:F\n# Audit GPO delegations quarterly:\nGet-GPPermission -All -DomainName inlanefreight.local | Where-Object { $_.Permission -eq 'GpoEdit' }",
-    "evasion": "Read the exposed data with least interaction; revert any change you make; scope queries narrowly to avoid bulk-read alerts."
+    "evasion": "Read the exposed data with least interaction; revert any change you make; scope queries narrowly to avoid bulk-read alerts.",
+    "splunk_spl": "index=sysmon EventCode=1 Image=\"*Group3r*\"\n| table _time, Computer, User, CommandLine\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145 Share_Name=\"*SYSVOL*\"\n| table _time, Computer, Account_Name, Relative_Target_Name",
+    "elastic_kql": "event.code:\"1\" AND process.name:*Group3r* OR (event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"Group3r\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 5145 and ShareName has \"SYSVOL\" | project Timestamp=TimeGenerated, DeviceName=Computer, AccountName=SubjectUserName, ProcessCommandLine=RelativeTargetName)\n| sort by Timestamp desc\n// Group3r reads GPOs from SYSVOL looking for misconfigurations",
+    "sigma_rules": "proc_creation_win_group3r (GPO SYSVOL misconfig enumeration)"
   },
   "tools": [
     "Group3r"

@@ -78,6 +78,10 @@
     "impact": "Confirmation that a specific host is alive before committing to a full port scan.",
     "detection": "[MITRE T1018 AN1583] Execution of network enumeration utilities (ping, nmap -sn) against a target, particularly when followed by deeper port scanning or exploitation. Single-host ICMP probes are lower fidelity but still logged by network monitoring tools.",
     "artifacts": "ICMP echo, ARP, and TCP SYN/ACK probes to the target in firewall/IDS logs.",
+    "splunk_spl": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25\n\nindex=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND source.ip:* AND destination.port:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap single-host discovery probes",
+    "sigma_rules": "net_port_scan_activity (nmap single-host discovery probes)",
     "prevention": "Firewall rules that drop ICMP echo and unsolicited probes make a host appear inactive to default discovery (HTB M03: hosts ignoring ICMP are marked down). This only defeats ICMP-based discovery — on the local segment ARP still reveals live hosts — so network segmentation and NAC matter more than ICMP filtering alone.",
     "evasion": "On a local segment Nmap falls back to ARP, which reveals hosts even when ICMP is firewalled; vary probe types (-PS/-PA/-PU) to find hosts that ignore default ICMP echo, and slow the timing to stay quiet.",
     "sources": [

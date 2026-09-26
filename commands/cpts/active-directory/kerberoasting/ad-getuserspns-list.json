@@ -68,6 +68,10 @@
     "impact": "The set of Kerberoastable service accounts to target.",
     "detection": "[MITRE T1558.003] LDAP queries filtering on servicePrincipalName / userAccountControl (Event 4662; Defender for Identity recon); one host reading roastable-account attributes.",
     "artifacts": "LDAP query on servicePrincipalName; the SPN account list.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Object_Type=\"*user*\"\n| where Properties=\"*servicePrincipalName*\"\n| stats count by Account_Name, Client_Address | where count>5",
+    "elastic_kql": "event.code:\"4662\" AND winlog.event_data.Properties:*servicePrincipalName*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662 and Properties has \"servicePrincipalName\"\n| summarize count() by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where count_ > 5\n| sort by count_ desc",
+    "sigma_rules": "win_security_ldap_spn_enumeration (LDAP query filtering on servicePrincipalName)",
     "prevention": "Use 100+ character passwords or gMSA for service accounts; disable RC4 (force AES); audit and remove unused SPNs; deploy honeypot SPN accounts to catch roasting; Defender for Identity flags mass TGS requests.",
     "evasion": "A single scoped LDAP query blends with normal directory reads; this step generates no 4769 yet.",
     "sources": [

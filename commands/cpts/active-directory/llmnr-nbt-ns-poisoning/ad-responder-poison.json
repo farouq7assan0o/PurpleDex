@@ -73,6 +73,10 @@
     "impact": "Captured NetNTLM hashes (crackable) or a relay primitive - a path to credential compromise.",
     "detection": "[MITRE T1557.001] LLMNR/NBT-NS/mDNS responses from an unexpected host; a spoofed name-resolution answer; NetNTLM auth to an unknown host. Honeypot name-lookups (queries for non-existent hosts) that get answered reveal poisoning; Defender for Identity flags it.",
     "artifacts": "Spoofed name-resolution answers; captured NetNTLM hashes; the Responder host.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM\n| stats count by Account_Name, Source_Network_Address\n\nindex=suricata event_type=alert alert.signature=\"*LLMNR*\"\n| table _time, src_ip, dest_ip",
+    "elastic_kql": "event.category:network AND network.protocol:(llmnr OR nbns) AND source.ip:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"NTLM\"\n| summarize accounts=make_set(TargetUserName) by IpAddress, bin(TimeGenerated, 10m)\n| sort by TimeGenerated desc\n// spoofed LLMNR/NBT-NS answers from a non-authoritative host, then NetNTLM auth to it",
+    "sigma_rules": "net_llmnr_nbns_poisoning_responder (spoofed name-resolution answers)",
     "prevention": "Disable LLMNR, NBT-NS, and mDNS (GPO/registry); require SMB signing to block relay; segment; deploy honeytoken name-lookups to catch poisoners; enforce authenticated DNS.",
     "evasion": "Answer selectively (one victim) and use analyze mode first to reduce the poisoning footprint.",
     "sources": [

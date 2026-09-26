@@ -79,6 +79,10 @@
     "impact": "Direct access to one internal service via a forwarded local port.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "A local forwarded port; the pivot connecting to the internal service; the Meterpreter C2.",
+    "splunk_spl": "index=network\n| stats count by src_ip, dest_ip, dest_port\n| where src_ip=\"<pivot_ip>\"\n// portfwd relays a single internal service through the Meterpreter C2",
+    "elastic_kql": "event.category:network AND destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16) AND network.direction:internal",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemoteIPType == \"Private\" and ActionType == \"ConnectionSuccess\"\n| summarize count() by DeviceName, RemoteIP, RemotePort, bin(Timestamp, 5m)\n| sort by count_ desc\n// a local forwarded port on the pivot relaying to an internal service",
+    "sigma_rules": "net_pivot_port_forward (Meterpreter portfwd relay to internal host)",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Tunnel over an allowed protocol/port (443) and encrypt the channel so the relay blends with normal traffic; keep the listener on a common-looking port.",
     "sources": [

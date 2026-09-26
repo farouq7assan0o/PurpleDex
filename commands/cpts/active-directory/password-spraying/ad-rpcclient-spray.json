@@ -64,6 +64,10 @@
     "impact": "Validated credentials over RPC.",
     "detection": "Failed-authentication bursts: Windows 4625 / Kerberos 4771; account lockouts (4740). Spraying = one password across MANY accounts (few failures each - a subtle, distributed pattern). Defender for Identity flags spraying.",
     "artifacts": "RPC auth attempts across accounts; 4625 bursts.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4625 OR EventCode=4771)\n| stats dc(Account_Name) as accts by Source_Network_Address, bin(_time, 5m)\n| where accts>10",
+    "elastic_kql": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4625, 4771)\n| summarize accts=dcount(TargetUserName), attempts=count() by IpAddress, bin(TimeGenerated, 5m)\n| where accts > 10\n| sort by accts desc",
+    "sigma_rules": "win_security_password_spray_4625, win_security_kerberos_preauth_failed_spray",
     "prevention": "[MITRE T1110.003 M1032 MFA] MFA defeats spraying; [M1027] strong/unique passwords + [M1036 Account Use Policies] lockout thresholds; alert on distributed failed logons and impossible travel.",
     "evasion": "Spray one password low-and-slow with delays to avoid lockouts and volume alerts; rotate source hosts; Kerberos-based spraying avoids 4625.",
     "sources": [

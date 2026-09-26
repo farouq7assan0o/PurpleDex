@@ -68,6 +68,10 @@
     "impact": "The list of AS-REP roastable accounts.",
     "detection": "[MITRE T1558.004] LDAP query on userAccountControl for DONT_REQUIRE_PREAUTH (4662); PowerView in 4104 logs.",
     "artifacts": "LDAP UAC query; the no-preauth account list.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-DomainUser*\\\" OR ScriptBlockText=\\\"*PreauthNotRequired*\\\" OR ScriptBlockText=\\\"*DoesNotRequirePreAuth*\\\")\n| table _time, Computer, User, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *PreauthNotRequired* OR *DoesNotRequirePreAuth*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainUser\", \"PreauthNotRequired\", \"DoesNotRequirePreAuth\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_powerview_recon, win_security_ldap_recon",
     "prevention": "Enable Kerberos pre-authentication (disable only when truly required); enforce 25+ character passwords for any account that must have it off; quarterly review of no-preauth accounts; Defender for Identity detects AS-REP roasting.",
     "evasion": "A single scoped LDAP read blends; no 4768 generated at this step.",
     "sources": [

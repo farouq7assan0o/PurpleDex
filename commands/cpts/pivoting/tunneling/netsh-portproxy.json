@@ -95,6 +95,10 @@
     "impact": "A native port forward through the Windows pivot to an internal service.",
     "detection": "[MITRE T1090.001] A compromised host relaying traffic between segments it shouldn't bridge; an unexpected listening port (SOCKS/forwarder) on the pivot; the pivot initiating connections to hosts/ports it never normally contacts; lateral flows that appear to originate from the pivot (NetFlow/east-west monitoring).",
     "artifacts": "A netsh portproxy rule (persisted in registry); the pivot relaying to the internal host.",
+    "splunk_spl": "index=sysmon EventCode=1 Image=\"*netsh.exe\" CommandLine=\"*portproxy*add*\"\n| table _time, Computer, User, CommandLine\n\nindex=sysmon EventCode=13 TargetObject=\"*\\\\PortProxy\\\\v4tov4*\"\n| table _time, Computer, TargetObject, Details",
+    "elastic_kql": "event.code:\"1\" AND process.name:netsh.exe AND process.command_line:(*portproxy* AND *add*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"netsh.exe\" and ProcessCommandLine has \"portproxy\" and ProcessCommandLine has \"add\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceRegistryEvents | where RegistryKey has \"PortProxy\\\\v4tov4\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=RegistryValueData)\n| sort by Timestamp desc",
+    "sigma_rules": "proc_creation_win_netsh_port_forwarding, sysmon_registry_portproxy_v4tov4",
     "prevention": "[MITRE T1090.001 M1030 Network Segmentation] strict east-west firewall rules so one foothold can't reach other segments; egress filtering; IDS/IPS + NetFlow analysis for proxy patterns and long-lived flows; alert on unexpected listeners on servers.",
     "evasion": "Uses a built-in Windows feature (no dropped tool); the portproxy rule persists but looks like admin config.",
     "sources": [

@@ -70,6 +70,10 @@
     "impact": "Authentication as the target account via a forged key credential - account takeover without changing its password.",
     "detection": "[MITRE T1649] modification of msDS-KeyCredentialLink (5136 on the attribute); subsequent PKINIT 4768 for that account.",
     "artifacts": "A new KeyCredentialLink value; the generated cert/key; a PKINIT logon for the target.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 LDAP_Display_Name=\"msDS-KeyCredentialLink\"\n| table _time, Computer, Subject_Account_Name, Object_DN, Value\n\nindex=wineventlog EventCode=4768 Certificate_Thumbprint=\"*\"\n| table _time, Computer, Account_Name, Certificate_Thumbprint",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-KeyCredentialLink\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"msDS-KeyCredentialLink\"\n| project TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeValue\n| sort by TimeGenerated desc\n// Shadow Credentials: KeyCredentialLink added, then a PKINIT 4768 for that account",
+    "sigma_rules": "win_security_shadow_credentials_keycredentiallink (msDS-KeyCredentialLink modification)",
     "prevention": "Audit/restrict write access to msDS-KeyCredentialLink; monitor 5136 on that attribute; enforce Key Trust hardening.",
     "evasion": "Removing the added key credential after use hides the change; PKINIT then looks like normal certificate auth.",
     "sources": [

@@ -71,6 +71,10 @@
     "impact": "Attacker rapidly identifies default-credential panels, exposed management UIs (Jenkins, PRTG, Tomcat Manager), and outdated login pages across a network segment.",
     "detection": "Headless browser requests generate characteristic HTTP headers. Sequential requests from one IP with short delay. IDS signature for EyeWitness User-Agent.",
     "artifacts": "Web server access logs (sequential requests, minimal interaction) | IDS/WAF alerts for scanning UA strings",
+    "splunk_spl": "index=web sourcetype=access_combined\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+    "elastic_kql": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+    "sentinel_kql": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// eyewitness application fingerprinting/enumeration (path burst, scanner UA)",
+    "sigma_rules": "web_app_scanner_eyewitness (eyewitness fingerprinting request pattern)",
     "prevention": "Require VPN/network-level auth before management interfaces are reachable. Suppress version banners. Block known scanning tool User-Agents at WAF.",
     "sources": [
       "HTB M24",

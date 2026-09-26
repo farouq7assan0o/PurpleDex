@@ -107,6 +107,10 @@
     "impact": "Full internal DNS record dump reveals hostnames, internal IP addresses, mail servers, and service locations — dramatically accelerates reconnaissance.",
     "detection": "AXFR requests visible in DNS server query logs (type=AXFR from unexpected source IPs). Subdomain brute force produces high NXDOMAIN rates from a single source IP.",
     "artifacts": "DNS server query logs, firewall connection logs on TCP/UDP 53.",
+    "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count count(eval(reply_code=\\\"NXDOMAIN\\\")) as nx by src_ip, bin(_time, 1m)\n| where count>50 OR nx>30",
+    "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
+    "sentinel_kql": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// dnsenum full enumeration (AXFR attempt + subdomain brute)",
+    "sigma_rules": "net_dns_enumeration (dnsenum full enumeration (AXFR attempt + subdomain brute))",
     "prevention": "Restrict AXFR with allow-transfer to known secondary server IPs. Implement TSIG for zone-transfer authentication. Use split-horizon DNS so internal records are not resolvable externally.",
     "evasion": "Slow the brute force request rate; source from multiple IPs to avoid per-IP NXDOMAIN rate limiting.",
     "sources": [

@@ -128,17 +128,21 @@
   "defense": {
     "why_it_works": "Get-DomainUser, Get-DomainGroup, Get-DomainComputer enumerate AD principals via LDAP. Used to find Kerberoastable accounts (SPNs), AS-REP roastable accounts (no pre-auth), DA members, and nested group paths.",
     "prerequisites": "Any domain user. PowerView loaded. LDAP access.",
-    "impact": "T1069.002 Permission Groups Discovery + T1087.002 Account Discovery. Identifies Kerberoastable SPNs, AS-REP roast targets, DA members \u2014 directly feeds subsequent credential attacks.",
+    "impact": "T1069.002 Permission Groups Discovery + T1087.002 Account Discovery. Identifies Kerberoastable SPNs, AS-REP roast targets, DA members — directly feeds subsequent credential attacks.",
     "detection": "Event 4104 SBL: Get-DomainUser/Get-DomainGroup/Get-DomainGroupMember. LDAP query volume from workstation. MDI reconnaissance alerts.\nDetection of adversary enumeration of domain or local group memberships via native tools such as net.exe, PowerShell, or WMI; may precede lateral movement or privilege escalation (DET0179/AN0507).\nGroup enumeration using 'id', 'groups', or 'getent group' commands on Linux, often followed by privilege escalation or SSH lateral movement (AN0508).\nGroup membership checks via 'dscl', 'dscacheutil', or 'id' on macOS, executed via terminal or automation scripts (AN0509).",
     "artifacts": "Event 4104 with PowerView user/group functions | DC LDAP logs: large result set from workstation | MDI LDAP recon alert",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-DomainUser*\" OR ScriptBlockText=\"*Get-DomainGroup*\" OR ScriptBlockText=\"*Get-DomainGroupMember*\")\n| table _time, Computer, User, ScriptBlockText\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Object_Type=\"*user*\"\n| stats count by Account_Name, Client_Address | where count>100",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *Get-DomainGroup* OR *Get-DomainGroupMember*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainUser\",\"Get-DomainGroup\",\"Get-DomainGroupMember\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+    "sigma_rules": "posh_ps_powerview_user_group_enum, win_security_ldap_recon",
     "prevention": "SBL + CLM via GPO/WDAC. MDI. Regularly audit/rotate SPN account passwords. Use gMSA for service accounts. Remove DoesNotRequirePreAuth from all accounts.\nThis technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\nOperating System Configuration: Prevent administrator account enumeration via UAC (GPO: HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\CredUI\\EnumerateAdministrators).\nUser Account Management: Manage creation, modification, use, and permissions associated with user accounts.",
     "evasion": "Obfuscation, AMSI bypass, ADSI direct calls, targeted queries on small OUs.",
     "sources": [
       "https://attack.mitre.org/techniques/T1069/002/",
       "https://attack.mitre.org/techniques/T1087/002/"
     ],
-    "misconfiguration": "Service accounts with SPNs have stale passwords (Kerberoastable). Accounts have DoesNotRequirePreAuth set. Nested group memberships not audited \u2014 hidden DA pathways.",
-    "vulnerable_config": "# Service accounts with old SPN passwords:\nGet-ADUser -Filter {ServicePrincipalName -ne '$null'} -Properties ServicePrincipalName,PasswordLastSet\n# PasswordLastSet: 2015-01-01 \u2014 crackable Kerberos ticket\n\n# AS-REP roastable accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true}",
+    "misconfiguration": "Service accounts with SPNs have stale passwords (Kerberoastable). Accounts have DoesNotRequirePreAuth set. Nested group memberships not audited — hidden DA pathways.",
+    "vulnerable_config": "# Service accounts with old SPN passwords:\nGet-ADUser -Filter {ServicePrincipalName -ne '$null'} -Properties ServicePrincipalName,PasswordLastSet\n# PasswordLastSet: 2015-01-01 — crackable Kerberos ticket\n\n# AS-REP roastable accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true}",
     "secure_config": "# Use gMSA for service accounts (auto-rotate passwords):\nNew-ADServiceAccount -Name 'svc_web' -DNSHostName 'dc01.corp.local' -ManagedPasswordIntervalInDays 30\n\n# Ensure pre-auth required:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# Alert on SPN enumeration:\n# SIEM: Event 4769 volume spike from unexpected source"
   },
   "variations": [

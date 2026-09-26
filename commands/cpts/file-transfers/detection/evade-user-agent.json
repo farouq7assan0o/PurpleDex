@@ -75,6 +75,10 @@
     "impact": "The transfer evades User-Agent analysis, appearing as ordinary browser traffic in proxy/web logs.",
     "detection": "UA analysis still catches KNOWN-BAD or anomalous UAs, and behavioural correlation flags a browser UA emitted by a NON-browser process (e.g. powershell.exe) - so process+UA SIEM correlation and command-line logging still detect it.",
     "artifacts": "The spoofed UA in proxy/web logs; the -UserAgent/-A argument in the command line (4688 / 4104).",
+    "splunk_spl": "index=sysmon EventCode=1 (CommandLine=\"*Invoke-WebRequest*-UserAgent*\" OR CommandLine=\"*DownloadFile*\")\n| table _time, Computer, User, CommandLine\n\nindex=proxy http_user_agent=\"Mozilla*\"\n| where match(process, \"(?i)powershell\")\n| table _time, src_ip, http_user_agent, process",
+    "elastic_kql": "event.code:\"1\" AND process.name:powershell.exe AND process.command_line:(*-UserAgent* OR *DownloadFile*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"powershell.exe\",\"pwsh.exe\") and ProcessCommandLine has_any (\"-UserAgent\",\"-A \",\"DownloadFile\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// a browser User-Agent emitted by powershell.exe (process+UA correlation still catches it)",
+    "sigma_rules": "proc_creation_win_iwr_spoofed_useragent (non-browser process with browser UA)",
     "prevention": "Correlate User-Agent with the initiating process (a browser UA from powershell.exe is suspicious); command-line and script-block logging; egress filtering regardless of UA.",
     "evasion": "Pick a UA string matching the organisation's standard browser build; combine with HTTPS and an allowed domain so both the UA and the destination look normal.",
     "sources": [

@@ -86,6 +86,10 @@
     "impact": "Files moved on/off the target over an allowed channel - commonly used to stage privesc binaries or exfil sensitive data.",
     "detection": "Outbound SMB (445) to a non-domain/external host is anomalous; new file on disk; the copy/net-use command line (4688 / Sysmon 1). SMB to an unknown server IP is a strong indicator.",
     "artifacts": "An SMB session to the attacker IP on 445; the copied file; net use / copy command lines.",
+    "splunk_spl": "index=sysmon EventCode=3 DestinationPort=445\n| where DestinationIp!=\"10.*\" AND DestinationIp!=\"172.16.*\"\n| table _time, Computer, Image, DestinationIp\n\nindex=sysmon EventCode=1 (CommandLine=\"*net use*\" OR CommandLine=\"*copy*\\\\\\\\*\")\n| table _time, Computer, User, CommandLine",
+    "elastic_kql": "event.code:\"3\" AND destination.port:445 AND NOT destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 445 and RemoteIPType == \"Public\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP\n| sort by Timestamp desc\n// outbound SMB to a non-domain/external impacket-smbserver is anomalous",
+    "sigma_rules": "net_smb_outbound_external_host (SMB 445 to an external IP)",
     "prevention": "[MITRE T1105 M1037] Block outbound 445 to non-internal hosts - SMB should never egress the perimeter - and segment/monitor internal SMB. [M1031] IDS/IPS on SMB file writes; EDR on the copy activity.",
     "evasion": "SMB blends where 445 is broadly allowed internally; authenticate the share (impacket -user/-pass) so it resembles a normal file server; encrypt the payload before transfer.",
     "sources": [

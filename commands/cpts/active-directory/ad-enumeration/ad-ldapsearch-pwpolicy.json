@@ -63,6 +63,10 @@
     "impact": "Lockout/complexity settings that make spraying safe.",
     "detection": "[MITRE T1087.002] Broad/bulk LDAP queries to the DC (Event 4662 directory-service access; Microsoft Defender for Identity reconnaissance alerts); one host reading large swaths of the directory in a short window.",
     "artifacts": "LDAP query for domain policy attributes.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Access_Mask=0x100\n| stats count by Account_Name, Client_Address, bin(_time, 5m)\n| where count>50\n\nindex=zeek sourcetype=\"zeek:ldap\"\n| stats count by id.orig_h | where count>100",
+    "elastic_kql": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| summarize reads=count() by SubjectUserName, IpAddress, bin(TimeGenerated, 5m)\n| where reads > 50\n| sort by reads desc\n// ldapsearch reading domain password-policy attributes",
+    "sigma_rules": "win_security_ldap_recon (ldapsearch (password policy) bulk LDAP enumeration)",
     "prevention": "AD is readable by any authenticated user by design, so prevention is limited - focus on DETECTION (Defender for Identity, LDAP/SMB anomaly monitoring), least privilege, disabling anonymous/null sessions, and REDUCING what's exposed (remove unnecessary SPNs, descriptions with secrets, over-shared folders).",
     "evasion": "Use built-in tools (net, AD module, dsquery) that blend with normal admin activity; throttle and scope collection; avoid the noisiest methods (full BloodHound sweeps, RID brute) where Defender for Identity is present.",
     "sources": [

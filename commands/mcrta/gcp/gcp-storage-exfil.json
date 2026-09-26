@@ -79,6 +79,10 @@
     "impact": "T1530 Data from Cloud Storage Object + T1552.001 Unsecured Credentials: Credentials In Files. Data exfiltration plus credential pivots (leaked SA keys) that escalate access.",
     "detection": "Cloud Audit Logs (Data Access) on storage.objects.get/list - large or unusual read volume, downloads of key/secret files, access from new principals/IPs. SCC public-bucket findings.",
     "artifacts": "Storage Data Access log entries (objects.get/list); egress of key/tfstate/.env objects.",
+    "splunk_spl": "index=gcp sourcetype=\"google:gcp:audit\" (protoPayload.methodName=\"storage.objects.get\" OR protoPayload.methodName=\"storage.objects.list\")\n| stats count by protoPayload.authenticationInfo.principalEmail, resource.labels.bucket_name, bin(_time, 10m)\n| where count>50",
+    "elastic_kql": "event.dataset:gcp.audit AND gcp.audit.method_name:(storage.objects.get OR storage.objects.list)",
+    "sentinel_kql": "GCPAuditLogs\n| where methodName in (\"storage.objects.get\",\"storage.objects.list\")\n| summarize objects=count() by principalEmail=protoPayload_authenticationInfo_principalEmail, callerIp=protoPayload_requestMetadata_callerIp, bin(TimeGenerated, 10m)\n| where objects > 50\n| sort by objects desc\n// bulk GCS object download (storage exfil)",
+    "sigma_rules": "gcp_storage_bulk_object_read (GCS exfiltration)",
     "prevention": "Never store SA keys/secrets in buckets - use Secret Manager + Workload Identity. Enforce uniform bucket-level access + least-privilege IAM; remove allUsers/allAuthenticatedUsers; enable Data Access logs; VPC Service Controls to stop exfil to external projects; DLP scans for secrets in buckets.",
     "evasion": "Target specific known object paths rather than listing everything; download during business hours; use the SA that normally accesses the bucket.",
     "sources": [

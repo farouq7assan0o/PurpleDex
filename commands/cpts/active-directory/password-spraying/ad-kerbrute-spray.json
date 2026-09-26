@@ -73,6 +73,10 @@
     "impact": "Valid credentials found via a spray that leaves no 4625.",
     "detection": "Failed-authentication bursts: Windows 4625 / Kerberos 4771; account lockouts (4740). Spraying = one password across MANY accounts (few failures each - a subtle, distributed pattern). Defender for Identity flags spraying.",
     "artifacts": "4768 AS-REQs across many accounts (not 4625); a Kerberos spray pattern.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 (Result_Code=0x18 OR Pre_Authentication_Type=2)\n| stats dc(Account_Name) as accts by Client_Address, bin(_time, 5m)\n| where accts>10",
+    "elastic_kql": "event.code:\"4768\" AND winlog.event_data.Status:\"0x18\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768\n| summarize accts=dcount(TargetUserName), fails=countif(Status == \"0x18\") by IpAddress, bin(TimeGenerated, 5m)\n| where accts > 10\n| sort by accts desc\n// kerbrute spray shows as 4768 AS-REQ bursts (not 4625) across many accounts",
+    "sigma_rules": "win_security_kerberos_spray_4768 (AS-REQ spray via kerbrute)",
     "prevention": "[MITRE T1110.003 M1032 MFA] MFA defeats spraying; [M1027] strong/unique passwords + [M1036 Account Use Policies] lockout thresholds; alert on distributed failed logons and impossible travel.",
     "evasion": "Spray one password low-and-slow with delays to avoid lockouts and volume alerts; rotate source hosts; Kerberos-based spraying avoids 4625.",
     "sources": [

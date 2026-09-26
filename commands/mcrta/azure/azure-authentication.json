@@ -84,6 +84,10 @@
     "impact": "T1078.004 Valid Accounts: Cloud Accounts. API access to Azure/Entra at the principal's privilege - the entry point for all further cloud enumeration and attack.",
     "detection": "Entra sign-in logs: interactive vs non-interactive / service-principal sign-ins, new/unusual IPs, ROPC / device-code flows, impossible travel. Azure Activity Log for token use.",
     "artifacts": "Entra ID SignInLogs (UPN/appId, IP, clientAppUsed), Azure Activity Log, token issuance events.",
+    "splunk_spl": "index=azure sourcetype=\"azure:signin\"\n| stats count by userPrincipalName, ipAddress, appDisplayName, bin(_time, 10m)",
+    "elastic_kql": "event.dataset:azure.signinlogs AND azure.signinlogs.properties.app_display_name:*",
+    "sentinel_kql": "SigninLogs\n| where AppDisplayName has_any (\"Azure CLI\",\"PowerShell\",\"Az\")\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName, ResultType\n| sort by TimeGenerated desc\n// az login / device-code auth from an unusual IP or client",
+    "sigma_rules": "azure_signin_from_cli_unusual_ip (az/PowerShell authentication)",
     "prevention": "Conditional Access (MFA, block legacy/ROPC, device compliance, named locations). Least-privilege RBAC + Entra roles. Short-lived credentials; rotate SP secrets; prefer managed identities/certs over secrets.",
     "evasion": "Use tokens (no interactive sign-in), authenticate from an allowed IP/region, and reuse a legitimate service principal to blend with normal automation.",
     "sources": [

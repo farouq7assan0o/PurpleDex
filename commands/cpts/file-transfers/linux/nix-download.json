@@ -88,6 +88,10 @@
     "impact": "Attacker tooling (enum scripts, exploits) delivered to the target for the next stage.",
     "detection": "Outbound HTTP(S) from wget/curl/python to an external host; the command line (auditd/execve) and the new file on disk; default wget/curl User-Agents in web/proxy logs.",
     "artifacts": "The downloaded file; wget/curl/python in process/auditd logs; an outbound connection to the attacker; tool default UA.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE (comm=\"wget\" OR comm=\"curl\")\n| where match(proctitle, \"https?://\")\n| table _time, host, auid, proctitle\n\nindex=proxy (http_user_agent=\"Wget*\" OR http_user_agent=\"curl*\")\n| table _time, src_ip, dest, http_user_agent",
+    "elastic_kql": "process.name:(wget OR curl) AND process.command_line:*http*",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"wget\",\"curl\") and ProcessCommandLine has \"http\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where InitiatingProcessFileName in~ (\"wget\",\"curl\") and RemoteIPType == \"Public\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=RemoteUrl)\n| sort by Timestamp desc",
+    "sigma_rules": "proc_creation_lnx_wget_curl_download (default Wget/curl UA in proxy logs)",
     "prevention": "[MITRE T1105 M1037 Filter Network Traffic] Use web content filtering to block risky file types (.exe) and whitelist domains (the module scenario shows GitHub/Dropbox/Drive blocked); [M1031 Network Intrusion Prevention] inspect and block transfers at IDS/IPS. Apply application control (WDAC/AppLocker) to block download cradles/LOLBins, and AV/EDR to catch known tooling.",
     "evasion": "Pipe directly into an interpreter (curl ... | bash) to avoid a disk artifact; set a browser UA (curl -A / wget -U); use HTTPS and an allowed domain.",
     "sources": [

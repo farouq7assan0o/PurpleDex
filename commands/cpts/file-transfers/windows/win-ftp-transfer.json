@@ -90,6 +90,10 @@
     "impact": "Files transferred over FTP; the module scenario notes 21 is often blocked, so this is a fallback channel.",
     "detection": "Outbound FTP (21) to an external host is uncommon in modern networks and easily flagged; the plaintext control channel exposes commands/credentials to inspection; ftp.exe command line and the ftpcommand.txt script file are logged.",
     "artifacts": "An FTP control connection on 21 to the attacker; ftp.exe in process logs; a dropped ftpcommand.txt; the transferred file.",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\"*ftp.exe\" OR CommandLine=\"*ftp://*\" OR CommandLine=\"*ftpcommand.txt*\")\n| table _time, Computer, User, CommandLine\n\nindex=sysmon EventCode=3 DestinationPort=21\n| table _time, Computer, Image, DestinationIp",
+    "elastic_kql": "event.code:\"1\" AND (process.name:ftp.exe OR process.command_line:*ftp\\://*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"ftp.exe\" or ProcessCommandLine has \"ftp://\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where RemotePort == 21 and RemoteIPType == \"Public\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=RemoteIP)\n| sort by Timestamp desc\n// plaintext FTP control channel on 21 to an external host",
+    "sigma_rules": "proc_creation_win_ftp_download (ftp.exe with a scripted ftpcommand.txt)",
     "prevention": "[MITRE T1105 M1037 Filter Network Traffic] Use web content filtering to block risky file types (.exe) and whitelist domains (the module scenario shows GitHub/Dropbox/Drive blocked); [M1031 Network Intrusion Prevention] inspect and block transfers at IDS/IPS. Apply application control (WDAC/AppLocker) to block download cradles/LOLBins, and AV/EDR to catch known tooling.",
     "evasion": "Only viable where 21 egresses; there is little to hide since FTP is plaintext - encrypt files beforehand so intercepted data is unreadable.",
     "sources": [

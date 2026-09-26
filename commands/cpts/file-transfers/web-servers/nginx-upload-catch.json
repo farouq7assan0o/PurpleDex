@@ -86,6 +86,10 @@
     "impact": "Provides a reliable endpoint to receive files exfiltrated from the target over HTTP.",
     "detection": "On the victim side this looks like an outbound HTTP PUT to an external host - unusual for most processes; egress/DLP monitoring catches the upload; command line of the uploading tool.",
     "artifacts": "An outbound HTTP PUT to the attacker nginx; the uploading process's network connection; DLP hits on the content.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*curl*-T*\" OR proctitle=\"*PUT*\")\n| table _time, host, auid, proctitle\n\nindex=proxy method=PUT\n| where match(uri_path, \"UploadDirectory\")\n| table _time, src_ip, dest_ip, uri_path",
+    "elastic_kql": "process.name:curl AND process.args:\"-T\" OR (http.request.method:PUT AND url.path:*Upload*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"curl\" and ProcessCommandLine has \"-T\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// outbound HTTP PUT of a local file to an attacker nginx upload endpoint",
+    "sigma_rules": "proc_creation_curl_http_put_upload (curl -T exfil via nginx WebDAV/upload)",
     "prevention": "[MITRE T1048 M1037] Egress filtering + DLP on outbound PUT/POST to unknown hosts; restrict which hosts can reach the internet.",
     "evasion": "Upload over HTTPS to blend with web traffic; the catch-server is attacker-side, so only the outbound flow is target-visible - encrypt content to defeat DLP.",
     "sources": [

@@ -83,6 +83,10 @@
     "impact": "Sensitive files leave the environment - a confidentiality breach and material for offline analysis.",
     "detection": "Outbound data flows to an external/unknown host, unusual for the source process; DLP/egress monitoring on sensitive content; command line (curl -F / nc) in auditd.",
     "artifacts": "An outbound POST/nc/scp to the attacker; the source process's unusual network connection; DLP hits.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*curl*-F*\" OR proctitle=\"*curl*-T*\" OR comm=\"nc\")\n| table _time, host, auid, proctitle",
+    "elastic_kql": "process.name:curl AND process.args:(\"-F\" OR \"-T\" OR \"--data\")",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"curl\",\"nc\",\"ncat\") and ProcessCommandLine has_any (\"-F \",\"-T \",\"POST\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// outbound POST/nc of a sensitive file to an external host (DLP/egress)",
+    "sigma_rules": "proc_creation_lnx_curl_upload (curl -F/-T exfil to external host - T1048.003)",
     "prevention": "[MITRE T1048 M1037] Egress filtering + DLP; restrict which hosts reach the internet; monitor for large/unusual outbound flows.",
     "evasion": "Encrypt/compress and chunk data to defeat DLP; exfil over HTTPS/SSH to blend with normal egress.",
     "sources": [

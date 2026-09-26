@@ -86,6 +86,10 @@
     "impact": "Confirms reachable services on internal network hosts from a Windows foothold. Used to pivot after initial access — identify SMB, WinRM, RDP, and database ports on other hosts before launching attacks.",
     "detection": "PowerShell script block logging (Event ID 4104) captures Test-NetConnection calls if module logging is enabled. Network: full TCP handshake (SYN/SYN-ACK/ACK) visible in PCAP; IPS rules on sequential port probes. Process: powershell.exe with arguments visible in Event 4688 (command-line auditing on).",
     "artifacts": "Windows Security Event 4688 (powershell.exe with -Port argument if command-line auditing enabled). PowerShell operational log. Network: TCP SYN to target host/port.",
+    "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Test-NetConnection*\" OR ScriptBlockText=\"*Test-Connection*\")\n| stats count by Computer, User, bin(_time, 1m) | where count>10",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Test-NetConnection* OR *Test-Connection*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"Test-NetConnection\",\"Test-Connection\")\n| summarize count() by DeviceName, InitiatingProcessAccountName, bin(Timestamp, 1m)\n| where count_ > 10\n| sort by count_ desc\n// Test-NetConnection used as a port/host sweep",
+    "sigma_rules": "posh_ps_test_netconnection_sweep (PowerShell port scanning)",
     "prevention": "Enable PowerShell Constrained Language Mode. Enable script block logging (GPO: PowerShell → Turn on Script Block Logging). Network egress filtering to restrict which ports internal hosts can reach.",
     "evasion": "tnc alias is shorter and may evade simple keyword-based detection. Single-port checks generate far less noise than a range scan. Test-NetConnection is a LOLBAS — same binary used for legitimate admin tasks.",
     "sources": [

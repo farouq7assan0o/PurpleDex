@@ -102,6 +102,10 @@
     "impact": "T1580 Cloud Infrastructure Discovery + T1526 Cloud Service Discovery. Complete map of subscriptions/resources and the RBAC assignments needed to plan escalation and lateral movement.",
     "detection": "Azure Activity Log: high-volume Microsoft.Authorization/roleAssignments and resource 'list' reads from one principal; Defender for Cloud anomalous enumeration.",
     "artifacts": "Azure Activity Log read/list operations; role assignment reads.",
+    "splunk_spl": "index=azure sourcetype=\"azure:activity\" (operationName=\"*list*\" OR operationName=\"*read*\")\n| stats count values(operationName) as ops by caller, callerIpAddress, bin(_time, 10m)\n| where count>20",
+    "elastic_kql": "event.dataset:azure.activitylogs AND azure.activitylogs.operation_name:(*list* OR *read*)",
+    "sentinel_kql": "AzureActivity\n| where OperationNameValue has_any (\"list\",\"read\")\n| summarize ops=dcount(OperationNameValue), count() by Caller, CallerIpAddress, bin(TimeGenerated, 10m)\n| where count_ > 20\n| sort by count_ desc\n// Azure ARM resource enumeration (bulk list/read across resource groups)",
+    "sigma_rules": "azure_resource_enumeration (Azure ARM resource enumeration (bulk list/read across resource groups))",
     "prevention": "Least-privilege RBAC; avoid broad Reader at management-group/subscription scope; use PIM for privileged roles; monitor enumeration bursts; deny standing Owner / User Access Administrator.",
     "evasion": "Scope queries to a single resource group; spread reads over time; use an existing automation SP.",
     "sources": [

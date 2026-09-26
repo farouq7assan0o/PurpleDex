@@ -76,6 +76,10 @@
     "impact": "A validated list of domain usernames (and, when spraying, valid credentials).",
     "detection": "Failed authentication bursts: Windows 4625 (failed logon) and 4771 (Kerberos pre-auth failed) at abnormal rate/volume; account lockouts (4740); many attempts from one source, or - for spraying - one password across many accounts. SIEM correlation on failed-logon spikes.",
     "artifacts": "Kerberos 4768 pre-auth requests for many usernames; unknown users return distinct errors - a user-enumeration pattern.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Result_Code=0x6\n| stats dc(Account_Name) as accts by Client_Address, bin(_time, 1m)\n| where accts>25",
+    "elastic_kql": "event.code:\"4768\" AND winlog.event_data.Status:\"0x6\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and Status == \"0x6\"\n| summarize accts=dcount(TargetUserName) by IpAddress, bin(TimeGenerated, 1m)\n| where accts > 25\n| sort by accts desc\n// KDC_ERR_C_PRINCIPAL_UNKNOWN burst = username enumeration",
+    "sigma_rules": "win_security_kerberos_user_enumeration (kerbrute userenum 4768 0x6 burst)",
     "prevention": "[MITRE T1110 M1032 Multi-factor Authentication] MFA defeats password guessing; [M1027 Password Policies] strong passwords + [M1036 Account Use Policies] lockout thresholds; alert on failed-logon spikes and impossible-travel.",
     "evasion": "Enumeration via AS-REQ avoids 4625 failed-logon events (quieter than LDAP/SMB brute); spray slowly to avoid 4771 spikes.",
     "sources": [

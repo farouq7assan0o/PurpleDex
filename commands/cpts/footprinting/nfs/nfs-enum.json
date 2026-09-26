@@ -86,6 +86,10 @@
     "impact": "A list of exports and readable/writable files — especially where an 'insecure'/no_root_squash export misconfiguration exists.",
     "detection": "[MITRE T1046 AN1583] Monitor for execution of network enumeration utilities (nmap, netcat, net.exe, ping.exe, tracert.exe) in short succession, particularly when chained with lateral movement tools or system enumeration commands. [AN1584] Sequential ping, arp, or traceroute commands issued from bash scripts or interactive shells to map remote hosts are a strong behavioral indicator.",
     "artifacts": "showmount and mount requests in NFS/rpcbind logs; file-access records on exported shares.",
+    "splunk_spl": "index=network (dest_port=2049 OR dest_port=111)\n| stats count by src_ip, dest_ip | where count>3\n\nindex=linux sourcetype=\"linux:auditd\" (comm=\"showmount\" OR comm=\"mount\")\n| table _time, host, proctitle",
+    "elastic_kql": "event.category:network AND destination.port:(111 OR 2049)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (111, 2049)\n| summarize count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| sort by count_ desc\n// showmount -e / NFS export enumeration (111 rpcbind + 2049)",
+    "sigma_rules": "net_nfs_showmount_enum (NFS export enumeration)",
     "prevention": "Avoid the 'insecure' export option. Enable 'root_squash' on all exports. Restrict exports to specific trusted client IPs rather than using wildcards. Prefer NFSv4 which includes Kerberos authentication and ACL support.\n\n[MITRE T1046 M1042] Disable or remove unnecessary services and functionality that expose attack surface. [M1030] Implement network segmentation to limit the set of hosts reachable from any given compromised system. Use firewalls to restrict which source addresses can reach each service port.",
     "sources": [
       "HTB M04",

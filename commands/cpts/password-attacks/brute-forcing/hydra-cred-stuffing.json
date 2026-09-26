@@ -64,6 +64,10 @@
     "impact": "Access to any account where the user reused a breached password.",
     "detection": "Failed authentication bursts: Windows 4625 (failed logon) and 4771 (Kerberos pre-auth failed) at abnormal rate/volume; account lockouts (4740); many attempts from one source, or - for spraying - one password across many accounts. SIEM correlation on failed-logon spikes.",
     "artifacts": "Failed and occasional successful logons from breach-sourced pairs; 4625 bursts.",
+    "splunk_spl": "index=linux sourcetype=\"linux_secure\" \"Failed password\"\n| stats count by user, src_ip, bin(_time, 1m)\n| where count>10\n\nindex=linux sourcetype=\"linux_secure\" \"Accepted password\"\n| stats count by user, src_ip",
+    "elastic_kql": "event.category:authentication AND event.outcome:failure AND source.ip:*",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"Failed password\" or SyslogMessage has \"authentication failure\"\n| extend SrcIP = extract(@\"from ([0-9\\.]+)\", 1, SyslogMessage)\n| summarize attempts=count() by SrcIP, bin(TimeGenerated, 1m)\n| where attempts > 10\n| sort by attempts desc\n// credential stuffing: breach-sourced user:pass pairs, occasional success among many failures",
+    "sigma_rules": "lnx_auth_credential_stuffing (breach-pair logins; success amid failures)",
     "prevention": "[MITRE T1110 M1032 Multi-factor Authentication] MFA defeats password guessing; [M1027 Password Policies] strong passwords + [M1036 Account Use Policies] lockout thresholds; alert on failed-logon spikes and impossible-travel.",
     "evasion": "Spray low-and-slow (one password, spaced attempts) to stay under lockout thresholds and volume alerts; distribute across source IPs; target accounts unlikely to be monitored.",
     "sources": [

@@ -73,6 +73,10 @@
     "impact": "An interactive remote shell as the authenticated user — a foothold or a lateral-movement hop.",
     "detection": "Monitor for SSH logins from remote systems followed by post-login execution of suspicious binaries or privilege escalation behavior. Logins outside normal user hours or from unusual source IPs are particularly significant.",
     "artifacts": "sshd authentication log entries (/var/log/auth.log; Windows OpenSSH event log), a new session, and the source IP recorded by sshd.",
+    "splunk_spl": "index=linux sourcetype=\"linux_secure\" \"Accepted password\" OR \"Accepted publickey\"\n| stats count values(src_ip) as sources by user\n| where count>0\n\nindex=linux sourcetype=\"linux_secure\" \"Accepted\" \n| eval hour=strftime(_time,\"%H\") | where hour<6 OR hour>22\n| table _time, user, src_ip",
+    "elastic_kql": "event.category:authentication AND event.action:(ssh_login OR \"logged-in\") AND event.outcome:success AND source.ip:*",
+    "sentinel_kql": "Syslog\n| where ProcessName == \"sshd\" and SyslogMessage has \"Accepted\"\n| extend SrcIP = extract(@\"from ([0-9\\.]+)\", 1, SyslogMessage), User = extract(@\"for (\\S+)\", 1, SyslogMessage)\n| summarize logins=count(), sources=make_set(SrcIP) by User, bin(TimeGenerated, 1h)\n| sort by TimeGenerated desc",
+    "sigma_rules": "lnx_auth_ssh_accepted_login, lnx_ssh_login_unusual_hours_or_source",
     "prevention": "Disable the SSH daemon on systems that do not require it. Require multi-factor authentication for SSH connections wherever possible, such as password-protected SSH keys. Limit which user accounts are allowed to login via SSH.",
     "evasion": "Authenticating with valid credentials makes the session blend with legitimate administrative traffic — SSH is expected on port 22, so a single successful login raises little suspicion compared with exploit traffic.",
     "sources": [

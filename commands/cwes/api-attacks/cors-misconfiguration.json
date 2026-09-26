@@ -92,6 +92,10 @@
     "impact": "T1190 Exploit Public-Facing Application + T1539 Steal Web Session Cookie (effectively - reading authenticated data cross-origin). Theft of PII, tokens, or account data from any logged-in victim who opens the attacker page.",
     "detection": "Requests carrying an external/attacker Origin header to sensitive endpoints; responses reflecting non-allowlisted origins; spikes of cross-origin credentialed requests. WAF rules matching unexpected Origin values.",
     "artifacts": "Access logs: requests with Origin: https://evil.com (or null) to authenticated API paths; the reflected ACAO in responses.",
+    "splunk_spl": "index=web sourcetype=access_combined\n| where isnotnull(origin) AND origin!=\"\"\n| stats count by clientip, origin | where match(origin, \"(?i)(attacker|evil|null)\")",
+    "elastic_kql": "event.category:web AND http.request.headers.origin:* AND NOT http.request.headers.origin:(*yourdomain.com*)",
+    "sentinel_kql": "W3CIISLog\n| where csReferer != \"\" or csUriQuery has \"origin\"\n| project TimeGenerated, cIP, csUriStem, csReferer\n| sort by TimeGenerated desc\n// CORS misconfig probing: requests with a foreign Origin, checking for a reflected ACAO header",
+    "sigma_rules": "web_cors_misconfiguration_probe (foreign Origin + reflected ACAO)",
     "prevention": "Use a strict server-side allowlist of exact trusted origins - never reflect the Origin header. Do not set Access-Control-Allow-Credentials: true unless required, and never with a reflected/wildcard origin. Reject Origin: null. Validate origins with exact match, not startswith/endswith/substring. Prefer same-site cookies (SameSite=Strict/Lax) as defense in depth.",
     "evasion": "Use a plausible-looking origin that passes weak validation (trusted substring/suffix). Keep the exfil beacon small and to a benign-looking host.",
     "sources": [

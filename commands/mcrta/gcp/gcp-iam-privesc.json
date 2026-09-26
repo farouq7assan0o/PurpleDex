@@ -87,6 +87,10 @@
     "impact": "T1548 Abuse Elevation Control Mechanism + T1098.003 Account Manipulation: Additional Cloud Roles. Escalation from a limited principal to a highly-privileged SA (up to Owner/Editor), enabling full project/org compromise.",
     "detection": "Cloud Audit Logs: GenerateAccessToken / SignJwt on service accounts, service-account key creation, roles.update, SetIamPolicy, and deploymentmanager/cloudfunctions runs by unexpected principals. SCC/IAM Recommender flag these dangerous grants.",
     "artifacts": "Audit Log: iam.serviceAccounts.getAccessToken, CreateServiceAccountKey, UpdateRole, SetIamPolicy events by the escalating principal.",
+    "splunk_spl": "index=gcp_audit sourcetype=\"google:gcp:audit\" (protoPayload.methodName=\"google.iam.admin.v1.SetIAMPolicy\" OR protoPayload.methodName=\"SetIamPolicy\")\n| table _time, protoPayload.authenticationInfo.principalEmail, protoPayload.resourceName, protoPayload.request.policy.bindings{}.role",
+    "elastic_kql": "cloud.provider:gcp AND event.action:(*SetIAMPolicy* OR *SetIamPolicy*)",
+    "sentinel_kql": "GCPAuditLogs\n| where methodName has_any (\"GenerateAccessToken\",\"SignJwt\",\"CreateServiceAccountKey\",\"UpdateRole\",\"SetIamPolicy\")\n| project TimeGenerated, methodName, principalEmail=protoPayload_authenticationInfo_principalEmail, resourceName\n| sort by TimeGenerated desc",
+    "sigma_rules": "gcp_iam_policy_modification",
     "prevention": "Least privilege - never grant actAs / getAccessToken / serviceAccountKeys.create / roles.update / setIamPolicy broadly. Separate duties. Use IAM Recommender + Policy Analyzer to find and remove escalation-enabling grants. Org policy to disable SA key creation. Alert on the audit events above.",
     "evasion": "Prefer impersonation (token) over key creation (quieter); perform the escalation once and operate with the impersonated identity from normal contexts.",
     "sources": [

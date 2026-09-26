@@ -117,6 +117,10 @@
     "sources": [
       "MITRE T1590.002"
     ],
-    "evasion": "Use passive sources first (cert transparency, public records); rate-limit active zone-transfer/brute attempts; a single AXFR attempt is quiet, brute-forcing is not."
+    "evasion": "Use passive sources first (cert transparency, public records); rate-limit active zone-transfer/brute attempts; a single AXFR attempt is quiet, brute-forcing is not.",
+    "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count count(eval(reply_code=\\\"NXDOMAIN\\\")) as nx by src_ip, bin(_time, 1m)\n| where count>50 OR nx>30",
+    "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
+    "sentinel_kql": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// dnsrecon multi-technique enumeration (AXFR attempt + brute)",
+    "sigma_rules": "net_dns_enumeration (dnsrecon multi-technique enumeration (AXFR attempt + brute))"
   }
 }

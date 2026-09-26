@@ -79,6 +79,10 @@
     "impact": "An interactive command shell on the target, reachable by the attacker connecting inbound.",
     "detection": "Monitor for execution of scripting or command interpreters outside expected administrative time windows, from unusual user contexts, or with encoded/obfuscated arguments. Secondary execution events spawned from interpreters (e.g., a shell spawning another shell or a network tool) are particularly significant.",
     "artifacts": "A listening port opened by an unusual process; an inbound connection to that port; an interpreter (bash/nc/powershell) spawned with listener arguments.",
+    "splunk_spl": "index=sysmon EventCode=1 (CommandLine=\"*-l*-e*\" OR CommandLine=\"*-lvp*\")\n| table _time, Computer, User, CommandLine",
+    "elastic_kql": "event.code:\"1\" AND process.command_line:(*-l* AND *-e* AND (*cmd* OR */bin/*))",
+    "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"-lvp\",\"nc -l\",\"-e cmd\",\"-e /bin/\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// bind shell listener on the target executing a shell for inbound connections",
+    "sigma_rules": "proc_creation_bind_shell_listener",
     "prevention": "Use antivirus/antimalware to automatically quarantine suspicious scripts. Employ application control to restrict which scripts and interpreters can execute. Monitor and restrict the execution of interpreters (bash, sh, python, etc.) where not explicitly required.",
     "evasion": "Bind the listener to a common-looking port and encode the payload; a bind shell is inherently more exposed than a reverse shell because its listening port is visible, so an unremarkable, reachable port is preferred.",
     "sources": [

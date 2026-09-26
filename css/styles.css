@@ -733,6 +733,16 @@ body[data-mode="both"] .team-dot { opacity: 1; }
 .builder-tab.active[data-btab="attack"]    { color: var(--team-red);  border-bottom-color: var(--team-red); }
 .builder-tab.active[data-btab="understand"]{ color: var(--yellow);    border-bottom-color: var(--yellow); }
 .builder-tab.active[data-btab="defend"]    { color: var(--team-blue); border-bottom-color: var(--team-blue); }
+/* Pin: keep every card open on one tab (per-viewer, saved locally) */
+.builder-pin {
+  margin-left: auto; align-self: center; margin-bottom: 2px;
+  padding: 0.28rem 0.5rem; font-size: 0.8rem; line-height: 1; cursor: pointer;
+  color: var(--muted); border: none; background: none; border-radius: 5px;
+  transition: color .15s, background .15s;
+}
+.builder-pin:hover { color: var(--text); background: var(--border); }
+.builder-pin.active { color: var(--yellow); }
+.pin-dot { font-size: 0.6rem; margin-left: 0.3rem; opacity: 0.9; vertical-align: middle; }
 
 /* ── Defense / Understand content blocks ────────────────────────────── */
 .def-section { margin-bottom: 1.1rem; }

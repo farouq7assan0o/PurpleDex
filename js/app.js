@@ -33,6 +33,8 @@ class CommandManager {
         this.selectedCommand = null;
         this.mode = this.loadMode();       // 'red' | 'blue' | 'both'
         this.builderTab = 'attack';        // 'attack' | 'understand' | 'defend'
+        this.pinnedTab = null;             // when set, every card opens on this tab (per-viewer, localStorage)
+        try { this.pinnedTab = localStorage.getItem('cr_pinnedTab') || null; } catch (e) {}
         this._searchHits = {};             // { cardId: ['step 2', 'variation 3', ...] } — where the search matched
 
         this.init();
@@ -813,11 +815,23 @@ class CommandManager {
     }
 
     /* ---------- builder ---------- */
+    hasTabContent(cmd, tab) {
+        if (tab === 'attack') return true;
+        if (tab === 'notes') return !!(cmd.notes || '').trim();
+        const def = cmd.defense || {};
+        if (tab === 'understand') return !!(def.why_it_works || def.prerequisites || def.impact || def.misconfiguration || (Array.isArray(def.interview) && def.interview.length));
+        if (tab === 'defend') return !!(def.detection || def.prevention || def.evasion || def.artifacts || def.vulnerable_config || def.secure_config || def.splunk_spl || def.elastic_kql || def.sigma_rules || def.sentinel_kql);
+        return false;
+    }
+
     selectCommand(cmd) {
         this.selectedCommand = cmd;
         this.authTab = 0;
         const isBlue = Array.isArray(cmd.certifications) && cmd.certifications.some(c => c.toUpperCase() === 'CDSA');
-        this.builderTab = isBlue ? 'defend' : 'attack';
+        const defaultTab = isBlue ? 'defend' : 'attack';
+        // A pinned tab keeps every card on the same view (e.g. Defend while studying),
+        // but falls back to the default when this card has nothing for it.
+        this.builderTab = (this.pinnedTab && this.hasTabContent(cmd, this.pinnedTab)) ? this.pinnedTab : defaultTab;
         this.pushRecent(cmd.id);
         const app = document.getElementById('app'); if (app) app.classList.add('has-selection');
         this.renderBuilder();
@@ -1125,8 +1139,12 @@ class CommandManager {
             ? { attack: '🔍 Investigate', understand: '🎯 Understand Attack', defend: '🛡 Defend', notes: '📓 Notes' }
             : { attack: '⚔ Attack',       understand: '💡 Understand',        defend: '🛡 Defend', notes: '📓 Notes' };
         const btabsHtml = '<div class="builder-tabs">' +
-            btabs.map(t => '<button class="builder-tab' + (this.builderTab === t ? ' active' : '') +
-                '" data-btab="' + t + '">' + btabLabels[t] + '</button>').join('') + '</div>';
+            btabs.map(t => '<button class="builder-tab' + (this.builderTab === t ? ' active' : '') + (this.pinnedTab === t ? ' pinned' : '') +
+                '" data-btab="' + t + '">' + btabLabels[t] + (this.pinnedTab === t ? ' <i class="fas fa-thumbtack pin-dot"></i>' : '') + '</button>').join('') +
+            '<button class="builder-pin' + (this.pinnedTab ? ' active' : '') + '" id="pinTab" title="' +
+                (this.pinnedTab ? 'Every card opens on ' + btabLabels[this.pinnedTab].replace(/^[^ ]+ /, '') + '. Click to unpin.' : 'Pin the open tab so every card opens on it.') +
+                '" aria-label="Pin tab"><i class="fas fa-thumbtack"></i></button>' +
+            '</div>';
 
         const tabContent = this.builderTab === 'understand' ? understandHtml
                          : this.builderTab === 'defend'     ? defendHtml
@@ -1161,6 +1179,16 @@ class CommandManager {
         // wire perspective tabs (Attack / Understand / Defend)
         body.querySelectorAll('.builder-tab').forEach(t => {
             t.addEventListener('click', () => { this.builderTab = t.dataset.btab; this.renderBuilder(); });
+        });
+        // wire the pin toggle: pins the currently open tab so every card opens on it
+        const pinBtn = document.getElementById('pinTab');
+        if (pinBtn) pinBtn.addEventListener('click', () => {
+            this.pinnedTab = (this.pinnedTab === this.builderTab) ? null : this.builderTab;
+            try {
+                if (this.pinnedTab) localStorage.setItem('cr_pinnedTab', this.pinnedTab);
+                else localStorage.removeItem('cr_pinnedTab');
+            } catch (e) {}
+            this.renderBuilder();
         });
         // wire variation tabs
         body.querySelectorAll('.auth-tab').forEach(t => {

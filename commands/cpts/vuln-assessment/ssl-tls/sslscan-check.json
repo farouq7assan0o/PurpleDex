@@ -110,5 +110,6 @@
       "command": "openssl s_client -connect <host>:<port> 2>/dev/null | openssl x509 -noout -dates -subject -issuer",
       "label": "openssl"
     }
-  ]
+  ],
+  "explain": "Enumerates a host's SSL/TLS configuration:\n  sslscan <host>   connect and probe supported protocols, ciphers, and the certificate\nFlags weak protocols (SSLv3, TLS 1.0/1.1), weak ciphers, and expiring/self-signed certs; append :<port> for non-443 services and --show-certificate for full cert detail."
 }

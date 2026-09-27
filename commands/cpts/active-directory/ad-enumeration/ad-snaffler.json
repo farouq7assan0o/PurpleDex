@@ -106,5 +106,6 @@
       "label": "Review high-signal (red) findings",
       "command": "# grep the log for creds/keys/config files"
     }
-  ]
+  ],
+  "explain": "Hunts shares across the domain for credentials and sensitive files:\n  Snaffler.exe   run from a domain-joined Windows host\n  -s             also print findings to the console\n  -d <domain>    the domain to enumerate shares in\n  -o snaffler.log   log file\n  -v data        verbosity: show the interesting data it finds\nUses built-in classifiers to flag files by name and content (keys, configs, passwords) at scale - point -i at a single host to scope it."
 }

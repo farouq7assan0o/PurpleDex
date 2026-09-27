@@ -94,5 +94,6 @@
       "OWASP A05:2021"
     ],
     "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-  }
+  },
+  "explain": "Detects Drupal and reads its version:\n  curl -s http://<url>/CHANGELOG.txt   fetch the changelog\n  | grep -m2 \"\"                         show the first lines (top entry = current version)\nConfirms Drupal and the version to match against exploits (e.g. Drupalgeddon); droopescan scan drupal enumerates modules more deeply."
 }

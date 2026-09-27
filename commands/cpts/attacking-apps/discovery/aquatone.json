@@ -94,5 +94,6 @@
       "label": "Plain host list",
       "command": "cat hosts.txt | ./aquatone"
     }
-  ]
+  ],
+  "explain": "Screenshots web hosts from an Nmap XML for visual triage:\n  cat web_discovery.xml   the nmap XML from the discovery scan\n  | ./aquatone -nmap      parse it as nmap input and capture each host\nProduces an HTML gallery so you can eyeball many sites at once and spot login/admin/default pages; -ports large widens the port set."
 }

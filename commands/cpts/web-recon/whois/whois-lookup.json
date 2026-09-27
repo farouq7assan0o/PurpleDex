@@ -112,5 +112,6 @@
       "command": "whois <ip> -h <whois_server>",
       "label": "whois an IP (pick server)"
     }
-  ]
+  ],
+  "explain": "Queries WHOIS registration data for a domain:\n  whois <domain>   look up the domain's registry record\nReturns registrar, registrant, name servers, and creation/expiry dates - a passive first look that can leak org names, emails, and infrastructure; add -h <server> to query a specific WHOIS server."
 }

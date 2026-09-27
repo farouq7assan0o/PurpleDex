@@ -90,5 +90,6 @@
       "description": "Forward multiple ports in a single SSH connection - e.g. database on 1234 and web on 8080 simultaneously"
     }
   ],
-  "type": "command"
+  "type": "command",
+  "explain": "Forwards a local port through SSH to a service the pivot can reach:\n  -L <local_port>:localhost:<remote_port>   listen locally and tunnel to <remote_port> as seen from the pivot\n  <user>@<pivot>                             the SSH pivot host\nTraffic to your localhost:<local_port> emerges from the pivot to the target service; repeat -L to forward several ports in one session."
 }

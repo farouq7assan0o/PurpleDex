@@ -124,5 +124,6 @@
       "label": "Import the zip into BloodHound",
       "command": "# drag-drop zip -> run 'Shortest paths to Domain Admins'"
     }
-  ]
+  ],
+  "explain": "Collects BloodHound data natively on a Windows host:\n  .\\SharpHound.exe   the C# collector\n  -c All             run all collection methods (more accurate sessions/local-admin than the Python collector)\n  --zipfilename <name>   name the output ZIP\nProduces a ZIP of JSON to import into BloodHound; use -c DCOnly for a quieter LDAP-only collection with no host touching."
 }

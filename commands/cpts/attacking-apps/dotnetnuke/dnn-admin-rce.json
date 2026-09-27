@@ -115,5 +115,6 @@
       "MITRE T1059"
     ],
     "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
-  }
+  },
+  "explain": "Gets code execution on DotNetNuke with SuperUser/admin creds via the built-in SQL console:\n  sp_configure 'show advanced options','1'; RECONFIGURE;   unlock advanced settings\n  sp_configure 'xp_cmdshell','1'; RECONFIGURE;              enable the OS-command stored proc\n  xp_cmdshell 'whoami'                                     run commands as the SQL/IIS service account\nDNN's Settings > SQL console runs arbitrary T-SQL, so enabling xp_cmdshell yields RCE; from there upload nc/PrintSpoofer to escalate (creds are often pillaged from an exposed web.config)."
 }

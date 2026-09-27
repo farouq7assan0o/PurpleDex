@@ -91,5 +91,6 @@
       "label": "All protocols (RDP/VNC/web)",
       "command": "eyewitness --all-protocols -x web_discovery.xml -d <output_dir>"
     }
-  ]
+  ],
+  "explain": "Screenshots every web app from an Nmap XML with EyeWitness:\n  eyewitness --web   web-app mode\n  -x web_discovery.xml   parse targets from the nmap XML\n  -d <output_dir>        report output directory\nBuilds a browsable report so you can visually triage many hosts and spot login/admin/default pages fast; -f urls.txt takes a plain URL list, --all-protocols adds RDP/VNC."
 }

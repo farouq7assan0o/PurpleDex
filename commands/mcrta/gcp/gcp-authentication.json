@@ -91,5 +91,6 @@
     "misconfiguration": "Downloadable service-account keys enabled and long-lived; no MFA on users; over-privileged service accounts (Owner/Editor).",
     "vulnerable_config": "# Leaked SA key with Editor/Owner -> full access:\ngcloud auth activate-service-account --key-file leaked-sa.json   # now you are the SA",
     "secure_config": "# Org policy: constraints/iam.disableServiceAccountKeyCreation = true\n# Use Workload Identity Federation / attached SAs instead of keys; enforce 2SV;\n# least-privilege SA roles; alert on SA key usage in Cloud Audit Logs."
-  }
+  },
+  "explain": "Authenticates to Google Cloud as a compromised service account:\n  gcloud auth activate-service-account   log in as an SA\n  --key-file <sa_key>.json               the SA's JSON key\nEstablishes the gcloud session for all GCP operations; 'gcloud auth login' handles user OAuth, and 'gcloud auth list'/'config list' confirm the active identity and project."
 }

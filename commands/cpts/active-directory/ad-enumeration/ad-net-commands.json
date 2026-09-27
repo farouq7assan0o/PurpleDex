@@ -123,5 +123,6 @@
       "label": "Password policy",
       "command": "net accounts /domain"
     }
-  ]
+  ],
+  "explain": "Enumerates the domain with the built-in net command (LOTL):\n  net <object> /domain   query the domain rather than the local host\nWith no tools to install, 'net user /domain', 'net group \"Domain Admins\" /domain', and 'net accounts /domain' list users, group membership, and the password policy from any domain-joined host."
 }

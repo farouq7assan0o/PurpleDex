@@ -84,5 +84,6 @@
       "OWASP A07:2021"
     ],
     "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic."
-  }
+  },
+  "explain": "Enumerates valid GitLab usernames to build a target list:\n  gitlab_userenum.sh   the enumeration script\n  --url http://<url>:8081/   the GitLab instance\n  --userlist <userlist>      candidate usernames\nConfirms which accounts exist via GitLab's sign-up/internal endpoints; check /users/sign_up for open registration and /help for the version."
 }

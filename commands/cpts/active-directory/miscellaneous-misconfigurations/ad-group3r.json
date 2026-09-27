@@ -81,5 +81,6 @@
   },
   "tools": [
     "Group3r"
-  ]
+  ],
+  "explain": "Audits GPOs for misconfigurations and secrets:\n  group3r.exe   walk every GPO the current user can read\n  -f <output_log>   write findings to this log file\nFlags writable GPO links, weak script paths, insecure scheduled tasks, and credentials in GPP; run as a domain user and grep the log for HIGH/CRITICAL, or -s to target a specific DC."
 }

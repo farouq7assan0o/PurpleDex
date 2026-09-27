@@ -123,5 +123,6 @@
       "command": "# Navigate to: https://localhost:8834\n# Accept self-signed cert, create admin account, enter license key (Nessus Essentials = free, 16-host limit)",
       "label": "Navigate to: https://localhost:883…"
     }
-  ]
+  ],
+  "explain": "Installs the Nessus vulnerability scanner from its Debian package:\n  dpkg -i Nessus-<version>-ubuntu910_amd64.deb   install the downloaded .deb\nAfter 'systemctl start nessusd.service' the web UI is at https://localhost:8834, where you create scans (Basic Network Scan, Credentialed Patch Audit, etc.)."
 }

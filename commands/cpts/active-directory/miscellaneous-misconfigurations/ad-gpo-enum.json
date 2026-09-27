@@ -87,5 +87,6 @@
   },
   "tools": [
     "PowerView"
-  ]
+  ],
+  "explain": "Checks whether you can write to any GPO with PowerView:\n  Get-DomainGPO | select displayname                  list the GPOs\n  Convert-NameToSid \"<user>\"                            resolve your principal's SID\n  Get-DomainObjectACL -ResolveGUIDs -Identity * | ? {SID matches and rights like '*Write*'}   find GPOs you can modify\nWrite access to a GPO = code execution on every computer it applies to (via a startup script or scheduled task); Get-DomainGPOComputerLocalGroupMapping shows which hosts a GPO targets."
 }

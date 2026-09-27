@@ -127,5 +127,6 @@
       "command": "sudo tail -1 /var/www/uploads/SecretUploadDirectory/users.txt",
       "label": "tail"
     }
-  ]
+  ],
+  "explain": "Receives uploaded files through Nginx's WebDAV PUT method:\n  curl -T /etc/passwd                              upload this local file (-T = PUT)\n  http://localhost:9001/SecretUploadDirectory/users.txt   destination URL and saved name\nNginx (with dav_methods PUT enabled on that location) writes the body to disk, handling large/binary files more reliably than simple one-line servers."
 }

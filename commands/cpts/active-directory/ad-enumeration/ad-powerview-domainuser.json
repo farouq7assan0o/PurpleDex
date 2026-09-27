@@ -106,5 +106,6 @@
       "label": "Only privileged (admincount=1)",
       "command": "Get-DomainUser -AdminCount | select samaccountname"
     }
-  ]
+  ],
+  "explain": "Reads detailed user attributes with PowerView:\n  Get-DomainUser   query user objects\n  -Identity <user>   a specific account (omit for all users)\n  -Domain <domain>   target a specific domain\nReturns UAC flags, SPN, logon history, admincount, and password metadata; select the columns you need, or pipe to a description filter to hunt for creds."
 }

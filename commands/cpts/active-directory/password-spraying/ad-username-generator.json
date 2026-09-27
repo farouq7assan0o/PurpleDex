@@ -100,5 +100,6 @@
       "label": "Validate against the DC (no lockout)",
       "command": "kerbrute userenum -d <domain> --dc <dc_ip> usernames.txt -o valid_users.txt"
     }
-  ]
+  ],
+  "explain": "Builds an AD username wordlist from real names:\n  username-anarchy   permutation generator\n  -i <names_file>    input list of 'First Last' names (from OSINT/LinkedIn)\n  | tee ...txt       save the generated candidates\nProduces common formats (first.last, flast, f.last, firstl, ...); feed the output straight into kerbrute userenum to confirm which actually exist before spraying."
 }

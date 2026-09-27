@@ -8,9 +8,22 @@
   "opsec": "loud",
   "category": "Digital Forensics",
   "subcategory": "Evidence Acquisition",
-  "certifications": ["CDSA"],
+  "certifications": [
+    "CDSA"
+  ],
   "source": "CDSA Module 13: Introduction to Digital Forensics",
-  "tags": ["kape", "velociraptor", "winpmem", "memory-acquisition", "ftk-imager", "dfir", "triage", "forensics", "evidence-collection", "blue-team"],
+  "tags": [
+    "kape",
+    "velociraptor",
+    "winpmem",
+    "memory-acquisition",
+    "ftk-imager",
+    "dfir",
+    "triage",
+    "forensics",
+    "evidence-collection",
+    "blue-team"
+  ],
   "notes": "=== KAPE (Kroll Artifact Parser and Extractor) ===\nTwo modes:\n  gkape.exe    → GUI launcher\n  kape.exe     → CLI (for automation and scripting)\n\nCLI syntax:\n  kape.exe --tsource <drive> --tdest <output_dir> --target <target_name>\n\nCommon targets:\n  !SANS_Triage    → compound target collecting ALL critical forensic artifacts:\n                    MFT, USN Journal, prefetch, event logs, registry hives,\n                    LNK files, browser data, shellbags, amcache, SRUM, etc.\n\n  Individual targets also available:\n    $MFT, $J, Prefetch, RegistryHives, EventLogs, etc.\n\nFull triage example:\n  kape.exe --tsource D: --tdest C:\\investigation --target !SANS_Triage\n\nOutput structure:\n  C:\\investigation\\<source_drive>\\<artifact_paths>\n  e.g. C:\\investigation\\C%3A\\Windows\\Prefetch\\\n       C:\\investigation\\ntfs\\%5C%5C.%5CC%3A\\$Extend\\$UsnJrnl%3A$J\n\nKAPE processes (modules) can also parse artifacts after collection:\n  kape.exe --tsource ... --target ... --msource <dir> --mdest <dir> --module !EZParser\n\n=== VELOCIRAPTOR ===\nEndpoint agent for rapid forensic triage and memory acquisition.\n\nArtifact for disk triage (equivalent to KAPE !SANS_Triage):\n  Artifact: Windows.KapeFiles.Targets\n  Configuration: _SANS_Triage = True\n  Output: artifacts collected to server or local path\n\nArtifact for memory acquisition:\n  Artifact: Windows.Memory.Acquisition\n  Output: PhysicalMemory.raw (full physical memory dump)\n\nVelociraptor can run across multiple endpoints simultaneously.\nUseful for: fleet-wide triage, remote acquisition without physical access\n\n=== MEMORY ACQUISITION TOOLS ===\n\n--- WinPmem (recommended for Windows) ---\nLightweight, open-source, no installation required:\n  winpmem_mini_x64_rc2.exe memdump.raw\n  → Writes full physical memory to memdump.raw in current directory\n  → Requires Administrator privileges\n\nDownload: https://github.com/Velocidex/WinPmem/releases\n\n--- DumpIt ---\nSingle executable, creates memory dump in current directory:\n  DumpIt.exe\n  → Interactive confirmation prompt\n  → Output: <COMPUTERNAME>-<YYYY><MM><DD>-<HHMMSS>.dmp\n\n--- FTK Imager (Magnet Forensics) ---\nGUI tool, also supports:\n  → Memory acquisition (File → Capture Memory)\n  → Disk/volume imaging (bitstream copies)\n  → Viewing raw images and file systems\n  → Exporting individual files from images\n\n--- LiME (Linux Memory Extractor) ---\nLinux kernel module for live memory acquisition:\n  insmod lime.ko \"path=/tmp/memdump.lime format=lime\"\n  → Requires kernel module compilation matching target kernel\n  → Formats: lime (default), padded, raw\n\n--- Belkasoft RAM Capturer ---\nFree, supports 32/64-bit, works even when security software active\n\n--- Magnet RAM Capture ---\nFree, GUI-based, writes to .raw format\n\n=== VIRTUAL MACHINE MEMORY ===\nVMware:\n  → Suspend VM → <VM_name>.vmem file in VM directory\n  → Or use Velociraptor/WinPmem inside guest\n\nHyper-V:\n  → Checkpoints contain .bin file (memory)\n\nVirtualBox:\n  → VBoxManage debugvm <uuid> dumpvmcore --filename=dump.elf\n\n=== WRITE BLOCKERS ===\nHardware write blocker: prevents modification of source media during imaging\nSoftware write blocker: diskpart → select disk → attributes disk set readonly\nAlways image original media with write blocker - forensic soundness\n\n=== FORENSIC IMAGING WITH FTK IMAGER ===\n  File → Add Evidence Item → Physical Drive → select source\n  File → Create Disk Image → select format (E01/raw/AFF)\n  E01 format: includes metadata, verification hash, compression\n  After imaging: verify MD5/SHA1 hash matches FTK report\n\n=== CHAIN OF CUSTODY ===\nDocument for every piece of evidence:\n  - Who collected it\n  - When and where collected\n  - Storage/transfer log\n  - Verification hashes (MD5 + SHA256)\n  - Seal/tag physical media\n\n=== VOLATILITY MEMORY FILE FORMATS ===\nraw/lime/dd → supported natively\nE01 → ewf support (install libewf)\n.vmem + .vmss → VMware (need --profile matching)\n.mem → Hyper-V",
   "examples": [
     {
@@ -71,5 +84,6 @@
       "rel": "next",
       "note": "Analyze the PhysicalMemory.raw dump with Volatility v2/v3."
     }
-  ]
+  ],
+  "explain": "Uses KAPE to triage-collect forensic artifacts from a Windows drive:\n  --tsource D:            the source volume to collect from\n  --tdest C:\\investigation   where to write the collected artifacts\n  --target !SANS_Triage   the compound target that grabs all the critical artifacts (MFT, registry, event logs, etc.)\nGives you a defensible artifact set without imaging the whole disk; add --module !EZParser to parse it, and pair with WinPmem/LiME for memory acquisition."
 }

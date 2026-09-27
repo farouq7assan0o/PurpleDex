@@ -93,5 +93,6 @@
       "label": "Run a command (if admin)",
       "command": "smbmap -u <user> -p <password> -H <target> -x 'whoami'"
     }
-  ]
+  ],
+  "explain": "Enumerates SMB shares and your access with smbmap:\n  smbmap -u <user> -p <password>   authenticate\n  -d <domain>                      the domain\n  -H <target>                      the host to enumerate\nShows READ/WRITE per share; add -r '<share>' to list a share's contents, or use null creds (-u '' -p '') to test anonymous access - faster than manual smbclient browsing."
 }

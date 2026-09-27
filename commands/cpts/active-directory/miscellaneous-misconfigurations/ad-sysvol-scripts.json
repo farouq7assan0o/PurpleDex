@@ -84,5 +84,6 @@
       "label": "Grep logon scripts for creds",
       "command": "findstr /S /I /C:\"password\" \\\\<dc_host>\\SYSVOL\\<domain>\\scripts\\*"
     }
-  ]
+  ],
+  "explain": "Lists the domain logon-script folder in SYSVOL:\n  ls \\\\<dc_host>\\SYSVOL\\<domain>\\scripts   browse the replicated scripts share (readable by all domain users)\nLogon scripts (.bat/.vbs/.ps1) frequently hardcode credentials for drive mapping or privileged tasks; recurse SYSVOL and Select-String for 'password'/'net use', or reach it with smbclient."
 }

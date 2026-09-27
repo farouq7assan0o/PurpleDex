@@ -97,5 +97,6 @@
     "misconfiguration": "No Conditional Access / MFA; long-lived service-principal secrets; over-privileged users/SPs.",
     "vulnerable_config": "# SP with a long-lived secret and Contributor at subscription scope, no CA/MFA:\naz login --service-principal -u <app_id> -p <secret> --tenant <tid>   # succeeds from anywhere",
     "secure_config": "# Enforce Conditional Access + MFA; block ROPC/legacy auth.\n# Use managed identities or cert-based SP auth; rotate secrets; scope RBAC to least privilege."
-  }
+  },
+  "explain": "Authenticates to Azure/Entra as a compromised service principal:\n  az login --service-principal   non-interactive SP login\n  -u <app_id> -p <secret>        the app's client id and secret\n  --tenant <tenant_id>           the directory to sign into\nEstablishes a session for ARM/Entra enumeration; interactive 'az login' (or --use-device-code) works for user creds, and 'az account get-access-token' extracts a bearer token for raw API calls."
 }

@@ -94,5 +94,6 @@
       "label": "Spray a password against the valid users",
       "command": "kerbrute passwordspray -d <domain> --dc <dc_ip> valid_users.txt '<Season2024>'"
     }
-  ]
+  ],
+  "explain": "Validates usernames via Kerberos pre-auth without locking accounts:\n  kerbrute userenum   username-guessing mode\n  -d <domain>         target domain\n  --dc <dc_ip>        the KDC to ask\n  <userlist>          candidate names\n  -o valid_users.txt  save the confirmed accounts\nThe KDC answers differently for real vs unknown users (no bad-password count incremented), so you build a verified user list safely; feed it to a controlled password spray."
 }

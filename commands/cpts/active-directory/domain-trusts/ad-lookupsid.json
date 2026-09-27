@@ -108,5 +108,6 @@
       "label": "Note the domain SID + Enterprise/Domain Admins RIDs",
       "command": "# domain SID = base for forging tickets with /sids"
     }
-  ]
+  ],
+  "explain": "Brute-forces RIDs to enumerate users, groups, and the domain SID:\n  lookupsid.py <domain>/<user>@<dc_ip>   authenticate and walk the SID space\nReturns the domain SID plus account names by RID; it works across trusts, so you can enumerate a foreign domain's users with your current creds - grep for 'Domain SID' to grab the SID for ticket forging."
 }

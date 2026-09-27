@@ -113,5 +113,6 @@
       "label": "Import the zip into BloodHound and run pathfinding",
       "command": "# upload zip -> 'Shortest paths to Domain Admins'"
     }
-  ]
+  ],
+  "explain": "Collects BloodHound graph data remotely from Linux over LDAP/SMB:\n  bloodhound-python   the Python collector (no code on the target beyond queries)\n  -u/-p               domain credentials\n  -ns <dc_ip>         name server / DC to query\n  -d <domain>         the target domain\n  -c All              run every collection method (users, groups, ACLs, sessions, trusts, ...)\nProduces JSON (add --zip) you import into BloodHound to graph attack paths to Domain Admin."
 }

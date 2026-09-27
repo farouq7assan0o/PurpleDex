@@ -112,5 +112,6 @@
       "label": "Combined - threads + ignore SSL + save",
       "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -t 50 -k -o vhosts.txt"
     }
-  ]
+  ],
+  "explain": "Brute-forces the HTTP Host header to find virtual hosts served from one IP:\n  gobuster vhost   virtual-host discovery mode\n  -u http://<ip>   the target IP/base URL\n  -w <wordlist>    host names to try in the Host header\n  --append-domain  append the base domain to each word (word.domain)\nDifferent Host values can serve entirely different sites; add -k for HTTPS with invalid certs and -o to save hits."
 }

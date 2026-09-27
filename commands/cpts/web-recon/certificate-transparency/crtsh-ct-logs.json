@@ -111,5 +111,6 @@
       "command": "curl -s \"https://api.certspotter.com/v1/issuances?domain=<domain>&include_subdomains=true&expand=dns_names\" | jq '.[].dns_names[]' | tr -d '\"' | sort -u",
       "label": "certspotter API"
     }
-  ]
+  ],
+  "explain": "Mines Certificate Transparency logs for subdomains without touching the target:\n  curl \"https://crt.sh/?q=<domain>&output=json\"   fetch every logged cert for the domain as JSON\n  jq -r '.[] | .name_value'                        pull the certificate common/SAN names\n  sort -u                                          dedupe\nReveals subdomains (often internal-sounding) from issued TLS certs; add a jq 'contains()' filter to focus on a keyword like dev or vpn."
 }

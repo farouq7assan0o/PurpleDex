@@ -129,5 +129,6 @@
       "command": "sudo gvm-stop",
       "label": "gvm-stop"
     }
-  ]
+  ],
+  "explain": "Initializes Greenbone Vulnerability Management (OpenVAS) after install:\n  sudo gvm-setup   create the databases, feeds, and admin user\nOnce 'sudo gvm-start' is running, log into the Greenbone Security Assistant at https://127.0.0.1:9392 with the credentials gvm-setup prints; 'gvm-check-setup' verifies the install."
 }

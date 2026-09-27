@@ -95,5 +95,6 @@
       "label": "Feed live IPs into nmap",
       "command": "nmap -sV -iL live.txt -oA services"
     }
-  ]
+  ],
+  "explain": "Fast ICMP sweep to find live hosts on a subnet:\n  fping   parallel pinger\n  -a      show only alive hosts\n  -s      print summary stats\n  -g      generate the target list from the CIDR\n  -q      quiet (suppress per-host errors)\nGives a clean live-host list (tee it to a file) to feed straight into an nmap -iL service scan."
 }

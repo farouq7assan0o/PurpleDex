@@ -86,5 +86,6 @@
       "label": "Then enumerate with rpcclient",
       "command": "rpcclient -U \"\" -N <dc_ip> -c enumdomusers"
     }
-  ]
+  ],
+  "explain": "Opens a null session to a DC's IPC$ share from Windows:\n  net use \\\\<dc_host>\\ipc$   connect to the inter-process comms share\n  \"\" /u:\"\"                    empty password, empty username (anonymous)\nIf allowed, this enables anonymous RPC enumeration ('net user /domain', 'net group /domain'); rarely works on patched modern Windows but still common on legacy servers."
 }

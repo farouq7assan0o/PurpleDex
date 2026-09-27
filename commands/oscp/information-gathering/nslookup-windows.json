@@ -108,5 +108,6 @@
       "MITRE T1016",
       "MS Docs"
     ]
-  }
+  },
+  "explain": "Resolves DNS from a Windows foothold when dig/nmap are absent:\n  nslookup <domain>   forward-resolve the name\nUse '-type=TXT' (or MX, NS, etc.) for specific records and append a server IP to query a chosen DNS server; supports reverse lookups too."
 }

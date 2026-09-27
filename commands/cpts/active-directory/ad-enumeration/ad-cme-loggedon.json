@@ -93,5 +93,6 @@
       "label": "query user / quser - who is logged on",
       "command": "query user /server:<target>"
     }
-  ]
+  ],
+  "explain": "Finds who is currently logged on to a host via SMB:\n  crackmapexec smb <target>   connect to the target's SMB service\n  -u/-p                       valid domain credentials\n  --loggedon-users            call NetWkstaUserEnum to list active sessions\nReveals where privileged users have live sessions so you can target that host for lateral movement or credential theft; sweep a /23 and grep for 'admin' or 'Pwn3d'."
 }

@@ -99,5 +99,6 @@
     "fingerprinting",
     "recon",
     "scanner"
-  ]
+  ],
+  "explain": "Scans a web server for misconfigurations and known issues with Nikto:\n  -h <url>       the target host\n  -Tuning b      restrict tests to software identification only (fast, quieter)\nFlags the server software, dangerous files, outdated components, and default creds; drop -Tuning b (or use 0123456789abcde) for a full, noisier scan and -output to save."
 }

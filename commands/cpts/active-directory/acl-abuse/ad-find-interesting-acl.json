@@ -134,5 +134,6 @@
       "label": "Filter to your principals + note the right (GenericAll/WriteDacl/ForceChangePassword)",
       "command": "# pick the abuse: add-member / reset-password / targeted-kerberoast / RBCD"
     }
-  ]
+  ],
+  "explain": "Surfaces abusable ACL entries across the domain with PowerView:\n  Find-InterestingDomainAcl   find non-default ACEs granting control over objects\n  -ResolveGUIDs               translate rights GUIDs into readable names (e.g. ForceChangePassword)\nReports where a principal has GenericAll/GenericWrite/WriteDACL/WriteOwner/ForceChangePassword/AddMember over another object - the raw material for ACL-abuse privesc paths; filter by IdentityReferenceName to focus on accounts you control."
 }

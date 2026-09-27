@@ -105,5 +105,6 @@
       "rel": "next",
       "note": "TShark and Wireshark - GUI-based and CLI alternatives with display filters."
     }
-  ]
+  ],
+  "explain": "Captures on an interface but keeps only packets matching a BPF filter:\n  sudo tcpdump   packet sniffer (needs root)\n  -i eth0        the interface to capture on\n  host <target_ip>   BPF primitive: only traffic to/from this host\nCuts the noise down to the conversation you care about; combine primitives with and/or/not (e.g. 'host X and port 23'), and read a saved pcap with -r instead of -i for non-destructive post-capture filtering."
 }

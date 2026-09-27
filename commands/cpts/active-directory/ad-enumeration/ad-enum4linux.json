@@ -97,5 +97,6 @@
       "label": "Follow up on interesting shares/users",
       "command": "# feed usernames into kerbrute / spraying"
     }
-  ]
+  ],
+  "explain": "Runs the classic all-in-one SMB/RPC enumeration script:\n  enum4linux -A <dc_ip>   -A runs every check (users, groups, shares, password policy, OS info, domain membership)\nGreat for an initial unauthenticated sweep when null sessions are allowed; supply -u/-p to run it authenticated for fuller results."
 }

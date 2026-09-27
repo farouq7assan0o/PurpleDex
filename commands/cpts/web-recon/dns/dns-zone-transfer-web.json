@@ -112,5 +112,6 @@
       "command": "for ns in $(dig ns <domain> +short); do dig axfr @$ns <domain>; done",
       "label": "Batch loop"
     }
-  ]
+  ],
+  "explain": "Attempts a full DNS zone transfer (AXFR) against a name server:\n  dig axfr        request a zone transfer\n  @<nameserver>   the name server to ask (must allow AXFR)\n  <domain>        the zone to pull\nA misconfigured server dumps every record in the zone at once; enumerate the NS records first, then try AXFR against each (zonetransfer.me is a public practice target)."
 }

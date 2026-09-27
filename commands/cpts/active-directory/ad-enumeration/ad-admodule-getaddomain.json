@@ -98,5 +98,6 @@
       "label": "Forest info",
       "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
     }
-  ]
+  ],
+  "explain": "Returns the domain's core identity from the ActiveDirectory module:\n  Get-ADDomain   query the current domain object\nGives the domain/NetBIOS name, domain SID, forest root, functional level, and PDC emulator; the domain SID here is what you need for an ExtraSids golden-ticket across a trust. Add -Identity <domain> to read another domain in the forest."
 }

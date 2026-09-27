@@ -97,5 +97,6 @@
     "misconfiguration": "No DNS filtering. Web proxy without category-based blocking. No user training on phishing identification. Browser plugins enabled (Flash, Java - each increases attack surface).",
     "vulnerable_config": "# No DNS filtering:\n# Users can resolve any domain → attacker fingerprinting domain accessible\n\n# Browser plugins enabled (each is an attack surface):\n# Java plugin: enables Java applet exploits\n# Flash: CVE-2018-15982 and hundreds more\n# PDF reader plugins: numerous exploits\n\n# No web proxy content filtering for newly registered domains",
     "secure_config": "# DNS filtering (Cisco Umbrella, Cloudflare Gateway, or internal RPZ):\n# Block: newly registered domains, phishing categories, malware categories\n\n# Disable browser plugins:\n# Group Policy: disable Java, Flash, and other NPAPI plugins in Chrome/Firefox\n# Chrome: chrome://settings/content/plugins → Block all plugins\n\n# Web proxy: block uncategorized and newly registered domains for 30 days\n\n# User awareness: report phishing training program (GoPhish, KnowBe4)"
-  }
+  },
+  "explain": "Fingerprints a phishing target before building a client-side payload:\n  python3 -m http.server 80   host a benign resource and watch the connecting client's User-Agent\nThe UA reveals OS build and browser so your payload matches the victim; embed a 1x1 tracking image in a lure, and exiftool on a returned document leaks the Office/producer version."
 }

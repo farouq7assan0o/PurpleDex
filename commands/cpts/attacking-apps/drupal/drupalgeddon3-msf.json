@@ -103,5 +103,6 @@
       "OWASP A06:2021"
     ],
     "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-  }
+  },
+  "explain": "Authenticated Drupal RCE via CVE-2018-7602 in Metasploit:\n  use exploit/multi/http/drupal_drupageddon3   the module\nRequires a valid Drupal session cookie and a node id, so set DRUPAL_SESSION, DRUPAL_NODE, VHOST, RHOSTS, and LHOST before exploit; it abuses the same Form API flaw as Drupalgeddon2 but on a path that needs authentication."
 }

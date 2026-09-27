@@ -119,5 +119,6 @@
       "CVE-2010-2861"
     ],
     "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path."
-  }
+  },
+  "explain": "Exploits ColdFusion's unauthenticated locale traversal (CVE-2010-2861):\n  python2 14641.py <ip> <port> \"<file_path>\"   the EDB exploit: target, port, and the file to read\nColdFusion 9.0.1 and earlier let the unvalidated locale parameter of admin .cfm pages read arbitrary files; reading /lib/password.properties leaks the encrypted admin hash - grab the script with 'searchsploit -p 14641'."
 }

@@ -109,5 +109,6 @@
       "label": "Enumerate via wpscan",
       "command": "wpscan --url http://<url> --no-update"
     }
-  ]
+  ],
+  "explain": "Detects WordPress and enumerates themes/plugins from the page source:\n  curl -s http://<url>/   fetch the homepage\n  | grep -E 'WordPress|themes|plugins'   pull WordPress markers and asset links\nConfirms the CMS and reveals active themes/plugins passively; a plugin's /wp-content/plugins/<name>/readme.txt usually leaks its version for CVE matching."
 }

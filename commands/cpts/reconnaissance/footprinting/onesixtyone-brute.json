@@ -121,5 +121,6 @@
       "OSCP Ch06",
       "MITRE T1110.003"
     ]
-  }
+  },
+  "explain": "Brute-forces SNMP community strings quickly over UDP:\n  onesixtyone   the scanner\n  -c <community_wordlist>   list of community strings to try\n  <ip>          the target (or -i <file> for many)\nFinds the valid community string that unlocks snmpwalk; it is fast enough to sweep a whole /24."
 }

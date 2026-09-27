@@ -132,5 +132,6 @@
       "rel": "next",
       "note": "After built-in enumeration identifies targets, run SharpHound for comprehensive graph-based analysis."
     }
-  ]
+  ],
+  "explain": "Enumerates the host and domain using only built-in commands:\n  systeminfo   dump OS build, hotfixes, domain, and hardware info\nA living-off-the-land starting point when tools are blocked by AppLocker/AV; the card chains it with wmic qfe (patches), a PowerShell v2 downgrade to dodge logging, and native net/dsquery commands."
 }

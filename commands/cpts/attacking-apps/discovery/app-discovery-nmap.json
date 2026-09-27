@@ -90,5 +90,6 @@
       "MITRE T1046",
       "MITRE T1595.002"
     ]
-  }
+  },
+  "explain": "Sweeps a scope for common web/app ports with nmap:\n  -p 80,443,8000,8080,8180,8888,10000   HTTP and alternate HTTP ports\n  --open                                 only report open ports\n  -oA web_discovery                      save all output formats (the XML feeds screenshot tools)\n  -iL <scope_file>                       read targets from file\nBuilds the list of live web apps to triage; pipe web_discovery.xml into EyeWitness or Aquatone next."
 }

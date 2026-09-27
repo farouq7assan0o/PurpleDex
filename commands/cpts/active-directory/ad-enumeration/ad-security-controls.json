@@ -108,5 +108,6 @@
       "rel": "next",
       "note": "If tools are blocked, switch to LOTL techniques using built-in Windows commands"
     }
-  ]
+  ],
+  "explain": "Enumerates host defenses after landing on a Windows box:\n  Get-MpComputerStatus   report Windows Defender real-time/AV state\nTells you what you are up against before dropping tools; the card also checks PowerShell language mode ($ExecutionContext.SessionState.LanguageMode - Constrained vs Full) and AppLocker rules (Get-AppLockerPolicy)."
 }

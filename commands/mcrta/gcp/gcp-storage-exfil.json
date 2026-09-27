@@ -93,5 +93,6 @@
     "misconfiguration": "SA keys / terraform state / .env stored in buckets; public (allUsers) buckets; overly broad storage roles; Data Access logs off.",
     "vulnerable_config": "# Over-privileged token can list + pull a key file:\ngcloud storage cp gs://devops-bucket/devops-srvacc-key.json . --access-token-file token.txt",
     "secure_config": "# Store secrets in Secret Manager, not buckets; enforce uniform bucket-level access + least privilege;\n# remove public bindings; enable Data Access audit logs; apply VPC Service Controls; run DLP on buckets."
-  }
+  },
+  "explain": "Enumerates and pulls objects from Cloud Storage buckets:\n  gcloud storage ls gs://<bucket>   list a bucket's contents\n  --access-token-file token.txt     authenticate with a stolen OAuth token (or use an activated SA)\nBuckets often hold SA key files, .env, terraform state, and backups; 'gcloud storage cp' downloads them, and a recovered SA key frequently unlocks a more privileged identity."
 }

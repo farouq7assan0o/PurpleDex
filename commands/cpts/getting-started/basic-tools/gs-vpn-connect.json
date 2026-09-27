@@ -98,5 +98,6 @@
   ],
   "primary_cert": "CPTS",
   "source": "CPTS Module 02: Getting Started",
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Connects your attack VM to the lab network over OpenVPN:\n  sudo openvpn user.ovpn   bring up the VPN using this config profile (root needed to create the tun interface)\nEstablishes the tunnel (watch for 'Initialization Sequence Completed'); then confirm tun0 exists with 'ip -4 a show tun0' and that the lab subnet is routed before touching any target."
 }

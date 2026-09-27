@@ -101,5 +101,6 @@
     "versioning",
     "enumeration",
     "improper-inventory"
-  ]
+  ],
+  "explain": "Probes retired API versions that skipped current security controls:\n  curl -s http://<target>/api/v0/<endpoint>   hit an old version path\n  -H \"Authorization: Bearer <jwt_token>\"     with your token\n  | jq                                       parse the response\nOld versions (v0, beta, legacy) often miss auth checks or expose deleted records (OWASP API9); loop 'for ver in v0 v1 v2 beta legacy internal' to find which endpoints still answer."
 }

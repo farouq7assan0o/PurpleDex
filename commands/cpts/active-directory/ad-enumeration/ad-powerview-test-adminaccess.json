@@ -117,5 +117,6 @@
       "label": "Move laterally to those hosts",
       "command": "# PSRemoting / wmiexec, then dump creds"
     }
-  ]
+  ],
+  "explain": "Tests for local admin rights on a remote host with PowerView:\n  Test-AdminAccess -ComputerName <target>   try to open the target's Service Control Manager with admin rights\nReturns True/False quickly, so you can loop it over every domain computer to find where your current context is already local admin - a direct lateral-movement lead."
 }

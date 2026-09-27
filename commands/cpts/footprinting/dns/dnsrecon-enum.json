@@ -122,5 +122,6 @@
     "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
     "sentinel_kql": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// dnsrecon multi-technique enumeration (AXFR attempt + brute)",
     "sigma_rules": "net_dns_enumeration (dnsrecon multi-technique enumeration (AXFR attempt + brute))"
-  }
+  },
+  "explain": "Runs standard DNS enumeration with dnsrecon:\n  dnsrecon -d <domain>   the target domain\n  -t std                 standard record enumeration (SOA, NS, A, AAAA, MX, TXT, SPF) plus wildcard and AXFR checks\nGives a broad DNS picture in one pass; switch to '-t brt -D <wordlist>' to brute-force subdomains from a list."
 }

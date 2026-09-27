@@ -86,5 +86,6 @@
       "OWASP A05:2021"
     ],
     "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity."
-  }
+  },
+  "explain": "Detects Apache Tomcat and its version:\n  curl -s http://<url>:8080/docs/   fetch the docs page\n  | grep Tomcat                     read the version string\nConfirms Tomcat; then brute-force paths with gobuster for /manager and /host-manager (WAR deployment endpoints) and look for tomcat-users.xml, which often holds the manager credentials."
 }

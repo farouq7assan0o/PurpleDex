@@ -99,5 +99,6 @@
       "MITRE T1135",
       "MS Docs"
     ]
-  }
+  },
+  "explain": "Lists shared resources on a remote host with the built-in net view:\n  net view \\\\<ip>   query the host's shares\n  /all             include hidden admin shares (ADMIN$, C$, IPC$)\nA no-tools way from an authenticated Windows session to see what a host shares; 'net view' alone lists computers in the domain."
 }

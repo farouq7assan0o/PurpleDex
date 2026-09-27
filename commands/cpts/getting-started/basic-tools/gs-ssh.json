@@ -97,5 +97,6 @@
       "command": "ssh <user>@<ip> -p <port>",
       "label": "ssh -p"
     }
-  ]
+  ],
+  "explain": "Opens an interactive SSH session to a remote host:\n  ssh <user>@<ip>   authenticate as <user> and get a shell on <ip>\nGives you a terminal on the target; add -i <key> for key auth, -p <port> for a non-standard port, and the StrictHostKeyChecking=no options to skip the host-key prompt on throwaway lab hosts."
 }

@@ -107,5 +107,6 @@
       "label": "Abuse that access across the trust",
       "command": "# use the account's rights in the foreign domain"
     }
-  ]
+  ],
+  "explain": "Finds cross-forest group membership with PowerView:\n  Get-DomainForeignGroupMember   list principals from another domain who are members of this domain's groups\n  -Domain <foreign_domain>        the trusted domain to inspect\nForeign members inherit the group's rights, sometimes privileged - a common trust-abuse foothold; resolve the returned SIDs with ConvertFrom-SID."
 }

@@ -98,5 +98,6 @@
       "label": "Save to a userlist for spraying/roasting",
       "command": "crackmapexec smb <dc_ip> -u <user> -p <password> --users | awk '{print $5}' > users.txt"
     }
-  ]
+  ],
+  "explain": "Enumerates all domain users over SMB:\n  crackmapexec smb <dc_ip>   query the DC\n  -u/-p                      valid credentials\n  --users                    list accounts with RID, badpwd count, and password-set dates\nGives you a spray target list (pipe to awk to extract just usernames) and flags stale accounts worth attacking."
 }

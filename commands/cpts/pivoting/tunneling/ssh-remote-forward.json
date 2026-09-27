@@ -95,5 +95,6 @@
       "label": "Reverse SOCKS (-R dynamic)",
       "command": "ssh -R <socks_port> <user>@<attacker>"
     }
-  ]
+  ],
+  "explain": "Forwards a pivot-side port back to a service on your attack host (the reverse of -L):\n  -R <pivot_ip>:<remote_port>:<bind_ip>:<local_port>   open remote_port on the pivot, tunnel it to bind_ip:local_port on your side\n  <user>@<pivot>   the SSH pivot host\n  -vN              verbose, and no remote shell (tunnel only)\nLets a deeper host reach a service (or handler) only your attack box runs, by connecting to the pivot's remote_port."
 }

@@ -115,5 +115,6 @@
     "misconfiguration": "Broad Reader/Contributor at high scope; Owner or User Access Administrator granted to non-admins; unreviewed custom roles with wildcard actions.",
     "vulnerable_config": "# Contributor at subscription scope can enumerate everything and run most resource actions:\naz role assignment list --assignee <me> --all   # shows Contributor / Subscription scope",
     "secure_config": "# Scope RBAC tightly (resource-group not subscription); use PIM; review custom roles for wildcard actions;\n# alert on roleAssignments list/write spikes in Activity Log."
-  }
+  },
+  "explain": "Enumerates the Azure Resource Manager layer with the az CLI:\n  az resource list -o table   list every resource your principal can see\nThe card walks accounts/subscriptions (az account list), resource groups (az group list), and - most importantly - RBAC via 'az role assignment list --all' and role definitions to find what you can do and where to escalate."
 }

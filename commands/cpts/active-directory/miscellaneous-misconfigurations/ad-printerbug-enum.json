@@ -82,5 +82,6 @@
   },
   "tools": [
     "impacket"
-  ]
+  ],
+  "explain": "Checks whether the Print Spooler is running on target hosts:\n  Import-Module .\\SecurityAssessment.ps1   load the helper\n  Get-SpoolStatus -ComputerName <host>     query the Spooler service state\nA running Spooler on a DC enables the Printer Bug (SpoolSample) coercion and PrintNightmare - so this finds coercion targets; CrackMapExec's -M spooler does the same remotely."
 }

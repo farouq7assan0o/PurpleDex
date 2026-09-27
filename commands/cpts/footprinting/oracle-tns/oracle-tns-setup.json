@@ -64,5 +64,6 @@
   "mitre": [
     "T1046"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "One-time install of the tooling to attack Oracle TNS:\n  git clone https://github.com/quentinhardy/odat.git   fetch ODAT\nInstalls build deps and the Oracle client (cx_Oracle) that ODAT and sqlplus need; the card also includes the ld.so.conf fix for the common sqlplus shared-library load error."
 }

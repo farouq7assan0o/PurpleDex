@@ -8,11 +8,23 @@
   "opsec": "silent",
   "category": "SIEM",
   "subcategory": "KQL",
-  "certifications": ["CDSA"],
+  "certifications": [
+    "CDSA"
+  ],
   "source": "CDSA Module 02: Security Monitoring & SIEM Fundamentals",
-  "tags": ["kql", "kibana", "elastic", "siem", "query", "blue-team"],
+  "tags": [
+    "kql",
+    "kibana",
+    "elastic",
+    "siem",
+    "query",
+    "blue-team"
+  ],
   "notes": "KQL runs at http://<TARGET_IP>:5601 → Discover (or Dashboard filter bar).\n\nBasic syntax:\n  field:value                           exact match\n  field: value1 OR value2              multiple values same field\n  field:value1 AND field2:value2       both conditions\n  NOT field:value  or  field:!value    negation\n  field: prefix*                       wildcard\n  field:>5  field:>=5  field:<5        comparison (numeric)\n  @timestamp >= \"2023-03-03T00:00:00.000Z\"  timestamp range\n\nImportant field types:\n  event.code        → Windows event ID (ECS preferred)\n  winlog.event_id   → Windows event ID (Winlogbeat specific)\n  user.name         → username (use user.name: not user.name.keyword in KQL)\n  user.name.keyword → use .keyword variant for aggregations/visualizations\n  host.hostname     → host reporting the event\n  @timestamp        → event timestamp\n  winlog.logon.type → logon type (Interactive, RemoteInteractive, Network...)\n  winlog.event_data.SubStatus → failure reason sub-code\n  winlog.channel    → Security, System, Application, etc.\n  event.action      → action string (e.g. 'logged-on', 'logoff')\n  group.name        → group name (local group membership events)\n  related.ip        → IPs involved in the event\n\nUseful SubStatus values for event 4625 (failed logon):\n  0xC0000072 → Account disabled\n  0xC000006A → Wrong password\n  0xC0000064 → Username does not exist\n  0xC0000234 → Account locked out",
-  "mitre": ["T1110", "T1078"],
+  "mitre": [
+    "T1110",
+    "T1078"
+  ],
   "examples": [
     {
       "label": "Find all failed logon attempts (Event 4625)",
@@ -72,5 +84,6 @@
       "rel": "next",
       "note": "Build Kibana dashboards on top of KQL queries."
     }
-  ]
+  ],
+  "explain": "The Kibana Query Language pattern for filtering Elastic SIEM events:\n  field:value              match a field to a value (e.g. event.code:4625)\n  AND field2:value2        both conditions must hold\n  NOT field3:value3        exclude matches of this condition\nUsed in Discover and dashboards to hunt events; wildcards (user.name: admin*) and @timestamp ranges narrow the hunt further."
 }

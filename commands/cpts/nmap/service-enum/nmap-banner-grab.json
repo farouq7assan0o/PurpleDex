@@ -105,5 +105,6 @@
       "label": "4. Check tcpdump for PSH flag carrying banner bytes",
       "command": "# Look for: Flags [P.] with payload = banner string\n# Confirms what nmap -sV couldn't show from a fast sweep"
     }
-  ]
+  ],
+  "explain": "Grabs a service banner manually with netcat:\n  nc   the connection tool\n  -n   no DNS\n  -v   verbose\n  <ip> 25   connect to the port (here SMTP)\nWhatever the service prints identifies it; run tcpdump on the same interface alongside to capture and confirm the exact exchange."
 }

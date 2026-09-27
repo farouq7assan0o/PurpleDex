@@ -119,5 +119,6 @@
     "misconfiguration": "Stale user/computer accounts, excessive privileged group membership, misconfigured trusts, GPO weaknesses, missing LAPS deployment, disabled SMB signing, enabled Print Spooler on DCs.",
     "vulnerable_config": "# PingCastle healthcheck reveals common issues:\n# - Domain Admins group has 15 members (should be <5)\n# - 200 stale computer accounts (no logon in 90+ days)\n# - Forest trust with SID filtering disabled\n# - SMB signing not required on DCs",
     "secure_config": "# Address PingCastle findings:\n# 1. Reduce DA membership to minimum required\n# 2. Disable/remove stale accounts (Get-ADComputer -Filter {LastLogonDate -lt (Get-Date).AddDays(-90)})\n# 3. Enable SID filtering on all trusts\n# 4. Require SMB signing (GPO: Microsoft network server: Digitally sign communications (always) = Enabled)\n# 5. Run PingCastle quarterly to track improvement scores"
-  }
+  },
+  "explain": "Scores an AD environment's security posture:\n  PingCastle.exe --healthcheck   run the health-check assessment\nProduces a CMMI-scored report of misconfigurations and risky settings (delegation, weak trusts, stale accounts, privileged groups) - fast situational awareness for both attackers mapping weaknesses and defenders prioritizing fixes."
 }

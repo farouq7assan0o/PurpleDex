@@ -118,5 +118,6 @@
       "OSCP Ch06",
       "MITRE T1018"
     ]
-  }
+  },
+  "explain": "Runs full automated DNS enumeration in one command:\n  dnsenum --dnsserver <nameserver>   query this NS\n  --enum -p 0 -s 0                   preset without whois page/scrape steps\n  -o <outfile> -f <wordlist>         save output; brute-force subdomains from the wordlist\n  <domain>                           target\nDiscovers NS/MX/SOA records, attempts AXFR against every nameserver, and brute-forces subdomains together - a one-shot DNS map."
 }

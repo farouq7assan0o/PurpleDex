@@ -93,5 +93,6 @@
     "detection",
     "recon",
     "web"
-  ]
+  ],
+  "explain": "Detects and fingerprints a Web Application Firewall by probing it and analysing responses:\n  wafw00f <url>   send crafted requests to the target and match the WAF signature\nTells you the WAF vendor so you can pick the right evasion technique before attacking; add -a to test all signatures and -v for detail."
 }

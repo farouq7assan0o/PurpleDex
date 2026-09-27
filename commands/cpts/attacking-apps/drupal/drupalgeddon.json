@@ -87,5 +87,6 @@
       "OWASP A03:2021"
     ],
     "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
-  }
+  },
+  "explain": "Creates a Drupal admin account via the Drupalgeddon SQLi (CVE-2014-3704):\n  python2.7 drupalgeddon.py   the exploit\n  -t http://<url>             target\n  -u <newuser> -p <newpass>   the admin account it inserts\nDrupal 7 < 7.32 mishandles the SQL API, letting the exploit inject a new administrator - giving full CMS control with no prior credentials."
 }

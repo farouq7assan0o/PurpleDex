@@ -89,5 +89,6 @@
       "MITRE T1190",
       "OWASP A03:2021"
     ]
-  }
+  },
+  "explain": "Bypasses an LDAP-backed login by injecting a wildcard:\n  Username: *   matches any account entry\n  Password: *   matches any password value\nIf the login builds a filter like (&(sAMAccountName=$user)(userPassword=$pass)), the * makes the filter match any entry and authentication succeeds; test * (and other LDAP metacharacters) in each field."
 }

@@ -90,5 +90,6 @@
       "label": "External trusts only",
       "command": "Get-DomainTrust | ?{$_.TrustAttributes -notmatch 'WITHIN_FOREST'}"
     }
-  ]
+  ],
+  "explain": "Maps every trust reachable in the environment with PowerView:\n  Get-DomainTrustMapping   recursively walk trusts from the current domain outward\nUnlike Get-ADTrust (current domain only) this reveals the full forest/inter-forest trust graph - filter for Bidirectional trusts to find the widest attack paths between domains."
 }

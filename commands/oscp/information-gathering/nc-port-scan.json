@@ -105,5 +105,6 @@
       "PEN-200 Ch 6",
       "MITRE T1046"
     ]
-  }
+  },
+  "explain": "Does a quick TCP connect scan with netcat when a full scanner is overkill:\n  nc   the tool\n  -n   no DNS resolution\n  -vv  very verbose (report each port)\n  -w 1 one-second per-connection timeout\n  -z   zero-I/O: connect then close without sending data\n  <ip> <port>   target and port (or a range like 3388-3390)\nReports which ports accept a connection; add -u for a UDP sweep."
 }

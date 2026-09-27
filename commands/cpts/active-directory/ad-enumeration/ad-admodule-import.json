@@ -90,5 +90,6 @@
       "label": "Import the DLL directly (no RSAT install)",
       "command": "Import-Module .\\Microsoft.ActiveDirectory.Management.dll"
     }
-  ]
+  ],
+  "explain": "Loads Microsoft's ActiveDirectory PowerShell module:\n  Import-Module ActiveDirectory   bring the Get-AD* cmdlets into the session\nRequires RSAT (or runs by default on a DC); once loaded you get authoritative, LDAP-backed enumeration cmdlets. Verify with 'Get-Module -Name ActiveDirectory'."
 }

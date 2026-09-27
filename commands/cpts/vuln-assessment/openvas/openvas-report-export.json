@@ -105,5 +105,6 @@
       "command": "# Greenbone UI: Reports → select report → Export → XML format",
       "label": "Greenbone UI: Reports → select rep…"
     }
-  ]
+  ],
+  "explain": "Converts an exported OpenVAS XML report into a formatted deliverable:\n  python3 -m openvasreporting   run the reporting module\n  -i <report>.xml               the report exported from Greenbone\n  -f xlsx                       output format (Excel workbook)\nProduces a triage-friendly spreadsheet; use -f docx for a Word document and --min-lvl high to include only high/critical findings."
 }

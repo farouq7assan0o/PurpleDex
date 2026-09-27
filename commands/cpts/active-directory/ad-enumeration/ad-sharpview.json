@@ -98,5 +98,6 @@
       "label": "Any PowerView function, compiled",
       "command": ".\\SharpView.exe Get-DomainGroupMember -Identity 'Domain Admins'"
     }
-  ]
+  ],
+  "explain": "Runs PowerView functionality as a compiled binary (SharpView):\n  .\\SharpView.exe Get-DomainUser   invoke a PowerView cmdlet from the .exe\n  -Identity <user>                 the same parameters PowerView uses\nRuns without a PowerShell session, dodging PowerShell/AMSI-based detection; supports the full PowerView API (Get-DomainUser -SPN, Get-DomainGroupMember -Recurse, etc.)."
 }

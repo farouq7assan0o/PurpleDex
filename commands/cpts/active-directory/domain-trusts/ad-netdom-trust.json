@@ -107,5 +107,6 @@
       "label": "Cross-check with PowerView",
       "command": "Get-DomainTrust | select SourceName,TargetName,TrustDirection,TrustType"
     }
-  ]
+  ],
+  "explain": "Lists domain trusts with the built-in netdom tool:\n  netdom query   query domain information\n  /domain:<domain>   the domain to inspect\n  trust          ask specifically for trust relationships\nShows trust direction and type (parent-child, forest, external) - the first step before a trust-abuse attack; PowerView's Get-DomainTrust returns the same data."
 }

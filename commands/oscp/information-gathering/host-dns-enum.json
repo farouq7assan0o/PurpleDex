@@ -152,5 +152,6 @@
       "OSCP Ch06",
       "MITRE T1018"
     ]
-  }
+  },
+  "explain": "Performs DNS lookups with the host command:\n  host <domain>   forward-resolve the name to its A/AAAA records\nAdd -t mx/txt/ns for specific record types; the card also covers forward brute-forcing a subdomain wordlist and reverse PTR sweeps of an IP range to map a target's DNS."
 }

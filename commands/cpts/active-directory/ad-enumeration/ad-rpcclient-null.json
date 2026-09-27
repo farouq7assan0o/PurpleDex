@@ -109,5 +109,6 @@
       "label": "Enumerate users/groups",
       "command": "rpcclient $> enumdomusers ; enumdomgroups"
     }
-  ]
+  ],
+  "explain": "Opens an anonymous RPC session to a DC:\n  rpcclient   MS-RPC client\n  -U \"\"       empty username (null session)\n  -N          no password prompt\n  <dc_ip>     the target\nIf null sessions are allowed you can then run enumdomusers, enumdomgroups, querydominfo, etc. to enumerate the domain with no credentials - common on older/legacy systems."
 }

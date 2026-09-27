@@ -88,5 +88,6 @@
       "label": "ldapsearch-ad.py - automated LDAP enum (all)",
       "command": "ldapsearch-ad.py -l <dc_ip> -d <domain> -u <user> -p <password> -t all"
     }
-  ]
+  ],
+  "explain": "Enumerates user accounts over LDAP:\n  ldapsearch -h <dc_ip> -x   query the DC with a simple bind\n  -b \"<base_dn>\" -s sub      search the whole domain subtree\n  \"(&(objectCategory=person)(objectClass=user))\"   filter to real users (not machine accounts)\n  | grep sAMAccountName      extract the login names\nGives a clean username list for kerbrute or spraying; add -D '<user>@<domain>' -w '<password>' for an authenticated bind when anonymous is disabled."
 }

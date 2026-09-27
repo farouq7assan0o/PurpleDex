@@ -116,5 +116,6 @@
       "CVE-2009-2265"
     ],
     "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
-  }
+  },
+  "explain": "Exploits the ColdFusion FCKeditor upload flaw for unauth RCE (CVE-2009-2265):\n  python3 50057.py   the EDB exploit, after editing lhost/lport/rhost/rport inside it\nColdFusion 8.0.1 and earlier ship a vulnerable FCKeditor file manager; the script uploads a JSP payload and triggers a shell - fetch it with 'searchsploit -p 50057' and set the callback details before running."
 }

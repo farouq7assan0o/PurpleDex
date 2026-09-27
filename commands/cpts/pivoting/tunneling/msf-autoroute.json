@@ -113,5 +113,6 @@
       "description": "Start a SOCKS4a proxy listener in MSF so proxychains can route traffic through the autoroute tunnel"
     }
   ],
-  "type": "command"
+  "type": "command",
+  "explain": "Adds a route through a Meterpreter session so Metasploit modules can reach an internal subnet:\n  run autoroute   the Meterpreter post module\n  -s <subnet>     the internal network to route through this session (e.g. 172.16.5.0/23)\nMSF modules can now hit that subnet; follow with auxiliary/server/socks_proxy to share the route with external proxychains tools."
 }

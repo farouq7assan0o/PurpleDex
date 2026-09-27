@@ -110,5 +110,6 @@
       "label": "Brute a discovered user",
       "command": "wpscan --url http://<url> -U <user> -P /usr/share/wordlists/rockyou.txt --password-attack xmlrpc"
     }
-  ]
+  ],
+  "explain": "Scans a WordPress site for enumerable components with WPScan:\n  wpscan --url http://<url>   point at the target\n  --enumerate                 enumerate plugins, themes, and users (u,vp,vt to scope)\n  --api-token <token>         add known-vulnerability data from the WPScan database\nMaps the attack surface and flags vulnerable plugins/themes; it can also brute-force logins (-U/-P --password-attack xmlrpc)."
 }

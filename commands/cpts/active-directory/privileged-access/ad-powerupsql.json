@@ -110,5 +110,6 @@
       "label": "Audit each for escalation paths",
       "command": "Invoke-SQLAudit -Verbose"
     }
-  ]
+  ],
+  "explain": "Discovers and audits domain MSSQL instances:\n  Import-Module .\\PowerUpSQL.ps1                 load the toolkit\n  Get-SQLInstanceDomain                          find every SQL instance registered in AD via SPNs\n  Get-SQLQuery -Instance <instance> -Query '...'  run a query to check your rights (SYSTEM_USER, sysadmin membership)\nMaps reachable SQL servers and privilege-escalation paths (sysadmin, linked servers, xp_cmdshell); Invoke-SQLAudit automates the checks."
 }

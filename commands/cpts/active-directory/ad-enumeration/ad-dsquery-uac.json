@@ -94,5 +94,6 @@
       "label": "AS-REP roastable (no preauth)",
       "command": "dsquery * -filter \"(&(objectCategory=person)(userAccountControl:1.2.840.113556.1.4.803:=4194304))\" -attr samAccountName"
     }
-  ]
+  ],
+  "explain": "Runs an LDAP filter with the built-in dsquery tool (no extra tooling):\n  dsquery *   raw LDAP search\n  -filter \"(...userAccountControl:1.2.840.113556.1.4.803:=32)\"   the OID :=32 bit is PASSWD_NOTREQD - matches accounts allowing a blank password\n  -attr sAMAccountName userAccountControl   fields to return\nA living-off-the-land way to hunt risky UAC flags; swap the bit value (4194304 = no-preauth) or the filter to find other classes of accounts."
 }

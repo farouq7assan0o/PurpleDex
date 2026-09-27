@@ -91,5 +91,6 @@
       "label": "With creds",
       "command": "enum4linux-ng -u <user> -p <password> -A <dc_ip> -oA out"
     }
-  ]
+  ],
+  "explain": "The modern rewrite of enum4linux with structured output:\n  enum4linux-ng   Python reimplementation\n  -P <dc_ip>      dump the password policy\n  -oA <outfile>   save results to JSON and YAML\nUse -P first to learn the lockout threshold before spraying; -A runs the full suite, and -u/-p adds authentication."
 }

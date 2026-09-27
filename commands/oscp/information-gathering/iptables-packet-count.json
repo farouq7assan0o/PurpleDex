@@ -103,5 +103,6 @@
     "sources": [
       "PEN-200 Ch 6"
     ]
-  }
+  },
+  "explain": "Measures exactly how many packets an nmap scan sends and receives:\n  iptables -I INPUT 1 -s <ip> -j ACCEPT   count inbound packets from the target (rule at position 1)\n  (plus an OUTPUT rule for outbound)\n  iptables -Z                              zero the counters before the scan\nRun the scan, then read the counter columns - lets you compare the noise/footprint of different scan types (-sS vs -sT, timing templates) precisely."
 }

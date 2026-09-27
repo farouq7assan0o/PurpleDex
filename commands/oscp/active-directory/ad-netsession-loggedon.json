@@ -115,5 +115,6 @@
     "misconfiguration": "RestrictRemoteSam not configured (default - any auth user can enumerate sessions). DAs log on to regular workstations. No MDI. No PAW model.",
     "vulnerable_config": "# RestrictRemoteSam not set:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').RestrictRemoteSam  # $null\n\n# Any auth user can see who's logged on where:\nnet session \\\\workstation01\n# → CORP\\DomainAdmin1 logged on → target for PtH/token theft",
     "secure_config": "# Restrict NetSessionEnum to Administrators:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# Via GPO:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network access: Restrict clients allowed to make remote calls to SAM\n\n# Add DAs to Protected Users:\nAdd-ADGroupMember 'Protected Users' 'DomainAdmin1'"
-  }
+  },
+  "explain": "Finds active sessions and tests local admin rights with PowerView:\n  Get-NetSession -ComputerName <target>   list SMB sessions on the host (who is connected)\n  Find-LocalAdminAccess                    scan the domain for hosts where you are local admin\nTogether they show where privileged users are logged on and where you can already act as admin - the map for lateral movement and credential harvesting."
 }

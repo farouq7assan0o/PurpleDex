@@ -101,5 +101,6 @@
       "command": "vnstat",
       "label": "vnstat"
     }
-  ]
+  ],
+  "explain": "Watches live network throughput on an interface while you scan:\n  vnstat -l        live mode (real-time rx/tx rates)\n  -i eth0          the interface to monitor\nLets you see if an aggressive Nessus/OpenVAS scan is saturating the link or likely to trip network monitoring; 'vnstat -d' gives a daily summary instead."
 }

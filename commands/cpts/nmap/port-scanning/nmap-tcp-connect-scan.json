@@ -103,5 +103,6 @@
       "label": "Packet-trace on a single port (diagnose closed/filtered state)",
       "command": "sudo nmap <ip> -p 21 --packet-trace -Pn -n --disable-arp-ping"
     }
-  ]
+  ],
+  "explain": "Completes the full TCP handshake to determine port state:\n  -sT     TCP connect scan (works without root and through proxies)\n  -p 443  the port\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show the packets\n  --reason                    print why Nmap calls a port open/closed/filtered\nUse -sT when you cannot send raw packets (unprivileged, or over a SOCKS proxy)."
 }

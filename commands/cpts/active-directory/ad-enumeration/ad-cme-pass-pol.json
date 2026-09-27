@@ -93,5 +93,6 @@
       "label": "PowerView - Get-DomainPolicy (password policy from LDAP)",
       "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess"
     }
-  ]
+  ],
+  "explain": "Reads the domain password policy over SMB:\n  crackmapexec smb <dc_ip>   query the DC\n  -u/-p                      credentials (a null session '' '' sometimes works)\n  --pass-pol                 return lockout threshold, window, complexity, min length\nRun this BEFORE any password spray so you stay under the lockout threshold and do not lock accounts."
 }

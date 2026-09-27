@@ -121,5 +121,6 @@
       "command": "amass enum -active -brute -d <domain> -w <wordlist>",
       "label": "amass (active brute)"
     }
-  ]
+  ],
+  "explain": "Brute-forces subdomains by resolving a wordlist against the domain with dnsenum:\n  --enum <domain>   enumeration mode against this domain\n  -f <wordlist>     candidate subdomain names to try\n  -r                recurse into subdomains it discovers\nResolves each guess and reports the ones that exist; amass, subfinder, and puredns cover the same ground with different data sources."
 }

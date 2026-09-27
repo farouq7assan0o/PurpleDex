@@ -97,5 +97,6 @@
       "label": "Then roast",
       "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat"
     }
-  ]
+  ],
+  "explain": "Lists Kerberoastable SPN accounts with PowerView:\n  Get-DomainUser -SPN   users that have a ServicePrincipalName set\n  -Properties samaccountname,ServicePrincipalName   return the SPN\nThese accounts can be Kerberoasted; prioritize ones with admincount=1 or RC4 support - feed them to Rubeus kerberoast or GetUserSPNs.py."
 }

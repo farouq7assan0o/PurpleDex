@@ -90,5 +90,6 @@
       "OWASP A05:2021"
     ],
     "evasion": "The 8.3 short-name probe is inherently noisy (many 404s) - throttle requests and target a single path prefix to reduce log volume."
-  }
+  },
+  "explain": "Recovers IIS 8.3 short file names via the tilde disclosure bug:\n  java -jar iis_shortname_scanner.jar   the scanner\n  0 5                                    request/retry timing parameters\n  http://<ip>/                           the target\nLeaks the first 6 characters of files/dirs (e.g. TRANSF~1.ASP); build a wordlist from the recovered prefix and brute-force the full names with gobuster -x .asp,.aspx."
 }

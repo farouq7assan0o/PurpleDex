@@ -97,5 +97,6 @@
       "MITRE T1595.002"
     ],
     "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
-  }
+  },
+  "explain": "Fingerprints a Joomla (or Drupal) site with droopescan:\n  droopescan scan joomla   run the Joomla plugin\n  --url http://<url>/       the target\nEnumerates version, components, and modules to guide exploitation; joomscan is the Joomla-specific alternative that also flags known vulnerabilities."
 }

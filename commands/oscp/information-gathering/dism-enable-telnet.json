@@ -92,5 +92,6 @@
       "PEN-200 Ch 6",
       "MS Docs"
     ]
-  }
+  },
+  "explain": "Installs the Telnet client on a Windows foothold via DISM:\n  dism /online   operate on the running OS\n  /Enable-Feature /FeatureName:TelnetClient   turn on the optional Telnet client feature\nGives you telnet for banner grabbing and manual protocol interaction (e.g. SMTP VRFY) when it is not installed; needs local admin, and /Get-Features confirms the state."
 }

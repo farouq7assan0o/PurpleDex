@@ -87,5 +87,6 @@
       "OWASP A05:2021"
     ],
     "evasion": "Randomize the uploaded payload name and delete it after the shell connects; restrict activity to a single upload+trigger to limit web-log evidence."
-  }
+  },
+  "explain": "Detects a ColdFusion server and locates its admin panel:\n  nmap -p- -sC -Pn <ip> --open   full scan looking for the ColdFusion port 8500\nColdFusion also uses 80/443/1935/5500; the admin console lives at /CFIDE/administrator/index.cfm and .cfm/.cfc are the app extensions - version-match it to CVEs (e.g. CVE-2010-2861 LFI) for exploitation."
 }

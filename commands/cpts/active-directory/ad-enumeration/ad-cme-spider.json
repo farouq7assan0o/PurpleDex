@@ -97,5 +97,6 @@
       "label": "Review the JSON output",
       "command": "cat /tmp/cme_spider_plus/<ip>.json | jq"
     }
-  ]
+  ],
+  "explain": "Recursively indexes SMB share contents with the spider_plus module:\n  crackmapexec smb <dc_ip>          target\n  -u/-p                             credentials\n  -M spider_plus                    the deep-spider module\n  -o READ_ONLY=False                also download the files it finds (True just indexes)\nBuilds a JSON index (under /tmp/cme_spider_plus) of every readable file across shares - ideal for finding config files, scripts, and creds at scale."
 }

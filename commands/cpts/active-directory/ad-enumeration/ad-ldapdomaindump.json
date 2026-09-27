@@ -110,5 +110,6 @@
       "label": "Open the HTML or grep the .grep files for quick wins",
       "command": "xdg-open loot/domain_users.html ; grep -i pass loot/domain_users.grep"
     }
-  ]
+  ],
+  "explain": "Dumps the whole directory over LDAP into browsable files:\n  sudo ldapdomaindump   the collector\n  -u '<domain>\\<user>' -p '<password>'   credentials\n  <dc_ip>               the DC to query\n  -o loot/              output directory\nProduces HTML plus JSON and greppable .grep files for users, groups, computers, policy, and trusts - an offline, searchable snapshot; open the HTML or grep the .grep files for 'pass'."
 }

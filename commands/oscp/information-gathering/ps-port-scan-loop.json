@@ -98,5 +98,6 @@
       "MITRE T1046",
       "MS Docs"
     ]
-  }
+  },
+  "explain": "Scans TCP ports from Windows with a pure-.NET PowerShell one-liner:\n  1..1024 | % {...}   iterate the port range\n  (New-Object Net.Sockets.TcpClient).Connect(\"<ip>\", $_)   attempt a TCP connect to each port\n  \"TCP port $_ is open\"   printed only when the connect succeeds\n  2>$null             suppress the errors from closed ports\nFinds open ports with no tools to upload; change the range (e.g. 3000..9000) as needed."
 }

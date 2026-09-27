@@ -101,5 +101,6 @@
       "label": "Quiet mode",
       "command": "proxychains -q <command>"
     }
-  ]
+  ],
+  "explain": "Forces a tool's TCP traffic through the SOCKS/HTTP proxy configured in /etc/proxychains.conf:\n  proxychains <command>   run any command with its connections redirected through the proxy\nLets non-SOCKS-aware tools reach the internal network via your pivot tunnel; use nmap -sT (full TCP connect) since raw/SYN scans do not tunnel, and -q to silence proxychains output."
 }

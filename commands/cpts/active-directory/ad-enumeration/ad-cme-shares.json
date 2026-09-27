@@ -85,5 +85,6 @@
       "label": "NetExec + filter readable",
       "command": "nxc smb <dc_ip> -u <user> -p <password> --shares"
     }
-  ]
+  ],
+  "explain": "Lists accessible SMB shares with read/write flags:\n  crackmapexec smb <dc_ip>   target host\n  -u/-p                      valid credentials\n  --shares                   enumerate shares and your access level on each\nFinds non-default shares to hunt for credentials; sweep a subnet and grep out 'NO ACCESS', then dig into writable/interesting shares with smbmap or spider_plus."
 }

@@ -5,18 +5,35 @@
   "description": "Custom Python3 script that opens a TCP socket to an SMTP server, reads the banner, issues a VRFY command for a given username, and prints the server's response. Automates the manual nc/telnet VRFY process and serves as a template for building SMTP enumeration tools.",
   "type": "script",
   "platform": "linux",
-  "requires": ["network-access"],
-  "protocols": ["smtp"],
-  "tools": ["python3"],
-  "tags": ["smtp", "vrfy", "user-enumeration", "python", "script", "email"],
+  "requires": [
+    "network-access"
+  ],
+  "protocols": [
+    "smtp"
+  ],
+  "tools": [
+    "python3"
+  ],
+  "tags": [
+    "smtp",
+    "vrfy",
+    "user-enumeration",
+    "python",
+    "script",
+    "email"
+  ],
   "category": "Enumeration",
   "subcategory": "SMTP",
-  "certifications": ["OSCP"],
+  "certifications": [
+    "OSCP"
+  ],
   "primary_cert": "OSCP",
   "source": "PEN-200 Chapter 06: Information Gathering",
   "opsec": "quiet",
   "exam": "exam-ok",
-  "mitre": ["T1087.003"],
+  "mitre": [
+    "T1087.003"
+  ],
   "examples": [
     {
       "label": "Check if 'root' exists on mail.lab",
@@ -65,6 +82,11 @@
     "artifacts": "SMTP server mail.log (Postfix) or syslog entries showing VRFY commands with source IP. Network PCAP showing VRFY requests and 250/550 responses.",
     "prevention": "Disable VRFY on the MTA (disable_vrfy_command = yes for Postfix). Restrict SMTP to required source IPs. Rate-limit SMTP connections per source IP at the firewall.",
     "evasion": "Single requests per username spaced out over time evade rate-limit rules. Varying the source IP (or using SOCKS proxy) bypasses per-IP thresholds. RCPT TO enumeration (not VRFY) works even when VRFY is disabled on many servers.",
-    "sources": ["PEN-200 Ch 6", "MITRE T1087.003", "RFC 5321"]
-  }
+    "sources": [
+      "PEN-200 Ch 6",
+      "MITRE T1087.003",
+      "RFC 5321"
+    ]
+  },
+  "explain": "A custom Python script automating SMTP VRFY user enumeration:\n  python3 smtp.py <user> <ip>   connect to the SMTP server and VRFY this username\nIt opens a socket, reads the banner, sends VRFY, and prints the response - scripting the manual nc/telnet check so you can loop a username list; a template for building your own protocol tooling."
 }

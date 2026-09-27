@@ -99,5 +99,6 @@
     "misconfiguration": "Basic roles granted broadly; service accounts with Owner/Editor; allUsers/allAuthenticatedUsers on resources; Data Access logs disabled (blind to enumeration).",
     "vulnerable_config": "# SA bound as Owner at project scope -> enumeration reveals the escalation target:\ngcloud projects get-iam-policy <proj> --flatten=\"bindings[].members\" --filter=\"bindings.members=serviceAccount:<sa>\" --format=\"value(bindings.role)\"  # roles/owner",
     "secure_config": "# Replace Basic roles with least-privilege predefined/custom roles;\n# remove allUsers/allAuthenticatedUsers; enable Data Access audit logs;\n# use IAM Recommender + Security Command Center to enforce least privilege."
-  }
+  },
+  "explain": "Enumerates GCP IAM, which is resource-based rather than identity-based:\n  gcloud projects get-iam-policy <project_id>   read the role bindings on a project\nYou cannot list an identity's permissions directly, so you read policies on orgs/projects/resources and enumerate service accounts; --flatten/--filter isolates a given member's roles, and 'iam service-accounts keys list' finds usable keys."
 }

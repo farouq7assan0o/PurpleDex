@@ -118,5 +118,6 @@
       "label": "List issued certificates via certutil",
       "command": "certutil -view -restrict \"DispositionMessage=Issued\" -out RequesterName,CommonName,UPN,CertificateTemplate"
     }
-  ]
+  ],
+  "explain": "Certify hunts for ESC1-vulnerable certificate templates (requester supplies the SAN):\n  Certify.exe find          enumerate CA templates\n  /vulnerable              show only templates with exploitable misconfigurations\nOn an ESC1 hit, request a cert with /altname:Administrator, convert PEM to PFX, and PKINIT with Rubeus asktgt to become that user. Detect via CA Event 4887 (cert issued) and certutil -view of issued certs with mismatched UPN/CommonName."
 }

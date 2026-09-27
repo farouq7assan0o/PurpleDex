@@ -120,5 +120,6 @@
       "label": "Read it (e.g. a config/hash/flag)",
       "command": "type '<target_file>'"
     }
-  ]
+  ],
+  "explain": "Abuses SeTakeOwnershipPrivilege to own and read any protected file:\n  takeown /f '<target_file>'   seize ownership of the file\nThen icacls '<target_file>' /grant <user>:F gives yourself full control, and type reads it (cred files, SAM/SYSTEM backups, web.config). Enable the privilege first (EnableAllTokenPrivs.ps1); add /r /d y to take a directory recursively."
 }

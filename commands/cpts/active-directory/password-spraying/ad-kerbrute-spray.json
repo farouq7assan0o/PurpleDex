@@ -105,5 +105,6 @@
       "label": "Validate a hit",
       "command": "crackmapexec smb <dc_ip> -u <user> -p '<password>'"
     }
-  ]
+  ],
+  "explain": "Sprays a password over Kerberos - faster and quieter than SMB spraying:\n  kerbrute passwordspray   one AS-REQ per user (no SMB logon events)\n  -d <domain>              the domain\n  --dc <dc_ip>             the Domain Controller\n  <userlist>               usernames to try\n  <password>               the single password sprayed\nGenerates Event 4768 (less monitored) instead of 4625. Stay under the lockout threshold per observation window; validate a hit with crackmapexec."
 }

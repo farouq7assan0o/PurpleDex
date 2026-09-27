@@ -126,5 +126,6 @@
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"ssh2john\" or ProcessCommandLine has \"ssh2john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// converts a protected file to a John hash locally; cracking is offline",
     "sigma_rules": "no target-side telemetry (ssh2john runs on the attacker host)"
   },
-  "type": "command"
+  "type": "command",
+  "explain": "Converts a password-protected file into a John-crackable hash:\n  ssh2john.py <file>       extract the hash from a protected artifact (SSH key here; office2john/pdf2john/zip2john for others)\n  > file.hash              save it\n  john --wordlist=/usr/share/wordlists/rockyou.txt file.hash   crack it\nReveal the recovered password with john --show; locate all helpers with 'locate *2john*'."
 }

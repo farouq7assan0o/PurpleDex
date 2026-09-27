@@ -85,5 +85,6 @@
       "MITRE T1563",
       "MITRE T1055"
     ]
-  }
+  },
+  "explain": "Attaches to a privileged user's tmux session left on a group-writable socket:\n  tmux -S /shareds         attach to the tmux server listening on this socket file\nIf a higher-privileged user started tmux on a socket your group can write, attaching drops you straight into their shell with their privileges."
 }

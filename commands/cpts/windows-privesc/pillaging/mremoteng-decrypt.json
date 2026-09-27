@@ -95,5 +95,6 @@
       "MITRE T1555"
     ],
     "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
-  }
+  },
+  "explain": "Decrypts passwords stored by mRemoteNG:\n  python3 mremoteng_decrypt.py   the decryptor\n  -s \"<encrypted_string>\"   the encrypted password from confCons.xml\nmRemoteNG encrypts connection passwords with a hardcoded default key (mR3m), so they decrypt directly; add a wordlist option to brute-force a custom master password."
 }

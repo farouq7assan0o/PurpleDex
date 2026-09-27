@@ -107,5 +107,6 @@
       "label": "Use the local admin password to move laterally",
       "command": "# psexec/winrm as the local Administrator"
     }
-  ]
+  ],
+  "explain": "Reads LAPS-managed local Administrator passwords from AD:\n  Get-LAPSComputers        list computers whose ms-Mcs-AdmPwd attribute your account can read\nLAPS stores a randomized local admin password per machine in that attribute, readable only by authorized principals; if you are one, use the returned password to log in locally and move laterally. NetExec (-M laps) and pyLAPS do the same over the network."
 }

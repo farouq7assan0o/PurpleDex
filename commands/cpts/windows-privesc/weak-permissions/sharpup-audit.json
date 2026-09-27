@@ -113,5 +113,6 @@
       "label": "Follow the highest-signal finding",
       "command": "# unquoted path / modifiable service / AlwaysInstallElevated -> exploit"
     }
-  ]
+  ],
+  "explain": "Runs SharpUp to flag Windows privesc misconfigurations:\n  .\\SharpUp.exe audit      check modifiable service binaries, weak service/registry ACLs, unquoted paths, and AlwaysInstallElevated\nFollow the highest-signal hit (unquoted path / modifiable service / AlwaysInstallElevated), confirming with icacls before exploiting; pass a specific check name (e.g. UnquotedServicePath) to narrow it."
 }

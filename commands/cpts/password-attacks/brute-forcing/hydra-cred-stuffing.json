@@ -88,5 +88,6 @@
       "label": "Single service, user:pass list",
       "command": "hydra -C <userpass_list> <service>://<ip>"
     }
-  ]
+  ],
+  "explain": "Replays known user:password pairs against a service (credential stuffing):\n  hydra                    the online cracker\n  -C <userpass_list>       a combined file of user:pass pairs - test each pair as-is, not every combination\n  ssh://<ip>               the service and target\nUse to replay credentials leaked or found elsewhere; the variation shows the http-post-form syntax for web login forms."
 }

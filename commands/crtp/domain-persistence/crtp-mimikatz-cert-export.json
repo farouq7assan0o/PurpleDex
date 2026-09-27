@@ -133,5 +133,6 @@
       "https://posts.specterops.io/certified-pre-owned-d95910965cd2",
       "CRTP Domain Persistence"
     ]
-  }
+  },
+  "explain": "Exports certificates AND their private keys from the Windows stores, even keys marked non-exportable:\n  crypto::capi              patch CryptoAPI in memory so CAPI-backed keys become exportable\n  crypto::cng               patch the KeyIso/CNG service so CNG keys become exportable\n  crypto::certificates /export   dump certs+keys from the current-user store (add /systemstore:...LOCAL_MACHINE for the machine store)\nYou get .pfx files; use a client-auth cert with Rubeus asktgt /certificate to PKINIT as its owner."
 }

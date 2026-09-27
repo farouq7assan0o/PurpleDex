@@ -98,5 +98,6 @@
       "a": "Event 4662 containing the replication extended-right GUIDs (1131f6aa-... and 1131f6ad-...) requested by an account that is not a Domain Controller, ideally correlated with a preceding 5136 change to the domain's nTSecurityDescriptor. Any non-DC replication is an incident.",
       "role": "soc"
     }
-  ]
+  ],
+  "explain": "Abuses WriteDACL over the domain object to grant yourself DCSync rights, then dump hashes:\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account holding WriteDACL\n  add dcsync <user>        write the DS-Replication-Get-Changes(-All) ACEs onto <user>\nWith replication rights, run secretsdump.py to DCSync the domain (krbtgt, Administrator, all NT hashes); remove the ACE afterward to clean up."
 }

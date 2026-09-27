@@ -72,5 +72,6 @@
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"openssl\" or ProcessCommandLine has \"openssl\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// brute-forcing an encrypted archive password locally; no target-side telemetry",
     "sigma_rules": "no target-side telemetry (openssl runs on the attacker host)"
   },
-  "type": "command"
+  "type": "command",
+  "explain": "Brute-forces an OpenSSL-encrypted gzip archive against a wordlist:\n  for i in $(cat rockyou.txt)   try each word as the passphrase\n  openssl enc -aes-256-cbc -d -in <file> -k $i   attempt to decrypt with that key\n  2>/dev/null | tar xz     pipe the output to tar; only the correct key yields valid tar data to extract\nWhen the extraction succeeds you have both the passphrase and the files."
 }

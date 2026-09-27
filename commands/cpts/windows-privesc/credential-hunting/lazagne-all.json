@@ -97,5 +97,6 @@
       "label": "Write to file",
       "command": ".\\lazagne.exe all -oN -output C:\\Users\\Public"
     }
-  ]
+  ],
+  "explain": "Recovers locally stored application passwords in one run:\n  .\\lazagne.exe all        run every module (browsers, mail clients, Wi-Fi, RDP, databases, and more)\nEach module reads its app's own credential store in the current user's context; use browsers to scope it, or -oN -output to write results to a file."
 }

@@ -140,5 +140,6 @@
       "CRTP",
       "MITRE T1615"
     ]
-  }
+  },
+  "explain": "Maps GPOs so you can spot policy you can abuse for code execution or local admin:\n  Get-DomainGPO            list every Group Policy Object\n  | select displayname,gpcfilesyspath   the friendly name and its SYSVOL path\nFollow up by resolving OU gplinks to GPOs (which computers a policy hits), Get-DomainGPOLocalGroup (GPO-granted local admin), and checking GPO ACLs for WriteProperty/WriteDacl - a writable GPO is a foothold on every computer in its OU."
 }

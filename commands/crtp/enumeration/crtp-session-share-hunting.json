@@ -148,5 +148,6 @@
       "MITRE T1049",
       "MITRE T1135"
     ]
-  }
+  },
+  "explain": "Finds where privileged users are logged on and which shares hold secrets, without needing admin:\n  Invoke-SessionHunter     map user->host sessions via remote registry (no admin required)\n  -NoPortScan              skip the port scan (faster/quieter)\n  -RawResults              return objects, not a formatted table\n  | select Hostname,UserSession,Access   host, the user session found, and whether you can reach it\nWhere an admin session sits on a box you can access, that is your lateral target; PowerHuntShares then inventories readable SMB shares for sensitive data."
 }

@@ -98,5 +98,6 @@
       "MITRE T1053.005"
     ],
     "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
-  }
+  },
+  "explain": "Lists scheduled tasks to find one whose target you can write:\n  schtasks /query          enumerate scheduled tasks\n  /fo LIST /v              full verbose list output (shows Run As User and the task action)\nA task run by a privileged account whose script/binary is writable by you is an escalation path - replace the target and wait for the trigger."
 }

@@ -40,11 +40,11 @@
       "command": "strace ping -c1 <ip>"
     },
     {
-      "label": "OSCP Ch17 \u2014 list loaded kernel modules (CVE matching)",
+      "label": "OSCP Ch17 — list loaded kernel modules (CVE matching)",
       "command": "lsmod"
     },
     {
-      "label": "OSCP Ch17 \u2014 get module version for CVE matching",
+      "label": "OSCP Ch17 — get module version for CVE matching",
       "command": "/sbin/modinfo <module_name>"
     }
   ],
@@ -103,5 +103,6 @@
     "T1057",
     "T1518"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Digs into processes, packages, and configs for escalation vectors:\n  ps aux | grep root       list processes running as root (candidates to abuse)\nThe variations enumerate installed packages/binaries (to cross-ref GTFOBins), sudo -V (version for CVEs), and config/shell-script files - where misconfigurations and creds hide."
 }

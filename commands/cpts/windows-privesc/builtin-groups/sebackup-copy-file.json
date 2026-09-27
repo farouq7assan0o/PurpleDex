@@ -91,5 +91,6 @@
       "MITRE T1078.002"
     ],
     "evasion": "Copy the hives/ntds via the shadow copy, parse OFFLINE, and remove the shadow copy + copied files after."
-  }
+  },
+  "explain": "Abuses Backup Operators' SeBackupPrivilege (which bypasses file ACLs on read) to copy any protected file:\n  Copy-FileSeBackupPrivilege   copy using the backup semantics that ignore the DACL\n  '<protected_file>'       the file you cannot normally read\n  .\\out.txt                the local copy\nImport the SeBackupPrivilege cmdlets and enable the privilege first; then read otherwise-denied files (configs, hive backups, flags)."
 }

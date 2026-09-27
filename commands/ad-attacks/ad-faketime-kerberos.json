@@ -60,5 +60,6 @@
     "faketime",
     "ntpdate",
     "impacket"
-  ]
+  ],
+  "explain": "Wraps any Kerberos command so it runs with the DC's clock, curing 'KRB_AP_ERR_SKEW (Clock skew too great)' from Linux without changing your system time:\n  ntpdate -q <dc_ip>        query (do not set) the DC's current time\n  cut -d ' ' -f 1,2         take the date and time fields from that output\n  faketime \"...\" <kerberos_command>   run impacket/certipy/Rubeus/evil-winrm -k with that faked clock\nThe wrapped tool sees a time within 5 minutes of the DC, so PKINIT/AS-REQ succeeds."
 }

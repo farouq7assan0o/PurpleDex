@@ -102,5 +102,6 @@
     "misconfiguration": "Default Compute Engine SA (Editor) attached with the legacy 'cloud-platform' scope on an internet-facing VM; SSRF that can set headers.",
     "vulnerable_config": "# Default SA (Editor) + broad scope + SSRF/RCE:\ncurl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token",
     "secure_config": "# Attach a dedicated least-privilege SA with narrow scopes (not the default Editor SA).\n# Enable metadata concealment / GKE Workload Identity; block workload egress to 169.254.169.254;\n# remediate SSRF; alert on anomalous SA API usage."
-  }
+  },
+  "explain": "Pulls a GCE VM's attached service-account token from the metadata server:\n  curl -s -H \"Metadata-Flavor: Google\"   the required metadata header\n  \"http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token\"   fetch the default SA's OAuth access token\nFrom code execution (or a header-controlling SSRF) on the VM, this returns a token to use with gcloud; Compute default SAs are often over-privileged (Editor)."
 }

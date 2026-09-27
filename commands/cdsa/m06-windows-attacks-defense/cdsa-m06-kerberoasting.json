@@ -101,5 +101,6 @@
       "label": "Crack",
       "command": "hashcat -m 13100 spn.txt rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Rubeus requests TGS tickets for all SPN accounts for offline cracking:\n  kerberoast               roast every account with an SPN (add /rc4opsec to avoid noisy AES downgrades)\n  /outfile:spn.txt         save the hashes\nCrack offline with hashcat -m 13100. Detect via Event 4769 with RC4 encryption or bulk TGS requests from one source; defend with 100+ char / gMSA passwords."
 }

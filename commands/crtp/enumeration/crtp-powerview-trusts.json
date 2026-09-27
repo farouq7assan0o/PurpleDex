@@ -112,5 +112,6 @@
       "label": "Get-DomainTrustMapping (recursive full trust map)",
       "command": "Get-DomainTrustMapping"
     }
-  ]
+  ],
+  "explain": "Enumerates trust relationships to find lateral paths across domain/forest boundaries:\n  Get-DomainTrust          list this domain's trusts\n  | select SourceName,TargetName,TrustDirection,TrustType   the endpoints, direction, and kind of each trust\nAdd Get-ForestTrust for forest trusts and Get-DomainTrustMapping to recursively map the whole trust graph - the direction and type tell you which trusts can be abused (e.g. SID History via a parent-child trust)."
 }

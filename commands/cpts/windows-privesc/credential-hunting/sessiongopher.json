@@ -98,5 +98,6 @@
       "label": "Thorough (search filesystem too)",
       "command": "Invoke-SessionGopher -Thorough"
     }
-  ]
+  ],
+  "explain": "Extracts saved remote-session secrets from the registry and profiles:\n  Invoke-SessionGopher     harvest stored credentials for PuTTY, WinSCP, FileZilla, SuperPuTTY, and RDP\n  -Target <hostname>       run against this host\nMany of these tools store connection passwords recoverably; -AllDomain sweeps every domain host, -Thorough also searches the filesystem for key/session files."
 }

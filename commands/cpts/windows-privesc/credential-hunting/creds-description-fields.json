@@ -98,5 +98,6 @@
       "label": "Check domain user descriptions for passwords",
       "command": "Get-DomainUser -Properties description | ?{$_.description -match 'pass|pw'}"
     }
-  ]
+  ],
+  "explain": "Checks user Description fields, where admins sometimes stash passwords:\n  Get-LocalUser            list local accounts (pipe to select Name,Description to read their descriptions)\nA free credential when present. The variations check domain user descriptions via PowerView (Get-DomainUser -Properties description | ? {$_.description -match 'pass|pw'})."
 }

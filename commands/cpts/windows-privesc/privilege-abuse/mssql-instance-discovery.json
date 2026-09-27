@@ -109,5 +109,6 @@
       "label": "Enumerate links + privileges",
       "command": "Get-SQLServerLinkCrawl -Instance <instance> -Verbose"
     }
-  ]
+  ],
+  "explain": "Finds SQL Server instances and the account each runs as:\n  sc query | findstr SQL   list local services whose name contains SQL (to spot instances and their service accounts)\nThe steps use PowerUpSQL (Get-SQLInstanceDomain) to discover instances domain-wide and test access. If a service account holds SeImpersonatePrivilege, it is the pivot for a potato privesc."
 }

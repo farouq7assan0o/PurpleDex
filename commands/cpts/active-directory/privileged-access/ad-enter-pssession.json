@@ -111,5 +111,6 @@
       "label": "Open the remote session",
       "command": "Enter-PSSession -ComputerName <target> -Credential $cred"
     }
-  ]
+  ],
+  "explain": "Opens an interactive PowerShell remoting session (WinRM) from a Windows foothold - the native Evil-WinRM:\n  $cred = New-Object ...PSCredential('<domain>\\<user>', <secure password>)   build a credential object\n  Enter-PSSession -ComputerName <target> -Credential $cred   open the remote shell as that user\nUse when operating from Windows and you do not need Evil-WinRM's upload/download helpers; New-PSSession keeps a reusable session object."
 }

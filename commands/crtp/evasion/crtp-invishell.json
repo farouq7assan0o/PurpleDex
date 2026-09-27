@@ -112,5 +112,6 @@
       "MITRE T1574.012",
       "MITRE T1562.001"
     ]
-  }
+  },
+  "explain": "Launches a PowerShell session with AMSI, Script Block Logging, and Module Logging disabled - no admin needed - via a COR_PROFILER COM hijack under HKCU:\n  RunWithRegistryNonAdmin.bat   registers the InprocServer32 CLSID in HKCU, then starts powershell so the CLR loads InShellProf.dll as a profiler that neuters logging/AMSI\nUse the non-admin .bat (registry-based) as a low-priv user, or RunWithPathAsAdmin.bat when elevated. Then dot-source PowerView/Mimikatz quietly in that cloaked shell."
 }

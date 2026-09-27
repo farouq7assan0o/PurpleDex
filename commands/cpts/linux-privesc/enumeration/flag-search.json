@@ -86,5 +86,6 @@
       "HTB M25",
       "MITRE T1083"
     ]
-  }
+  },
+  "explain": "Recursively hunts the filesystem for a flag or keyword:\n  grep -r 'HTB{'           search recursively for the flag prefix (swap for any keyword)\n  / 2>/dev/null            start at root, discard permission-denied noise\nHandy on lab/exam boxes once you have read access, to confirm you can reach a flag or locate secrets."
 }

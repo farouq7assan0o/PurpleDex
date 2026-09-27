@@ -98,5 +98,6 @@
       "MITRE T1613",
       "MITRE T1078.004"
     ]
-  }
+  },
+  "explain": "Probes a Kubernetes cluster for anonymous access:\n  kubeletctl               Kubelet API client\n  -i                       ignore TLS certificate errors\n  --server <ip>            the node's Kubelet API (port 10250)\n  pods                     list pods running on that node\nAlso probe the API server on 6443 for anonymous access. A readable pod list points you at pods that allow command execution."
 }

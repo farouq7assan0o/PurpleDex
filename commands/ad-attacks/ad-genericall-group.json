@@ -99,5 +99,6 @@
       "a": "4728/4732/4756 (member added to a security group) and 5136 on the member attribute. Separate malicious from routine by the actor (not a normal group admin), timing, and correlation with prior recon or a fresh logon by the added principal.",
       "role": "soc"
     }
-  ]
+  ],
+  "explain": "Adds a principal you control into a group you have GenericAll/GenericWrite/AddMember over, inheriting the group's rights:\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account holding the write right\n  add groupMember \"<target_group>\" <user>   put <user> into <target_group>\nRe-authenticate (new ticket) afterward so the added membership appears in your Kerberos PAC and the inherited privileges take effect."
 }

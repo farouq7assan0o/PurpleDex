@@ -98,5 +98,6 @@
       "label": "Convert-SidToName (SID to readable name)",
       "command": "Convert-SidToName <sid>"
     }
-  ]
+  ],
+  "explain": "Hunts for dangerous, non-default ACLs across the domain with PowerView:\n  Find-InterestingDomainAcl   enumerate ACEs that are not built-in defaults\n  -ResolveGUIDs            translate schema/extended-right GUIDs to readable rights\n  | select IdentityReferenceName,ObjectDN,ActiveDirectoryRights   who has what right over which object\nLook for WriteDACL/GenericAll/GenericWrite/AllExtendedRights held by non-privileged users - each is an ACL abuse path (Shadow Creds, targeted Kerberoast, DCSync grant)."
 }

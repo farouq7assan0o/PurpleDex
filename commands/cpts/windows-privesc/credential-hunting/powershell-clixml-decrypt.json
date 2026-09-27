@@ -102,5 +102,6 @@
       "label": "Decrypt it (only as the same user/host that saved it)",
       "command": "$c = Import-Clixml '<cred_xml>'; $c.GetNetworkCredential().Password"
     }
-  ]
+  ],
+  "explain": "Decrypts a PSCredential exported with Export-Clixml (DPAPI-bound to the saving user):\n  $c = Import-Clixml -Path '<cred_xml>'   load the saved credential object\n  $c.GetNetworkCredential().Password   read the plaintext password\nOnly works when run as the same user on the same host that saved it (DPAPI). Find such files by grepping XML for System.Management.Automation.PSCredential."
 }

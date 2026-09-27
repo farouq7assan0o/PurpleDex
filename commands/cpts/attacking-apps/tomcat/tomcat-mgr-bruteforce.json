@@ -106,5 +106,6 @@
       "OWASP A07:2021"
     ],
     "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity."
-  }
+  },
+  "explain": "Brute-forces Tomcat Manager HTTP Basic auth with Metasploit:\n  use auxiliary/scanner/http/tomcat_mgr_login   the module (set RHOSTS and it tries default credential lists)\nManager/Host-Manager access lets you deploy a malicious WAR for RCE."
 }

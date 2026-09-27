@@ -100,5 +100,6 @@
     "elastic_kql": "process.name:dislocker*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"dislocker\" or ProcessCommandLine has \"dislocker\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// unlocks a BitLocker volume with a recovered key; local operation, no network signal",
     "sigma_rules": "no target-side telemetry (dislocker runs on the attacker host)"
-  }
+  },
+  "explain": "Mounts a BitLocker volume on Linux once you have the recovery key:\n  sudo dislocker            decrypt the BitLocker partition\n  /dev/loop0p2             the BitLocker partition (attach the image with losetup -f -P first)\n  -u<recovery_key>         unlock with the recovery password/key\n  -- /media/bitlocker      expose the decrypted virtual file here\nThen mount /media/bitlocker/dislocker-file to read the drive - the counterpart to cracking, used once you have the key."
 }

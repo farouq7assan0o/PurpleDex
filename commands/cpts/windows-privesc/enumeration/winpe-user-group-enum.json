@@ -97,5 +97,6 @@
   "mitre": [
     "T1033"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Enumerates your token privileges and group memberships - the key privesc signal:\n  whoami /priv             list the current token's privileges\nSeImpersonate, SeDebug, SeBackup, SeTakeOwnership, and SeLoadDriver each map to a specific escalation path. The variations add whoami /groups and local user/group membership (net localgroup administrators)."
 }

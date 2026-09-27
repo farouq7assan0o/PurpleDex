@@ -110,5 +110,6 @@
     "wordlist",
     "password",
     "generation"
-  ]
+  ],
+  "explain": "Generates a custom wordlist from a known pattern:\n  crunch <min> <max>       min and max candidate length\n  <charset>                the characters to use\n  -t <pattern>             a template (% = digit, @ = lowercase, ^ = symbol, , = uppercase)\n  -o <output_file>         write the list\nEssential for targeted brute force when you know partial structure (e.g. -t Lab%%% for Lab plus three digits); pipe straight into hashcat --stdin or hydra -P -."
 }

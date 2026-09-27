@@ -84,5 +84,6 @@
   "mitre": [
     "T1110.002"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "A reference of hashcat -m mode numbers by hash type:\n  hashcat -a 0 -m <mode>   straight attack; <mode> tells hashcat which algorithm the hash is\n  <hash_file> /usr/share/wordlists/rockyou.txt   the hashes and wordlist\nGetting the mode wrong makes cracking silently fail, so identify the hash (hashid) first, then match: 1000 NTLM, 1800 sha512crypt, 13100 Kerberoast, 5600 NetNTLMv2, 13400 KeePass, etc."
 }

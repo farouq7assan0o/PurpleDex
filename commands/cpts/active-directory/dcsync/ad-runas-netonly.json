@@ -84,5 +84,6 @@
   },
   "tools": [
     "runas"
-  ]
+  ],
+  "explain": "Spawns a process carrying AD credentials for network auth, even off a non-domain-joined host:\n  runas /netonly           the injected creds are used only for outbound network authentication, not local logon\n  /user:<domain>\\<user>    the account to authenticate as\n  powershell               the process to launch with those creds\nYou will be prompted for the password. Run domain tools (PowerView, etc.) in that window and they authenticate to the DC as <user>."
 }

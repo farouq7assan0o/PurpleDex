@@ -50,27 +50,27 @@
       "command": "routel\nss -anp\ncat /etc/iptables/rules.v4"
     },
     {
-      "label": "Kernel modules \u2014 name + version for CVE matching",
+      "label": "Kernel modules — name + version for CVE matching",
       "command": "lsmod\n/sbin/modinfo <module_name>\n# e.g. /sbin/modinfo libata  -> version, license, depends"
     },
     {
-      "label": "OSCP Ch17 \u2014 OS version info (distro + codename)",
+      "label": "OSCP Ch17 — OS version info (distro + codename)",
       "command": "cat /etc/issue\ncat /etc/os-release"
     },
     {
-      "label": "OSCP Ch17 \u2014 kernel version and architecture",
+      "label": "OSCP Ch17 — kernel version and architecture",
       "command": "uname -a"
     },
     {
-      "label": "OSCP Ch17 \u2014 hostname (role clue)",
+      "label": "OSCP Ch17 — hostname (role clue)",
       "command": "hostname"
     },
     {
-      "label": "OSCP Ch17 \u2014 current user cron jobs",
+      "label": "OSCP Ch17 — current user cron jobs",
       "command": "crontab -l"
     },
     {
-      "label": "OSCP Ch17 \u2014 root cron jobs via sudo",
+      "label": "OSCP Ch17 — root cron jobs via sudo",
       "command": "sudo crontab -l"
     }
   ],
@@ -133,5 +133,6 @@
     "T1033",
     "T1082"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "First-look orientation the moment you land a shell:\n  id                       your UID/GID and group memberships\nThe variations add whoami/hostname and, critically, sudo -l (what you can run as root), plus OS/kernel (uname -a, /etc/os-release) and PATH/env - the basics that steer every next step."
 }

@@ -110,5 +110,6 @@
       "MITRE T1548.001"
     ],
     "evasion": "Use the GTFOBins invocation that runs in-place without dropping files; clean up any temporary payloads; a single setuid abuse is quieter than repeated attempts."
-  }
+  },
+  "explain": "Enumerates file capabilities and abuses a high-value one:\n  find /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -type f   scan the common binary dirs\n  -exec getcap {} \\;       print each file's capabilities\nCapabilities grant slices of root without SUID; e.g. a binary with cap_dac_override (like vim.basic) can rewrite /etc/passwd to blank root's password, then su -."
 }

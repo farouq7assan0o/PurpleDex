@@ -100,5 +100,6 @@
       "MITRE T1574.007",
       "MITRE T1548"
     ]
-  }
+  },
+  "explain": "Hijacks a command a privileged script calls by relative name:\n  PATH=.:${PATH}           prepend the current (writable) directory to PATH so it is searched first\nThen drop a malicious executable named exactly like the command the script invokes (e.g. touch ls; make it executable). When the privileged script runs, your binary executes instead of the real one."
 }

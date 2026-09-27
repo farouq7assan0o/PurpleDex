@@ -98,5 +98,6 @@
       "MITRE T1068",
       "OWASP A06:2021"
     ]
-  }
+  },
+  "explain": "Runs the PwnKit exploit (CVE-2021-4034) against pkexec for instant local root:\n  ./poc                    trigger the pkexec memory-corruption bug to spawn a root shell\nPwnKit is a 12-year-old flaw in polkit's SUID-root pkexec affecting default installs. Confirm pkexec exists, clone and gcc the tiny PoC, then run it and check id."
 }

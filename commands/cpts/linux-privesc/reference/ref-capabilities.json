@@ -64,5 +64,6 @@
   "mitre": [
     "T1548.001"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "A lookup of Linux capability meanings, anchored by the enumeration command:\n  getcap -r / 2>/dev/null  recursively list every file capability on the system, discarding errors\nMatch the results against the card's list of high-value capabilities (cap_setuid, cap_dac_override, cap_sys_admin, etc.) to see which grant a path to root."
 }

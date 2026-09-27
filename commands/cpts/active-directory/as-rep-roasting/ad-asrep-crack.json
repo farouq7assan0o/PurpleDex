@@ -96,5 +96,6 @@
       "label": "Show cracked",
       "command": "hashcat -m 18200 <hashfile> --show"
     }
-  ]
+  ],
+  "explain": "Cracks AS-REP roast hashes offline to recover the account's plaintext password:\n  hashcat                  the cracker\n  -m 18200                 mode 18200 = Kerberos 5 AS-REP etype 23 ($krb5asrep$)\n  <hashfile>               the GetNPUsers/Rubeus output\n  /usr/share/wordlists/rockyou.txt   the wordlist\nThe DC encrypted the AS-REP with the account's NT-hash-derived key, so a match reveals the password. Add --show to reprint cracked results."
 }

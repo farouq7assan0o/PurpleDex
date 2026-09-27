@@ -101,5 +101,6 @@
     "misconfiguration": "Non-admins granted actAs/getAccessToken over privileged SAs, serviceAccountKeys.create, iam.roles.update, or *.setIamPolicy; default Editor SAs reusable as escalation targets.",
     "vulnerable_config": "# Principal can impersonate a project-Editor SA:\ngcloud iam service-accounts get-iam-policy <priv_sa>   # shows you as roles/iam.serviceAccountTokenCreator\ngcloud storage ls --impersonate-service-account <priv_sa>",
     "secure_config": "# Remove actAs/getAccessToken/keys.create/roles.update/setIamPolicy from non-admin roles;\n# use IAM Recommender + Policy Analyzer to prune escalation paths; disable SA key creation via org policy;\n# alert on GenerateAccessToken/CreateServiceAccountKey/UpdateRole/SetIamPolicy in audit logs."
-  }
+  },
+  "explain": "Escalates a low-priv GCP identity by abusing dangerous IAM permissions:\n  python3 check_for_privesc.py   enumerate your permissions and flag exploitable ones\nLooks for rights like iam.roles.update, iam.serviceAccounts.getAccessToken/actAs, serviceAccountKeys.create, and setIamPolicy - each lets you grant yourself more or impersonate a higher-privileged service account. gcp_enum.sh does broader enumeration."
 }

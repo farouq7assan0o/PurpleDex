@@ -106,5 +106,6 @@
       "label": "Duplicate a SYSTEM process token to spawn SYSTEM",
       "command": "[MyProcess]::CreateProcessFromParent(<system_pid>,<command>)"
     }
-  ]
+  ],
+  "explain": "Uses SeDebugPrivilege to spawn a process from a SYSTEM-owned parent, inheriting its token:\n  [MyProcess]::CreateProcessFromParent(<system_pid>,<command_to_execute>,\"\")   psgetsys.ps1 - create a child of a SYSTEM process (e.g. an lsass/winlogon PID)\nThe child inherits a SYSTEM token and runs your command as SYSTEM. PowerUp's Get-System (NamedPipe/Token techniques) is the packaged equivalent."
 }

@@ -96,5 +96,6 @@
       "label": "Multiple users",
       "command": "wpscan --url http://<url> -U users.txt -P rockyou.txt --password-attack wp-login"
     }
-  ]
+  ],
+  "explain": "Brute-forces a WordPress account through the XML-RPC endpoint:\n  wpscan                   the WordPress scanner\n  --password-attack xmlrpc  use xmlrpc (faster/quieter than wp-login)\n  -t 20                    20 threads\n  -U <user> -P <wordlist>  the target user and password list\n  --url http://<url>       the site\nRecovered admin creds lead to code execution via the theme editor."
 }

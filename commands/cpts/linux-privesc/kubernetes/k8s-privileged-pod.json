@@ -107,5 +107,6 @@
       "MITRE T1610",
       "MITRE T1611"
     ]
-  }
+  },
+  "explain": "Deploys a pod that mounts the host root filesystem to escape to the node:\n  kubectl                  the K8s client\n  --token=$token           the stolen service-account token\n  --certificate-authority=ca.crt   the cluster CA cert\n  --server=https://<ip>:6443   the API server\n  apply -f privesc.yaml    create the pod defined in privesc.yaml (hostPath / mounted in)\nRequires a token that can create pods. Once running, exec in and read the node's root SSH key or write to the host filesystem."
 }

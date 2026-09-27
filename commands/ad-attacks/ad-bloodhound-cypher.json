@@ -55,5 +55,6 @@
   ],
   "tools": [
     "bloodhound"
-  ]
+  ],
+  "explain": "A set of raw Cypher queries you paste into the BloodHound CE Neo4j console to surface attack paths the GUI does not show by default:\n  MATCH (u:User {owned:true})   start from accounts you have already marked as owned\n  shortestPath(...->(t:Group {highvalue:true}))   the fewest hops to a high-value group (e.g. Domain Admins)\n  RETURN p                       render that path as a graph\nOther queries in the set list outbound control edges, Kerberoastable/AS-REP-roastable users, shadow-credential and RBCD opportunities, and DCSync principals - so you pick the next abuse from live graph data instead of guessing."
 }

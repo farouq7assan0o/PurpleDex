@@ -112,5 +112,6 @@
       "label": "Request their TGS hashes",
       "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password> -request -outputfile hashes.txt"
     }
-  ]
+  ],
+  "explain": "Lists domain accounts that have an SPN - the Kerberoasting target list - without pulling tickets yet:\n  GetUserSPNs.py           impacket SPN enumerator\n  -dc-ip <dc_ip>           the Domain Controller to query\n  <domain>/<user>          any valid domain credential (append :<password> to authenticate)\nNo -request means pure enumeration. Note service accounts with old PasswordLastSet, then add -request to roast them."
 }

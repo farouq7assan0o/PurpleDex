@@ -130,5 +130,6 @@
       "label": "SOAPHound - dump BloodHound data",
       "command": "SOAPHound.exe -c <cache_file> --bhdump -o <output_dir> --nolaps"
     }
-  ]
+  ],
+  "explain": "Runs the SharpHound collector to gather AD relationship data for BloodHound path analysis:\n  Invoke-BloodHound       the SharpHound.ps1 collection function\n  -CollectionMethod All   collect sessions, ACLs, group membership, trusts, delegation, etc.\n  -OutputDirectory C:\\Temp\\   where to drop the zip\n  -OutputPrefix 'crtp'    prefix for the output files\nImport the resulting zip into BloodHound to see shortest paths to Domain Admin, unconstrained hosts, and ACL abuse edges."
 }

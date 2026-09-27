@@ -86,5 +86,6 @@
       "MITRE T1559.001"
     ],
     "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries."
-  }
+  },
+  "explain": "Lists named pipes and their permissions to find an abusable one:\n  accesschk.exe            Sysinternals ACL checker\n  -accepteula              auto-accept the EULA (non-interactive)\n  -w \\pipe\\*               only pipes your user can write to\n  -v                       verbose (show the DACL)\nA writable service pipe (e.g. WindscribeService) can allow impersonation or command execution - see CVE-2020-27350-style abuses."
 }

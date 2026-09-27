@@ -97,5 +97,6 @@
       "MITRE T1059",
       "MITRE T1548"
     ]
-  }
+  },
+  "explain": "Breaks out of a restricted shell (rbash/rksh/rzsh) using allowed built-ins:\n  ls -l `pwd`              command substitution - backticks run pwd even though cd/redirection are blocked\nRestricted shells block cd, redirection, and PATH changes but often still allow $()/backticks, built-ins, and chaining metacharacters - use those to read files or spawn an unrestricted shell."
 }

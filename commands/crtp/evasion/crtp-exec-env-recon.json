@@ -127,5 +127,6 @@
       "label": "Check if AMSI is likely active (quick)",
       "command": "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils') -ne $null"
     }
-  ]
+  ],
+  "explain": "Before loading any offensive PowerShell, checks what defenses are watching so you pick the right bypass:\n  $ExecutionContext.SessionState.LanguageMode   FullLanguage vs ConstrainedLanguage (CLM changes what you can run)\nFollow with whoami /all (privileges/groups), klist (current tickets), Get-AppLockerPolicy -Effective (allow-listing), and Get-MpComputerStatus/Get-MpPreference (Defender status + exclusion paths). Knowing this avoids burning the host with the wrong tool."
 }

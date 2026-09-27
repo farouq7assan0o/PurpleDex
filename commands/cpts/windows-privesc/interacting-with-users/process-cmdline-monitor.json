@@ -77,5 +77,6 @@
       "MITRE T1552"
     ],
     "evasion": "Blend the lure (SCF/LNK/clipboard) into a share users already browse; keep the capture window short; remove the planted file after a hash lands."
-  }
+  },
+  "explain": "Polls process command lines to catch credentials passed as arguments:\n  Get-WmiObject Win32_Process | select CommandLine   snapshot every process's command line\n  sleep 1; ... Compare-Object $a $b   diff two snapshots a second apart to reveal newly launched processes\nScheduled tasks/scripts that pass passwords on the command line show up here; a helper like procmon.ps1 does this continuously."
 }

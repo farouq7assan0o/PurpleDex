@@ -100,5 +100,6 @@
       "MITRE T1543.003",
       "MITRE T1574.001"
     ]
-  }
+  },
+  "explain": "Abuses DnsAdmins membership to run a DLL as SYSTEM on a DC:\n  dnscmd.exe /config       change DNS server configuration\n  /serverlevelplugindll C:\\path\\adduser.dll   register a custom plugin DLL the DNS service loads on restart\nThe DNS service runs as SYSTEM on a DC, so restarting it loads your DLL (e.g. one that adds a domain admin) with SYSTEM privilege."
 }

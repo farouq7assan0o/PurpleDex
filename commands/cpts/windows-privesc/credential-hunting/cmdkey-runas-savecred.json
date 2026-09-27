@@ -104,5 +104,6 @@
       "label": "Run as the saved user (no password prompt)",
       "command": "runas /savecred /user:<domain>\\<user> cmd"
     }
-  ]
+  ],
+  "explain": "Reuses saved Windows credentials without seeing the password:\n  cmdkey /list             list stored credentials (targets and usernames)\nIf a useful entry exists, runas /savecred /user:<domain>\\<user> cmd launches a process as that stored user - potentially a privileged account - using the saved secret."
 }

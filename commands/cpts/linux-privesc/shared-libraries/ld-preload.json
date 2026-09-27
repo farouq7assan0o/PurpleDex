@@ -101,5 +101,6 @@
       "MITRE T1574.006",
       "MITRE T1548.003"
     ]
-  }
+  },
+  "explain": "Loads a malicious shared library into a sudo-allowed command when LD_PRELOAD is kept:\n  sudo LD_PRELOAD=/tmp/root.so   force the loader to preload your library first\n  /usr/sbin/apache2 restart   an allowed sudo command that will load it\nRequires env_keep+=LD_PRELOAD in sudoers (check sudo -l). Your library's _init() constructor runs as root, spawning a root shell. Compile it with gcc -fPIC -shared -nostartfiles."
 }

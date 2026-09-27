@@ -91,5 +91,6 @@
       "label": "Generate from a single name",
       "command": "./username-anarchy Jane Doe"
     }
-  ]
+  ],
+  "explain": "Generates corporate username permutations from real names:\n  ./username-anarchy       the generator\n  -i <names_file>          input file of first/last names\nProduces jdoe, john.doe, doe.john, etc.; feed the output to kerbrute or a spray to discover which username format the org actually uses. --select-format picks one scheme."
 }

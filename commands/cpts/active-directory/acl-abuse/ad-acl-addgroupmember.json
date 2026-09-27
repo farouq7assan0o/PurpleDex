@@ -120,5 +120,6 @@
       "label": "Verify membership",
       "command": "Get-DomainGroupMember -Identity '<group>' | select MemberName"
     }
-  ]
+  ],
+  "explain": "Adds a member to a group you have GenericWrite/AddMember over, inheriting the group's rights:\n  Add-DomainGroupMember   PowerView group modification\n  -Identity '<group>'      the group you can write to\n  -Members '<user>'        the principal to add (yourself)\n  -Credential $Cred        run as the account that holds the write right (not your logon)\n  -Verbose                  show the result\nRe-authenticate afterward so the new membership lands in your Kerberos ticket."
 }

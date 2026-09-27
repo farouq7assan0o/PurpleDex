@@ -116,5 +116,6 @@
       "label": "Show cracked",
       "command": "hashcat -m 13100 <hashfile> --show"
     }
-  ]
+  ],
+  "explain": "Cracks Kerberoast TGS-REP hashes offline:\n  hashcat -m 13100         mode 13100 = RC4-encrypted TGS (etype 23, fast)\n  <hashfile>               the roasted hashes\n  /usr/share/wordlists/rockyou.txt   the wordlist\nUse -m 19700 for AES256 tickets (etype 18, much slower). Recovers the service account's plaintext with no lockout or network traffic; add -r best64.rule to expand coverage."
 }

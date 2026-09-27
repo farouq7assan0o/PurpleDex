@@ -143,5 +143,6 @@
     "powershell",
     "privesc",
     "local"
-  ]
+  ],
+  "explain": "PowerShell-native local user/group and software enumeration:\n  Get-LocalGroup           list local groups\n  | Select-Object Name, Description   show each group's name and purpose\nThe variations enumerate Administrators membership, installed software (from the Uninstall registry keys), running services and their run-as accounts, and hotfixes - richer, scriptable output than net.exe."
 }

@@ -138,5 +138,6 @@
       "label": "Get-NetLocalGroup (local groups on a machine)",
       "command": "Get-NetLocalGroup -ComputerName <host>"
     }
-  ]
+  ],
+  "explain": "Locates where privileged users are currently logged on, to plan a lateral hop that steals their session:\n  Find-DomainUserLocation   query hosts for sessions of high-value users\n  -CheckAccess             also test whether YOU are local admin on each host found\nWhere a DA is logged in AND you have admin, that box is a credential-theft target. Backing cmdlets (Get-NetSession, Get-NetLoggedon, Find-LocalAdminAccess) enumerate sessions and admin access per host."
 }

@@ -133,5 +133,6 @@
       "https://attack.mitre.org/techniques/T1018/",
       "CRTP Domain Enumeration"
     ]
-  }
+  },
+  "explain": "Maps the physical/logical topology of the forest with PowerView:\n  Get-DomainSite           enumerate AD Sites\n  | select name,siteobjectbl   the site name and its linked subnet backlinks\nPair with Get-DomainSubnet (subnet->site), Get-ForestGlobalCatalog, and Get-NetComputerSiteName to learn network segmentation and where DCs/GCs/file servers physically sit - useful for planning pivots."
 }

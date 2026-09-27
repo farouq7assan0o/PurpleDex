@@ -97,5 +97,6 @@
       "label": "Confirm EA on the parent",
       "command": "# raiseChild drops a SYSTEM shell on the forest root DC"
     }
-  ]
+  ],
+  "explain": "Automates the entire child-to-parent escalation in one command:\n  raiseChild.py            impacket's child->parent automation\n  -target-exec <parent_dc_ip>   run a payload on the forest-root DC once escalated\n  <child_domain>/<child_admin>:<password>   child-domain admin credentials\nInternally it DCSyncs the child krbtgt, enumerates SIDs, forges an ExtraSids golden ticket, and psexecs the parent DC - dropping a SYSTEM shell on the forest root. Use -hashes for pass-the-hash instead of a password."
 }

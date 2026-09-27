@@ -103,5 +103,6 @@
       "label": "Decrypt it (AES key is public)",
       "command": "gpp-decrypt <cpassword>"
     }
-  ]
+  ],
+  "explain": "Decrypts a Group Policy Preferences cpassword using Microsoft's published AES key:\n  gpp-decrypt              apply the public GPP AES key (KB2962486)\n  <cpassword>              the base64 cpassword string from a SYSVOL GPP XML (Groups.xml, Services.xml, etc.)\nMicrosoft published the key in 2012, so every GPP-stored password is trivially recoverable. Find the cpassword first with findstr/grep over SYSVOL."
 }

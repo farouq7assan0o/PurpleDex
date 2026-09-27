@@ -122,5 +122,6 @@
       "label": "Service abuse (writable service)",
       "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>' -Verbose"
     }
-  ]
+  ],
+  "explain": "Runs every PowerUp check to find Windows local privilege-escalation vectors:\n  Invoke-AllChecks          scan for unquoted service paths, weak service/file permissions, AlwaysInstallElevated, autologon creds, DLL hijacks, etc.\nDot-source PowerUp.ps1 first. Each finding maps to an abuse function - e.g. Invoke-ServiceAbuse -Name <service> -UserName <domain>\\<user> hijacks a writable service to add you to a group."
 }

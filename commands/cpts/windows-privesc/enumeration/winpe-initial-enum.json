@@ -114,5 +114,6 @@
   "mitre": [
     "T1082"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Baseline Windows host enumeration to feed patch/service escalation paths:\n  systeminfo               OS version, build, patch level, architecture, domain\nThe variations add running processes/services (tasklist /svc, sc query), installed software, hotfixes (wmic qfe / Get-HotFix), and listening ports (netstat -ano) - the raw material for choosing an escalation."
 }

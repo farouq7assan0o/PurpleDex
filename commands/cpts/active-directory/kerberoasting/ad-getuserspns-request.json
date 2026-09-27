@@ -116,5 +116,6 @@
       "label": "Use the cracked service-account creds",
       "command": "# check local admin / delegation for that account"
     }
-  ]
+  ],
+  "explain": "Requests TGS-REP tickets for SPN accounts and saves hashcat-ready hashes:\n  GetUserSPNs.py           impacket Kerberoaster\n  -dc-ip <dc_ip>           the Domain Controller\n  <domain>/<user>          authenticating credentials (add :<password>)\n  -request                 actually pull the TGS tickets (the encrypted ticket is the crackable material)\n  -outputfile <outfile>    write the hashes to file\nCrack offline with hashcat -m 13100; use -request-user <name> to target a single high-value account."
 }

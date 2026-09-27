@@ -108,5 +108,6 @@
       "label": "Crack (hashcat 18200)",
       "command": "hashcat -m 18200 asrep.txt /usr/share/wordlists/rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Rubeus AS-REP roasts from a domain-joined Windows host:\n  asreproast               request AS-REP tickets for pre-auth-disabled accounts (omit /user to roast all)\n  /user:<user>             target a single account\n  /nowrap                  print the whole hash on one line for easy copy\n  /format:hashcat          emit $krb5asrep$ compatible with hashcat -m 18200\nCrack the output offline to recover the password."
 }

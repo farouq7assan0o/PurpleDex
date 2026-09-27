@@ -116,5 +116,6 @@
       "label": "Crack it",
       "command": "hashcat -m 13400 keepass.hash /usr/share/wordlists/rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Cracks a found KeePass database master password offline:\n  keepass2john <kdbx_file>   extract a crackable hash from the .kdbx\n  > keepass.hash           save it\n  hashcat -m 13400 keepass.hash rockyou.txt   brute-force it (mode 13400 = KeePass)\nRecovering the master password unlocks every credential stored in the database."
 }

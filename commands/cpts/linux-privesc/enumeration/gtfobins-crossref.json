@@ -86,5 +86,6 @@
       "MITRE T1548.001",
       "MITRE T1548.003"
     ]
-  }
+  },
+  "explain": "Auto-flags installed binaries that GTFOBins documents an escalation for:\n  curl -s https://gtfobins.github.io/gtfobins.json | jq -r 'keys[]'   pull every GTFOBins entry name\n  grep -q \"$i\" installed_pkgs.list   check each against your installed-packages list\n  echo \"Check GTFO: $i\"    print the ones present on the target\nEach match is a candidate for a SUID/sudo/shell-escape technique - look it up on GTFOBins."
 }

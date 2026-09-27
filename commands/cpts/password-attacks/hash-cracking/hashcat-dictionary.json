@@ -104,5 +104,6 @@
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"-a 0\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline dictionary attack; no victim signal - focus on preventing the hash dump",
     "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
   },
-  "type": "command"
+  "type": "command",
+  "explain": "Runs a straight dictionary attack with hashcat:\n  hashcat -a 0             attack mode 0 = straight (hash each wordlist entry and compare)\n  -m <mode>                the hash algorithm number\n  <hash>                   the target hash\n  /usr/share/wordlists/rockyou.txt   the wordlist\nAdd -r <rule_file> (e.g. best64.rule) to mutate each candidate, greatly expanding coverage at little cost."
 }

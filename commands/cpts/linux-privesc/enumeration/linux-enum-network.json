@@ -38,15 +38,15 @@
       "command": "cat /etc/hosts"
     },
     {
-      "label": "OSCP Ch17 \u2014 routing table",
+      "label": "OSCP Ch17 — routing table",
       "command": "routel"
     },
     {
-      "label": "OSCP Ch17 \u2014 active connections and listening ports",
+      "label": "OSCP Ch17 — active connections and listening ports",
       "command": "ss -anp"
     },
     {
-      "label": "OSCP Ch17 \u2014 firewall rules (readable by non-root if iptables-persistent)",
+      "label": "OSCP Ch17 — firewall rules (readable by non-root if iptables-persistent)",
       "command": "cat /etc/iptables/rules.v4"
     }
   ],
@@ -90,5 +90,6 @@
   "mitre": [
     "T1016"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Maps the host's network position for pivoting and finding new targets:\n  ip a                     list interfaces and their addresses\nThe variations cover /etc/hosts, routing (route/netstat -rn), DNS (resolv.conf), ARP neighbours (arp -a), and who is/was logged in (w/who/lastlog) - together they show what else is reachable from this box."
 }

@@ -98,5 +98,6 @@
       "MITRE T1053.003",
       "MITRE T1574"
     ]
-  }
+  },
+  "explain": "Weaponizes a root cron running tar with a wildcard in a writable directory:\n  echo '...sudoers append...' > root.sh   create the payload script tar will execute\nBecause tar * expands your filenames as arguments, also create files named --checkpoint=1 and --checkpoint-action=exec=sh root.sh. When the cron's tar runs, it treats them as options and executes root.sh as root (here appending a NOPASSWD sudoers line)."
 }

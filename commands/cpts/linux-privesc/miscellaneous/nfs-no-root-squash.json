@@ -110,5 +110,6 @@
       "MITRE T1548.001",
       "MITRE T1210"
     ]
-  }
+  },
+  "explain": "Abuses an NFS export set to no_root_squash to run a root-owned SUID shell on the target:\n  sudo mount -t nfs <ip>:/<share> /mnt   mount the export locally as root\nWith no_root_squash, files you create as root on the mount keep uid 0 on the server. Copy a SUID /bin/bash shell into the share, chmod u+s it, then execute it on the target for a root shell. showmount -e and /etc/exports confirm the flag."
 }

@@ -111,5 +111,6 @@
       "label": "Run + note valid logins",
       "command": "run   # green [+] = valid"
     }
-  ]
+  ],
+  "explain": "Validates SMB credentials across hosts with Metasploit:\n  use auxiliary/scanner/smb/smb_login   the module; set RHOSTS, USER_FILE, PASS_FILE, then run\nUseful when a target negotiates SMBv3 and other brute tools fail; set SMBPass to an NT hash for a pass-the-hash check. A green [+] marks valid logins."
 }

@@ -100,5 +100,6 @@
       "MITRE T1548",
       "MITRE T1136.001"
     ]
-  }
+  },
+  "explain": "Escalates when /etc/passwd is writable by adding a root-equivalent account:\n  openssl passwd <password>   generate a crypt hash to put in the password field\nAppend an entry with uid 0 (e.g. root2:<hash>:0:0:...:/bin/bash) and su to it for root. The variation uses an empty password field (root3::0:0:...) so no password is needed at all."
 }

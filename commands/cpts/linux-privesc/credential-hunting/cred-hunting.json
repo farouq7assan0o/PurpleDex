@@ -101,5 +101,6 @@
       "MITRE T1552.001",
       "OWASP A02:2021"
     ]
-  }
+  },
+  "explain": "Sweeps the filesystem for stored credentials in config files:\n  find /                   search from root\n  ! -path \"*/proc/*\"       skip /proc noise\n  -iname \"*config*\"        match any file with 'config' in the name (case-insensitive)\n  -type f 2>/dev/null      files only, discard permission errors\nInspect hits like wp-config.php and app configs, plus SSH key directories - recovered keys/passwords enable lateral movement or direct root."
 }

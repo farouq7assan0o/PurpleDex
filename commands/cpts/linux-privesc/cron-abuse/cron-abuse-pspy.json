@@ -132,5 +132,6 @@
       "MITRE T1053.003",
       "MITRE T1543"
     ]
-  }
+  },
+  "explain": "Watches for root cron jobs without needing root, so you can abuse a writable one:\n  ./pspy64                 monitor process creation and scheduled tasks in real time (no privileges needed)\n  -pf                      print commands and file-system events\n  -i 1000                  poll every 1000 ms\nWhen you spot a root cron running a world-writable script, append a reverse shell to that script (back up the original first) and wait for the next run."
 }

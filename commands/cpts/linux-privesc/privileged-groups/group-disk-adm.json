@@ -99,5 +99,6 @@
       "label": "Extract /etc/shadow and crack",
       "command": "debugfs -R 'cat /etc/shadow' /dev/sda1 | tee shadow"
     }
-  ]
+  ],
+  "explain": "Abuses the disk group's raw block-device access to read any file:\n  debugfs /dev/sda1        open the root filesystem device directly (disk-group membership grants this)\nInside debugfs (or with debugfs -R 'cat /etc/shadow' /dev/sda1) you can read /etc/shadow, root's SSH key, or any file, bypassing filesystem permissions. The adm group similarly reads all system logs, often exposing credentials."
 }

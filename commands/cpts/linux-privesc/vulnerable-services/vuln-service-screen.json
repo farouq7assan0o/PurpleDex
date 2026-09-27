@@ -105,5 +105,6 @@
       "MITRE T1068",
       "MITRE T1574.006"
     ]
-  }
+  },
+  "explain": "Exploits setuid GNU screen 4.5.0 to load an attacker library as root:\n  screen -v                print the version to confirm 4.05.00 / v4.5.0\nThe bug lets you overwrite /etc/ld.so.preload so a library of yours loads with root privilege; the screenroot.sh PoC compiles libhax.so + a rootshell and triggers it, dropping /tmp/rootshell."
 }

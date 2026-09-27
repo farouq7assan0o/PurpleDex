@@ -91,5 +91,6 @@
       "MITRE T1611"
     ],
     "evasion": "Use the symlink/takeown path once to grab the target file, then restore ownership/permissions."
-  }
+  },
+  "explain": "Abuses Hyper-V Administrators (effectively SYSTEM file access) by hijacking a SYSTEM-run service binary:\n  takeown /F \"C:\\Program Files (x86)\\Mozilla Maintenance Service\\maintenanceservice.exe\"   take ownership of the service executable\nThen grant yourself write, replace the binary with a payload, and start the service so it runs as SYSTEM. CVE-2018-0952/CVE-2019-0841 symlink abuse is the underlying primitive."
 }

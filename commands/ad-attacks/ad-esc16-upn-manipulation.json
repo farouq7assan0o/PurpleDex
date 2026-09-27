@@ -108,5 +108,6 @@
       "a": "Detect via Event 5136 changes to userPrincipalName (set to a privileged name then reverted) correlated with CA enrollment (4886/4887) and PKINIT logon (4768). Prevent by re-enabling the SID security extension on the CA, enforcing strong certificate mapping on DCs (KB5014754 Full Enforcement), restricting UPN write access, and treating CA hosts as Tier-0.",
       "role": "soc"
     }
-  ]
+  ],
+  "explain": "Rewrites a controlled account's UPN to a privileged target, abusing an ESC16 CA that globally omits the SID security extension:\n  account update            modify a directory account's attributes\n  -u <user>@<domain> -p <password>   authenticate\n  -dc-ip <dc_ip>            the Domain Controller\n  -user <controlled_account>   the account whose userPrincipalName you rewrite (you must have write over it)\n  -upn administrator        the privileged UPN to impersonate\nAfter this, enroll a client-auth cert as that account and PKINIT: because the SID extension is missing, the DC maps the cert to administrator by UPN. Reset the UPN afterward."
 }

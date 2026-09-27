@@ -93,5 +93,6 @@
       "MITRE T1082"
     ],
     "evasion": "Use a fileless UAC bypass (fodhelper/registry) that self-cleans; remove the added registry keys after elevation."
-  }
+  },
+  "explain": "Confirms UAC state and level before choosing a bypass:\n  REG QUERY HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ /v EnableLUA   read whether UAC is on\nEnableLUA=1 means UAC is active; ConsentPromptBehaviorAdmin sets prompt strictness. The OS build number then determines which UAC bypass technique will work."
 }

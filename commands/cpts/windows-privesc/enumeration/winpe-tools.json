@@ -103,5 +103,6 @@
   "mitre": [
     "T1082"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "The automated Windows privesc enumerators - run one or more to surface vectors:\n  winPEASx64.exe           broad sweep: services, ACLs, unquoted paths, stored creds, patches\n  Seatbelt.exe -group=all  security-relevant host checks\n  SharpUp.exe audit        modifiable services / weak ACLs / AlwaysInstallElevated\n  Invoke-AllChecks         PowerUp's PowerShell equivalent\nUpload to a writable dir like C:\\Windows\\Temp and triage the highest-signal findings."
 }

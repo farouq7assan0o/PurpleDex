@@ -97,5 +97,6 @@
       "label": "Pass-the-ticket",
       "command": "KRB5CCNAME=<ccache> mssqlclient.py -k <domain>/<user>@<target_fqdn>"
     }
-  ]
+  ],
+  "explain": "Connects to Microsoft SQL Server with impacket for command execution or pivoting:\n  mssqlclient.py           the MSSQL client\n  <domain>/<user>@<target>   the account and SQL host\n  -windows-auth            authenticate with Windows/NTLM domain creds (omit for SQL auth user:pass@host)\nOnce connected, enable_xp_cmdshell gives OS command execution, or use linked servers to pivot; -k reuses a Kerberos ticket."
 }

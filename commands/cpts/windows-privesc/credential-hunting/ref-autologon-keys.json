@@ -61,5 +61,6 @@
   "mitre": [
     "T1552.002"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "A reference to the registry values that store autologon credentials in cleartext:\n  reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\"   read the Winlogon key\nWhen AdminAutoLogon is enabled, DefaultUserName/DefaultDomainName/DefaultPassword hold the auto-login account's plaintext password - a quick credential."
 }

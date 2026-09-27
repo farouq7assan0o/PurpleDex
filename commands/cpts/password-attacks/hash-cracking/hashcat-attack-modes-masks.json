@@ -81,5 +81,6 @@
   "mitre": [
     "T1110.002"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "A reference for hashcat's attack modes and mask charsets, shown via a mask brute-force:\n  hashcat -a 3             attack mode 3 = brute-force / mask\n  -m <mode>                the hash algorithm\n  <hash>                   the target hash\n  '?u?l?l?l?l?d?s'         a mask (one uppercase, four lowercase, a digit, a symbol)\nThe card lists all -a modes (0 straight, 1 combination, 6/7 hybrid) and the built-in charsets (?l ?u ?d ?s ?a), plus custom charsets (-1..-4) for policy-aware cracking."
 }

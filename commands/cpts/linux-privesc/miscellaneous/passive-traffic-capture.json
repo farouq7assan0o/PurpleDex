@@ -94,5 +94,6 @@
       "MITRE T1040",
       "MITRE T1552"
     ]
-  }
+  },
+  "explain": "Sniffs local traffic for cleartext credentials on a multi-user host:\n  tcpdump                  capture packets on the host's interfaces\nOn a shared box you may see other users' cleartext logins; feed the capture to net-creds or PCredz to extract credentials automatically."
 }

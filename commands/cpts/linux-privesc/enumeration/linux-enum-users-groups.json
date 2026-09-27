@@ -84,5 +84,6 @@
   "mitre": [
     "T1087.001"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Enumerates accounts and privileged group membership:\n  cat /etc/passwd          list all accounts (and, per the variations, which have login shells = attack targets)\nAlso check /etc/group and getent group sudo for membership of powerful groups (sudo/docker/lxd/disk/adm) - each maps to a specific escalation path."
 }

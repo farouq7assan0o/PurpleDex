@@ -108,5 +108,6 @@
     "misconfiguration": "Service accounts with stale NTLM hashes (Kerberoastable). PAC validation disabled. gMSA not used. No monitoring for Kerberos auth without prior DC exchange.",
     "vulnerable_config": "# Stale service account hash (Kerberoasted and cracked):\n# svc_mssql password 'Sql@2019' - unchanged since 2019\n# Silver ticket forged for MSSQLSvc/sql01.corp.local\n# → Full DB access as 'Administrator' with no DC events\n\n# PAC validation off (default):\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').ValidateKdcPacSignature  # null = off",
     "secure_config": "# gMSA for all service accounts:\nNew-ADServiceAccount -Name svc_mssql -DNSHostName sql.corp.local -ManagedPasswordIntervalInDays 30\n\n# Enable PAC validation:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name ValidateKdcPacSignature -Value 1\n\n# MDI: silver ticket detection enabled by default"
-  }
+  },
+  "explain": "Forges a Silver Ticket - a TGS for one service, signed with the service account's hash, never contacting the KDC:\n  kerberos::golden         (Mimikatz forges the ticket offline; /target+/service make it a silver TGS)\n  /sid:<domain_sid> /domain:<domain>   the domain and its SID\n  /target:<svc_host>.<domain> /service:<svc_name>   the specific host and service (e.g. cifs)\n  /rc4:<svc_account_nt_hash>   the service/machine account hash that signs it\n  /user:<fake_user> /ptt   the impersonated user, injected\nBecause no AS/TGS request hits a DC, there is no 4768/4769 to detect; access is limited to that one service."
 }

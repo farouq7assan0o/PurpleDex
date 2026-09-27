@@ -86,5 +86,6 @@
       "MITRE T1083"
     ],
     "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries."
-  }
+  },
+  "explain": "Checks endpoint protections before dropping tools:\n  Get-MpComputerStatus     report Defender real-time protection and AMSI status\nAlso read the effective AppLocker policy and test whether a specific binary path is allowed for your user - so you pick execution methods the host will actually permit."
 }

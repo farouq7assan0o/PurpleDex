@@ -114,5 +114,6 @@
     "file-search",
     "powershell",
     "credential-hunting"
-  ]
+  ],
+  "explain": "Recursively searches the Windows filesystem for credential and config files with PowerShell:\n  Get-ChildItem -Path C:\\  walk the whole C: drive\n  -Include *.kdbx          match this pattern (here KeePass databases; swap for *.pem, web.config, unattend.xml, etc.)\n  -File -Recurse           only files, into every subdirectory\n  -ErrorAction SilentlyContinue   suppress access-denied noise from protected dirs\nThe variations target office docs, SSH keys, web.config connection strings, and sysprep answer files."
 }

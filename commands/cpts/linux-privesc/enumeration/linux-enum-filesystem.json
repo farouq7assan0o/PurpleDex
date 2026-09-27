@@ -39,11 +39,11 @@
       "command": "ls -l /tmp /var/tmp /dev/shm"
     },
     {
-      "label": "OSCP Ch17 \u2014 show all mounted filesystems",
+      "label": "OSCP Ch17 — show all mounted filesystems",
       "command": "mount"
     },
     {
-      "label": "OSCP Ch17 \u2014 all disks and partitions (spot unmounted drives)",
+      "label": "OSCP Ch17 — all disks and partitions (spot unmounted drives)",
       "command": "lsblk"
     }
   ],
@@ -88,5 +88,6 @@
   "mitre": [
     "T1083"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Inspects mounts and storage for escalation material:\n  cat /etc/fstab           show configured mounts - network-share entries sometimes contain credentials\nThe variations add df -h/lsblk (block devices) and find for hidden files/dirs, which often hold keys, configs, and history worth reading."
 }

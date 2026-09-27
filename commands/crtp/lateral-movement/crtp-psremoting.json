@@ -137,5 +137,6 @@
       "label": "WSManWinRM.exe (when winrs is blocked)",
       "command": "WSManWinRM.exe <host_fqdn> \"cmd /c <command>\""
     }
-  ]
+  ],
+  "explain": "Moves laterally over PowerShell Remoting (WinRM, 5985/5986):\n  Enter-PSSession           open an interactive remote shell\n  -ComputerName <dc_host>  the target machine\n  -Credential (Get-Credential)   the credentials to authenticate with\nUse Invoke-Command -ScriptBlock/-FilePath for non-interactive execution or to load tools remotely; New-PSSession keeps a reusable session. Beware the double-hop issue when reaching a further host."
 }

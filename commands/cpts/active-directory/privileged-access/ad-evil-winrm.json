@@ -98,5 +98,6 @@
       "label": "With scripts/executables dir",
       "command": "evil-winrm -i <target> -u <user> -p <password> -s /opt/scripts -e /opt/bins"
     }
-  ]
+  ],
+  "explain": "Opens an interactive PowerShell shell over WinRM with credentials:\n  evil-winrm -i <target>   the target host (WinRM 5985/HTTP, 5986/HTTPS)\n  -u <user> -p <password>  domain or local credentials\nThe account must be in Remote Management Users/Administrators. -H <nt_hash> authenticates by hash (pass-the-hash); -s and -e set local script/binary directories for in-memory loading."
 }

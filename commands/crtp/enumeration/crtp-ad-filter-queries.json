@@ -117,5 +117,6 @@
       "label": "PowerView equivalents",
       "command": "Get-DomainUser -PreauthNotRequired; Get-DomainComputer -Unconstrained; Get-DomainUser -AdminCount"
     }
-  ]
+  ],
+  "explain": "A set of LDAP / AD-module filter queries that pinpoint attack targets without noisy full dumps. The lead example finds AS-REP roastable accounts:\n  Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true}   accounts with pre-auth disabled\n  -Properties DoesNotRequirePreAuth   include that attribute in the output\nOther queries in the set cover Kerberoastable (servicePrincipalName=*), disabled accounts (userAccountControl bitwise), adminCount=1, Protected Users, and OU-scoped searches - each returns just the principals worth attacking."
 }

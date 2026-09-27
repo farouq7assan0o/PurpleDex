@@ -104,5 +104,6 @@
       "MITRE T1548.001"
     ],
     "evasion": "Use the GTFOBins invocation that runs in-place without dropping files; clean up any temporary payloads; a single setuid abuse is quieter than repeated attempts."
-  }
+  },
+  "explain": "Finds root-owned SUID/SGID binaries to abuse via GTFOBins:\n  find /                   search the whole filesystem\n  -user root               owned by root\n  -perm -4000              the SUID bit set (SGID is -6000)\n  -exec ls -ldb {} \\; 2>/dev/null   list each, discarding errors\nLook up each unusual binary on GTFOBins for a SUID escalation (e.g. apt-get's Pre-Invoke shell escape)."
 }

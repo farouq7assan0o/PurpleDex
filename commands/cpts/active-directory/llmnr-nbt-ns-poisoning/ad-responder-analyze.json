@@ -89,5 +89,6 @@
   },
   "tools": [
     "Responder"
-  ]
+  ],
+  "explain": "Runs Responder passively to scope the attack before poisoning:\n  sudo responder           the poisoner\n  -I <interface>           listen on this interface\n  -A                       analyze mode - log who is broadcasting LLMNR/NBT-NS/mDNS queries WITHOUT answering\nUse this first to confirm victims exist and gauge volume, so you only go active when it is worthwhile."
 }

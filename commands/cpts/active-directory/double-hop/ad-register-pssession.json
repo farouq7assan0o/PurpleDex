@@ -90,5 +90,6 @@
   },
   "tools": [
     "powershell"
-  ]
+  ],
+  "explain": "Creates a PSSession endpoint that runs as a stored credential, solving the Kerberos double-hop:\n  Register-PSSessionConfiguration   define a custom WinRM endpoint\n  -Name <sessname>         the endpoint name to connect to\n  -RunAsCredential <domain>\\<user>   run every session under these creds, so they exist on the box for a second hop\n  -Force                   overwrite/skip prompts\nConnect to it (Enter-PSSession -ConfigurationName <sessname>) and onward access to a third machine now authenticates, instead of failing with no forwarded credentials."
 }

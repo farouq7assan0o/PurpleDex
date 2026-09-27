@@ -100,5 +100,6 @@
       "label": "Brute-force one user",
       "command": "kerbrute bruteuser --dc <dc_ip> --domain <domain> <wordlist> <username>"
     }
-  ]
+  ],
+  "explain": "Validates which usernames exist in AD via Kerberos pre-auth, without lockouts:\n  kerbrute userenum        enumerate valid users from KDC responses\n  --dc <dc_ip>             the Domain Controller\n  --domain <domain>        the domain\n  <names_file>             candidate usernames\nValid users give a distinct response and no failed-logon events; confirmed accounts become spray/AS-REP-roast targets. bruteuser brute-forces one user's password instead."
 }

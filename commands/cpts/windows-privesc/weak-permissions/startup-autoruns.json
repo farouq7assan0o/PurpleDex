@@ -87,5 +87,6 @@
       "label": "Startup folder",
       "command": "Get-ChildItem \"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\""
     }
-  ]
+  ],
+  "explain": "Lists autostart programs to find a writable one that runs at another user's logon:\n  Get-CimInstance Win32_StartupCommand   enumerate autostart entries\n  | select Name, command, Location, User | fl   show each entry's command, where it is registered, and which user it runs for\nIf an entry or its target binary is writable by you, replace it with a payload that executes when a higher-privileged user logs in."
 }

@@ -114,5 +114,6 @@
       "label": "Monitor Event 4724 - password reset attempt",
       "command": "Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4724} | Select -First 10 | Format-List"
     }
-  ]
+  ],
+  "explain": "Collects AD ACL data with SharpHound so BloodHound can find abusable object rights:\n  SharpHound.exe            the collector\n  -c All                   collect all methods (ACLs, sessions, group membership, etc.)\n  --zipfilename bh_output   name the output zip\nImport into BloodHound to spot GenericAll/GenericWrite/WriteDACL/WriteOwner over privileged objects; each maps to an abuse (reset password, add to group, grant DCSync). Detect the abuse via Events 4738/4724."
 }

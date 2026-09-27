@@ -92,5 +92,6 @@
       "description": "Adds a symbols filter requiring 2+ special characters (!@#$%^&*) on top of the standard length/upper/lower/digit filters. Use when the target policy mandates special characters."
     }
   ],
-  "type": "command"
+  "type": "command",
+  "explain": "Trims a wordlist to only candidates matching a known password policy:\n  grep -E '^.{8,}$' <wordlist>   keep entries of at least 8 characters\n  | grep -E '[A-Z]'        require an uppercase letter\n  | grep -E '[a-z]'        require a lowercase letter\n  | grep -E '[0-9]'        require a digit\n  > filtered.txt           the reduced list\nShrinking the keyspace to the target's complexity rules cuts crack time; chain another grep for symbol requirements."
 }

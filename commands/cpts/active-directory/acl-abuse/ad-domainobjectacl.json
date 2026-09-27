@@ -115,5 +115,6 @@
       "label": "Find what that SID can modify",
       "command": "Get-DomainObjectAcl -ResolveGUIDs -Identity <object> | ?{$_.SecurityIdentifier -eq $sid}"
     }
-  ]
+  ],
+  "explain": "Enumerates which objects a principal you control can modify (step before an ACL escalation):\n  $sid = Convert-NameToSid <user>   resolve your controlled account to its SID\n  Get-DomainObjectACL -ResolveGUIDs -Identity *   read ACEs across objects with readable right names\n  ? {$_.SecurityIdentifier -eq $sid}   keep only ACEs granted to that SID\nFilter the results for GenericAll/WriteDacl/WriteOwner/GenericWrite; WriteDACL over the domain lets you then Add-DomainObjectACL your own DCSync rights."
 }

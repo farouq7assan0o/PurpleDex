@@ -128,5 +128,6 @@
       "label": "Deprecated PowerView alias (OSCP PEN-200 Ch21)",
       "command": "Get-NetDomain   # older PowerView name for Get-Domain - identical output"
     }
-  ]
+  ],
+  "explain": "Enumerates the domain, forest, and DCs from an authenticated Windows session with PowerView:\n  Get-Domain               core domain object (add -Domain <domain> to target a trusted domain)\nFollow-ons: Get-DomainController for DCs, Get-Forest for the forest, Get-DomainSID for the SID you need to forge tickets. (Get-NetDomain is the deprecated alias.)"
 }

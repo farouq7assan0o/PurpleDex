@@ -120,5 +120,6 @@
       "label": "Crack AS-REP (hashcat m18200)",
       "command": "hashcat -m 18200 <hashfile> <wordlist>"
     }
-  ]
+  ],
+  "explain": "Roasts every account with Kerberos pre-auth disabled - no credentials needed:\n  asreproast               request AS-REP responses for all UF_DONT_REQUIRE_PREAUTH accounts (add /user:<user> to target one)\n  /format:hashcat          emit in hashcat crackable format\n  /nowrap                  do not line-wrap the hash (one line, easy to copy)\n  /outfile:asrep_hashes.txt save the hashes\nCrack offline with hashcat -m 18200 to recover the account passwords."
 }

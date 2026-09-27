@@ -99,5 +99,6 @@
       "label": "Check Event 4725 - user account disabled (honeypot response)",
       "command": "Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4725} | Select -First 10 | Format-List"
     }
-  ]
+  ],
+  "explain": "Enumerates GPO ACLs to find policies a non-admin can modify (and thus weaponize):\n  Get-DomainGPO             list all GPOs\n  | Get-ObjectAcl -ResolveGUIDs   read each GPO's ACL with readable right names\n  | Where-Object {...SecurityIdentifier -ne '<domain_controllers_sid>'}   drop the expected DC entries so attacker-writable ACEs stand out\nA writable GPO lets you push a scheduled task/registry change to every computer in its OU. Detect via Event 5136 on CN=Policies objects."
 }

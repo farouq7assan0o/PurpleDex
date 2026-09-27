@@ -115,5 +115,6 @@
       "MITRE T1548.003"
     ],
     "evasion": "Place the hijack file, trigger once, then remove it and restore the path so the change is transient."
-  }
+  },
+  "explain": "Hijacks a module imported by a root-run Python script:\n  sudo /usr/bin/python3 ./mem_status.py   run the sudo-allowed script after planting your hijack\nFirst find (sudo -l) the runnable script and which module it imports, then pick a writable vector: overwrite the module file, drop a same-named module earlier in sys.path, use PYTHONPATH (if SETENV is allowed), or append to a writable script. Your code (e.g. os.system('/bin/bash')) then runs as root."
 }

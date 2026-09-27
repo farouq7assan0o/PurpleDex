@@ -123,5 +123,6 @@
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline John the Ripper crack; detect the credential dump that produced <hash_file>",
     "sigma_rules": "proc_creation_john_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
   },
-  "type": "command"
+  "type": "command",
+  "explain": "Cracks hashes with John the Ripper:\n  john                     the cracker\n  --wordlist=/usr/share/wordlists/rockyou.txt   dictionary mode\n  <hash_file>              the hashes\nSingle mode (--single) derives candidates from GECOS/username data (ideal for Linux passwd); --format sets the algorithm, --show reveals cracked results, --restore resumes a session."
 }

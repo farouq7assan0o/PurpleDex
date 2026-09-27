@@ -102,5 +102,6 @@
       "a": "Set MachineAccountQuota to 0 so users cannot add computer accounts, and restrict/monitor write access to computer delegation attributes (alert on Event 5136 for msDS-AllowedToActOnBehalfOfOtherIdentity). Also mark privileged accounts 'sensitive and cannot be delegated' / add them to Protected Users.",
       "role": "soc"
     }
-  ]
+  ],
+  "explain": "Configures Resource-Based Constrained Delegation on a computer you have write over, so a machine account you control can impersonate any user to it:\n  -delegate-to '<target_account>$'   the victim computer whose msDS-AllowedToActOnBehalfOfOtherIdentity you write\n  -delegate-from 'EVIL$'    the attacker-controlled computer account granted delegation\n  -action write             add the delegation ACE (use read/remove to check/clean up)\n  -dc-ip <dc_ip>            the Domain Controller\n  <domain>/<user>:<password>   the account with write over the target\nThen use getST -impersonate Administrator to mint a service ticket to the target as any user."
 }

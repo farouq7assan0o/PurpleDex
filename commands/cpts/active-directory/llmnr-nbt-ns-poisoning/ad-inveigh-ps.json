@@ -88,5 +88,6 @@
       "label": "File output + only unique",
       "command": "Invoke-Inveigh -NBNS Y -mDNS Y -FileOutput Y"
     }
-  ]
+  ],
+  "explain": "The PowerShell LLMNR/NBT-NS poisoner - Responder for a Windows-only foothold:\n  Invoke-Inveigh Y         start with defaults enabled\n  -NBNS Y                  also answer NBT-NS name queries\n  -ConsoleOutput Y         print captured hashes to the console\n  -FileOutput Y            also write them to disk\nCaptures NetNTLMv2 hashes from other hosts on the subnet (crack with hashcat -m 5600). Deprecated in favor of the C# build."
 }

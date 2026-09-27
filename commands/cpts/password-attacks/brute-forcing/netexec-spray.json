@@ -85,5 +85,6 @@
       "label": "LDAP / WinRM protocols too",
       "command": "netexec winrm <cidr> -u <userlist> -p '<password>' | grep +"
     }
-  ]
+  ],
+  "explain": "Sprays one password against many accounts (optionally across a subnet):\n  netexec smb <cidr>       the SMB module against a whole subnet\n  -u <userlist>            the accounts to try\n  -p '<password>'          the single password sprayed to all\nSpraying (many users, one password) stays under lockout thresholds - the reverse of brute forcing; works over winrm/ldap too."
 }

@@ -99,5 +99,6 @@
       "MITRE T1078"
     ],
     "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
-  }
+  },
+  "explain": "Hunts common registry stashes of cleartext credentials:\n  reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\"   read Winlogon autologon (DefaultPassword)\nThe variations cover PuTTY saved sessions (proxy creds under HKCU\\...\\PuTTY\\Sessions) and Wi-Fi profiles (netsh wlan show profile <SSID> key=clear) - each can expose a recoverable password."
 }

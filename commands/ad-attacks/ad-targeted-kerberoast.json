@@ -99,5 +99,6 @@
       "a": "Event 5136 adding a servicePrincipalName to a user account quickly followed by removing it, correlated with a 4769 RC4 TGS request for that account. The transient SPN add/remove around a roast is a strong, low-false-positive indicator.",
       "role": "soc"
     }
-  ]
+  ],
+  "explain": "Turns a write right over an SPN-less user into that user's cleartext password:\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account with GenericWrite/GenericAll over the target\n  --request-user <target_account>   temporarily set a fake SPN on this user, request its TGS, then remove the SPN\nYou get a $krb5tgs$ RC4 hash for <target_account>; crack it offline (hashcat -m 13100) to recover the password."
 }

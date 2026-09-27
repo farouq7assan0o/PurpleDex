@@ -65,5 +65,6 @@
   ],
   "tools": [
     "certipy"
-  ]
+  ],
+  "explain": "certipy-ad is the Linux Swiss-army knife for AD CS (certificate services) enumeration and abuse:\n  find                     enumerate CAs and templates\n  -u <user>@<domain> -p <password>   authenticate to the DC\n  -dc-ip <dc_ip>           the Domain Controller / LDAP target\n  -vulnerable              show only templates vulnerable to ESC1-ESC16\n  -stdout                  print results to the terminal instead of a file\nSwap the verb (req to enroll a cert, auth to PKINIT, shadow, account update) to escalate from a readable misconfiguration to a privileged TGT / NT hash."
 }

@@ -66,5 +66,6 @@
   "mitre": [
     "T1068"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "The defensive counterpart - hardening measures plus an automated auditor:\n  ./lynis audit system     run Lynis to scan the host and score its hardening, flagging the misconfigurations this module abuses\nUse it to find (or verify you have closed) the escalation paths covered by the privesc cards."
 }

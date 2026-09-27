@@ -113,5 +113,6 @@
       "label": "Register a loopback PSSession config to re-auth (RunAsCredential)",
       "command": "Register-PSSessionConfiguration -Name creddemo -RunAsCredential <domain>\\<user> -Force ; Enter-PSSession -ComputerName localhost -ConfigurationName creddemo"
     }
-  ]
+  ],
+  "explain": "Fixes the Kerberos double-hop problem - creds from a WinRM/PSRemoting session are not forwarded to a second hop, so DC access fails from the remote box:\n  createnetonly             spawn a new logon session (LOGON32_LOGON_NETONLY) with no cached creds\n  /program:powershell.exe   the process to launch in that clean session\n  /show                     reveal the spawned window\nInto that new window inject a TGT (Rubeus asktgt /ptt); now tools there authenticate to the DC directly, bypassing the missing second-hop credential."
 }

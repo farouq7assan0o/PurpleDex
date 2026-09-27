@@ -128,5 +128,6 @@
       "label": "Pivot as the service account",
       "command": "# check local admin / delegation on its hosts"
     }
-  ]
+  ],
+  "explain": "Roasts every SPN account from a domain-joined host:\n  kerberoast               request TGS tickets for all SPN accounts\n  /nowrap                  print each hash on one line (no base64 line breaks)\nUse /rc4opsec to skip AES-only accounts (avoids noisy downgrades), /stats to profile the attack surface first, or /tgtdeleg to roast without credentials using the current TGT. Crack with hashcat -m 13100."
 }

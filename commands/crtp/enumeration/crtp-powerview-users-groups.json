@@ -190,5 +190,6 @@
       "label": "Export-PowerViewCSV (thread-safe CSV output)",
       "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv"
     }
-  ]
+  ],
+  "explain": "Enumerates users, groups, and the accounts worth attacking with PowerView:\n  Get-DomainUser -Properties samaccountname,description,memberof,admincount   pull key attributes\n  | select samaccountname,description,admincount   admincount=1 marks protected (privileged) accounts; descriptions often leak passwords\nSwap flags to hunt targets: -SPN (Kerberoastable), -PreauthNotRequired (AS-REP roastable), Get-DomainGroupMember 'Domain Admins' -Recurse."
 }

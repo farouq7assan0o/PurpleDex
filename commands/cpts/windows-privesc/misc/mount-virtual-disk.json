@@ -97,5 +97,6 @@
       "MITRE T1552.001"
     ],
     "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
-  }
+  },
+  "explain": "Mounts a found virtual disk to extract its credentials offline:\n  guestmount -a <disk>.vmdk   attach the VMDK/VHD(X) image\n  -i                       inspect it and mount its filesystems automatically\n  --ro /mnt/vmdk           read-only, at this mount point\nThen run impacket-secretsdump against the mounted SAM/SYSTEM/SECURITY hives to recover local account hashes."
 }

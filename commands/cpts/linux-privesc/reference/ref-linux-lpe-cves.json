@@ -71,5 +71,6 @@
   "mitre": [
     "T1068"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "A fast version-to-exploit lookup for Linux local root:\n  uname -r                 the kernel release\n  sudo -V | head -n1       the sudo version\nCompare both against the card's table mapping kernel/sudo/polkit versions to known local-root exploits - the first thing to check on any Linux target."
 }

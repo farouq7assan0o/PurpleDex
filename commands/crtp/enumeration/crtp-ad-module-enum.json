@@ -145,5 +145,6 @@
       "label": "Ping sweep via AD Module",
       "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}"
     }
-  ]
+  ],
+  "explain": "Uses the signed Microsoft ActiveDirectory module (stealthier than PowerView, it is legitimate admin tooling) to enumerate the domain:\n  Get-ADDomain             pull core domain facts\n  | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator   the name, SID, and PDC you need for later attacks\nSwap the cmdlet to map targets: Get-ADUser -Filter for Kerberoastable/AS-REP accounts, Get-ADGroupMember 'Domain Admins' -Recursive, Get-ADTrust for trusts."
 }

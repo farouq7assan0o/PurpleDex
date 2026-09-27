@@ -95,5 +95,6 @@
       "MITRE T1068"
     ],
     "evasion": "Load the driver for execution then remove it; SeLoadDriver abuse is a single event - do it once."
-  }
+  },
+  "explain": "Abuses Print Operators' SeLoadDriverPrivilege to load a vulnerable driver and get SYSTEM:\n  EoPLoadDriver.exe        register the driver under HKCU and load it via NtLoadDriver\n  System\\CurrentControlSet\\Capcom   the registry path it creates for the service\n  c:\\Tools\\Capcom.sys      the vulnerable Capcom driver to load\nWith the driver loaded, ExploitCapcom runs a shell as SYSTEM by abusing its kernel primitive."
 }

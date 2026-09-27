@@ -98,5 +98,6 @@
       "label": "Forest-wide",
       "command": "setspn.exe -T <forest> -Q */*"
     }
-  ]
+  ],
+  "explain": "Lists domain SPNs with the native Windows tool (living-off-the-land Kerberoasting):\n  setspn.exe -Q */*        query for all SPNs in the domain (-L <account> for one account, -T <forest> for forest-wide)\nCombined with .NET's KerberosRequestorSecurityToken (to request the ticket) and Mimikatz kerberos::list /export (to extract it), you can Kerberoast with zero third-party offensive tooling."
 }

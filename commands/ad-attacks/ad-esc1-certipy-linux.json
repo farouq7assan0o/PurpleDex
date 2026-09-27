@@ -103,5 +103,6 @@
       "a": "With Full Enforcement, DCs require a strong SID binding, so a UPN/SAN-only cert is rejected. You adapt by supplying the target's SID in the request (certipy -sid) when you can, or pivot to ESC16 where the CA drops the SID extension entirely.",
       "role": "both"
     }
-  ]
+  ],
+  "explain": "Requests a certificate from an ESC1-vulnerable template (one that lets the enrollee supply the Subject Alternative Name) so you impersonate a privileged user:\n  req                       request/enroll a certificate\n  -u <user>@<domain> -p <password>   authenticate as your low-priv account\n  -dc-ip <dc_ip>            the Domain Controller\n  -ca <ca_name>             the issuing Certificate Authority\n  -template <vuln_template> the ENROLLEE_SUPPLIES_SUBJECT template\n  -upn administrator@<domain>   the identity to bake into the cert's SAN\nYou get a .pfx for administrator; use it with certipy auth to PKINIT and recover that account's TGT/NT hash."
 }

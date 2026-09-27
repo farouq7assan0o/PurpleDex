@@ -97,5 +97,6 @@
     "misconfiguration": "Over-privileged managed identity (e.g., Contributor at subscription scope) on an internet-facing VM/app; SSRF that can set request headers.",
     "vulnerable_config": "# MI with Contributor at subscription, app has SSRF -> attacker sets Metadata header via SSRF:\n# GET http://169.254.169.254/metadata/identity/oauth2/token?...&resource=https://management.azure.com/ (Metadata:true)",
     "secure_config": "# Scope the managed identity to least privilege (specific resource group / resource).\n# Block workload egress to 169.254.169.254 where the app does not need IMDS.\n# Remediate SSRF (egress allowlist, block link-local); alert on MI anomalies in Activity Log."
-  }
+  },
+  "explain": "Steals an Azure VM's managed-identity token from the Instance Metadata Service:\n  curl -H \"Metadata:true\"   the required IMDS header\n  \"http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/\"   request an ARM access token for the VM's managed identity\nFrom code execution on the VM, this returns a bearer token; use it against the Azure APIs as that identity, which frequently holds RBAC roles."
 }

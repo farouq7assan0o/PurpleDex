@@ -27246,7 +27246,8 @@ const COMMAND_DATA = {
           "label": "Authenticate as the cracked user",
           "command": "# re-enumerate from the new user's perspective"
         }
-      ]
+      ],
+      "explain": "GetNPUsers.py requests AS-REP tickets for accounts with Kerberos pre-auth disabled:\n  <domain>/              target domain (trailing slash and no name = spray a user list)\n  -dc-ip <dc_ip>         the Domain Controller to query\n  -no-pass               do not authenticate - anonymous roasting\n  -usersfile <userlist>  try each username in this file\nAny account without pre-auth returns a $krb5asrep$ hash you crack offline (hashcat -m 18200)."
     },
     {
       "id": "ad-pkinit-getnthash",
@@ -72225,7 +72226,8 @@ const COMMAND_DATA = {
           "a": "You need write over the target's msDS-KeyCredentialLink (GenericWrite/GenericAll/WriteProperty), a DC with a PKINIT-capable certificate (normal with AD CS or default DCs), and a clock in sync with the DC or PKINIT fails with KRB_AP_ERR_SKEW.",
           "role": "pentest"
         }
-      ]
+      ],
+      "explain": "certipy-ad shadow auto automates the whole Shadow Credentials attack:\n  -u <user>@<domain> -p <password>  authenticate as the account you already control\n  -account <target_account>         the victim whose msDS-KeyCredentialLink you write to\n  -dc-ip <dc_ip>                    the Domain Controller to talk to\n'shadow auto' adds a key credential, authenticates via PKINIT, UnPACs the NT hash, then removes the key it added (cleanup)."
     },
     {
       "type": "command",
@@ -98865,7 +98867,7 @@ const COMMAND_DATA = {
     }
   ],
   "totalCommands": 950,
-  "buildDate": "2026-09-26T16:40:19.015Z",
+  "buildDate": "2026-09-27T10:58:43.694Z",
   "certifications": [
     "CDSA",
     "CPTS",

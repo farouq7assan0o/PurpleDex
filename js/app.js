@@ -1122,6 +1122,10 @@ class CommandManager {
             : '<div class="def-empty">No study notes added yet for this command.<br>Add context, chains, and methodology to the <code>notes</code> field.</div>';
 
         // Attack/Investigate tab: same content, label changes for blue cards
+        const explainHtml = cmd.explain
+            ? '<details class="explain-box"><summary><i class="fas fa-circle-info"></i> What this does</summary>' +
+              '<div class="explain-body">' + this.esc(cmd.explain) + '</div></details>'
+            : '';
         const investigateHtml =
             tabs +
             '<div class="gen-box"><div class="gen-box-head"><span>Generated Command</span>' +
@@ -1129,6 +1133,7 @@ class CommandManager {
                 '<button class="copy-btn ghost" id="genCopyRaw" title="Copy raw template (with &lt;placeholders&gt;)">&lt;/&gt;</button>' +
                 '<button class="copy-btn" id="genCopy"><i class="fas fa-copy"></i> Copy</button></div></div>' +
                 '<div id="genCmd"></div><div id="unfilledHint" class="unfilled-hint"></div></div>' +
+            explainHtml +
             '<div class="b-section-label"><i class="fas fa-sliders-h"></i> Parameters</div>' +
             '<div class="b-params">' + paramFields + '</div>' +
             stepsHtml + recHtml + exHtml + backHtml + refHtml + myNotesHtml;

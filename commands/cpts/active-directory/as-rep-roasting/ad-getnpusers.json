@@ -112,5 +112,6 @@
       "label": "Authenticate as the cracked user",
       "command": "# re-enumerate from the new user's perspective"
     }
-  ]
+  ],
+  "explain": "GetNPUsers.py requests AS-REP tickets for accounts with Kerberos pre-auth disabled:\n  <domain>/              target domain (trailing slash and no name = spray a user list)\n  -dc-ip <dc_ip>         the Domain Controller to query\n  -no-pass               do not authenticate - anonymous roasting\n  -usersfile <userlist>  try each username in this file\nAny account without pre-auth returns a $krb5asrep$ hash you crack offline (hashcat -m 18200)."
 }

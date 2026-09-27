@@ -743,6 +743,13 @@ body[data-mode="both"] .team-dot { opacity: 1; }
 .builder-pin:hover { color: var(--text); background: var(--border); }
 .builder-pin.active { color: var(--yellow); }
 .pin-dot { font-size: 0.6rem; margin-left: 0.3rem; opacity: 0.9; vertical-align: middle; }
+/* "What this does" - per-command plain-English explanation (Attack tab) */
+.explain-box { margin: 0 0 1.1rem; border: 1px solid var(--border); border-radius: 6px; background: rgba(127,127,127,0.06); }
+.explain-box > summary { cursor: pointer; padding: 0.5rem 0.8rem; font-size: 0.72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); list-style: none; user-select: none; }
+.explain-box > summary::-webkit-details-marker { display: none; }
+.explain-box > summary i { margin-right: 0.4rem; }
+.explain-box[open] > summary { color: var(--text); border-bottom: 1px solid var(--border); }
+.explain-body { padding: 0.7rem 0.9rem; font-size: 0.82rem; line-height: 1.55; white-space: pre-wrap; color: var(--text); }
 
 /* ── Defense / Understand content blocks ────────────────────────────── */
 .def-section { margin-bottom: 1.1rem; }

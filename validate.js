@@ -36,7 +36,23 @@ const VALID_DEFENSE_KEYS = ['why_it_works', 'prerequisites', 'detection', 'preve
                             'evasion', 'impact', 'artifacts', 'sources',
                             'misconfiguration', 'vulnerable_config', 'secure_config',
                             'code_review',
-                            'splunk_spl', 'elastic_kql', 'sigma_rules', 'sentinel_kql'];
+                            'splunk_spl', 'elastic_kql', 'sigma_rules', 'sentinel_kql',
+                            'detections', 'visibility'];
+// structured detection schema (defense.detections[])
+const VALID_DETECTION_PLATFORMS = ['splunk', 'elastic', 'sentinel', 'sigma'];
+const VALID_FIDELITY = ['behavioral', 'signature', 'telemetry'];
+const VALID_CONFIDENCE = ['high', 'medium', 'low'];
+const VALID_DATA_SOURCES = [
+    'windows-security', 'windows-system', 'windows-application',
+    'sysmon', 'powershell', 'wmi', 'etw',
+    'edr', 'ndr', 'firewall', 'proxy', 'dns',
+    'iis', 'apache', 'nginx',
+    'linux-audit', 'linux-syslog', 'linux-auth',
+    'cloud-trail', 'azure-activity', 'gcp-audit',
+    'o365', 'entra-id', 'defender-endpoint',
+    'network-flow', 'pcap', 'zeek',
+    'custom'
+];
 // card types that SHOULD carry defense content (completeness warning, not a hard error)
 const DEFENSE_TYPES = ['command', 'payload', 'attack-chain'];
 
@@ -162,9 +178,64 @@ for (const { file, data } of cards) {
                 err(file, id, 'defense.sources must be an array of strings');
             // string sub-fields must actually be strings
             for (const k of VALID_DEFENSE_KEYS) {
-                if (k === 'sources') continue;
+                if (k === 'sources' || k === 'detections' || k === 'visibility') continue;
                 if (data.defense[k] != null && typeof data.defense[k] !== 'string')
                     err(file, id, `defense.${k} must be a string`);
+            }
+            // structured detections[] array
+            if (data.defense.detections != null) {
+                if (!Array.isArray(data.defense.detections)) {
+                    err(file, id, 'defense.detections must be an array');
+                } else {
+                    data.defense.detections.forEach((det, i) => {
+                        if (!det || typeof det !== 'object') { err(file, id, `detections[${i}] must be an object`); return; }
+                        if (!det.platform) err(file, id, `detections[${i}] missing platform`);
+                        else if (!VALID_DETECTION_PLATFORMS.includes(det.platform))
+                            err(file, id, `detections[${i}] invalid platform "${det.platform}" (expected ${VALID_DETECTION_PLATFORMS.join('|')})`);
+                        if (!det.name) err(file, id, `detections[${i}] missing name`);
+                        if (!det.logic) err(file, id, `detections[${i}] missing logic (the actual query/rule)`);
+                        if (!det.data_source) err(file, id, `detections[${i}] missing data_source`);
+                        else if (!VALID_DATA_SOURCES.includes(det.data_source))
+                            err(file, id, `detections[${i}] unknown data_source "${det.data_source}" (add to VALID_DATA_SOURCES if new)`);
+                        if (!det.attack || !Array.isArray(det.attack) || det.attack.length === 0)
+                            err(file, id, `detections[${i}] missing attack[] (MITRE technique IDs)`);
+                        else det.attack.forEach(t => { if (!MITRE_RE.test(String(t))) err(file, id, `detections[${i}] invalid MITRE id "${t}"`); });
+                        if (!det.fidelity) err(file, id, `detections[${i}] missing fidelity`);
+                        else if (!VALID_FIDELITY.includes(det.fidelity))
+                            err(file, id, `detections[${i}] invalid fidelity "${det.fidelity}" (expected ${VALID_FIDELITY.join('|')})`);
+                        if (det.confidence && !VALID_CONFIDENCE.includes(det.confidence))
+                            err(file, id, `detections[${i}] invalid confidence "${det.confidence}" (expected ${VALID_CONFIDENCE.join('|')})`);
+                        // cross-check: attack[] entries should match the card's mitre[]
+                        if (data.mitre && det.attack) {
+                            det.attack.forEach(t => {
+                                if (!data.mitre.includes(t))
+                                    err(file, id, `detections[${i}] references ${t} but it's not in the card's mitre[] - add it or fix the detection`);
+                            });
+                        }
+                    });
+                }
+            }
+            // visibility object
+            if (data.defense.visibility != null) {
+                const vis = data.defense.visibility;
+                if (typeof vis !== 'object' || Array.isArray(vis)) {
+                    err(file, id, 'defense.visibility must be an object');
+                } else {
+                    if (!vis.requires || !Array.isArray(vis.requires) || vis.requires.length === 0)
+                        err(file, id, 'defense.visibility.requires must be a non-empty array of data sources');
+                    else vis.requires.forEach(ds => {
+                        if (!VALID_DATA_SOURCES.includes(ds))
+                            err(file, id, `defense.visibility.requires: unknown data_source "${ds}"`);
+                    });
+                    if (vis.better_with != null) {
+                        if (!Array.isArray(vis.better_with))
+                            err(file, id, 'defense.visibility.better_with must be an array');
+                        else vis.better_with.forEach(ds => {
+                            if (!VALID_DATA_SOURCES.includes(ds))
+                                err(file, id, `defense.visibility.better_with: unknown data_source "${ds}"`);
+                        });
+                    }
+                }
             }
         }
     }
@@ -300,6 +371,7 @@ for (const { data } of cards) {
 // global defense coverage (across scoped cards)
 let defEligibleTotal = 0, defCoveredTotal = 0;
 let siemCoveredTotal = 0;  // eligible cards carrying at least one SIEM query field
+let structuredDetTotal = 0; // cards with defense.detections[]
 const SIEM_KEYS = ['splunk_spl', 'elastic_kql', 'sigma_rules', 'sentinel_kql'];
 for (const { data } of scopedCards) {
     if (!DEFENSE_TYPES.includes(data.type || 'command')) continue;
@@ -309,6 +381,8 @@ for (const { data } of scopedCards) {
         defCoveredTotal++;
     if (df && typeof df === 'object' && SIEM_KEYS.some(k => df[k]))
         siemCoveredTotal++;
+    if (df && Array.isArray(df.detections) && df.detections.length > 0)
+        structuredDetTotal++;
 }
 
 // ---------- placeholder audit (engagement-variable consistency) ----------
@@ -521,6 +595,9 @@ if (!opt.errorsOnly) {
     const siemPct = defEligibleTotal ? Math.round(100 * siemCoveredTotal / defEligibleTotal) : 0;
     const siemColor = siemPct >= 90 ? green : siemPct >= 40 ? yellow : dim;
     console.log(`    SIEM queries (splunk/elastic/sigma/sentinel): ${siemColor(siemCoveredTotal + '/' + defEligibleTotal + ' (' + siemPct + '%)')}   ${dim('at least one field')}`);
+    const detPct = defEligibleTotal ? Math.round(100 * structuredDetTotal / defEligibleTotal) : 0;
+    const detColor = detPct >= 50 ? green : detPct >= 10 ? yellow : dim;
+    console.log(`    structured detections[]: ${detColor(structuredDetTotal + '/' + defEligibleTotal + ' (' + detPct + '%)')}   ${dim('cards with defense.detections[]')}`);
     // --strict: list eligible cards missing defense (the per-module "not shipped half-done" gate)
     if (opt.strict && defCoveredTotal < defEligibleTotal) {
         const miss = scopedCards.filter(c => DEFENSE_TYPES.includes(c.data.type || 'command') &&

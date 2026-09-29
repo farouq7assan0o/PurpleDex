@@ -95,7 +95,48 @@ function buildCommands() {
 
     fs.writeFileSync(outPath, body);
 
+    // --- Coverage index: technique -> detections, data_source -> techniques ---
+    const coverage = { techniques: {}, data_sources: {}, cards_with_detections: 0, total_detections: 0 };
+    for (const cmd of commands) {
+        const dets = cmd.defense && Array.isArray(cmd.defense.detections) ? cmd.defense.detections : [];
+        if (dets.length === 0) continue;
+        coverage.cards_with_detections++;
+        coverage.total_detections += dets.length;
+        for (const det of dets) {
+            // technique -> detection index
+            for (const tid of (det.attack || [])) {
+                if (!coverage.techniques[tid]) coverage.techniques[tid] = { detections: [], platforms: new Set(), data_sources: new Set(), best_fidelity: null };
+                const t = coverage.techniques[tid];
+                t.detections.push({ card_id: cmd.id, name: det.name, platform: det.platform, fidelity: det.fidelity, data_source: det.data_source });
+                t.platforms.add(det.platform);
+                t.data_sources.add(det.data_source);
+                const fRank = { behavioral: 3, signature: 2, telemetry: 1 };
+                if (!t.best_fidelity || (fRank[det.fidelity] || 0) > (fRank[t.best_fidelity] || 0)) t.best_fidelity = det.fidelity;
+            }
+            // data_source -> technique index
+            if (det.data_source) {
+                if (!coverage.data_sources[det.data_source]) coverage.data_sources[det.data_source] = new Set();
+                for (const tid of (det.attack || [])) coverage.data_sources[det.data_source].add(tid);
+            }
+        }
+        // visibility enrichment
+        const vis = cmd.defense && cmd.defense.visibility;
+        if (vis && vis.requires) {
+            for (const ds of vis.requires) {
+                if (!coverage.data_sources[ds]) coverage.data_sources[ds] = new Set();
+            }
+        }
+    }
+    // serialize Sets
+    for (const t of Object.values(coverage.techniques)) { t.platforms = [...t.platforms]; t.data_sources = [...t.data_sources]; }
+    for (const [k, v] of Object.entries(coverage.data_sources)) coverage.data_sources[k] = [...v];
+
+    const covPath = path.join(__dirname, 'js', 'coverage.json');
+    fs.writeFileSync(covPath, JSON.stringify(coverage, null, 2));
+
     console.log('Build complete: ' + commands.length + ' commands from ' + allCommands.length + ' sources.');
+    console.log('Coverage index: ' + coverage.cards_with_detections + ' cards, ' + coverage.total_detections + ' structured detections, ' +
+        Object.keys(coverage.techniques).length + ' techniques, ' + Object.keys(coverage.data_sources).length + ' data sources.');
     console.log('Certifications: ' + output.certifications.join(', '));
     console.log('Types: ' + output.types.map(t => t + '=' + commands.filter(c => c.type === t).length).join(', '));
 }

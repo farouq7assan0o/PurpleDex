@@ -81,7 +81,55 @@
     ],
     "misconfiguration": "Non-administrative principals hold write access to user objects' servicePrincipalName attribute (via GenericWrite/GenericAll or explicit WriteProperty).",
     "vulnerable_config": "# BloodHound: GenericWrite/GenericAll edge to a user with no SPN.\nGet-DomainObjectAcl -Identity <target_account> -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'GenericWrite|GenericAll|WriteProperty' }",
-    "secure_config": "# Remove the excessive write ACE (example with dsacls):\ndsacls \"CN=<target_account>,OU=Users,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Alert on Event 5136 servicePrincipalName changes on user objects."
+    "secure_config": "# Remove the excessive write ACE (example with dsacls):\ndsacls \"CN=<target_account>,OU=Users,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Alert on Event 5136 servicePrincipalName changes on user objects.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Targeted kerberoast - transient SPN set/remove",
+        "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"servicePrincipalName\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType\n| join kind=leftouter (\n    SecurityEvent | where EventID == 4769 and TicketEncryptionType == \"0x17\"\n    | project RoastTime=TimeGenerated, ServiceName, IpAddress\n) on $left.Target == $right.ServiceName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "log_ids": ["5136", "4769"],
+        "attack": ["T1558.003"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate SPN provisioning (rare for user objects; common for computer objects)",
+        "tuning": "Filter to user objects only (exclude computer/gMSA); alert on add-then-remove within 5 minutes"
+      },
+      {
+        "platform": "splunk",
+        "name": "Targeted kerberoast - SPN modification on user",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"servicePrincipalName\"\n| table _time, SubjectUserName, ObjectDN, OperationType, AttributeValue",
+        "data_source": "windows-security",
+        "log_ids": ["5136"],
+        "attack": ["T1558.003"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Admin SPN provisioning during deployment",
+        "tuning": "Correlate with 4769 RC4 TGS within 5 min of the SPN add"
+      },
+      {
+        "platform": "sigma",
+        "name": "SPN added to user account (Sigma)",
+        "logic": "win_security_spn_added_to_user_account",
+        "data_source": "windows-security",
+        "attack": ["T1558.003"],
+        "fidelity": "behavioral",
+        "confidence": "high"
+      },
+      {
+        "platform": "sigma",
+        "name": "Kerberoasting RC4 (Sigma)",
+        "logic": "win_security_kerberoasting_rc4",
+        "data_source": "windows-security",
+        "attack": ["T1558.003"],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": ["windows-security"],
+      "better_with": ["sysmon"]
+    }
   },
   "tools": [
     "targetedKerberoast",

@@ -4401,7 +4401,85 @@ const COMMAND_DATA = {
         "misconfiguration": "The 'Do Not Require Kerberos Preauthentication' checkbox is enabled on the user account (msDS-SupportedEncryptionTypes or the UAC flag UF_DONT_REQUIRE_PREAUTH = 0x400000). This means the KDC issues an AS-REP with the user's session key encrypted by their password hash - without demanding proof of identity first.",
         "vulnerable_config": "# Active Directory user account attribute (via ADUC or ADSI Edit)\n# 'Do not require Kerberos preauthentication' = CHECKED\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $true\n\n# UAC flag value: 0x400000 (4194304)\n# Confirmed with:\nGet-ADUser svc_backup -Properties DoesNotRequirePreAuth",
         "secure_config": "# Enforce Kerberos pre-authentication (the secure default)\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $false\n\n# Bulk fix - find and fix all no-preauth accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth |\n  Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# GPO path (Kerberos policy):\n# Computer Configuration > Windows Settings > Security Settings >\n# Account Policies > Kerberos Policy\n# 'Maximum lifetime for user ticket' should be set (forces preauth implicitly)",
-        "evasion": "Forge/inject with AES keys (not RC4) and realistic lifetimes to match normal tickets; request tickets just before use; avoid extra SID history that trips MDI."
+        "evasion": "Forge/inject with AES keys (not RC4) and realistic lifetimes to match normal tickets; request tickets just before use; avoid extra SID history that trips MDI.",
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "AS-REP roast - RC4 pre-auth type 0",
+            "logic": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"0\" and TicketEncryptionType == \"0x17\"\n| summarize accounts=make_set(TargetUserName), count() by IpAddress, bin(TimeGenerated, 10m)\n| sort by count_ desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4768"
+            ],
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate accounts with pre-auth disabled (rare - should be inventoried)",
+            "tuning": "Exclude approved no-preauth service accounts by SamAccountName whitelist"
+          },
+          {
+            "platform": "splunk",
+            "name": "AS-REP roast - RC4 pre-auth type 0",
+            "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Pre_Authentication_Type=0 Ticket_Encryption_Type=0x17\n| table _time, Computer, Account_Name, Client_Address",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4768"
+            ],
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate accounts with pre-auth disabled",
+            "tuning": "Whitelist known no-preauth SPNs"
+          },
+          {
+            "platform": "splunk",
+            "name": "Rubeus AS-REProast process creation",
+            "logic": "index=sysmon EventCode=1 (Image=\"*Rubeus.exe\" OR CommandLine=\"*asreproast*\")\n| table _time, Computer, User, CommandLine",
+            "data_source": "sysmon",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "None expected - Rubeus is an attack tool",
+            "tuning": "Extend to cover renamed binaries via CommandLine patterns"
+          },
+          {
+            "platform": "sigma",
+            "name": "Kerberos AS-REP roasting (Sigma)",
+            "logic": "win_security_kerberos_asrep_roasting",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high"
+          },
+          {
+            "platform": "sigma",
+            "name": "Rubeus hacking tool (Sigma)",
+            "logic": "proc_creation_win_hktl_rubeus",
+            "data_source": "sysmon",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "signature",
+            "confidence": "high"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "windows-security"
+          ],
+          "better_with": [
+            "sysmon",
+            "edr"
+          ]
+        }
       },
       "variations": [
         {
@@ -16518,7 +16596,60 @@ const COMMAND_DATA = {
         "misconfiguration": "User or computer accounts have been granted AD replication rights (DS-Replication-Get-Changes + DS-Replication-Get-Changes-All) that are not needed for their role. These rights are required by Domain Controllers to synchronize, but if granted to a regular account (via ACL on the domain object, or inherited through group membership), the account can call DRSGetNCChanges() and pull NTLM hashes for any account - including krbtgt and Domain Admins.",
         "vulnerable_config": "# Checking who has dangerous replication rights on the domain object:\n# (via BloodHound 'DCSync' edge, or directly):\nGet-ObjectAcl -DistinguishedName 'DC=corp,DC=local' -ResolveGUIDs |\n  Where-Object {$_.ActiveDirectoryRights -match 'DS-Replication-Get-Changes'} |\n  Select-Object IdentityReference, ActiveDirectoryRights\n\n# Dangerous output:\n# IdentityReference            ActiveDirectoryRights\n# CORP\\svc_monitoring          DS-Replication-Get-Changes-All\n# CORP\\john.doe                DS-Replication-Get-Changes\n\n# Legitimate holders: CORP\\Domain Controllers, CORP\\Enterprise Controllers, CORP\\ENTERPRISE DOMAIN CONTROLLERS",
         "secure_config": "# Remove DCSync rights from non-DC accounts:\n# Using PowerView:\n$acl = Get-Acl 'AD:\\DC=corp,DC=local'\n$ace = $acl.Access | Where-Object {\n    $_.IdentityReference -match 'svc_monitoring' -and\n    $_.ObjectType -eq 'DS-Replication-Get-Changes-All'\n}\n$acl.RemoveAccessRule($ace)\nSet-Acl 'AD:\\DC=corp,DC=local' $acl\n\n# Alert on all DCSync-capable accounts:\n# Microsoft Defender for Identity detects DCSync automatically (alert: 'DCSync attack')\n# SIEM: Watch for 4662 events with replication rights GUIDs:\n# {19195a5b-6da0-11d0-afd3-00c04fd930c9} = DS-Replication-Get-Changes\n# {1131f6ad-9c07-11d1-f79f-00c04fc2dcd2} = DS-Replication-Get-Changes-All",
-        "evasion": "Run the escalation in-memory where possible, restore any modified config/ACL, and remove dropped payloads after obtaining the higher context."
+        "evasion": "Run the escalation in-memory where possible, restore any modified config/ACL, and remove dropped payloads after obtaining the higher context.",
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "DCSync - non-DC replication request",
+            "logic": "SecurityEvent\n| where EventID == 4662\n| where Properties has_any (\"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\",\"1131f6ad-9c07-11d1-f79f-00c04fc2dcd2\")\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| sort by TimeGenerated desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4662"
+            ],
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Azure AD Connect replication account, legitimate third-party SIEM agents with replication rights",
+            "tuning": "Whitelist DC computer accounts (*$) and Azure AD Connect service account by name"
+          },
+          {
+            "platform": "splunk",
+            "name": "DCSync - non-DC replication request",
+            "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where (Properties=\"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*\" OR Properties=\"*1131f6ad-9c07-11d1-f79f-00c04fc2dcd2*\") AND Account_Name!=\"*$\"\n| table _time, Computer, Account_Name, Object_Name",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4662"
+            ],
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Azure AD Connect, third-party tools with replication rights",
+            "tuning": "Exclude known DC accounts and AAD Connect service account"
+          },
+          {
+            "platform": "sigma",
+            "name": "DCSync replication rights abuse (Sigma)",
+            "logic": "win_security_dcsync_replication_rights",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "windows-security"
+          ],
+          "better_with": [
+            "edr"
+          ]
+        }
       },
       "steps": [
         {
@@ -36937,7 +37068,61 @@ const COMMAND_DATA = {
         ],
         "misconfiguration": "Service accounts are registered with a Service Principal Name (SPN) but use weak, human-chosen passwords - or even share a password with other accounts. Any authenticated domain user can request a TGS for any SPN account, receiving a blob encrypted with that account's NTLM hash. The SPN registration itself is not the flaw; the flaw is weak passwords on SPN accounts and permitting RC4 encryption (which produces a shorter, faster-to-crack blob).",
         "vulnerable_config": "# Service account set up manually with a weak password + SPN\n# Attacker can find these with:\nGet-ADUser -Filter {ServicePrincipalName -ne '$null'} -Properties ServicePrincipalName,PasswordLastSet\n\n# Bad state - password set 4 years ago, RC4 permitted:\n# Name: svc_sql  PasswordLastSet: 2020-01-15  SPN: MSSQLSvc/db01.corp.local:1433\n# RC4 (0x17) requested in TGS ticket - short hash, GPU-crackable\n\n# Confirming RC4 is available:\nGet-ADUser svc_sql -Properties msDS-SupportedEncryptionTypes\n# msDS-SupportedEncryptionTypes: 0 (= RC4+AES both permitted if 0 or blank)",
-        "secure_config": "# Fix 1 - Use Group Managed Service Accounts (gMSA): 240-char random passwords,\n# auto-rotated by AD, no human ever knows the password\nNew-ADServiceAccount -Name gmsa_sql -DNSHostName sql.corp.local \\\n    -PrincipalsAllowedToRetrieveManagedPassword 'db-servers-grp'\nInstall-ADServiceAccount gmsa_sql\n\n# Fix 2 - For legacy accounts that must keep SPNs:\n# Set a 100+ character random password (AD max is 127 chars):\n$pw = [System.Web.Security.Membership]::GeneratePassword(127,20)\nSet-ADAccountPassword svc_sql -NewPassword (ConvertTo-SecureString $pw -AsPlainText -Force)\n\n# Fix 3 - Disable RC4, require AES-only:\nSet-ADUser svc_sql -KerberosEncryptionType AES128,AES256\n# msDS-SupportedEncryptionTypes = 24 (AES128+AES256 only)"
+        "secure_config": "# Fix 1 - Use Group Managed Service Accounts (gMSA): 240-char random passwords,\n# auto-rotated by AD, no human ever knows the password\nNew-ADServiceAccount -Name gmsa_sql -DNSHostName sql.corp.local \\\n    -PrincipalsAllowedToRetrieveManagedPassword 'db-servers-grp'\nInstall-ADServiceAccount gmsa_sql\n\n# Fix 2 - For legacy accounts that must keep SPNs:\n# Set a 100+ character random password (AD max is 127 chars):\n$pw = [System.Web.Security.Membership]::GeneratePassword(127,20)\nSet-ADAccountPassword svc_sql -NewPassword (ConvertTo-SecureString $pw -AsPlainText -Force)\n\n# Fix 3 - Disable RC4, require AES-only:\nSet-ADUser svc_sql -KerberosEncryptionType AES128,AES256\n# msDS-SupportedEncryptionTypes = 24 (AES128+AES256 only)",
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Kerberoast - RC4 TGS burst",
+            "logic": "SecurityEvent\n| where EventID == 4769 and TicketEncryptionType == \"0x17\" and ServiceName != \"krbtgt\"\n| summarize spns=dcount(ServiceName) by TargetUserName, IpAddress, bin(TimeGenerated, 1m)\n| where spns > 10\n| sort by spns desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4769"
+            ],
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Service accounts requesting multiple TGS tickets during normal operations (rare with RC4 filter)",
+            "tuning": "Adjust spns threshold based on environment baseline; whitelist known service-to-service TGS patterns"
+          },
+          {
+            "platform": "splunk",
+            "name": "Kerberoast - RC4 TGS burst",
+            "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!=\"krbtgt\"\n| stats dc(Service_Name) as spns by Account_Name, Client_Address, bin(_time, 1m)\n| where spns>10",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4769"
+            ],
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate bulk TGS requests (unusual with RC4 filter)",
+            "tuning": "Lower threshold for honeypot SPN; raise for high-traffic environments"
+          },
+          {
+            "platform": "sigma",
+            "name": "Kerberoasting activity (Sigma)",
+            "logic": "win_security_kerberoasting_activity",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "windows-security"
+          ],
+          "better_with": [
+            "sysmon",
+            "edr"
+          ]
+        }
       },
       "variations": [
         {
@@ -72684,7 +72869,73 @@ const COMMAND_DATA = {
         ],
         "misconfiguration": "Low-privileged or service accounts hold GenericWrite/GenericAll (or explicit WriteProperty on msDS-KeyCredentialLink) over other users/computers, usually from over-permissive ACLs or nested group ownership.",
         "vulnerable_config": "# BloodHound shows an AddKeyCredentialLink / GenericWrite / GenericAll edge to the target.\n# Confirm the ACL:\nGet-DomainObjectAcl -Identity <target_account> -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'WriteProperty|GenericWrite|GenericAll' }\n# Writable msDS-KeyCredentialLink = Shadow Credentials possible.",
-        "secure_config": "# Remove the excessive right (example: strip GenericAll from a service account):\n# Use dsacls or Set-Acl to remove the ACE granting write over the target object.\ndsacls \"CN=<target_account>,OU=Users,DC=<domain>\" /R \"<domain>\\<service_account>\"\n\n# Monitor the attribute (enable directory-service auditing for object modification),\n# then alert on Event 5136 where AttributeLDAPDisplayName == msDS-KeyCredentialLink."
+        "secure_config": "# Remove the excessive right (example: strip GenericAll from a service account):\n# Use dsacls or Set-Acl to remove the ACE granting write over the target object.\ndsacls \"CN=<target_account>,OU=Users,DC=<domain>\" /R \"<domain>\\<service_account>\"\n\n# Monitor the attribute (enable directory-service auditing for object modification),\n# then alert on Event 5136 where AttributeLDAPDisplayName == msDS-KeyCredentialLink.",
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Shadow Credentials - KeyCredentialLink write + PKINIT",
+            "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"msDS-KeyCredentialLink\"\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType\n| join kind=leftouter (\n    SecurityEvent | where EventID == 4768 and isnotempty(CertificateThumbprint)\n    | project PkinitTime=TimeGenerated, TargetUserName, IpAddress, CertificateThumbprint\n) on $left.ObjectDN == $right.TargetUserName\n| sort by TimeGenerated desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136",
+              "4768"
+            ],
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Windows Hello for Business enrollment writes to the same attribute",
+            "tuning": "Correlate 5136 with subsequent PKINIT 4768 for the same principal within 10 minutes; exclude WHfB enrollment accounts"
+          },
+          {
+            "platform": "splunk",
+            "name": "Shadow Credentials - KeyCredentialLink modification",
+            "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"msDS-KeyCredentialLink\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "WHfB key enrollment",
+            "tuning": "Cross-reference with 4768 PKINIT events; exclude known WHfB service accounts"
+          },
+          {
+            "platform": "sigma",
+            "name": "Shadow Credentials KeyCredentialLink (Sigma)",
+            "logic": "win_security_shadow_credentials_keycredentiallink",
+            "data_source": "windows-security",
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high"
+          },
+          {
+            "platform": "sigma",
+            "name": "PKINIT certificate logon (Sigma)",
+            "logic": "win_security_pkinit_certificate_logon",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "windows-security"
+          ],
+          "better_with": [
+            "edr",
+            "defender-endpoint"
+          ]
+        }
       },
       "tools": [
         "certipy",
@@ -84822,7 +85073,72 @@ const COMMAND_DATA = {
         ],
         "misconfiguration": "Non-administrative principals hold write access to user objects' servicePrincipalName attribute (via GenericWrite/GenericAll or explicit WriteProperty).",
         "vulnerable_config": "# BloodHound: GenericWrite/GenericAll edge to a user with no SPN.\nGet-DomainObjectAcl -Identity <target_account> -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'GenericWrite|GenericAll|WriteProperty' }",
-        "secure_config": "# Remove the excessive write ACE (example with dsacls):\ndsacls \"CN=<target_account>,OU=Users,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Alert on Event 5136 servicePrincipalName changes on user objects."
+        "secure_config": "# Remove the excessive write ACE (example with dsacls):\ndsacls \"CN=<target_account>,OU=Users,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Alert on Event 5136 servicePrincipalName changes on user objects.",
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Targeted kerberoast - transient SPN set/remove",
+            "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"servicePrincipalName\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType\n| join kind=leftouter (\n    SecurityEvent | where EventID == 4769 and TicketEncryptionType == \"0x17\"\n    | project RoastTime=TimeGenerated, ServiceName, IpAddress\n) on $left.Target == $right.ServiceName\n| sort by TimeGenerated desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136",
+              "4769"
+            ],
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate SPN provisioning (rare for user objects; common for computer objects)",
+            "tuning": "Filter to user objects only (exclude computer/gMSA); alert on add-then-remove within 5 minutes"
+          },
+          {
+            "platform": "splunk",
+            "name": "Targeted kerberoast - SPN modification on user",
+            "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"servicePrincipalName\"\n| table _time, SubjectUserName, ObjectDN, OperationType, AttributeValue",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Admin SPN provisioning during deployment",
+            "tuning": "Correlate with 4769 RC4 TGS within 5 min of the SPN add"
+          },
+          {
+            "platform": "sigma",
+            "name": "SPN added to user account (Sigma)",
+            "logic": "win_security_spn_added_to_user_account",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high"
+          },
+          {
+            "platform": "sigma",
+            "name": "Kerberoasting RC4 (Sigma)",
+            "logic": "win_security_kerberoasting_rc4",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "windows-security"
+          ],
+          "better_with": [
+            "sysmon"
+          ]
+        }
       },
       "tools": [
         "targetedKerberoast",
@@ -99468,7 +99784,7 @@ const COMMAND_DATA = {
     }
   ],
   "totalCommands": 950,
-  "buildDate": "2026-09-27T11:47:35.166Z",
+  "buildDate": "2026-09-29T15:16:49.058Z",
   "certifications": [
     "CDSA",
     "CPTS",

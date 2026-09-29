@@ -1,0 +1,203 @@
+{
+  "techniques": {
+    "T1558.004": {
+      "detections": [
+        {
+          "card_id": "cdsa-m06-asreproasting",
+          "name": "AS-REP roast - RC4 pre-auth type 0",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-asreproasting",
+          "name": "AS-REP roast - RC4 pre-auth type 0",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-asreproasting",
+          "name": "Rubeus AS-REProast process creation",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cdsa-m06-asreproasting",
+          "name": "Kerberos AS-REP roasting (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-asreproasting",
+          "name": "Rubeus hacking tool (Sigma)",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-shadow-credentials",
+          "name": "PKINIT certificate logon (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma"
+      ],
+      "data_sources": [
+        "windows-security",
+        "sysmon"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1003.006": {
+      "detections": [
+        {
+          "card_id": "cdsa-m06-dcsync",
+          "name": "DCSync - non-DC replication request",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-dcsync",
+          "name": "DCSync - non-DC replication request",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-dcsync",
+          "name": "DCSync replication rights abuse (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma"
+      ],
+      "data_sources": [
+        "windows-security"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1558.003": {
+      "detections": [
+        {
+          "card_id": "cdsa-m06-kerberoasting",
+          "name": "Kerberoast - RC4 TGS burst",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-kerberoasting",
+          "name": "Kerberoast - RC4 TGS burst",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-kerberoasting",
+          "name": "Kerberoasting activity (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-targeted-kerberoast",
+          "name": "Targeted kerberoast - transient SPN set/remove",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-targeted-kerberoast",
+          "name": "Targeted kerberoast - SPN modification on user",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-targeted-kerberoast",
+          "name": "SPN added to user account (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-targeted-kerberoast",
+          "name": "Kerberoasting RC4 (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma"
+      ],
+      "data_sources": [
+        "windows-security"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1098": {
+      "detections": [
+        {
+          "card_id": "ad-shadow-credentials",
+          "name": "Shadow Credentials - KeyCredentialLink write + PKINIT",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-shadow-credentials",
+          "name": "Shadow Credentials - KeyCredentialLink modification",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-shadow-credentials",
+          "name": "Shadow Credentials KeyCredentialLink (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma"
+      ],
+      "data_sources": [
+        "windows-security"
+      ],
+      "best_fidelity": "behavioral"
+    }
+  },
+  "data_sources": {
+    "windows-security": [
+      "T1558.004",
+      "T1003.006",
+      "T1558.003",
+      "T1098"
+    ],
+    "sysmon": [
+      "T1558.004"
+    ]
+  },
+  "cards_with_detections": 5,
+  "total_detections": 19
+}

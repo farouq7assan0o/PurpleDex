@@ -75,7 +75,46 @@
     "misconfiguration": "User or computer accounts have been granted AD replication rights (DS-Replication-Get-Changes + DS-Replication-Get-Changes-All) that are not needed for their role. These rights are required by Domain Controllers to synchronize, but if granted to a regular account (via ACL on the domain object, or inherited through group membership), the account can call DRSGetNCChanges() and pull NTLM hashes for any account - including krbtgt and Domain Admins.",
     "vulnerable_config": "# Checking who has dangerous replication rights on the domain object:\n# (via BloodHound 'DCSync' edge, or directly):\nGet-ObjectAcl -DistinguishedName 'DC=corp,DC=local' -ResolveGUIDs |\n  Where-Object {$_.ActiveDirectoryRights -match 'DS-Replication-Get-Changes'} |\n  Select-Object IdentityReference, ActiveDirectoryRights\n\n# Dangerous output:\n# IdentityReference            ActiveDirectoryRights\n# CORP\\svc_monitoring          DS-Replication-Get-Changes-All\n# CORP\\john.doe                DS-Replication-Get-Changes\n\n# Legitimate holders: CORP\\Domain Controllers, CORP\\Enterprise Controllers, CORP\\ENTERPRISE DOMAIN CONTROLLERS",
     "secure_config": "# Remove DCSync rights from non-DC accounts:\n# Using PowerView:\n$acl = Get-Acl 'AD:\\DC=corp,DC=local'\n$ace = $acl.Access | Where-Object {\n    $_.IdentityReference -match 'svc_monitoring' -and\n    $_.ObjectType -eq 'DS-Replication-Get-Changes-All'\n}\n$acl.RemoveAccessRule($ace)\nSet-Acl 'AD:\\DC=corp,DC=local' $acl\n\n# Alert on all DCSync-capable accounts:\n# Microsoft Defender for Identity detects DCSync automatically (alert: 'DCSync attack')\n# SIEM: Watch for 4662 events with replication rights GUIDs:\n# {19195a5b-6da0-11d0-afd3-00c04fd930c9} = DS-Replication-Get-Changes\n# {1131f6ad-9c07-11d1-f79f-00c04fc2dcd2} = DS-Replication-Get-Changes-All",
-    "evasion": "Run the escalation in-memory where possible, restore any modified config/ACL, and remove dropped payloads after obtaining the higher context."
+    "evasion": "Run the escalation in-memory where possible, restore any modified config/ACL, and remove dropped payloads after obtaining the higher context.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DCSync - non-DC replication request",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| where Properties has_any (\"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\",\"1131f6ad-9c07-11d1-f79f-00c04fc2dcd2\")\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "log_ids": ["4662"],
+        "attack": ["T1003.006"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Azure AD Connect replication account, legitimate third-party SIEM agents with replication rights",
+        "tuning": "Whitelist DC computer accounts (*$) and Azure AD Connect service account by name"
+      },
+      {
+        "platform": "splunk",
+        "name": "DCSync - non-DC replication request",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where (Properties=\"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*\" OR Properties=\"*1131f6ad-9c07-11d1-f79f-00c04fc2dcd2*\") AND Account_Name!=\"*$\"\n| table _time, Computer, Account_Name, Object_Name",
+        "data_source": "windows-security",
+        "log_ids": ["4662"],
+        "attack": ["T1003.006"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Azure AD Connect, third-party tools with replication rights",
+        "tuning": "Exclude known DC accounts and AAD Connect service account"
+      },
+      {
+        "platform": "sigma",
+        "name": "DCSync replication rights abuse (Sigma)",
+        "logic": "win_security_dcsync_replication_rights",
+        "data_source": "windows-security",
+        "attack": ["T1003.006"],
+        "fidelity": "behavioral",
+        "confidence": "high"
+      }
+    ],
+    "visibility": {
+      "requires": ["windows-security"],
+      "better_with": ["edr"]
+    }
   },
   "steps": [
     {

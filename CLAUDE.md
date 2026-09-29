@@ -36,6 +36,7 @@ Work only survives if it is **committed**. Large edits left uncommitted (especia
 - **No en-dashes or em-dashes (or other non-ASCII punctuation) anywhere in card content. Plain ASCII hyphen `-` only.**
 - Placeholders use canonical tokens from `js/vars.js` (`<ip>`, `<dc_ip>`, `<domain>`, `<target>`, ...). `canonVar()` is case-insensitive. A per-command local value that should NOT be filled from the global context bar must use a token that is NOT in the registry (e.g. `<target_account>`).
 - Defense-eligible card types: `command`, `payload`, `attack-chain`. `reference`/`cheatsheet`/`script`/`resource` are exempt. Cards retired in place are set to `{"_ignore": true}` (the build skips them).
+- **Structured detections (Phase 0+):** `defense.detections[]` is an optional array of typed detection objects. Each detection requires: `platform` (splunk|elastic|sentinel|sigma), `name`, `logic` (the actual query/rule), `data_source` (from the canonical list in validate.js), `attack[]` (MITRE IDs - must match the card's `mitre[]`), `fidelity` (behavioral|signature|telemetry). Optional: `confidence`, `log_ids[]`, `false_positives`, `tuning`. `defense.visibility` is an optional object with `requires[]` (mandatory log sources) and `better_with[]` (enhancement sources). The flat SIEM fields (`splunk_spl` etc.) remain - detections are additive. The build emits `js/coverage.json` (technique-to-detection and data-source-to-technique indices) from the structured detections.
 
 ## Build / validate loop
 

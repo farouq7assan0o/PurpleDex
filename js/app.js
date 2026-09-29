@@ -2002,7 +2002,78 @@ class CommandManager {
         if (this.covTab === 'cert') return this.renderCoverageCert(body);
         if (this.covTab === 'tool') return this.renderCoverageTool(body);
         if (this.covTab === 'source') return this.renderCoverageSource(body);
+        if (this.covTab === 'detection') return this.renderCoverageDetection(body);
         return this.renderCoverageMitre(body);
+    }
+    async renderCoverageDetection(body) {
+        if (!this._coverageIndex) {
+            body.innerHTML = '<p class="cov-note">Loading detection index...</p>';
+            try { this._coverageIndex = await fetch('js/coverage.json').then(r => r.json()); }
+            catch (e) { body.innerHTML = '<p class="cov-note">Could not load <code>js/coverage.json</code>. Run <code>node build-commands.js</code> to generate it.</p>'; return; }
+        }
+        const cov = this._coverageIndex;
+        const techs = Object.entries(cov.techniques).sort((a, b) => b[1].detections.length - a[1].detections.length);
+        const dsSorted = Object.entries(cov.data_sources).sort((a, b) => b[1].length - a[1].length);
+        const fCol = f => f === 'behavioral' ? '#3fb950' : f === 'signature' ? '#d29922' : '#8b949e';
+        const pCol = p => p === 'sentinel' ? '#0078d4' : p === 'splunk' ? '#65a637' : p === 'elastic' ? '#f04e98' : p === 'sigma' ? '#ff6b6b' : '#8b949e';
+
+        // Summary stats
+        let html = '<div class="det-summary">';
+        html += '<div class="det-stat"><span class="det-stat-n">' + cov.cards_with_detections + '</span><span class="det-stat-l">cards</span></div>';
+        html += '<div class="det-stat"><span class="det-stat-n">' + cov.total_detections + '</span><span class="det-stat-l">detections</span></div>';
+        html += '<div class="det-stat"><span class="det-stat-n">' + techs.length + '</span><span class="det-stat-l">techniques</span></div>';
+        html += '<div class="det-stat"><span class="det-stat-n">' + dsSorted.length + '</span><span class="det-stat-l">data sources</span></div>';
+        html += '</div>';
+
+        // Data source browser
+        html += '<h3 class="det-section">Log Source Coverage</h3>';
+        html += '<p class="cov-note">If you ship only one log source, how many techniques can you detect?</p>';
+        const maxDs = Math.max(1, ...dsSorted.map(d => d[1].length));
+        html += dsSorted.map(([ds, tids]) => {
+            const pct = Math.round(tids.length / techs.length * 100);
+            return '<div class="cov-bar-row"><div class="cov-bar-label">' + this.esc(ds) + '</div>' +
+                '<div class="cov-bar-track"><div class="cov-bar-fill" style="width:' + Math.round(tids.length / maxDs * 100) + '%;background:var(--accent,#58a6ff)"></div></div>' +
+                '<div class="cov-bar-val">' + tids.length + '/' + techs.length + ' (' + pct + '%)</div></div>';
+        }).join('');
+
+        // Fidelity breakdown
+        html += '<h3 class="det-section">Fidelity Breakdown</h3>';
+        html += '<p class="cov-note">How robust are the detections? <span style="color:#3fb950">Behavioral</span> (pattern-based, resistant to tool changes) vs <span style="color:#d29922">Signature</span> (tool-specific, brittle) vs <span style="color:#8b949e">Telemetry</span> (data present, no alerting logic).</p>';
+        const fTally = { behavioral: 0, signature: 0, telemetry: 0 };
+        techs.forEach(([, v]) => v.detections.forEach(d => fTally[d.fidelity] = (fTally[d.fidelity] || 0) + 1));
+        const fTotal = Object.values(fTally).reduce((a, b) => a + b, 0) || 1;
+        html += '<div class="det-fidelity-bar">';
+        for (const [f, n] of Object.entries(fTally)) {
+            const w = Math.round(n / fTotal * 100);
+            if (w > 0) html += '<div class="det-f-seg" style="width:' + w + '%;background:' + fCol(f) + '" title="' + f + ': ' + n + ' (' + w + '%)">' + (w >= 8 ? f + ' ' + w + '%' : '') + '</div>';
+        }
+        html += '</div>';
+
+        // Platform breakdown
+        html += '<h3 class="det-section">Platform Coverage</h3>';
+        html += '<p class="cov-note">Detections per SIEM platform.</p>';
+        const pTally = {};
+        techs.forEach(([, v]) => v.detections.forEach(d => pTally[d.platform] = (pTally[d.platform] || 0) + 1));
+        const maxP = Math.max(1, ...Object.values(pTally));
+        html += Object.entries(pTally).sort((a, b) => b[1] - a[1]).map(([p, n]) =>
+            '<div class="cov-bar-row"><div class="cov-bar-label">' + this.esc(p) + '</div>' +
+            '<div class="cov-bar-track"><div class="cov-bar-fill" style="width:' + Math.round(n / maxP * 100) + '%;background:' + pCol(p) + '"></div></div>' +
+            '<div class="cov-bar-val">' + n + '</div></div>'
+        ).join('');
+
+        // Technique grid (top 60)
+        html += '<h3 class="det-section">Top Techniques by Detection Count</h3>';
+        html += '<p class="cov-note">Click a technique to search it. Color = best fidelity.</p>';
+        html += '<div class="cov-grid">';
+        techs.slice(0, 60).forEach(([tid, v]) => {
+            html += '<div class="cov-cell" data-covsearch="mitre:' + this.esc(tid) + '" style="border-left:3px solid ' + fCol(v.best_fidelity) + '">' +
+                '<h4>' + this.esc(tid) + '</h4>' +
+                '<span class="cov-count">' + v.detections.length + '</span>' +
+                '<span class="cov-sub">' + v.platforms.join(', ') + '</span></div>';
+        });
+        html += '</div>';
+
+        body.innerHTML = html;
     }
     renderCoverageSource(body) {
         const data = (typeof COVERAGE_DATA !== 'undefined') ? COVERAGE_DATA : null;

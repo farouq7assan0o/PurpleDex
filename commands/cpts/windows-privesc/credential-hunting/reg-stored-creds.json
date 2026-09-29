@@ -135,6 +135,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - Registry  Wi-Fi Secrets - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:reg.exe AND process.command_line:(*Winlogon* OR *DefaultPassword* OR *PuTTY*)",
+        "data_source": "edr",
+        "attack": [
+          "T1552.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

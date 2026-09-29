@@ -119,6 +119,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "smbmap - Enumerate SMB Shares - Elastic KQL",
+        "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+        "data_source": "edr",
+        "attack": [
+          "T1135"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

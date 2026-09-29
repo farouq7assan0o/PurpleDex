@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Responder - Active Poisoning - Elastic KQL",
+        "logic": "event.category:network AND network.protocol:(llmnr OR nbns) AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

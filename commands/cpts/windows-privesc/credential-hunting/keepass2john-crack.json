@@ -146,6 +146,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - Crack KeePass Database - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:(*keepass2john* OR *13400*)",
+        "data_source": "edr",
+        "attack": [
+          "T1555.005"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

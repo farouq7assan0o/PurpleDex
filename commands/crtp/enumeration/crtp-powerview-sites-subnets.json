@@ -204,6 +204,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView Sites Subnets  AD Topology Enumeration - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainSite* OR *Get-DomainSubnet*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1016",
+          "T1018",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

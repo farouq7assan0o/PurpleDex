@@ -121,6 +121,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SSH - RemoteReverse Port Forwarding - Elastic KQL",
+        "logic": "process.name:ssh AND process.args:\"-R\"",
+        "data_source": "edr",
+        "attack": [
+          "T1572"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

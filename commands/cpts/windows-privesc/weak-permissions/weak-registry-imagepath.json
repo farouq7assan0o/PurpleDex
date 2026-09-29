@@ -119,6 +119,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Weak Permissions - Writable Service Registry (ImagePath) - Elastic KQL",
+        "logic": "event.code:\"13\" AND registry.path:*CurrentControlSet\\\\Services\\\\*\\\\ImagePath AND NOT process.name:(services.exe OR TrustedInstaller.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1574.011"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

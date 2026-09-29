@@ -137,6 +137,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Crunch Wordlist Generator - Elastic KQL",
+        "logic": "process.name:crunch*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -140,6 +140,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SSH - Connect to a Host - Elastic KQL",
+        "logic": "event.category:authentication AND event.action:(ssh_login OR \"logged-in\") AND event.outcome:success AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1021.004"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

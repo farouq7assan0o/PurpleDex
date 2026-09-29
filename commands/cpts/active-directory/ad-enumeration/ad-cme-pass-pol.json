@@ -115,6 +115,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "CrackMapExec - Get Password Policy - Elastic KQL",
+        "logic": "event.code:\"4661\" AND winlog.event_data.ObjectType:\"SAM_DOMAIN\"",
+        "data_source": "edr",
+        "attack": [
+          "T1201"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

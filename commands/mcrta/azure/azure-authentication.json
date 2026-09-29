@@ -130,6 +130,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Azure Authentication (az  Az PowerShell  Mg Graph) - Elastic KQL",
+        "logic": "event.dataset:azure.signinlogs AND azure.signinlogs.properties.app_display_name:*",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

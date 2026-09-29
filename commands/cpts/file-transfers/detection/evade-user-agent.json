@@ -135,6 +135,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Evasion - Custom User-Agent Download - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:powershell.exe AND process.command_line:(*-UserAgent* OR *DownloadFile*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1027"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

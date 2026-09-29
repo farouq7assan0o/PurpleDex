@@ -104,6 +104,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "OpenSSL - Brute Force Encrypted Archive - Elastic KQL",
+        "logic": "process.name:openssl*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

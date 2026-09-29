@@ -132,6 +132,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "User Enumeration via Kerberos (kerbrute) - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.Status:\"0x6\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

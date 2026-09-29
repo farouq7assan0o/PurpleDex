@@ -146,6 +146,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Evil-WinRM - Shell via WinRM - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:wsmprovhost.exe AND process.parent.name:svchost.exe",
+        "data_source": "edr",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

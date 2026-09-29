@@ -134,6 +134,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Network Recon (CRTP Foothold) - Elastic KQL",
+        "logic": "event.code:\"5156\" AND destination.port:(53 OR 88 OR 135 OR 139 OR 389 OR 445 OR 636 OR 3268)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

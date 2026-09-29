@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "LAPSToolkit - Read LAPS Passwords - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*ms-Mcs-AdmPwd* OR *ms-LAPS-Password*)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

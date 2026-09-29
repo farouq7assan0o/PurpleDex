@@ -115,6 +115,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Inveigh (PowerShell) - LLMNRNBNS Poisoning - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*Inveigh*",
+        "data_source": "powershell",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

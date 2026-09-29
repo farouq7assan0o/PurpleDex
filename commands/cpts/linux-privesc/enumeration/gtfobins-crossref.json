@@ -141,6 +141,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Enumeration - GTFOBins Cross-Reference - Elastic KQL",
+        "logic": "(url.domain:gtfobins.github.io) OR (process.name:curl AND process.command_line:*gtfobins*)",
+        "data_source": "edr",
+        "attack": [
+          "T1518"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

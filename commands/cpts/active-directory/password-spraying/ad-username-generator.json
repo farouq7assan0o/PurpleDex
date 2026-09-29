@@ -117,6 +117,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Username Generator - Build AD Wordlist from Names - Elastic KQL",
+        "logic": "/* local username list generation; no target-side event */",
+        "data_source": "edr",
+        "attack": [
+          "T1589.003",
+          "T1110.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

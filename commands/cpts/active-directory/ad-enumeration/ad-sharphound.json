@@ -155,6 +155,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SharpHound - Windows-Based BloodHound Collection - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -212,6 +212,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Unconstrained Delegation Abuse (Printer Bug  Rubeus) - Elastic KQL",
+        "logic": "event.code:\"3\" AND source.domain:*DC* AND destination.port:445",
+        "data_source": "edr",
+        "attack": [
+          "T1558",
+          "T1187"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

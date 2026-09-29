@@ -123,6 +123,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WPScan - Enumerate ThemesPluginsUsers - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.path:(\"/wp-json/wp/v2/users\" OR \"/?author=\" OR \"/wp-content/plugins/\")",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

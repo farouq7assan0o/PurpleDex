@@ -170,6 +170,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Docker Container Post-Exploitation Enumeration - Elastic KQL",
+        "logic": "cloud.provider:aws AND (event.action:GetMetadataToken OR event.action:AssumeRole) AND source.ip:169.254.169.254",
+        "data_source": "ndr",
+        "attack": [
+          "T1528",
+          "T1613",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

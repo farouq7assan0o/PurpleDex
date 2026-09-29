@@ -117,6 +117,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GitLab - User Enumeration - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.path:(\"/api/v4/users\" OR \"/users/sign_in\")",
+        "data_source": "ndr",
+        "attack": [
+          "T1087"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -124,6 +124,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "IPMI - Enumeration  Hash Dump - Elastic KQL",
+        "logic": "event.category:network AND destination.port:623",
+        "data_source": "ndr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

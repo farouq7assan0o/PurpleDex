@@ -123,6 +123,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "gpp-decrypt - Decrypt GPP cpassword - Elastic KQL",
+        "logic": "event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL* AND winlog.event_data.RelativeTargetName:(Groups.xml OR Services.xml OR Scheduledtasks.xml OR DataSources.xml)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

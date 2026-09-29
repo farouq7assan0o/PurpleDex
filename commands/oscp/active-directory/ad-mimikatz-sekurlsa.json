@@ -194,6 +194,17 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Mimikatz - Dump Cached Credentials (sekurlsa) - Elastic KQL",
+        "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND winlog.event_data.GrantedAccess:(\"0x1010\" OR \"0x1038\" OR \"0x1FFFFF\")\n\nevent.code:\"4656\" AND winlog.event_data.ObjectName:*lsass.exe",
+        "data_source": "edr",
+        "attack": [
+          "T1003.001",
+          "T1558"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

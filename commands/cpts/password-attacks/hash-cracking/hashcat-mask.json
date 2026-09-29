@@ -108,6 +108,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hashcat - Mask Attack - Elastic KQL",
+        "logic": "process.name:hashcat* AND process.args:\"-a 3\"",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

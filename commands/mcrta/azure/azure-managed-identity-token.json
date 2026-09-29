@@ -145,6 +145,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Azure Managed Identity Token Theft (VM IMDS) - Elastic KQL",
+        "logic": "event.dataset:azure.auditlogs AND event.action:(*managed*identity* OR *access*token*)\n\nevent.dataset:azure.signinlogs AND azure.signinlogs.properties.authentication_details.method:ManagedIdentity",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

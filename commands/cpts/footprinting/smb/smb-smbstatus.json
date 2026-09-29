@@ -123,6 +123,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SMB Server Status (smbstatus) - Elastic KQL",
+        "logic": "process.name:smbstatus",
+        "data_source": "edr",
+        "attack": [
+          "T1049"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

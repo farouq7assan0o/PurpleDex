@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Impacket - NTLM Relay to ADCS (ESC8) - Elastic KQL",
+        "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.Attributes:*DomainController*",
+        "data_source": "edr",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

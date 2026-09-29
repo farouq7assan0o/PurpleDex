@@ -130,6 +130,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Misc - Mount Virtual Disk  Dump Hashes - Elastic KQL",
+        "logic": "process.name:(guestmount OR qemu-nbd) OR file.extension:(vmdk OR vhdx)",
+        "data_source": "edr",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

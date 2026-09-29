@@ -148,6 +148,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SSH - Enumeration - Elastic KQL",
+        "logic": "process.name:ssh* OR (event.category:network AND destination.port:22)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

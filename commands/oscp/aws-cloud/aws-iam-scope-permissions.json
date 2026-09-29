@@ -193,6 +193,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - IAM Permission Scoping with Compromised Credentials - Elastic KQL",
+        "logic": "event.dataset:aws.cloudtrail AND event.action:(\"SimulatePrincipalPolicy\" OR \"GetUserPolicy\" OR \"ListAttachedUserPolicies\" OR \"GetPolicyVersion\")",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1069.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

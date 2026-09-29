@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows BOF - Step 2 EIP Control (Pattern Offset) - Elastic KQL",
+        "logic": "event.code:(\"1000\" OR \"1001\") AND winlog.channel:Application",
+        "data_source": "edr",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

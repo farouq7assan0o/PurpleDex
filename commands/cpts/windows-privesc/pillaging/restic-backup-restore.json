@@ -155,6 +155,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Pillaging - restic Backup Restore - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:restic.exe AND process.args:restore",
+        "data_source": "edr",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

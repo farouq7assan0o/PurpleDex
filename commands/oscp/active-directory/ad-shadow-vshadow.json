@@ -178,6 +178,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Domain Persistence - NTDSdit Extraction via vshadowexe - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.executable:*vshadow.exe OR process.executable:*diskshadow.exe OR process.command_line:*\"create shadow\"*)",
+        "data_source": "edr",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

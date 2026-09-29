@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - Sticky Notes Database - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.name:plum.sqlite* AND NOT process.name:*StickyNotes*",
+        "data_source": "edr",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

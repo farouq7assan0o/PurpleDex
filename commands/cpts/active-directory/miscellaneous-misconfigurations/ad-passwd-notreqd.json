@@ -122,6 +122,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Find Accounts with No Password Required - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *PASSWD_NOTREQD* OR *UserAccountControl*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1078.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

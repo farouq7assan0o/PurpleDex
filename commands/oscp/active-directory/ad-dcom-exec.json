@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD Lateral Movement - DCOM Execution via MMC20Application - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.parent.executable:*mmc.exe AND (process.name:cmd.exe OR process.name:powershell.exe)\n\nevent.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND process.name:*mmc.exe",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

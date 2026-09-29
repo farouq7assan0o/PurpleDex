@@ -136,6 +136,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "raiseChildpy - Automated ChildParent Escalation - Elastic KQL",
+        "logic": "event.code:\"4769\" AND source.domain:*child* AND NOT winlog.event_data.ServiceName:krbtgt\n\nevent.code:\"1\" AND process.command_line:*raiseChild*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

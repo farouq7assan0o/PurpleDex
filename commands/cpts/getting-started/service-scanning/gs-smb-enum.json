@@ -120,6 +120,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SMB - Share Enumeration (Getting Started) - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(139 OR 445)",
+        "data_source": "ndr",
+        "attack": [
+          "T1135"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

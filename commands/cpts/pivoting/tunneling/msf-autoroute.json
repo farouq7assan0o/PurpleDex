@@ -138,6 +138,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Metasploit - AutoRoute and SOCKS Proxy - Elastic KQL",
+        "logic": "event.category:network AND source.ip:* AND destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16)",
+        "data_source": "ndr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

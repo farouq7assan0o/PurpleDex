@@ -154,6 +154,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DNSenum - Full DNS Enumeration - Elastic KQL",
+        "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1018",
+          "T1590.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

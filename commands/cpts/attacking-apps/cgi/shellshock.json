@@ -133,6 +133,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Shellshock - CGI RCE (CVE-2014-6271) - Elastic KQL",
+        "logic": "event.category:web AND (user_agent.original:*\\(\\)\\ \\{* OR url.query:*\\(\\)\\ \\{*)",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1059.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

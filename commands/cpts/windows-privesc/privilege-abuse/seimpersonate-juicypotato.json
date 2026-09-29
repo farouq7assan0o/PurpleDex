@@ -155,6 +155,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SeImpersonate - JuicyPotato to SYSTEM - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:*Potato* OR process.parent.name:(sqlservr.exe OR w3wp.exe) AND user.name:*SYSTEM*)",
+        "data_source": "edr",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

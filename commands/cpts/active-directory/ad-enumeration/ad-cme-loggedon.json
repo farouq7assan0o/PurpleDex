@@ -115,6 +115,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "CrackMapExec - Find Logged-On Users - Elastic KQL",
+        "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+        "data_source": "edr",
+        "attack": [
+          "T1049"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

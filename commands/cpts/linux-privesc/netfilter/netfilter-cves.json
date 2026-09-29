@@ -160,6 +160,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Netfilter - Kernel LPE CVEs - Elastic KQL",
+        "logic": "process.name:(gcc OR make) AND process.args:*netfilter* OR (user.effective.id:0 AND user.id:1000)",
+        "data_source": "edr",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

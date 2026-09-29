@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Web Fingerprinting - Elastic KQL",
+        "logic": "event.category:web AND http.request.method:HEAD AND user_agent.original:(curl* OR *fingerprint*)",
+        "data_source": "proxy",
+        "attack": [
+          "T1592.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

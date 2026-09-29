@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Find Foreign Group Members (Cross-Forest) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainForeignGroupMember* OR *Get-DomainForeignUser*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

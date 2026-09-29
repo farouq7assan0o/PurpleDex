@@ -187,6 +187,19 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AMSI  Script Block Logging Bypass (one-liner) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*amsiInitFailed* OR *AmsiUtils* OR *DownloadString*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1059.001",
+          "T1140"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

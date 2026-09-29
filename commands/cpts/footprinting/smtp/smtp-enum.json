@@ -182,6 +182,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SMTP - Enumeration - Elastic KQL",
+        "logic": "process.name:smtp-user-enum* OR (event.category:network AND destination.port:25)",
+        "data_source": "edr",
+        "attack": [
+          "T1046",
+          "T1087"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

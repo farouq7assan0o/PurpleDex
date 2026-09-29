@@ -166,6 +166,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Oracle TNS - File Upload via ODAT UTLFILE - Elastic KQL",
+        "logic": "event.category:network AND destination.port:1521",
+        "data_source": "ndr",
+        "attack": [
+          "T1105",
+          "T1505.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

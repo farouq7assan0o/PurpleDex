@@ -114,6 +114,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "CeWL - Scrape Site for Wordlist - Elastic KQL",
+        "logic": "event.category:web AND user_agent.original:*CeWL*",
+        "data_source": "proxy",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

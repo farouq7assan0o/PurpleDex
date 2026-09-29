@@ -126,6 +126,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Gobuster - Directory  DNS Enumeration - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

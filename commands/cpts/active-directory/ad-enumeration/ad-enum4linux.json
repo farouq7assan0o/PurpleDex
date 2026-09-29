@@ -129,6 +129,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "enum4linux - Unauthenticated SMBRPC Enumeration - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(139 OR 445) AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1135",
+          "T1087.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -154,6 +154,18 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SilkETW - ETW Provider Collection for Detection - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:SilkETW.exe",
+        "data_source": "edr",
+        "attack": [
+          "T1055.001",
+          "T1134.004",
+          "T1620"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

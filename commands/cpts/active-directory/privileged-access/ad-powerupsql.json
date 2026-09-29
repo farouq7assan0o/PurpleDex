@@ -137,6 +137,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerUpSQL - Enumerate MSSQL Instances - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-SQLInstance* OR *PowerUpSQL*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

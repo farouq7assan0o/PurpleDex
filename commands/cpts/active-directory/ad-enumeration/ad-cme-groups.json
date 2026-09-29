@@ -122,6 +122,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "CrackMapExec - Enumerate Domain Groups - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1069.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

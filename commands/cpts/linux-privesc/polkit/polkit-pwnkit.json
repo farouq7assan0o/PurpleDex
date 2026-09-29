@@ -146,6 +146,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Polkit - PwnKit (CVE-2021-4034) - Elastic KQL",
+        "logic": "process.name:pkexec AND NOT user.name:root",
+        "data_source": "edr",
+        "attack": [
+          "T1068",
+          "T1548"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

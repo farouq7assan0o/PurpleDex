@@ -129,6 +129,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Enumeration - World-Writable Files and Directories - Elastic KQL",
+        "logic": "process.name:find AND process.command_line:(*-perm* AND *o+w*)",
+        "data_source": "edr",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

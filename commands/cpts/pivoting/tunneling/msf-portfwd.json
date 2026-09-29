@@ -125,6 +125,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Meterpreter - Port Forwarding (portfwd) - Elastic KQL",
+        "logic": "event.category:network AND destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16) AND network.direction:internal",
+        "data_source": "ndr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

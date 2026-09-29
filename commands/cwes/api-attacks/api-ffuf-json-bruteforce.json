@@ -132,6 +132,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "API Credential Brute-Force with ffuf (JSON Body) - Elastic KQL",
+        "logic": "event.category:web AND http.request.method:POST AND url.path:(*login* OR *sign-in* OR *auth*) AND (user_agent.original:*Fuzz* OR http.response.status_code:401)",
+        "data_source": "proxy",
+        "attack": [
+          "T1110.001",
+          "T1110.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

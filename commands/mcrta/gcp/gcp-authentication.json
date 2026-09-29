@@ -124,6 +124,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GCP Authentication (gcloud user  service-account  token) - Elastic KQL",
+        "logic": "event.dataset:gcp.audit AND gcp.audit.method_name:*Authenticate*",
+        "data_source": "edr",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -171,6 +171,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SNMP - Enumeration - Elastic KQL",
+        "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+        "data_source": "ndr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

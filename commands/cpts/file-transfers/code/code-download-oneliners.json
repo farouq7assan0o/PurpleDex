@@ -157,6 +157,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Transfer with Code - Download One-liners - Elastic KQL",
+        "logic": "process.name:(python* OR php OR ruby OR perl) AND process.command_line:(*urlretrieve* OR *urlopen* OR *requests.get*)",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

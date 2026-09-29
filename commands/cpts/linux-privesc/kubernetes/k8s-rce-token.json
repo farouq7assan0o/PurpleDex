@@ -155,6 +155,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Kubernetes - Pod RCE and Token Theft - Elastic KQL",
+        "logic": "kubernetes.audit.objectRef.subresource:exec OR kubernetes.audit.objectRef.resource:\"pods/exec\"",
+        "data_source": "edr",
+        "attack": [
+          "T1528",
+          "T1610"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

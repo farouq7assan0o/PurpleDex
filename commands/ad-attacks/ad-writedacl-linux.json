@@ -152,6 +152,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WriteDACL to DCSync (bloodyAD Linux) - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND not winlog.event_data.SubjectUserName:*$",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -134,6 +134,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - Configs Keys and Secrets - Elastic KQL",
+        "logic": "event.category:file AND file.name:(wp-config.php OR .bash_history OR id_rsa) AND NOT user.name:root",
+        "data_source": "edr",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

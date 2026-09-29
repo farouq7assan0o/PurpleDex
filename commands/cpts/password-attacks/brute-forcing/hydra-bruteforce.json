@@ -152,6 +152,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hydra - Brute Force Network Service - Elastic KQL",
+        "logic": "event.category:authentication AND event.outcome:failure AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

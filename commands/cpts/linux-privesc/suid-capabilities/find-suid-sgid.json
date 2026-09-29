@@ -137,6 +137,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SUIDSGID - Enumerate and Abuse - Elastic KQL",
+        "logic": "process.name:find AND process.args:(*-perm* AND (*4000* OR *u=s*))",
+        "data_source": "edr",
+        "attack": [
+          "T1548.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

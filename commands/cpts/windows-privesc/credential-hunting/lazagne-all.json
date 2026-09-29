@@ -123,6 +123,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - LaZagne (All Modules) - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:*lazagne* OR process.pe.original_file_name:*LaZagne*)",
+        "data_source": "edr",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

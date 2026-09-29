@@ -131,6 +131,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "API Version Enumeration (Improper Inventory Management) - Elastic KQL",
+        "logic": "event.category:web AND (url.query:(*/api/v1* OR */api/v2* OR */api/v3* OR */swagger* OR */openapi*) OR url.path:(*/api/v1* OR */api/v2* OR */api/v3* OR */swagger* OR */openapi*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1087"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

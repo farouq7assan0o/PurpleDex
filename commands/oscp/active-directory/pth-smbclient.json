@@ -170,6 +170,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Pass-the-Hash with smbclient - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

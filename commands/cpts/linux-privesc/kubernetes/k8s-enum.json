@@ -153,6 +153,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Kubernetes - Enumerate API and Kubelet - Elastic KQL",
+        "logic": "kubernetes.audit.user.username:\"system:anonymous\" OR (destination.port:(10250 OR 6443) AND network.direction:inbound)",
+        "data_source": "ndr",
+        "attack": [
+          "T1613"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

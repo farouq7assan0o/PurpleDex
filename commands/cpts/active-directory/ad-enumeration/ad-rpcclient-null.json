@@ -128,6 +128,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "rpcclient - Null Session RPC Enumeration - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1135",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

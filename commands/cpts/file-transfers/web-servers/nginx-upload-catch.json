@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hosting - Catch Files via Nginx PUT - Elastic KQL",
+        "logic": "process.name:curl AND process.args:\"-T\" OR (http.request.method:PUT AND url.path:*Upload*)",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

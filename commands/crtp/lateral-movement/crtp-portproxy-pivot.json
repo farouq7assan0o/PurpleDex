@@ -181,6 +181,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Pivoting with netsh portproxy  winrs - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:(*portproxy?add* OR *netsh*portproxy*)",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

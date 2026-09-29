@@ -217,6 +217,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Abusing GPO Permissions - Attack Detection  Honeypot - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.ObjectDN:*POLICIES*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1484.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -484,6 +494,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ACL Backdoors with RACEps1 (WMI  PSRemoting  Registry) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Set-RemoteWMI* OR *Set-RemotePSRemoting* OR *RACE*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1098",
+              "T1546",
+              "T1112"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -682,6 +704,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ACL-Based Persistence (Grant DCSync Rights) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:nTSecurityDescriptor AND winlog.event_data.ObjectDN:DC\\=*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1098",
+              "T1222.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -860,6 +893,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ActiveDirectory Module - Find Kerberoastable Users (SPN) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ADUser* OR *servicePrincipalName* OR *ServicePrincipalName*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -1053,6 +1096,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ActiveDirectory Module - Get-ADDomain - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ADDomain* OR *Get-ADForest*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -1239,6 +1292,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ActiveDirectory Module - Get-ADTrust - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ADTrust* OR *Get-ADForest*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -1417,6 +1480,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ActiveDirectory Module - Import - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Module ActiveDirectory* OR *addsadministration*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1059.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -1609,6 +1682,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD - Enumerate Security Controls (Defender  AppLocker  CLM) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-MpComputerStatus* OR *Get-AppLockerPolicy* OR *AMSI*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1518.001",
+              "T1562.001",
+              "T1685"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -1814,6 +1899,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD - Living Off the Land Enumeration - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(net.exe OR net1.exe OR nltest.exe OR dsquery.exe OR whoami.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1087.002",
+              "T1016",
+              "T1059.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -2122,6 +2219,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD CS ESC1 - Subject Alt Name (SAN) Abuse - Elastic KQL",
+            "logic": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:*\n\nevent.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649",
+              "T1558"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -2331,6 +2439,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD CS ESC1 via Certipy (Linux - Enrollee-Supplied SAN) - Elastic KQL",
+            "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.CertificateTemplate:*",
+            "data_source": "edr",
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -2548,6 +2666,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD CS ESC16 - Security Extension Disabled (UPN Spoof to DA) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"userPrincipalName\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -2776,6 +2904,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD CS ESC3 - Enrollment Agent Certificate Abuse - Elastic KQL",
+            "logic": "event.code:\"4887\" AND message:(*enrollment*agent* OR *Certificate*Request*Agent*)\n\nevent.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -2982,6 +3120,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD Enumeration - Domain Share Discovery  SYSVOL Hunting - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Find-DomainShare* OR *Invoke-ShareFinder*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1135",
+              "T1552.006"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -3178,6 +3327,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD Enumeration - Logged-On Users  Session Hunting - Elastic KQL",
+            "logic": "event.code:\"3\" AND destination.port:445",
+            "data_source": "edr",
+            "attack": [
+              "T1049",
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -3459,6 +3619,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD Lateral Movement - DCOM Execution via MMC20Application - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.executable:*mmc.exe AND (process.name:cmd.exe OR process.name:powershell.exe)\n\nevent.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND process.name:*mmc.exe",
+            "data_source": "powershell",
+            "attack": [
+              "T1021.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -3796,6 +3966,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD Module Enumeration (Microsoft ActiveDirectory Module) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Module?ActiveDirectory* OR *Get-ADDomain* OR *Get-ADUser*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1482",
+              "T1069.002",
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -4036,6 +4218,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AD Module LDAP  Filter Queries (Advanced Enumeration) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.scriptblock.text:(*DoesNotRequirePreAuth* OR *TrustedForDelegation* OR *adminCount*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1087.002",
+              "T1018"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -4234,6 +4427,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "adidnsdump - Dump All AD DNS Records - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1018"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -4424,6 +4627,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AdminSDHolder Abuse (SDProp Persistence) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.ObjectDN:*AdminSDHolder*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -4732,6 +4945,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AlwaysInstallElevated - Malicious MSI - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:msiexec.exe AND process.args:(\"/quiet\" AND \"/i\")",
+            "data_source": "edr",
+            "attack": [
+              "T1548"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -4992,6 +5215,19 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AMSI  Script Block Logging Bypass (one-liner) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*amsiInitFailed* OR *AmsiUtils* OR *DownloadString*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1562.001",
+              "T1685",
+              "T1059.001",
+              "T1140"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -5195,6 +5431,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AMSI Bypass (PowerShell In-Memory) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*amsiInitFailed* OR *AmsiUtils* OR *VirtualAlloc* OR *Reflection.Emit*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1562.001",
+              "T1685",
+              "T1059.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -5385,6 +5633,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Antak - ASPX PowerShell Web Shell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR sh OR bash)",
+            "data_source": "powershell",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -5612,6 +5870,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "API - Unrestricted Resource Consumption (API42023) - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/api/* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1499.001",
+              "T1608.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -5786,6 +6055,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "API BOLA - Sequential Object ID Enumeration - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/api/* AND http.response.status_code:(200 OR 403)",
+            "data_source": "proxy",
+            "attack": [
+              "T1078",
+              "T1087"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -5966,6 +6246,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "API Credential Brute-Force with ffuf (JSON Body) - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:(*login* OR *sign-in* OR *auth*) AND (user_agent.original:*Fuzz* OR http.response.status_code:401)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001",
+              "T1110.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -6145,6 +6436,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "API Version Enumeration (Improper Inventory Management) - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*/api/v1* OR */api/v2* OR */api/v3* OR */swagger* OR */openapi*) OR url.path:(*/api/v1* OR */api/v2* OR */api/v3* OR */swagger* OR */openapi*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1087"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -6326,6 +6628,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Application Discovery - Nmap Web Ports - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -6605,6 +6917,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Apps Connecting to Services - Extract Credentials via gdb - Elastic KQL",
+            "logic": "process.name:gdb AND process.args:*attach*",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -6759,6 +7081,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Aquatone - Visual Web Inspection - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -7071,6 +7403,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AS-REP Roasting (Rubeus) - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -7273,6 +7615,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "high"
+          },
+          {
+            "platform": "elastic",
+            "name": "AS-REProasting - Attack Detection  Defense - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -7514,6 +7866,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Attack Chain - MS16-032 Local Admin - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-MS16-032* OR *DownloadString*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -7765,6 +8127,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Attack Chain - Pillaging to SYSTEM - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:reg.exe AND process.command_line:(*save* AND *sam*)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -7994,6 +8366,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Authentication Coercion (MS-RPRN  DFSCoerce  WSPCoerce) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:*$ AND NOT source.ip:\"<dc_ip>\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1187"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -8180,6 +8562,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AV Evasion - Detection Methods  Approach - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*amsiInitFailed* OR *AmsiUtils* OR *VirtualAlloc* OR *Reflection.Emit*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1027",
+              "T1518.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -8376,6 +8769,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Account ID Fingerprinting  Cross-Account IAM Enumeration - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:(\"GetCallerIdentity\" OR \"ListUsers\" OR \"ListRoles\" OR \"GetAccountAuthorizationDetails\")",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1087.004",
+              "T1580"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -8584,6 +8988,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Container Network Pivot via Meterpreter  SOCKS Proxy - Elastic KQL",
+            "logic": "cloud.provider:aws AND event.action:(RunInstances OR CreateFunction OR UpdateFunctionCode) AND user.id:*assumed-role*",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1090.003",
+              "T1021",
+              "T1570"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -8789,6 +9205,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Docker Container Post-Exploitation Enumeration - Elastic KQL",
+            "logic": "cloud.provider:aws AND (event.action:GetMetadataToken OR event.action:AssumeRole) AND source.ip:169.254.169.254",
+            "data_source": "ndr",
+            "attack": [
+              "T1528",
+              "T1613",
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -8987,6 +9415,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Enumerate Public S3 Buckets  EC2 Shared Resources - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:(\"ListBuckets\" OR \"GetBucketAcl\" OR \"DescribeInstances\" OR \"DescribeSnapshots\")",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1619",
+              "T1580"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -9186,6 +9625,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Full IAM Account Dump  JMESPath Querying - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:(\"GetAccountAuthorizationDetails\" OR \"ListPolicies\" OR \"ListRoles\" OR \"ListUsers\" OR \"ListGroups\")",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1087.004",
+              "T1069.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -9415,6 +9865,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - IAM Permission Scoping with Compromised Credentials - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:(\"SimulatePrincipalPolicy\" OR \"GetUserPolicy\" OR \"ListAttachedUserPolicies\" OR \"GetPolicyVersion\")",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1087.004",
+              "T1069.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -9626,6 +10087,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - IAM Privilege Escalation  Backdoor User Creation - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:(\"CreateAccessKey\" OR \"CreateUser\" OR \"AttachUserPolicy\" OR \"CreateLoginProfile\" OR \"PutUserPolicy\")",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1136.003",
+              "T1098.001",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -9834,6 +10307,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Jenkins Pipeline Modification for RCE  Credential Theft - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:(\"AssumeRole\" OR \"GetSessionToken\" OR \"CreateAccessKey\")",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1059.004",
+              "T1552.001",
+              "T1612"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -10057,6 +10542,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Pacu Framework (Automated IAM  Cloud Enumeration) - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:(\"DescribeInstances\" OR \"ListBuckets\" OR \"GetAccountAuthorizationDetails\" OR \"ListSecrets\")",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1087.004",
+              "T1580",
+              "T1526"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -10262,6 +10759,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Python Package Supply Chain Attack (Private PyPI) - Elastic KQL",
+            "logic": "process.name:(pip OR pip3) AND process.args:install",
+            "data_source": "edr",
+            "attack": [
+              "T1195.001",
+              "T1059.006"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -10466,6 +10974,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - S3 Bucket Download  Git History Credential Mining - Elastic KQL",
+            "logic": "cloud.provider:aws AND event.action:GetObject AND (aws.s3.bucket.name:*terraform* OR aws.s3.object.key:(*.git* OR *.env*))",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1552.001",
+              "T1213.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -10661,6 +11180,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS - Terraform State File Credential Extraction - Elastic KQL",
+            "logic": "cloud.provider:aws AND event.action:GetObject AND aws.s3.object.key:*.tfstate*",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1552.001",
+              "T1213.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -10850,6 +11380,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS CLI - Configure Profile  Verify Identity - Elastic KQL",
+            "logic": "event.dataset:aws.cloudtrail AND event.action:GetCallerIdentity",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1078.004",
+              "T1526"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -11044,6 +11585,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "AWS Pre-Auth Recon - DNS  Cloud Service Discovery - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:(*.amazonaws.com OR *.cloudfront.net)",
+            "data_source": "ndr",
+            "attack": [
+              "T1580",
+              "T1596"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -11201,6 +11753,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Azure Authentication (az  Az PowerShell  Mg Graph) - Elastic KQL",
+            "logic": "event.dataset:azure.signinlogs AND azure.signinlogs.properties.app_display_name:*",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1078.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -11387,6 +11949,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Azure Managed Identity Token Theft (VM IMDS) - Elastic KQL",
+            "logic": "event.dataset:azure.auditlogs AND event.action:(*managed*identity* OR *access*token*)\n\nevent.dataset:azure.signinlogs AND azure.signinlogs.properties.authentication_details.method:ManagedIdentity",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1552.005",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -11575,6 +12148,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Azure Resource Manager (ARM) Enumeration - Elastic KQL",
+            "logic": "event.dataset:azure.activitylogs AND azure.activitylogs.operation_name:(*list* OR *read*)",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1580",
+              "T1526"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -11755,6 +12339,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Backup Operators - Copy Protected File (SeBackupPrivilege) - Elastic KQL",
+            "logic": "event.code:\"4656\" AND winlog.event_data.ObjectName:(*SAM OR *SECURITY OR *ntds.dit) AND winlog.event_data.AccessMask:*",
+            "data_source": "edr",
+            "attack": [
+              "T1006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -11956,6 +12550,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Backup Operators - Dump NTDSdit via diskshadow - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(diskshadow.exe OR ntdsutil.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -12153,6 +12757,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Base64 - CopyPaste Transfer - Elastic KQL",
+            "logic": "process.command_line:(*base64* AND *-d*) OR (event.code:\"4104\" AND powershell.file.script_block_text:*FromBase64String*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -12361,6 +12975,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Bashfuscator - Automated Bash Obfuscation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1027",
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -12554,6 +13179,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Bind Shell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*nc* AND *-l* AND *-e*)",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -12724,6 +13359,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Bind Shell Payloads - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*-l* AND *-e* AND (*cmd* OR */bin/*))",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -12942,6 +13587,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "BloodHound  SharpHound Collection - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-BloodHound* OR *SharpHound* OR *CollectionMethod*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1087.002",
+              "T1069.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -13180,6 +13836,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "BloodHound GUI - Start Neo4j and BloodHound - Elastic KQL",
+            "logic": "/* offline graph analysis; detect the collection phase (SharpHound LDAP burst) */",
+            "data_source": "edr",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -13369,6 +14035,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "BloodHoundpy - Remote AD Data Collection (Linux) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002",
+              "T1069.002",
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -13622,6 +14300,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - 2FA  OTP Code Brute-Force - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1111",
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -13779,6 +14468,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Bypass via Direct Access (302200) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*/admin* OR */dashboard* OR */account* OR *authenticated=true*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1078",
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -13939,6 +14639,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Bypass via Parameter Modification - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*role=admin* OR *isAdmin=1* OR *admin=true* OR *auth=1*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1078",
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -14176,6 +14887,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Forge Weak Session Token - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*session=* OR *sessid=* OR *jwt=* OR *eyJ*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1539",
+              "T1550.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -14369,6 +15091,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Password Brute-Force  Custom Wordlist - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001",
+              "T1110.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -14532,6 +15265,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Password Reset Token Brute-Force - Elastic KQL",
+            "logic": "event.category:web AND url.path:*reset* AND url.query:*token\\=*",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001",
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -14691,6 +15435,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Rate-Limit  Lockout Bypass - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001",
+              "T1556"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -14906,6 +15661,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Username Enumeration (ffuf) - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *register* OR *forgot*) AND user_agent.original:*ffuf*",
+            "data_source": "proxy",
+            "attack": [
+              "T1589.002",
+              "T1078"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -15082,6 +15848,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Broken Auth - Vulnerable Password Reset (Security Question) - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001",
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -15239,6 +16016,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Build Hybrid Wordlist (Policy Filtering) - Elastic KQL",
+            "logic": "process.name:grep*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -15417,6 +16204,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Burp Intruder  ZAP Fuzzer - Web Directory  Parameter Fuzzing - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003",
+              "T1110.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -15619,6 +16417,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Burp Repeater - Manual Request Testing  Manipulation - Elastic KQL",
+            "logic": "/* manual proxy request; detect the carried payload via WAF/web-log rules */",
+            "data_source": "edr",
+            "attack": [
+              "T1185"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -15809,6 +16617,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "C Shellcode Runner  Process Injection - Elastic KQL",
+            "logic": "event.code:\"8\" AND process.name:*",
+            "data_source": "edr",
+            "attack": [
+              "T1055",
+              "T1620"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -16007,6 +16826,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Capabilities - Enumerate and Abuse - Elastic KQL",
+            "logic": "process.name:getcap OR (event.category:file AND file.path:/etc/passwd AND event.action:change AND NOT process.name:(passwd OR useradd))",
+            "data_source": "edr",
+            "attack": [
+              "T1548.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -16270,6 +17099,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Certificate Transparency - crtsh - Elastic KQL",
+            "logic": "/* passive OSINT against crt.sh (Certificate Transparency); no target-side event to match */",
+            "data_source": "edr",
+            "attack": [
+              "T1596.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -16507,6 +17346,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CeWL - Scrape Site for Wordlist - Elastic KQL",
+            "logic": "event.category:web AND user_agent.original:*CeWL*",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -16685,6 +17534,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Check Print Spooler Status on Domain Hosts - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainComputer* OR *Get-SpoolStatus* OR *rpcdump*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -16916,6 +17775,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Child-to-Parent Domain Escalation (krbtgt SID-History OR Trust Key) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketOptions:*0x40810000* AND source.domain:*child*\n\nevent.code:\"4768\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1134.005",
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -17197,6 +18067,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Chisel - SOCKS5 Tunnel - Elastic KQL",
+            "logic": "process.name:*chisel* OR process.command_line:(*chisel* OR *socks5*)",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -17382,6 +18262,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Client-Side Recon - Fingerprint the Target - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+            "data_source": "ndr",
+            "attack": [
+              "T1592.002",
+              "T1598.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -17551,6 +18442,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Cloud Resources - Discovery - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:(*.amazonaws.com OR *.blob.core.windows.net OR *.googleapis.com)",
+            "data_source": "ndr",
+            "attack": [
+              "T1580"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -17823,6 +18724,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Coercing  Unconstrained Delegation - TGT Capture Attack - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:*DC$ AND NOT source.ip:\"<dc_ip>\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1187",
+              "T1558.001",
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -18054,6 +18967,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ColdFusion - Directory Traversal (CVE-2010-2861) - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*../* OR *%2e%2e* OR */CFIDE/* OR *password.properties*) OR url.path:(*../* OR *%2e%2e* OR */CFIDE/* OR *password.properties*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1083"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -18218,6 +19142,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ColdFusion - Discovery and Admin Panel - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/CFIDE/administrator/index.cfm\" OR \"/cfdocs/\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1595",
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -18438,6 +19373,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ColdFusion - Unauthenticated RCE (CVE-2009-2265) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -18659,6 +19605,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Command Injection - Base64 Encoded Command - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1027",
+              "T1140"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -18878,6 +19835,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Command Injection - Case Manipulation Obfuscation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1027",
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -19106,6 +20074,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Command Injection - Character Filter Bypass - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.004",
+              "T1027"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -19341,6 +20320,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Command Injection - Command Obfuscation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1027",
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -19577,6 +20567,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Command Injection - Detection Payload - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -19915,6 +20916,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Command Injection - Reversed Command Obfuscation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1027",
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -20129,6 +21141,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Command Injection - Space Filter Bypass - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.004",
+              "T1027"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -20342,6 +21365,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Confluence OGNL Injection RCE - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1059.007"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -20580,6 +21614,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Constrained Delegation Abuse (S4U) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TransmittedServices:* AND NOT winlog.event_data.TransmittedServices:\"-\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -20738,6 +21782,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CoreFTP - Path Traversal File Write (CVE-2022-22836) - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*../* OR *%2e%2e* OR *PUT* OR *..%5c*) OR url.path:(*../* OR *%2e%2e* OR *PUT* OR *..%5c*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -20923,6 +21977,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CORS Misconfiguration - Cross-Origin Data Theft - Elastic KQL",
+            "logic": "event.category:web AND http.request.headers.origin:* AND NOT http.request.headers.origin:(*yourdomain.com*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1539"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -21207,6 +22272,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Crack BitLocker Volume (bitlocker2john) - Elastic KQL",
+            "logic": "process.name:bitlocker2john*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -21366,6 +22441,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Enumerate Domain Groups - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1069.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -21542,6 +22627,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Enumerate Domain Users - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -21722,6 +22817,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Enumerate SMB Shares - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -21881,6 +22986,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Find AutoLogon Credentials (GPP) - Elastic KQL",
+            "logic": "event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL* AND winlog.event_data.RelativeTargetName:*Registry.xml*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1552.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -22050,6 +23165,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Find Logged-On Users - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1049"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -22217,6 +23342,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Get Password Policy - Elastic KQL",
+            "logic": "event.code:\"4661\" AND winlog.event_data.ObjectType:\"SAM_DOMAIN\"",
+            "data_source": "edr",
+            "attack": [
+              "T1201"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -22395,6 +23530,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Local Auth Spray (Hash Reuse) - Elastic KQL",
+            "logic": "event.code:\"4625\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+            "data_source": "windows-security",
+            "attack": [
+              "T1110.003",
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -22590,6 +23736,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - SMB Password Spray - Elastic KQL",
+            "logic": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+            "data_source": "edr",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -22770,6 +23926,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CrackMapExec - Spider Plus (File Content Hunt) - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1135",
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -23016,6 +24183,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Dumping (SafetyKatz  Invoke-Mimikatz) - Elastic KQL",
+            "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND NOT process.name:(MsMpEng.exe OR wininit.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -23225,6 +24402,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Chrome Saved Logins - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:*SharpChrome*logins*",
+            "data_source": "edr",
+            "attack": [
+              "T1555.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -23407,6 +24594,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Configs Keys and Secrets - Elastic KQL",
+            "logic": "event.category:file AND file.name:(wp-config.php OR .bash_history OR id_rsa) AND NOT user.name:root",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -23586,6 +24783,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Crack KeePass Database - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*keepass2john* OR *13400*)",
+            "data_source": "edr",
+            "attack": [
+              "T1555.005"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -23770,6 +24977,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Decrypt Export-Clixml Secrets - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Clixml* AND *GetNetworkCredential*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -23951,6 +25168,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - LaZagne (All Modules) - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:*lazagne* OR process.pe.original_file_name:*LaZagne*)",
+            "data_source": "edr",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -24139,6 +25366,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - PowerShell History - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*ConsoleHost_history* OR *HistorySavePath*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -24323,6 +25560,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Registry  Wi-Fi Secrets - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:reg.exe AND process.command_line:(*Winlogon* OR *DefaultPassword* OR *PuTTY*)",
+            "data_source": "edr",
+            "attack": [
+              "T1552.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -24497,6 +25744,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Search Files for Passwords - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:findstr.exe AND process.command_line:(*password* OR *SIM*)",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -24669,6 +25926,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - SessionGopher - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*SessionGopher*",
+            "data_source": "powershell",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -24865,6 +26132,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Sticky Notes Database - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.name:plum.sqlite* AND NOT process.name:*StickyNotes*",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -25050,6 +26327,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - Stored Credentials (cmdkeyrunas) - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:cmdkey.exe AND process.args:\"/list\") OR (process.name:runas.exe AND process.args:\"/savecred\")",
+            "data_source": "edr",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -25221,6 +26508,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credential Hunting - User  Computer Description Fields - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-LocalUser* OR *Get-ADUser*Description*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -25489,6 +26786,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Credentials in Network Shares - Discovery  Detection - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-ShareFinder* OR *findstr?\\/s*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1039",
+              "T1552.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -25746,6 +27054,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Cron Abuse - Writable Script  pspy - Elastic KQL",
+            "logic": "process.parent.name:(cron OR crond) AND process.name:(bash OR sh OR nc OR python*)",
+            "data_source": "edr",
+            "attack": [
+              "T1053.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -25912,6 +27230,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Cross-Compile a Public Exploit - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1588.005",
+              "T1027.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -26201,6 +27530,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Crunch Wordlist Generator - Elastic KQL",
+            "logic": "process.name:crunch*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -26360,6 +27699,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CUPP - Targeted Wordlist from Profile - Elastic KQL",
+            "logic": "process.name:cupp*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -26616,6 +27965,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CVE-2020-0668 - Service Tracing Symlink EoP - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.name:maintenanceservice.exe AND NOT process.name:(msiexec.exe OR maintenanceservice.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -26817,6 +28176,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "CVE-2025-24071 - library-ms NTLM Hash Leak (Zero-Click) - Elastic KQL",
+            "logic": "event.code:\"3\" AND destination.port:445 AND not destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16)",
+            "data_source": "ndr",
+            "attack": [
+              "T1187"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -27206,6 +28575,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DCSync (SafetyKatz  impacket-secretsdump) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND NOT user.name:*$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -27362,6 +28741,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "high"
+          },
+          {
+            "platform": "elastic",
+            "name": "DCSync Attack - Attack Detection  Defense - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND NOT user.name:*$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -27635,6 +29024,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DefaultCreds - Search Default Credentials - Elastic KQL",
+            "logic": "process.name:creds*",
+            "data_source": "edr",
+            "attack": [
+              "T1078.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -28176,6 +29575,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Diamond Ticket (Rubeus tgtdeleg) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*diamond* OR *tgtdeleg*)",
+            "data_source": "edr",
+            "attack": [
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -28359,6 +29768,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Directory Traversal (read-only file disclosure) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1083",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -28538,6 +29958,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Dirty Pipe (CVE-2022-0847) - Elastic KQL",
+            "logic": "event.category:file AND file.path:(/etc/passwd OR /usr/bin/sudo OR /usr/bin/su) AND event.action:(change OR modification) AND NOT user.name:root",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -28707,6 +30137,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Disable Windows Defender Real-Time Protection - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Set-MpPreference* AND (*Disable* OR *ExclusionPath*))",
+            "data_source": "powershell",
+            "attack": [
+              "T1562.001",
+              "T1685"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -29028,6 +30469,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Dislocker - Unlock a BitLocker Volume - Elastic KQL",
+            "logic": "process.name:dislocker*",
+            "data_source": "edr",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -29207,6 +30658,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DLL Hijacking - Missing  Proxy DLL - Elastic KQL",
+            "logic": "event.code:\"7\" AND NOT dll.path:(*System32* OR *SysWOW64* OR *Program?Files*) AND dll.code_signature.trusted:false",
+            "data_source": "edr",
+            "attack": [
+              "T1574.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -29431,6 +30892,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - Cache Poisoning with Ettercap - Elastic KQL",
+            "logic": "event.category:network AND event.action:(arp_poisoning OR dns_spoofing)",
+            "data_source": "ndr",
+            "attack": [
+              "T1557.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -29646,6 +31117,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - dig Queries  Zone Transfer - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -29826,6 +31307,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - dig Record Queries - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -30008,6 +31499,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - dnsrecon Standard  Brute Force - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -30146,6 +31647,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - Passive Subdomain Enumeration (Subfinder) - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -30314,6 +31825,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - Subdomain Brute Force - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -30461,6 +31982,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - Subdomain Brute Force (Subbrute) - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -30632,6 +32163,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - Windows nslookup Queries - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1018",
+              "T1016"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -30777,6 +32319,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - Zone Transfer (AXFR) - Elastic KQL",
+            "logic": "event.category:network AND dns.question.type:(AXFR OR IXFR)",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -30952,6 +32504,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNS - Zone Transfer with Fierce - Elastic KQL",
+            "logic": "event.category:network AND dns.question.type:(AXFR OR IXFR)",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -31130,6 +32692,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DnsAdmins - Malicious DLL via dnscmd - Elastic KQL",
+            "logic": "event.code:\"13\" AND registry.path:*ServerLevelPluginDll*",
+            "data_source": "edr",
+            "attack": [
+              "T1574"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -31304,6 +32876,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DnsAdmins - WPAD Record Injection - Elastic KQL",
+            "logic": "dns.question.name:wpad* AND event.action:record_added",
+            "data_source": "dns",
+            "attack": [
+              "T1557"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -31510,6 +33092,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Dnscat2 - DNS Tunneling - Elastic KQL",
+            "logic": "dns.question.type:(TXT OR NULL OR CNAME) AND dns.question.name:*",
+            "data_source": "dns",
+            "attack": [
+              "T1572"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -31692,6 +33284,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DNSenum - Full DNS Enumeration - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1018",
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -31867,6 +33470,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Domain Information - Passive Recon - Elastic KQL",
+            "logic": "/* passive OSINT; no target-side event to match */",
+            "data_source": "edr",
+            "attack": [
+              "T1590"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -32041,6 +33654,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Domain Password Policy Enumeration - Elastic KQL",
+            "logic": "event.code:\"4661\" AND winlog.event_data.ObjectType:\"SAM_DOMAIN\"",
+            "data_source": "edr",
+            "attack": [
+              "T1201"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -32217,6 +33840,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Domain Password Spray (kerbrute  CrackMapExec) - Elastic KQL",
+            "logic": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+            "data_source": "edr",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -32436,6 +34069,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Domain Persistence - NTDSdit Extraction via vshadowexe - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.executable:*vshadow.exe OR process.executable:*diskshadow.exe OR process.command_line:*\"create shadow\"*)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -32663,6 +34306,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DomainPasswordSpray - Windows PS Spray - Elastic KQL",
+            "logic": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+            "data_source": "edr",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -32908,6 +34561,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DotNetNuke (DNN) - Authenticated RCE (SQL Console  File-Extension Bypass) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003",
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -33176,6 +34841,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Drupal - Detect and Version Enumeration - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/CHANGELOG.txt\" OR \"/core/CHANGELOG.txt\" OR \"/user/login\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -33376,6 +35051,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Drupal - PHP Filter Module Webshell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR sh OR bash)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -33573,6 +35259,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Drupalgeddon - Create Admin (CVE-2014-3704) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1136"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -33787,6 +35484,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Drupalgeddon2 - RCE (CVE-2018-7600) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -33998,6 +35706,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Drupalgeddon3 - Authenticated RCE (Metasploit) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -34165,6 +35883,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "dsquery - Search AD via Built-in Tool - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(dsquery.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -34392,6 +36120,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "DSRM Backdoor (DC Local Admin Persistence) - Elastic KQL",
+            "logic": "event.code:\"13\" AND registry.path:*DsrmAdminLogonBehavior*",
+            "data_source": "edr",
+            "attack": [
+              "T1098",
+              "T1003.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -34885,6 +36624,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Email - Abuse Open Relay (swaks) - Elastic KQL",
+            "logic": "event.category:network AND destination.port:25 AND smtp.command:(MAIL OR RCPT)",
+            "data_source": "ndr",
+            "attack": [
+              "T1534"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -35053,6 +36802,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Email - O365 Enumeration and Spraying - Elastic KQL",
+            "logic": "event.dataset:azure.signinlogs AND azure.signinlogs.properties.status.error_code:*",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -35215,6 +36974,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Email - Password Attack (POP3IMAPSMTP) - Elastic KQL",
+            "logic": "event.category:(authentication OR network) AND destination.port:587 AND event.outcome:failure",
+            "data_source": "ndr",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -35379,6 +37148,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Email - SMTP User Enumeration - Elastic KQL",
+            "logic": "event.category:(authentication OR network) AND destination.port:25 AND event.outcome:failure",
+            "data_source": "ndr",
+            "attack": [
+              "T1087.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -35718,6 +37497,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Enter-PSSession - WinRM Shell (Windows) - Elastic KQL",
+            "logic": "event.code:\"4648\" OR (event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND process.name:wsmprovhost.exe)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1021.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -35934,6 +37723,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Entra App Credential Abuse (Add-MgApplicationPassword) - Elastic KQL",
+            "logic": "event.dataset:azure.auditlogs AND event.action:\"Add service principal credentials\"\n\nevent.action:(*Update*application* AND *Certificates*secrets*)",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1098.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -36130,6 +37929,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Entra ID (Azure AD) Enumeration via Microsoft Graph - Elastic KQL",
+            "logic": "event.dataset:azure.activitylogs AND azure.activitylogs.operation_name:(*list* OR *read*)",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1087.004",
+              "T1069.003",
+              "T1526"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -36295,6 +38106,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "enum4linux - Unauthenticated SMBRPC Enumeration - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(139 OR 445) AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1135",
+              "T1087.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -36494,6 +38316,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "enum4linux-ng - Enhanced SMBRPC Enumeration - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(139 OR 445) AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1201",
+              "T1087.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -36776,6 +38609,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Enumeration - Flag  Keyword Search - Elastic KQL",
+            "logic": "process.name:(grep OR find) AND process.args:(*-r* OR */root*)",
+            "data_source": "edr",
+            "attack": [
+              "T1083"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -36953,6 +38796,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Enumeration - GTFOBins Cross-Reference - Elastic KQL",
+            "logic": "(url.domain:gtfobins.github.io) OR (process.name:curl AND process.command_line:*gtfobins*)",
+            "data_source": "edr",
+            "attack": [
+              "T1518"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -37553,6 +39406,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Enumeration - World-Writable Files and Directories - Elastic KQL",
+            "logic": "process.name:find AND process.command_line:(*-perm* AND *o+w*)",
+            "data_source": "edr",
+            "attack": [
+              "T1083"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -37724,6 +39587,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Evasion - Custom User-Agent Download - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:powershell.exe AND process.command_line:(*-UserAgent* OR *DownloadFile*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1027"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -37920,6 +39793,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Evasion - Decoy Scan (-D) - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -38095,6 +39978,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Evasion - OS Detection  Source Spoofing - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -38265,6 +40158,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Evasion - SYN vs ACK Scans - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -38435,6 +40338,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Evasion - Trusted Source Port (53) - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -38716,6 +40629,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Event Log Readers - Hunt Credentials in Security Logs - Elastic KQL",
+            "logic": "event.code:\"1\" AND ((process.name:wevtutil.exe AND process.command_line:*Security*) OR process.command_line:*Get-WinEvent*Security*)",
+            "data_source": "edr",
+            "attack": [
+              "T1654"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -38881,6 +40804,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Evil-WinRM - Pass the Hash - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM AND process.name:wsmprovhost.exe",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -39080,6 +41013,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Evil-WinRM - Shell via WinRM - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:wsmprovhost.exe AND process.parent.name:svchost.exe",
+            "data_source": "edr",
+            "attack": [
+              "T1021.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -39314,6 +41257,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "EyeWitness - Screenshot Web Applications - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -39522,6 +41475,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "FeroxBuster - Recursive Content Discovery - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -39716,6 +41679,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ffuf - Directory Fuzzing - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -39936,6 +41909,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ffuf - Full Web Fuzzing Workflow - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003",
+              "T1595.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -40114,6 +42098,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ffuf - Page and Extension Fuzzing - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -40292,6 +42286,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ffuf - Parameter Fuzzing (GETPOST) - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -40460,6 +42464,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ffuf - Subdomain Fuzzing - Elastic KQL",
+            "logic": "event.category:network AND dns.response_code:NXDOMAIN AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -40616,6 +42630,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ffuf - Value Fuzzing - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -40795,6 +42819,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ffuf - Vhost Fuzzing - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.domain:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -40972,6 +43006,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "File Transfers - Basics - Elastic KQL",
+            "logic": "event.category:process AND (process.name:(certutil.exe OR bitsadmin.exe OR wget OR curl) OR process.command_line:*DownloadFile*) AND process.command_line:*http*",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -41224,6 +43268,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "File Upload to SSH (overwrite authorizedkeys) - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1098.004",
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -41393,6 +43448,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Firefox - Decrypt Saved Logins - Elastic KQL",
+            "logic": "event.category:file AND file.name:(key4.db OR logins.json) AND NOT process.name:firefox",
+            "data_source": "edr",
+            "attack": [
+              "T1555.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -41564,6 +43629,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Fix a Memory-Corruption Exploit - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1203",
+              "T1027.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -41725,6 +43801,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Fix a Web Application Exploit - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -41889,6 +43976,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ForceChangePassword (Reset a Users Password) - Elastic KQL",
+            "logic": "event.code:\"4724\" AND not winlog.event_data.SubjectUserName:winlog.event_data.TargetUserName",
+            "data_source": "edr",
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -42202,6 +44299,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Forest Trust Abuse (Inter-Realm TGT Forgery) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND NOT winlog.event_data.TargetDomainName:<local_domain>\n\nevent.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND NOT source.domain:<local_domain>",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.001",
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -42378,6 +44486,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "fping - ICMP Host Discovery - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1018"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -42560,6 +44678,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "FTP - Anonymous Enumeration - Elastic KQL",
+            "logic": "process.name:ftp* OR (event.category:network AND destination.port:21)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -42730,6 +44858,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "FTP - Bounce Attack Scan - Elastic KQL",
+            "logic": "event.category:network AND destination.port:21 AND ftp.command:PORT",
+            "data_source": "ndr",
+            "attack": [
+              "T1090"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -42899,6 +45037,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "FTP - Brute Force Login - Elastic KQL",
+            "logic": "event.category:(authentication OR network) AND destination.port:21 AND event.outcome:failure",
+            "data_source": "ndr",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -43114,6 +45262,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "FTP - Enumeration - Elastic KQL",
+            "logic": "process.name:ftp* OR (event.category:network AND destination.port:21)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -43285,6 +45443,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GCP Authentication (gcloud user  service-account  token) - Elastic KQL",
+            "logic": "event.dataset:gcp.audit AND gcp.audit.method_name:*Authenticate*",
+            "data_source": "edr",
+            "attack": [
+              "T1078.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -43445,6 +45613,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GCP Cloud Storage Enumeration  Exfiltration - Elastic KQL",
+            "logic": "event.dataset:gcp.audit AND gcp.audit.method_name:(storage.objects.get OR storage.objects.list)",
+            "data_source": "edr",
+            "attack": [
+              "T1530",
+              "T1552.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -43615,6 +45794,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GCP Compute SA Token Theft (Metadata Server) - Elastic KQL",
+            "logic": "cloud.provider:gcp AND event.action:v1.compute.instances.get AND message:*metadata*",
+            "data_source": "edr",
+            "attack": [
+              "T1552.005",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -43778,6 +45968,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GCP Credential Theft from gcloud Config (disk) - Elastic KQL",
+            "logic": "cloud.provider:gcp AND event.action:(google.iam.admin.v1.GetServiceAccountKey OR storage.objects.get) AND resource.name:*serviceAccountKey*",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001",
+              "T1528"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -43948,6 +46149,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GCP IAM  Resource Enumeration (gcloud) - Elastic KQL",
+            "logic": "event.dataset:gcp.audit AND gcp.audit.method_name:(*.list OR *.get)",
+            "data_source": "edr",
+            "attack": [
+              "T1069.003",
+              "T1087.004",
+              "T1580"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -44116,6 +46329,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Elastic KQL",
+            "logic": "cloud.provider:gcp AND event.action:(*SetIAMPolicy* OR *SetIamPolicy*)",
+            "data_source": "edr",
+            "attack": [
+              "T1548",
+              "T1098.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -44267,6 +46491,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GCP Persistence via Service Account Key Creation - Elastic KQL",
+            "logic": "cloud.provider:gcp AND event.action:google.iam.admin.v1.CreateServiceAccountKey",
+            "data_source": "edr",
+            "attack": [
+              "T1098.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -44443,6 +46677,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GenericAll  GenericWrite on a Group (Add Member) - Elastic KQL",
+            "logic": "event.code:(\"4728\" OR \"4732\" OR \"4756\")",
+            "data_source": "edr",
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -44745,6 +46989,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GetNPUserspy - AS-REP Roasting (Linux) - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -44937,6 +47191,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "getnthashpy - Get NT Hash from PKINIT TGT - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.CertificateThumbprint:* AND winlog.event_data.TicketEncryptionType:\"0x12\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649",
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -45108,6 +47373,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "gettgtpkinitpy - Get TGT via PKINIT Certificate - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -45278,6 +47553,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GetUserSPNspy - Kerberoast Across Forest Trust - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT source.domain:<local_domain>",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -45490,6 +47775,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GitLab - Authenticated RCE (CVE-2021-22205) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -45657,6 +47952,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GitLab - User Enumeration - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/api/v4/users\" OR \"/users/sign_in\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1087"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -45824,6 +48129,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Gobuster - Directory  DNS Enumeration - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -46035,6 +48350,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Golden Ticket Attack (Rubeus  SafetyKatz) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND NOT winlog.event_data.TargetUserName:krbtgt",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -46244,6 +48569,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GPO Misconfiguration Abuse (SharpGPOAbuse) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.ObjectClass:groupPolicyContainer",
+            "data_source": "windows-security",
+            "attack": [
+              "T1484.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -46435,6 +48770,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GPP Passwords (SYSVOL Credentials) - Attack  Detection - Elastic KQL",
+            "logic": "event.code:\"4663\" AND winlog.event_data.ObjectName:(*SYSVOL* AND *Groups.xml)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1552.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -46615,6 +48960,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "gpp-decrypt - Decrypt GPP cpassword - Elastic KQL",
+            "logic": "event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL* AND winlog.event_data.RelativeTargetName:(Groups.xml OR Services.xml OR Scheduledtasks.xml OR DataSources.xml)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1552.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -46799,6 +49154,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - Abusing Mutations (Privilege Escalation) - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND (url.query:*__schema* OR http.request.body.content:*__schema*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1136.001",
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -46963,6 +49329,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - DoS via Nested Queries  Batching - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND http.request.method:POST",
+            "data_source": "proxy",
+            "attack": [
+              "T1499.001",
+              "T1110"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -47126,6 +49503,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - Endpoint Discovery  Engine Fingerprint - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND (url.query:*__schema* OR http.request.body.content:*__schema*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1595",
+              "T1592"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -47294,6 +49682,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - IDOR via Query Arguments - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND (url.query:*__schema* OR http.request.body.content:*__schema*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1213",
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -47463,6 +49862,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - Information Disclosure via Over-Fetching - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND (url.query:*__schema* OR http.request.body.content:*__schema*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1213",
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -47641,6 +50051,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - Introspection (map the schema) - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND (url.query:*__schema* OR http.request.body.content:*__schema*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1592",
+              "T1213"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -47833,6 +50254,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - SQL Injection through Arguments - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND (url.query:*__schema* OR http.request.body.content:*__schema*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -48065,6 +50496,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "GraphQL - XSS via Reflected Arguments - Elastic KQL",
+            "logic": "event.category:web AND url.path:*graphql* AND (url.query:*__schema* OR http.request.body.content:*__schema*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -48236,6 +50677,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Group3r - GPO Misconfiguration Analysis - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:*Group3r* OR (event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL*)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1484.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -48572,6 +51023,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hashcat - Crack AS-REP Hash (Mode 18200) - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -48754,6 +51215,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hashcat - Crack Kerberoast TGS - Elastic KQL",
+            "logic": "process.name:hashcat* AND process.args:\"13100\"",
+            "data_source": "edr",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -48932,6 +51403,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hashcat - Crack NetNTLMv2 Hash - Elastic KQL",
+            "logic": "process.name:hashcat* AND process.args:\"5600\"",
+            "data_source": "edr",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -49115,6 +51596,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hashcat - Crack Windows Hashes - Elastic KQL",
+            "logic": "process.name:hashcat* AND process.args:(\"-m\" AND \"1000\")",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -49297,6 +51788,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hashcat - Dictionary Attack - Elastic KQL",
+            "logic": "process.name:hashcat* AND process.args:\"-a 0\"",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -49447,6 +51948,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hashcat - Generate Mutated Wordlist - Elastic KQL",
+            "logic": "process.name:hashcat*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -49687,6 +52198,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hashcat - Mask Attack - Elastic KQL",
+            "logic": "process.name:hashcat* AND process.args:\"-a 3\"",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -49945,6 +52466,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "hashID - Identify Hash Type - Elastic KQL",
+            "logic": "process.name:hashid*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -50134,6 +52665,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "HiveNightmare - SAM Read (CVE-2021-36934) - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:*HiveNightmare* OR process.command_line:*config\\\\SAM*)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -50393,6 +52934,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "host - DNS ForwardReverse Lookup and Brute Force - Elastic KQL",
+            "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1018",
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -50564,6 +53116,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hosting - Catch Files via Nginx PUT - Elastic KQL",
+            "logic": "process.name:curl AND process.args:\"-T\" OR (http.request.method:PUT AND url.path:*Upload*)",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -50781,6 +53343,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hosting - Quick HTTP Servers - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(8000 OR 8080) AND network.direction:outbound",
+            "data_source": "ndr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -50969,6 +53541,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "HTA - mshtaexe Execution - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:mshta.exe AND process.command_line:(*http* OR *javascript* OR *vbscript*)",
+            "data_source": "edr",
+            "attack": [
+              "T1566.002",
+              "T1218.005",
+              "T1059.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -51222,6 +53806,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "HTTP Verb Tampering - Bypass Basic Authentication - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:(PUT OR DELETE OR OPTIONS OR TRACE OR PATCH OR HEAD)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -51390,6 +53984,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "HTTP Verb Tampering - Bypass Security Filter - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:(PUT OR DELETE OR OPTIONS OR TRACE OR PATCH OR HEAD)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -51543,6 +54148,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "HTTP Verb Tampering - Enumerate Allowed Methods - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:(PUT OR DELETE OR OPTIONS OR TRACE OR PATCH OR HEAD)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -51830,6 +54445,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hydra - Brute Force Network Service - Elastic KQL",
+            "logic": "event.category:authentication AND event.outcome:failure AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -51988,6 +54613,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hydra - Credential Stuffing - Elastic KQL",
+            "logic": "event.category:authentication AND event.outcome:failure AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1110.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -52170,6 +54805,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hydra - HTTP Basic Auth Brute Force - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -52338,6 +54983,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hydra - Login Form Brute Force (http-post-form) - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -52523,6 +55178,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Hyper-V Administrators - Service Binary Hijack - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:takeown.exe AND process.args:*Program?Files*",
+            "data_source": "edr",
+            "attack": [
+              "T1222.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -52794,6 +55459,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "IDOR - Chaining for Privilege Escalation - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/[0-9]* AND http.response.status_code:(200 OR 403)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -52958,6 +55634,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "IDOR - Extract Object Links with cURL - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/[0-9]* AND http.response.status_code:(200 OR 403)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1213"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -53126,6 +55813,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "IDOR - Manipulate Object Reference - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/[0-9]* AND http.response.status_code:(200 OR 403)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -53406,6 +56103,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "IDOR in Insecure APIs - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/[0-9]* AND http.response.status_code:(200 OR 403)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -53677,6 +56384,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "IIS - Tilde (83 Short Name) Enumeration - Elastic KQL",
+            "logic": "event.category:web AND url.path:*~1* AND http.request.method:(GET OR OPTIONS)",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -53866,6 +56583,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "IMAP  POP3 - Enumeration - Elastic KQL",
+            "logic": "process.name:openssl* OR (event.category:network AND destination.port:143)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -54055,6 +56782,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - DCSync with Kerberos Ticket - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:*1131f6aa* AND NOT user.name:*$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -54222,6 +56959,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - Dump Hashes Offline - Elastic KQL",
+            "logic": "process.name:*secretsdump* AND process.args:(\"-sam\" OR \"-system\" OR \"LOCAL\")",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -54436,6 +57183,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - Extract Hashes from NTDSdit - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:*1131f6aa* AND NOT user.name:*$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -54619,6 +57376,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - NTLM Relay (ntlmrelayx) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+            "data_source": "windows-security",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -54791,6 +57558,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - NTLM Relay to ADCS (ESC8) - Elastic KQL",
+            "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.Attributes:*DomainController*",
+            "data_source": "edr",
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -55009,6 +57786,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - Pass the Hash Execution - Elastic KQL",
+            "logic": "event.code:\"7045\" AND winlog.event_data.ServiceName:/[A-Za-z0-9]{8}/",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -55181,6 +57968,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - PsExec Remote Code Execution - Elastic KQL",
+            "logic": "event.code:\"7045\" AND winlog.event_data.ServiceName:(PSEXESVC OR /[A-Za-z0-9]{8}/)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1021.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -55426,6 +58223,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket - Remote Command Execution (wmiexecatexecsmbexec) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:WmiPrvSE.exe AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1021.002",
+              "T1047"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -55602,6 +58410,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket GetUserSPNs - List SPN Accounts - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:*servicePrincipalName*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -55798,6 +58616,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Impacket GetUserSPNs - Request TGS Hashes - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:(krbtgt OR *$)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -56061,6 +58889,19 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "In-Memory Execution with Loaderexe (ETWAMSI unhook) - Elastic KQL",
+            "logic": "event.code:\"7\" AND dll.name:(clr.dll OR mscoree.dll) AND NOT process.name:(powershell.exe OR dotnet.exe OR msbuild.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1620",
+              "T1562.001",
+              "T1562.006",
+              "T1685"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -56397,6 +59238,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Interacting with Users - Clipboard Logger - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-Clipboard* OR *ClipboardLogger*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1115"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -56551,6 +59402,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Interacting with Users - Monitor Process Command Lines - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Win32_Process* AND *while*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1057"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -56745,6 +59606,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Interacting with Users - SCF Forced Auth - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:scf",
+            "data_source": "edr",
+            "attack": [
+              "T1187"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -56927,6 +59798,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Inveigh (C) - Run Executable - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:*Inveigh*",
+            "data_source": "edr",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -57097,6 +59978,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Inveigh (PowerShell) - LLMNRNBNS Poisoning - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*Inveigh*",
+            "data_source": "powershell",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -57335,6 +60226,19 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "InviShell - AMSI  PowerShell Logging Bypass (CORPROFILER) - Elastic KQL",
+            "logic": "event.code:\"7\" AND process.name:powershell.exe AND dll.name:InShellProf.dll\n\nevent.code:\"13\" AND registry.path:*\\\\CLSID\\\\*\\\\InprocServer32*",
+            "data_source": "powershell",
+            "attack": [
+              "T1562.001",
+              "T1685",
+              "T1574.012",
+              "T1112"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -57564,6 +60468,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Invoke-DOSfuscation - Windows Command Obfuscation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\;* OR *\\|* OR *\\`* OR *\\$\\(* OR *&&*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1027",
+              "T1059.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -57766,6 +60681,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Invoke-TheHash - PtH Execution (PowerShell) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM AND winlog.event_data.LogonProcessName:NtLmSsp",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -58025,6 +60950,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "IPMI - Enumeration  Hash Dump - Elastic KQL",
+            "logic": "event.category:network AND destination.port:623",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -58203,6 +61138,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "iptables - Packet Counter for Scan Verification - Elastic KQL",
+            "logic": "process.name:iptables AND process.args:(\"-L\" AND \"-v\")",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -58402,6 +61347,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "JavaScript Deobfuscation - Recover Endpoints  Secrets - Elastic KQL",
+            "logic": "/* offline JS analysis; only the normal script GET is logged server-side */",
+            "data_source": "edr",
+            "attack": [
+              "T1592.002",
+              "T1140"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -58681,6 +61637,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Jenkins - Groovy Reverse Shell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -58890,6 +61857,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Jenkins - Script Console Command Execution - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -59105,6 +62083,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Jenkins Groovy Script Console RCE - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:java.exe AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1059",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -59310,6 +62299,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "John the Ripper - Crack Hashes - Elastic KQL",
+            "logic": "process.name:john*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -59465,6 +62464,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Joomla - Admin Brute Force - Elastic KQL",
+            "logic": "event.category:web AND url.path:\"/administrator/index.php\" AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -59625,6 +62634,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Joomla - Authenticated Directory Traversal (CVE-2019-10945) - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*../* OR *%2e%2e* OR *com_* OR *configuration.php*) OR url.path:(*../* OR *%2e%2e* OR *com_* OR *configuration.php*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -59788,6 +62807,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Joomla - Detect and Version Enumeration - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/administrator/\" OR \"/language/en-GB/en-GB.xml\" OR \"/README.txt\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -59965,6 +62994,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Joomla - droopescan  joomscan Enumeration - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/administrator/\" OR \"/components/\" OR \"/modules/\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -60160,6 +63199,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Joomla - Template Editor Webshell (RCE) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR sh OR bash)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -60365,6 +63415,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "JtR - Crack Password-Protected Files (2john) - Elastic KQL",
+            "logic": "process.name:ssh2john*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -60530,6 +63590,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "high"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kerberoasting - Attack Detection  Defense - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:krbtgt",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -60747,6 +63817,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kerberoasting (Rubeus rc4opsec) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:(krbtgt OR *$)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -60995,6 +64075,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kerberos Constrained Delegation Abuse (S4U) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.TransmittedServices:* AND NOT winlog.event_data.TransmittedServices:\"-\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003",
+              "T1134.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -61259,6 +64350,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kerberos Golden Ticket - Forged TGT Attack - Elastic KQL",
+            "logic": "event.code:\"4769\" AND NOT winlog.event_data.TargetUserName:krbtgt",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -61455,6 +64556,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kerbrute - Enumerate AD Usernames - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.Status:\"0x6\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -61627,6 +64738,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kerbrute - Password Spray via Kerberos - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.Status:\"0x18\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -61796,6 +64917,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kerbrute - Username Enumeration via Kerberos - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.Status:\"0x6\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -61998,6 +65129,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kernel Exploits - Enumerate Missing Patches - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:systeminfo.exe OR (process.name:wmic.exe AND process.args:qfe) OR process.name:(Watson.exe OR Seatbelt.exe))",
+            "data_source": "edr",
+            "attack": [
+              "T1082"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -62245,6 +65386,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kernel Exploits - Identify Compile Run - Elastic KQL",
+            "logic": "process.name:(gcc OR cc OR make) OR (user.effective.id:0 AND user.id:1000)",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -62668,6 +65819,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Elastic KQL",
+            "logic": "kubernetes.audit.verb:create AND kubernetes.audit.objectRef.resource:pods AND kubernetes.audit.requestObject.spec.*.privileged:true",
+            "data_source": "edr",
+            "attack": [
+              "T1610",
+              "T1611"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -62857,6 +66019,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kubernetes - Enumerate API and Kubelet - Elastic KQL",
+            "logic": "kubernetes.audit.user.username:\"system:anonymous\" OR (destination.port:(10250 OR 6443) AND network.direction:inbound)",
+            "data_source": "ndr",
+            "attack": [
+              "T1613"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -63054,6 +66226,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Kubernetes - Pod RCE and Token Theft - Elastic KQL",
+            "logic": "kubernetes.audit.objectRef.subresource:exec OR kubernetes.audit.objectRef.resource:\"pods/exec\"",
+            "data_source": "edr",
+            "attack": [
+              "T1528",
+              "T1610"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -63226,6 +66409,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LAPSToolkit - Read LAPS Passwords - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*ms-Mcs-AdmPwd* OR *ms-LAPS-Password*)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -63462,6 +66655,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Lateral Movement via PowerShell Remoting (WinRM) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:wsmprovhost.exe",
+            "data_source": "edr",
+            "attack": [
+              "T1021.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -63680,6 +66883,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Laudanum - Prebuilt Web Shells - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR sh OR bash)",
+            "data_source": "powershell",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -63899,6 +67112,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LaZagne - Retrieve Stored Credentials - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:*LaZagne* OR process.pe.original_file_name:*LaZagne*)",
+            "data_source": "edr",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -64059,6 +67282,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LDAP Injection - Authentication Bypass - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(**)(* OR **))%00* OR **)(uid=** OR *%2a%29*) OR url.path:(**)(* OR **))%00* OR **)(uid=** OR *%2a%29*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -64245,6 +67478,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ldapdomaindump - AD Dump via LDAP (HTMLJSONgreppable) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002",
+              "T1069.002",
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -64431,6 +67676,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ldapsearch - Enumerate Users via LDAP - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -64616,6 +67871,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ldapsearch - Get Password Policy via LDAP - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1201"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -64822,6 +68087,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Legacy OS - EternalBlue  MS08-067 - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(lsass.exe OR smss.exe OR services.exe) AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -65036,6 +68311,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI - Basic Path Traversal - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -65206,6 +68492,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI - Fuzz Exposed Parameters (ffuf) - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -65396,6 +68692,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI - Fuzz Payloads and Webroot (ffuf) - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -65675,6 +68981,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI - Null Byte  Extension Bypass - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -65842,6 +69159,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI - PHP Filter Source Disclosure - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -66072,6 +69400,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI - Traversal Filter Bypass - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -66278,6 +69617,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - data Wrapper - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -66485,6 +69835,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - expect Wrapper - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -66704,6 +70065,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - Malicious Image Upload - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -66911,6 +70283,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - phar Wrapper Upload - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -67119,6 +70502,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - PHP Session Poisoning - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -67326,6 +70720,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - phpinput - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -67538,6 +70943,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - Server Log Poisoning - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -67765,6 +71181,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LFI to RCE - zip Wrapper Upload - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*..\\/* OR *php\\:\\/\\/* OR */etc/passwd* OR *data\\:\\/\\/* OR *..%2f*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -68000,6 +71427,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ligolo-ng - TUN-Interface Pivot (no proxychains) - Elastic KQL",
+            "logic": "process.command_line:(*ligolo* OR (*-connect* AND *11601*)) OR (event.code:\"3\" AND destination.port:11601)",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -68180,6 +71617,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Crack Local Passwords (unshadow) - Elastic KQL",
+            "logic": "event.category:file AND file.path:\"/etc/shadow\" AND NOT process.name:(passwd OR sshd OR useradd)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.008"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -68367,6 +71814,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Detect Domain Join  SSSD Cached Creds - Elastic KQL",
+            "logic": "process.name:(realm OR klist OR adcli) OR file.path:*/krb5.keytab",
+            "data_source": "edr",
+            "attack": [
+              "T1087.002",
+              "T1003.008"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -68549,6 +72007,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Download (wgetcurldev-tcp) - Elastic KQL",
+            "logic": "process.name:(wget OR curl) AND process.command_line:*http*",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -68714,6 +72182,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Dump In-Memory Credentials (mimipenguin) - Elastic KQL",
+            "logic": "event.category:file AND file.path:/proc/*/mem AND NOT process.name:(gdb OR systemd)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.008"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -68904,6 +72382,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Extract Kerberos Credentials from AD-Integrated Host (linikatz) - Elastic KQL",
+            "logic": "event.category:file AND file.path:(*/krb5.keytab OR */sss/db/* OR /proc/*/mem)",
+            "data_source": "edr",
+            "attack": [
+              "T1003",
+              "T1558"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -69072,6 +72561,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Hunt Credentials in Files - Elastic KQL",
+            "logic": "process.name:(find OR grep) AND process.command_line:(*password* OR *.cnf*)",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -69282,6 +72781,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Pass the Ticket (ccache  keytab) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -69459,6 +72968,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - SCP Transfer - Elastic KQL",
+            "logic": "process.name:scp OR (event.category:network AND destination.port:22)",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -69626,6 +73145,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux - Upload to Attacker (HTTPS) - Elastic KQL",
+            "logic": "process.name:curl AND process.args:(\"-F\" OR \"-T\" OR \"--data\")",
+            "data_source": "edr",
+            "attack": [
+              "T1048.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -69843,6 +73372,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Linux PrivEsc - etcpasswd World-Writable - Elastic KQL",
+            "logic": "event.category:file AND file.path:(/etc/passwd OR /etc/shadow) AND event.action:modification",
+            "data_source": "edr",
+            "attack": [
+              "T1548",
+              "T1136.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -70052,6 +73592,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Living off the Land - LOLBin Transfers - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:certutil.exe AND process.args:*urlcache*) OR (process.name:bitsadmin.exe AND process.args:*transfer*)",
+            "data_source": "edr",
+            "attack": [
+              "T1105",
+              "T1027"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -70238,6 +73789,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "LLMNRNBT-NS Poisoning (Responder) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:\"NTLM\" AND source.ip:\"<attacker_ip>\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -70409,6 +73970,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "logmanexe - ETW Session  Provider Enumeration - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:logman.exe AND process.args:\"-ets\"",
+            "data_source": "edr",
+            "attack": [
+              "T1059",
+              "T1055"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -70594,6 +74166,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Logrotate - logrotten Exploit - Elastic KQL",
+            "logic": "event.category:file AND file.path:/etc/bash_completion.d/* AND event.action:creation AND NOT process.name:(dpkg OR apt)",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -70771,6 +74353,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "lookupsidpy - Enumerate Domain SIDs and Users - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(135 OR 445)",
+            "data_source": "ndr",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -71264,6 +74856,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Medusa - Multi-Service Brute Force Chain - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001",
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -71430,6 +75033,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Medusa - Service Brute Force - Elastic KQL",
+            "logic": "event.category:authentication AND event.outcome:failure AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -71591,6 +75204,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Medusa - Web Form Brute Force - Elastic KQL",
+            "logic": "event.category:web AND url.path:(*login* OR *auth* OR *signin*) AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -71874,6 +75497,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Analyze Payload with VirusTotal - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1518.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -72065,6 +75698,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - AutoRoute and SOCKS Proxy - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16)",
+            "data_source": "ndr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -72246,6 +75889,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Basic Workflow - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -72410,6 +76063,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Credential Store - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -72686,6 +76349,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - dbnmap - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -72964,6 +76637,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Hosts and Services - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -73159,6 +76842,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Import Custom Module - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -73318,6 +77011,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Import Scan Results - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -73492,6 +77195,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Initialize Database - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -73685,6 +77398,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Linux Web App Exploits - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -73891,6 +77614,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Load and Configure Module - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -74054,6 +77787,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Load Plugin - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -74246,6 +77989,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Local Exploit Suggester - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(systeminfo.exe OR wmic.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -74422,6 +78175,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Manage Sessions - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -74634,6 +78397,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - MultiHandler Listener - Elastic KQL",
+            "logic": "event.code:\"3\" AND destination.port:(4444 OR 443 OR 8080) AND NOT process.name:(chrome.exe OR firefox.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -74917,6 +78690,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - PsExec Delivery - Elastic KQL",
+            "logic": "event.code:\"7045\" AND winlog.event_data.ServiceName:/[A-Za-z0-9]{8,16}/",
+            "data_source": "windows-security",
+            "attack": [
+              "T1021.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -75115,6 +78898,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Run Exploit as Background Job - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -75373,6 +79166,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Search Modules - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -75543,6 +79346,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Select Payload - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -75723,6 +79536,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Set Options and Run - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -75878,6 +79701,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Show and Set Target - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -76048,6 +79881,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - SMB Login Scanner - Elastic KQL",
+            "logic": "event.code:\"4625\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+            "data_source": "windows-security",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -76263,6 +80106,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Windows SMB Exploits - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(services.exe OR lsass.exe OR smss.exe) AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -76471,6 +80324,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit - Workspaces - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -76633,6 +80496,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Metasploit Resource Scripts (rc files) - Elastic KQL",
+            "logic": "/* attacker-side msfconsole command; detect the resulting exploit/payload/C2 instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1059.004"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -76954,6 +80827,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - Core Enumeration - Elastic KQL",
+            "logic": "event.code:\"3\" AND destination.port:(4444 OR 443 OR 8080) AND NOT process.name:(chrome.exe OR firefox.exe OR msedge.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -77113,6 +80996,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - Drop to System Shell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(cmd.exe OR sh OR bash) AND process.parent.name:(rundll32.exe OR regsvr32.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -77302,6 +81195,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - Dump Local Hashes - Elastic KQL",
+            "logic": "event.code:\"4656\" AND winlog.event_data.ObjectName:*SAM* AND NOT process.name:(lsass.exe OR services.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -77522,6 +81425,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - getsystem - Elastic KQL",
+            "logic": "event.code:\"17\" AND file.name:\\\\pipe\\\\* AND process.name:*",
+            "data_source": "edr",
+            "attack": [
+              "T1134"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -77730,6 +81643,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - Kiwi (Mimikatz) - Elastic KQL",
+            "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND winlog.event_data.GrantedAccess:(0x1010 OR 0x1410 OR 0x1fffff)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -77917,6 +81840,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - Migrate Process - Elastic KQL",
+            "logic": "event.code:\"8\" AND process.name:* AND NOT process.name:(msbuild.exe OR devenv.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1055"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -78092,6 +82025,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - Port Forwarding (portfwd) - Elastic KQL",
+            "logic": "event.category:network AND destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16) AND network.direction:internal",
+            "data_source": "ndr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -78283,6 +82226,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Meterpreter - Steal Token - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"9\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1134.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -78486,6 +82439,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz - DCSync (Windows) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND NOT user.name:*$\n\nevent.code:\"1\" AND process.command_line:*dcsync*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -78685,6 +82648,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz - Decrypt Chrome Credentials (DPAPI) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:*dpapi\\:\\:chrome*",
+            "data_source": "edr",
+            "attack": [
+              "T1555.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -78942,6 +82915,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz - Dump Cached Credentials (sekurlsa) - Elastic KQL",
+            "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND winlog.event_data.GrantedAccess:(\"0x1010\" OR \"0x1038\" OR \"0x1FFFFF\")\n\nevent.code:\"4656\" AND winlog.event_data.ObjectName:*lsass.exe",
+            "data_source": "edr",
+            "attack": [
+              "T1003.001",
+              "T1558"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -79142,6 +83126,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz - Dump Credential Manager - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*sekurlsa\\:\\:credman* OR *vaultcmd*)",
+            "data_source": "edr",
+            "attack": [
+              "T1555.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -79364,6 +83358,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz - Forge Golden Ticket - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:krbtgt\n\nevent.code:\"4624\" AND user.name:Administrator AND NOT source.ip:<dc_ip>",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -79595,6 +83599,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz - Pass the Hash - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"9\" AND winlog.event_data.LogonProcessName:seclogo",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -79813,6 +83827,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz - Pass the Ticket  OverPass the Hash - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -80073,6 +84097,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz Certificate Theft (cryptocapi  cryptocng) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*crypto\\:\\:certificates* OR *crypto\\:\\:capi* OR *crypto\\:\\:cng*)\n\nevent.code:\"10\" AND winlog.event_data.TargetImage:(*lsass.exe OR *keyiso*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1649",
+              "T1552.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -80339,6 +84374,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Mimikatz LSA Dump (SAM  LSA Secrets) - Elastic KQL",
+            "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND winlog.event_data.GrantedAccess:(\"0x1010\" OR \"0x1FFFFF\")\n\nevent.code:\"1\" AND process.command_line:(*lsadump* OR *sekurlsa*)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002",
+              "T1003.004",
+              "T1134.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -80525,6 +84572,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Misc - certutil File Transfer  Encoding - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:certutil.exe AND process.command_line:(*urlcache* OR *http*)",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -80685,6 +84742,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Misc - Hijack Shared tmux Session - Elastic KQL",
+            "logic": "process.name:tmux AND process.args:-S",
+            "data_source": "edr",
+            "attack": [
+              "T1563"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -80851,6 +84918,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Misc - Mount Virtual Disk  Dump Hashes - Elastic KQL",
+            "logic": "process.name:(guestmount OR qemu-nbd) OR file.extension:(vmdk OR vhdx)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -81042,6 +85119,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Misc - NFS norootsquash SUID Abuse - Elastic KQL",
+            "logic": "process.name:mount AND process.args:*nfs* OR (event.category:process AND process.executable:/mnt/* AND user.effective.id:0)",
+            "data_source": "edr",
+            "attack": [
+              "T1548.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -81205,6 +85292,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Misc - Passive Traffic Capture - Elastic KQL",
+            "logic": "process.name:(tcpdump OR tshark OR dumpcap) AND NOT user.name:root",
+            "data_source": "edr",
+            "attack": [
+              "T1040"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -81375,6 +85472,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Misc - Scheduled Task Enumeration - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:schtasks.exe AND process.args:\"/query\"",
+            "data_source": "edr",
+            "attack": [
+              "T1053.005"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -81578,6 +85685,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MS10-092 - Task Scheduler EoP (Metasploit) - Elastic KQL",
+            "logic": "event.code:\"4698\" AND winlog.event_data.SubjectUserName:*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -81759,6 +85876,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MS16-032 - Secondary Logon EoP - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*Invoke-MS16-032*",
+            "data_source": "powershell",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -81986,6 +86113,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSFVenom - ASPX Web Payload - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:\"aspx\"",
+            "data_source": "edr",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -82197,6 +86334,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSFVenom - Backdoored Executable - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:\"exe\"",
+            "data_source": "edr",
+            "attack": [
+              "T1036"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -82440,6 +86587,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSFVenom - Craft Payloads - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:\"bin\"",
+            "data_source": "edr",
+            "attack": [
+              "T1587.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -82647,6 +86804,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSFVenom - Encoded EXE Payload - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:\"exe\"",
+            "data_source": "edr",
+            "attack": [
+              "T1027"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -82849,6 +87016,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Abuse Linked Servers - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:sqlservr.exe AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -83058,6 +87235,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Capture Service Hash (xpdirtree) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+            "data_source": "windows-security",
+            "attack": [
+              "T1187"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -83251,6 +87438,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Command Execution (xpcmdshell) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:sqlservr.exe AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -83452,6 +87649,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Connect and Enable xpcmdshell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:sqlservr.exe AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -83660,6 +87867,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Connect to Server - Elastic KQL",
+            "logic": "event.category:network AND destination.port:1433",
+            "data_source": "ndr",
+            "attack": [
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -83823,6 +88040,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Discover Instance  Service Account - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(sc.exe OR wmic.exe) AND process.command_line:*SQL*",
+            "data_source": "edr",
+            "attack": [
+              "T1007"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -84044,6 +88271,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Enumeration - Elastic KQL",
+            "logic": "process.name:mssqlclient* OR (event.category:network AND destination.port:1433)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -84215,6 +88452,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL - Impersonate Another Login - Elastic KQL",
+            "logic": "event.dataset:mssql.audit AND mssql.statement:(*EXECUTE?AS* OR *IMPERSONATE*)",
+            "data_source": "edr",
+            "attack": [
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -84439,6 +88686,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MSSQL Linked Server Chain Abuse (PowerUpSQL) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.executable:*sqlservr.exe AND (process.name:cmd.exe OR process.name:powershell.exe)\n\nevent.code:\"4688\" AND winlog.event_data.ParentProcessName:*sqlservr.exe",
+            "data_source": "powershell",
+            "attack": [
+              "T1021.002",
+              "T1210"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -84649,6 +88907,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "mssqlclientpy - Connect to MSSQL - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:sqlservr.exe AND process.name:(cmd.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1505.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -84879,6 +89147,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MySQL - Connect  Attack (LOADFILE  INTO OUTFILE) - Elastic KQL",
+            "logic": "event.category:network AND destination.port:3306",
+            "data_source": "ndr",
+            "attack": [
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -85063,6 +89341,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "MySQL - Enumeration - Elastic KQL",
+            "logic": "process.name:mysql* OR (event.category:network AND destination.port:3306)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -85258,6 +89546,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nessus - Install  Start - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -85472,6 +89770,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "net Commands - Windows Domain Enumeration (LOTL) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(net.exe OR net1.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1087.002",
+              "T1069.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -85642,6 +89951,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "net use - Windows Null Session IPC - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -85826,6 +90145,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NetBIOS Discovery (nbtscan) - Elastic KQL",
+            "logic": "process.name:nbtscan* OR (event.category:network AND destination.port:137)",
+            "data_source": "edr",
+            "attack": [
+              "T1046",
+              "T1018"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -86000,6 +90330,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Netcat - Banner Grab - Elastic KQL",
+            "logic": "process.name:(nc OR ncat) AND process.args:*-v*",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -86194,6 +90534,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Netcat - Listener  Connect - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.command_line:(*/dev/tcp/* OR *-e?/bin/* OR *nc?-* ) OR process.name:(nc OR ncat))",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -86370,6 +90720,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Netcat - Start a Listener - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.command_line:(*/dev/tcp/* OR *-e?/bin/* OR *nc?-* ) OR process.name:(nc OR ncat))",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -86561,6 +90921,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Netcat - TCPUDP Port Sweep (-z) - Elastic KQL",
+            "logic": "process.name:(nc OR ncat) AND process.args:\"-z\"",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -86750,6 +91120,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Netcat  Ncat - File Transfer - Elastic KQL",
+            "logic": "process.name:(nc OR ncat) AND process.args:(*-l* OR *-p*)",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -86912,6 +91292,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "netdom - Enumerate Domain Trusts - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(netdom.exe OR nltest.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -87129,6 +91519,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NetExec - Brute Force and Enumerate - Elastic KQL",
+            "logic": "event.code:(\"4625\" OR \"4771\") AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -87326,6 +91726,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NetExec - Pass the Hash - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM AND winlog.event_data.LogonProcessName:NtLmSsp",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -87478,6 +91888,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NetExec - Password Spraying - Elastic KQL",
+            "logic": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+            "data_source": "edr",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -87635,6 +92055,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NetExec - Read gMSA Password - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:*msDS-ManagedPassword*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -87834,6 +92264,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NetExec - Remote SAM and LSA Dump - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -88041,6 +92481,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Netfilter - Kernel LPE CVEs - Elastic KQL",
+            "logic": "process.name:(gcc OR make) AND process.args:*netfilter* OR (user.effective.id:0 AND user.id:1000)",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -88211,6 +92661,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Network Recon (CRTP Foothold) - Elastic KQL",
+            "logic": "event.code:\"5156\" AND destination.port:(53 OR 88 OR 135 OR 139 OR 389 OR 445 OR 636 OR 3268)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -88395,6 +92855,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NFS - Enumeration  Mounting - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(111 OR 2049)",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -88570,6 +93040,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nikto - Web Server Fingerprinting - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*Nikto* OR http.response.status_code:404) AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002",
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -88813,6 +93294,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Deploy and Run Custom NSE Script - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046",
+              "T1595.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -89006,6 +93498,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Full Port Version Scan - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -89201,6 +93703,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Host Discovery Sweep (-sn) - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1018"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -89388,6 +93900,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Performance Tuning - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -89589,6 +94111,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Save Results (All Formats) - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -89754,6 +94286,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "nmap - Scan Host List from Discovery - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -89977,6 +94519,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Service Scanning - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -90153,6 +94705,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Single-Host Discovery with ICMP - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1018"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -90327,6 +94889,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Syntax and Basic Scan - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -90510,6 +95082,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - TCP Connect Scan  Port States - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -90698,6 +95280,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Top Ports  Port Specification - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -90884,6 +95476,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - UDP Scan - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -91056,6 +95658,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap - Version Detection on a Port - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -91244,6 +95856,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap NSE Vulnerability Scanning - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002",
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -91432,6 +96055,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Nmap Scripting Engine (NSE) - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -91607,6 +96240,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NoPac - Exploit CVE-2021-4227842287 (DA Shell) - Elastic KQL",
+            "logic": "event.code:\"4741\"\n\nevent.code:\"4742\" AND winlog.event_data.SamAccountName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1558"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -91785,6 +96428,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "NoPac Scanner - CVE-2021-4227842287 Check - Elastic KQL",
+            "logic": "event.code:(\"4741\" OR \"4742\" OR \"4781\")",
+            "data_source": "edr",
+            "attack": [
+              "T1558"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -92099,6 +96752,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Object ACL Abuse in Active Directory - BloodHound  Detection - Elastic KQL",
+            "logic": "event.code:(\"4738\" OR \"4742\" OR \"4724\") AND NOT winlog.event_data.SubjectUserName:*$",
+            "data_source": "edr",
+            "attack": [
+              "T1222.001",
+              "T1078.002",
+              "T1484.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -92334,6 +96999,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Office - Malicious VBA Macro - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(WINWORD.EXE OR EXCEL.EXE OR POWERPNT.EXE) AND process.name:(cmd.exe OR powershell.exe OR mshta.exe OR wscript.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1566.001",
+              "T1204.002",
+              "T1059.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -92540,6 +97217,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Offline LSASS Minidump - Mimikatz (sekurlsaminidump) - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:dmp\n\nevent.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND winlog.event_data.GrantedAccess:(0x1010 OR 0x1410)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -92740,6 +97427,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "onesixtyone - SNMP Community String Brute Force - Elastic KQL",
+            "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+            "data_source": "ndr",
+            "attack": [
+              "T1110.003",
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -92886,6 +97584,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "OpenSSL - Brute Force Encrypted Archive - Elastic KQL",
+            "logic": "process.name:openssl*",
+            "data_source": "edr",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -93034,6 +97742,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "OpenVAS - Export Report to XLSX - Elastic KQL",
+            "logic": "/* local report export; no target-side event to match */",
+            "data_source": "edr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -93227,6 +97945,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "OpenVAS (GVM) - Install  Start - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -93449,6 +98177,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Oracle TNS - Enumeration  Exploitation - Elastic KQL",
+            "logic": "process.name:tnscmd* OR (event.category:network AND destination.port:1521)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -93662,6 +98400,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Oracle TNS - File Upload via ODAT UTLFILE - Elastic KQL",
+            "logic": "event.category:network AND destination.port:1521",
+            "data_source": "ndr",
+            "attack": [
+              "T1105",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -94045,6 +98794,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "osTicket - Email Harvesting  Sensitive Data Exposure - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*/include/* OR *ost-config.php* OR *.bak* OR *.sql*) OR url.path:(*/include/* OR *ost-config.php* OR *.bak* OR *.sql*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1078",
+              "T1213"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -94368,6 +99128,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "OU  GPO Enumeration (PowerView) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.ObjectType:(*groupPolicyContainer* OR *organizationalUnit*)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1615",
+              "T1069.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -94587,6 +99358,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Overpass-the-Hash  Pass-the-Key (Rubeus asktgt) - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002",
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -94871,6 +99653,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pass-the-Hash with smbclient - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -95052,6 +99844,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Path Abuse - Hijack a Relative Binary Call - Elastic KQL",
+            "logic": "event.category:process AND process.executable:(/home/*/ls OR /tmp/*/id OR /home/*/cat)",
+            "data_source": "edr",
+            "attack": [
+              "T1574.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -95200,6 +100002,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pcredz - Extract Credentials from Traffic - Elastic KQL",
+            "logic": "event.category:network AND event.action:(arp_poisoning OR llmnr_response) AND network.direction:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1040"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -95450,6 +100262,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PetitPotam  NTLM Relay  ADCS Certificate - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:*$ AND NOT source.ip:<dc_ip>\n\nevent.code:\"18\" AND winlog.event_data.PipeName:(\\\\lsarpc OR \\\\efsrpc)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1557.001",
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -95666,6 +100489,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PHP Web Shell (wwwolf) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR sh OR bash)",
+            "data_source": "powershell",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -95881,6 +100714,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pillaging - Decrypt mRemoteNG Passwords - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.name:confCons.xml AND NOT process.name:mRemoteNG*",
+            "data_source": "edr",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -96081,6 +100924,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pillaging - restic Backup Restore - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:restic.exe AND process.args:restore",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -96265,6 +101118,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pillaging - restic VSS Backup of Locked Hives - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:restic.exe AND process.args:(*backup* AND *use-fs-snapshot*)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -96457,6 +101320,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pillaging - Steal Browser Cookies - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*SharpChromium* OR *cookies*) AND process.command_line:*slack*",
+            "data_source": "edr",
+            "attack": [
+              "T1539"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -96684,6 +101557,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PingCastle - AD Security Posture Assessment - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:*PingCastle*",
+            "data_source": "edr",
+            "attack": [
+              "T1087.002",
+              "T1069.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -96875,6 +101759,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pivot - Host Discovery Ping Sweep - Elastic KQL",
+            "logic": "network.transport:icmp AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1018"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -97104,6 +101998,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pivoting with netsh portproxy  winrs - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*portproxy?add* OR *netsh*portproxy*)",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001",
+              "T1021.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -97285,6 +102190,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PKI ESC1 - Misconfigured Certificate Template (SAN Abuse) - Elastic KQL",
+            "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.Attributes:*SAN*",
+            "data_source": "edr",
+            "attack": [
+              "T1649",
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -97527,6 +102443,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Elastic KQL",
+            "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.Attributes:*DomainController*",
+            "data_source": "edr",
+            "attack": [
+              "T1557.001",
+              "T1649",
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -97756,6 +102684,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PKINITtools - Get TGT from Certificate - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -97960,6 +102898,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Plink - Dynamic Port Forward (Windows) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:plink* AND process.args:(\"-D\" OR \"-R\" OR \"-L\")",
+            "data_source": "edr",
+            "attack": [
+              "T1572"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -98155,6 +103103,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Polkit - PwnKit (CVE-2021-4034) - Elastic KQL",
+            "logic": "process.name:pkexec AND NOT user.name:root",
+            "data_source": "edr",
+            "attack": [
+              "T1068",
+              "T1548"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -98441,6 +103400,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerHuntShares - Enumerate SMB Shares - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*Invoke-HuntSMBShares*",
+            "data_source": "powershell",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -98605,6 +103574,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerShell - Create PSCredential Object - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.scriptblock.text:(*PSCredential* OR *SecureString*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1134"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -98886,6 +103865,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerShell - Test-NetConnection Port Check - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Test-NetConnection* OR *Test-Connection*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -99081,6 +104070,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerShell In-Memory Shellcode Runner - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*amsiInitFailed* OR *AmsiUtils* OR *VirtualAlloc* OR *Reflection.Emit*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1620",
+              "T1059.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -99308,6 +104308,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerUp Local Privilege Escalation - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-AllChecks* OR *Invoke-ServiceAbuse* OR *Get-ModifiableService*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1574.009",
+              "T1574.007",
+              "T1548.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -99505,6 +104517,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerUpSQL - Enumerate MSSQL Instances - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-SQLInstance* OR *PowerUpSQL*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -99701,6 +104723,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Abuse ForceChangePassword ACL - Elastic KQL",
+            "logic": "event.code:\"4724\" AND NOT winlog.event_data.TargetUserName:*$\n\nevent.code:\"4723\"",
+            "data_source": "edr",
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -99918,6 +104950,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Abuse GenericWriteAddMember ACL - Elastic KQL",
+            "logic": "event.code:(\"4728\" OR \"4732\" OR \"4756\")\n\nevent.code:\"4662\" AND winlog.event_data.Properties:*bf9679c0* AND winlog.event_data.AccessMask:\"0x2\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -100153,6 +105195,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Add DCSync Rights via WriteDACL - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:nTSecurityDescriptor\n\nevent.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1222.001",
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -100353,6 +105406,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Enumerate GPO Permissions - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainGPO* OR *Get-GPO* OR *gpcfilesyspath*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1484.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -100519,6 +105582,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Find Accounts with No Password Required - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *PASSWD_NOTREQD* OR *UserAccountControl*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1078.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -100697,6 +105770,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Find AS-REP Roastable Accounts - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *PreauthNotRequired* OR *DoesNotRequirePreAuth*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -100893,6 +105976,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Find Foreign Group Members (Cross-Forest) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainForeignGroupMember* OR *Get-DomainForeignUser*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -101119,6 +106212,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Find Interesting ACLs - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Find-InterestingDomainAcl* OR *Get-ObjectAcl* OR *ResolveGUIDs*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1222.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -101318,6 +106421,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Get Kerberoastable SPNs - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *SPN* OR *serviceprincipalname*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -101493,6 +106606,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Get SPN Ticket (Hashcat) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:krbtgt",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -101692,6 +106815,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Get-DomainGroupMember (Group Membership) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainGroupMember* OR *Get-NetGroupMember*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1069.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -101870,6 +107003,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Get-DomainTrustMapping (Full Trust Map) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainTrust* OR *Get-ForestTrust* OR *Get-DomainTrustMapping*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -102060,6 +107203,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Get-DomainUser (User Enumeration) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *Get-NetUser*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -102246,6 +107399,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Import Module - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Module* OR *PowerView.ps1*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1059.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -102422,6 +107585,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Passwords in AD Descriptions - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *Description* OR *admincount*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -102622,6 +107795,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Targeted Kerberoast via GenericWrite - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\"\n\nevent.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:servicePrincipalName",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -102828,6 +108011,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView - Test-AdminAccess (Local Admin Check) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Test-AdminAccess* OR *Invoke-CheckLocalAdminAccess*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1069.001",
+              "T1135"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -103049,6 +108243,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView ACL Enumeration (Find-InterestingDomainAcl) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Find-InterestingDomainAcl* OR *Get-DomainObjectAcl* OR *ResolveGUIDs*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1222.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -103285,6 +108489,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView Domain Enumeration - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-Domain* OR *Get-DomainController* OR *Get-NetDomain*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1482",
+              "T1069.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -103552,6 +108767,19 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView Interesting File  Share ACL Hunting - Elastic KQL",
+            "logic": "event.code:\"5145\" AND winlog.event_data.RelativeTargetName:(*pass* OR *.config OR *.xml OR *.vbs)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1083",
+              "T1135",
+              "T1039",
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -103799,6 +109027,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView Sites Subnets  AD Topology Enumeration - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainSite* OR *Get-DomainSubnet*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1016",
+              "T1018",
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -103986,6 +109226,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView Trust Enumeration - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainTrust* OR *Get-ForestTrust*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -104195,6 +109445,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView User Hunting (Find-DomainUserLocation) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Find-DomainUserLocation* OR *Invoke-UserHunter*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1033",
+              "T1087.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -104506,6 +109767,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PowerView Users Groups  Computers Enumeration - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *Get-DomainGroup* OR *Get-DomainGroupMember*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1069.002",
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -104896,6 +110168,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Print Operators - SeLoadDriver Capcom Abuse - Elastic KQL",
+            "logic": "event.code:\"6\" AND driver.name:*Capcom* OR (event.code:\"13\" AND registry.path:*CurrentControlSet\\\\Capcom*)",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -105082,6 +110364,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Print Spooler Bug  NTLM Relay (DCSync via PrinterBug) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND user.name:*DC$ AND NOT source.ip:(\"<dc_ip>\" OR \"<dc2_ip>\")",
+            "data_source": "windows-security",
+            "attack": [
+              "T1187",
+              "T1003.006",
+              "T1557.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -105292,6 +110586,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PrintNightmare - Local Admin (CVE-2021-1675) - Elastic KQL",
+            "logic": "event.code:\"7\" AND process.name:spoolsv.exe AND dll.path:*spool\\\\drivers\\\\* AND NOT dll.path:*system32*",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -105508,6 +110812,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PrintNightmare - RCE via Print Spooler (CVE-2021-1675) - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.path:C\\:\\\\Windows\\\\System32\\\\spool\\\\drivers\\\\*\n\nevent.code:\"4688\" AND winlog.event_data.NewProcessName:*spoolsv.exe",
+            "data_source": "windows-security",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -105688,6 +111002,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privilege Escalation - Enumeration Basics - Elastic KQL",
+            "logic": "process.name:(linpeas* OR linpeas.sh) OR process.command_line:*linpeas*",
+            "data_source": "edr",
+            "attack": [
+              "T1082"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -105842,6 +111166,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privilege Escalation - SSH Key Abuse - Elastic KQL",
+            "logic": "event.category:file AND file.path:*/.ssh/id_* AND NOT process.name:(ssh OR sshd OR ssh-agent)",
+            "data_source": "edr",
+            "attack": [
+              "T1552.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -106015,6 +111349,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privilege Escalation - sudo  su - Elastic KQL",
+            "logic": "event.category:process AND process.name:(sudo OR su) AND event.outcome:success",
+            "data_source": "edr",
+            "attack": [
+              "T1548.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -106198,6 +111542,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privilege Escalation - Sudo Writable Script Abuse - Elastic KQL",
+            "logic": "event.category:process AND process.name:sudo AND process.args:(*/home/* OR */tmp/*) AND process.args:*.sh",
+            "data_source": "edr",
+            "attack": [
+              "T1548.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -106356,6 +111710,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privileged Groups - disk and adm Groups - Elastic KQL",
+            "logic": "process.name:debugfs OR (event.category:file AND file.path:/dev/sda* AND NOT user.name:root)",
+            "data_source": "edr",
+            "attack": [
+              "T1006"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -106552,6 +111916,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privileged Groups - Docker Group Escape - Elastic KQL",
+            "logic": "process.name:docker AND process.args:(*-v* AND */:/mnt*) OR process.args:*chroot*",
+            "data_source": "edr",
+            "attack": [
+              "T1611"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -106753,6 +112127,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privileged Groups - Exposed Docker Socket (in-container) - Elastic KQL",
+            "logic": "event.category:file AND file.path:*docker.sock OR (docker.event.action:create AND docker.container.privileged:true)",
+            "data_source": "edr",
+            "attack": [
+              "T1611"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -106934,6 +112318,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Privileged Groups - LXDLXC Container Escape - Elastic KQL",
+            "logic": "process.name:(lxc OR lxd) AND process.args:*security.privileged=true*",
+            "data_source": "edr",
+            "attack": [
+              "T1611"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -107123,6 +112517,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Protected Transfers - Encrypt Files - Elastic KQL",
+            "logic": "process.name:openssl AND process.args:enc OR (event.code:\"4104\" AND powershell.file.script_block_text:*AESEncryption*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1105",
+              "T1027"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -107293,6 +112698,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Proxychains - Route Tools Through Proxy - Elastic KQL",
+            "logic": "process.name:proxychains*",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -107501,6 +112916,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "PRTG - Notification Command Injection (CVE-2018-9276) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1136.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -107693,6 +113119,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "psexecpy - Shell via Kerberos Ticket - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND NOT user.name:*$\n\nevent.code:\"1\" AND process.parent.executable:*services.exe AND (process.name:cmd.exe OR process.name:powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1021.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -107909,6 +113345,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Ptunnel-ng - ICMP Tunneling - Elastic KQL",
+            "logic": "network.transport:icmp AND network.bytes>1000",
+            "data_source": "edr",
+            "attack": [
+              "T1572"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -108058,6 +113504,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Pypykatz - Parse LSASS Dump - Elastic KQL",
+            "logic": "process.name:pypykatz AND process.args:minidump",
+            "data_source": "edr",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -108276,6 +113732,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Python Library Hijacking - Sudo Script Abuse - Elastic KQL",
+            "logic": "event.category:file AND file.path:*/python3*/*.py AND event.action:(change OR creation) AND NOT user.name:root",
+            "data_source": "edr",
+            "attack": [
+              "T1574"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -108456,6 +113922,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "R-Services - Enumeration - Elastic KQL",
+            "logic": "process.name:rlogin* OR (event.category:network AND destination.port:513)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -108639,6 +114115,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "raiseChildpy - Automated ChildParent Escalation - Elastic KQL",
+            "logic": "event.code:\"4769\" AND source.domain:*child* AND NOT winlog.event_data.ServiceName:krbtgt\n\nevent.code:\"1\" AND process.command_line:*raiseChild*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1134.005",
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -108846,6 +114333,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "RDP - Enumeration  Connect - Elastic KQL",
+            "logic": "event.category:network AND destination.port:3389",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -109029,6 +114526,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "RDP - Mount a Local Drive - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.path:*tsclient*",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -109207,6 +114714,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "RDP - Password Spraying - Elastic KQL",
+            "logic": "event.code:\"4625\" AND winlog.event_data.LogonType:\"10\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -109380,6 +114897,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "RDP - Session Hijacking (tscon) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:tscon.exe",
+            "data_source": "edr",
+            "attack": [
+              "T1563.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -109569,6 +115096,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Recon Automation - FinalRecon - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:(Mozilla* AND *Chrome*)",
+            "data_source": "ndr",
+            "attack": [
+              "T1595"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -109840,6 +115377,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Recon Your Execution Environment (before running tools) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-MpComputerStatus* OR *Get-AppLockerPolicy* OR *LanguageMode*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1082",
+              "T1518.001",
+              "T1033"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -112458,6 +118007,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Register-PSSessionConfiguration - Fix Kerberos Double Hop - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:Kerberos\n\nevent.provider:\"Microsoft-Windows-WinRM\" AND event.code:\"91\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1021.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -112664,6 +118223,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Resource-Based Constrained Delegation (RBCD Linux) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-AllowedToActOnBehalfOfOtherIdentity\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1134.001",
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -112877,6 +118447,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Resource-Based Constrained Delegation (RBCD) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-AllowedToActOnBehalfOfOtherIdentity\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -113065,6 +118645,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Responder - Active Poisoning - Elastic KQL",
+            "logic": "event.category:network AND network.protocol:(llmnr OR nbns) AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -113247,6 +118837,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Responder - Passive Analysis Mode - Elastic KQL",
+            "logic": "event.category:network AND network.protocol:(llmnr OR nbns)",
+            "data_source": "ndr",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -113425,6 +119025,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Responder - Poison and Capture NetNTLM Hashes - Elastic KQL",
+            "logic": "event.category:network AND network.protocol:(llmnr OR nbns) AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -113603,6 +119213,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "REST API Enumeration  Abuse (curl) - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/api/* AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.003",
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -113784,6 +119405,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Restricted Shell - Escape Techniques - Elastic KQL",
+            "logic": "process.parent.name:rbash AND process.name:(bash OR sh)",
+            "data_source": "edr",
+            "attack": [
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -114004,6 +119635,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Reverse Shell - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.command_line:(*/dev/tcp/* OR *-e?/bin/* OR *nc?-* ) OR process.name:(nc OR ncat))",
+            "data_source": "edr",
+            "attack": [
+              "T1059.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -114310,6 +119951,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Reverse Shell Payloads - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.command_line:(*/dev/tcp/* OR *-e?/bin/* OR *nc?-* ) OR process.name:(nc OR ncat))",
+            "data_source": "edr",
+            "attack": [
+              "T1059.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -114522,6 +120173,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "RFI - Remote File Inclusion Web Shell - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*\\=http\\:\\/\\/* OR *\\=https\\:\\/\\/* OR *\\=ftp\\:\\/\\/*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -114694,6 +120356,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "rpcclient - Null Session RPC Enumeration - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1135",
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -114878,6 +120551,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "rpcclient - Password Spray via MS-RPC - Elastic KQL",
+            "logic": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+            "data_source": "edr",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -115077,6 +120760,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Rpivot - Web Server Pivoting - Elastic KQL",
+            "logic": "process.command_line:(*rpivot* OR (*proxy-port* AND *server-port*))",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -115255,6 +120948,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Rsync - Enumeration - Elastic KQL",
+            "logic": "process.name:rsync* OR (event.category:network AND destination.port:873)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -115451,6 +121154,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Rubeus - AS-REP Roasting (Windows) - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\"\n\nevent.code:\"1\" AND process.command_line:(*asreproast* OR *Rubeus*)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.004"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -115671,6 +121384,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Rubeus - Forge Golden Ticket - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:krbtgt\n\nevent.code:\"1\" AND process.command_line:(*Rubeus* AND *golden*)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -115882,6 +121605,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Rubeus - Kerberoast (Windows) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:(krbtgt OR *$)",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -116078,6 +121811,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Rubeus - Kerberoast Single User - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:krbtgt",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -116306,6 +122049,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Rubeus - Pass the Ticket  OverPass the Hash - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*asktgt* AND *ptt*)",
+            "data_source": "edr",
+            "attack": [
+              "T1550.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -116492,6 +122245,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "runas netonly - Inject AD Creds on Windows - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:(*runas* AND */netonly*)\n\nevent.code:\"4648\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1134.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -116800,6 +122563,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Search Share Content for Keywords - Elastic KQL",
+            "logic": "event.code:\"5145\" AND winlog.event_data.ShareName:* AND NOT winlog.event_data.ShareName:*IPC$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -116987,6 +122760,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "searchsploit - Find Public Exploits - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1588.005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -117165,6 +122948,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "secretsdumppy - DCSync (Linux) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND NOT user.name:*$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -117350,6 +123143,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "secretsdumppy - DCSync via Kerberos TGT - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:*Replicating*Directory*Changes*\n\nevent.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND NOT user.name:*$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -117702,6 +123505,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SeDebugPrivilege - Dump LSASS and Parse - Elastic KQL",
+            "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND process.name:procdump*",
+            "data_source": "edr",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -117909,6 +123722,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SeDebugPrivilege - psgetsystem Parent Process - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*psgetsys* OR *CreateProcessFromParent*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1134.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -118130,6 +123953,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SeImpersonate - JuicyPotato to SYSTEM - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:*Potato* OR process.parent.name:(sqlservr.exe OR w3wp.exe) AND user.name:*SYSTEM*)",
+            "data_source": "edr",
+            "attack": [
+              "T1134.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -118321,6 +124154,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SeImpersonate - PrintSpoofer to SYSTEM - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:*PrintSpoofer* OR (event.code:\"17\" AND file.name:*spoolss*)",
+            "data_source": "edr",
+            "attack": [
+              "T1134.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -118541,6 +124384,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Server Operators - Modify Service binPath - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:sc.exe AND process.command_line:(*config* AND *binPath*)",
+            "data_source": "edr",
+            "attack": [
+              "T1543.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -118718,6 +124571,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Service Enumeration - Banner Grab  Capture - Elastic KQL",
+            "logic": "event.category:network AND source.ip:* AND destination.port:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -119000,6 +124863,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Session  Share Hunting (SessionHunter  PowerHuntShares) - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*\n\nevent.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-SessionHunter* OR *PowerHuntShares*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1049",
+              "T1135",
+              "T1033"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -119201,6 +125076,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SeTakeOwnershipPrivilege - Own and Read a File - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(takeown.exe OR icacls.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1222.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -119409,6 +125294,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "setspn - Semi-Manual Kerberoast - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:setspn.exe AND process.args:\"-Q\"",
+            "data_source": "edr",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -119605,6 +125500,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Shadow Credentials - pywhisker - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-KeyCredentialLink\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -119802,6 +125707,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Shadow Credentials (msDS-KeyCredentialLink Abuse) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-KeyCredentialLink\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1098",
+              "T1558.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -120011,6 +125927,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Shared Libraries - LDPRELOAD via sudo - Elastic KQL",
+            "logic": "process.name:sudo AND process.env_vars:*LD_PRELOAD* OR process.command_line:*LD_PRELOAD=*",
+            "data_source": "edr",
+            "attack": [
+              "T1574.006"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -120202,6 +126128,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SharpHound - Windows-Based BloodHound Collection - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002",
+              "T1069.002",
+              "T1482"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -120407,6 +126345,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SharpView - C PowerView Equivalent - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-Domain* OR *Get-DomainUser* OR *SharpView*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -120590,6 +126538,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Shellshock - CGI RCE (CVE-2014-6271) - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*\\(\\)\\ \\{* OR url.query:*\\(\\)\\ \\{*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -120813,6 +126772,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Shellter AV Evasion (PE Injection) - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:\"exe\"",
+            "data_source": "edr",
+            "attack": [
+              "T1055",
+              "T1027"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -121120,6 +127090,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SilkETW - ETW Provider Collection for Detection - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:SilkETW.exe",
+            "data_source": "edr",
+            "attack": [
+              "T1055.001",
+              "T1134.004",
+              "T1620"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -121322,6 +127304,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Silver Ticket - Forge Service Ticket (mimikatz) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:Kerberos",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -121527,6 +127519,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Silver Ticket Attack (Rubeus) - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:Kerberos",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -121740,6 +127742,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Skeleton Key (LSASS Patch on DC) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.command_line:*misc\\:\\:skeleton*",
+            "data_source": "edr",
+            "attack": [
+              "T1556.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -121956,6 +127968,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMB - enum4linux-ng  samrdump - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(139 OR 445)",
+            "data_source": "ndr",
+            "attack": [
+              "T1046",
+              "T1087.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -122122,6 +128145,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMB - Mount Share on Linux - Elastic KQL",
+            "logic": "process.name:mount* AND process.args:cifs",
+            "data_source": "edr",
+            "attack": [
+              "T1021.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -122295,6 +128328,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMB - Password Spraying (CrackMapExec) - Elastic KQL",
+            "logic": "event.code:\"4625\" AND winlog.event_data.LogonType:\"3\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -122488,6 +128531,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMB - rpcclient  RID Cycling - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -122712,6 +128765,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMB - Share Enumeration - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -122867,6 +128930,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMB - Share Enumeration (Getting Started) - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(139 OR 445)",
+            "data_source": "ndr",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -123032,6 +129105,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMB Server Status (smbstatus) - Elastic KQL",
+            "logic": "process.name:smbstatus",
+            "data_source": "edr",
+            "attack": [
+              "T1049"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -123187,6 +129270,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "smbmap - Enumerate SMB Shares - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -123388,6 +129481,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMBMap - List Download Upload Share Files - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:* AND NOT winlog.event_data.ShareName:*IPC$",
+            "data_source": "edr",
+            "attack": [
+              "T1021.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -123552,6 +129655,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "smbmap - Recursive Share Content Listing - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1135",
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -123779,6 +129893,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SMTP - Enumeration - Elastic KQL",
+            "logic": "process.name:smtp-user-enum* OR (event.category:network AND destination.port:25)",
+            "data_source": "edr",
+            "attack": [
+              "T1046",
+              "T1087"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -124047,6 +130172,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Snaffler - Credential and Sensitive File Discovery - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1083",
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -124226,6 +130362,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Snaffler - Hunt Credentials in Shares - Elastic KQL",
+            "logic": "event.code:(\"5140\" OR \"5145\") AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -124439,6 +130585,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SNMP - Enumeration - Elastic KQL",
+            "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -124602,6 +130758,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SNMP - Enumeration (Getting Started) - Elastic KQL",
+            "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -124814,6 +130980,19 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SNMP - Windows OID Enumeration (Users Processes Software Ports) - Elastic KQL",
+            "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+            "data_source": "ndr",
+            "attack": [
+              "T1049",
+              "T1082",
+              "T1087.001",
+              "T1518"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -125047,6 +131226,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "snmpwalk - MIB Enumeration with Community String - Elastic KQL",
+            "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+            "data_source": "ndr",
+            "attack": [
+              "T1046",
+              "T1082"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -125318,6 +131508,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Socat - Bind Shell Redirector - Elastic KQL",
+            "logic": "process.name:socat AND process.args:*TCP4-LISTEN*",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -125490,6 +131690,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Socat - Reverse Shell Redirector - Elastic KQL",
+            "logic": "process.name:socat AND process.args:(*TCP4-LISTEN* AND *fork*)",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -125689,6 +131899,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SocksOverRDP - SOCKS Tunnel over RDP - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:regsvr32.exe AND process.command_line:*SocksOverRDP*",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -125884,6 +132104,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Spawning Interactive Shells - Elastic KQL",
+            "logic": "process.command_line:(*pty.spawn* OR *bash?-i* OR *script?/dev/null*)",
+            "data_source": "edr",
+            "attack": [
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -126535,6 +132765,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQL - Enumerate Databases and Tables - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(1433 OR 3306)",
+            "data_source": "ndr",
+            "attack": [
+              "T1078"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -126701,6 +132941,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQL - Read Local Files - Elastic KQL",
+            "logic": "event.dataset:(mssql.audit OR mysql.audit) AND (mssql.statement:*OPENROWSET* OR mysql.statement:*LOAD_FILE*)",
+            "data_source": "edr",
+            "attack": [
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -126873,6 +133123,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQL - Write Webshell to Disk - Elastic KQL",
+            "logic": "event.code:\"11\" AND process.name:(sqlservr.exe OR mysqld.exe OR mysqld) AND file.extension:(php OR aspx OR jsp)",
+            "data_source": "edr",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -127051,6 +133311,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Authentication Bypass - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -127226,6 +133496,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Comment-Based Bypass - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -127413,6 +133693,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - DBMS Fingerprinting - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -127622,6 +133912,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Detect Injectable Input - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -127839,6 +134139,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Enumerate DB User and Privileges - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -128040,6 +134350,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Find Column Count and Visible Columns - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -128288,6 +134608,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Full Exploitation Chain (Skills Assessment) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -128449,6 +134780,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Read Files (LOADFILE) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -128663,6 +135004,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Union Database Enumeration - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*UNION*SELECT* OR *information_schema* OR *' OR * OR *--*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -128852,6 +135203,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLi - Write Files  Webshell (INTO OUTFILE) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*INTO?OUTFILE* OR *INTO?DUMPFILE*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -129019,6 +135380,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Anti-CSRF Token Bypass - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -129186,6 +135557,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Auto-find Parameters - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -129347,6 +135728,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Basic DB Enumeration - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -129534,6 +135925,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Basic GET Scan - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -129692,6 +136093,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Debug  Errors - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -129863,6 +136274,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Dump DB User Hashes - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -130026,6 +136447,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Dump Everything - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -130201,6 +136632,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Dump Full Schema - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -130391,6 +136832,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Dump Table Data - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -130547,6 +136998,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Enumerate Tables - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -130715,6 +137176,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Evaluate Parameter (--eval) - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -130872,6 +137343,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Increase Level and Risk - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -131034,6 +137515,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Inject via Cookie - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -131202,6 +137693,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Install  Update - Elastic KQL",
+            "logic": "/* local install; detect sqlmap usage via its request signatures instead */",
+            "data_source": "edr",
+            "attack": [
+              "T1588.002"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -131356,6 +137857,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - List Databases - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -131554,6 +138065,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - OS Shell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(sqlservr.exe OR mysqld.exe) AND process.name:(cmd.exe OR sh OR bash)",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -131722,6 +138243,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Prefix  Suffix Tuning - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -131881,6 +138412,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Proxy  Tor - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -132045,6 +138586,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Randomize Parameter - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -132206,6 +138757,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Read Server File - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1005"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -132377,6 +138938,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Response Comparison Tuning - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -132534,6 +139105,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Restrict Injection Technique - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -132714,6 +139295,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Scan from Request File - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -132872,6 +139463,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Search TablesColumns - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -133040,6 +139641,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Tamper Scripts - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -133210,6 +139821,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Test POST Data - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -133367,6 +139988,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - UNION Query Tuning - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -133538,6 +140169,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - WAF Evasion Options - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -133731,6 +140372,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SQLMap - Write File  Webshell - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*sqlmap* OR url.query:(*CAST\\(* OR *BENCHMARK* OR *WAITFOR?DELAY*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -133931,6 +140582,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSH - Connect to a Host - Elastic KQL",
+            "logic": "event.category:authentication AND event.action:(ssh_login OR \"logged-in\") AND event.outcome:success AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1021.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -134117,6 +140778,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSH - Dynamic Port Forwarding (SOCKS) - Elastic KQL",
+            "logic": "process.name:ssh AND process.args:\"-D\"",
+            "data_source": "edr",
+            "attack": [
+              "T1572"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -134309,6 +140980,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSH - Enumeration - Elastic KQL",
+            "logic": "process.name:ssh* OR (event.category:network AND destination.port:22)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -134471,6 +141152,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSH - Local Port Forwarding - Elastic KQL",
+            "logic": "process.name:ssh AND process.args:\"-L\"",
+            "data_source": "edr",
+            "attack": [
+              "T1572"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -134637,6 +141328,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSH - RemoteReverse Port Forwarding - Elastic KQL",
+            "logic": "process.name:ssh AND process.args:\"-R\"",
+            "data_source": "edr",
+            "attack": [
+              "T1572"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -134812,6 +141513,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Sshuttle - Transparent SSH VPN Pivot - Elastic KQL",
+            "logic": "process.name:sshuttle OR (process.name:iptables AND process.parent.name:sshuttle)",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -134992,6 +141703,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSI Injection - Server-Side Includes RCE - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<!--#exec* OR *<!--#include* OR *<!--#echo* OR *cmd=*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -135249,6 +141971,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "sslscan - Check SSLTLS Configuration - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(443 OR 8443) AND network.protocol:tls",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -135435,6 +142167,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSRF - Blind (no response reflected) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*127.0.0.1* OR *localhost* OR *169.254.169.254* OR *file\\:\\/\\/* OR *gopher\\:\\/\\/*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -135623,6 +142365,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSRF - Exploit (file gopher Gopherus) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*127.0.0.1* OR *localhost* OR *169.254.169.254* OR *file\\:\\/\\/* OR *gopher\\:\\/\\/*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1083"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -135785,6 +142538,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSRF - Identify (OOB callback  port scan) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*127.0.0.1* OR *localhost* OR *169.254.169.254* OR *file\\:\\/\\/* OR *gopher\\:\\/\\/*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -135976,6 +142739,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSTI - Identify  Fingerprint Engine - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*{{* OR *${* OR *<%\\=* OR *#{*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -136216,6 +142989,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSTI - Jinja2 (FlaskPython) Exploitation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*{{* OR *${* OR *<%\\=* OR *#{*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059.006"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -136442,6 +143226,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSTI - Twig (PHPSymfony) Exploitation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*{{* OR *${* OR *<%\\=* OR *#{*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -136662,6 +143457,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SSTImap - Automated SSTI ScannerExploiter - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*{{* OR *${* OR *<%\\=* OR *#{*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -137216,6 +144021,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Subdomains - Brute Force - Elastic KQL",
+            "logic": "event.category:network AND dns.response_code:NXDOMAIN AND source.ip:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -137423,6 +144238,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Sudo - Baron Samedit (CVE-2021-3156) - Elastic KQL",
+            "logic": "process.name:(sudo OR sudoedit) AND process.args:\"-s\" AND process.args:*\\\\",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -137583,6 +144408,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Sudo - Negative UID Bypass (CVE-2019-14287) - Elastic KQL",
+            "logic": "process.name:sudo AND process.args:(\"-u#-1\" OR \"-u#4294967295\")",
+            "data_source": "edr",
+            "attack": [
+              "T1548.003",
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -137747,6 +144583,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Sudo Abuse - Enumerate and Exploit - Elastic KQL",
+            "logic": "process.parent.name:(vim OR find OR less OR nmap OR python*) AND process.name:(bash OR sh) AND user.id:0",
+            "data_source": "edr",
+            "attack": [
+              "T1548.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -137964,6 +144810,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Sudo Abuse - tcpdump postrotate Command - Elastic KQL",
+            "logic": "process.name:tcpdump AND process.args:\"-z\" AND process.args:/tmp/*",
+            "data_source": "edr",
+            "attack": [
+              "T1548.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -138143,6 +144999,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SUIDSGID - Enumerate and Abuse - Elastic KQL",
+            "logic": "process.name:find AND process.args:(*-perm* AND (*4000* OR *u=s*))",
+            "data_source": "edr",
+            "attack": [
+              "T1548.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -138673,6 +145539,19 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Sysmon - Installation  Configuration - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(sysmon.exe OR sysmon64.exe) AND process.args:(\"-i\" OR \"-c\" OR \"-u\")",
+            "data_source": "sysmon",
+            "attack": [
+              "T1055",
+              "T1059",
+              "T1071",
+              "T1547"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -138919,6 +145798,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "SYSVOL Logon Scripts - Hunt for Creds - Elastic KQL",
+            "logic": "event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL* AND winlog.event_data.RelativeTargetName:*scripts*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -139138,6 +146027,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Targeted Kerberoasting (Add SPN via GenericWrite) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"servicePrincipalName\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -139331,6 +146230,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Targeted Kerberoasting (Set SPN Roast Cleanup) - Elastic KQL",
+            "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"servicePrincipalName\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1558.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -139847,6 +146756,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "The Kerberos Double-Hop Problem  Fixes - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"9\" AND winlog.event_data.LogonProcessName:seclogo",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.003",
+              "T1021.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -140088,6 +147008,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Thick Client - Exploit Web Vulns (JAR patch) - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*sql* OR *'--* OR *<script>* OR *../*) OR url.path:(*sql* OR *'--* OR *<script>* OR *../*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1552.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -140263,6 +147194,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Thick Client - StaticDynamic Analysis - Elastic KQL",
+            "logic": "event.code:\"3\" AND NOT process.name:(chrome.exe OR firefox.exe OR svchost.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1140",
+              "T1592.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -140524,6 +147466,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "ticketerpy - Forge ExtraSids Golden Ticket (ChildParent) - Elastic KQL",
+            "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\"\n\nevent.code:\"4672\" AND NOT user.name:Administrator AND winlog.event_data.PrivilegeList:*SeTcbPrivilege*",
+            "data_source": "windows-security",
+            "attack": [
+              "T1134.005",
+              "T1558.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -140777,6 +147730,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Tomcat - Detect and Enumerate - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/manager/html\" OR \"/host-manager/html\" OR \"/docs/\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -140954,6 +147917,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Tomcat - Ghostcat AJP LFI (CVE-2020-1938) - Elastic KQL",
+            "logic": "event.category:network AND destination.port:8009",
+            "data_source": "ndr",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -141156,6 +148129,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Tomcat - JSP WAR Webshell Deploy - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -141344,6 +148328,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Tomcat - Manager Brute Force (Metasploit) - Elastic KQL",
+            "logic": "event.category:web AND url.path:\"/manager/html\" AND http.response.status_code:(401 OR 200)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -141544,6 +148538,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Tomcat - msfvenom WAR Reverse Shell - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -141759,6 +148764,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Tomcat CGI - Command Injection (batcmd) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -142061,6 +149077,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Transfer with Code - Download One-liners - Elastic KQL",
+            "logic": "process.name:(python* OR php OR ruby OR perl) AND process.command_line:(*urlretrieve* OR *urlopen* OR *requests.get*)",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -142232,6 +149258,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Transfer with Code - Upload  Read One-liners - Elastic KQL",
+            "logic": "process.name:(python* OR php OR ruby) AND process.command_line:(*requests.post* OR *files\\=*)",
+            "data_source": "edr",
+            "attack": [
+              "T1048.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -142407,6 +149443,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "tshark - Extract Credentials  Files from a PCAP - Elastic KQL",
+            "logic": "event.category:network AND network.protocol:(ftp OR http) AND event.action:credential*",
+            "data_source": "ndr",
+            "attack": [
+              "T1040"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -142764,6 +149810,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "UAC - Enumerate Configuration - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:reg.exe AND process.command_line:(*Policies\\\\System* AND *EnableLUA*)",
+            "data_source": "edr",
+            "attack": [
+              "T1082"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -142941,6 +149997,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "UAC Bypass - SystemPropertiesAdvanced DLL Hijack - Elastic KQL",
+            "logic": "event.code:\"7\" AND process.name:SystemPropertiesAdvanced.exe AND dll.path:*WindowsApps*srrstr.dll",
+            "data_source": "edr",
+            "attack": [
+              "T1548.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -143199,6 +150265,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Unconstrained Delegation Abuse (Printer Bug  Rubeus) - Elastic KQL",
+            "logic": "event.code:\"3\" AND source.domain:*DC* AND destination.port:445",
+            "data_source": "edr",
+            "attack": [
+              "T1558",
+              "T1187"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -143434,6 +150511,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upgrade to a Full TTY - Elastic KQL",
+            "logic": "process.command_line:(*pty.spawn* OR *script?/dev/null* OR *stty?raw*)",
+            "data_source": "edr",
+            "attack": [
+              "T1059.004"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -143629,6 +150716,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - Blacklist Extension Bypass - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -143842,6 +150940,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - Client-Side Validation Bypass - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -144050,6 +151159,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - Content-Type  MIME Bypass - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -144256,6 +151376,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - Injection via Filename - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -144458,6 +151589,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - PHP Reverse Shell - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -144657,6 +151799,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - Stored XSS via SVG - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -144853,6 +152006,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - Web Shell Payloads - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -145062,6 +152226,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - Whitelist  Double Extension Bypass - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -145237,6 +152412,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - XSS in Image Metadata (exiftool) - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND url.path:*upload*",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -145416,6 +152602,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Upload - XXE File Disclosure via SVG - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND http.request.body.content:(*<!DOCTYPE* OR *<!ENTITY* OR *SYSTEM*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -145588,6 +152785,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "User Enumeration via Kerberos (kerbrute) - Elastic KQL",
+            "logic": "event.code:\"4768\" AND winlog.event_data.Status:\"0x6\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1589.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -145737,6 +152944,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Username Anarchy - Generate Usernames - Elastic KQL",
+            "logic": "process.name:username-anarchy*",
+            "data_source": "edr",
+            "attack": [
+              "T1589.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -145901,6 +153118,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Username Generator - Build AD Wordlist from Names - Elastic KQL",
+            "logic": "/* local username list generation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1589.003",
+              "T1110.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -146081,6 +153309,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Veil - On-Disk AV Evasion Payload - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1027",
+              "T1588.005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -146247,6 +153486,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Vet a Public Exploit Before Running It - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1588.005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -146469,6 +153718,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Virtual Hosts - Brute Force - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.domain:*",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -146635,6 +153894,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "vnstat - Monitor Scan Bandwidth - Elastic KQL",
+            "logic": "/* vnstat is local interface accounting; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1040"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -146941,6 +154210,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Vulnerable Service - Druva inSync Local RPC - Elastic KQL",
+            "logic": "event.code:\"3\" AND destination.ip:\"127.0.0.1\" AND destination.port:6064",
+            "data_source": "ndr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -147135,6 +154414,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Vulnerable Service - GNU screen 450 root - Elastic KQL",
+            "logic": "event.category:file AND file.path:/etc/ld.so.preload AND NOT user.name:root",
+            "data_source": "edr",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -147290,6 +154579,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "wafw00f - WAF Detection - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*wafw00f* OR url.query:(*script* OR *..\\/..*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -147478,6 +154777,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Weak Permissions - Reconfigure Service binPath - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:sc.exe AND process.command_line:(*config* AND *binpath*)",
+            "data_source": "edr",
+            "attack": [
+              "T1543.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -147693,6 +155002,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Weak Permissions - Replace Modifiable Service Binary - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.path:*service*.exe AND NOT process.name:(msiexec.exe OR TrustedInstaller.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1574.010"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -147896,6 +155215,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "signature",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Weak Permissions - SharpUp Audit - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:*SharpUp* OR process.pe.original_file_name:*SharpUp*)",
+            "data_source": "edr",
+            "attack": [
+              "T1082"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -148087,6 +155416,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Weak Permissions - Startup  Autorun Enumeration - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*Win32_StartupCommand*",
+            "data_source": "powershell",
+            "attack": [
+              "T1547.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -148284,6 +155623,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Weak Permissions - Unquoted Service Path - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:services.exe AND process.executable:*Program.exe",
+            "data_source": "edr",
+            "attack": [
+              "T1574.009"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -148472,6 +155821,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Weak Permissions - Writable Service Registry (ImagePath) - Elastic KQL",
+            "logic": "event.code:\"13\" AND registry.path:*CurrentControlSet\\\\Services\\\\*\\\\ImagePath AND NOT process.name:(services.exe OR TrustedInstaller.exe)",
+            "data_source": "edr",
+            "attack": [
+              "T1574.011"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -148648,6 +156007,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Archives - Wayback Machine - Elastic KQL",
+            "logic": "/* passive OSINT against the Wayback Machine / web.archive.org; no target-side event to match */",
+            "data_source": "edr",
+            "attack": [
+              "T1596"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -148870,6 +156239,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Attacks - Full Chain (Skills Assessment IDOR - Verb Tampering - XXE) - Elastic KQL",
+            "logic": "event.category:web AND url.path:*/[0-9]* AND http.response.status_code:(200 OR 403)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1083"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -149039,6 +156419,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Crawling - ReconSpider - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND (NOT user_agent.original:Mozilla* OR user_agent.original:*Spider*)",
+            "data_source": "ndr",
+            "attack": [
+              "T1594"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -149246,6 +156636,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Fingerprinting - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:HEAD AND user_agent.original:(curl* OR *fingerprint*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1592.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -149509,6 +156909,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Mass Assignment - Inject Extra Parameters - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*isAdmin* OR *role=admin* OR *is_admin* OR *\"admin\":true*) OR url.path:(*isAdmin* OR *role=admin* OR *is_admin* OR *\"admin\":true*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -149701,6 +157111,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Proxy - Automated Scanning Spider  Scope (Burp Scanner  ZAP) - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.002",
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -149870,6 +157291,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Proxy - Intercept  Modify HTTP Responses - Elastic KQL",
+            "logic": "/* manual proxy request; detect the carried payload via WAF/web-log rules */",
+            "data_source": "edr",
+            "attack": [
+              "T1562.001",
+              "T1685"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -150058,6 +157490,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Proxy - Launch Burp  ZAP - Elastic KQL",
+            "logic": "/* manual proxy request; detect the carried payload via WAF/web-log rules */",
+            "data_source": "edr",
+            "attack": [
+              "T1557"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -150231,6 +157673,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Proxy - Route CLI Tools Through Burp  ZAP - Elastic KQL",
+            "logic": "/* manual proxy request; detect the carried payload via WAF/web-log rules */",
+            "data_source": "edr",
+            "attack": [
+              "T1090"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -150408,6 +157860,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Recon - Headers  Fingerprinting - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+            "data_source": "ndr",
+            "attack": [
+              "T1592"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -150605,6 +158067,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Web Shell Payloads - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR sh OR bash)",
+            "data_source": "powershell",
+            "attack": [
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -150830,6 +158302,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WebDAV - Transfer - Elastic KQL",
+            "logic": "http.request.method:(PUT OR PROPFIND) OR file.path:*DavWWWRoot*",
+            "data_source": "proxy",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -151023,6 +158505,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "wenum  wfuzz - Parameter  Directory Fuzzing - Elastic KQL",
+            "logic": "event.category:web AND (http.response.status_code:404 OR user_agent.original:(*ffuf* OR *feroxbuster* OR *wfuzz* OR *gobuster*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -151196,6 +158688,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WHOIS - Domain Lookup - Elastic KQL",
+            "logic": "/* passive OSINT against a WHOIS registry/registrar server; no target-side event to match */",
+            "data_source": "edr",
+            "attack": [
+              "T1596.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -151385,6 +158887,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Wildcard Abuse - tar checkpoint (root cron) - Elastic KQL",
+            "logic": "file.name:(--checkpoint\\=1 OR --checkpoint-action*) OR (process.name:tar AND process.parent.name:cron)",
+            "data_source": "edr",
+            "attack": [
+              "T1053.003",
+              "T1548"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -151552,6 +159065,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "windapsearch - LDAP Enumeration (Python) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+            "data_source": "windows-security",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -151758,6 +159281,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Back Up Registry Hives - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:reg.exe AND process.command_line:(*save* AND *hklm* AND (*sam* OR *system* OR *security*))",
+            "data_source": "edr",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -151982,6 +159515,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Copy NTDSdit via Shadow Copy - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:(vssadmin.exe OR ntdsutil.exe) AND process.command_line:*SHADOW*",
+            "data_source": "edr",
+            "attack": [
+              "T1003.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -152287,6 +159830,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Dump LSASS Memory - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:rundll32.exe AND process.command_line:(*comsvcs.dll* AND *MiniDump*)",
+            "data_source": "edr",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -152469,6 +160022,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Enable Telnet Client via DISM - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:dism.exe AND process.args:*TelnetClient*)",
+            "data_source": "edr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -152650,6 +160213,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Enumerate and Reuse Stored Credentials - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:cmdkey.exe AND process.args:\"/list\"",
+            "data_source": "edr",
+            "attack": [
+              "T1555.004"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -152861,6 +160434,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - FTP Transfer - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:ftp.exe OR process.command_line:*ftp\\://*)",
+            "data_source": "edr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -153041,6 +160624,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - net view Share Enumeration - Elastic KQL",
+            "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+            "data_source": "edr",
+            "attack": [
+              "T1135"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -153245,6 +160838,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Port Forwarding with Netsh - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:netsh.exe AND process.command_line:(*portproxy* AND *add*)",
+            "data_source": "edr",
+            "attack": [
+              "T1090.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -153451,6 +161054,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - PowerShell Download - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*DownloadFile* OR *DownloadString* OR *IEX*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -153625,6 +161238,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Search Files for Passwords (findstr) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.name:findstr.exe AND process.command_line:(*password* OR *\\/s*)",
+            "data_source": "edr",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -153813,6 +161436,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - SMB Transfer (Impacket) - Elastic KQL",
+            "logic": "event.code:\"3\" AND destination.port:445 AND NOT destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16)",
+            "data_source": "ndr",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -154022,6 +161655,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows - Upload to Attacker - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-FileUpload* OR *UploadFile* OR *InFile*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1048.003"
+            ],
+            "fidelity": "signature"
           }
         ],
         "visibility": {
@@ -154209,6 +161852,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows BOF - Step 1 Fuzzing - Elastic KQL",
+            "logic": "event.code:\"1000\" AND winlog.channel:Application",
+            "data_source": "edr",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -154376,6 +162029,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows BOF - Step 2 EIP Control (Pattern Offset) - Elastic KQL",
+            "logic": "event.code:(\"1000\" OR \"1001\") AND winlog.channel:Application",
+            "data_source": "edr",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -154539,6 +162202,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows BOF - Step 3 Bad Character Identification - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -154694,6 +162367,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows BOF - Step 4 Find JMP ESP - Elastic KQL",
+            "logic": "/* local operation; no target-side event */",
+            "data_source": "edr",
+            "attack": [
+              "T1210"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -154863,6 +162546,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows BOF - Step 5 Final Exploit Assembly - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:* AND process.name:(cmd.exe OR calc.exe OR powershell.exe)",
+            "data_source": "powershell",
+            "attack": [
+              "T1210",
+              "T1059"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -155049,6 +162743,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows File Search (PowerShell Recursive) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ChildItem* AND *Recurse* AND (*.kdbx* OR *.pfx* OR *Unattend* OR *password*))",
+            "data_source": "powershell",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -155429,6 +163133,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows Library File  WebDAV Delivery - Elastic KQL",
+            "logic": "event.code:\"11\" AND file.extension:(library-ms OR lnk OR url)",
+            "data_source": "edr",
+            "attack": [
+              "T1566.001",
+              "T1204.002",
+              "T1059.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -155652,6 +163368,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "Windows Local Enumeration (PowerShell) - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-LocalGroup* OR *Get-LocalUser* OR *Get-Service*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1069.001",
+              "T1518",
+              "T1552.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -155823,6 +163551,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WinPE - Enumerate Defender and AppLocker - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-MpComputerStatus* OR *Get-AppLockerPolicy*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1518.001"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -156213,6 +163951,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WinPE - Named Pipe Enumeration - Elastic KQL",
+            "logic": "event.code:\"1\" AND (process.name:accesschk.exe AND process.command_line:*pipe*) OR process.name:pipelist.exe",
+            "data_source": "edr",
+            "attack": [
+              "T1057"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -156500,6 +164248,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WinRM - Copy via PowerShell Session - Elastic KQL",
+            "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Copy-Item* AND (*ToSession* OR *FromSession*))",
+            "data_source": "powershell",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -156716,6 +164474,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WinRM  WMI - Enumeration  Access - Elastic KQL",
+            "logic": "event.category:network AND destination.port:(5985 OR 5986)",
+            "data_source": "ndr",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -157108,6 +164876,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WordPress - Admin Shell Upload (Metasploit) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -157289,6 +165068,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WordPress - Detect and Enumerate via cURL - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/wp-login.php\" OR \"/wp-content/\" OR \"/readme.html\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -157460,6 +165249,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WordPress - Mail Masta Plugin LFI - Elastic KQL",
+            "logic": "event.category:web AND (url.query:(*/wp-content/plugins/mailmasta* OR *pl=* OR */etc/passwd* OR *php://filter*) OR url.path:(*/wp-content/plugins/mailmasta* OR *pl=* OR */etc/passwd* OR *php://filter*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -157663,6 +165462,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WordPress - Theme Editor Webshell (RCE) - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR sh OR bash)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -157869,6 +165679,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WordPress - wpDiscuz Unauthenticated RCE - Elastic KQL",
+            "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+            "data_source": "powershell",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -158070,6 +165891,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WordPress XSS  CSRF Admin Creation - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007",
+              "T1548"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -158243,6 +166075,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WPScan - Enumerate ThemesPluginsUsers - Elastic KQL",
+            "logic": "event.category:web AND source.ip:* AND url.path:(\"/wp-json/wp/v2/users\" OR \"/?author=\" OR \"/wp-content/plugins/\")",
+            "data_source": "ndr",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -158427,6 +166269,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WPScan - Password Brute Force (xmlrpc) - Elastic KQL",
+            "logic": "event.category:web AND url.path:\"/wp-login.php\" AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+            "data_source": "proxy",
+            "attack": [
+              "T1110"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -158626,6 +166478,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "WriteDACL to DCSync (bloodyAD Linux) - Elastic KQL",
+            "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND not winlog.event_data.SubjectUserName:*$",
+            "data_source": "windows-security",
+            "attack": [
+              "T1222.001",
+              "T1003.006"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -158819,6 +166682,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "xFreeRDP - Pass the Hash - Elastic KQL",
+            "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:(\"10\" OR \"3\") AND winlog.event_data.AuthenticationPackageName:NTLM",
+            "data_source": "windows-security",
+            "attack": [
+              "T1550.002"
+            ],
+            "fidelity": "behavioral"
           }
         ],
         "visibility": {
@@ -159003,6 +166876,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSLT Injection - Fingerprint  File Read  RCE - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<xsl:* OR *document(* OR *unparsed-text(* OR *system-property(*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1083"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -159167,6 +167051,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Attribute Break-Out - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -159336,6 +167230,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Automated Discovery (XSStrike) - Elastic KQL",
+            "logic": "event.category:web AND (user_agent.original:*XSStrike* OR url.query:(*<script* OR *onerror*))",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -159518,6 +167422,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Deface Background Color - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007",
+              "T1491.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -159689,6 +167604,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Deface Background Image - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007",
+              "T1491.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -159857,6 +167783,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Deface Change Page Title - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007",
+              "T1491.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -160023,6 +167960,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Deface Replace Body Content - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007",
+              "T1491.001"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -160196,6 +168144,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Detection Payload - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -160377,6 +168335,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - DOM-Based (img onerror) - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -160555,6 +168523,18 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Phishing Inject Fake Login Form - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007",
+              "T1566",
+              "T1056.003"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -161138,6 +169118,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Session Hijack Remote Script Include - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1059.007"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -161298,6 +169288,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XSS - Session Hijack Replay Stolen Cookie - Elastic KQL",
+            "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1550.004",
+              "T1539"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -161689,6 +169690,16 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XXE - Denial of Service (Billion Laughs) - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND http.request.body.content:(*<!DOCTYPE* OR *<!ENTITY* OR *SYSTEM*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1499"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -161863,6 +169874,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XXE - Error-Based File Disclosure - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND http.request.body.content:(*<!DOCTYPE* OR *<!ENTITY* OR *SYSTEM*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -162037,6 +170059,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XXE - Local File Disclosure (External Entity) - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND http.request.body.content:(*<!DOCTYPE* OR *<!ENTITY* OR *SYSTEM*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -162250,6 +170283,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XXE - RCE via expect Wrapper - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND http.request.body.content:(*<!DOCTYPE* OR *<!ENTITY* OR *SYSTEM*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -162439,6 +170483,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XXE - Read Source with phpfilter - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND http.request.body.content:(*<!DOCTYPE* OR *<!ENTITY* OR *SYSTEM*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -162624,6 +170679,17 @@ const COMMAND_DATA = {
             ],
             "fidelity": "behavioral",
             "confidence": "medium"
+          },
+          {
+            "platform": "elastic",
+            "name": "XXEinjector - Automated OOB XXE Exfiltration - Elastic KQL",
+            "logic": "event.category:web AND http.request.method:POST AND http.request.body.content:(*<!DOCTYPE* OR *<!ENTITY* OR *SYSTEM*)",
+            "data_source": "proxy",
+            "attack": [
+              "T1190",
+              "T1005"
+            ],
+            "fidelity": "telemetry"
           }
         ],
         "visibility": {
@@ -162891,7 +170957,7 @@ const COMMAND_DATA = {
     }
   ],
   "totalCommands": 950,
-  "buildDate": "2026-09-29T18:00:08.092Z",
+  "buildDate": "2026-09-29T18:05:18.260Z",
   "certifications": [
     "CDSA",
     "CPTS",

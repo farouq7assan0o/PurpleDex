@@ -150,6 +150,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView User Hunting (Find-DomainUserLocation) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Find-DomainUserLocation* OR *Invoke-UserHunter*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1033",
+          "T1087.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

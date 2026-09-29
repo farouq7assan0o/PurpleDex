@@ -142,6 +142,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD CS ESC1 via Certipy (Linux - Enrollee-Supplied SAN) - Elastic KQL",
+        "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.CertificateTemplate:*",
+        "data_source": "edr",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

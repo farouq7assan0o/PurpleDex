@@ -153,6 +153,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Oracle TNS - Enumeration  Exploitation - Elastic KQL",
+        "logic": "process.name:tnscmd* OR (event.category:network AND destination.port:1521)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

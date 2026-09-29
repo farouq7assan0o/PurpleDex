@@ -176,6 +176,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Lateral Movement via PowerShell Remoting (WinRM) - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:wsmprovhost.exe",
+        "data_source": "edr",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -157,6 +157,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Skeleton Key (LSASS Patch on DC) - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:*misc\\:\\:skeleton*",
+        "data_source": "edr",
+        "attack": [
+          "T1556.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

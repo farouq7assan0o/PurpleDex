@@ -129,6 +129,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "UAC - Enumerate Configuration - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:reg.exe AND process.command_line:(*Policies\\\\System* AND *EnableLUA*)",
+        "data_source": "edr",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

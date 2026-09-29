@@ -156,6 +156,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Backup Operators - Dump NTDSdit via diskshadow - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(diskshadow.exe OR ntdsutil.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

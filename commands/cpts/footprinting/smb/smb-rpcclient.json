@@ -147,6 +147,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SMB - rpcclient  RID Cycling - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

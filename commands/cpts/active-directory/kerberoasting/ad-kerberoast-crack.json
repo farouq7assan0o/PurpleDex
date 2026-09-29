@@ -132,6 +132,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hashcat - Crack Kerberoast TGS - Elastic KQL",
+        "logic": "process.name:hashcat* AND process.args:\"13100\"",
+        "data_source": "edr",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

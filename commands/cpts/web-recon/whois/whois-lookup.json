@@ -133,6 +133,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WHOIS - Domain Lookup - Elastic KQL",
+        "logic": "/* passive OSINT against a WHOIS registry/registrar server; no target-side event to match */",
+        "data_source": "edr",
+        "attack": [
+          "T1596.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

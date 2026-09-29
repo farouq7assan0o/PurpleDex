@@ -195,6 +195,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Attack Chain - Pillaging to SYSTEM - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:reg.exe AND process.command_line:(*save* AND *sam*)",
+        "data_source": "edr",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

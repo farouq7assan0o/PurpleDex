@@ -159,6 +159,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Python Library Hijacking - Sudo Script Abuse - Elastic KQL",
+        "logic": "event.category:file AND file.path:*/python3*/*.py AND event.action:(change OR creation) AND NOT user.name:root",
+        "data_source": "edr",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

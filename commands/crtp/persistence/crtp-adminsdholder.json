@@ -139,6 +139,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AdminSDHolder Abuse (SDProp Persistence) - Elastic KQL",
+        "logic": "event.code:\"5136\" AND winlog.event_data.ObjectDN:*AdminSDHolder*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

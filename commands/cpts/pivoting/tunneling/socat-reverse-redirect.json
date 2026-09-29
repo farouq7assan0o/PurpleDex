@@ -126,6 +126,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Socat - Reverse Shell Redirector - Elastic KQL",
+        "logic": "process.name:socat AND process.args:(*TCP4-LISTEN* AND *fork*)",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

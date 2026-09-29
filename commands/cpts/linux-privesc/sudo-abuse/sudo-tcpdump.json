@@ -161,6 +161,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Sudo Abuse - tcpdump postrotate Command - Elastic KQL",
+        "logic": "process.name:tcpdump AND process.args:\"-z\" AND process.args:/tmp/*",
+        "data_source": "edr",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

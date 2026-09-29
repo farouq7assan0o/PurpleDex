@@ -158,6 +158,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD CS ESC16 - Security Extension Disabled (UPN Spoof to DA) - Elastic KQL",
+        "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"userPrincipalName\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

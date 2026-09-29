@@ -158,6 +158,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PKINITtools - Get TGT from Certificate - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

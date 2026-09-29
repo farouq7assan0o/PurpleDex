@@ -139,6 +139,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PKI ESC1 - Misconfigured Certificate Template (SAN Abuse) - Elastic KQL",
+        "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.Attributes:*SAN*",
+        "data_source": "edr",
+        "attack": [
+          "T1649",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

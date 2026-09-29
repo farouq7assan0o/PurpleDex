@@ -141,6 +141,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Pillaging - restic VSS Backup of Locked Hives - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:restic.exe AND process.args:(*backup* AND *use-fs-snapshot*)",
+        "data_source": "edr",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

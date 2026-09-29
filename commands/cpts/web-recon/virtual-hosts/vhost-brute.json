@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Virtual Hosts - Brute Force - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.domain:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

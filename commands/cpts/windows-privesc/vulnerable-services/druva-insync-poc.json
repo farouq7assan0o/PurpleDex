@@ -145,6 +145,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Vulnerable Service - Druva inSync Local RPC - Elastic KQL",
+        "logic": "event.code:\"3\" AND destination.ip:\"127.0.0.1\" AND destination.port:6064",
+        "data_source": "ndr",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

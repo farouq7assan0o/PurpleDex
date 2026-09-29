@@ -148,6 +148,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hosting - Quick HTTP Servers - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(8000 OR 8080) AND network.direction:outbound",
+        "data_source": "ndr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

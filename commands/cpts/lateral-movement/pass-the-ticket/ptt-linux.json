@@ -172,6 +172,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Linux - Pass the Ticket (ccache  keytab) - Elastic KQL",
+        "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

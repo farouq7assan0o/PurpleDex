@@ -141,6 +141,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Restricted Shell - Escape Techniques - Elastic KQL",
+        "logic": "process.parent.name:rbash AND process.name:(bash OR sh)",
+        "data_source": "edr",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

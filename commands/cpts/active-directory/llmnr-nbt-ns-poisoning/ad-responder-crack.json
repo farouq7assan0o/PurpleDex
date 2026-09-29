@@ -120,6 +120,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hashcat - Crack NetNTLMv2 Hash - Elastic KQL",
+        "logic": "process.name:hashcat* AND process.args:\"5600\"",
+        "data_source": "edr",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

@@ -118,6 +118,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - User  Computer Description Fields - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-LocalUser* OR *Get-ADUser*Description*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

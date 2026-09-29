@@ -116,6 +116,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "sslscan - Check SSLTLS Configuration - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(443 OR 8443) AND network.protocol:tls",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

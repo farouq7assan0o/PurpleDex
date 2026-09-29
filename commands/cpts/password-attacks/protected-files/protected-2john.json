@@ -158,6 +158,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "JtR - Crack Password-Protected Files (2john) - Elastic KQL",
+        "logic": "process.name:ssh2john*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

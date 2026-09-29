@@ -137,6 +137,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Targeted Kerberoasting (Set SPN Roast Cleanup) - Elastic KQL",
+        "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"servicePrincipalName\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

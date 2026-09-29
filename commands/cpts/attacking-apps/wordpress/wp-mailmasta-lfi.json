@@ -120,6 +120,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WordPress - Mail Masta Plugin LFI - Elastic KQL",
+        "logic": "event.category:web AND (url.query:(*/wp-content/plugins/mailmasta* OR *pl=* OR */etc/passwd* OR *php://filter*) OR url.path:(*/wp-content/plugins/mailmasta* OR *pl=* OR */etc/passwd* OR *php://filter*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

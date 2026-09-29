@@ -119,6 +119,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Responder - Passive Analysis Mode - Elastic KQL",
+        "logic": "event.category:network AND network.protocol:(llmnr OR nbns)",
+        "data_source": "ndr",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

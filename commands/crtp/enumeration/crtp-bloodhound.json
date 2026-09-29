@@ -181,6 +181,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "BloodHound  SharpHound Collection - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-BloodHound* OR *SharpHound* OR *CollectionMethod*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

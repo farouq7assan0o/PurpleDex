@@ -188,6 +188,19 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "InviShell - AMSI  PowerShell Logging Bypass (CORPROFILER) - Elastic KQL",
+        "logic": "event.code:\"7\" AND process.name:powershell.exe AND dll.name:InShellProf.dll\n\nevent.code:\"13\" AND registry.path:*\\\\CLSID\\\\*\\\\InprocServer32*",
+        "data_source": "powershell",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1574.012",
+          "T1112"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

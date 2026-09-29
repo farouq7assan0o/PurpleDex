@@ -148,6 +148,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Domain Information - Passive Recon - Elastic KQL",
+        "logic": "/* passive OSINT; no target-side event to match */",
+        "data_source": "edr",
+        "attack": [
+          "T1590"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

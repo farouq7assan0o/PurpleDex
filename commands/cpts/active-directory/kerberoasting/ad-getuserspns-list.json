@@ -120,6 +120,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Impacket GetUserSPNs - List SPN Accounts - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.Properties:*servicePrincipalName*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -140,6 +140,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "UAC Bypass - SystemPropertiesAdvanced DLL Hijack - Elastic KQL",
+        "logic": "event.code:\"7\" AND process.name:SystemPropertiesAdvanced.exe AND dll.path:*WindowsApps*srrstr.dll",
+        "data_source": "edr",
+        "attack": [
+          "T1548.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

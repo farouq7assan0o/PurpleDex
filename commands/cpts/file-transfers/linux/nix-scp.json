@@ -135,6 +135,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Linux - SCP Transfer - Elastic KQL",
+        "logic": "process.name:scp OR (event.category:network AND destination.port:22)",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

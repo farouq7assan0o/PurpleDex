@@ -160,6 +160,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "MSSQL - Enumeration - Elastic KQL",
+        "logic": "process.name:mssqlclient* OR (event.category:network AND destination.port:1433)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

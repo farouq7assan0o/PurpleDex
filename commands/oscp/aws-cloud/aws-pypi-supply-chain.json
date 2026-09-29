@@ -169,6 +169,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Python Package Supply Chain Attack (Private PyPI) - Elastic KQL",
+        "logic": "process.name:(pip OR pip3) AND process.args:install",
+        "data_source": "edr",
+        "attack": [
+          "T1195.001",
+          "T1059.006"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

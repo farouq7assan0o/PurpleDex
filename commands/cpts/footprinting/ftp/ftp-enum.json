@@ -172,6 +172,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "FTP - Enumeration - Elastic KQL",
+        "logic": "process.name:ftp* OR (event.category:network AND destination.port:21)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

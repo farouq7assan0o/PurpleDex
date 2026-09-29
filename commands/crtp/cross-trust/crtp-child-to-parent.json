@@ -187,6 +187,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Child-to-Parent Domain Escalation (krbtgt SID-History OR Trust Key) - Elastic KQL",
+        "logic": "event.code:\"4769\" AND winlog.event_data.TicketOptions:*0x40810000* AND source.domain:*child*\n\nevent.code:\"4768\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

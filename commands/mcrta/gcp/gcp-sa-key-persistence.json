@@ -120,6 +120,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GCP Persistence via Service Account Key Creation - Elastic KQL",
+        "logic": "cloud.provider:gcp AND event.action:google.iam.admin.v1.CreateServiceAccountKey",
+        "data_source": "edr",
+        "attack": [
+          "T1098.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

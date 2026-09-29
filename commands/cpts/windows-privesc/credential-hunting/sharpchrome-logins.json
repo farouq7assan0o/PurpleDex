@@ -137,6 +137,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - Chrome Saved Logins - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:*SharpChrome*logins*",
+        "data_source": "edr",
+        "attack": [
+          "T1555.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

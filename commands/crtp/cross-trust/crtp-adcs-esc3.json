@@ -169,6 +169,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD CS ESC3 - Enrollment Agent Certificate Abuse - Elastic KQL",
+        "logic": "event.code:\"4887\" AND message:(*enrollment*agent* OR *Certificate*Request*Agent*)\n\nevent.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

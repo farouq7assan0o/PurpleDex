@@ -177,6 +177,17 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Overpass-the-Hash  Pass-the-Key (Rubeus asktgt) - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

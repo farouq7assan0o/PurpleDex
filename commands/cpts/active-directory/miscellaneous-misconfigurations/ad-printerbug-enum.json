@@ -126,6 +126,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Check Print Spooler Status on Domain Hosts - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainComputer* OR *Get-SpoolStatus* OR *rpcdump*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

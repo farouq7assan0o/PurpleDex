@@ -146,6 +146,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Netcat  Ncat - File Transfer - Elastic KQL",
+        "logic": "process.name:(nc OR ncat) AND process.args:(*-l* OR *-p*)",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

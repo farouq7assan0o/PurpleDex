@@ -116,6 +116,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privileged Groups - disk and adm Groups - Elastic KQL",
+        "logic": "process.name:debugfs OR (event.category:file AND file.path:/dev/sda* AND NOT user.name:root)",
+        "data_source": "edr",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

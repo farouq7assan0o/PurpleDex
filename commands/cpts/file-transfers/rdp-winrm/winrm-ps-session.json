@@ -148,6 +148,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WinRM - Copy via PowerShell Session - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Copy-Item* AND (*ToSession* OR *FromSession*))",
+        "data_source": "powershell",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

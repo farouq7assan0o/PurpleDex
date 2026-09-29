@@ -150,6 +150,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "NetExec - Pass the Hash - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:NTLM AND winlog.event_data.LogonProcessName:NtLmSsp",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

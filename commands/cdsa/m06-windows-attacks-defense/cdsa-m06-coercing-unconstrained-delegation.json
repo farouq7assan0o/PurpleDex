@@ -155,6 +155,18 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Coercing  Unconstrained Delegation - TGT Capture Attack - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:*DC$ AND NOT source.ip:\"<dc_ip>\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1558.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

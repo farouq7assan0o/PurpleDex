@@ -140,6 +140,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "API - Unrestricted Resource Consumption (API42023) - Elastic KQL",
+        "logic": "event.category:web AND url.path:*/api/* AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1499.001",
+          "T1608.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

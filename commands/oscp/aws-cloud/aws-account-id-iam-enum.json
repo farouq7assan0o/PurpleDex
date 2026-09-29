@@ -148,6 +148,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Account ID Fingerprinting  Cross-Account IAM Enumeration - Elastic KQL",
+        "logic": "event.dataset:aws.cloudtrail AND event.action:(\"GetCallerIdentity\" OR \"ListUsers\" OR \"ListRoles\" OR \"GetAccountAuthorizationDetails\")",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

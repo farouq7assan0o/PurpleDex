@@ -139,6 +139,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privileged Groups - LXDLXC Container Escape - Elastic KQL",
+        "logic": "process.name:(lxc OR lxd) AND process.args:*security.privileged=true*",
+        "data_source": "edr",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

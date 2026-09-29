@@ -119,6 +119,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Joomla - Authenticated Directory Traversal (CVE-2019-10945) - Elastic KQL",
+        "logic": "event.category:web AND (url.query:(*../* OR *%2e%2e* OR *com_* OR *configuration.php*) OR url.path:(*../* OR *%2e%2e* OR *com_* OR *configuration.php*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

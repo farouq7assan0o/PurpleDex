@@ -183,6 +183,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Shellter AV Evasion (PE Injection) - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.extension:\"exe\"",
+        "data_source": "edr",
+        "attack": [
+          "T1055",
+          "T1027"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -148,6 +148,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Logrotate - logrotten Exploit - Elastic KQL",
+        "logic": "event.category:file AND file.path:/etc/bash_completion.d/* AND event.action:creation AND NOT process.name:(dpkg OR apt)",
+        "data_source": "edr",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

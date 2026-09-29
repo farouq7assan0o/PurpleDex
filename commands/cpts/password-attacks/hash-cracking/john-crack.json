@@ -155,6 +155,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "John the Ripper - Crack Hashes - Elastic KQL",
+        "logic": "process.name:john*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

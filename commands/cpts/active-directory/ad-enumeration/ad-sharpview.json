@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SharpView - C PowerView Equivalent - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-Domain* OR *Get-DomainUser* OR *SharpView*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

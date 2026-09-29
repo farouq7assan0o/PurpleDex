@@ -170,6 +170,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Golden Ticket Attack (Rubeus  SafetyKatz) - Elastic KQL",
+        "logic": "event.code:\"4769\" AND NOT winlog.event_data.TargetUserName:krbtgt",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -134,6 +134,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "mssqlclientpy - Connect to MSSQL - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.parent.name:sqlservr.exe AND process.name:(cmd.exe OR powershell.exe)",
+        "data_source": "powershell",
+        "attack": [
+          "T1505.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

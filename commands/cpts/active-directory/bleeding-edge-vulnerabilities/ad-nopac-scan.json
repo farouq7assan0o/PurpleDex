@@ -109,6 +109,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "NoPac Scanner - CVE-2021-4227842287 Check - Elastic KQL",
+        "logic": "event.code:(\"4741\" OR \"4742\" OR \"4781\")",
+        "data_source": "edr",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

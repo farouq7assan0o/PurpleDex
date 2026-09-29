@@ -129,6 +129,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GCP Cloud Storage Enumeration  Exfiltration - Elastic KQL",
+        "logic": "event.dataset:gcp.audit AND gcp.audit.method_name:(storage.objects.get OR storage.objects.list)",
+        "data_source": "edr",
+        "attack": [
+          "T1530",
+          "T1552.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

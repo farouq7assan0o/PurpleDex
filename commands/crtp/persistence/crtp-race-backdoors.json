@@ -209,6 +209,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "ACL Backdoors with RACEps1 (WMI  PSRemoting  Registry) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Set-RemoteWMI* OR *Set-RemotePSRemoting* OR *RACE*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1098",
+          "T1546",
+          "T1112"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

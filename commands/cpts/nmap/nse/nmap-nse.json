@@ -146,6 +146,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Nmap Scripting Engine (NSE) - Elastic KQL",
+        "logic": "event.category:network AND source.ip:* AND destination.port:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

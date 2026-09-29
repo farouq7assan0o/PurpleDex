@@ -143,6 +143,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Plink - Dynamic Port Forward (Windows) - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:plink* AND process.args:(\"-D\" OR \"-R\" OR \"-L\")",
+        "data_source": "edr",
+        "attack": [
+          "T1572"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

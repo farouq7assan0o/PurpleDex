@@ -118,6 +118,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "BloodHound GUI - Start Neo4j and BloodHound - Elastic KQL",
+        "logic": "/* offline graph analysis; detect the collection phase (SharpHound LDAP burst) */",
+        "data_source": "edr",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

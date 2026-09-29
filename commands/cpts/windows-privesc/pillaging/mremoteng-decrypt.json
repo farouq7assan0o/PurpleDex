@@ -142,6 +142,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Pillaging - Decrypt mRemoteNG Passwords - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.name:confCons.xml AND NOT process.name:mRemoteNG*",
+        "data_source": "edr",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

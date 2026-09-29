@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Apps Connecting to Services - Extract Credentials via gdb - Elastic KQL",
+        "logic": "process.name:gdb AND process.args:*attach*",
+        "data_source": "edr",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

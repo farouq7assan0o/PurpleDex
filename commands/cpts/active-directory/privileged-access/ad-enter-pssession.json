@@ -150,6 +150,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Enter-PSSession - WinRM Shell (Windows) - Elastic KQL",
+        "logic": "event.code:\"4648\" OR (event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND process.name:wsmprovhost.exe)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

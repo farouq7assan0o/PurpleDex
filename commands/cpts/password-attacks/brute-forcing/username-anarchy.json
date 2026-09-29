@@ -113,6 +113,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Username Anarchy - Generate Usernames - Elastic KQL",
+        "logic": "process.name:username-anarchy*",
+        "data_source": "edr",
+        "attack": [
+          "T1589.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

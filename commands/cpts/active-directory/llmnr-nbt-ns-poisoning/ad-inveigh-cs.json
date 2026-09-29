@@ -137,6 +137,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Inveigh (C) - Run Executable - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:*Inveigh*",
+        "data_source": "edr",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

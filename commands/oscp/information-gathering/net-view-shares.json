@@ -138,6 +138,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows - net view Share Enumeration - Elastic KQL",
+        "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+        "data_source": "edr",
+        "attack": [
+          "T1135"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Tomcat - Ghostcat AJP LFI (CVE-2020-1938) - Elastic KQL",
+        "logic": "event.category:network AND destination.port:8009",
+        "data_source": "ndr",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

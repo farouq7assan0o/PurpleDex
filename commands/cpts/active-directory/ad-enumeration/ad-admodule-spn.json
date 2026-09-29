@@ -128,6 +128,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "ActiveDirectory Module - Find Kerberoastable Users (SPN) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ADUser* OR *servicePrincipalName* OR *ServicePrincipalName*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

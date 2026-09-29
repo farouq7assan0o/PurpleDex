@@ -158,6 +158,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DCSync (SafetyKatz  impacket-secretsdump) - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.Properties:(*1131f6aa* OR *1131f6ad*) AND NOT user.name:*$",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

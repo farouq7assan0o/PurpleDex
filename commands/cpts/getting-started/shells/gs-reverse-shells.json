@@ -153,6 +153,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Reverse Shell Payloads - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.command_line:(*/dev/tcp/* OR *-e?/bin/* OR *nc?-* ) OR process.name:(nc OR ncat))",
+        "data_source": "edr",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

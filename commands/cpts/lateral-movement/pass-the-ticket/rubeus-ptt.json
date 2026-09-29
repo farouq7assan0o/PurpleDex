@@ -178,6 +178,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Rubeus - Pass the Ticket  OverPass the Hash - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:(*asktgt* AND *ptt*)",
+        "data_source": "edr",
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -187,6 +187,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Cron Abuse - Writable Script  pspy - Elastic KQL",
+        "logic": "process.parent.name:(cron OR crond) AND process.name:(bash OR sh OR nc OR python*)",
+        "data_source": "edr",
+        "attack": [
+          "T1053.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -173,6 +173,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD CS ESC1 - Subject Alt Name (SAN) Abuse - Elastic KQL",
+        "logic": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:*\n\nevent.code:\"4768\" AND winlog.event_data.CertificateThumbprint:*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

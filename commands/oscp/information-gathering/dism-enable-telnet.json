@@ -128,6 +128,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows - Enable Telnet Client via DISM - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:dism.exe AND process.args:*TelnetClient*)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

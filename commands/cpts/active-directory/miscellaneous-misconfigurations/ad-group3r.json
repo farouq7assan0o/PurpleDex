@@ -131,6 +131,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Group3r - GPO Misconfiguration Analysis - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:*Group3r* OR (event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL*)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

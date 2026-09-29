@@ -158,6 +158,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Impacket - Pass the Hash Execution - Elastic KQL",
+        "logic": "event.code:\"7045\" AND winlog.event_data.ServiceName:/[A-Za-z0-9]{8}/",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -140,6 +140,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Print Spooler Bug  NTLM Relay (DCSync via PrinterBug) - Elastic KQL",
+        "logic": "event.code:\"4624\" AND user.name:*DC$ AND NOT source.ip:(\"<dc_ip>\" OR \"<dc2_ip>\")",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1003.006",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

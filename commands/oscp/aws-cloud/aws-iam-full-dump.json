@@ -163,6 +163,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Full IAM Account Dump  JMESPath Querying - Elastic KQL",
+        "logic": "event.dataset:aws.cloudtrail AND event.action:(\"GetAccountAuthorizationDetails\" OR \"ListPolicies\" OR \"ListRoles\" OR \"ListUsers\" OR \"ListGroups\")",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1069.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

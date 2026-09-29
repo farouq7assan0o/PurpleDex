@@ -159,6 +159,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "osTicket - Email Harvesting  Sensitive Data Exposure - Elastic KQL",
+        "logic": "event.category:web AND (url.query:(*/include/* OR *ost-config.php* OR *.bak* OR *.sql*) OR url.path:(*/include/* OR *ost-config.php* OR *.bak* OR *.sql*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1078",
+          "T1213"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

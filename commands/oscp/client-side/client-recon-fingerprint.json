@@ -133,6 +133,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Client-Side Recon - Fingerprint the Target - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+        "data_source": "ndr",
+        "attack": [
+          "T1592.002",
+          "T1598.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

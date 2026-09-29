@@ -130,6 +130,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Joomla - droopescan  joomscan Enumeration - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.path:(\"/administrator/\" OR \"/components/\" OR \"/modules/\")",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

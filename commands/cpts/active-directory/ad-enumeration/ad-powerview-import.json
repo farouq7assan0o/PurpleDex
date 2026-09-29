@@ -132,6 +132,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Import Module - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Import-Module* OR *PowerView.ps1*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1059.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

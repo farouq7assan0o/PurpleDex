@@ -138,6 +138,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GCP Compute SA Token Theft (Metadata Server) - Elastic KQL",
+        "logic": "cloud.provider:gcp AND event.action:v1.compute.instances.get AND message:*metadata*",
+        "data_source": "edr",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

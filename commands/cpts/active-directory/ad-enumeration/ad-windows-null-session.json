@@ -116,6 +116,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "net use - Windows Null Session IPC - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:\"ANONYMOUS LOGON\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1135"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

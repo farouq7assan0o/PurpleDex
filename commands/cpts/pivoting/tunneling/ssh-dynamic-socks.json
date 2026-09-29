@@ -138,6 +138,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SSH - Dynamic Port Forwarding (SOCKS) - Elastic KQL",
+        "logic": "process.name:ssh AND process.args:\"-D\"",
+        "data_source": "edr",
+        "attack": [
+          "T1572"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

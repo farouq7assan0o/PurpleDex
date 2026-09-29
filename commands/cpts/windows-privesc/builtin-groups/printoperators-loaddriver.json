@@ -145,6 +145,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Print Operators - SeLoadDriver Capcom Abuse - Elastic KQL",
+        "logic": "event.code:\"6\" AND driver.name:*Capcom* OR (event.code:\"13\" AND registry.path:*CurrentControlSet\\\\Capcom*)",
+        "data_source": "edr",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

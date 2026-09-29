@@ -129,6 +129,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Web Crawling - ReconSpider - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND (NOT user_agent.original:Mozilla* OR user_agent.original:*Spider*)",
+        "data_source": "ndr",
+        "attack": [
+          "T1594"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

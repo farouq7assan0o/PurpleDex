@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SeDebugPrivilege - psgetsystem Parent Process - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*psgetsys* OR *CreateProcessFromParent*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1134.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - Search Files for Passwords - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:findstr.exe AND process.command_line:(*password* OR *SIM*)",
+        "data_source": "edr",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

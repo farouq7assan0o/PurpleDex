@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "R-Services - Enumeration - Elastic KQL",
+        "logic": "process.name:rlogin* OR (event.category:network AND destination.port:513)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -124,6 +124,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "smbmap - Recursive Share Content Listing - Elastic KQL",
+        "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*",
+        "data_source": "edr",
+        "attack": [
+          "T1135",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

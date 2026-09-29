@@ -143,6 +143,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "psexecpy - Shell via Kerberos Ticket - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND NOT user.name:*$\n\nevent.code:\"1\" AND process.parent.executable:*services.exe AND (process.name:cmd.exe OR process.name:powershell.exe)",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

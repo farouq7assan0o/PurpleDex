@@ -143,6 +143,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD - Living Off the Land Enumeration - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(net.exe OR net1.exe OR nltest.exe OR dsquery.exe OR whoami.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1087.002",
+          "T1016",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -172,6 +172,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Jenkins Pipeline Modification for RCE  Credential Theft - Elastic KQL",
+        "logic": "event.dataset:aws.cloudtrail AND event.action:(\"AssumeRole\" OR \"GetSessionToken\" OR \"CreateAccessKey\")",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1059.004",
+          "T1552.001",
+          "T1612"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

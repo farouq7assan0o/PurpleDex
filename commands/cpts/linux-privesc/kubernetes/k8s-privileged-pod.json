@@ -143,6 +143,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Elastic KQL",
+        "logic": "kubernetes.audit.verb:create AND kubernetes.audit.objectRef.resource:pods AND kubernetes.audit.requestObject.spec.*.privileged:true",
+        "data_source": "edr",
+        "attack": [
+          "T1610",
+          "T1611"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -133,6 +133,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Path Abuse - Hijack a Relative Binary Call - Elastic KQL",
+        "logic": "event.category:process AND process.executable:(/home/*/ls OR /tmp/*/id OR /home/*/cat)",
+        "data_source": "edr",
+        "attack": [
+          "T1574.007"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

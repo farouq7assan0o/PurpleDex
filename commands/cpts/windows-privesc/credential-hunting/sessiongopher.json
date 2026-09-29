@@ -124,6 +124,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - SessionGopher - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*SessionGopher*",
+        "data_source": "powershell",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

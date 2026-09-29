@@ -131,6 +131,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Enumerate GPO Permissions - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainGPO* OR *Get-GPO* OR *gpcfilesyspath*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

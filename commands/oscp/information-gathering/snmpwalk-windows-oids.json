@@ -170,6 +170,19 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SNMP - Windows OID Enumeration (Users Processes Software Ports) - Elastic KQL",
+        "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+        "data_source": "ndr",
+        "attack": [
+          "T1049",
+          "T1082",
+          "T1087.001",
+          "T1518"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

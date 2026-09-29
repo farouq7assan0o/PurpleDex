@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privileged Groups - Docker Group Escape - Elastic KQL",
+        "logic": "process.name:docker AND process.args:(*-v* AND */:/mnt*) OR process.args:*chroot*",
+        "data_source": "edr",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -128,6 +128,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Find AS-REP Roastable Accounts - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *PreauthNotRequired* OR *DoesNotRequirePreAuth*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

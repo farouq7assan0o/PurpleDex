@@ -137,6 +137,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DLL Hijacking - Missing  Proxy DLL - Elastic KQL",
+        "logic": "event.code:\"7\" AND NOT dll.path:(*System32* OR *SysWOW64* OR *Program?Files*) AND dll.code_signature.trusted:false",
+        "data_source": "edr",
+        "attack": [
+          "T1574.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

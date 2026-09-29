@@ -140,6 +140,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Weak Permissions - Unquoted Service Path - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.parent.name:services.exe AND process.executable:*Program.exe",
+        "data_source": "edr",
+        "attack": [
+          "T1574.009"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

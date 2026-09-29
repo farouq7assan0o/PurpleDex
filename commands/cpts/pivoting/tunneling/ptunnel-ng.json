@@ -139,6 +139,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Ptunnel-ng - ICMP Tunneling - Elastic KQL",
+        "logic": "network.transport:icmp AND network.bytes>1000",
+        "data_source": "edr",
+        "attack": [
+          "T1572"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

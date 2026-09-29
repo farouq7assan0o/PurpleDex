@@ -134,6 +134,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Application Discovery - Nmap Web Ports - Elastic KQL",
+        "logic": "event.category:network AND source.ip:* AND destination.port:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

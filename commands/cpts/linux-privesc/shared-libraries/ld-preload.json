@@ -145,6 +145,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Shared Libraries - LDPRELOAD via sudo - Elastic KQL",
+        "logic": "process.name:sudo AND process.env_vars:*LD_PRELOAD* OR process.command_line:*LD_PRELOAD=*",
+        "data_source": "edr",
+        "attack": [
+          "T1574.006"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

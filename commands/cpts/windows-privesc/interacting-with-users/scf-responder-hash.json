@@ -153,6 +153,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Interacting with Users - SCF Forced Auth - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.extension:scf",
+        "data_source": "edr",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

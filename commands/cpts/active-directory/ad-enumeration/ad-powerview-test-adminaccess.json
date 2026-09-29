@@ -137,6 +137,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Test-AdminAccess (Local Admin Check) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Test-AdminAccess* OR *Invoke-CheckLocalAdminAccess*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1069.001",
+          "T1135"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

@@ -131,6 +131,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DnsAdmins - WPAD Record Injection - Elastic KQL",
+        "logic": "dns.question.name:wpad* AND event.action:record_added",
+        "data_source": "dns",
+        "attack": [
+          "T1557"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

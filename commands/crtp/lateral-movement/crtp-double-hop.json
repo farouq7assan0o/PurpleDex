@@ -172,6 +172,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "The Kerberos Double-Hop Problem  Fixes - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"9\" AND winlog.event_data.LogonProcessName:seclogo",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

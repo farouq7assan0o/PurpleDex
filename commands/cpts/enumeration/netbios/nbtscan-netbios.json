@@ -139,6 +139,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "NetBIOS Discovery (nbtscan) - Elastic KQL",
+        "logic": "process.name:nbtscan* OR (event.category:network AND destination.port:137)",
+        "data_source": "edr",
+        "attack": [
+          "T1046",
+          "T1018"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

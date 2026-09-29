@@ -165,6 +165,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Diamond Ticket (Rubeus tgtdeleg) - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:(*diamond* OR *tgtdeleg*)",
+        "data_source": "edr",
+        "attack": [
+          "T1558.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

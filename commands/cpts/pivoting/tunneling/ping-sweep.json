@@ -141,6 +141,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Pivot - Host Discovery Ping Sweep - Elastic KQL",
+        "logic": "network.transport:icmp AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1018"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

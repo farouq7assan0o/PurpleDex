@@ -123,6 +123,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "IIS - Tilde (83 Short Name) Enumeration - Elastic KQL",
+        "logic": "event.category:web AND url.path:*~1* AND http.request.method:(GET OR OPTIONS)",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

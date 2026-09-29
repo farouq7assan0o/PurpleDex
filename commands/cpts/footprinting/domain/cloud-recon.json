@@ -128,6 +128,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Cloud Resources - Discovery - Elastic KQL",
+        "logic": "event.category:network AND dns.question.name:(*.amazonaws.com OR *.blob.core.windows.net OR *.googleapis.com)",
+        "data_source": "ndr",
+        "attack": [
+          "T1580"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

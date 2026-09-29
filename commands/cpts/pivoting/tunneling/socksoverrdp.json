@@ -156,6 +156,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SocksOverRDP - SOCKS Tunnel over RDP - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:regsvr32.exe AND process.command_line:*SocksOverRDP*",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

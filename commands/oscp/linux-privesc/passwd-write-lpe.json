@@ -148,6 +148,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Linux PrivEsc - etcpasswd World-Writable - Elastic KQL",
+        "logic": "event.category:file AND file.path:(/etc/passwd OR /etc/shadow) AND event.action:modification",
+        "data_source": "edr",
+        "attack": [
+          "T1548",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

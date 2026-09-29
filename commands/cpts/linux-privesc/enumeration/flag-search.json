@@ -130,6 +130,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Enumeration - Flag  Keyword Search - Elastic KQL",
+        "logic": "process.name:(grep OR find) AND process.args:(*-r* OR */root*)",
+        "data_source": "edr",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

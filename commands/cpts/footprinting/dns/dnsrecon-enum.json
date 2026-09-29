@@ -155,6 +155,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DNS - dnsrecon Standard  Brute Force - Elastic KQL",
+        "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

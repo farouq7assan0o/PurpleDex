@@ -222,6 +222,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Session  Share Hunting (SessionHunter  PowerHuntShares) - Elastic KQL",
+        "logic": "event.code:\"5140\" AND winlog.event_data.ShareName:*\n\nevent.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-SessionHunter* OR *PowerHuntShares*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1049",
+          "T1135",
+          "T1033"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

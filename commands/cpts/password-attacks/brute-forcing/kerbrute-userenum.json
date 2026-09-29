@@ -128,6 +128,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Kerbrute - Enumerate AD Usernames - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.Status:\"0x6\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

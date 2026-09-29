@@ -160,6 +160,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Entra ID (Azure AD) Enumeration via Microsoft Graph - Elastic KQL",
+        "logic": "event.dataset:azure.activitylogs AND azure.activitylogs.operation_name:(*list* OR *read*)",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1087.004",
+          "T1069.003",
+          "T1526"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

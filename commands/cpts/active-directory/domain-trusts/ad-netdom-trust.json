@@ -120,6 +120,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "netdom - Enumerate Domain Trusts - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(netdom.exe OR nltest.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

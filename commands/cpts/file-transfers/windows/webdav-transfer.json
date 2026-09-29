@@ -178,6 +178,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WebDAV - Transfer - Elastic KQL",
+        "logic": "http.request.method:(PUT OR PROPFIND) OR file.path:*DavWWWRoot*",
+        "data_source": "proxy",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

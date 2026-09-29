@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Web Recon - Headers  Fingerprinting - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+        "data_source": "ndr",
+        "attack": [
+          "T1592"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

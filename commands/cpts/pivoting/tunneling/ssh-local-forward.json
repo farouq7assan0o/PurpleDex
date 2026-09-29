@@ -115,6 +115,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SSH - Local Port Forwarding - Elastic KQL",
+        "logic": "process.name:ssh AND process.args:\"-L\"",
+        "data_source": "edr",
+        "attack": [
+          "T1572"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

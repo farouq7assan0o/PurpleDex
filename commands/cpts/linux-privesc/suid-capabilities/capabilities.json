@@ -154,6 +154,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Capabilities - Enumerate and Abuse - Elastic KQL",
+        "logic": "process.name:getcap OR (event.category:file AND file.path:/etc/passwd AND event.action:change AND NOT process.name:(passwd OR useradd))",
+        "data_source": "edr",
+        "attack": [
+          "T1548.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -154,6 +154,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SeImpersonate - PrintSpoofer to SYSTEM - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:*PrintSpoofer* OR (event.code:\"17\" AND file.name:*spoolss*)",
+        "data_source": "edr",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

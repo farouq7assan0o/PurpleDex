@@ -186,6 +186,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Ligolo-ng - TUN-Interface Pivot (no proxychains) - Elastic KQL",
+        "logic": "process.command_line:(*ligolo* OR (*-connect* AND *11601*)) OR (event.code:\"3\" AND destination.port:11601)",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

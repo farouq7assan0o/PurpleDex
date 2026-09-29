@@ -214,6 +214,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Mimikatz Certificate Theft (cryptocapi  cryptocng) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*crypto\\:\\:certificates* OR *crypto\\:\\:capi* OR *crypto\\:\\:cng*)\n\nevent.code:\"10\" AND winlog.event_data.TargetImage:(*lsass.exe OR *keyiso*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1649",
+          "T1552.004"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

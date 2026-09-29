@@ -118,6 +118,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Upgrade to a Full TTY - Elastic KQL",
+        "logic": "process.command_line:(*pty.spawn* OR *script?/dev/null* OR *stty?raw*)",
+        "data_source": "edr",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

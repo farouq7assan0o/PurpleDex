@@ -145,6 +145,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GenericAll  GenericWrite on a Group (Add Member) - Elastic KQL",
+        "logic": "event.code:(\"4728\" OR \"4732\" OR \"4756\")",
+        "data_source": "edr",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -109,6 +109,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "NetExec - Read gMSA Password - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.Properties:*msDS-ManagedPassword*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

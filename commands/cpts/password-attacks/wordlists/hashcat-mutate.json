@@ -109,6 +109,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hashcat - Generate Mutated Wordlist - Elastic KQL",
+        "logic": "process.name:hashcat*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

@@ -129,6 +129,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Transfer with Code - Upload  Read One-liners - Elastic KQL",
+        "logic": "process.name:(python* OR php OR ruby) AND process.command_line:(*requests.post* OR *files\\=*)",
+        "data_source": "edr",
+        "attack": [
+          "T1048.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

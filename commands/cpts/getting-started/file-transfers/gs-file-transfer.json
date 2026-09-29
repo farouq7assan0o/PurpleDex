@@ -129,6 +129,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "File Transfers - Basics - Elastic KQL",
+        "logic": "event.category:process AND (process.name:(certutil.exe OR bitsadmin.exe OR wget OR curl) OR process.command_line:*DownloadFile*) AND process.command_line:*http*",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

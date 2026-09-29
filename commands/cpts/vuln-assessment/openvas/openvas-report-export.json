@@ -111,6 +111,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "OpenVAS - Export Report to XLSX - Elastic KQL",
+        "logic": "/* local report export; no target-side event to match */",
+        "data_source": "edr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

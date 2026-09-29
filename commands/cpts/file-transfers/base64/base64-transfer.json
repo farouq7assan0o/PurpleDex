@@ -147,6 +147,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Base64 - CopyPaste Transfer - Elastic KQL",
+        "logic": "process.command_line:(*base64* AND *-d*) OR (event.code:\"4104\" AND powershell.file.script_block_text:*FromBase64String*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

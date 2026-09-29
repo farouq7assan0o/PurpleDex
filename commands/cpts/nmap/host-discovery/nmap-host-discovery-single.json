@@ -134,6 +134,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Nmap - Single-Host Discovery with ICMP - Elastic KQL",
+        "logic": "event.category:network AND source.ip:* AND destination.port:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1018"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

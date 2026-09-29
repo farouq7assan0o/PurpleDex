@@ -191,6 +191,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "snmpwalk - MIB Enumeration with Community String - Elastic KQL",
+        "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+        "data_source": "ndr",
+        "attack": [
+          "T1046",
+          "T1082"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

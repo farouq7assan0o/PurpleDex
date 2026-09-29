@@ -123,6 +123,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Crack BitLocker Volume (bitlocker2john) - Elastic KQL",
+        "logic": "process.name:bitlocker2john*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

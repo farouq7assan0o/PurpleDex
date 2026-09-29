@@ -114,6 +114,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "EyeWitness - Screenshot Web Applications - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:Mozilla*",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

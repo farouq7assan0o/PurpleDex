@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows File Search (PowerShell Recursive) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ChildItem* AND *Recurse* AND (*.kdbx* OR *.pfx* OR *Unattend* OR *password*))",
+        "data_source": "powershell",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

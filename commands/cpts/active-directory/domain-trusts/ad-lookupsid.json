@@ -135,6 +135,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "lookupsidpy - Enumerate Domain SIDs and Users - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(135 OR 445)",
+        "data_source": "ndr",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

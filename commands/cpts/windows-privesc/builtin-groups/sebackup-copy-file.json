@@ -144,6 +144,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Backup Operators - Copy Protected File (SeBackupPrivilege) - Elastic KQL",
+        "logic": "event.code:\"4656\" AND winlog.event_data.ObjectName:(*SAM OR *SECURITY OR *ntds.dit) AND winlog.event_data.AccessMask:*",
+        "data_source": "edr",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

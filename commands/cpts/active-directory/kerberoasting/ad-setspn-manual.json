@@ -135,6 +135,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "setspn - Semi-Manual Kerberoast - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:setspn.exe AND process.args:\"-Q\"",
+        "data_source": "edr",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

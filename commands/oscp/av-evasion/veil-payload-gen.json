@@ -124,6 +124,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Veil - On-Disk AV Evasion Payload - Elastic KQL",
+        "logic": "/* local operation; no target-side event */",
+        "data_source": "edr",
+        "attack": [
+          "T1027",
+          "T1588.005"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

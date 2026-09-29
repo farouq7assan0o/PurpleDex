@@ -128,6 +128,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "getnthashpy - Get NT Hash from PKINIT TGT - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.CertificateThumbprint:* AND winlog.event_data.TicketEncryptionType:\"0x12\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

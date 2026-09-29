@@ -123,6 +123,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "ColdFusion - Discovery and Admin Panel - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.path:(\"/CFIDE/administrator/index.cfm\" OR \"/cfdocs/\")",
+        "data_source": "ndr",
+        "attack": [
+          "T1595",
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -153,6 +153,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows - FTP Transfer - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:ftp.exe OR process.command_line:*ftp\\://*)",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

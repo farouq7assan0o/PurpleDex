@@ -152,6 +152,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS CLI - Configure Profile  Verify Identity - Elastic KQL",
+        "logic": "event.dataset:aws.cloudtrail AND event.action:GetCallerIdentity",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1078.004",
+          "T1526"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

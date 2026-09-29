@@ -155,6 +155,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "ColdFusion - Directory Traversal (CVE-2010-2861) - Elastic KQL",
+        "logic": "event.category:web AND (url.query:(*../* OR *%2e%2e* OR */CFIDE/* OR *password.properties*) OR url.path:(*../* OR *%2e%2e* OR */CFIDE/* OR *password.properties*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1083"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

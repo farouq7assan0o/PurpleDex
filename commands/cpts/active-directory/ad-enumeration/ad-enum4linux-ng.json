@@ -134,6 +134,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "enum4linux-ng - Enhanced SMBRPC Enumeration - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(139 OR 445) AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1201",
+          "T1087.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

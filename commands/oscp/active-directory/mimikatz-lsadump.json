@@ -211,6 +211,18 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Mimikatz LSA Dump (SAM  LSA Secrets) - Elastic KQL",
+        "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND winlog.event_data.GrantedAccess:(\"0x1010\" OR \"0x1FFFFF\")\n\nevent.code:\"1\" AND process.command_line:(*lsadump* OR *sekurlsa*)",
+        "data_source": "edr",
+        "attack": [
+          "T1003.002",
+          "T1003.004",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

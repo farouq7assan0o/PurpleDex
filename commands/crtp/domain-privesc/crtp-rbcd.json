@@ -157,6 +157,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Resource-Based Constrained Delegation (RBCD) - Elastic KQL",
+        "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-AllowedToActOnBehalfOfOtherIdentity\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

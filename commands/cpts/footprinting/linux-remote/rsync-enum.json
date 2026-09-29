@@ -134,6 +134,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Rsync - Enumeration - Elastic KQL",
+        "logic": "process.name:rsync* OR (event.category:network AND destination.port:873)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

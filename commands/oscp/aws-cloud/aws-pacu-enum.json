@@ -187,6 +187,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Pacu Framework (Automated IAM  Cloud Enumeration) - Elastic KQL",
+        "logic": "event.dataset:aws.cloudtrail AND event.action:(\"DescribeInstances\" OR \"ListBuckets\" OR \"GetAccountAuthorizationDetails\" OR \"ListSecrets\")",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1580",
+          "T1526"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

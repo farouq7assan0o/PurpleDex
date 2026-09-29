@@ -179,6 +179,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Attack Chain - MS16-032 Local Admin - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-MS16-032* OR *DownloadString*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

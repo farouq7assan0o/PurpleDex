@@ -134,6 +134,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "runas netonly - Inject AD Creds on Windows - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:(*runas* AND */netonly*)\n\nevent.code:\"4648\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

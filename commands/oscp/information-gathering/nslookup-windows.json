@@ -144,6 +144,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DNS - Windows nslookup Queries - Elastic KQL",
+        "logic": "event.category:network AND dns.question.name:* AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1018",
+          "T1016"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

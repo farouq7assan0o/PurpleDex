@@ -195,6 +195,17 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Impacket - Remote Command Execution (wmiexecatexecsmbexec) - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.parent.name:WmiPrvSE.exe AND process.name:(cmd.exe OR powershell.exe)",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.002",
+          "T1047"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

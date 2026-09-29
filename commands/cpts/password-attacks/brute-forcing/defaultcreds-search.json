@@ -116,6 +116,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DefaultCreds - Search Default Credentials - Elastic KQL",
+        "logic": "process.name:creds*",
+        "data_source": "edr",
+        "attack": [
+          "T1078.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

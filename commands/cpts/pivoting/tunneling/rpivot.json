@@ -149,6 +149,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Rpivot - Web Server Pivoting - Elastic KQL",
+        "logic": "process.command_line:(*rpivot* OR (*proxy-port* AND *server-port*))",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

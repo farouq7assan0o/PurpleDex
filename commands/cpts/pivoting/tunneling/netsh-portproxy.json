@@ -169,6 +169,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows - Port Forwarding with Netsh - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:netsh.exe AND process.command_line:(*portproxy* AND *add*)",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

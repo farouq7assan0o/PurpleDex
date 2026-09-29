@@ -135,6 +135,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Get Kerberoastable SPNs - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainUser* OR *SPN* OR *serviceprincipalname*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

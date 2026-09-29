@@ -145,6 +145,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Linux - Download (wgetcurldev-tcp) - Elastic KQL",
+        "logic": "process.name:(wget OR curl) AND process.command_line:*http*",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

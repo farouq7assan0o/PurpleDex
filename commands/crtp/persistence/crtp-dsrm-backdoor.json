@@ -177,6 +177,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DSRM Backdoor (DC Local Admin Persistence) - Elastic KQL",
+        "logic": "event.code:\"13\" AND registry.path:*DsrmAdminLogonBehavior*",
+        "data_source": "edr",
+        "attack": [
+          "T1098",
+          "T1003.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

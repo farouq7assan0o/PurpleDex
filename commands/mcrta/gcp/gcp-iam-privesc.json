@@ -137,6 +137,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Elastic KQL",
+        "logic": "cloud.provider:gcp AND event.action:(*SetIAMPolicy* OR *SetIamPolicy*)",
+        "data_source": "edr",
+        "attack": [
+          "T1548",
+          "T1098.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

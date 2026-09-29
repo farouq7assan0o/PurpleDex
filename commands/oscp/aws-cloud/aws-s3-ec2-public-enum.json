@@ -161,6 +161,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Enumerate Public S3 Buckets  EC2 Shared Resources - Elastic KQL",
+        "logic": "event.dataset:aws.cloudtrail AND event.action:(\"ListBuckets\" OR \"GetBucketAcl\" OR \"DescribeInstances\" OR \"DescribeSnapshots\")",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1619",
+          "T1580"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

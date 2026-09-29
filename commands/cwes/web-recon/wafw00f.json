@@ -119,6 +119,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "wafw00f - WAF Detection - Elastic KQL",
+        "logic": "event.category:web AND (user_agent.original:*wafw00f* OR url.query:(*script* OR *..\\/..*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

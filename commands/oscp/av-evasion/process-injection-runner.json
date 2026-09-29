@@ -150,6 +150,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "C Shellcode Runner  Process Injection - Elastic KQL",
+        "logic": "event.code:\"8\" AND process.name:*",
+        "data_source": "edr",
+        "attack": [
+          "T1055",
+          "T1620"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

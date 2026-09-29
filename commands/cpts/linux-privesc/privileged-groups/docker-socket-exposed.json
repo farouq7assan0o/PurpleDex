@@ -145,6 +145,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privileged Groups - Exposed Docker Socket (in-container) - Elastic KQL",
+        "logic": "event.category:file AND file.path:*docker.sock OR (docker.event.action:create AND docker.container.privileged:true)",
+        "data_source": "edr",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -152,6 +152,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WordPress XSS  CSRF Admin Creation - Elastic KQL",
+        "logic": "event.category:web AND url.query:(*<script* OR *onerror\\=* OR *javascript\\:* OR *document.cookie*)",
+        "data_source": "proxy",
+        "attack": [
+          "T1059.007",
+          "T1548"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

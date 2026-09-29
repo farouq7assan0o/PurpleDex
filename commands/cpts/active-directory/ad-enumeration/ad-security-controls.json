@@ -142,6 +142,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD - Enumerate Security Controls (Defender  AppLocker  CLM) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-MpComputerStatus* OR *Get-AppLockerPolicy* OR *AMSI*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1518.001",
+          "T1562.001",
+          "T1685"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

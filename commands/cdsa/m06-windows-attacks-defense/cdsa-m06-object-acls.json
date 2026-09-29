@@ -158,6 +158,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Object ACL Abuse in Active Directory - BloodHound  Detection - Elastic KQL",
+        "logic": "event.code:(\"4738\" OR \"4742\" OR \"4724\") AND NOT winlog.event_data.SubjectUserName:*$",
+        "data_source": "edr",
+        "attack": [
+          "T1222.001",
+          "T1078.002",
+          "T1484.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

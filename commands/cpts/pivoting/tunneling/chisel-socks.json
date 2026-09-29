@@ -213,6 +213,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Chisel - SOCKS5 Tunnel - Elastic KQL",
+        "logic": "process.name:*chisel* OR process.command_line:(*chisel* OR *socks5*)",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

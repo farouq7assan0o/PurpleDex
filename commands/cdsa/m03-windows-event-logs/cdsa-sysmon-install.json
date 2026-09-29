@@ -185,6 +185,19 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Sysmon - Installation  Configuration - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(sysmon.exe OR sysmon64.exe) AND process.args:(\"-i\" OR \"-c\" OR \"-u\")",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1059",
+          "T1071",
+          "T1547"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

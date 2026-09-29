@@ -153,6 +153,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GPO Misconfiguration Abuse (SharpGPOAbuse) - Elastic KQL",
+        "logic": "event.code:\"5136\" AND winlog.event_data.ObjectClass:groupPolicyContainer",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

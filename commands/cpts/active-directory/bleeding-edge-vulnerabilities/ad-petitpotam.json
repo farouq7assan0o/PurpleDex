@@ -151,6 +151,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PetitPotam  NTLM Relay  ADCS Certificate - Elastic KQL",
+        "logic": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:*$ AND NOT source.ip:<dc_ip>\n\nevent.code:\"18\" AND winlog.event_data.PipeName:(\\\\lsarpc OR \\\\efsrpc)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Misc - certutil File Transfer  Encoding - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:certutil.exe AND process.command_line:(*urlcache* OR *http*)",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

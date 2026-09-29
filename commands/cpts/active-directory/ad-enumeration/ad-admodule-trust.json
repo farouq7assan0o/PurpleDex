@@ -132,6 +132,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "ActiveDirectory Module - Get-ADTrust - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-ADTrust* OR *Get-ADForest*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

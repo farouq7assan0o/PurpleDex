@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Bind Shell Payloads - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:(*-l* AND *-e* AND (*cmd* OR */bin/*))",
+        "data_source": "edr",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

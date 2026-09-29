@@ -142,6 +142,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "MySQL - Enumeration - Elastic KQL",
+        "logic": "process.name:mysql* OR (event.category:network AND destination.port:3306)",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

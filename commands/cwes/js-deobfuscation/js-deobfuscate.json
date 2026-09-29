@@ -163,6 +163,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "JavaScript Deobfuscation - Recover Endpoints  Secrets - Elastic KQL",
+        "logic": "/* offline JS analysis; only the normal script GET is logged server-side */",
+        "data_source": "edr",
+        "attack": [
+          "T1592.002",
+          "T1140"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

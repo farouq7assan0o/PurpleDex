@@ -163,6 +163,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Elastic KQL",
+        "logic": "event.code:(\"4886\" OR \"4887\") AND winlog.event_data.Attributes:*DomainController*",
+        "data_source": "edr",
+        "attack": [
+          "T1557.001",
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

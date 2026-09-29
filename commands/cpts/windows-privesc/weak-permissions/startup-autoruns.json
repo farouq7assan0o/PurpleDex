@@ -138,6 +138,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Weak Permissions - Startup  Autorun Enumeration - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:*Win32_StartupCommand*",
+        "data_source": "powershell",
+        "attack": [
+          "T1547.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

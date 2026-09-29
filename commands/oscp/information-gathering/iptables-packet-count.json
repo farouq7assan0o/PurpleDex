@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "iptables - Packet Counter for Scan Verification - Elastic KQL",
+        "logic": "process.name:iptables AND process.args:(\"-L\" AND \"-v\")",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

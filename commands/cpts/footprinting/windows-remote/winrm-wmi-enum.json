@@ -138,6 +138,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WinRM  WMI - Enumeration  Access - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(5985 OR 5986)",
+        "data_source": "ndr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

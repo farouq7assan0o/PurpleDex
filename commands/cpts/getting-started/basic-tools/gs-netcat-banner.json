@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Netcat - Banner Grab - Elastic KQL",
+        "logic": "process.name:(nc OR ncat) AND process.args:*-v*",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

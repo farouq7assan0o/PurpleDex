@@ -118,6 +118,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privilege Escalation - SSH Key Abuse - Elastic KQL",
+        "logic": "event.category:file AND file.path:*/.ssh/id_* AND NOT process.name:(ssh OR sshd OR ssh-agent)",
+        "data_source": "edr",
+        "attack": [
+          "T1552.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

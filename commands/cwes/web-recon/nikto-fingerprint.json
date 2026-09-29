@@ -128,6 +128,17 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Nikto - Web Server Fingerprinting - Elastic KQL",
+        "logic": "event.category:web AND (user_agent.original:*Nikto* OR http.response.status_code:404) AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002",
+          "T1190"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

@@ -121,6 +121,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "MSSQL - Discover Instance  Service Account - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(sc.exe OR wmic.exe) AND process.command_line:*SQL*",
+        "data_source": "edr",
+        "attack": [
+          "T1007"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

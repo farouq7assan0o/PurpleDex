@@ -114,6 +114,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SYSVOL Logon Scripts - Hunt for Creds - Elastic KQL",
+        "logic": "event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL* AND winlog.event_data.RelativeTargetName:*scripts*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

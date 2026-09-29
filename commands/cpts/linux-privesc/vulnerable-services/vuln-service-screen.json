@@ -149,6 +149,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Vulnerable Service - GNU screen 450 root - Elastic KQL",
+        "logic": "event.category:file AND file.path:/etc/ld.so.preload AND NOT user.name:root",
+        "data_source": "edr",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

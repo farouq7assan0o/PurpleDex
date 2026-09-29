@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Proxychains - Route Tools Through Proxy - Elastic KQL",
+        "logic": "process.name:proxychains*",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

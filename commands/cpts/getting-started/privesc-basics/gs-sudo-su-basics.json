@@ -136,6 +136,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privilege Escalation - sudo  su - Elastic KQL",
+        "logic": "event.category:process AND process.name:(sudo OR su) AND event.outcome:success",
+        "data_source": "edr",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -136,6 +136,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hashcat - Dictionary Attack - Elastic KQL",
+        "logic": "process.name:hashcat* AND process.args:\"-a 0\"",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

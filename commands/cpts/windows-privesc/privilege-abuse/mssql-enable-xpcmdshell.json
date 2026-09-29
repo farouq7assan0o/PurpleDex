@@ -149,6 +149,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "MSSQL - Connect and Enable xpcmdshell - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.parent.name:sqlservr.exe AND process.name:(cmd.exe OR powershell.exe)",
+        "data_source": "powershell",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

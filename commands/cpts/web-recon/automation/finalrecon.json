@@ -143,6 +143,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Recon Automation - FinalRecon - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND NOT user_agent.original:(Mozilla* AND *Chrome*)",
+        "data_source": "ndr",
+        "attack": [
+          "T1595"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

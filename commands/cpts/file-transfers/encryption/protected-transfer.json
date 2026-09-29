@@ -147,6 +147,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Protected Transfers - Encrypt Files - Elastic KQL",
+        "logic": "process.name:openssl AND process.args:enc OR (event.code:\"4104\" AND powershell.file.script_block_text:*AESEncryption*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1105",
+          "T1027"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

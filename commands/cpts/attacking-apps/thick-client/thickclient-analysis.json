@@ -134,6 +134,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Thick Client - StaticDynamic Analysis - Elastic KQL",
+        "logic": "event.code:\"3\" AND NOT process.name:(chrome.exe OR firefox.exe OR svchost.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1140",
+          "T1592.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

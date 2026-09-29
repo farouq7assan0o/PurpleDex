@@ -118,6 +118,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Misc - Hijack Shared tmux Session - Elastic KQL",
+        "logic": "process.name:tmux AND process.args:-S",
+        "data_source": "edr",
+        "attack": [
+          "T1563"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

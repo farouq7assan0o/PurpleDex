@@ -149,6 +149,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Office - Malicious VBA Macro - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.parent.name:(WINWORD.EXE OR EXCEL.EXE OR POWERPNT.EXE) AND process.name:(cmd.exe OR powershell.exe OR mshta.exe OR wscript.exe)",
+        "data_source": "powershell",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

@@ -122,6 +122,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Certificate Transparency - crtsh - Elastic KQL",
+        "logic": "/* passive OSINT against crt.sh (Certificate Transparency); no target-side event to match */",
+        "data_source": "edr",
+        "attack": [
+          "T1596.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

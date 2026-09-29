@@ -138,6 +138,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "GCP IAM  Resource Enumeration (gcloud) - Elastic KQL",
+        "logic": "event.dataset:gcp.audit AND gcp.audit.method_name:(*.list OR *.get)",
+        "data_source": "edr",
+        "attack": [
+          "T1069.003",
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

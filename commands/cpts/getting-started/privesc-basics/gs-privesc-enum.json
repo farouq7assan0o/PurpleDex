@@ -125,6 +125,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privilege Escalation - Enumeration Basics - Elastic KQL",
+        "logic": "process.name:(linpeas* OR linpeas.sh) OR process.command_line:*linpeas*",
+        "data_source": "edr",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

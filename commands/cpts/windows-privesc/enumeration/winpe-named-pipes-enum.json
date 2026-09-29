@@ -122,6 +122,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WinPE - Named Pipe Enumeration - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:accesschk.exe AND process.command_line:*pipe*) OR process.name:pipelist.exe",
+        "data_source": "edr",
+        "attack": [
+          "T1057"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

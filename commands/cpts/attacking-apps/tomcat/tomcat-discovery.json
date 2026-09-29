@@ -119,6 +119,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Tomcat - Detect and Enumerate - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.path:(\"/manager/html\" OR \"/host-manager/html\" OR \"/docs/\")",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -150,6 +150,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AV Evasion - Detection Methods  Approach - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*amsiInitFailed* OR *AmsiUtils* OR *VirtualAlloc* OR *Reflection.Emit*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1027",
+          "T1518.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

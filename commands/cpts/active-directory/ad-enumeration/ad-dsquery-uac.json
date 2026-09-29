@@ -117,6 +117,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "dsquery - Search AD via Built-in Tool - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(dsquery.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

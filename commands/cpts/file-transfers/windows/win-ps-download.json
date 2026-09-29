@@ -163,6 +163,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows - PowerShell Download - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*DownloadFile* OR *DownloadString* OR *IEX*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

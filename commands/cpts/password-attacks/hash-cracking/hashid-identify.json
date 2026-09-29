@@ -117,6 +117,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "hashID - Identify Hash Type - Elastic KQL",
+        "logic": "process.name:hashid*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

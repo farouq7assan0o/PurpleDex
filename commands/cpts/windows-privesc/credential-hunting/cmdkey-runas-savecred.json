@@ -135,6 +135,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Credential Hunting - Stored Credentials (cmdkeyrunas) - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:cmdkey.exe AND process.args:\"/list\") OR (process.name:runas.exe AND process.args:\"/savecred\")",
+        "data_source": "edr",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

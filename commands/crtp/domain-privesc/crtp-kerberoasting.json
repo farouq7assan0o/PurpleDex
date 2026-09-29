@@ -164,6 +164,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Kerberoasting (Rubeus rc4opsec) - Elastic KQL",
+        "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:(krbtgt OR *$)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

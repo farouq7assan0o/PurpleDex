@@ -149,6 +149,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows - SMB Transfer (Impacket) - Elastic KQL",
+        "logic": "event.code:\"3\" AND destination.port:445 AND NOT destination.ip:(10.0.0.0/8 OR 172.16.0.0/12 OR 192.168.0.0/16)",
+        "data_source": "ndr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

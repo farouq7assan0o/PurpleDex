@@ -141,6 +141,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PrintNightmare - RCE via Print Spooler (CVE-2021-1675) - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.path:C\\:\\\\Windows\\\\System32\\\\spool\\\\drivers\\\\*\n\nevent.code:\"4688\" AND winlog.event_data.NewProcessName:*spoolsv.exe",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -207,6 +207,19 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView Interesting File  Share ACL Hunting - Elastic KQL",
+        "logic": "event.code:\"5145\" AND winlog.event_data.RelativeTargetName:(*pass* OR *.config OR *.xml OR *.vbs)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1083",
+          "T1135",
+          "T1039",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Misc - Passive Traffic Capture - Elastic KQL",
+        "logic": "process.name:(tcpdump OR tshark OR dumpcap) AND NOT user.name:root",
+        "data_source": "edr",
+        "attack": [
+          "T1040"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

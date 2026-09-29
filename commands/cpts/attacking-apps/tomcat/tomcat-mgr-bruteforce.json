@@ -139,6 +139,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Tomcat - Manager Brute Force (Metasploit) - Elastic KQL",
+        "logic": "event.category:web AND url.path:\"/manager/html\" AND http.response.status_code:(401 OR 200)",
+        "data_source": "proxy",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -146,6 +146,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Pillaging - Steal Browser Cookies - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.command_line:(*SharpChromium* OR *cookies*) AND process.command_line:*slack*",
+        "data_source": "edr",
+        "attack": [
+          "T1539"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -142,6 +142,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "HTA - mshtaexe Execution - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:mshta.exe AND process.command_line:(*http* OR *javascript* OR *vbscript*)",
+        "data_source": "edr",
+        "attack": [
+          "T1566.002",
+          "T1218.005",
+          "T1059.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

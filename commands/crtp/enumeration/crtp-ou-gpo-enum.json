@@ -209,6 +209,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "OU  GPO Enumeration (PowerView) - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.ObjectType:(*groupPolicyContainer* OR *organizationalUnit*)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1615",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

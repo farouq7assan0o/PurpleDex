@@ -134,6 +134,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Web Mass Assignment - Inject Extra Parameters - Elastic KQL",
+        "logic": "event.category:web AND (url.query:(*isAdmin* OR *role=admin* OR *is_admin* OR *\"admin\":true*) OR url.path:(*isAdmin* OR *role=admin* OR *is_admin* OR *\"admin\":true*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

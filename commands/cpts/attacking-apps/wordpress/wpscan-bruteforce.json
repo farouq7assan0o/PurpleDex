@@ -123,6 +123,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WPScan - Password Brute Force (xmlrpc) - Elastic KQL",
+        "logic": "event.category:web AND url.path:\"/wp-login.php\" AND (http.response.status_code:(401 OR 403) OR http.request.method:POST)",
+        "data_source": "proxy",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

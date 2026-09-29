@@ -133,6 +133,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Dislocker - Unlock a BitLocker Volume - Elastic KQL",
+        "logic": "process.name:dislocker*",
+        "data_source": "edr",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

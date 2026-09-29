@@ -151,6 +151,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Azure Resource Manager (ARM) Enumeration - Elastic KQL",
+        "logic": "event.dataset:azure.activitylogs AND azure.activitylogs.operation_name:(*list* OR *read*)",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1580",
+          "T1526"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

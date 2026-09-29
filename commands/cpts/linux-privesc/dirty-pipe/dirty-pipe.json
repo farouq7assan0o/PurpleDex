@@ -139,6 +139,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Dirty Pipe (CVE-2022-0847) - Elastic KQL",
+        "logic": "event.category:file AND file.path:(/etc/passwd OR /usr/bin/sudo OR /usr/bin/su) AND event.action:(change OR modification) AND NOT user.name:root",
+        "data_source": "edr",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

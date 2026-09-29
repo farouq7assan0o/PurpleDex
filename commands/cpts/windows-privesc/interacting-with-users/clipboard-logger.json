@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Interacting with Users - Clipboard Logger - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-Clipboard* OR *ClipboardLogger*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1115"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

@@ -179,6 +179,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerUp Local Privilege Escalation - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Invoke-AllChecks* OR *Invoke-ServiceAbuse* OR *Get-ModifiableService*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1574.009",
+          "T1574.007",
+          "T1548.002"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

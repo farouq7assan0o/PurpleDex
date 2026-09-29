@@ -145,6 +145,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "net Commands - Windows Domain Enumeration (LOTL) - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(net.exe OR net1.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -177,6 +177,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Living off the Land - LOLBin Transfers - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:certutil.exe AND process.args:*urlcache*) OR (process.name:bitsadmin.exe AND process.args:*transfer*)",
+        "data_source": "edr",
+        "attack": [
+          "T1105",
+          "T1027"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

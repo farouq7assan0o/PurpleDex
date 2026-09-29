@@ -160,6 +160,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD Module LDAP  Filter Queries (Advanced Enumeration) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.scriptblock.text:(*DoesNotRequirePreAuth* OR *TrustedForDelegation* OR *adminCount*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1087.002",
+          "T1018"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

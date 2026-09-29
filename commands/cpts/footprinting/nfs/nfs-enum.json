@@ -143,6 +143,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "NFS - Enumeration  Mounting - Elastic KQL",
+        "logic": "event.category:network AND destination.port:(111 OR 2049)",
+        "data_source": "ndr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

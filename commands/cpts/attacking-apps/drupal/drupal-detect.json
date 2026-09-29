@@ -127,6 +127,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Drupal - Detect and Version Enumeration - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.path:(\"/CHANGELOG.txt\" OR \"/core/CHANGELOG.txt\" OR \"/user/login\")",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

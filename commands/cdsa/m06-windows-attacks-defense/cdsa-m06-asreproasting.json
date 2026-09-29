@@ -146,6 +146,16 @@
         ],
         "fidelity": "signature",
         "confidence": "high"
+      },
+      {
+        "platform": "elastic",
+        "name": "AS-REProasting - Attack Detection  Defense - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

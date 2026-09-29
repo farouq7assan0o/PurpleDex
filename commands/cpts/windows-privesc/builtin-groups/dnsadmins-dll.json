@@ -150,6 +150,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DnsAdmins - Malicious DLL via dnscmd - Elastic KQL",
+        "logic": "event.code:\"13\" AND registry.path:*ServerLevelPluginDll*",
+        "data_source": "edr",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

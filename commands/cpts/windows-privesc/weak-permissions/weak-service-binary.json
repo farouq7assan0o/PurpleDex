@@ -149,6 +149,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Weak Permissions - Replace Modifiable Service Binary - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.path:*service*.exe AND NOT process.name:(msiexec.exe OR TrustedInstaller.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1574.010"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

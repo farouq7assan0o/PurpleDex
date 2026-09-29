@@ -157,6 +157,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "onesixtyone - SNMP Community String Brute Force - Elastic KQL",
+        "logic": "event.category:network AND destination.port:161 AND network.transport:udp",
+        "data_source": "ndr",
+        "attack": [
+          "T1110.003",
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

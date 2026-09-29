@@ -122,6 +122,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "LDAP Injection - Authentication Bypass - Elastic KQL",
+        "logic": "event.category:web AND (url.query:(**)(* OR **))%00* OR **)(uid=** OR *%2a%29*) OR url.path:(**)(* OR **))%00* OR **)(uid=** OR *%2a%29*))",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

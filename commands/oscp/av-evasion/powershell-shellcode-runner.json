@@ -154,6 +154,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerShell In-Memory Shellcode Runner - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*amsiInitFailed* OR *AmsiUtils* OR *VirtualAlloc* OR *Reflection.Emit*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1620",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

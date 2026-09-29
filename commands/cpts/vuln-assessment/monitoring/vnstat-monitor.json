@@ -107,6 +107,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "vnstat - Monitor Scan Bandwidth - Elastic KQL",
+        "logic": "/* vnstat is local interface accounting; no target-side event */",
+        "data_source": "edr",
+        "attack": [
+          "T1040"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

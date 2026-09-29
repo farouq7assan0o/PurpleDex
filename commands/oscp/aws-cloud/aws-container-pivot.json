@@ -172,6 +172,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AWS - Container Network Pivot via Meterpreter  SOCKS Proxy - Elastic KQL",
+        "logic": "cloud.provider:aws AND event.action:(RunInstances OR CreateFunction OR UpdateFunctionCode) AND user.id:*assumed-role*",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1090.003",
+          "T1021",
+          "T1570"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -147,6 +147,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Privilege Escalation - Sudo Writable Script Abuse - Elastic KQL",
+        "logic": "event.category:process AND process.name:sudo AND process.args:(*/home/* OR */tmp/*) AND process.args:*.sh",
+        "data_source": "edr",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

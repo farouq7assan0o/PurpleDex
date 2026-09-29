@@ -160,6 +160,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SeTakeOwnershipPrivilege - Own and Read a File - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:(takeown.exe OR icacls.exe)",
+        "data_source": "edr",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

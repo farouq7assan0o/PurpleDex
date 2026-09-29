@@ -117,6 +117,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Build Hybrid Wordlist (Policy Filtering) - Elastic KQL",
+        "logic": "process.name:grep*",
+        "data_source": "edr",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

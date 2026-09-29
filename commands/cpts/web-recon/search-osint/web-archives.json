@@ -115,6 +115,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Web Archives - Wayback Machine - Elastic KQL",
+        "logic": "/* passive OSINT against the Wayback Machine / web.archive.org; no target-side event to match */",
+        "data_source": "edr",
+        "attack": [
+          "T1596"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

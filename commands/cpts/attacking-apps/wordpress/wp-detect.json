@@ -132,6 +132,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WordPress - Detect and Enumerate via cURL - Elastic KQL",
+        "logic": "event.category:web AND source.ip:* AND url.path:(\"/wp-login.php\" OR \"/wp-content/\" OR \"/readme.html\")",
+        "data_source": "ndr",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

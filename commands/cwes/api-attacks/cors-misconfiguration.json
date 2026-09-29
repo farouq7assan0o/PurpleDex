@@ -143,6 +143,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "CORS Misconfiguration - Cross-Origin Data Theft - Elastic KQL",
+        "logic": "event.category:web AND http.request.headers.origin:* AND NOT http.request.headers.origin:(*yourdomain.com*)",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1539"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

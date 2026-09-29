@@ -133,6 +133,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerShell - Test-NetConnection Port Check - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Test-NetConnection* OR *Test-Connection*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

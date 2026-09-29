@@ -149,6 +149,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Netcat - TCPUDP Port Sweep (-z) - Elastic KQL",
+        "logic": "process.name:(nc OR ncat) AND process.args:\"-z\"",
+        "data_source": "edr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

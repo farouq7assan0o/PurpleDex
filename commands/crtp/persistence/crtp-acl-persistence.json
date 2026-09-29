@@ -156,6 +156,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "ACL-Based Persistence (Grant DCSync Rights) - Elastic KQL",
+        "logic": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:nTSecurityDescriptor AND winlog.event_data.ObjectDN:DC\\=*",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1222.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -115,6 +115,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "NetExec - Password Spraying - Elastic KQL",
+        "logic": "event.code:(\"4625\" OR \"4771\") AND winlog.event_data.Status:\"0x18\"",
+        "data_source": "edr",
+        "attack": [
+          "T1110.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

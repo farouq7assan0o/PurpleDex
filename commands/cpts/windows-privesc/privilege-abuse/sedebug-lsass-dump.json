@@ -158,6 +158,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "SeDebugPrivilege - Dump LSASS and Parse - Elastic KQL",
+        "logic": "event.code:\"10\" AND winlog.event_data.TargetImage:*lsass.exe AND process.name:procdump*",
+        "data_source": "edr",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

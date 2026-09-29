@@ -135,6 +135,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "logmanexe - ETW Session  Provider Enumeration - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:logman.exe AND process.args:\"-ets\"",
+        "data_source": "edr",
+        "attack": [
+          "T1059",
+          "T1055"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

@@ -113,6 +113,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Interacting with Users - Monitor Process Command Lines - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Win32_Process* AND *while*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1057"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

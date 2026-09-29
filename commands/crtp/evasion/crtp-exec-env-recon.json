@@ -188,6 +188,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Recon Your Execution Environment (before running tools) - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-MpComputerStatus* OR *Get-AppLockerPolicy* OR *LanguageMode*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1082",
+          "T1518.001",
+          "T1033"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

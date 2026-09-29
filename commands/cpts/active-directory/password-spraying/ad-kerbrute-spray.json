@@ -125,6 +125,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Kerbrute - Password Spray via Kerberos - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.Status:\"0x18\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

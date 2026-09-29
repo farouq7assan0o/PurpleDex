@@ -131,6 +131,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Service Enumeration - Banner Grab  Capture - Elastic KQL",
+        "logic": "event.category:network AND source.ip:* AND destination.port:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -121,6 +121,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Hydra - Credential Stuffing - Elastic KQL",
+        "logic": "event.category:authentication AND event.outcome:failure AND source.ip:*",
+        "data_source": "ndr",
+        "attack": [
+          "T1110.004"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

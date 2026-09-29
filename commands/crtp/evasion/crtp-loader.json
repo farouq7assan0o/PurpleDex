@@ -199,6 +199,19 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "In-Memory Execution with Loaderexe (ETWAMSI unhook) - Elastic KQL",
+        "logic": "event.code:\"7\" AND dll.name:(clr.dll OR mscoree.dll) AND NOT process.name:(powershell.exe OR dotnet.exe OR msbuild.exe)",
+        "data_source": "powershell",
+        "attack": [
+          "T1620",
+          "T1562.001",
+          "T1562.006",
+          "T1685"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

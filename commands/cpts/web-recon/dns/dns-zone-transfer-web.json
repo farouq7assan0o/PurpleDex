@@ -118,6 +118,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "DNS - Zone Transfer (AXFR) - Elastic KQL",
+        "logic": "event.category:network AND dns.question.type:(AXFR OR IXFR)",
+        "data_source": "ndr",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

@@ -145,6 +145,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Weak Permissions - Reconfigure Service binPath - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.name:sc.exe AND process.command_line:(*config* AND *binpath*)",
+        "data_source": "edr",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

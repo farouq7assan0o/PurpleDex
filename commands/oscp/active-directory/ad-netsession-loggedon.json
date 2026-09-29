@@ -154,6 +154,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "AD Enumeration - Logged-On Users  Session Hunting - Elastic KQL",
+        "logic": "event.code:\"3\" AND destination.port:445",
+        "data_source": "edr",
+        "attack": [
+          "T1049",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

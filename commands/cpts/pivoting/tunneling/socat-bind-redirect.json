@@ -132,6 +132,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Socat - Bind Shell Redirector - Elastic KQL",
+        "logic": "process.name:socat AND process.args:*TCP4-LISTEN*",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

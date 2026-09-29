@@ -133,6 +133,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Weak Permissions - SharpUp Audit - Elastic KQL",
+        "logic": "event.code:\"1\" AND (process.name:*SharpUp* OR process.pe.original_file_name:*SharpUp*)",
+        "data_source": "edr",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

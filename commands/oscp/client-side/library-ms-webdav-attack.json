@@ -166,6 +166,18 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Windows Library File  WebDAV Delivery - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.extension:(library-ms OR lnk OR url)",
+        "data_source": "edr",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

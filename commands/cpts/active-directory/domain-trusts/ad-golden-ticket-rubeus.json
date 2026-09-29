@@ -145,6 +145,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Rubeus - Forge Golden Ticket - Elastic KQL",
+        "logic": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT winlog.event_data.ServiceName:krbtgt\n\nevent.code:\"1\" AND process.command_line:(*Rubeus* AND *golden*)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.001"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

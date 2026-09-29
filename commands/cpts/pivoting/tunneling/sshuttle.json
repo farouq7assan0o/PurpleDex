@@ -131,6 +131,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Sshuttle - Transparent SSH VPN Pivot - Elastic KQL",
+        "logic": "process.name:sshuttle OR (process.name:iptables AND process.parent.name:sshuttle)",
+        "data_source": "edr",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

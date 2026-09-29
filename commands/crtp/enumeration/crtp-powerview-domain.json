@@ -180,6 +180,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView Domain Enumeration - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-Domain* OR *Get-DomainController* OR *Get-NetDomain*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1482",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

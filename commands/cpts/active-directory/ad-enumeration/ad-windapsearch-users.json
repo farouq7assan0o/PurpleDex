@@ -130,6 +130,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "windapsearch - LDAP Enumeration (Python) - Elastic KQL",
+        "logic": "event.code:\"4662\" AND winlog.event_data.AccessMask:\"0x100\"",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

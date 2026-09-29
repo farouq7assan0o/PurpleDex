@@ -173,6 +173,17 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "WordPress - Admin Shell Upload (Metasploit) - Elastic KQL",
+        "logic": "event.code:\"1\" AND process.parent.name:(w3wp.exe OR httpd OR apache2 OR php-fpm OR java.exe) AND process.name:(cmd.exe OR powershell.exe OR bash OR sh OR nc OR python*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

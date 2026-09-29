@@ -128,6 +128,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Sudo Abuse - Enumerate and Exploit - Elastic KQL",
+        "logic": "process.parent.name:(vim OR find OR less OR nmap OR python*) AND process.name:(bash OR sh) AND user.id:0",
+        "data_source": "edr",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

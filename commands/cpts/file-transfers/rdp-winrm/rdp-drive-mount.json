@@ -141,6 +141,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "RDP - Mount a Local Drive - Elastic KQL",
+        "logic": "event.code:\"11\" AND file.path:*tsclient*",
+        "data_source": "edr",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

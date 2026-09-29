@@ -149,6 +149,16 @@
         ],
         "fidelity": "signature",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Rubeus - AS-REP Roasting (Windows) - Elastic KQL",
+        "logic": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\"\n\nevent.code:\"1\" AND process.command_line:(*asreproast* OR *Rubeus*)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "signature"
       }
     ],
     "visibility": {

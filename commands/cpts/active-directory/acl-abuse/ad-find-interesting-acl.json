@@ -158,6 +158,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "PowerView - Find Interesting ACLs - Elastic KQL",
+        "logic": "event.code:\"4104\" AND powershell.file.script_block_text:(*Find-InterestingDomainAcl* OR *Get-ObjectAcl* OR *ResolveGUIDs*)",
+        "data_source": "powershell",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral"
       }
     ],
     "visibility": {

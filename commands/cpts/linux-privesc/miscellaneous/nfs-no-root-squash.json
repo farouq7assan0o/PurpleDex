@@ -154,6 +154,16 @@
         ],
         "fidelity": "behavioral",
         "confidence": "medium"
+      },
+      {
+        "platform": "elastic",
+        "name": "Misc - NFS norootsquash SUID Abuse - Elastic KQL",
+        "logic": "process.name:mount AND process.args:*nfs* OR (event.category:process AND process.executable:/mnt/* AND user.effective.id:0)",
+        "data_source": "edr",
+        "attack": [
+          "T1548.001"
+        ],
+        "fidelity": "telemetry"
       }
     ],
     "visibility": {

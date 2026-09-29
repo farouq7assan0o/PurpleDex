@@ -1,9 +1,10 @@
 /* Service worker - offline app-shell cache. Bump CACHE when assets change. */
-const CACHE = 'cmdref-v5';
+const CACHE = 'cmdref-v6';
 const ASSETS = [
   '.', 'index.html', 'exam.html',
   'css/styles.css', 'css/icons.css', 'css/exam.css',
-  'js/commands.js', 'js/vars.js', 'js/groups.js', 'js/app.js', 'js/exam.js', 'js/coverage.json',
+  'js/commands.js', 'js/vars.js', 'js/groups.js', 'js/app.js', 'js/exam.js',
+  'js/coverage-data.js', 'js/coverage-index.js',
   'manifest.webmanifest'
 ];
 self.addEventListener('install', e => {

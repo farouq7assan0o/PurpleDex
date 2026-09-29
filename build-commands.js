@@ -133,6 +133,8 @@ function buildCommands() {
 
     const covPath = path.join(__dirname, 'js', 'coverage.json');
     fs.writeFileSync(covPath, JSON.stringify(coverage, null, 2));
+    const covJsPath = path.join(__dirname, 'js', 'coverage-index.js');
+    fs.writeFileSync(covJsPath, 'const COVERAGE_INDEX = ' + JSON.stringify(coverage) + ';\n');
 
     console.log('Build complete: ' + commands.length + ' commands from ' + allCommands.length + ' sources.');
     console.log('Coverage index: ' + coverage.cards_with_detections + ' cards, ' + coverage.total_detections + ' structured detections, ' +

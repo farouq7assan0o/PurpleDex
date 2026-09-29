@@ -2007,11 +2007,10 @@ class CommandManager {
         if (this.covTab === 'triage') return this.renderCoverageTriage(body);
         return this.renderCoverageMitre(body);
     }
-    async renderCoverageDetection(body) {
+    renderCoverageDetection(body) {
         if (!this._coverageIndex) {
-            body.innerHTML = '<p class="cov-note">Loading detection index...</p>';
-            try { this._coverageIndex = await fetch('js/coverage.json').then(r => r.json()); }
-            catch (e) { body.innerHTML = '<p class="cov-note">Could not load <code>js/coverage.json</code>. Run <code>node build-commands.js</code> to generate it.</p>'; return; }
+            if (typeof COVERAGE_INDEX !== 'undefined') { this._coverageIndex = COVERAGE_INDEX; }
+            else { body.innerHTML = '<p class="cov-note">No coverage index found. Run <code>node build-commands.js</code> to generate <code>js/coverage-index.js</code>.</p>'; return; }
         }
         const cov = this._coverageIndex;
         const techs = Object.entries(cov.techniques).sort((a, b) => b[1].detections.length - a[1].detections.length);
@@ -2314,11 +2313,10 @@ class CommandManager {
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
     }
-    async renderCoverageTriage(body) {
+    renderCoverageTriage(body) {
         if (!this._coverageIndex) {
-            body.innerHTML = '<p class="cov-note">Loading detection index...</p>';
-            try { this._coverageIndex = await fetch('js/coverage.json').then(r => r.json()); }
-            catch (e) { body.innerHTML = '<p class="cov-note">Could not load <code>js/coverage.json</code>.</p>'; return; }
+            if (typeof COVERAGE_INDEX !== 'undefined') { this._coverageIndex = COVERAGE_INDEX; }
+            else { body.innerHTML = '<p class="cov-note">No coverage index found. Run <code>node build-commands.js</code> to generate <code>js/coverage-index.js</code>.</p>'; return; }
         }
         const cov = this._coverageIndex;
         const eidMap = {};

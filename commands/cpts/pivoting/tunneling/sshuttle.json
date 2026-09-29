@@ -96,7 +96,7 @@
         "attack": [
           "T1090.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -107,7 +107,7 @@
         "attack": [
           "T1090.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -118,7 +118,7 @@
         "attack": [
           "T1090.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

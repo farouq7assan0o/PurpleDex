@@ -104,7 +104,7 @@
         "attack": [
           "T1548.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -115,7 +115,7 @@
         "attack": [
           "T1548.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

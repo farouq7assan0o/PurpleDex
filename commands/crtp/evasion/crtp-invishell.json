@@ -124,7 +124,7 @@
           "T1574.012",
           "T1112"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

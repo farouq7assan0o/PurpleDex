@@ -128,7 +128,7 @@
           "T1518.001",
           "T1033"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

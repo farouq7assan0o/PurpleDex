@@ -121,7 +121,7 @@
           "T1098",
           "T1003.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -133,7 +133,7 @@
           "T1078",
           "T1213"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -145,7 +145,7 @@
           "T1078",
           "T1213"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

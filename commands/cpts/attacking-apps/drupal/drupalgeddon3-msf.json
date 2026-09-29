@@ -112,7 +112,7 @@
         "attack": [
           "T1190"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

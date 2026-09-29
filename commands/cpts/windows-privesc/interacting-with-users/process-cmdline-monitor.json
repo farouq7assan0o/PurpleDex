@@ -86,7 +86,7 @@
         "attack": [
           "T1057"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

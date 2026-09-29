@@ -129,7 +129,7 @@
           "T1190",
           "T1083"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -141,7 +141,7 @@
           "T1190",
           "T1083"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -114,7 +114,7 @@
         "attack": [
           "T1134.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -153,7 +153,7 @@
         "attack": [
           "T1134.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       }
     ],

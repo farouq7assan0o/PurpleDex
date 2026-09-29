@@ -95,7 +95,7 @@
         "attack": [
           "T1110.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4768"

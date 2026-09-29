@@ -103,7 +103,7 @@
         "attack": [
           "T1552.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -128,7 +128,7 @@
         "attack": [
           "T1552.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4104"

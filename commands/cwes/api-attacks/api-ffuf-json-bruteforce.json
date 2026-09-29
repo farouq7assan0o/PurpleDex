@@ -106,7 +106,7 @@
           "T1110.001",
           "T1110.004"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

@@ -93,7 +93,7 @@
           "T1027",
           "T1518.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

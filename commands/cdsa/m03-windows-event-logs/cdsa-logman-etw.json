@@ -106,7 +106,7 @@
           "T1059",
           "T1055"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -96,7 +96,7 @@
         "attack": [
           "T1190"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -107,7 +107,7 @@
         "attack": [
           "T1190"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

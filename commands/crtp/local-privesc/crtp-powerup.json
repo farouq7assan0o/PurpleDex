@@ -119,7 +119,7 @@
           "T1574.007",
           "T1548.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -132,7 +132,7 @@
           "T1574.007",
           "T1548.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4104"

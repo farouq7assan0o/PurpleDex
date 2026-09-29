@@ -101,7 +101,7 @@
         "attack": [
           "T1082"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -112,7 +112,7 @@
         "attack": [
           "T1082"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

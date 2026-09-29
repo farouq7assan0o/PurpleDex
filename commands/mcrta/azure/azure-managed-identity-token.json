@@ -119,7 +119,7 @@
           "T1552.005",
           "T1078.004"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

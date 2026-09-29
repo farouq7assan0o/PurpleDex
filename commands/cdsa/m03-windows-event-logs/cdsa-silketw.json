@@ -107,7 +107,7 @@
           "T1134.004",
           "T1620"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -152,7 +152,7 @@
           "T1134.004",
           "T1620"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       }
     ],

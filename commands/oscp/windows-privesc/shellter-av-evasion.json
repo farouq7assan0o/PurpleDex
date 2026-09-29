@@ -127,7 +127,7 @@
           "T1055",
           "T1027"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

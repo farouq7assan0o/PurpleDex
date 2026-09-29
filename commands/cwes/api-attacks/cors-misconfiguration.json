@@ -117,7 +117,7 @@
           "T1190",
           "T1539"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

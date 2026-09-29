@@ -102,7 +102,7 @@
           "T1190",
           "T1552.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -114,7 +114,7 @@
           "T1190",
           "T1552.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

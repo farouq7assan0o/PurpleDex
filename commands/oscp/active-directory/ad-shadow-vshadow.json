@@ -126,7 +126,7 @@
         "attack": [
           "T1003.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

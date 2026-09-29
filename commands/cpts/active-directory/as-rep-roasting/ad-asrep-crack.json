@@ -92,7 +92,7 @@
         "attack": [
           "T1558.004"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4768"

@@ -118,7 +118,7 @@
           "T1204.002",
           "T1059.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -131,7 +131,7 @@
           "T1204.002",
           "T1059.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "1"

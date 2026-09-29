@@ -106,7 +106,7 @@
           "T1105",
           "T1027"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -118,7 +118,7 @@
           "T1105",
           "T1027"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -130,7 +130,7 @@
           "T1105",
           "T1027"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4104"

@@ -106,7 +106,7 @@
           "T1055",
           "T1620"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

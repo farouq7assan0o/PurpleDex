@@ -124,7 +124,7 @@
           "T1482",
           "T1069.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -151,7 +151,7 @@
           "T1482",
           "T1069.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "7"

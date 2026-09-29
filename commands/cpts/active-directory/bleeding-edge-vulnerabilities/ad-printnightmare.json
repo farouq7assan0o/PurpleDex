@@ -89,7 +89,7 @@
         "attack": [
           "T1068"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

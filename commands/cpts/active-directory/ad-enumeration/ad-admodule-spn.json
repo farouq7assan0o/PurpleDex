@@ -90,7 +90,7 @@
         "attack": [
           "T1558.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

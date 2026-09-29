@@ -106,7 +106,7 @@
         "attack": [
           "T1003.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -117,7 +117,7 @@
         "attack": [
           "T1003.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

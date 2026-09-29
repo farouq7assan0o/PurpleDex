@@ -155,7 +155,7 @@
           "T1613",
           "T1552.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -120,7 +120,7 @@
           "T1190",
           "T1505.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

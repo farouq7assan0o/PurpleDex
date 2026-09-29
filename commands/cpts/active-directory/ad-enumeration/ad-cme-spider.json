@@ -88,7 +88,7 @@
           "T1135",
           "T1552.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "5140"

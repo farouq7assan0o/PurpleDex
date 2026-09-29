@@ -109,7 +109,7 @@
         "attack": [
           "T1574"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

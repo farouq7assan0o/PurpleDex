@@ -107,7 +107,7 @@
         "attack": [
           "T1613"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

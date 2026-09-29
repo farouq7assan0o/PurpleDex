@@ -144,7 +144,7 @@
           "T1021",
           "T1570"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -157,7 +157,7 @@
           "T1021",
           "T1570"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

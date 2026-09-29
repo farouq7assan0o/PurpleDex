@@ -105,7 +105,7 @@
           "T1140",
           "T1592.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

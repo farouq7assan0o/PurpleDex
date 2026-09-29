@@ -88,7 +88,7 @@
           "T1135",
           "T1087.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

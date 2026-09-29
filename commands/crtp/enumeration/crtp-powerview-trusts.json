@@ -103,7 +103,7 @@
         "attack": [
           "T1482"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

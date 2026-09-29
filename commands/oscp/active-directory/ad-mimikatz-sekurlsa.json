@@ -138,7 +138,7 @@
           "T1003.001",
           "T1558"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

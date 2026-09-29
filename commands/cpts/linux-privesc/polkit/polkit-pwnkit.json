@@ -108,7 +108,7 @@
           "T1068",
           "T1548"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -120,7 +120,7 @@
           "T1068",
           "T1548"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -132,7 +132,7 @@
           "T1068",
           "T1548"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -94,7 +94,7 @@
         "attack": [
           "T1059"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

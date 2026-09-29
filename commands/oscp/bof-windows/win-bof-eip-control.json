@@ -99,7 +99,7 @@
         "attack": [
           "T1210"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -92,7 +92,7 @@
           "T1201",
           "T1087.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

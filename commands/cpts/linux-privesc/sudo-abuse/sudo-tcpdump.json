@@ -126,7 +126,7 @@
         "attack": [
           "T1548.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -137,7 +137,7 @@
         "attack": [
           "T1548.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -148,7 +148,7 @@
         "attack": [
           "T1548.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

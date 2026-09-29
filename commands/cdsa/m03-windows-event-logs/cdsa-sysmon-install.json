@@ -121,7 +121,7 @@
           "T1071",
           "T1547"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -125,7 +125,7 @@
           "T1135",
           "T1552.006"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -137,7 +137,7 @@
           "T1135",
           "T1552.006"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4104"

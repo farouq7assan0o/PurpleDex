@@ -96,7 +96,7 @@
         "attack": [
           "T1555.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -135,7 +135,7 @@
         "attack": [
           "T1555.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       }
     ],

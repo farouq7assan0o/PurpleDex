@@ -85,7 +85,7 @@
         "attack": [
           "T1201"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4662"

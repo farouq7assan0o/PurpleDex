@@ -97,7 +97,7 @@
           "T1190",
           "T1136"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

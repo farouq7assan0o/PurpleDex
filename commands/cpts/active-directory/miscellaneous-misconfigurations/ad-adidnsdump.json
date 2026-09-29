@@ -89,7 +89,7 @@
         "attack": [
           "T1018"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "4662"

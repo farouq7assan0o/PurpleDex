@@ -117,7 +117,7 @@
           "T1528",
           "T1610"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -129,7 +129,7 @@
           "T1528",
           "T1610"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

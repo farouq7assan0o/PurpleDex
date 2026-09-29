@@ -103,7 +103,7 @@
           "T1589.003",
           "T1110.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

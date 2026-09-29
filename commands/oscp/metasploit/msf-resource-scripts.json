@@ -102,7 +102,7 @@
         "attack": [
           "T1059.004"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -113,7 +113,7 @@
         "attack": [
           "T1059.004"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

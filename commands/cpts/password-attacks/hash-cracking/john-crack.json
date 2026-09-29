@@ -131,7 +131,7 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -142,7 +142,7 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {

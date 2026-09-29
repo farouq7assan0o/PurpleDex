@@ -108,7 +108,7 @@
           "T1595.002",
           "T1046"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -132,7 +132,7 @@
           "T1595.002",
           "T1046"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

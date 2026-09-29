@@ -93,7 +93,7 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -115,7 +115,7 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

@@ -141,7 +141,7 @@
         "attack": [
           "T1053.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -152,7 +152,7 @@
         "attack": [
           "T1053.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {
@@ -163,7 +163,7 @@
         "attack": [
           "T1053.003"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

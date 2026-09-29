@@ -757,7 +757,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -925,7 +925,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -1087,7 +1087,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1482"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -1241,7 +1241,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -1403,7 +1403,7 @@ const COMMAND_DATA = {
               "T1562.001",
               "T1685"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -1597,7 +1597,7 @@ const COMMAND_DATA = {
               "T1016",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -2626,7 +2626,7 @@ const COMMAND_DATA = {
               "T1135",
               "T1552.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -2638,7 +2638,7 @@ const COMMAND_DATA = {
               "T1135",
               "T1552.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -3347,7 +3347,7 @@ const COMMAND_DATA = {
               "T1069.002",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -3750,7 +3750,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1018"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4662"
@@ -4192,7 +4192,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -4408,7 +4408,7 @@ const COMMAND_DATA = {
               "T1059.001",
               "T1140"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -4585,7 +4585,7 @@ const COMMAND_DATA = {
               "T1685",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -4752,7 +4752,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -5280,7 +5280,7 @@ const COMMAND_DATA = {
               "T1110.001",
               "T1110.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -5436,7 +5436,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1087"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -5448,7 +5448,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1087"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -5585,7 +5585,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -5607,7 +5607,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -5851,7 +5851,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -5862,7 +5862,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -5985,7 +5985,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -6628,7 +6628,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -6639,7 +6639,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -6840,7 +6840,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -7063,7 +7063,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1187"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -7196,7 +7196,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1518.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -7578,7 +7578,7 @@ const COMMAND_DATA = {
               "T1021",
               "T1570"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -7591,7 +7591,7 @@ const COMMAND_DATA = {
               "T1021",
               "T1570"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -7777,7 +7777,7 @@ const COMMAND_DATA = {
               "T1613",
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -8524,7 +8524,7 @@ const COMMAND_DATA = {
               "T1098.001",
               "T1078.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -8537,7 +8537,7 @@ const COMMAND_DATA = {
               "T1098.001",
               "T1078.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -8713,7 +8713,7 @@ const COMMAND_DATA = {
               "T1552.001",
               "T1612"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -8726,7 +8726,7 @@ const COMMAND_DATA = {
               "T1552.001",
               "T1612"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -9092,7 +9092,7 @@ const COMMAND_DATA = {
               "T1195.001",
               "T1059.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -9116,7 +9116,7 @@ const COMMAND_DATA = {
               "T1195.001",
               "T1059.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -9293,7 +9293,7 @@ const COMMAND_DATA = {
               "T1552.001",
               "T1213.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -9456,7 +9456,7 @@ const COMMAND_DATA = {
               "T1552.001",
               "T1213.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -9468,7 +9468,7 @@ const COMMAND_DATA = {
               "T1552.001",
               "T1213.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -9625,7 +9625,7 @@ const COMMAND_DATA = {
               "T1078.004",
               "T1526"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -9944,7 +9944,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1078.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -10105,7 +10105,7 @@ const COMMAND_DATA = {
               "T1552.005",
               "T1078.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -10591,7 +10591,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -10759,7 +10759,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -10770,7 +10770,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -10924,7 +10924,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -10936,7 +10936,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -11100,7 +11100,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -11252,7 +11252,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -12196,7 +12196,7 @@ const COMMAND_DATA = {
               "T1078",
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -12208,7 +12208,7 @@ const COMMAND_DATA = {
               "T1078",
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -12333,7 +12333,7 @@ const COMMAND_DATA = {
               "T1078",
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -12345,7 +12345,7 @@ const COMMAND_DATA = {
               "T1078",
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -12547,7 +12547,7 @@ const COMMAND_DATA = {
               "T1539",
               "T1550.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -12559,7 +12559,7 @@ const COMMAND_DATA = {
               "T1539",
               "T1550.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -12717,7 +12717,7 @@ const COMMAND_DATA = {
               "T1110.001",
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -13185,7 +13185,7 @@ const COMMAND_DATA = {
               "T1589.002",
               "T1078"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -13474,7 +13474,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -13485,7 +13485,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -13807,7 +13807,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1185"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -13818,7 +13818,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1185"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -13954,7 +13954,7 @@ const COMMAND_DATA = {
               "T1055",
               "T1620"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -14132,7 +14132,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -14143,7 +14143,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -14154,7 +14154,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -14387,7 +14387,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1596.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -14398,7 +14398,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1596.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -14750,7 +14750,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -15201,7 +15201,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -15212,7 +15212,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -15237,7 +15237,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -15980,7 +15980,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -15992,7 +15992,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -16291,7 +16291,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -16480,7 +16480,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1140"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -16492,7 +16492,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1140"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -16667,7 +16667,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -16679,7 +16679,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -16863,7 +16863,7 @@ const COMMAND_DATA = {
               "T1059.004",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -16875,7 +16875,7 @@ const COMMAND_DATA = {
               "T1059.004",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17054,7 +17054,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17066,7 +17066,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17270,7 +17270,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17282,7 +17282,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17576,7 +17576,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17588,7 +17588,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17758,7 +17758,7 @@ const COMMAND_DATA = {
               "T1059.004",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17770,7 +17770,7 @@ const COMMAND_DATA = {
               "T1059.004",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -17939,7 +17939,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -18302,7 +18302,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -18313,7 +18313,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -18462,7 +18462,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1539"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -18725,7 +18725,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -18736,7 +18736,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -19165,7 +19165,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1135"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "5140"
@@ -19449,7 +19449,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1049"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "5140"
@@ -20084,7 +20084,7 @@ const COMMAND_DATA = {
               "T1135",
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "5140"
@@ -20290,7 +20290,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -20480,7 +20480,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -20519,7 +20519,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -20650,7 +20650,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -20661,7 +20661,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -20792,7 +20792,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -20803,7 +20803,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -20961,7 +20961,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -21117,7 +21117,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -21128,7 +21128,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -21142,7 +21142,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -21267,7 +21267,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -21435,7 +21435,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -21584,7 +21584,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -21731,7 +21731,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -21742,7 +21742,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -21888,7 +21888,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -21913,7 +21913,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -22046,7 +22046,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -22204,7 +22204,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -22445,7 +22445,7 @@ const COMMAND_DATA = {
               "T1039",
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -22655,7 +22655,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1053.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -22666,7 +22666,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1053.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -22677,7 +22677,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1053.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -22821,7 +22821,7 @@ const COMMAND_DATA = {
               "T1588.005",
               "T1027.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -22833,7 +22833,7 @@ const COMMAND_DATA = {
               "T1588.005",
               "T1027.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -23097,7 +23097,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -23108,7 +23108,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -23237,7 +23237,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -23248,7 +23248,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -23457,7 +23457,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -24393,7 +24393,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1078.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -24404,7 +24404,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1078.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25066,7 +25066,7 @@ const COMMAND_DATA = {
               "T1083",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25078,7 +25078,7 @@ const COMMAND_DATA = {
               "T1083",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25224,7 +25224,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25235,7 +25235,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25354,7 +25354,7 @@ const COMMAND_DATA = {
               "T1562.001",
               "T1685"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25667,7 +25667,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25678,7 +25678,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -25819,7 +25819,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -26033,7 +26033,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -26550,7 +26550,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -26673,7 +26673,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -26684,7 +26684,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -27255,7 +27255,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -27404,7 +27404,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -27415,7 +27415,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -27550,7 +27550,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -27701,7 +27701,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -27712,7 +27712,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -28222,7 +28222,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -28233,7 +28233,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1590"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -28381,7 +28381,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1201"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -28704,7 +28704,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -28926,7 +28926,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -29111,7 +29111,7 @@ const COMMAND_DATA = {
               "T1505.003",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -29525,7 +29525,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -29692,7 +29692,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1136"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -29874,7 +29874,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -30057,7 +30057,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -30214,7 +30214,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -30388,7 +30388,7 @@ const COMMAND_DATA = {
               "T1098",
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -31597,7 +31597,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1021.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -31793,7 +31793,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1098.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -31804,7 +31804,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1098.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -31815,7 +31815,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1098.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -32110,7 +32110,7 @@ const COMMAND_DATA = {
               "T1135",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -32280,7 +32280,7 @@ const COMMAND_DATA = {
               "T1201",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -32537,7 +32537,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -32548,7 +32548,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -32559,7 +32559,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -32684,7 +32684,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1518"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -32695,7 +32695,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1518"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -32706,7 +32706,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1518"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -33283,7 +33283,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -33294,7 +33294,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -33432,7 +33432,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -33446,7 +33446,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -33596,7 +33596,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -33618,7 +33618,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -33747,7 +33747,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -33769,7 +33769,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -33893,7 +33893,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -33915,7 +33915,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -34039,7 +34039,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -34061,7 +34061,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -34304,7 +34304,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1654"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -34431,7 +34431,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1550.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624"
@@ -34823,7 +34823,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -34986,7 +34986,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35008,7 +35008,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35019,7 +35019,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35157,7 +35157,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35179,7 +35179,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35190,7 +35190,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35362,7 +35362,7 @@ const COMMAND_DATA = {
               "T1595.003",
               "T1595.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35386,7 +35386,7 @@ const COMMAND_DATA = {
               "T1595.003",
               "T1595.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35520,7 +35520,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35542,7 +35542,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35675,7 +35675,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35697,7 +35697,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35831,7 +35831,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35961,7 +35961,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -35983,7 +35983,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -36128,7 +36128,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -36279,7 +36279,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36508,7 +36508,7 @@ const COMMAND_DATA = {
               "T1098.004",
               "T1078"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36520,7 +36520,7 @@ const COMMAND_DATA = {
               "T1098.004",
               "T1078"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36645,7 +36645,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36656,7 +36656,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36667,7 +36667,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36798,7 +36798,7 @@ const COMMAND_DATA = {
               "T1203",
               "T1027.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36810,7 +36810,7 @@ const COMMAND_DATA = {
               "T1203",
               "T1027.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36944,7 +36944,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -36956,7 +36956,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -37549,7 +37549,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1018"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -37696,7 +37696,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -37849,7 +37849,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -38170,7 +38170,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -38622,7 +38622,7 @@ const COMMAND_DATA = {
               "T1552.005",
               "T1078.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -38769,7 +38769,7 @@ const COMMAND_DATA = {
               "T1552.001",
               "T1528"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -39064,7 +39064,7 @@ const COMMAND_DATA = {
               "T1548",
               "T1098.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -39076,7 +39076,7 @@ const COMMAND_DATA = {
               "T1548",
               "T1098.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -39202,7 +39202,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1098.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -39213,7 +39213,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1098.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -40257,7 +40257,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -40561,7 +40561,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -40583,7 +40583,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -42964,7 +42964,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4768"
@@ -43131,7 +43131,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43142,7 +43142,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43153,7 +43153,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -43285,7 +43285,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43296,7 +43296,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43307,7 +43307,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -43431,7 +43431,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43442,7 +43442,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43453,7 +43453,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -43467,7 +43467,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -43599,7 +43599,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43610,7 +43610,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43621,7 +43621,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -43726,7 +43726,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43737,7 +43737,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43947,7 +43947,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43958,7 +43958,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -43969,7 +43969,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -44182,7 +44182,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44193,7 +44193,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44335,7 +44335,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44726,7 +44726,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44737,7 +44737,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44748,7 +44748,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44916,7 +44916,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44927,7 +44927,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -44938,7 +44938,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -45081,7 +45081,7 @@ const COMMAND_DATA = {
               "T1218.005",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -45094,7 +45094,7 @@ const COMMAND_DATA = {
               "T1218.005",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -45317,7 +45317,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -45460,7 +45460,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -45592,7 +45592,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -46158,7 +46158,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -46303,7 +46303,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -46462,7 +46462,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1222.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -47669,7 +47669,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -47971,7 +47971,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -47982,7 +47982,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -48151,7 +48151,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -48321,7 +48321,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624"
@@ -48490,7 +48490,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1649"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -49560,7 +49560,7 @@ const COMMAND_DATA = {
               "T1562.006",
               "T1685"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -49574,7 +49574,7 @@ const COMMAND_DATA = {
               "T1562.006",
               "T1685"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "7"
@@ -49608,7 +49608,7 @@ const COMMAND_DATA = {
               "T1562.006",
               "T1685"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -49900,7 +49900,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1115"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -49911,7 +49911,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1115"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -50030,7 +50030,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1057"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -50186,7 +50186,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1187"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -50339,7 +50339,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -50494,7 +50494,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -50505,7 +50505,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -50671,7 +50671,7 @@ const COMMAND_DATA = {
               "T1574.012",
               "T1112"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -50866,7 +50866,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -50878,7 +50878,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1059.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -51465,7 +51465,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -51476,7 +51476,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -51643,7 +51643,7 @@ const COMMAND_DATA = {
               "T1592.002",
               "T1140"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -51655,7 +51655,7 @@ const COMMAND_DATA = {
               "T1592.002",
               "T1140"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -51876,7 +51876,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -52053,7 +52053,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -52236,7 +52236,7 @@ const COMMAND_DATA = {
               "T1059",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -52263,7 +52263,7 @@ const COMMAND_DATA = {
               "T1059",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -52438,7 +52438,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -52449,7 +52449,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -52707,7 +52707,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -52718,7 +52718,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -53141,7 +53141,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -53345,7 +53345,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -53356,7 +53356,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -54469,7 +54469,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4768"
@@ -54618,7 +54618,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4768"
@@ -54803,7 +54803,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1082"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55007,7 +55007,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55018,7 +55018,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55029,7 +55029,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55431,7 +55431,7 @@ const COMMAND_DATA = {
               "T1610",
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55443,7 +55443,7 @@ const COMMAND_DATA = {
               "T1610",
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55581,7 +55581,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1613"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55762,7 +55762,7 @@ const COMMAND_DATA = {
               "T1528",
               "T1610"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -55774,7 +55774,7 @@ const COMMAND_DATA = {
               "T1528",
               "T1610"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -56117,7 +56117,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1021.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -56302,7 +56302,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -56513,7 +56513,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -56524,7 +56524,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -56538,7 +56538,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -56652,7 +56652,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -56663,7 +56663,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -56959,7 +56959,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4662"
@@ -57119,7 +57119,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1201"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4662"
@@ -57292,7 +57292,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -57303,7 +57303,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -57501,7 +57501,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -57513,7 +57513,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -57639,7 +57639,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -57661,7 +57661,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -57806,7 +57806,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -57828,7 +57828,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -58071,7 +58071,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58083,7 +58083,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58215,7 +58215,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58227,7 +58227,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58398,7 +58398,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58410,7 +58410,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58578,7 +58578,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58590,7 +58590,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58753,7 +58753,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58765,7 +58765,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58928,7 +58928,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -58940,7 +58940,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59115,7 +59115,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59127,7 +59127,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59279,7 +59279,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59291,7 +59291,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59466,7 +59466,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59478,7 +59478,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59634,7 +59634,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59646,7 +59646,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59841,7 +59841,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -59853,7 +59853,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60056,7 +60056,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60067,7 +60067,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -60095,7 +60095,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -60213,7 +60213,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60224,7 +60224,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60235,7 +60235,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60389,7 +60389,7 @@ const COMMAND_DATA = {
               "T1087.002",
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60401,7 +60401,7 @@ const COMMAND_DATA = {
               "T1087.002",
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60542,7 +60542,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60553,7 +60553,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60564,7 +60564,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60680,7 +60680,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60691,7 +60691,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60702,7 +60702,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.008"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60847,7 +60847,7 @@ const COMMAND_DATA = {
               "T1003",
               "T1558"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60859,7 +60859,7 @@ const COMMAND_DATA = {
               "T1003",
               "T1558"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -60871,7 +60871,7 @@ const COMMAND_DATA = {
               "T1003",
               "T1558"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61009,7 +61009,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61020,7 +61020,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61340,7 +61340,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61351,7 +61351,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61362,7 +61362,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61495,7 +61495,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1048.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61506,7 +61506,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1048.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61675,7 +61675,7 @@ const COMMAND_DATA = {
               "T1548",
               "T1136.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61687,7 +61687,7 @@ const COMMAND_DATA = {
               "T1548",
               "T1136.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61699,7 +61699,7 @@ const COMMAND_DATA = {
               "T1548",
               "T1136.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -61850,7 +61850,7 @@ const COMMAND_DATA = {
               "T1105",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -61862,7 +61862,7 @@ const COMMAND_DATA = {
               "T1105",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -61877,7 +61877,7 @@ const COMMAND_DATA = {
               "T1105",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -62037,7 +62037,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -62183,7 +62183,7 @@ const COMMAND_DATA = {
               "T1059",
               "T1055"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -62349,7 +62349,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -62360,7 +62360,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -62973,7 +62973,7 @@ const COMMAND_DATA = {
               "T1110.001",
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -63260,7 +63260,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -63520,7 +63520,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1518.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -63531,7 +63531,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1518.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -63853,7 +63853,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -63864,7 +63864,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64002,7 +64002,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64013,7 +64013,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64258,7 +64258,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64512,7 +64512,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64523,7 +64523,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64688,7 +64688,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64699,7 +64699,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64828,7 +64828,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64839,7 +64839,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64983,7 +64983,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -64994,7 +64994,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65132,7 +65132,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65331,7 +65331,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65342,7 +65342,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65475,7 +65475,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65486,7 +65486,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65631,7 +65631,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -65795,7 +65795,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65806,7 +65806,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -65974,7 +65974,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -65985,7 +65985,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "3"
@@ -66425,7 +66425,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -66436,7 +66436,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -66664,7 +66664,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -66675,7 +66675,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -66815,7 +66815,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -66826,7 +66826,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -66976,7 +66976,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -66987,7 +66987,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -67112,7 +67112,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -67123,7 +67123,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -67428,7 +67428,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -67439,7 +67439,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -67633,7 +67633,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -67644,7 +67644,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -67776,7 +67776,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -67787,7 +67787,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -68075,7 +68075,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -68086,7 +68086,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "3"
@@ -68210,7 +68210,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -68221,7 +68221,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -68361,7 +68361,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -68745,7 +68745,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -68893,7 +68893,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1055"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -69542,7 +69542,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -69766,7 +69766,7 @@ const COMMAND_DATA = {
               "T1003.001",
               "T1558"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -69941,7 +69941,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -70731,7 +70731,7 @@ const COMMAND_DATA = {
               "T1649",
               "T1552.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -70970,7 +70970,7 @@ const COMMAND_DATA = {
               "T1003.004",
               "T1134.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71145,7 +71145,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -71156,7 +71156,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -71293,7 +71293,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1563"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71304,7 +71304,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1563"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71440,7 +71440,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -71451,7 +71451,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71600,7 +71600,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71611,7 +71611,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71622,7 +71622,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71755,7 +71755,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71766,7 +71766,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -71903,7 +71903,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1053.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -72223,7 +72223,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -72234,7 +72234,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -72399,7 +72399,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -72585,7 +72585,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1036"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -72796,7 +72796,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1587.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -72971,7 +72971,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -73152,7 +73152,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -73360,7 +73360,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1187"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -73500,7 +73500,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -73675,7 +73675,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -73700,7 +73700,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -74005,7 +74005,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -74205,7 +74205,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -74348,7 +74348,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1078"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -74359,7 +74359,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1078"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -74533,7 +74533,7 @@ const COMMAND_DATA = {
               "T1021.002",
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -74717,7 +74717,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -74946,7 +74946,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1078"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -75091,7 +75091,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -75438,7 +75438,7 @@ const COMMAND_DATA = {
               "T1087.002",
               "T1069.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -75751,7 +75751,7 @@ const COMMAND_DATA = {
               "T1046",
               "T1018"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -75910,7 +75910,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -76053,7 +76053,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -76200,7 +76200,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -76379,7 +76379,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -76526,7 +76526,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -76537,7 +76537,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -76671,7 +76671,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1482"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -77632,7 +77632,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -77643,7 +77643,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -77654,7 +77654,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -77805,7 +77805,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -77827,7 +77827,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -77976,7 +77976,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -78110,7 +78110,7 @@ const COMMAND_DATA = {
               "T1595.002",
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -78122,7 +78122,7 @@ const COMMAND_DATA = {
               "T1595.002",
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -78134,7 +78134,7 @@ const COMMAND_DATA = {
               "T1595.002",
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -78330,7 +78330,7 @@ const COMMAND_DATA = {
               "T1046",
               "T1595.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -78354,7 +78354,7 @@ const COMMAND_DATA = {
               "T1046",
               "T1595.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -78490,7 +78490,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -78512,7 +78512,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -78661,7 +78661,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1018"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -78683,7 +78683,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1018"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -78824,7 +78824,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -78846,7 +78846,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -79001,7 +79001,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -79023,7 +79023,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -79142,7 +79142,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -79164,7 +79164,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -79341,7 +79341,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -79363,7 +79363,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -79493,7 +79493,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1018"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -79515,7 +79515,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1018"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -79643,7 +79643,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -79665,7 +79665,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -79802,7 +79802,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -79824,7 +79824,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -79966,7 +79966,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -79988,7 +79988,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -80128,7 +80128,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -80150,7 +80150,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -80276,7 +80276,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -80298,7 +80298,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -80437,7 +80437,7 @@ const COMMAND_DATA = {
               "T1595.002",
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -80461,7 +80461,7 @@ const COMMAND_DATA = {
               "T1595.002",
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -80604,7 +80604,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -80626,7 +80626,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -81387,7 +81387,7 @@ const COMMAND_DATA = {
               "T1204.002",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -81400,7 +81400,7 @@ const COMMAND_DATA = {
               "T1204.002",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -81548,7 +81548,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -81868,7 +81868,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -81879,7 +81879,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -81997,7 +81997,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -82008,7 +82008,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -82373,7 +82373,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -82568,7 +82568,7 @@ const COMMAND_DATA = {
               "T1105",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -82911,7 +82911,7 @@ const COMMAND_DATA = {
               "T1078",
               "T1213"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -82923,7 +82923,7 @@ const COMMAND_DATA = {
               "T1078",
               "T1213"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -83640,7 +83640,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1550.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624",
@@ -83817,7 +83817,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -83828,7 +83828,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -83946,7 +83946,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -83957,7 +83957,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -84335,7 +84335,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -84531,7 +84531,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -84556,7 +84556,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -84700,7 +84700,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -84854,7 +84854,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -85017,7 +85017,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1539"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -85028,7 +85028,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1539"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -85200,7 +85200,7 @@ const COMMAND_DATA = {
               "T1087.002",
               "T1069.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -85559,7 +85559,7 @@ const COMMAND_DATA = {
               "T1090.001",
               "T1021.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -86315,7 +86315,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -86326,7 +86326,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -86340,7 +86340,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "3"
@@ -86484,7 +86484,7 @@ const COMMAND_DATA = {
               "T1068",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -86496,7 +86496,7 @@ const COMMAND_DATA = {
               "T1068",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -86508,7 +86508,7 @@ const COMMAND_DATA = {
               "T1068",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -86762,7 +86762,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1135"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -87311,7 +87311,7 @@ const COMMAND_DATA = {
               "T1620",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -87491,7 +87491,7 @@ const COMMAND_DATA = {
               "T1574.007",
               "T1548.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -87504,7 +87504,7 @@ const COMMAND_DATA = {
               "T1574.007",
               "T1548.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -87678,7 +87678,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -87689,7 +87689,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -88410,7 +88410,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1484.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -88552,7 +88552,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1078.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -88706,7 +88706,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -88877,7 +88877,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1482"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -89079,7 +89079,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1222.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -89254,7 +89254,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -89582,7 +89582,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1069.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -89736,7 +89736,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1482"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -89902,7 +89902,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -90064,7 +90064,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -90075,7 +90075,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -90216,7 +90216,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -90568,7 +90568,7 @@ const COMMAND_DATA = {
               "T1069.001",
               "T1135"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -90580,7 +90580,7 @@ const COMMAND_DATA = {
               "T1069.001",
               "T1135"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -90754,7 +90754,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1222.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -90957,7 +90957,7 @@ const COMMAND_DATA = {
               "T1482",
               "T1069.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -90984,7 +90984,7 @@ const COMMAND_DATA = {
               "T1482",
               "T1069.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "7"
@@ -91412,7 +91412,7 @@ const COMMAND_DATA = {
               "T1018",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -91592,7 +91592,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1482"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -91786,7 +91786,7 @@ const COMMAND_DATA = {
               "T1033",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -92041,7 +92041,7 @@ const COMMAND_DATA = {
               "T1069.002",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -92417,7 +92417,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -92934,7 +92934,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -93113,7 +93113,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1082"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -93124,7 +93124,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1082"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -93248,7 +93248,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93259,7 +93259,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93379,7 +93379,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93401,7 +93401,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93554,7 +93554,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93565,7 +93565,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93576,7 +93576,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93704,7 +93704,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93715,7 +93715,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93870,7 +93870,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93881,7 +93881,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -93892,7 +93892,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94052,7 +94052,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94063,7 +94063,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94074,7 +94074,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94225,7 +94225,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94236,7 +94236,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1611"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94378,7 +94378,7 @@ const COMMAND_DATA = {
               "T1105",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -94390,7 +94390,7 @@ const COMMAND_DATA = {
               "T1105",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94402,7 +94402,7 @@ const COMMAND_DATA = {
               "T1105",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -94537,7 +94537,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94548,7 +94548,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -94693,7 +94693,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1136.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -95193,7 +95193,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -95204,7 +95204,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -95215,7 +95215,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -95376,7 +95376,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -95387,7 +95387,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -95398,7 +95398,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -95548,7 +95548,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -95874,7 +95874,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -96016,7 +96016,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -96318,7 +96318,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1563.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -96703,7 +96703,7 @@ const COMMAND_DATA = {
               "T1518.001",
               "T1033"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -99867,7 +99867,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -100018,7 +100018,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -100029,7 +100029,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -100164,7 +100164,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624"
@@ -100192,7 +100192,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -100486,7 +100486,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -100497,7 +100497,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -100508,7 +100508,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -100659,7 +100659,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -100954,7 +100954,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -101137,7 +101137,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -101149,7 +101149,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -101290,7 +101290,7 @@ const COMMAND_DATA = {
               "T1135",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624"
@@ -101625,7 +101625,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -101636,7 +101636,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -101647,7 +101647,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -101786,7 +101786,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -103299,7 +103299,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1588.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -103310,7 +103310,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1588.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -103919,7 +103919,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -103930,7 +103930,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "10"
@@ -103944,7 +103944,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -103958,7 +103958,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -104107,7 +104107,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1134.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -104299,7 +104299,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1134.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -104338,7 +104338,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1134.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -104466,7 +104466,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1134.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -104505,7 +104505,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1134.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -104657,7 +104657,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1543.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -104811,7 +104811,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -104833,7 +104833,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -105073,7 +105073,7 @@ const COMMAND_DATA = {
               "T1135",
               "T1033"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -105416,7 +105416,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -105943,7 +105943,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -105954,7 +105954,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -105965,7 +105965,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -106292,7 +106292,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -106463,7 +106463,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -106475,7 +106475,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -106633,7 +106633,7 @@ const COMMAND_DATA = {
               "T1055",
               "T1027"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -106917,7 +106917,7 @@ const COMMAND_DATA = {
               "T1134.004",
               "T1620"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -106962,7 +106962,7 @@ const COMMAND_DATA = {
               "T1134.004",
               "T1620"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -107094,7 +107094,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624",
@@ -107273,7 +107273,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1558.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624",
@@ -107451,7 +107451,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1556.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -107649,7 +107649,7 @@ const COMMAND_DATA = {
               "T1046",
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -107815,7 +107815,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1021.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -108121,7 +108121,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4624"
@@ -108325,7 +108325,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1135"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "5140"
@@ -108467,7 +108467,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1135"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -108608,7 +108608,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1049"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -108619,7 +108619,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1049"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -109271,7 +109271,7 @@ const COMMAND_DATA = {
               "T1046",
               "T1087"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -110632,7 +110632,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -110643,7 +110643,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -110774,7 +110774,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -110785,7 +110785,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -110796,7 +110796,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "3"
@@ -110942,7 +110942,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -110953,7 +110953,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -111125,7 +111125,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -111136,7 +111136,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -111899,7 +111899,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -111910,7 +111910,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112045,7 +112045,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112202,7 +112202,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112213,7 +112213,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112354,7 +112354,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112365,7 +112365,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112496,7 +112496,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112507,7 +112507,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112704,7 +112704,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112715,7 +112715,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112887,7 +112887,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -112898,7 +112898,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113076,7 +113076,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113087,7 +113087,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113299,7 +113299,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113311,7 +113311,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113439,7 +113439,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113450,7 +113450,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113630,7 +113630,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113641,7 +113641,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113782,7 +113782,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113793,7 +113793,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -113935,7 +113935,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -113946,7 +113946,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -113957,7 +113957,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -114079,7 +114079,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114090,7 +114090,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114101,7 +114101,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -114217,7 +114217,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114228,7 +114228,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114239,7 +114239,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -114381,7 +114381,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114392,7 +114392,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114403,7 +114403,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -114516,7 +114516,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114527,7 +114527,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114538,7 +114538,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -114664,7 +114664,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114675,7 +114675,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114686,7 +114686,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1110.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -114804,7 +114804,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114815,7 +114815,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114826,7 +114826,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -114956,7 +114956,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114967,7 +114967,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -114978,7 +114978,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -115123,7 +115123,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115134,7 +115134,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115145,7 +115145,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -115256,7 +115256,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115267,7 +115267,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115278,7 +115278,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -115401,7 +115401,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115412,7 +115412,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115423,7 +115423,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -115535,7 +115535,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115546,7 +115546,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115557,7 +115557,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -115674,7 +115674,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115685,7 +115685,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115696,7 +115696,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -115819,7 +115819,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1588.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115830,7 +115830,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1588.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115954,7 +115954,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115965,7 +115965,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -115976,7 +115976,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -116104,7 +116104,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116115,7 +116115,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116140,7 +116140,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116265,7 +116265,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116276,7 +116276,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116287,7 +116287,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -116401,7 +116401,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116412,7 +116412,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116423,7 +116423,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -116542,7 +116542,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116553,7 +116553,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116564,7 +116564,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -116680,7 +116680,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116691,7 +116691,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116702,7 +116702,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -116828,7 +116828,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116839,7 +116839,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116850,7 +116850,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -116962,7 +116962,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116973,7 +116973,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -116984,7 +116984,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -117119,7 +117119,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117130,7 +117130,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117141,7 +117141,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -117254,7 +117254,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117265,7 +117265,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117276,7 +117276,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -117399,7 +117399,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117410,7 +117410,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117421,7 +117421,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -117546,7 +117546,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117557,7 +117557,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117568,7 +117568,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -117680,7 +117680,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117691,7 +117691,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117702,7 +117702,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -117828,7 +117828,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117839,7 +117839,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117850,7 +117850,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -117973,7 +117973,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -117984,7 +117984,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -118009,7 +118009,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -118166,7 +118166,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1021.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118333,7 +118333,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118344,7 +118344,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118502,7 +118502,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118636,7 +118636,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118647,7 +118647,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118779,7 +118779,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118790,7 +118790,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1572"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118920,7 +118920,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118931,7 +118931,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -118942,7 +118942,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119086,7 +119086,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119098,7 +119098,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119484,7 +119484,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119495,7 +119495,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119647,7 +119647,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119659,7 +119659,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119788,7 +119788,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119799,7 +119799,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119931,7 +119931,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -119942,7 +119942,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -120135,7 +120135,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -120147,7 +120147,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.006"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -120329,7 +120329,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -120341,7 +120341,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -120521,7 +120521,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -120532,7 +120532,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121249,7 +121249,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121260,7 +121260,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121271,7 +121271,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121399,7 +121399,7 @@ const COMMAND_DATA = {
               "T1548.003",
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121411,7 +121411,7 @@ const COMMAND_DATA = {
               "T1548.003",
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121546,7 +121546,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -121557,7 +121557,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -121733,7 +121733,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121744,7 +121744,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121755,7 +121755,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121904,7 +121904,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -121915,7 +121915,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -122375,7 +122375,7 @@ const COMMAND_DATA = {
               "T1071",
               "T1547"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -123705,7 +123705,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -123717,7 +123717,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -123853,7 +123853,7 @@ const COMMAND_DATA = {
               "T1140",
               "T1592.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -124482,7 +124482,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -124620,7 +124620,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -124953,7 +124953,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -125136,7 +125136,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -125432,7 +125432,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -125578,7 +125578,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1048.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -125589,7 +125589,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1048.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -125730,7 +125730,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -125741,7 +125741,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -126069,7 +126069,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1082"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -126208,7 +126208,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1548.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -126658,7 +126658,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -126669,7 +126669,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -126805,7 +126805,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -126817,7 +126817,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -126990,7 +126990,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127002,7 +127002,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127170,7 +127170,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127182,7 +127182,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127375,7 +127375,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127387,7 +127387,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127527,7 +127527,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127539,7 +127539,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127725,7 +127725,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127737,7 +127737,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127871,7 +127871,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -127883,7 +127883,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128052,7 +128052,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128064,7 +128064,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128226,7 +128226,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128238,7 +128238,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128382,7 +128382,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128394,7 +128394,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128555,7 +128555,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1589.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -128662,7 +128662,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1589.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128673,7 +128673,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1589.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128817,7 +128817,7 @@ const COMMAND_DATA = {
               "T1589.003",
               "T1110.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128965,7 +128965,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1588.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -128977,7 +128977,7 @@ const COMMAND_DATA = {
               "T1027",
               "T1588.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129107,7 +129107,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1588.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129118,7 +129118,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1588.005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129325,7 +129325,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -129468,7 +129468,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129479,7 +129479,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1040"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129742,7 +129742,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129913,7 +129913,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129924,7 +129924,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -129935,7 +129935,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1068"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -130060,7 +130060,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -130212,7 +130212,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1543.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -130398,7 +130398,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.010"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -130586,7 +130586,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1082"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -130611,7 +130611,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1082"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           }
         ],
@@ -130728,7 +130728,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1547.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -130906,7 +130906,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.009"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -131084,7 +131084,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1574.011"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -131239,7 +131239,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1596"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -131250,7 +131250,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1596"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132016,7 +132016,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132027,7 +132027,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132329,7 +132329,7 @@ const COMMAND_DATA = {
               "T1562.001",
               "T1685"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132341,7 +132341,7 @@ const COMMAND_DATA = {
               "T1562.001",
               "T1685"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132496,7 +132496,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132507,7 +132507,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1557"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132646,7 +132646,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132657,7 +132657,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -132946,7 +132946,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133127,7 +133127,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133166,7 +133166,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133320,7 +133320,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -133342,7 +133342,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1595.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -133481,7 +133481,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1596.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133492,7 +133492,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1596.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133641,7 +133641,7 @@ const COMMAND_DATA = {
               "T1053.003",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133653,7 +133653,7 @@ const COMMAND_DATA = {
               "T1053.003",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133665,7 +133665,7 @@ const COMMAND_DATA = {
               "T1053.003",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -133785,7 +133785,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1087.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4662"
@@ -133966,7 +133966,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.002"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -134149,7 +134149,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -134160,7 +134160,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -134424,7 +134424,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -134435,7 +134435,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1003.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "1"
@@ -134601,7 +134601,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1046"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -134733,7 +134733,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1555.004"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -134931,7 +134931,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -135256,7 +135256,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1090.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -135447,7 +135447,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -135472,7 +135472,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -135608,7 +135608,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -135951,7 +135951,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1048.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -135962,7 +135962,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1048.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium",
             "log_ids": [
               "4104"
@@ -136256,7 +136256,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -136400,7 +136400,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -136411,7 +136411,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -136540,7 +136540,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -136551,7 +136551,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1210"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -136677,7 +136677,7 @@ const COMMAND_DATA = {
               "T1210",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -136848,7 +136848,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -137183,7 +137183,7 @@ const COMMAND_DATA = {
               "T1204.002",
               "T1059.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -137394,7 +137394,7 @@ const COMMAND_DATA = {
               "T1518",
               "T1552.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -137544,7 +137544,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1518.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -137910,7 +137910,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1057"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -138159,7 +138159,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1105"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -138702,7 +138702,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "signature",
             "confidence": "medium"
           },
           {
@@ -139028,7 +139028,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -139039,7 +139039,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1190"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -139176,7 +139176,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -139352,7 +139352,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1505.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -139548,7 +139548,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -139560,7 +139560,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1548"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140356,7 +140356,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140368,7 +140368,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1083"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140499,7 +140499,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140510,7 +140510,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140802,7 +140802,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140814,7 +140814,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140950,7 +140950,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -140962,7 +140962,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141095,7 +141095,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141107,7 +141107,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141238,7 +141238,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141250,7 +141250,7 @@ const COMMAND_DATA = {
               "T1059.007",
               "T1491.001"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141390,7 +141390,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141401,7 +141401,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141548,7 +141548,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141559,7 +141559,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141699,7 +141699,7 @@ const COMMAND_DATA = {
               "T1566",
               "T1056.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -141712,7 +141712,7 @@ const COMMAND_DATA = {
               "T1566",
               "T1056.003"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142263,7 +142263,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142274,7 +142274,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1059.007"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142398,7 +142398,7 @@ const COMMAND_DATA = {
               "T1550.004",
               "T1539"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142410,7 +142410,7 @@ const COMMAND_DATA = {
               "T1550.004",
               "T1539"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142768,7 +142768,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1499"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142779,7 +142779,7 @@ const COMMAND_DATA = {
             "attack": [
               "T1499"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142917,7 +142917,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -142929,7 +142929,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143068,7 +143068,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143080,7 +143080,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143243,7 +143243,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143255,7 +143255,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1059"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143419,7 +143419,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143431,7 +143431,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143581,7 +143581,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143593,7 +143593,7 @@ const COMMAND_DATA = {
               "T1190",
               "T1005"
             ],
-            "fidelity": "behavioral",
+            "fidelity": "telemetry",
             "confidence": "medium"
           },
           {
@@ -143851,7 +143851,7 @@ const COMMAND_DATA = {
     }
   ],
   "totalCommands": 950,
-  "buildDate": "2026-09-29T16:59:00.278Z",
+  "buildDate": "2026-09-29T17:31:39.951Z",
   "certifications": [
     "CDSA",
     "CPTS",

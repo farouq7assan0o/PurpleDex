@@ -97,7 +97,7 @@
         "attack": [
           "T1555"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

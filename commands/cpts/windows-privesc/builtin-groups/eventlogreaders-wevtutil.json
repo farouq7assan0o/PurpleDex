@@ -100,7 +100,7 @@
         "attack": [
           "T1654"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

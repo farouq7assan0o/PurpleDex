@@ -96,7 +96,7 @@
         "attack": [
           "T1555"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       },
       {
@@ -107,7 +107,7 @@
         "attack": [
           "T1555"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium",
         "log_ids": [
           "1"
@@ -121,7 +121,7 @@
         "attack": [
           "T1555"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       }
     ],

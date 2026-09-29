@@ -98,7 +98,7 @@
           "T1562.001",
           "T1685"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "telemetry",
         "confidence": "medium"
       },
       {

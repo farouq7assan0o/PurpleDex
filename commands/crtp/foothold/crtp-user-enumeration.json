@@ -130,7 +130,7 @@
         "attack": [
           "T1589.001"
         ],
-        "fidelity": "behavioral",
+        "fidelity": "signature",
         "confidence": "medium"
       }
     ],

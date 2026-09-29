@@ -1105,6 +1105,7 @@ class CommandManager {
                   defCode('✅ Secure Configuration / Code', 'dt-secure-code', 'secure', def.secure_config) +
                   defSection('🛡 Prevention / Remediation', 'dt-prevent', def.prevention) +
                   defSection('👻 Evasion (how attackers avoid the above)', 'dt-evasion', def.evasion) +
+                  this._renderValidation(def.validation, cmd.id) +
                   sourcesHtml
                 : '<div class="def-empty">' + defendEmpty + '</div>') +
             myNotesHtml;
@@ -2072,6 +2073,58 @@ class CommandManager {
         html += '<button class="det-export-btn" data-export="splunk"><i class="fas fa-magnifying-glass"></i> Splunk SPL Pack</button>';
         html += '</div>';
 
+        // Gap analysis: techniques with cards but weak/no detection
+        const allMitre = {};
+        this.commands.forEach(c => {
+            if (!c.mitre || c.type === 'reference' || c.type === 'cheatsheet' || c.type === 'resource') return;
+            c.mitre.forEach(t => {
+                if (!allMitre[t]) allMitre[t] = { cards: 0, dets: 0, bestFid: null };
+                allMitre[t].cards++;
+                const ct = cov.techniques[t];
+                if (ct) { allMitre[t].dets = ct.detections.length; allMitre[t].bestFid = ct.best_fidelity; }
+            });
+        });
+        const gaps = Object.entries(allMitre).filter(([, v]) => v.dets === 0 || v.bestFid === 'telemetry').sort((a, b) => b[1].cards - a[1].cards);
+        if (gaps.length > 0) {
+            html += '<h3 class="det-section">Detection Gaps</h3>';
+            html += '<p class="cov-note">' + gaps.filter(([,v]) => v.dets === 0).length + ' techniques with cards but NO detections. ' + gaps.filter(([,v]) => v.bestFid === 'telemetry').length + ' with telemetry-only coverage.</p>';
+            html += '<div class="cov-grid">';
+            gaps.slice(0, 40).forEach(([tid, v]) => {
+                const gapType = v.dets === 0 ? 'NO DETECTION' : 'telemetry only';
+                const color = v.dets === 0 ? '#e5484d' : '#d29922';
+                html += '<div class="cov-cell" data-covsearch="mitre:' + this.esc(tid) + '" style="border-left:3px solid ' + color + '">' +
+                    '<h4>' + this.esc(tid) + '</h4>' +
+                    '<span class="cov-count">' + v.cards + ' cards</span>' +
+                    '<span class="cov-sub" style="color:' + color + '">' + gapType + '</span></div>';
+            });
+            html += '</div>';
+        }
+
+        // Log source dependency: what you lose if a source goes down
+        html += '<h3 class="det-section">Log Source Dependencies</h3>';
+        html += '<p class="cov-note">Shows how many techniques become blind if a log source is lost. Red = sole coverage (no other source covers that technique).</p>';
+        const dsDepend = {};
+        for (const [ds, techList] of Object.entries(cov.data_sources)) {
+            let sole = 0;
+            for (const t of techList) {
+                const otherDs = cov.techniques[t] ? cov.techniques[t].data_sources.filter(d => d !== ds) : [];
+                if (otherDs.length === 0) sole++;
+            }
+            dsDepend[ds] = { total: techList.length, sole };
+        }
+        const dsDep = Object.entries(dsDepend).sort((a, b) => b[1].sole - a[1].sole);
+        const maxDep = Math.max(...dsDep.map(([,v]) => v.total), 1);
+        html += dsDep.map(([ds, v]) => {
+            const pctTotal = Math.round(v.total / maxDep * 100);
+            const pctSole = v.total > 0 ? Math.round(v.sole / v.total * 100) : 0;
+            return '<div class="cov-bar-row"><div class="cov-bar-label">' + this.esc(ds) + '</div>' +
+                '<div class="cov-bar-track">' +
+                '<div class="cov-bar-fill" style="width:' + pctTotal + '%;background:var(--accent);opacity:.4"></div>' +
+                '<div class="cov-bar-fill" style="width:' + Math.round(v.sole / maxDep * 100) + '%;background:#e5484d;position:absolute;top:0;left:0;height:100%"></div>' +
+                '</div>' +
+                '<div class="cov-bar-val">' + v.sole + ' sole / ' + v.total + ' total</div></div>';
+        }).join('');
+
         // Technique grid (top 60)
         html += '<h3 class="det-section">Top Techniques by Detection Count</h3>';
         html += '<p class="cov-note">Click a technique to search it. Color = best fidelity.</p>';
@@ -2136,22 +2189,56 @@ class CommandManager {
     }
     _exportSigmaIndex(allDets) {
         const sigmaDets = allDets.filter(d => d.platform === 'sigma');
-        const lines = ['# Command Reference - Sigma Rule Index', '# Generated ' + new Date().toISOString().slice(0, 10), '# ' + sigmaDets.length + ' rules referenced across ' + new Set(sigmaDets.map(d => d.card_id)).size + ' cards', ''];
-        const byDs = {};
-        sigmaDets.forEach(d => (byDs[d.data_source] = byDs[d.data_source] || []).push(d));
-        for (const [ds, dets] of Object.entries(byDs).sort((a, b) => b[1].length - a[1].length)) {
-            lines.push('## ' + ds + ' (' + dets.length + ' rules)', '');
-            const seen = new Set();
-            dets.forEach(d => {
-                if (seen.has(d.logic)) return;
-                seen.add(d.logic);
-                const techs = d.mitre.join(', ');
-                lines.push('- `' + d.logic + '` [' + techs + '] (' + d.fidelity + ') - ' + d.card_name);
-            });
-            lines.push('');
-        }
-        this._downloadFile('cmdref-sigma-index.md', lines.join('\n'), 'text/markdown');
-        this.toast('Sigma index downloaded');
+        const dsMap = { 'windows-security': 'windows', 'windows-system': 'windows', 'windows-application': 'windows', 'sysmon': 'windows', 'powershell': 'windows', 'wmi': 'windows', 'etw': 'windows', 'edr': 'windows', 'linux-audit': 'linux', 'linux-syslog': 'linux', 'linux-auth': 'linux', 'cloud-trail': 'cloud', 'azure-activity': 'cloud', 'gcp-audit': 'cloud', 'o365': 'cloud', 'entra-id': 'cloud' };
+        const catMap = { 'windows-security': 'process_creation', 'sysmon': 'process_creation', 'powershell': 'ps_script', 'windows-system': 'system', 'edr': 'process_creation', 'linux-audit': 'process_creation' };
+        const date = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+        const lines = [];
+        const seen = new Set();
+        let count = 0;
+        sigmaDets.forEach(d => {
+            const key = d.logic.trim();
+            if (seen.has(key)) return;
+            seen.add(key);
+            count++;
+            const slug = (d.name || key).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
+            const product = dsMap[d.data_source] || 'windows';
+            const category = catMap[d.data_source] || 'process_creation';
+            const level = d.fidelity === 'behavioral' ? 'medium' : d.fidelity === 'signature' ? 'high' : 'low';
+            const status = d.fidelity === 'telemetry' ? 'experimental' : 'stable';
+            lines.push('title: ' + (d.name || key));
+            lines.push('id: cmdref-' + slug);
+            lines.push('status: ' + status);
+            lines.push('level: ' + level);
+            lines.push('description: "Auto-generated from Command Reference. Card: ' + (d.card_name || '').replace(/"/g, '\\"') + '"');
+            lines.push('author: Command Reference');
+            lines.push('date: ' + date);
+            if (d.mitre && d.mitre.length) {
+                lines.push('tags:');
+                d.mitre.forEach(t => {
+                    const tag = 'attack.' + t.toLowerCase().replace('.', '.');
+                    lines.push('    - ' + tag);
+                });
+            }
+            lines.push('logsource:');
+            lines.push('    product: ' + product);
+            lines.push('    category: ' + category);
+            lines.push('detection:');
+            lines.push('    selection:');
+            lines.push('        # Reference: ' + key);
+            lines.push("        CommandLine|contains: 'PLACEHOLDER'");
+            lines.push('    condition: selection');
+            if (d.false_positives) {
+                lines.push('falsepositives:');
+                lines.push('    - ' + d.false_positives);
+            } else {
+                lines.push('falsepositives:');
+                lines.push('    - Legitimate administrative activity');
+            }
+            lines.push('---');
+        });
+        const header = '# Command Reference Sigma Rule Pack\n# ' + count + ' rules - Generated ' + new Date().toISOString().slice(0, 10) + '\n# Import into Sigma toolchain or convert with sigmac/sigma-cli\n---\n';
+        this._downloadFile('cmdref-sigma-rules.yml', header + lines.join('\n'), 'text/yaml');
+        this.toast(count + ' Sigma rules downloaded');
     }
     _exportSiemPack(allDets, platform) {
         const dets = allDets.filter(d => d.platform === platform);
@@ -2192,6 +2279,30 @@ class CommandManager {
             this._downloadFile('cmdref-splunk-pack.spl', lines.join('\n'), 'text/plain');
         }
         this.toast(platform.charAt(0).toUpperCase() + platform.slice(1) + ' pack downloaded');
+    }
+    _renderValidation(val, cardId) {
+        if (!val) return '';
+        let h = '<div class="def-section"><div class="def-section-title dt-validate">🎯 Purple Team Validation</div>';
+        if (val.expected_events && val.expected_events.length) {
+            h += '<div class="val-label">Expected Events</div><table class="triage-table"><tr><th>Source</th><th>Event ID</th><th>Description</th></tr>';
+            val.expected_events.forEach(ev => {
+                h += '<tr><td>' + this.esc(ev.source || '') + '</td><td>' + this.esc(ev.event_id || '-') + '</td><td>' + this.esc(ev.description || '') + '</td></tr>';
+            });
+            h += '</table>';
+        }
+        if (val.success_criteria) {
+            h += '<div class="val-label">Success Criteria</div><div class="val-text">' + this.esc(val.success_criteria) + '</div>';
+        }
+        if (val.test_command) {
+            h += '<div class="val-label">Test Command</div><pre class="det-query-pre">' + this.esc(val.test_command) + '</pre>';
+        }
+        if (val.response_steps && val.response_steps.length) {
+            h += '<div class="val-label">Response Playbook</div><ol class="val-steps">';
+            val.response_steps.forEach(s => h += '<li>' + this.esc(s) + '</li>');
+            h += '</ol>';
+        }
+        h += '</div>';
+        return h;
     }
     _downloadFile(name, content, type) {
         const blob = new Blob([content], { type });

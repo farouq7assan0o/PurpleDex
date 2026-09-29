@@ -1056,6 +1056,11 @@ body[data-mode="both"] .team-dot { opacity: 1; }
 .triage-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); color: var(--text); }
 .triage-eid-cell, .triage-ds-cell { cursor: pointer; }
 .triage-eid-cell:hover, .triage-ds-cell:hover { border-color: var(--accent); }
+.dt-validate { color: #a371f7; }
+.val-label { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 10px 0 4px; }
+.val-text { font-size: .85rem; color: var(--text); margin-bottom: 8px; }
+.val-steps { margin: 4px 0 8px 18px; padding: 0; font-size: .82rem; color: var(--text); }
+.val-steps li { margin-bottom: 4px; }
 @media (max-width: 760px) { .study-head, .cov-head { flex-wrap: wrap; } .study-scope { margin-left: 0; } .cov-bar-label { width: 100px; } }
 
 /* ===================== Print stylesheet (paper / PDF study) ===================== */

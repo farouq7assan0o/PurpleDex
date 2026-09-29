@@ -1,5 +1,5 @@
 /* Service worker - offline app-shell cache. Bump CACHE when assets change. */
-const CACHE = 'cmdref-v4';
+const CACHE = 'cmdref-v5';
 const ASSETS = [
   '.', 'index.html', 'exam.html',
   'css/styles.css', 'css/icons.css', 'css/exam.css',

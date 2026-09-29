@@ -2003,6 +2003,7 @@ class CommandManager {
         if (this.covTab === 'tool') return this.renderCoverageTool(body);
         if (this.covTab === 'source') return this.renderCoverageSource(body);
         if (this.covTab === 'detection') return this.renderCoverageDetection(body);
+        if (this.covTab === 'triage') return this.renderCoverageTriage(body);
         return this.renderCoverageMitre(body);
     }
     async renderCoverageDetection(body) {
@@ -2061,6 +2062,16 @@ class CommandManager {
             '<div class="cov-bar-val">' + n + '</div></div>'
         ).join('');
 
+        // Export buttons
+        html += '<h3 class="det-section">Export Detections</h3>';
+        html += '<p class="cov-note">Download detection rules for your SIEM or ATT&CK Navigator.</p>';
+        html += '<div class="det-exports">';
+        html += '<button class="det-export-btn" data-export="navigator"><i class="fas fa-map"></i> ATT&CK Navigator Layer</button>';
+        html += '<button class="det-export-btn" data-export="sigma"><i class="fas fa-shield-halved"></i> Sigma Rule Index</button>';
+        html += '<button class="det-export-btn" data-export="sentinel"><i class="fas fa-database"></i> Sentinel KQL Pack</button>';
+        html += '<button class="det-export-btn" data-export="splunk"><i class="fas fa-magnifying-glass"></i> Splunk SPL Pack</button>';
+        html += '</div>';
+
         // Technique grid (top 60)
         html += '<h3 class="det-section">Top Techniques by Detection Count</h3>';
         html += '<p class="cov-note">Click a technique to search it. Color = best fidelity.</p>';
@@ -2074,6 +2085,273 @@ class CommandManager {
         html += '</div>';
 
         body.innerHTML = html;
+
+        // Wire export buttons
+        body.querySelectorAll('.det-export-btn').forEach(btn => btn.addEventListener('click', () => {
+            this._exportDetections(btn.dataset.export);
+        }));
+    }
+    _exportDetections(format) {
+        const cov = this._coverageIndex;
+        if (!cov) { this.toast('No coverage data loaded'); return; }
+        const allDets = [];
+        this.commands.forEach(c => {
+            if (!c.defense || !Array.isArray(c.defense.detections)) return;
+            c.defense.detections.forEach(d => allDets.push({ ...d, card_id: c.id, card_name: c.name, mitre: c.mitre || [] }));
+        });
+        if (format === 'navigator') this._exportNavigatorLayer(cov);
+        else if (format === 'sigma') this._exportSigmaIndex(allDets);
+        else if (format === 'sentinel') this._exportSiemPack(allDets, 'sentinel');
+        else if (format === 'splunk') this._exportSiemPack(allDets, 'splunk');
+    }
+    _exportNavigatorLayer(cov) {
+        const techniques = Object.entries(cov.techniques).map(([tid, v]) => {
+            const score = v.best_fidelity === 'behavioral' ? 75 : v.best_fidelity === 'signature' ? 50 : 25;
+            return {
+                techniqueID: tid,
+                score,
+                color: v.best_fidelity === 'behavioral' ? '#3fb950' : v.best_fidelity === 'signature' ? '#d29922' : '#8b949e',
+                comment: v.detections.length + ' detection(s) across ' + v.platforms.join(', ') + '. Best fidelity: ' + v.best_fidelity,
+                metadata: [],
+                links: [],
+                enabled: true
+            };
+        });
+        const layer = {
+            name: 'Command Reference Detection Coverage',
+            versions: { attack: '14', navigator: '4.9.1', layer: '4.5' },
+            domain: 'enterprise-attack',
+            description: 'Auto-generated from Command Reference structured detections. ' + cov.total_detections + ' detections across ' + Object.keys(cov.techniques).length + ' techniques.',
+            gradient: { colors: ['#8b949e', '#d29922', '#3fb950'], minValue: 25, maxValue: 75 },
+            legendItems: [
+                { label: 'Behavioral (robust)', color: '#3fb950' },
+                { label: 'Signature (tool-specific)', color: '#d29922' },
+                { label: 'Telemetry (data only)', color: '#8b949e' }
+            ],
+            techniques,
+            sorting: 3
+        };
+        this._downloadFile('cmdref-navigator-layer.json', JSON.stringify(layer, null, 2), 'application/json');
+        this.toast('Navigator layer downloaded');
+    }
+    _exportSigmaIndex(allDets) {
+        const sigmaDets = allDets.filter(d => d.platform === 'sigma');
+        const lines = ['# Command Reference - Sigma Rule Index', '# Generated ' + new Date().toISOString().slice(0, 10), '# ' + sigmaDets.length + ' rules referenced across ' + new Set(sigmaDets.map(d => d.card_id)).size + ' cards', ''];
+        const byDs = {};
+        sigmaDets.forEach(d => (byDs[d.data_source] = byDs[d.data_source] || []).push(d));
+        for (const [ds, dets] of Object.entries(byDs).sort((a, b) => b[1].length - a[1].length)) {
+            lines.push('## ' + ds + ' (' + dets.length + ' rules)', '');
+            const seen = new Set();
+            dets.forEach(d => {
+                if (seen.has(d.logic)) return;
+                seen.add(d.logic);
+                const techs = d.mitre.join(', ');
+                lines.push('- `' + d.logic + '` [' + techs + '] (' + d.fidelity + ') - ' + d.card_name);
+            });
+            lines.push('');
+        }
+        this._downloadFile('cmdref-sigma-index.md', lines.join('\n'), 'text/markdown');
+        this.toast('Sigma index downloaded');
+    }
+    _exportSiemPack(allDets, platform) {
+        const dets = allDets.filter(d => d.platform === platform);
+        const lines = [];
+        if (platform === 'sentinel') {
+            lines.push('// Command Reference - Sentinel KQL Detection Pack');
+            lines.push('// Generated ' + new Date().toISOString().slice(0, 10));
+            lines.push('// ' + dets.length + ' queries across ' + new Set(dets.map(d => d.card_id)).size + ' cards');
+            lines.push('');
+            const seen = new Set();
+            dets.forEach(d => {
+                const key = d.logic.trim();
+                if (seen.has(key)) return;
+                seen.add(key);
+                lines.push('// === ' + d.card_name + ' [' + d.mitre.join(', ') + '] ===');
+                lines.push('// Fidelity: ' + d.fidelity + ' | Data source: ' + d.data_source);
+                if (d.false_positives) lines.push('// False positives: ' + d.false_positives);
+                lines.push(d.logic);
+                lines.push('');
+            });
+            this._downloadFile('cmdref-sentinel-pack.kql', lines.join('\n'), 'text/plain');
+        } else {
+            lines.push('# Command Reference - Splunk SPL Detection Pack');
+            lines.push('# Generated ' + new Date().toISOString().slice(0, 10));
+            lines.push('# ' + dets.length + ' queries across ' + new Set(dets.map(d => d.card_id)).size + ' cards');
+            lines.push('');
+            const seen = new Set();
+            dets.forEach(d => {
+                const key = d.logic.trim();
+                if (seen.has(key)) return;
+                seen.add(key);
+                lines.push('### ' + d.card_name + ' [' + d.mitre.join(', ') + '] ###');
+                lines.push('# Fidelity: ' + d.fidelity + ' | Data source: ' + d.data_source);
+                if (d.false_positives) lines.push('# False positives: ' + d.false_positives);
+                lines.push(d.logic);
+                lines.push('');
+            });
+            this._downloadFile('cmdref-splunk-pack.spl', lines.join('\n'), 'text/plain');
+        }
+        this.toast(platform.charAt(0).toUpperCase() + platform.slice(1) + ' pack downloaded');
+    }
+    _downloadFile(name, content, type) {
+        const blob = new Blob([content], { type });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    }
+    async renderCoverageTriage(body) {
+        if (!this._coverageIndex) {
+            body.innerHTML = '<p class="cov-note">Loading detection index...</p>';
+            try { this._coverageIndex = await fetch('js/coverage.json').then(r => r.json()); }
+            catch (e) { body.innerHTML = '<p class="cov-note">Could not load <code>js/coverage.json</code>.</p>'; return; }
+        }
+        const cov = this._coverageIndex;
+        const eidMap = {};
+        const dsCards = {};
+        this.commands.forEach(c => {
+            if (!c.defense || !Array.isArray(c.defense.detections)) return;
+            c.defense.detections.forEach(d => {
+                const ds = d.data_source;
+                if (!dsCards[ds]) dsCards[ds] = [];
+                dsCards[ds].push({ card: c, det: d });
+                const eids = (d.logic || '').match(/(?:EventCode|EventID|event\.code)\s*(?:=|==|in\s*\()\s*["']?(\d[\d,\s]*)/gi);
+                if (eids) eids.forEach(m => {
+                    const nums = m.match(/\d+/g);
+                    if (nums) nums.forEach(n => {
+                        if (!eidMap[n]) eidMap[n] = [];
+                        eidMap[n].push({ card: c, det: d });
+                    });
+                });
+            });
+        });
+        let html = '<h3 class="det-section">Triage Lookup</h3>';
+        html += '<p class="cov-note">Enter a log source, Event ID, or keyword. Results show which techniques fire, what cards to check, and investigation guidance.</p>';
+        html += '<div class="triage-search-row"><input id="triageQ" class="triage-input" placeholder="e.g. 4624, sysmon, windows-security, kerberos..." autocomplete="off"><button id="triageGo" class="det-export-btn" type="button"><i class="fas fa-search"></i> Lookup</button></div>';
+        html += '<div id="triageResults"></div>';
+        html += '<h3 class="det-section">Common Event IDs</h3>';
+        html += '<p class="cov-note">Click an Event ID to see associated techniques and cards.</p>';
+        const topEids = Object.entries(eidMap).sort((a, b) => b[1].length - a[1].length).slice(0, 40);
+        html += '<div class="cov-grid">';
+        topEids.forEach(([eid, hits]) => {
+            const techs = [...new Set(hits.flatMap(h => h.card.mitre || []))];
+            html += '<div class="cov-cell triage-eid-cell" data-eid="' + eid + '">' +
+                '<h4>Event ' + eid + '</h4>' +
+                '<span class="cov-count">' + hits.length + ' det</span>' +
+                '<span class="cov-sub">' + techs.slice(0, 3).join(', ') + (techs.length > 3 ? '...' : '') + '</span></div>';
+        });
+        html += '</div>';
+        html += '<h3 class="det-section">Log Sources</h3>';
+        html += '<p class="cov-note">Coverage by data source. Click to see techniques.</p>';
+        const dsSorted = Object.entries(cov.data_sources).sort((a, b) => b[1].length - a[1].length);
+        html += '<div class="cov-grid">';
+        dsSorted.forEach(([ds, techs]) => {
+            html += '<div class="cov-cell triage-ds-cell" data-ds="' + this.esc(ds) + '">' +
+                '<h4>' + this.esc(ds) + '</h4>' +
+                '<span class="cov-count">' + techs.length + ' tech</span></div>';
+        });
+        html += '</div>';
+        body.innerHTML = html;
+        const resultsDiv = document.getElementById('triageResults');
+        const doLookup = (q) => {
+            q = q.trim().toLowerCase();
+            if (!q) { resultsDiv.innerHTML = ''; return; }
+            let out = '';
+            if (/^\d+$/.test(q) && eidMap[q]) {
+                const hits = eidMap[q];
+                const techs = [...new Set(hits.flatMap(h => h.card.mitre || []))];
+                const cards = [...new Set(hits.map(h => h.card))];
+                out += '<div class="triage-result"><h4>Event ID ' + this.esc(q) + '</h4>';
+                out += '<p class="cov-note">' + hits.length + ' detection(s) across ' + cards.length + ' card(s) covering ' + techs.length + ' technique(s)</p>';
+                out += '<div class="triage-techs">' + techs.map(t => '<span class="triage-tag" data-covsearch="mitre:' + this.esc(t) + '">' + this.esc(t) + '</span>').join('') + '</div>';
+                out += '<table class="triage-table"><tr><th>Card</th><th>Detection</th><th>Fidelity</th><th>Platform</th></tr>';
+                const seen = new Set();
+                hits.forEach(h => {
+                    const key = h.card.id + h.det.name;
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    out += '<tr><td>' + this.esc(h.card.name) + '</td><td>' + this.esc(h.det.name) + '</td><td>' + h.det.fidelity + '</td><td>' + h.det.platform + '</td></tr>';
+                });
+                out += '</table></div>';
+            }
+            if (cov.data_sources[q]) {
+                const techs = cov.data_sources[q];
+                const cards = dsCards[q] || [];
+                out += '<div class="triage-result"><h4>Data source: ' + this.esc(q) + '</h4>';
+                out += '<p class="cov-note">' + techs.length + ' technique(s), ' + cards.length + ' detection(s)</p>';
+                out += '<div class="triage-techs">' + techs.map(t => '<span class="triage-tag" data-covsearch="mitre:' + this.esc(t) + '">' + this.esc(t) + '</span>').join('') + '</div>';
+                if (cards.length > 0) {
+                    out += '<table class="triage-table"><tr><th>Card</th><th>Detection</th><th>Fidelity</th></tr>';
+                    const seen = new Set();
+                    cards.slice(0, 50).forEach(h => {
+                        const key = h.card.id + h.det.name;
+                        if (seen.has(key)) return;
+                        seen.add(key);
+                        out += '<tr><td>' + this.esc(h.card.name) + '</td><td>' + this.esc(h.det.name) + '</td><td>' + h.det.fidelity + '</td></tr>';
+                    });
+                    out += '</table></div>';
+                }
+            }
+            if (!out) {
+                const matches = [];
+                Object.entries(eidMap).forEach(([eid, hits]) => {
+                    hits.forEach(h => {
+                        if ((h.det.logic || '').toLowerCase().includes(q) || (h.det.name || '').toLowerCase().includes(q) || (h.card.name || '').toLowerCase().includes(q)) {
+                            matches.push({ eid, card: h.card, det: h.det });
+                        }
+                    });
+                });
+                if (matches.length === 0) {
+                    this.commands.forEach(c => {
+                        if (!c.defense || !Array.isArray(c.defense.detections)) return;
+                        c.defense.detections.forEach(d => {
+                            if ((d.logic || '').toLowerCase().includes(q) || (d.name || '').toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q)) {
+                                matches.push({ card: c, det: d });
+                            }
+                        });
+                    });
+                }
+                if (matches.length > 0) {
+                    const techs = [...new Set(matches.flatMap(m => m.card.mitre || []))];
+                    out += '<div class="triage-result"><h4>Keyword: "' + this.esc(q) + '"</h4>';
+                    out += '<p class="cov-note">' + matches.length + ' match(es) across ' + techs.length + ' technique(s)</p>';
+                    out += '<div class="triage-techs">' + techs.slice(0, 20).map(t => '<span class="triage-tag" data-covsearch="mitre:' + this.esc(t) + '">' + this.esc(t) + '</span>').join('') + '</div>';
+                    out += '<table class="triage-table"><tr><th>Card</th><th>Detection</th><th>Fidelity</th><th>Data Source</th></tr>';
+                    const seen = new Set();
+                    matches.slice(0, 50).forEach(m => {
+                        const key = m.card.id + m.det.name;
+                        if (seen.has(key)) return;
+                        seen.add(key);
+                        out += '<tr><td>' + this.esc(m.card.name) + '</td><td>' + this.esc(m.det.name) + '</td><td>' + m.det.fidelity + '</td><td>' + m.det.data_source + '</td></tr>';
+                    });
+                    out += '</table></div>';
+                } else {
+                    out = '<p class="cov-note">No results for "' + this.esc(q) + '".</p>';
+                }
+            }
+            resultsDiv.innerHTML = out;
+            resultsDiv.querySelectorAll('[data-covsearch]').forEach(el => el.addEventListener('click', () => {
+                const overlay = document.getElementById('coverageOverlay');
+                if (overlay) overlay.hidden = true;
+                this.searchInput.value = el.dataset.covsearch;
+                this.applySearch();
+            }));
+        };
+        document.getElementById('triageGo').addEventListener('click', () => doLookup(document.getElementById('triageQ').value));
+        document.getElementById('triageQ').addEventListener('keydown', e => { if (e.key === 'Enter') doLookup(e.target.value); });
+        body.querySelectorAll('.triage-eid-cell').forEach(el => el.addEventListener('click', () => {
+            document.getElementById('triageQ').value = el.dataset.eid;
+            doLookup(el.dataset.eid);
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }));
+        body.querySelectorAll('.triage-ds-cell').forEach(el => el.addEventListener('click', () => {
+            document.getElementById('triageQ').value = el.dataset.ds;
+            doLookup(el.dataset.ds);
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }));
     }
     renderCoverageSource(body) {
         const data = (typeof COVERAGE_DATA !== 'undefined') ? COVERAGE_DATA : null;

@@ -1040,6 +1040,22 @@ body[data-mode="both"] .team-dot { opacity: 1; }
 .det-section { margin: 22px 0 8px; font-size: .95rem; color: var(--text); font-weight: 600; }
 .det-fidelity-bar { display: flex; height: 28px; border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
 .det-f-seg { display: flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 600; color: #0d1117; white-space: nowrap; }
+.det-exports { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.det-export-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: .82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: border-color .15s, background .15s; }
+.det-export-btn:hover { border-color: var(--accent); background: var(--hover); }
+.triage-search-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.triage-input { flex: 1; background: var(--code-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 6px; font-size: .88rem; outline: none; }
+.triage-input:focus { border-color: var(--accent); }
+.triage-result { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; }
+.triage-result h4 { margin: 0 0 6px; color: var(--accent); font-size: .95rem; }
+.triage-techs { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.triage-tag { background: var(--hover); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; font-size: .75rem; cursor: pointer; color: var(--text); }
+.triage-tag:hover { border-color: var(--accent); }
+.triage-table { width: 100%; border-collapse: collapse; font-size: .78rem; margin-top: 8px; }
+.triage-table th { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 600; }
+.triage-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+.triage-eid-cell, .triage-ds-cell { cursor: pointer; }
+.triage-eid-cell:hover, .triage-ds-cell:hover { border-color: var(--accent); }
 @media (max-width: 760px) { .study-head, .cov-head { flex-wrap: wrap; } .study-scope { margin-left: 0; } .cov-bar-label { width: 100px; } }
 
 /* ===================== Print stylesheet (paper / PDF study) ===================== */

@@ -93,7 +93,53 @@
       "MITRE T1595.002",
       "OWASP A05:2021"
     ],
-    "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
+    "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Drupal - Detect and Version Enumeration - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// drupal application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Drupal - Detect and Version Enumeration - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_path=\\\"/CHANGELOG.txt\\\" OR uri_path=\\\"/core/CHANGELOG.txt\\\" OR uri_path=\\\"/user/login\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_drupal",
+        "logic": "web_app_scanner_drupal",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Detects Drupal and reads its version:\n  curl -s http://<url>/CHANGELOG.txt   fetch the changelog\n  | grep -m2 \"\"                         show the first lines (top entry = current version)\nConfirms Drupal and the version to match against exploits (e.g. Drupalgeddon); droopescan scan drupal enumerates modules more deeply."
 }

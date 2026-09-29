@@ -86,7 +86,65 @@
       "HTB M26",
       "MITRE T1555.003"
     ],
-    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
+    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Credential Hunting - Chrome Saved Logins - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName == \"Login Data\" and FolderPath has \"Chrome\"\n| where InitiatingProcessFileName !in~ (\"chrome.exe\",\"msedge.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FolderPath\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1555.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - Chrome Saved Logins (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*SharpChrome*\" OR CommandLine=\"*SharpChrome*logins*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - Chrome Saved Logins (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*\\\\Chrome\\\\User Data\\\\*Login Data\"\n| where NOT match(Image, \"(?i)chrome\")\n| table _time, Computer, Image",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_sharpchrome",
+        "logic": "proc_creation_win_hktl_sharpchrome",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

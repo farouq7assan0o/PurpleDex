@@ -106,6 +106,56 @@
     ],
     "misconfiguration": "Office macros not disabled by GPO. ASR child process rule not enabled. Email gateway doesn't inspect macro content. Protected View disabled for network/internet locations.",
     "vulnerable_config": "# Macros enabled in Trust Center:\n# User Config → Admin Templates → Microsoft Office 2016 → Security Settings → Trust Center\n# → Macro Settings: Enable all macros = CRITICAL\n\n# Protected View disabled:\n# Trust Center → Protected View: all options unchecked\n# → Files from internet open directly in edit mode = macros auto-execute",
-    "secure_config": "# Disable macros via GPO:\n# User Config → Admin Templates → Microsoft Office → Trust Center → Macro Settings\n# → Disable VBA macros without notification: Enabled\n\n# ASR rules:\nSet-MpPreference -AttackSurfaceReductionRules_Ids @(\n  '2B5223F8-AC7F-4C4E-B2BD-69ECC11D8FE4',  # Office: block child process creation\n  '3B576869-A4EC-4529-8536-B80A7769E899',  # Office: block executable content\n  '75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84'   # Office: block process injection\n) -AttackSurfaceReductionRules_Actions @('Enabled','Enabled','Enabled')\n\n# Block macro-containing attachments at email gateway"
+    "secure_config": "# Disable macros via GPO:\n# User Config → Admin Templates → Microsoft Office → Trust Center → Macro Settings\n# → Disable VBA macros without notification: Enabled\n\n# ASR rules:\nSet-MpPreference -AttackSurfaceReductionRules_Ids @(\n  '2B5223F8-AC7F-4C4E-B2BD-69ECC11D8FE4',  # Office: block child process creation\n  '3B576869-A4EC-4529-8536-B80A7769E899',  # Office: block executable content\n  '75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84'   # Office: block process injection\n) -AttackSurfaceReductionRules_Actions @('Enabled','Enabled','Enabled')\n\n# Block macro-containing attachments at email gateway",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Office - Malicious VBA Macro - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"WINWORD.EXE\",\"EXCEL.EXE\",\"POWERPNT.EXE\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"mshta.exe\",\"wscript.exe\",\"cscript.exe\",\"regsvr32.exe\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// Office macro dropper: WINWORD/EXCEL spawning a script/shell child",
+        "data_source": "powershell",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Office - Malicious VBA Macro - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*WINWORD.EXE\" OR ParentImage=\"*EXCEL.EXE\" OR ParentImage=\"*POWERPNT.EXE\")\n| where match(Image, \"(?i)(cmd|powershell|mshta|wscript|cscript|regsvr32)\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_office_spawning_shell",
+        "logic": "proc_creation_win_office_spawning_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon"
+      ]
+    }
   }
 }

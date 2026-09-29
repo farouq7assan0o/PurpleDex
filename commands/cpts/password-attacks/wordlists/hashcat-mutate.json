@@ -75,7 +75,52 @@
     "splunk_spl": "index=* \"hashcat\"\n| table _time, host, user, _raw\n// rule-based wordlist mutation (--stdout) runs locally; detection is in the subsequent attack",
     "elastic_kql": "process.name:hashcat*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" or ProcessCommandLine has \"hashcat\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// rule-based wordlist mutation (--stdout) runs locally; detection is in the subsequent attack",
-    "sigma_rules": "no target-side telemetry (hashcat runs on the attacker host)"
+    "sigma_rules": "no target-side telemetry (hashcat runs on the attacker host)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Hashcat - Generate Mutated Wordlist - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" or ProcessCommandLine has \"hashcat\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// rule-based wordlist mutation (--stdout) runs locally; detection is in the subsequent attack",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Hashcat - Generate Mutated Wordlist - Splunk",
+        "logic": "index=* \"hashcat\"\n| table _time, host, user, _raw\n// rule-based wordlist mutation (--stdout) runs locally; detection is in the subsequent attack",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

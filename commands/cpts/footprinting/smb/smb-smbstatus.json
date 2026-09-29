@@ -89,7 +89,52 @@
     "misconfiguration": "SMB null sessions are allowed - the server accepts anonymous (unauthenticated) IPC$ connections, exposing share lists, user lists, password policy, and domain information. On older Windows versions (pre-2008 R2) this was the default. On modern systems it can be re-enabled by misconfiguration or GPO rollback. Additionally, SMB signing may be disabled, enabling relay attacks.",
     "vulnerable_config": "# Windows Registry - null sessions enabled:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RestrictAnonymous = 0      <-- allows null session enumeration\n#   RestrictAnonymousSAM = 0   <-- exposes SAM account list anonymously\n\n# SMB signing disabled (relay attack enabler):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RequireSecuritySignature = 0\n#   EnableSecuritySignature  = 0\n\n# Verify current state:\nGet-SmbServerConfiguration | Select-Object EnableSMBQUIC,RequireSecuritySignature",
     "secure_config": "# Disable null sessions:\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters' \\\n    -Name RestrictAnonymous -Value 2\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' \\\n    -Name RestrictAnonymous -Value 1\n\n# Enable SMB signing (blocks NTLM relay attacks):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\n\n# GPO path:\n# Computer Config > Windows Settings > Security Settings > Local Policies > Security Options:\n#   'Microsoft network server: Digitally sign communications (always)' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts and shares' = Enabled",
-    "evasion": "Authenticate with valid creds so it blends with normal admin traffic; prefer wmiexec/atexec (no service creation) over psexec's noisy service-install path; avoid touching every host - target only what you need."
+    "evasion": "Authenticate with valid creds so it blends with normal admin traffic; prefer wmiexec/atexec (no service creation) over psexec's noisy service-install path; avoid touching every host - target only what you need.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SMB Server Status (smbstatus) - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"smbstatus\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// smbstatus reads local Samba session/lock state (local recon, minimal signal)",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1049"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SMB Server Status (smbstatus) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"smbstatus\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1049"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_smbstatus_local_recon",
+        "logic": "lnx_auditd_smbstatus_local_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1049"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Shows the local Samba server's live activity:\n  smbstatus   list current connections, open files, and locks\nConfirms which shares are in use and by whom; --shares and --processes narrow the view to connected shares or the smbd processes serving them."
 }

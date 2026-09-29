@@ -85,7 +85,63 @@
     "sources": [
       "HTB M25",
       "MITRE T1083"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Enumeration - Flag / Keyword Search - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"grep -r\",\"find /\") \n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc\n// recursive grep/find across / and reads of /root by a non-root account",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Enumeration - Flag / Keyword Search (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"grep\" (proctitle=\"*-r*\" OR proctitle=\"*HTB*\")\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Enumeration - Flag / Keyword Search (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"/root/*\"\n| where auid!=0\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_recursive_filesystem_search",
+        "logic": "lnx_auditd_recursive_filesystem_search",
+        "data_source": "windows-security",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Recursively hunts the filesystem for a flag or keyword:\n  grep -r 'HTB{'           search recursively for the flag prefix (swap for any keyword)\n  / 2>/dev/null            start at root, discard permission-denied noise\nHandy on lab/exam boxes once you have read access, to confirm you can reach a flag or locate secrets."
 }

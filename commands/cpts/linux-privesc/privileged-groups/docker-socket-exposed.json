@@ -100,7 +100,63 @@
       "MITRE T1610",
       "MITRE T1611"
     ],
-    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running."
+    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Privileged Groups - Exposed Docker Socket (in-container) - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"docker.sock\" or (SyslogMessage has \"docker run\" and SyslogMessage has_any (\"--privileged\",\"-v /:\"))\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// a container launched --privileged with a host / mount via an exposed docker.sock",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privileged Groups - Exposed Docker Socket (in-container) (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"*docker.sock\"\n| where NOT match(exe, \"(?i)(dockerd|docker)$\") OR auid!=0\n| table _time, host, auid, exe",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privileged Groups - Exposed Docker Socket (in-container) (2) - Splunk",
+        "logic": "index=docker sourcetype=\"docker:events\" action=\"create\" \"privileged\"\n| table _time, host, image, HostConfig.Privileged",
+        "data_source": "windows-security",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_docker_socket_privileged_container",
+        "logic": "lnx_docker_socket_privileged_container",
+        "data_source": "windows-security",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

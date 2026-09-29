@@ -74,7 +74,52 @@
     "splunk_spl": "index=* (\"hashcat\" AND \"-a 3\")\n| table _time, host, user, _raw",
     "elastic_kql": "process.name:hashcat* AND process.args:\"-a 3\"",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"-a 3\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline mask/brute attack; no victim signal",
-    "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
+    "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Hashcat - Mask Attack - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"-a 3\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline mask/brute attack; no victim signal",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Hashcat - Mask Attack - Splunk",
+        "logic": "index=* (\"hashcat\" AND \"-a 3\")\n| table _time, host, user, _raw",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_hashcat_offline_cracking",
+        "logic": "proc_creation_hashcat_offline_cracking",
+        "data_source": "sysmon",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "type": "command",
   "variations": [

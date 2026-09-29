@@ -91,6 +91,63 @@
       "MITRE T1083",
       "OWASP A05:2021"
     ],
-    "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path."
+    "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Tomcat - Ghostcat AJP LFI (CVE-2020-1938) - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 8009\n| summarize count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| sort by count_ desc\n// Ghostcat (CVE-2020-1938): AJP connector abuse on TCP 8009 to read/include files",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Tomcat - Ghostcat AJP LFI (CVE-2020-1938) (1) - Splunk",
+        "logic": "index=network dest_port=8009\n| stats count by src_ip, dest_ip | where count>3",
+        "data_source": "network-flow",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Tomcat - Ghostcat AJP LFI (CVE-2020-1938) (2) - Splunk",
+        "logic": "index=suricata event_type=alert alert.signature=\"*AJP*\"\n| table _time, src_ip, dest_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_tomcat_ghostcat_ajp",
+        "logic": "net_tomcat_ghostcat_ajp",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

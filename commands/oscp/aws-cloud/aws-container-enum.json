@@ -130,7 +130,58 @@
     ],
     "misconfiguration": "ECR repositories public or accessible to all account roles. ECS task roles over-permissioned (admin-level). EKS with anonymous auth enabled. No ECR image scanning. Secrets hardcoded in container images.",
     "vulnerable_config": "# Over-permissioned ECS task role:\naws iam get-role-policy --role-name ecs-task-role --policy-name task-policy\n# → Action: '*', Resource: '*' (admin role on ECS task)\n\n# ECS task metadata credentials (from within container):\ncurl http://169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI\n# → AccessKeyId: ASIA..., SecretAccessKey: ..., Token: ... (temporary creds)\n# → These creds have the ECS task role permissions = admin if misconfigured",
-    "secure_config": "# Least-privilege ECS task roles:\n# Only grant permissions the container actually needs:\n# Application reads from S3? Only: s3:GetObject on specific bucket\n# Application writes to DynamoDB? Only: dynamodb:PutItem on specific table\n\n# ECR private with scanning:\naws ecr put-image-scanning-configuration --repository-name myapp --image-scanning-configuration scanOnPush=true\n\n# EKS: disable anonymous auth:\n# kube-apiserver flag: --anonymous-auth=false\n# Or use EKS managed addon with aws-auth ConfigMap\n\n# Secrets in containers: use Secrets Manager:\n# AWS Secrets Manager + ECS: inject via environment variable at task launch\n# EKS: use AWS Secrets Store CSI Driver"
+    "secure_config": "# Least-privilege ECS task roles:\n# Only grant permissions the container actually needs:\n# Application reads from S3? Only: s3:GetObject on specific bucket\n# Application writes to DynamoDB? Only: dynamodb:PutItem on specific table\n\n# ECR private with scanning:\naws ecr put-image-scanning-configuration --repository-name myapp --image-scanning-configuration scanOnPush=true\n\n# EKS: disable anonymous auth:\n# kube-apiserver flag: --anonymous-auth=false\n# Or use EKS managed addon with aws-auth ConfigMap\n\n# Secrets in containers: use Secrets Manager:\n# AWS Secrets Manager + ECS: inject via environment variable at task launch\n# EKS: use AWS Secrets Store CSI Driver",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS - Docker Container Post-Exploitation Enumeration - Sentinel",
+        "logic": "AWSCloudTrail\n| where EventName in (\"GetDownloadUrlForLayer\",\"BatchGetImage\",\"DescribeRepositories\",\"ListTasks\",\"DescribeTasks\")\n| summarize apis=make_set(EventName), count() by SourceIpAddress, UserIdentityArn, bin(TimeGenerated, 10m)\n| sort by count_ desc",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1528",
+          "T1613",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - Docker Container Post-Exploitation Enumeration - Splunk",
+        "logic": "index=aws_cloudtrail sourcetype=\"aws:cloudtrail\"\n| where eventName=\"GetMetadataToken\" OR eventName=\"AssumeRole\" OR like(eventSource, \"%sts%\")\n| where like(sourceIPAddress, \"169.254.169.254\") OR userAgent=\"*aws-sdk*\"\n| table _time, eventName, sourceIPAddress, userIdentity.arn, requestParameters",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1528",
+          "T1613",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "aws_sts_assumerole_from_container",
+        "logic": "aws_sts_assumerole_from_container",
+        "data_source": "windows-security",
+        "attack": [
+          "T1528",
+          "T1613",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "cloud-trail",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Enumerates a container you landed in (e.g. via pipeline RCE) to find escape and credential paths:\n  cat /proc/mounts | grep overlay   confirm you are in a container (overlay root filesystem)\n  cat /proc/1/status | grep Cap     read the container's Linux capability bitmasks\n  capsh --decode=<hex_value>        turn a Cap bitmask into named capabilities (spot dangerous ones like SYS_ADMIN)\n  env | grep -i aws ; printenv      look for AWS keys leaked into the environment\n  curl http://169.254.169.254/latest/meta-data/iam/security-credentials/   query the instance metadata service for IAM role creds\nTogether these reveal whether you can escape the container or assume a cloud role."
 }

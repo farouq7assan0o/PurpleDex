@@ -113,7 +113,85 @@
     ],
     "misconfiguration": "Script Block Logging disabled. AMSI not enforced/updated. CLM not applied to workstations. MDI absent.",
     "vulnerable_config": "# Script Block Logging disabled:\n# HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging\n# EnableScriptBlockLogging = 0 (or key absent)\n\n# AMSI bypass succeeds - not patched:\n[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)",
-    "secure_config": "# Enable Script Block Logging via GPO:\n# Computer Config → Admin Templates → Windows Components → Windows PowerShell\n# → Turn on Script Block Logging: Enabled\n\n# WDAC AllowMicrosoft policy → CLM on non-admin hosts\n\n# SIEM alert on PowerView function names in Event 4104:\n# EventID=4104 AND ScriptBlockText contains ('Get-DomainController' OR 'Get-NetGPO')"
+    "secure_config": "# Enable Script Block Logging via GPO:\n# Computer Config → Admin Templates → Windows Components → Windows PowerShell\n# → Turn on Script Block Logging: Enabled\n\n# WDAC AllowMicrosoft policy → CLM on non-admin hosts\n\n# SIEM alert on PowerView function names in Event 4104:\n# EventID=4104 AND ScriptBlockText contains ('Get-DomainController' OR 'Get-NetGPO')",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView Domain Enumeration - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-Domain\",\"Get-DomainController\",\"Get-NetDomain\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1482",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Domain Enumeration (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-Domain*\" OR ScriptBlockText=\"*Get-DomainController*\" OR ScriptBlockText=\"*Get-NetDomain*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1482",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Domain Enumeration (2) - Splunk",
+        "logic": "index=wineventlog EventCode=7 sourcetype=\"*Sysmon*\" ImageLoaded=\"*PowerView*\"\n| table _time, Computer, Image",
+        "data_source": "sysmon",
+        "attack": [
+          "T1482",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_functions",
+        "logic": "posh_ps_powerview_functions",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_defender_amsi_powerview",
+        "logic": "win_defender_amsi_powerview",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

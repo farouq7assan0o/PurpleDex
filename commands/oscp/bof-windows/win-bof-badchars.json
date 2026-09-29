@@ -91,6 +91,50 @@
     ],
     "misconfiguration": "Application performs no input sanitization or validation of received bytes. No stack protection compiled in. No monitoring for application crashes from a specific source.",
     "vulnerable_config": "# recv() without validation:\n# char buf[512];\n# int n = recv(sock, buf, 4096, 0);  // 4096 > 512 = overflow\n# memcpy(internal_buf, buf, n);       // copies all bytes including bad chars\n# → No filtering of null bytes, newlines, etc.",
-    "secure_config": "# Bounded recv + input validation:\n# char buf[512];\n# int n = recv(sock, buf, sizeof(buf) - 1, 0);\n# buf[n] = '\\0';\n# // Validate: only allow expected character set\n# for (int i = 0; i < n; i++) {\n#   if (!isprint(buf[i]) && buf[i] != '\\n' && buf[i] != '\\r') {\n#     close(sock);  // reject malformed input\n#     return;\n#   }\n# }"
+    "secure_config": "# Bounded recv + input validation:\n# char buf[512];\n# int n = recv(sock, buf, sizeof(buf) - 1, 0);\n# buf[n] = '\\0';\n# // Validate: only allow expected character set\n# for (int i = 0; i < n; i++) {\n#   if (!isprint(buf[i]) && buf[i] != '\\n' && buf[i] != '\\r') {\n#     close(sock);  // reject malformed input\n#     return;\n#   }\n# }",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Windows BOF - Step 3: Bad Character Identification - Sentinel",
+        "logic": "// bad-char identification in a debugger on the tester's copy of the target binary\n// No victim-side logs; detect the resulting exploit/payload when it is used against a target.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows BOF - Step 3: Bad Character Identification - Splunk",
+        "logic": "# bad-char identification in a debugger on the tester's copy of the target binary\n# This runs on the attacker/tester host and generates no victim-side telemetry.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side rule",
+        "logic": "no target-side rule",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

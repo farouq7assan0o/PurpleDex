@@ -86,7 +86,88 @@
     ],
     "misconfiguration": "Non-admins can write computer delegation attributes and/or MachineAccountQuota lets any user create computer accounts.",
     "vulnerable_config": "# BloodHound: GenericWrite/GenericAll to a computer + AllowedToAct.\nGet-DomainObjectAcl -Identity '<target_account>$' -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'GenericWrite|GenericAll|WriteProperty' }\n# Check quota:  Get-DomainObject -Identity '<domain>' -Properties ms-DS-MachineAccountQuota",
-    "secure_config": "# Set MachineAccountQuota to 0:\nSet-ADDomain -Identity <domain> -Replace @{'ms-DS-MachineAccountQuota'='0'}\n# Remove excessive write ACEs on computer objects; monitor 5136 on the delegation attribute."
+    "secure_config": "# Set MachineAccountQuota to 0:\nSet-ADDomain -Identity <domain> -Replace @{'ms-DS-MachineAccountQuota'='0'}\n# Remove excessive write ACEs on computer objects; monitor 5136 on the delegation attribute.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Resource-Based Constrained Delegation (RBCD, Linux) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| project TimeGenerated, Actor=SubjectUserName, TargetComputer=ObjectDN, Op=OperationType\n| union (SecurityEvent | where EventID == 4741 | project TimeGenerated, Actor=SubjectUserName, NewComputer=TargetUserName)\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.001",
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4741",
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Resource-Based Constrained Delegation (RBCD, Linux) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.001",
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Resource-Based Constrained Delegation (RBCD, Linux) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4741\n| table _time, SubjectUserName, TargetUserName",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.001",
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4741"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_rbcd_delegation_write",
+        "logic": "win_security_rbcd_delegation_write",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.001",
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_computer_account_created_by_user",
+        "logic": "win_security_computer_account_created_by_user",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.001",
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "impacket"

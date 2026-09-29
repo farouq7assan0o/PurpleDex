@@ -114,7 +114,63 @@
       "MITRE T1574.006",
       "MITRE T1548.003"
     ],
-    "evasion": "Place the hijack file, trigger once, then remove it and restore the path so the change is transient."
+    "evasion": "Place the hijack file, trigger once, then remove it and restore the path so the change is transient.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Python Library Hijacking - Sudo Script Abuse - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"/python3\",\"__init__.py\",\"site-packages\") and SyslogMessage has_any (\"write\",\"O_CREAT\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// a Python module in the import path written by a non-root user, then sudo python runs it",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Python Library Hijacking - Sudo Script Abuse (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"*/python3*/*.py\" (a1=\"*O_WRONLY*\" OR a1=\"*O_CREAT*\")\n| where auid!=0\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Python Library Hijacking - Sudo Script Abuse (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"sudo:\" \"python\"\n| table _time, host, user, _raw",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_python_module_hijack",
+        "logic": "lnx_auditd_python_module_hijack",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Hijacks a module imported by a root-run Python script:\n  sudo /usr/bin/python3 ./mem_status.py   run the sudo-allowed script after planting your hijack\nFirst find (sudo -l) the runnable script and which module it imports, then pick a writable vector: overwrite the module file, drop a same-named module earlier in sys.path, use PYTHONPATH (if SETENV is allowed), or append to a writable script. Your code (e.g. os.system('/bin/bash')) then runs as root."
 }

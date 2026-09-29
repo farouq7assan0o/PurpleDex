@@ -81,7 +81,76 @@
     ],
     "misconfiguration": "The Windows Print Spooler service (spoolsv.exe) is enabled on non-print-server machines and exposes MS-RPRN (RpcRemoteFindFirstPrinterChangeNotification). Any authenticated user can coerce the DC or any host running Spooler to authenticate outbound to an attacker-controlled machine via this RPC call. Combined with NTLM relay to LDAP/LDAPS, this grants write access to AD - including adding Shadow Credentials or changing msDS-AllowedToDelegateTo for privilege escalation.",
     "vulnerable_config": "# Print Spooler running on DC (the critical enabler):\nGet-Service Spooler -ComputerName dc01\n# Status: Running  StartType: Automatic\n\n# LDAP relay possible because LDAP signing not enforced:\n# ldapdomainrelay (impacket-ntlmrelayx -t ldap://dc01)\n# DC authenticates to attacker -> attacker relays to DC's LDAP -> writes Shadow Credentials\n\n# LDAPS + channel binding NOT enforced (default):\n# Registry: HKLM\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters\n#   LdapEnforceChannelBinding = 0  (not enforced)",
-    "secure_config": "# Fix 1 - Disable Print Spooler on all DCs and non-print-servers:\nStop-Service Spooler; Set-Service Spooler -StartupType Disabled\n# GPO: Computer Config > System Services > Print Spooler = Disabled\n\n# Fix 2 - Block remote Spooler access while keeping local printing:\n# GPO: Computer Config > Admin Templates > Printers\n#   'Allow Print Spooler to accept client connections' = Disabled\n\n# Fix 3 - Enforce LDAP signing + channel binding:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters:\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters' \\\n    -Name 'LdapEnforceChannelBinding' -Value 2\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters' \\\n    -Name 'LDAPServerIntegrity' -Value 2\n# These block NTLM relay to LDAP/LDAPS even if coercion succeeds\n\n# Fix 4 - Apply PrintNightmare patches: KB5004945, KB5005033"
+    "secure_config": "# Fix 1 - Disable Print Spooler on all DCs and non-print-servers:\nStop-Service Spooler; Set-Service Spooler -StartupType Disabled\n# GPO: Computer Config > System Services > Print Spooler = Disabled\n\n# Fix 2 - Block remote Spooler access while keeping local printing:\n# GPO: Computer Config > Admin Templates > Printers\n#   'Allow Print Spooler to accept client connections' = Disabled\n\n# Fix 3 - Enforce LDAP signing + channel binding:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters:\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters' \\\n    -Name 'LdapEnforceChannelBinding' -Value 2\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters' \\\n    -Name 'LDAPServerIntegrity' -Value 2\n# These block NTLM relay to LDAP/LDAPS even if coercion succeeds\n\n# Fix 4 - Apply PrintNightmare patches: KB5004945, KB5005033",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and TargetUserName endswith \"DC$\"\n| where IpAddress !in (\"<dc_ip>\", \"<dc2_ip>\")\n| project TimeGenerated, Computer, TargetUserName, IpAddress, LogonType\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1003.006",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Account_Name=\"*DC$\"\n| where Source_Network_Address!=\"<dc_ip>\" AND Source_Network_Address!=\"<dc2_ip>\"\n| table _time, Computer, Account_Name, Source_Network_Address, Logon_Type",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1003.006",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_dc_machine_account_logon_anomaly",
+        "logic": "win_security_dc_machine_account_logon_anomaly",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1003.006",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_printerbug_coercion",
+        "logic": "net_printerbug_coercion",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1003.006",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "steps": [
     {

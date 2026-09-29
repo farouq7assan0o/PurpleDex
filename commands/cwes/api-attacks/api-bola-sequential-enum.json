@@ -97,7 +97,56 @@
     ],
     "misconfiguration": "Authorization check only verifies token validity, not ownership. Server fetches object by ID without joining to authenticated user: SELECT * FROM orders WHERE id = ? (missing AND user_id = current_user_id). UUID v1 chosen over UUID v4 - UUIDs v1 embed timestamp and MAC address, making them predictable.",
     "vulnerable_config": "# Node.js / Express - BOLA vulnerability:\napp.get('/api/v1/users/:id/profile', authenticate, async (req, res) => {\n  // VULNERABLE: checks token is valid, but NOT that req.params.id == req.user.id\n  const user = await db.query('SELECT * FROM users WHERE id = ?', [req.params.id])\n  if (!user) return res.status(404).json({error:'not found'})\n  res.json(user)  // returns ANY user's profile to any authenticated token\n})\n\n# Python Flask - same pattern:\n@app.route('/api/v1/orders/<int:order_id>')\n@jwt_required()\ndef get_order(order_id):\n  order = Order.query.get(order_id)  # VULNERABLE: no ownership check\n  return jsonify(order.to_dict())\n\n# Sequential ID generation:\nCREATE TABLE orders (id SERIAL PRIMARY KEY, ...)  -- attacker iterates 1,2,3...",
-    "secure_config": "# Node.js - ownership enforced server-side:\napp.get('/api/v1/users/:id/profile', authenticate, async (req, res) => {\n  // SAFE: only allow access to own profile (or admin role)\n  if (req.params.id !== req.user.id && req.user.role !== 'admin') {\n    return res.status(403).json({error: 'Forbidden'})\n  }\n  const user = await db.query('SELECT id,name,email FROM users WHERE id = ?', [req.params.id])\n  res.json(user)\n})\n\n# Python Flask - ownership in query:\n@app.route('/api/v1/orders/<int:order_id>')\n@jwt_required()\ndef get_order(order_id):\n  current_uid = get_jwt_identity()\n  # ownership baked into the query - no bypass possible\n  order = Order.query.filter_by(id=order_id, user_id=current_uid).first_or_404()\n  return jsonify(order.to_dict())\n\n# Use UUID v4 instead of SERIAL to slow enumeration:\nCREATE TABLE orders (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, ...)\n\n# Rate-limit per token on sensitive endpoints:\n# Allow: 60 requests/minute per auth token to /api/v1/users/*"
+    "secure_config": "# Node.js - ownership enforced server-side:\napp.get('/api/v1/users/:id/profile', authenticate, async (req, res) => {\n  // SAFE: only allow access to own profile (or admin role)\n  if (req.params.id !== req.user.id && req.user.role !== 'admin') {\n    return res.status(403).json({error: 'Forbidden'})\n  }\n  const user = await db.query('SELECT id,name,email FROM users WHERE id = ?', [req.params.id])\n  res.json(user)\n})\n\n# Python Flask - ownership in query:\n@app.route('/api/v1/orders/<int:order_id>')\n@jwt_required()\ndef get_order(order_id):\n  current_uid = get_jwt_identity()\n  # ownership baked into the query - no bypass possible\n  order = Order.query.filter_by(id=order_id, user_id=current_uid).first_or_404()\n  return jsonify(order.to_dict())\n\n# Use UUID v4 instead of SERIAL to slow enumeration:\nCREATE TABLE orders (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, ...)\n\n# Rate-limit per token on sensitive endpoints:\n# Allow: 60 requests/minute per auth token to /api/v1/users/*",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "API BOLA - Sequential Object ID Enumeration - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has \"/api/\"\n| extend objid = extract(@\"/(\\d+)(/|$)\", 1, csUriStem)\n| summarize ids=dcount(objid), hits=count() by cIP, bin(TimeGenerated, 1m)\n| where ids > 30\n| sort by ids desc\n// BOLA/IDOR: one client walking sequential object IDs across /api/ endpoints",
+        "data_source": "iis",
+        "attack": [
+          "T1078",
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "API BOLA - Sequential Object ID Enumeration - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"*/api/*\"\n| rex field=uri_path \"/(?<objid>\\d+)(/|$)\"\n| stats dc(objid) as ids count by clientip, bin(_time, 1m)\n| where ids>30",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078",
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_bola_idor_sequential_object_access",
+        "logic": "web_bola_idor_sequential_object_access",
+        "data_source": "proxy",
+        "attack": [
+          "T1078",
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tags": [
     "api",

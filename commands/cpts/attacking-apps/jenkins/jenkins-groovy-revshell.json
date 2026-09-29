@@ -86,7 +86,83 @@
       "MITRE T1059.007",
       "MITRE T1071.001"
     ],
-    "evasion": "Run the Groovy script-console command once and avoid persisting a job; use an existing authenticated session; clear build logs that capture the command."
+    "evasion": "Run the Groovy script-console command once and avoid persisting a job; use an existing authenticated session; clear build logs that capture the command.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Jenkins - Groovy Reverse Shell - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"nginx\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\",\"nc\",\"python\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// Jenkins Groovy script-console reverse shell - java.exe spawning cmd/sh",
+        "data_source": "powershell",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Jenkins - Groovy Reverse Shell (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php-cgi*\" OR ParentImage=\"*php-fpm*\" OR ParentImage=\"*java.exe\" OR ParentImage=\"*tomcat*\")\n| where match(Image, \"(?i)(cmd|powershell|bash|sh|nc|python)\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Jenkins - Groovy Reverse Shell (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined (method=POST OR status=500)\n| stats count by clientip, uri_path | where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_jenkins_groovy_rce",
+        "logic": "web_jenkins_groovy_rce",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_webserver_spawning_shell",
+        "logic": "proc_creation_webserver_spawning_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

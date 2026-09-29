@@ -98,6 +98,73 @@
     ],
     "misconfiguration": "AMSI disabled or bypassed. CLM not enforced. No ETW monitoring. EDR without memory scanning capability. PowerShell outbound network not monitored.",
     "vulnerable_config": "# No CLM:\n$ExecutionContext.SessionState.LanguageMode  # FullLanguage\n# → Add-Type with unsafe code compiles WinAPI calls\n# → [System.Runtime.InteropServices.Marshal]::Copy() works to write shellcode\n\n# AMSI bypassed before runner executes:\n# amsiInitFailed = True → no AMSI scan of shellcode bytes",
-    "secure_config": "# CLM via WDAC prevents WinAPI calls from PS:\n# AllowMicrosoft base policy → PowerShell restricted to CLM\n# → [System.Runtime.InteropServices.Marshal] unavailable\n\n# Enable Script Block Logging (captures shellcode bytes before execution):\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging' -Name EnableScriptBlockLogging -Value 1\n\n# Network rule: alert on powershell.exe making outbound connections to non-corporate IPs:\n# Sysmon Event 3: Image contains powershell.exe AND DestinationIp NOT IN (corporate_ranges) → ALERT"
+    "secure_config": "# CLM via WDAC prevents WinAPI calls from PS:\n# AllowMicrosoft base policy → PowerShell restricted to CLM\n# → [System.Runtime.InteropServices.Marshal] unavailable\n\n# Enable Script Block Logging (captures shellcode bytes before execution):\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging' -Name EnableScriptBlockLogging -Value 1\n\n# Network rule: alert on powershell.exe making outbound connections to non-corporate IPs:\n# Sysmon Event 3: Image contains powershell.exe AND DestinationIp NOT IN (corporate_ranges) → ALERT",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerShell In-Memory Shellcode Runner - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"amsiInitFailed\",\"AmsiUtils\",\"VirtualAlloc\",\"Reflection.Emit\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// PowerShell shellcode runner (VirtualAlloc + CreateThread reflective load)",
+        "data_source": "powershell",
+        "attack": [
+          "T1620",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerShell In-Memory Shellcode Runner (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*amsiInitFailed*\" OR ScriptBlockText=\"*AmsiUtils*\" OR ScriptBlockText=\"*VirtualAlloc*\" OR ScriptBlockText=\"*Reflection.Emit*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1620",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerShell In-Memory Shellcode Runner (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-Windows Defender/Operational\" (EventCode=5001 OR EventCode=5007)\n| table _time, Computer, New_Value",
+        "data_source": "windows-security",
+        "attack": [
+          "T1620",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5001",
+          "5007"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_reflective_shellcode_runner",
+        "logic": "posh_ps_reflective_shellcode_runner",
+        "data_source": "windows-security",
+        "attack": [
+          "T1620",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

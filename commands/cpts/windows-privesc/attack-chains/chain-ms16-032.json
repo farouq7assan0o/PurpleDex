@@ -116,6 +116,80 @@
     ],
     "misconfiguration": "Windows systems accumulate privilege escalation paths over time: scheduled tasks running as SYSTEM with world-writable scripts, service binaries with weak DACL (non-admins can overwrite), AlwaysInstallElevated enabled (any MSI installs as SYSTEM), or SeImpersonatePrivilege granted to web/service accounts.",
     "vulnerable_config": "# AlwaysInstallElevated (any user installs MSI as SYSTEM):\nreg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated\nreg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated\n# Both = 1  ->  msfvenom -p windows/exec CMD=calc.exe -f msi > priv.msi; msiexec /quiet /i priv.msi\n\n# Service binary with weak DACL:\nicacls C:\\Program Files\\VulnSvc\\svc.exe\n# BUILTIN\\Users:(F)  <-- any user has Full Control -> replace with malicious binary",
-    "secure_config": "# Disable AlwaysInstallElevated:\n# GPO: Computer Config > Admin Templates > Windows Components > Windows Installer\n#   'Always install with elevated privileges' = Disabled\n# Registry (both keys required):\nSet-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\nSet-ItemProperty -Path 'HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\n\n# Fix service binary DACLs:\nicacls 'C:\\Program Files\\VulnSvc\\svc.exe' /inheritance:r /grant:r 'NT AUTHORITY\\SYSTEM:(F)' 'BUILTIN\\Administrators:(F)'\n# Remove all non-admin write permissions\n\n# Audit with PowerUp or PrivescCheck:\n# Invoke-PrivescCheck -Thorough  # comprehensive privesc surface audit\n# Run monthly and after any software installation"
+    "secure_config": "# Disable AlwaysInstallElevated:\n# GPO: Computer Config > Admin Templates > Windows Components > Windows Installer\n#   'Always install with elevated privileges' = Disabled\n# Registry (both keys required):\nSet-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\nSet-ItemProperty -Path 'HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\n\n# Fix service binary DACLs:\nicacls 'C:\\Program Files\\VulnSvc\\svc.exe' /inheritance:r /grant:r 'NT AUTHORITY\\SYSTEM:(F)' 'BUILTIN\\Administrators:(F)'\n# Remove all non-admin write permissions\n\n# Audit with PowerUp or PrivescCheck:\n# Invoke-PrivescCheck -Thorough  # comprehensive privesc surface audit\n# Run monthly and after any software installation",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Attack Chain - MS16-032 Local Admin - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Invoke-MS16-032\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID in (4720, 4732) | project Timestamp=TimeGenerated, DeviceName=Computer, InitiatingProcessAccountName=SubjectUserName, ProcessCommandLine=TargetUserName)\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Attack Chain - MS16-032 Local Admin (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-MS16-032*\" OR ScriptBlockText=\"*DownloadString*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Attack Chain - MS16-032 Local Admin (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4720 OR EventCode=4732)\n| table _time, Computer, Target_Account_Name, Subject_Account_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4720",
+          "4732"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_invoke_ms16032",
+        "logic": "posh_ps_invoke_ms16032",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_new_local_admin",
+        "logic": "win_security_new_local_admin",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

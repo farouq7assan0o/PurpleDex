@@ -85,7 +85,51 @@
       "HTB M26",
       "MITRE T1559.001"
     ],
-    "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries."
+    "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WinPE - Named Pipe Enumeration - Sentinel",
+        "logic": "DeviceProcessEvents\n| where (FileName =~ \"accesschk.exe\" and ProcessCommandLine has \"pipe\") or FileName =~ \"pipelist.exe\" or ProcessCommandLine has \"\\\\.\\pipe\\\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1057"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "WinPE - Named Pipe Enumeration - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*accesschk.exe\" CommandLine=\"*pipe*\") OR (Image=\"*pipelist.exe\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1057"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_named_pipe_enum",
+        "logic": "proc_creation_win_named_pipe_enum",
+        "data_source": "sysmon",
+        "attack": [
+          "T1057"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Lists named pipes and their permissions to find an abusable one:\n  accesschk.exe            Sysinternals ACL checker\n  -accepteula              auto-accept the EULA (non-interactive)\n  -w \\pipe\\*               only pipes your user can write to\n  -v                       verbose (show the DACL)\nA writable service pipe (e.g. WindscribeService) can allow impersonation or command execution - see CVE-2020-27350-style abuses."
 }

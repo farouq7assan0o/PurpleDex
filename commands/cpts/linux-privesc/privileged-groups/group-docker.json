@@ -99,7 +99,63 @@
       "MITRE T1610",
       "MITRE T1611"
     ],
-    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running."
+    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Privileged Groups - Docker Group Escape - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"docker run\" and SyslogMessage has_any (\"-v /:\",\":/mnt\",\"chroot\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// docker-group member mounting host / into a container",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privileged Groups - Docker Group Escape (1) - Splunk",
+        "logic": "index=docker sourcetype=\"docker:events\" action=\"create\"\n| search Mounts=\"*/:/mnt*\" OR Mounts=\"*Source:/,*\"\n| table _time, host, image, user",
+        "data_source": "windows-security",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privileged Groups - Docker Group Escape (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" proctitle=\"*docker run*-v /*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_docker_group_host_root_mount",
+        "logic": "lnx_docker_group_host_root_mount",
+        "data_source": "windows-security",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

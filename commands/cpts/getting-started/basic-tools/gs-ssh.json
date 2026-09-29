@@ -84,7 +84,74 @@
     ],
     "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
     "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
-    "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
+    "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SSH - Connect to a Host - Sentinel",
+        "logic": "Syslog\n| where ProcessName == \"sshd\" and SyslogMessage has \"Accepted\"\n| extend SrcIP = extract(@\"from ([0-9\\.]+)\", 1, SyslogMessage), User = extract(@\"for (\\S+)\", 1, SyslogMessage)\n| summarize logins=count(), sources=make_set(SrcIP) by User, bin(TimeGenerated, 1h)\n| sort by TimeGenerated desc",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1021.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SSH - Connect to a Host (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"Accepted password\" OR \"Accepted publickey\"\n| stats count values(src_ip) as sources by user\n| where count>0",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1021.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SSH - Connect to a Host (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"Accepted\" \n| eval hour=strftime(_time,\"%H\") | where hour<6 OR hour>22\n| table _time, user, src_ip",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1021.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auth_ssh_accepted_login",
+        "logic": "lnx_auth_ssh_accepted_login",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_ssh_login_unusual_hours_or_source",
+        "logic": "lnx_ssh_login_unusual_hours_or_source",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

@@ -94,7 +94,56 @@
     ],
     "misconfiguration": "Legacy API versions left active in routing configuration but removed from documentation and security review. No API gateway allowlist enforcing active-only routes. Beta/test API routes deployed to production without authentication. Different security middleware applied to v1 vs v2 routes - v1 lacks auth requirement. No automated inventory audit against deployed routes.",
     "vulnerable_config": "# Express - v1 left active with weaker controls:\nconst router_v1 = express.Router()\nconst router_v2 = express.Router()\n\n// v2 has auth middleware:\napp.use('/api/v2', authenticate, router_v2)\n\n// v1 forgotten - no auth, still active:\napp.use('/api/v1', router_v1)  // VULNERABLE: /api/v1/users returns full PII without auth\napp.use('/api/beta', router_v1) // VULNERABLE: beta alias also active\n\n// Django urls.py - deprecated paths not removed:\nurlpatterns = [\n  path('api/v2/', include('api_v2.urls')),\n  path('api/v1/', include('api_v1.urls')),  # VULNERABLE: never removed\n  path('api/internal/', include('api_internal.urls')),  # VULNERABLE: debug routes\n]",
-    "secure_config": "# Express - only active version mounted, gateway enforces allowlist:\n// Remove all unused router registrations:\napp.use('/api/v2', authenticate, rateLimiter, router_v2)\n// v1 completely removed - no route handler, no 404 → 410 Gone:\napp.use('/api/v1', (req, res) => res.status(410).json({ error: 'API v1 retired. Use /api/v2' }))\napp.use('/api/beta', (req, res) => res.status(410).json({ error: 'Beta API retired.' }))\n\n# API Gateway (Kong) - path allowlist:\n# services:\n#   - name: api-v2-only\n#     url: http://backend:3000/api/v2\n#     routes:\n#       - paths: [/api/v2/]  # only v2 exposed through gateway\n\n# OpenAPI spec as source of truth - CI check:\n# 1. Extract all routes from deployed app\n# 2. Compare against openapi.yaml paths\n# 3. Fail build if unlisted routes found\n\n# Nginx - block old versions at load balancer:\n# location ~ ^/api/v[01]/ {\n#   return 410 '{\"error\": \"API version retired\"}';\n#   add_header Content-Type application/json;\n# }"
+    "secure_config": "# Express - only active version mounted, gateway enforces allowlist:\n// Remove all unused router registrations:\napp.use('/api/v2', authenticate, rateLimiter, router_v2)\n// v1 completely removed - no route handler, no 404 → 410 Gone:\napp.use('/api/v1', (req, res) => res.status(410).json({ error: 'API v1 retired. Use /api/v2' }))\napp.use('/api/beta', (req, res) => res.status(410).json({ error: 'Beta API retired.' }))\n\n# API Gateway (Kong) - path allowlist:\n# services:\n#   - name: api-v2-only\n#     url: http://backend:3000/api/v2\n#     routes:\n#       - paths: [/api/v2/]  # only v2 exposed through gateway\n\n# OpenAPI spec as source of truth - CI check:\n# 1. Extract all routes from deployed app\n# 2. Compare against openapi.yaml paths\n# 3. Fail build if unlisted routes found\n\n# Nginx - block old versions at load balancer:\n# location ~ ^/api/v[01]/ {\n#   return 410 '{\"error\": \"API version retired\"}';\n#   add_header Content-Type application/json;\n# }",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "API Version Enumeration (Improper Inventory Management) - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has_any (\"/api/v1\", \"/api/v2\", \"/api/v3\", \"/swagger\", \"/openapi\") or csUriQuery has_any (\"/api/v1\", \"/api/v2\", \"/api/v3\", \"/swagger\", \"/openapi\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus\n| sort by TimeGenerated desc\n// api_version_enum",
+        "data_source": "iis",
+        "attack": [
+          "T1190",
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "API Version Enumeration (Improper Inventory Management) - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_query=\\\"*/api/v1*\\\" OR uri_path=\\\"*/api/v1*\\\" OR uri_query=\\\"*/api/v2*\\\" OR uri_path=\\\"*/api/v2*\\\" OR uri_query=\\\"*/api/v3*\\\" OR uri_path=\\\"*/api/v3*\\\" OR uri_query=\\\"*/swagger*\\\" OR uri_path=\\\"*/swagger*\\\" OR uri_query=\\\"*/openapi*\\\" OR uri_path=\\\"*/openapi*\\\")\n| table _time, clientip, uri_path, uri_query, status",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_api_version_enum",
+        "logic": "web_api_version_enum",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tags": [
     "api",

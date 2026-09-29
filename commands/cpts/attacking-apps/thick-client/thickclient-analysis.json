@@ -94,6 +94,57 @@
       "MITRE T1552.001",
       "OWASP A02:2021"
     ],
-    "evasion": "Analyze the client offline (decompile/traffic capture) so no attack traffic hits the server until you have the exploit ready."
+    "evasion": "Analyze the client offline (decompile/traffic capture) so no attack traffic hits the server until you have the exploit ready.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Thick Client - Static/Dynamic Analysis - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where InitiatingProcessFileName !in~ (\"chrome.exe\",\"firefox.exe\",\"msedge.exe\",\"svchost.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort\n| sort by Timestamp desc\n// thick-client traffic analysis: proprietary-protocol connections from a fat-client binary",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1140",
+          "T1592.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Thick Client - Static/Dynamic Analysis - Splunk",
+        "logic": "index=sysmon EventCode=3\n| where NOT match(Image, \"(?i)(chrome|firefox|edge|svchost)\")\n| stats count by Image, DestinationIp, DestinationPort | where count>0",
+        "data_source": "sysmon",
+        "attack": [
+          "T1140",
+          "T1592.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "net_thickclient_proprietary_protocol",
+        "logic": "net_thickclient_proprietary_protocol",
+        "data_source": "windows-security",
+        "attack": [
+          "T1140",
+          "T1592.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   }
 }

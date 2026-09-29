@@ -111,7 +111,55 @@
     ],
     "misconfiguration": "AWS Account ID exposed in public S3 bucket policies or error messages. No CloudTrail alerting on AssumeRole failure bursts. Roles with predictable names (admin, developer, readonly) enable targeted guessing.",
     "vulnerable_config": "# Account ID exposed in public S3 bucket policy:\naws s3api get-bucket-policy --bucket public-bucket\n# → Principal: arn:aws:iam::123456789012:root → exposes account ID\n\n# No AssumeRole failure alerting:\n# CloudWatch: no metric filter for AssumeRole ErrorCode=AccessDenied\n# → Unlimited role name brute force from external accounts",
-    "secure_config": "# Avoid account ID in public policies:\n# Use Principal: * (public) or reference by service, not account ID\n\n# CloudWatch alarm on AssumeRole failures:\n# Metric filter:\n# { $.eventName = 'AssumeRole' && $.errorCode = 'AccessDenied' }\n# Alarm: > 10 events in 5 minutes → SNS alert\n\n# SCP: restrict AssumeRole from external accounts:\n# {\n#   'Effect': 'Deny',\n#   'Action': 'sts:AssumeRole',\n#   'Resource': '*',\n#   'Condition': {\n#     'StringNotEquals': {'aws:PrincipalOrgID': 'o-xxxxxxxxxx'}\n#   }\n# }"
+    "secure_config": "# Avoid account ID in public policies:\n# Use Principal: * (public) or reference by service, not account ID\n\n# CloudWatch alarm on AssumeRole failures:\n# Metric filter:\n# { $.eventName = 'AssumeRole' && $.errorCode = 'AccessDenied' }\n# Alarm: > 10 events in 5 minutes → SNS alert\n\n# SCP: restrict AssumeRole from external accounts:\n# {\n#   'Effect': 'Deny',\n#   'Action': 'sts:AssumeRole',\n#   'Resource': '*',\n#   'Condition': {\n#     'StringNotEquals': {'aws:PrincipalOrgID': 'o-xxxxxxxxxx'}\n#   }\n# }",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS - Account ID Fingerprinting & Cross-Account IAM Enumeration - Sentinel",
+        "logic": "AWSCloudTrail\n| where EventName in (\"GetCallerIdentity\", \"ListUsers\", \"ListRoles\", \"GetAccountAuthorizationDetails\")\n| summarize apis=make_set(EventName), count() by SourceIpAddress, UserIdentityArn, bin(TimeGenerated, 10m)\n| where count_ > 10\n| sort by count_ desc\n// AWS IAM identity/account enumeration",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - Account ID Fingerprinting & Cross-Account IAM Enumeration - Splunk",
+        "logic": "index=aws sourcetype=\"aws:cloudtrail\" (eventName=\\\"GetCallerIdentity\\\" OR eventName=\\\"ListUsers\\\" OR eventName=\\\"ListRoles\\\" OR eventName=\\\"GetAccountAuthorizationDetails\\\")\n| stats count values(eventName) as apis by sourceIPAddress, userIdentity.arn, bin(_time, 10m)\n| where count>10",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "aws_cloudtrail_enumeration",
+        "logic": "aws_cloudtrail_enumeration",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "cloud-trail",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Fingerprints an AWS account and probes for IAM users without target creds:\n  sts get-access-key-info --access-key-id <target_akid>   returns the 12-digit Account ID behind any access key (needs only your own profile)\n  s3 mb + put-bucket-policy referencing a target principal   a bucket policy naming a real user succeeds; a fake one errors MalformedPolicy\nLets you confirm the account ID and enumerate which IAM users/roles exist by policy-validation side channel - pure recon, no target authentication."
 }

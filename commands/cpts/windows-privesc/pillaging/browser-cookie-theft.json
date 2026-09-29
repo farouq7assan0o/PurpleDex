@@ -95,7 +95,65 @@
       "MITRE T1539",
       "MITRE T1552"
     ],
-    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
+    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Pillaging - Steal Browser Cookies - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName in~ (\"Cookies\",\"cookies.sqlite\") and FolderPath has_any (\"Chrome\",\"Firefox\",\"Edge\")\n| where InitiatingProcessFileName !in~ (\"chrome.exe\",\"firefox.exe\",\"msedge.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FolderPath\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - Steal Browser Cookies (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (CommandLine=\"*Invoke-SharpChromium*cookies*\" OR CommandLine=\"*SharpChrome*cookies*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - Steal Browser Cookies (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 (TargetFilename=\"*\\\\Chrome\\\\*Cookies\" OR TargetFilename=\"*cookies.sqlite\")\n| where NOT match(Image, \"(?i)(chrome|firefox)\")\n| table _time, Computer, Image",
+        "data_source": "sysmon",
+        "attack": [
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "file_access_browser_cookie_theft_nonbrowser",
+        "logic": "file_access_browser_cookie_theft_nonbrowser",
+        "data_source": "sysmon",
+        "attack": [
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Steals browser session cookies to hijack authenticated web sessions:\n  Invoke-SharpChromium     SharpChromium loader\n  -Command \"cookies slack.com\"   extract Chrome cookies for this domain (e.g. a Slack session)\nImport the stolen cookie into your own browser to ride the session without a password. For Firefox, copy cookies.sqlite and use cookieextractor.py."
 }

@@ -98,7 +98,52 @@
     "splunk_spl": "index=* (\"hashcat\" AND \"13100\")\n| table _time, host, user, _raw",
     "elastic_kql": "process.name:hashcat* AND process.args:\"13100\"",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"13100\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline TGS crack (mode 13100); detect the 4769 roast that produced <hashfile>",
-    "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
+    "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Hashcat - Crack Kerberoast TGS - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"13100\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline TGS crack (mode 13100); detect the 4769 roast that produced <hashfile>",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Hashcat - Crack Kerberoast TGS - Splunk",
+        "logic": "index=* (\"hashcat\" AND \"13100\")\n| table _time, host, user, _raw",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_hashcat_offline_cracking",
+        "logic": "proc_creation_hashcat_offline_cracking",
+        "data_source": "sysmon",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "hashcat"

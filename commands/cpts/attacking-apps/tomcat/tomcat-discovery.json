@@ -85,7 +85,53 @@
       "MITRE T1595.002",
       "OWASP A05:2021"
     ],
-    "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity."
+    "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Tomcat - Detect and Enumerate - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// tomcat application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Tomcat - Detect and Enumerate - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_path=\\\"/manager/html\\\" OR uri_path=\\\"/host-manager/html\\\" OR uri_path=\\\"/docs/\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_tomcat",
+        "logic": "web_app_scanner_tomcat",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Detects Apache Tomcat and its version:\n  curl -s http://<url>:8080/docs/   fetch the docs page\n  | grep Tomcat                     read the version string\nConfirms Tomcat; then brute-force paths with gobuster for /manager and /host-manager (WAR deployment endpoints) and look for tomcat-users.xml, which often holds the manager credentials."
 }

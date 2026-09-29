@@ -154,7 +154,56 @@
       "OSCP Ch06",
       "MITRE T1046",
       "MITRE T1082"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "snmpwalk - MIB Enumeration with Community String - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 161\n| summarize probes=count(), hosts=dcount(RemoteIP) by LocalIP, bin(Timestamp, 1m)\n| where probes > 20 or hosts > 10\n| sort by probes desc\n// snmpwalk SNMP community/OID enumeration on UDP 161",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046",
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "snmpwalk - MIB Enumeration with Community String - Splunk",
+        "logic": "index=network dest_port=161 protocol=udp\n| stats count dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where count>20 OR hosts>10",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046",
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_snmp_enumeration_snmpwalk",
+        "logic": "net_snmp_enumeration_snmpwalk",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046",
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Dumps the SNMP MIB tree with a known community string:\n  snmpwalk   the walker\n  -c <community>   the validated community string\n  -v2c             SNMP version\n  <ip>             target\nReturns OS, running processes, users, installed software, interfaces, and the routing table; append an OID to target a specific branch and -t to raise the timeout on slow hosts."
 }

@@ -96,7 +96,63 @@
       "HTB M25",
       "MITRE T1059",
       "MITRE T1548"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Restricted Shell - Escape Techniques - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"rbash\" and SyslogMessage has_any (\"bash\",\"/bin/sh\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// an unrestricted shell spawned from a restricted (rbash) parent",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Restricted Shell - Escape Techniques (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" ppid_comm=\"rbash\" comm=\"bash\"\n| table _time, host, auid, comm, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Restricted Shell - Escape Techniques (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"sshd\" \"session opened\"\n| table _time, host, user, _raw",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_restricted_shell_escape",
+        "logic": "lnx_auditd_restricted_shell_escape",
+        "data_source": "windows-security",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Breaks out of a restricted shell (rbash/rksh/rzsh) using allowed built-ins:\n  ls -l `pwd`              command substitution - backticks run pwd even though cd/redirection are blocked\nRestricted shells block cd, redirection, and PATH changes but often still allow $()/backticks, built-ins, and chaining metacharacters - use those to read files or spawn an unrestricted shell."
 }

@@ -98,7 +98,65 @@
     ],
     "misconfiguration": "Web application and infrastructure information is inadvertently exposed: verbose HTTP headers (Server, X-Powered-By) revealing exact version numbers, directory listing enabled on web servers, .git repositories or .env files accessible in the web root, robots.txt listing sensitive paths, and WHOIS data exposing internal contact details.",
     "vulnerable_config": "# Apache with version disclosure in headers:\n# HTTP response: Server: Apache/2.4.41 (Ubuntu)\n# X-Powered-By: PHP/7.4.3  <-- exact version, enables targeted exploit search\n\n# Directory listing enabled:\n# nginx: autoindex on;  <- any directory without index.html lists files\n# Apache: Options +Indexes\n\n# .git accessible from web root:\n# http://target.com/.git/config  -- exposes repo + credentials in config\n# http://target.com/.env  -- exposes DB_PASSWORD, API keys",
-    "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
+    "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Recon Automation - FinalRecon - Sentinel",
+        "logic": "W3CIISLog\n| summarize paths=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where paths > 30 or hits > 100\n| sort by hits desc\n// FinalRecon: burst of diverse HTTP paths + DNS lookups from one source",
+        "data_source": "iis",
+        "attack": [
+          "T1595"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Recon Automation - FinalRecon (1) - Splunk",
+        "logic": "index=web sourcetype=access_combined\n| stats dc(uri_path) as paths count by clientip, useragent, bin(_time, 1m)\n| where paths>30 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Recon Automation - FinalRecon (2) - Splunk",
+        "logic": "index=dns sourcetype=\"stream:dns\"\n| stats dc(query) as lookups by src_ip, bin(_time, 1m) | where lookups>20",
+        "data_source": "dns",
+        "attack": [
+          "T1595"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_recon_scanner_useragent",
+        "logic": "web_recon_scanner_useragent",
+        "data_source": "proxy",
+        "attack": [
+          "T1595"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns",
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

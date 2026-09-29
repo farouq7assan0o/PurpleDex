@@ -114,7 +114,88 @@
       "MITRE T1505.003",
       "MITRE T1059"
     ],
-    "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
+    "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DotNetNuke (DNN) - Authenticated RCE (SQL Console + File-Extension Bypass) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"nginx\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\",\"nc\",\"python\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// DotNetNuke admin RCE - w3wp.exe spawning cmd/powershell",
+        "data_source": "powershell",
+        "attack": [
+          "T1190",
+          "T1505.003",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DotNetNuke (DNN) - Authenticated RCE (SQL Console + File-Extension Bypass) (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php-cgi*\" OR ParentImage=\"*php-fpm*\" OR ParentImage=\"*java.exe\" OR ParentImage=\"*tomcat*\")\n| where match(Image, \"(?i)(cmd|powershell|bash|sh|nc|python)\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1505.003",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "DotNetNuke (DNN) - Authenticated RCE (SQL Console + File-Extension Bypass) (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined (method=POST OR status=500)\n| stats count by clientip, uri_path | where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1505.003",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_dotnetnuke_rce",
+        "logic": "web_dotnetnuke_rce",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1505.003",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_webserver_spawning_shell",
+        "logic": "proc_creation_webserver_spawning_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1505.003",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Gets code execution on DotNetNuke with SuperUser/admin creds via the built-in SQL console:\n  sp_configure 'show advanced options','1'; RECONFIGURE;   unlock advanced settings\n  sp_configure 'xp_cmdshell','1'; RECONFIGURE;              enable the OS-command stored proc\n  xp_cmdshell 'whoami'                                     run commands as the SQL/IIS service account\nDNN's Settings > SQL console runs arbitrary T-SQL, so enabling xp_cmdshell yields RCE; from there upload nc/PrintSpoofer to escalate (creds are often pillaged from an exposed web.config)."
 }

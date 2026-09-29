@@ -151,7 +151,50 @@
     "sources": [
       "OSCP Ch06",
       "MITRE T1018"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "host - DNS Forward/Reverse Lookup and Brute Force - Sentinel",
+        "logic": "DnsEvents\n| summarize queries=count() by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50\n| sort by queries desc\n// host command DNS record enumeration",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "host - DNS Forward/Reverse Lookup and Brute Force - Splunk",
+        "logic": "index=dns sourcetype=\"stream:dns\"\n| stats count by src_ip, bin(_time, 1m)\n| where count>50",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_dns_enumeration",
+        "logic": "net_dns_enumeration",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns"
+      ]
+    }
   },
   "explain": "Performs DNS lookups with the host command:\n  host <domain>   forward-resolve the name to its A/AAAA records\nAdd -t mx/txt/ns for specific record types; the card also covers forward brute-forcing a subdomain wordlist and reverse PTR sweeps of an IP range to map a target's DNS."
 }

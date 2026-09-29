@@ -95,7 +95,56 @@
     ],
     "misconfiguration": "No rate-limiting on the authentication endpoint. No account lockout policy. Default or missing security headers (no CAPTCHA, no bot detection). API login endpoint not differentiated from regular endpoints in WAF rules. JSON body accepted without validation - any field combination tried. Auth failure response reveals whether username exists (user enumeration via different error messages).",
     "vulnerable_config": "# Node.js - no rate-limit, no lockout:\napp.post('/api/v1/login', async (req, res) => {\n  const { username, password } = req.body\n  const user = await db.query('SELECT * FROM users WHERE username=?', [username])\n  if (!user) return res.status(401).json({error: 'Invalid username'})  // VULN: username enumeration\n  if (!bcrypt.compareSync(password, user.password_hash))\n    return res.status(401).json({error: 'Invalid password'})  // VULN: different error = username valid\n  res.json({ token: generateJWT(user) })  // VULN: unlimited attempts\n})\n\n# No WAF rule for auth endpoint\n# No CAPTCHA\n# No MFA required",
-    "secure_config": "# Node.js - rate-limited, locked, constant-time response:\nconst rateLimit = require('express-rate-limit')\nconst loginLimiter = rateLimit({\n  windowMs: 15 * 60 * 1000,  // 15 min window\n  max: 10,                     // 10 attempts per IP per window\n  standardHeaders: true,\n  legacyHeaders: false,\n  message: { error: 'Too many attempts, try again later' }\n})\napp.post('/api/v1/login', loginLimiter, async (req, res) => {\n  const { username, password } = req.body\n  const user = await db.query('SELECT * FROM users WHERE username=?', [username])\n  // SAFE: same error and same timing whether username exists or not\n  const valid = user && await bcrypt.compare(password, user.password_hash)\n  if (!valid) {\n    await bcrypt.hash('dummy', 10)  // constant-time even if user not found\n    return res.status(401).json({ error: 'Invalid credentials' })  // generic message\n  }\n  // Check failed attempts and enforce lockout\n  if (user.failed_attempts >= 5) return res.status(423).json({ error: 'Account locked' })\n  res.json({ token: generateJWT(user) })\n})\n\n# WAF rule (nginx + ModSecurity or AWS WAF):\n# Rate-limit /api/v1/login to 10 req/min per IP\n# Block User-Agent containing 'ffuf' or 'python-requests' on auth endpoints"
+    "secure_config": "# Node.js - rate-limited, locked, constant-time response:\nconst rateLimit = require('express-rate-limit')\nconst loginLimiter = rateLimit({\n  windowMs: 15 * 60 * 1000,  // 15 min window\n  max: 10,                     // 10 attempts per IP per window\n  standardHeaders: true,\n  legacyHeaders: false,\n  message: { error: 'Too many attempts, try again later' }\n})\napp.post('/api/v1/login', loginLimiter, async (req, res) => {\n  const { username, password } = req.body\n  const user = await db.query('SELECT * FROM users WHERE username=?', [username])\n  // SAFE: same error and same timing whether username exists or not\n  const valid = user && await bcrypt.compare(password, user.password_hash)\n  if (!valid) {\n    await bcrypt.hash('dummy', 10)  // constant-time even if user not found\n    return res.status(401).json({ error: 'Invalid credentials' })  // generic message\n  }\n  // Check failed attempts and enforce lockout\n  if (user.failed_attempts >= 5) return res.status(423).json({ error: 'Account locked' })\n  res.json({ token: generateJWT(user) })\n})\n\n# WAF rule (nginx + ModSecurity or AWS WAF):\n# Rate-limit /api/v1/login to 10 req/min per IP\n# Block User-Agent containing 'ffuf' or 'python-requests' on auth endpoints",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "API Credential Brute-Force with ffuf (JSON Body) - Sentinel",
+        "logic": "W3CIISLog\n| where csMethod == \"POST\" and csUriStem has_any (\"/sign-in\",\"/login\",\"/auth\")\n| summarize attempts=count(), fails=countif(scStatus == 401) by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where attempts > 10\n| sort by attempts desc\n// ffuf default UA 'Fuzz Faster U Fool'; repeated JSON auth POSTs",
+        "data_source": "iis",
+        "attack": [
+          "T1110.001",
+          "T1110.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "API Credential Brute-Force with ffuf (JSON Body) - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"*/sign-in\" OR uri_path=\"*/login\" method=POST\n| stats count by clientip, http_user_agent, bin(_time, 1m)\n| where count>10",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001",
+          "T1110.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_api_credential_bruteforce",
+        "logic": "web_api_credential_bruteforce",
+        "data_source": "proxy",
+        "attack": [
+          "T1110.001",
+          "T1110.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tags": [
     "api",

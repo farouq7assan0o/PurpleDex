@@ -75,7 +75,57 @@
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17\n| where Account_Domain!=\"<local_domain>\"\n| stats count by Account_Name, Account_Domain, Service_Name\n| where count>5",
     "elastic_kql": "event.code:\"4769\" AND winlog.event_data.TicketEncryptionType:\"0x17\" AND NOT source.domain:<local_domain>",
     "sentinel_kql": "SecurityEvent\n| where EventID == 4769 and TicketEncryptionType == \"0x17\"\n| where TargetDomainName != \"<domain>\"\n| summarize spns=dcount(ServiceName) by TargetUserName, TargetDomainName, IpAddress, bin(TimeGenerated, 5m)\n| where spns > 3\n| sort by spns desc",
-    "sigma_rules": "win_security_kerberoasting_activity"
+    "sigma_rules": "win_security_kerberoasting_activity",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GetUserSPNs.py - Kerberoast Across Forest Trust - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4769 and TicketEncryptionType == \"0x17\"\n| where TargetDomainName != \"<domain>\"\n| summarize spns=dcount(ServiceName) by TargetUserName, TargetDomainName, IpAddress, bin(TimeGenerated, 5m)\n| where spns > 3\n| sort by spns desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "GetUserSPNs.py - Kerberoast Across Forest Trust - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17\n| where Account_Domain!=\"<local_domain>\"\n| stats count by Account_Name, Account_Domain, Service_Name\n| where count>5",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberoasting_activity",
+        "logic": "win_security_kerberoasting_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "impacket"

@@ -94,7 +94,52 @@
       "MITRE T1548.003",
       "MITRE T1059"
     ],
-    "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating."
+    "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Sudo Abuse - Enumerate and Exploit - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"sudo\" and SyslogMessage has_any (\"vim\",\"find\",\"less\",\"nmap\",\"python\",\"awk\") and SyslogMessage has_any (\"!bash\",\"/bin/sh\",\"os.system\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// GTFOBins shell escape from a sudo-allowed binary",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Sudo Abuse - Enumerate and Exploit - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" ppid_comm=\"sudo\" comm=\"*sh\"\n| where match(ppid_exe, \"(?i)(vim|find|less|nmap|python|perl|awk)\")\n| table _time, host, auid, ppid_exe, comm",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_gtfobins_sudo_shell_escape",
+        "logic": "lnx_auditd_gtfobins_sudo_shell_escape",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

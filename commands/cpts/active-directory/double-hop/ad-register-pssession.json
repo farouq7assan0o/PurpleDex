@@ -86,7 +86,72 @@
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3\n| where AuthenticationPackageName=\"Kerberos\" AND Account_Name!=\"*$\"\n| table _time, Account_Name, Source_Network_Address, Logon_Process\n\nindex=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-WinRM/Operational\" EventCode=91\n| table _time, Computer, User, Message",
     "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:Kerberos\n\nevent.provider:\"Microsoft-Windows-WinRM\" AND event.code:\"91\"",
     "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has \"Register-PSSessionConfiguration\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 4624 and LogonType == 3 | project Timestamp=TimeGenerated, DeviceName=Computer, InitiatingProcessAccountName=TargetUserName, ProcessCommandLine=IpAddress)\n| sort by Timestamp desc",
-    "sigma_rules": "win_security_winrm_remote_session"
+    "sigma_rules": "win_security_winrm_remote_session",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Register-PSSessionConfiguration - Fix Kerberos Double Hop - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has \"Register-PSSessionConfiguration\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 4624 and LogonType == 3 | project Timestamp=TimeGenerated, DeviceName=Computer, InitiatingProcessAccountName=TargetUserName, ProcessCommandLine=IpAddress)\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Register-PSSessionConfiguration - Fix Kerberos Double Hop (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3\n| where AuthenticationPackageName=\"Kerberos\" AND Account_Name!=\"*$\"\n| table _time, Account_Name, Source_Network_Address, Logon_Process",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Register-PSSessionConfiguration - Fix Kerberos Double Hop (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-WinRM/Operational\" EventCode=91\n| table _time, Computer, User, Message",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "91"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_winrm_remote_session",
+        "logic": "win_security_winrm_remote_session",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "powershell"

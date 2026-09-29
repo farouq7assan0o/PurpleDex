@@ -84,7 +84,52 @@
       "HTB M25",
       "MITRE T1563",
       "MITRE T1055"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Misc - Hijack Shared tmux Session - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"tmux\" and SyslogMessage has \"-S\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// a different user attaching to a shared tmux socket owned by a privileged user",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1563"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - Hijack Shared tmux Session - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"*/shareds\" OR proctitle=\"*tmux*-S*\"\n| table _time, host, auid, exe, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1563"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_tmux_shared_socket_attach",
+        "logic": "lnx_auditd_tmux_shared_socket_attach",
+        "data_source": "windows-security",
+        "attack": [
+          "T1563"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Attaches to a privileged user's tmux session left on a group-writable socket:\n  tmux -S /shareds         attach to the tmux server listening on this socket file\nIf a higher-privileged user started tmux on a socket your group can write, attaching drops you straight into their shell with their privileges."
 }

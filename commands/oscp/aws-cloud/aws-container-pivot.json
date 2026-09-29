@@ -132,6 +132,57 @@
     ],
     "misconfiguration": "ECS task role over-permissioned (admin or broad permissions). No monitoring of where container IAM credentials are used (CloudTrail source IP). No outbound egress restriction from containers (allows credential exfiltration). GuardDuty not enabled for container threat detection.",
     "vulnerable_config": "# ECS task metadata credential access (from container):\ncurl http://169.254.170.2${AWS_CONTAINER_CREDENTIALS_RELATIVE_URI}\n# → {'AccessKeyId': 'ASIA...', 'SecretAccessKey': '...', 'Token': '...'}\n\n# Exfiltrate and use from attacker machine:\nexport AWS_ACCESS_KEY_ID=ASIA...\nexport AWS_SECRET_ACCESS_KEY=...\nexport AWS_SESSION_TOKEN=...\naws iam list-users  # Uses container role = potentially admin",
-    "secure_config": "# ECS task role: least privilege example\n# Task that reads S3 and writes to SQS:\n# {\n#   'Effect': 'Allow',\n#   'Action': ['s3:GetObject'],\n#   'Resource': 'arn:aws:s3:::input-bucket/*'\n# },\n# {\n#   'Effect': 'Allow',\n#   'Action': ['sqs:SendMessage'],\n#   'Resource': 'arn:aws:sqs:::output-queue'\n# }\n# Nothing else - no iam:*, no ec2:*, no s3:ListBucket globally\n\n# GuardDuty container threat detection:\naws guardduty update-detector --detector-id DETECTOR_ID \\\n  --features '[{\"Name\":\"ECS_RUNTIME_MONITORING\",\"Status\":\"ENABLED\"}]'\n\n# CloudTrail alert: container role used from external IP:\n# Metric filter: eventSource != internal AND userIdentity.arn CONTAINS task-role"
+    "secure_config": "# ECS task role: least privilege example\n# Task that reads S3 and writes to SQS:\n# {\n#   'Effect': 'Allow',\n#   'Action': ['s3:GetObject'],\n#   'Resource': 'arn:aws:s3:::input-bucket/*'\n# },\n# {\n#   'Effect': 'Allow',\n#   'Action': ['sqs:SendMessage'],\n#   'Resource': 'arn:aws:sqs:::output-queue'\n# }\n# Nothing else - no iam:*, no ec2:*, no s3:ListBucket globally\n\n# GuardDuty container threat detection:\naws guardduty update-detector --detector-id DETECTOR_ID \\\n  --features '[{\"Name\":\"ECS_RUNTIME_MONITORING\",\"Status\":\"ENABLED\"}]'\n\n# CloudTrail alert: container role used from external IP:\n# Metric filter: eventSource != internal AND userIdentity.arn CONTAINS task-role",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS - Container Network Pivot via Meterpreter & SOCKS Proxy - Sentinel",
+        "logic": "AWSCloudTrail\n| extend arn = tostring(UserIdentityArn)\n| where arn has \"ecs\" or arn has \"task\"\n| where SourceIpAddress !startswith \"10.\" and SourceIpAddress !startswith \"172.\" and SourceIpAddress !startswith \"192.168.\"\n| project TimeGenerated, EventName, arn, SourceIpAddress\n| sort by TimeGenerated desc\n// ECS task-role credentials used from an IP outside the task's VPC range",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1090.003",
+          "T1021",
+          "T1570"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - Container Network Pivot via Meterpreter & SOCKS Proxy - Splunk",
+        "logic": "index=aws_cloudtrail sourcetype=\"aws:cloudtrail\" (eventName=\"RunInstances\" OR eventName=\"CreateFunction\" OR eventName=\"UpdateFunctionCode\")\n| where like(userIdentity.arn, \"*assumed-role*\")\n| table _time, eventName, sourceIPAddress, userIdentity.arn, requestParameters",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1090.003",
+          "T1021",
+          "T1570"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "aws_lateral_movement_via_container_role",
+        "logic": "aws_lateral_movement_via_container_role",
+        "data_source": "windows-security",
+        "attack": [
+          "T1090.003",
+          "T1021",
+          "T1570"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "cloud-trail",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

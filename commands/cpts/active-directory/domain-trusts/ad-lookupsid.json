@@ -84,7 +84,69 @@
     ],
     "misconfiguration": "Domain trusts (especially bidirectional and forest trusts) extend authentication boundaries. SID filtering is often disabled on forest trusts to support legacy applications - but this allows an attacker with Domain Admin in a child domain to forge a golden ticket with ExtraSids claiming Domain Admin SID in the parent/trusted forest. Without SID filtering (SIDHistory filtering), domain boundaries offer no security isolation.",
     "vulnerable_config": "# Bidirectional forest trust without SID filtering:\nGet-ADTrust -Filter * | Select-Object Name, Direction, SIDFilteringQuarantined\n# SIDFilteringQuarantined: False  <-- SID filtering DISABLED\n# Direction: BiDirectional        <-- both domains trust each other\n\n# Child domain to parent: SID filtering is always disabled by default\n# Enterprise Admin SID (S-1-5-21-<root>-519) can be added to ExtraSids\n# Golden ticket with ExtraSids = cross-domain privilege escalation",
-    "secure_config": "# Enable SID filtering on external/forest trusts:\nnetdom trust <TrustingDomain> /domain:<TrustedDomain> /quarantine:yes\n# 'Quarantine' = SID filtering enabled - ExtraSids from other domain are stripped\n\n# For child-to-parent trusts (SID filtering can't be enabled without breaking functionality):\n# Use Selective Authentication instead of full trust\n# Only accounts explicitly granted 'Allowed to Authenticate' can use the trust\nnetdom trust <ParentDomain> /domain:<ChildDomain> /SelectiveAuth:yes\n\n# Restrict SIDHistory (prevents ExtraSids abuse):\n# Audit accounts with SIDHistory:\nGet-ADUser -Filter {SIDHistory -like '*'} -Properties SIDHistory\n\n# Monitor cross-forest authentication:\n# Event 4769 on parent DC with ticket from child domain user"
+    "secure_config": "# Enable SID filtering on external/forest trusts:\nnetdom trust <TrustingDomain> /domain:<TrustedDomain> /quarantine:yes\n# 'Quarantine' = SID filtering enabled - ExtraSids from other domain are stripped\n\n# For child-to-parent trusts (SID filtering can't be enabled without breaking functionality):\n# Use Selective Authentication instead of full trust\n# Only accounts explicitly granted 'Allowed to Authenticate' can use the trust\nnetdom trust <ParentDomain> /domain:<ChildDomain> /SelectiveAuth:yes\n\n# Restrict SIDHistory (prevents ExtraSids abuse):\n# Audit accounts with SIDHistory:\nGet-ADUser -Filter {SIDHistory -like '*'} -Properties SIDHistory\n\n# Monitor cross-forest authentication:\n# Event 4769 on parent DC with ticket from child domain user",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "lookupsid.py - Enumerate Domain SIDs and Users - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| summarize count() by IpAddress, bin(TimeGenerated, 5m)\n| where count_ > 20\n| sort by count_ desc\n// lookupsid.py: LSARPC SID brute-forcing for RID cycling",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "lookupsid.py - Enumerate Domain SIDs and Users (1) - Splunk",
+        "logic": "index=network (dest_port=445 OR dest_port=135)\n| stats count by src_ip, dest_ip | where count>20",
+        "data_source": "network-flow",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "lookupsid.py - Enumerate Domain SIDs and Users (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4624 Account_Name=\"ANONYMOUS LOGON\"\n| table _time, Computer, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "net_lsarpc_sid_bruteforce",
+        "logic": "net_lsarpc_sid_bruteforce",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "impacket"

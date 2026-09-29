@@ -84,7 +84,52 @@
     ],
     "misconfiguration": "Common introductory misconfigurations: services running as root/SYSTEM unnecessarily, default credentials unchanged, unnecessary services listening on all interfaces, lack of firewall rules exposing services externally, no monitoring or alerting on authentication failures.",
     "vulnerable_config": "# Service listening on all interfaces with default creds (common in labs/staging):\nss -tlnp | grep LISTEN\n# 0.0.0.0:21  (FTP on all interfaces)\n# 0.0.0.0:3306 (MySQL on all interfaces - should be 127.0.0.1 only)\n# 0.0.0.0:8080 (Tomcat with manager app accessible)\n\n# Running services as root:\nps aux | grep -E '(mysql|apache|nginx|ftp)'\n# root  1234  /usr/sbin/mysqld  <-- should run as 'mysql' user",
-    "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services"
+    "secure_config": "# Bind services to localhost or specific IPs (not 0.0.0.0):\n# MySQL: my.cnf -> bind-address = 127.0.0.1\n# Apache: Listen 127.0.0.1:80 (if behind a proxy)\n\n# Run services as dedicated low-priv users:\n# systemd unit: User=mysql Group=mysql\n\n# Host-based firewall (ufw):\nufw default deny incoming\nufw allow from 10.10.1.0/24 to any port 22  # SSH from mgmt only\nufw allow 443  # HTTPS\nufw enable\n\n# Change all default credentials immediately after installation\n# Enable fail2ban for SSH and web services",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Privilege Escalation - SSH Key Abuse - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"/.ssh/id_\"\n| where SyslogMessage !has \"sshd\"\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privilege Escalation - SSH Key Abuse - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"*/.ssh/id_*\"\n| where NOT match(exe, \"(?i)(ssh|ssh-agent|sshd)\")\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_ssh_private_key_access",
+        "logic": "lnx_auditd_ssh_private_key_access",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Logs in as a user with a recovered SSH private key:\n  ssh <user>@<ip>          connect as that user\n  -i id_rsa                authenticate with this private key file (chmod 600 it first)\nA found private key gives instant access as its owner. If instead you can write a user's ~/.ssh/authorized_keys, append your own public key for a guaranteed login."
 }

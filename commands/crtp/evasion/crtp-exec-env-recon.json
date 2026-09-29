@@ -116,7 +116,90 @@
     ],
     "misconfiguration": "Tamper Protection disabled (lets an admin add Defender exclusions / disable real-time protection). No Constrained Language Mode enforcement. Script Block Logging disabled so environment-recon and later tooling are invisible.",
     "vulnerable_config": "# Tamper Protection OFF -> attacker with local admin can blind Defender:\nGet-MpComputerStatus | select IsTamperProtected   # False = attacker can Set-MpPreference freely\n\n# FullLanguage everywhere + no AppLocker -> any .ps1 offensive tool runs unhindered:\n$ExecutionContext.SessionState.LanguageMode   # FullLanguage on a workstation with no WDAC/AppLocker",
-    "secure_config": "# Enforce Constrained Language Mode via WDAC/AppLocker (script rules in Enforce mode):\n# so $ExecutionContext.SessionState.LanguageMode returns ConstrainedLanguage for non-allowlisted code\n\n# Enable Defender Tamper Protection (blocks exclusion/RTP tampering even by admins):\nSet-MpPreference -EnableControlledFolderAccess Enabled\n# Tamper Protection is enabled via Intune/Security Center; verify:\n(Get-MpComputerStatus).IsTamperProtected  # must be True\n\n# Turn on Script Block + Module logging via GPO so recon and tooling are logged (Event 4104)."
+    "secure_config": "# Enforce Constrained Language Mode via WDAC/AppLocker (script rules in Enforce mode):\n# so $ExecutionContext.SessionState.LanguageMode returns ConstrainedLanguage for non-allowlisted code\n\n# Enable Defender Tamper Protection (blocks exclusion/RTP tampering even by admins):\nSet-MpPreference -EnableControlledFolderAccess Enabled\n# Tamper Protection is enabled via Intune/Security Center; verify:\n(Get-MpComputerStatus).IsTamperProtected  # must be True\n\n# Turn on Script Block + Module logging via GPO so recon and tooling are logged (Event 4104).",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Recon Your Execution Environment (before running tools) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-MpComputerStatus\",\"Get-AppLockerPolicy\",\"LanguageMode\",\"Get-MpPreference\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1082",
+          "T1518.001",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Recon Your Execution Environment (before running tools) (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-MpComputerStatus*\" OR ScriptBlockText=\"*Get-AppLockerPolicy*\" OR ScriptBlockText=\"*LanguageMode*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1082",
+          "T1518.001",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Recon Your Execution Environment (before running tools) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-Windows Defender/Operational\" EventCode=5007\n| table _time, Computer, New_Value",
+        "data_source": "windows-security",
+        "attack": [
+          "T1082",
+          "T1518.001",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5007"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_defender_recon",
+        "logic": "posh_ps_defender_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1082",
+          "T1518.001",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_defender_tampering",
+        "logic": "win_defender_tampering",
+        "data_source": "windows-security",
+        "attack": [
+          "T1082",
+          "T1518.001",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

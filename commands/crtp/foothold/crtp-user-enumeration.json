@@ -81,7 +81,68 @@
     ],
     "misconfiguration": "DC port 88 accessible from any host. MDI not deployed. Pre-authentication disabled on some accounts (also enables AS-REP roasting).",
     "vulnerable_config": "# DC accessible from any host on UDP/TCP 88 - no ACL restriction\n\n# Accounts with Kerberos pre-auth disabled:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth",
-    "secure_config": "# Firewall: restrict Kerberos to domain-joined subnets:\nNew-NetFirewallRule -DisplayName 'Block external Kerberos' -Direction Inbound -Protocol TCP -LocalPort 88 -RemoteAddress Internet -Action Block\n\n# Ensure pre-auth required for all users:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# MDI sensor on each DC - 'Account enumeration reconnaissance using Kerberos' alert\n\n# Honeypot account alert in SIEM:\n# Any 4768 for honeypot_user = active enumeration"
+    "secure_config": "# Firewall: restrict Kerberos to domain-joined subnets:\nNew-NetFirewallRule -DisplayName 'Block external Kerberos' -Direction Inbound -Protocol TCP -LocalPort 88 -RemoteAddress Internet -Action Block\n\n# Ensure pre-auth required for all users:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# MDI sensor on each DC - 'Account enumeration reconnaissance using Kerberos' alert\n\n# Honeypot account alert in SIEM:\n# Any 4768 for honeypot_user = active enumeration",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "User Enumeration via Kerberos (kerbrute) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4768 and Status == \"0x6\"\n| summarize accts=dcount(TargetUserName), count() by IpAddress, bin(TimeGenerated, 1m)\n| where accts > 25\n| sort by accts desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "User Enumeration via Kerberos (kerbrute) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Result_Code=0x6\n| stats count dc(Account_Name) as accts by Client_Address, bin(_time, 1m)\n| where accts>25",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberos_user_enumeration",
+        "logic": "win_security_kerberos_user_enumeration",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_kerbrute_userenum",
+        "logic": "net_kerbrute_userenum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Validates which domain usernames exist via Kerberos pre-auth, without triggering lockouts:\n  kerbrute userenum         send AS-REQs and read the KDC error to tell valid from invalid names\n  --dc <dc_ip>             the Domain Controller to query\n  -d <domain>              the domain\n  <userlist>               candidate usernames to test\nValid users return a distinct response (and no lockout counter increments), giving you a confirmed username list to spray or roast."
 }

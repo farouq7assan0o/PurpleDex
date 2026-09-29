@@ -96,7 +96,55 @@
       "PEN-200 Ch 6",
       "MITRE T1046",
       "MS Docs"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerShell - Test-NetConnection Port Check - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"Test-NetConnection\",\"Test-Connection\")\n| summarize count() by DeviceName, InitiatingProcessAccountName, bin(Timestamp, 1m)\n| where count_ > 10\n| sort by count_ desc\n// Test-NetConnection used as a port/host sweep",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerShell - Test-NetConnection Port Check - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Test-NetConnection*\" OR ScriptBlockText=\"*Test-Connection*\")\n| stats count by Computer, User, bin(_time, 1m) | where count>10",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_test_netconnection_sweep",
+        "logic": "posh_ps_test_netconnection_sweep",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Tests TCP connectivity to a port from Windows PowerShell:\n  Test-NetConnection   built-in connectivity test\n  -Port <port>         the TCP port to probe\n  <ip>                 the target\nReturns TcpTestSucceeded True/False plus the remote address - a quick no-tools port check from a foothold (aliased as tnc)."
 }

@@ -105,7 +105,69 @@
     ],
     "misconfiguration": "Password policies are insufficiently strict: minimum length too short (< 12 chars), no complexity requirement, no history check (allows password reuse), no lockout or too-lenient lockout threshold. Combined with credential reuse across services, a single cracked hash grants access to multiple systems.",
     "vulnerable_config": "# Weak domain password policy:\nGet-ADDefaultDomainPasswordPolicy\n# MinPasswordLength:    8    <-- too short\n# PasswordHistoryCount: 0    <-- no history, password reuse allowed\n# ComplexityEnabled:    False <-- no complexity\n# LockoutThreshold:     0    <-- NO lockout\n\n# Local SAM policy (workgroup machines):\n# Control Panel -> Local Security Policy -> Account Policies -> Password Policy\n# Same weak defaults as above",
-    "secure_config": "# Set a strong domain password policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local \\\n    -MinPasswordLength 14 \\\n    -PasswordHistoryCount 24 \\\n    -ComplexityEnabled $true \\\n    -MaxPasswordAge 90.00:00:00 \\\n    -LockoutThreshold 5 \\\n    -LockoutDuration 00:30:00 \\\n    -LockoutObservationWindow 00:30:00\n\n# Fine-Grained PSO for privileged accounts (stricter):\nNew-ADFineGrainedPasswordPolicy -Name PrivilegedPSO \\\n    -MinPasswordLength 20 -PasswordHistoryCount 48 \\\n    -ComplexityEnabled $true -LockoutThreshold 3 \\\n    -LockoutDuration 01:00:00 -Precedence 1\nAdd-ADFineGrainedPasswordPolicySubject PrivilegedPSO -Subjects 'Domain Admins'\n\n# Deploy Azure AD Password Protection (blocks common passwords on-prem too)\n# Enable Microsoft Entra ID Smart Lockout"
+    "secure_config": "# Set a strong domain password policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local \\\n    -MinPasswordLength 14 \\\n    -PasswordHistoryCount 24 \\\n    -ComplexityEnabled $true \\\n    -MaxPasswordAge 90.00:00:00 \\\n    -LockoutThreshold 5 \\\n    -LockoutDuration 00:30:00 \\\n    -LockoutObservationWindow 00:30:00\n\n# Fine-Grained PSO for privileged accounts (stricter):\nNew-ADFineGrainedPasswordPolicy -Name PrivilegedPSO \\\n    -MinPasswordLength 20 -PasswordHistoryCount 48 \\\n    -ComplexityEnabled $true -LockoutThreshold 3 \\\n    -LockoutDuration 01:00:00 -Precedence 1\nAdd-ADFineGrainedPasswordPolicySubject PrivilegedPSO -Subjects 'Domain Admins'\n\n# Deploy Azure AD Password Protection (blocks common passwords on-prem too)\n# Enable Microsoft Entra ID Smart Lockout",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "NetExec - Brute Force and Enumerate - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4625, 4771)\n| summarize attempts=count() by TargetUserName, IpAddress, bin(TimeGenerated, 1m)\n| where attempts > 15\n| sort by attempts desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "NetExec - Brute Force and Enumerate (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4625 OR EventCode=4771)\n| stats count by Account_Name, Source_Network_Address, bin(_time, 1m)\n| where count>15",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4625",
+          "4771"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "NetExec - Brute Force and Enumerate (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4740\n| table _time, Computer, Target_Account_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4740"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_bruteforce_failed_logons",
+        "logic": "win_security_bruteforce_failed_logons",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "explain": "Sprays credentials across a protocol with NetExec:\n  netexec <proto> <ip>     the protocol (smb, winrm, ssh, ...) and target\n  -u <userlist>            usernames to try\n  -p <wordlist>            passwords to try\nA [+] marks a valid pair; (Pwn3d!) means code execution is possible on that host. Add --shares to list accessible SMB shares once authenticated."

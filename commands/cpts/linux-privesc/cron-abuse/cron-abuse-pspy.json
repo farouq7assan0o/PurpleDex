@@ -131,7 +131,74 @@
       "HTB M25",
       "MITRE T1053.003",
       "MITRE T1543"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Cron Abuse - Writable Script + pspy - Sentinel",
+        "logic": "Syslog\n| where ProcessName in (\"CROND\",\"cron\")\n| where SyslogMessage has_any (\"bash\",\"/bin/sh\",\"nc \",\"python\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// unexpected shell spawned from cron, or a cron-referenced script modified by a non-root user",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1053.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Cron Abuse - Writable Script + pspy (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"*/backup.sh\" (a1=\"*O_WRONLY*\" OR a1=\"*O_RDWR*\")\n| where auid!=0\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1053.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Cron Abuse - Writable Script + pspy (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" ppid_comm=\"cron*\"\n| where match(comm, \"(?i)(bash|sh|nc|python)\")\n| table _time, host, comm, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1053.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_cron_script_modification",
+        "logic": "lnx_auditd_cron_script_modification",
+        "data_source": "windows-security",
+        "attack": [
+          "T1053.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_shell_spawned_from_cron",
+        "logic": "lnx_shell_spawned_from_cron",
+        "data_source": "windows-security",
+        "attack": [
+          "T1053.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Watches for root cron jobs without needing root, so you can abuse a writable one:\n  ./pspy64                 monitor process creation and scheduled tasks in real time (no privileges needed)\n  -pf                      print commands and file-system events\n  -i 1000                  poll every 1000 ms\nWhen you spot a root cron running a world-writable script, append a reverse shell to that script (back up the original first) and wait for the next run."
 }

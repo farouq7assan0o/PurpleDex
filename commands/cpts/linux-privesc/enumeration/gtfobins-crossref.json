@@ -85,7 +85,75 @@
       "HTB M25",
       "MITRE T1548.001",
       "MITRE T1548.003"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Enumeration - GTFOBins Cross-Reference - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"gtfobins.github.io\" or (SyslogMessage has \"curl\" and SyslogMessage has \"gtfobins\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// outbound to gtfobins.github.io from a server + bulk package enumeration",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1518"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Enumeration - GTFOBins Cross-Reference (1) - Splunk",
+        "logic": "index=proxy (url=\"*gtfobins.github.io*\")\n| table _time, src_ip, url, http_user_agent",
+        "data_source": "proxy",
+        "attack": [
+          "T1518"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Enumeration - GTFOBins Cross-Reference (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"curl\" proctitle=\"*gtfobins*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1518"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proxy_gtfobins_lookup",
+        "logic": "proxy_gtfobins_lookup",
+        "data_source": "proxy",
+        "attack": [
+          "T1518"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_package_enum",
+        "logic": "lnx_auditd_package_enum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1518"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Auto-flags installed binaries that GTFOBins documents an escalation for:\n  curl -s https://gtfobins.github.io/gtfobins.json | jq -r 'keys[]'   pull every GTFOBins entry name\n  grep -q \"$i\" installed_pkgs.list   check each against your installed-packages list\n  echo \"Check GTFO: $i\"    print the ones present on the target\nEach match is a candidate for a SUID/sudo/shell-escape technique - look it up on GTFOBins."
 }

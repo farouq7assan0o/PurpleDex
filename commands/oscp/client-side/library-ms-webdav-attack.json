@@ -107,7 +107,77 @@
     ],
     "misconfiguration": "Outbound SMB to internet not blocked. WebDAV client enabled. Email gateway doesn't block .library-ms files. No NTLM relay prevention (SMB signing not required).",
     "vulnerable_config": "# WebDAV client running (enables .library-ms connection):\nGet-Service WebClient | Select-Object Status  # Running\n\n# Outbound SMB not blocked:\n# Firewall: allow TCP 445 outbound to ANY = VULNERABLE\n# → library-ms → WebDAV auth → NTLM hash captured\n\n# Email gateway allows .library-ms:\n# No content filtering rule for Windows Library files",
-    "secure_config": "# Disable WebDAV client (if not needed):\nStop-Service WebClient\nSet-Service WebClient -StartupType Disabled\n# Via GPO: Computer Config → Windows Settings → Security Settings → System Services\n# → WebClient: Disabled\n\n# Block outbound SMB at perimeter:\n# deny tcp internal_networks any eq 445\n# deny tcp internal_networks any eq 139\n\n# Email gateway: block .library-ms\n# Exchange transport rule:\nNew-TransportRule -Name 'Block Library Files' -AttachmentExtensionMatchesWords 'library-ms' -RejectMessageEnhancedStatusCode '5.7.1' -RejectMessageReasonText 'Library files are blocked'\n\n# Require SMB signing (prevents relay even if hash captured):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force"
+    "secure_config": "# Disable WebDAV client (if not needed):\nStop-Service WebClient\nSet-Service WebClient -StartupType Disabled\n# Via GPO: Computer Config → Windows Settings → Security Settings → System Services\n# → WebClient: Disabled\n\n# Block outbound SMB at perimeter:\n# deny tcp internal_networks any eq 445\n# deny tcp internal_networks any eq 139\n\n# Email gateway: block .library-ms\n# Exchange transport rule:\nNew-TransportRule -Name 'Block Library Files' -AttachmentExtensionMatchesWords 'library-ms' -RejectMessageEnhancedStatusCode '5.7.1' -RejectMessageReasonText 'Library files are blocked'\n\n# Require SMB signing (prevents relay even if hash captured):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Windows Library File + WebDAV Delivery - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName endswith_any (\".library-ms\",\".lnk\",\".url\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName, FolderPath\n| union (DeviceProcessEvents | where InitiatingProcessFileName =~ \"explorer.exe\" and RemoteUrl has \"DavWWWRoot\" | project Timestamp, DeviceName, InitiatingProcessFileName, FileName, FolderPath=RemoteUrl)\n| sort by Timestamp desc\n// .library-ms pointing at a WebDAV share to fetch a follow-on payload (CVE-2024-21412 style)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows Library File + WebDAV Delivery (1) - Splunk",
+        "logic": "index=sysmon EventCode=11 (TargetFilename=\"*.library-ms\" OR TargetFilename=\"*.lnk\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows Library File + WebDAV Delivery (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:System\" EventCode=7036 \"WebClient\"\n| table _time, Computer",
+        "data_source": "windows-security",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7036"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_win_library_ms_webdav",
+        "logic": "file_event_win_library_ms_webdav",
+        "data_source": "sysmon",
+        "attack": [
+          "T1566.001",
+          "T1204.002",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "A no-macro phishing chain using a .Library-ms file pointed at your WebDAV share:\n  <libraryDescription>...<url>http://<lhost></url>   the library file that mounts your share in Explorer\nWhen the user opens the .library-ms, Explorer transparently mounts the WebDAV share and shows it as a trusted folder; a malicious .lnk staged there (running a PowerShell download cradle) fires when clicked - host the share with wsgidav and catch the callback."
 }

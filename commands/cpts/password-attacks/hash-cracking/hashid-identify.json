@@ -83,7 +83,52 @@
     "splunk_spl": "index=* \"hashid\"\n| table _time, host, user, _raw\n// hash-type identification runs locally; no target-side telemetry",
     "elastic_kql": "process.name:hashid*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashid\" or ProcessCommandLine has \"hashid\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// hash-type identification runs locally; no target-side telemetry",
-    "sigma_rules": "no target-side telemetry (hashid runs on the attacker host)"
+    "sigma_rules": "no target-side telemetry (hashid runs on the attacker host)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "hashID - Identify Hash Type - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"hashid\" or ProcessCommandLine has \"hashid\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// hash-type identification runs locally; no target-side telemetry",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "hashID - Identify Hash Type - Splunk",
+        "logic": "index=* \"hashid\"\n| table _time, host, user, _raw\n// hash-type identification runs locally; no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

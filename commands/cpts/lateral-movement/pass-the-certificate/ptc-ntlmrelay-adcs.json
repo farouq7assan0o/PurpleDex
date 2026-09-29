@@ -87,7 +87,66 @@
     ],
     "misconfiguration": "Pass-the-Certificate (PtC) attacks exploit ADCS certificate abuse (ESC1/ESC8) combined with Kerberos PKINIT. Shadow credentials (pywhisker) exploit write access to msDS-KeyCredentialLink to add a certificate-based authentication mechanism to any account. Pass-the-Ticket works because Kerberos tickets are extractable from LSASS memory.",
     "vulnerable_config": "# msDS-KeyCredentialLink writable by attacker (GenericWrite on target account):\n# pywhisker.py -t targetuser -a add\n# Adds a fake device credential -> obtain certificate for targetuser\n# -> PKINIT TGT as targetuser -> NTLM hash via UnPAC\n\n# LSASS memory contains TGTs for all logged-in users:\n# Mimikatz: sekurlsa::tickets /export\n# Rubeus: dump /all",
-    "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes"
+    "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Impacket - NTLM Relay to ADCS (ESC8) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4886, 4887)\n| project TimeGenerated, Computer, RequesterName, CertificateTemplate\n// relayed request: cert issued but RequesterName/IP does not match the enrolling principal\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Impacket - NTLM Relay to ADCS (ESC8) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| where Requester_Name!=\"*$\" OR Attributes=\"*DomainController*\"\n| table _time, Computer, Requester_Name, Attributes",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4886",
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Impacket - NTLM Relay to ADCS (ESC8) (2) - Splunk",
+        "logic": "index=suricata event_type=alert (alert.signature=\"*certsrv*\" OR alert.signature=\"*NTLM relay*\")\n| table _time, src_ip, dest_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_esc8_ntlm_relay",
+        "logic": "win_security_adcs_esc8_ntlm_relay",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

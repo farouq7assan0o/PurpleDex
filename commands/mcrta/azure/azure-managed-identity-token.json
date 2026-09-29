@@ -96,7 +96,67 @@
     ],
     "misconfiguration": "Over-privileged managed identity (e.g., Contributor at subscription scope) on an internet-facing VM/app; SSRF that can set request headers.",
     "vulnerable_config": "# MI with Contributor at subscription, app has SSRF -> attacker sets Metadata header via SSRF:\n# GET http://169.254.169.254/metadata/identity/oauth2/token?...&resource=https://management.azure.com/ (Metadata:true)",
-    "secure_config": "# Scope the managed identity to least privilege (specific resource group / resource).\n# Block workload egress to 169.254.169.254 where the app does not need IMDS.\n# Remediate SSRF (egress allowlist, block link-local); alert on MI anomalies in Activity Log."
+    "secure_config": "# Scope the managed identity to least privilege (specific resource group / resource).\n# Block workload egress to 169.254.169.254 where the app does not need IMDS.\n# Remediate SSRF (egress allowlist, block link-local); alert on MI anomalies in Activity Log.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Azure Managed Identity Token Theft (VM IMDS) - Sentinel",
+        "logic": "AzureActivity\n| where Caller has \"managedidentity\" or CallerIpAddress != \"\"\n| project TimeGenerated, OperationNameValue, Caller, CallerIpAddress\n| sort by TimeGenerated desc\n// IMDS token request (169.254.169.254) followed by anomalous ARM/Graph calls by the MI principal",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Azure Managed Identity Token Theft (VM IMDS) (1) - Splunk",
+        "logic": "index=azure sourcetype=\"azure:audit\" operationName=\"Acquire access token\" OR operationName=\"Add managed identity credential\"\n| table _time, identity.claims.name, targetResources{}.displayName, result",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Azure Managed Identity Token Theft (VM IMDS) (2) - Splunk",
+        "logic": "index=azure sourcetype=\"azure:signin\" authenticationDetails{}.authenticationMethod=\"ManagedIdentity\"\n| stats count by identity, resourceDisplayName, ipAddress",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "azure_managed_identity_token_acquisition",
+        "logic": "azure_managed_identity_token_acquisition",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "azure-activity",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Steals an Azure VM's managed-identity token from the Instance Metadata Service:\n  curl -H \"Metadata:true\"   the required IMDS header\n  \"http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/\"   request an ARM access token for the VM's managed identity\nFrom code execution on the VM, this returns a bearer token; use it against the Azure APIs as that identity, which frequently holds RBAC roles."
 }

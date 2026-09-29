@@ -107,7 +107,90 @@
     ],
     "misconfiguration": "AlwaysInstallElevated enabled in registry (both HKLM and HKCU). Service binary directories writable by standard users. Unquoted service paths with spaces in directory names. Service DACLs allow standard users to reconfigure services.",
     "vulnerable_config": "# AlwaysInstallElevated enabled (BOTH keys must be set for exploitation):\n(Get-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer').AlwaysInstallElevated  # 1\n(Get-ItemProperty 'HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer').AlwaysInstallElevated  # 1\n# Both = 1 → MSI files run as SYSTEM = CRITICAL\n\n# Unquoted service path with space:\nsc qc 'Vulnerable Service'\n# BINARY_PATH_NAME: C:\\Program Files\\Some Company\\service.exe\n# → Windows tries: C:\\Program.exe, C:\\Program Files\\Some.exe, etc.\n\n# Writable service binary:\nicacls 'C:\\Program Files\\VulnApp\\service.exe'\n# Everyone:(F) → anyone can replace the binary",
-    "secure_config": "# Disable AlwaysInstallElevated via GPO:\n# Computer Config → Admin Templates → Windows Components → Windows Installer\n# → Always install with elevated privileges: Disabled\n# HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer\\AlwaysInstallElevated = 0\n\n# Fix unquoted service paths:\nGet-WmiObject Win32_Service | Where-Object {$_.PathName -notmatch '\"' -and $_.PathName -match ' '} | ForEach-Object {\n  $quoted = '\"' + $_.PathName + '\"'\n  sc.exe config $_.Name binpath= $quoted\n}\n\n# Fix service binary permissions:\n# icacls 'C:\\Program Files\\VulnApp\\service.exe' /inheritance:d\n# icacls 'C:\\Program Files\\VulnApp\\service.exe' /remove 'Everyone'\n# icacls 'C:\\Program Files\\VulnApp\\service.exe' /grant:r 'SYSTEM:(F)' 'Administrators:(F)'\n\n# Regular PrivEsc audit:\nIEX (New-Object Net.WebClient).DownloadString('https://internal-repo/PowerUp.ps1')\nInvoke-AllChecks | Where-Object {$_.AbuseFunction} | Format-List"
+    "secure_config": "# Disable AlwaysInstallElevated via GPO:\n# Computer Config → Admin Templates → Windows Components → Windows Installer\n# → Always install with elevated privileges: Disabled\n# HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer\\AlwaysInstallElevated = 0\n\n# Fix unquoted service paths:\nGet-WmiObject Win32_Service | Where-Object {$_.PathName -notmatch '\"' -and $_.PathName -match ' '} | ForEach-Object {\n  $quoted = '\"' + $_.PathName + '\"'\n  sc.exe config $_.Name binpath= $quoted\n}\n\n# Fix service binary permissions:\n# icacls 'C:\\Program Files\\VulnApp\\service.exe' /inheritance:d\n# icacls 'C:\\Program Files\\VulnApp\\service.exe' /remove 'Everyone'\n# icacls 'C:\\Program Files\\VulnApp\\service.exe' /grant:r 'SYSTEM:(F)' 'Administrators:(F)'\n\n# Regular PrivEsc audit:\nIEX (New-Object Net.WebClient).DownloadString('https://internal-repo/PowerUp.ps1')\nInvoke-AllChecks | Where-Object {$_.AbuseFunction} | Format-List",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerUp Local Privilege Escalation - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Invoke-AllChecks\",\"Invoke-ServiceAbuse\",\"Get-ModifiableService\",\"AlwaysInstallElevated\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1574.009",
+          "T1574.007",
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerUp Local Privilege Escalation (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-AllChecks*\" OR ScriptBlockText=\"*Invoke-ServiceAbuse*\" OR ScriptBlockText=\"*Get-ModifiableService*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1574.009",
+          "T1574.007",
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerUp Local Privilege Escalation (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4697\n| table _time, Computer, Service_Name, Service_File_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.009",
+          "T1574.007",
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4697"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerup_functions",
+        "logic": "posh_ps_powerup_functions",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.009",
+          "T1574.007",
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_new_service_install",
+        "logic": "win_security_new_service_install",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.009",
+          "T1574.007",
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

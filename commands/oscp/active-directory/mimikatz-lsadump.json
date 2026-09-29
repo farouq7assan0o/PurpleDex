@@ -139,7 +139,86 @@
     ],
     "misconfiguration": "Same local admin password on all hosts (allows PtH from any compromised host to all others). Service accounts with plaintext passwords in LSA secrets. CachedLogonsCount > 0 on servers (DA creds cached from interactive sessions). LAPS not deployed.",
     "vulnerable_config": "# Same local admin password everywhere:\n# lsadump::sam → Administrator: aad3b435b51404eeaad3b435b51404ee:8846f7eaee8fb117ad06bdd830b7586c\n# PtH to every host with that hash → full lateral movement\n\n# Cached domain credentials (10 by default):\n(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon').CachedLogonsCount  # 10\n# DA logged on interactively → DCC2 hash crackable offline",
-    "secure_config": "# Deploy LAPS (unique local admin passwords):\n# Install LAPS from Microsoft → extend AD schema → deploy GPO\n# GPO: Computer Config → Admin Templates → LAPS → Password Settings\n# → Password complexity: Large letters+small letters+numbers+specials\n# → Password length: 25\n# → Password age: 30 days\n\n# Set CachedLogonsCount to 0 on servers (no cached domain creds):\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon' -Name CachedLogonsCount -Value 0\n# Via GPO: Interactive logon: Number of previous logons to cache = 0\n\n# Use gMSA instead of service accounts with static passwords:\nNew-ADServiceAccount -Name svc_app -ManagedPasswordIntervalInDays 30 -DNSHostName app.corp.local"
+    "secure_config": "# Deploy LAPS (unique local admin passwords):\n# Install LAPS from Microsoft → extend AD schema → deploy GPO\n# GPO: Computer Config → Admin Templates → LAPS → Password Settings\n# → Password complexity: Large letters+small letters+numbers+specials\n# → Password length: 25\n# → Password age: 30 days\n\n# Set CachedLogonsCount to 0 on servers (no cached domain creds):\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon' -Name CachedLogonsCount -Value 0\n# Via GPO: Interactive logon: Number of previous logons to cache = 0\n\n# Use gMSA instead of service accounts with static passwords:\nNew-ADServiceAccount -Name svc_app -ManagedPasswordIntervalInDays 30 -DNSHostName app.corp.local",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Mimikatz LSA Dump (SAM / LSA Secrets) - Sentinel",
+        "logic": "DeviceRegistryEvents\n| where RegistryKey has \"SECURITY\\\\Policy\\\\Secrets\" or RegistryKey has \"SAM\\\\SAM\\\\Domains\"\n| where InitiatingProcessFileName !in~ (\"lsass.exe\",\"services.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, RegistryKey\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.002",
+          "T1003.004",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Mimikatz LSA Dump (SAM / LSA Secrets) (1) - Splunk",
+        "logic": "index=sysmon EventCode=10 TargetImage=\"*lsass.exe\"\n| where GrantedAccess=\"0x1010\" OR GrantedAccess=\"0x1FFFFF\"\n| table _time, Computer, SourceImage, SourceUser, GrantedAccess",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002",
+          "T1003.004",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "10"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Mimikatz LSA Dump (SAM / LSA Secrets) (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 (CommandLine=\"*lsadump*\" OR CommandLine=\"*sekurlsa*\")\n| table _time, Computer, User, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002",
+          "T1003.004",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_lsass_access_credential_dumping",
+        "logic": "sysmon_lsass_access_credential_dumping",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002",
+          "T1003.004",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_mimikatz_command_line",
+        "logic": "proc_creation_win_hktl_mimikatz_command_line",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002",
+          "T1003.004",
+          "T1134.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "tags": [
     "mimikatz",

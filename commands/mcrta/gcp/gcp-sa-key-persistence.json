@@ -86,7 +86,51 @@
     ],
     "misconfiguration": "SA key creation allowed (no org policy) and key-create permission granted broadly; privileged SAs whose keys anyone with Editor can mint.",
     "vulnerable_config": "# Any Editor on the project can mint a key for a privileged SA:\ngcloud iam service-accounts keys create bd.json --iam-account <priv_sa>   # long-lived backdoor",
-    "secure_config": "# Org policy: constraints/iam.disableServiceAccountKeyCreation = true\n# Use Workload Identity Federation / short-lived impersonation; restrict Key Admin;\n# alert on CreateServiceAccountKey; inventory + rotate keys."
+    "secure_config": "# Org policy: constraints/iam.disableServiceAccountKeyCreation = true\n# Use Workload Identity Federation / short-lived impersonation; restrict Key Admin;\n# alert on CreateServiceAccountKey; inventory + rotate keys.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GCP Persistence via Service Account Key Creation - Sentinel",
+        "logic": "GCPAuditLogs\n| where methodName == \"google.iam.admin.v1.CreateServiceAccountKey\"\n| project TimeGenerated, principalEmail=protoPayload_authenticationInfo_principalEmail, resourceName, callerIp=protoPayload_requestMetadata_callerIp\n| sort by TimeGenerated desc\n// user-managed SA key created, especially on a privileged SA or from an unexpected principal",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GCP Persistence via Service Account Key Creation - Splunk",
+        "logic": "index=gcp_audit sourcetype=\"google:gcp:audit\" protoPayload.methodName=\"google.iam.admin.v1.CreateServiceAccountKey\"\n| table _time, protoPayload.authenticationInfo.principalEmail, protoPayload.resourceName, protoPayload.request.keyAlgorithm",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "gcp_service_account_key_creation",
+        "logic": "gcp_service_account_key_creation",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Creates a long-lived JSON key for a service account you can manage - stealthy GCP persistence:\n  gcloud iam service-accounts keys create key.json   generate a new key and save it locally\n  --iam-account <sa_email>   the service account to mint the key for\nRequires iam.serviceAccountKeys.create. The downloaded key authenticates as the SA indefinitely, is MFA-independent, and survives user password resets - activate it later with gcloud auth activate-service-account."
 }

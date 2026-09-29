@@ -85,7 +85,55 @@
       "MITRE T1518.001",
       "MITRE T1083"
     ],
-    "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries."
+    "evasion": "Run one consolidated enumeration pass (winPEAS/Seatbelt) in-memory and save output off-host rather than repeated noisy queries.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WinPE - Enumerate Defender and AppLocker - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"Get-MpComputerStatus\",\"Get-AppLockerPolicy\",\"Get-MpPreference\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "WinPE - Enumerate Defender and AppLocker - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-MpComputerStatus*\" OR ScriptBlockText=\"*Get-AppLockerPolicy*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_defender_applocker_recon",
+        "logic": "posh_ps_defender_applocker_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Checks endpoint protections before dropping tools:\n  Get-MpComputerStatus     report Defender real-time protection and AMSI status\nAlso read the effective AppLocker policy and test whether a specific binary path is allowed for your user - so you pick execution methods the host will actually permit."
 }

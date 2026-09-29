@@ -116,7 +116,63 @@
       "HTB M25",
       "MITRE T1548.003"
     ],
-    "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating."
+    "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Sudo Abuse - tcpdump postrotate Command - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"tcpdump\" and SyslogMessage has \"-z\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// tcpdump -z postrotate script abused via sudo to run a payload as root",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Sudo Abuse - tcpdump postrotate Command (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"sudo:\" \"tcpdump\" \"-z\"\n| table _time, host, user, _raw",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Sudo Abuse - tcpdump postrotate Command (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" ppid_comm=\"tcpdump\"\n| where auid=0 AND NOT match(comm, \"tcpdump\")\n| table _time, host, comm, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_sudo_tcpdump_z_exec",
+        "logic": "lnx_auditd_sudo_tcpdump_z_exec",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

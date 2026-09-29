@@ -133,6 +133,79 @@
     ],
     "misconfiguration": "Windows systems accumulate privilege escalation paths over time: scheduled tasks running as SYSTEM with world-writable scripts, service binaries with weak DACL (non-admins can overwrite), AlwaysInstallElevated enabled (any MSI installs as SYSTEM), or SeImpersonatePrivilege granted to web/service accounts.",
     "vulnerable_config": "# AlwaysInstallElevated (any user installs MSI as SYSTEM):\nreg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated\nreg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated\n# Both = 1  ->  msfvenom -p windows/exec CMD=calc.exe -f msi > priv.msi; msiexec /quiet /i priv.msi\n\n# Service binary with weak DACL:\nicacls C:\\Program Files\\VulnSvc\\svc.exe\n# BUILTIN\\Users:(F)  <-- any user has Full Control -> replace with malicious binary",
-    "secure_config": "# Disable AlwaysInstallElevated:\n# GPO: Computer Config > Admin Templates > Windows Components > Windows Installer\n#   'Always install with elevated privileges' = Disabled\n# Registry (both keys required):\nSet-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\nSet-ItemProperty -Path 'HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\n\n# Fix service binary DACLs:\nicacls 'C:\\Program Files\\VulnSvc\\svc.exe' /inheritance:r /grant:r 'NT AUTHORITY\\SYSTEM:(F)' 'BUILTIN\\Administrators:(F)'\n# Remove all non-admin write permissions\n\n# Audit with PowerUp or PrivescCheck:\n# Invoke-PrivescCheck -Thorough  # comprehensive privesc surface audit\n# Run monthly and after any software installation"
+    "secure_config": "# Disable AlwaysInstallElevated:\n# GPO: Computer Config > Admin Templates > Windows Components > Windows Installer\n#   'Always install with elevated privileges' = Disabled\n# Registry (both keys required):\nSet-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\nSet-ItemProperty -Path 'HKCU:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer' -Name AlwaysInstallElevated -Value 0\n\n# Fix service binary DACLs:\nicacls 'C:\\Program Files\\VulnSvc\\svc.exe' /inheritance:r /grant:r 'NT AUTHORITY\\SYSTEM:(F)' 'BUILTIN\\Administrators:(F)'\n# Remove all non-admin write permissions\n\n# Audit with PowerUp or PrivescCheck:\n# Invoke-PrivescCheck -Thorough  # comprehensive privesc surface audit\n# Run monthly and after any software installation",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Attack Chain - Pillaging to SYSTEM - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"reg.exe\" and ProcessCommandLine has \"save\" and ProcessCommandLine has_any (\"hklm\\\\sam\",\"hklm\\\\system\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceFileEvents | where FileName has \"confCons.xml\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=FolderPath)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Attack Chain - Pillaging to SYSTEM (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*reg.exe\" CommandLine=\"*save*hklm\\\\sam*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Attack Chain - Pillaging to SYSTEM (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_reg_save_sam_hives",
+        "logic": "proc_creation_win_reg_save_sam_hives",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_pass_the_hash_ntlm",
+        "logic": "win_security_pass_the_hash_ntlm",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   }
 }

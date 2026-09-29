@@ -105,7 +105,52 @@
       "MITRE T1068",
       "OWASP A06:2021"
     ],
-    "evasion": "Compile off-target and transfer only the final ELF; run once and clean it up; many public PoCs are unstable - verify the kernel/arch match before firing to avoid a panic."
+    "evasion": "Compile off-target and transfer only the final ELF; run once and clean it up; many public PoCs are unstable - verify the kernel/arch match before firing to avoid a panic.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Dirty Pipe (CVE-2022-0847) - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"/etc/passwd\",\"passwd.bak\",\"splice\")\n| where SyslogMessage has_any (\"write\",\"O_WRONLY\")\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Dirty Pipe (CVE-2022-0847) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (name=\"/etc/passwd\" OR name=\"*/sudo\" OR name=\"*/su\") (a1=\"*O_WRONLY*\" OR a1=\"*O_RDWR*\")\n| where auid!=0\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_dirtypipe_readonly_overwrite",
+        "logic": "lnx_auditd_dirtypipe_readonly_overwrite",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Runs the Dirty Pipe (CVE-2022-0847) exploit to overwrite read-only files as an unprivileged user (kernels 5.8-5.17):\n  ./exploit-1              rewrite /etc/passwd to give root a known password, then su to root\nCheck uname -r is in range and build with compile.sh first. exploit-2 instead hijacks a chosen SUID binary (./exploit-2 /usr/bin/sudo) to pop a root shell - clean up /tmp/sh after."
 }

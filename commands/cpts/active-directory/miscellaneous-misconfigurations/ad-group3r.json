@@ -77,7 +77,72 @@
     "splunk_spl": "index=sysmon EventCode=1 Image=\"*Group3r*\"\n| table _time, Computer, User, CommandLine\n\nindex=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145 Share_Name=\"*SYSVOL*\"\n| table _time, Computer, Account_Name, Relative_Target_Name",
     "elastic_kql": "event.code:\"1\" AND process.name:*Group3r* OR (event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL*)",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"Group3r\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 5145 and ShareName has \"SYSVOL\" | project Timestamp=TimeGenerated, DeviceName=Computer, AccountName=SubjectUserName, ProcessCommandLine=RelativeTargetName)\n| sort by Timestamp desc\n// Group3r reads GPOs from SYSVOL looking for misconfigurations",
-    "sigma_rules": "proc_creation_win_group3r (GPO SYSVOL misconfig enumeration)"
+    "sigma_rules": "proc_creation_win_group3r (GPO SYSVOL misconfig enumeration)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Group3r - GPO Misconfiguration Analysis - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName has \"Group3r\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 5145 and ShareName has \"SYSVOL\" | project Timestamp=TimeGenerated, DeviceName=Computer, AccountName=SubjectUserName, ProcessCommandLine=RelativeTargetName)\n| sort by Timestamp desc\n// Group3r reads GPOs from SYSVOL looking for misconfigurations",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5145"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Group3r - GPO Misconfiguration Analysis (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*Group3r*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Group3r - GPO Misconfiguration Analysis (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145 Share_Name=\"*SYSVOL*\"\n| table _time, Computer, Account_Name, Relative_Target_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5145"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_group3r",
+        "logic": "proc_creation_win_group3r",
+        "data_source": "sysmon",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "Group3r"

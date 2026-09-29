@@ -95,7 +95,83 @@
       "MITRE T1222.001",
       "MITRE T1078"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SeTakeOwnershipPrivilege - Own and Read a File - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName in~ (\"takeown.exe\",\"icacls.exe\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 4670 | project Timestamp=TimeGenerated, DeviceName=Computer, AccountName=SubjectUserName, ProcessCommandLine=ObjectName)\n| sort by Timestamp desc\n// SeTakeOwnership: takeown/icacls on a protected file (Event 4670 DACL change)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4670"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "SeTakeOwnershipPrivilege - Own and Read a File (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*takeown.exe\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "SeTakeOwnershipPrivilege - Own and Read a File (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4670\n| table _time, Computer, Subject_Account_Name, Object_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4670"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_takeown_protected_file",
+        "logic": "proc_creation_win_takeown_protected_file",
+        "data_source": "sysmon",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_dacl_modified_4670",
+        "logic": "win_security_dacl_modified_4670",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

@@ -83,7 +83,86 @@
     ],
     "misconfiguration": "NetSessionEnum accessible to all authenticated users (default). DAs log on to regular workstations for daily tasks. No Credential Guard. No PAW model.",
     "vulnerable_config": "# RestrictRemoteSam not configured (default):\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').RestrictRemoteSam\n# Returns $null = not restricted = any auth user can enumerate sessions\n\n# DA logged onto workstation WS01:\n# NetSessionEnum returns: CORP\\DomainAdmin1 → WS01 → target for token theft",
-    "secure_config": "# Restrict NetSessionEnum:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# PAW model + Authentication Policy Silos:\nNew-ADAuthenticationPolicySilo -Name 'DomainAdmin-Silo'\n# Restrict DA logon to PAW computers only\n\n# Protected Users group:\nAdd-ADGroupMember -Identity 'Protected Users' -Members 'DomainAdmin1'\n# No NTLM, no delegatable credentials, no cached creds on logon"
+    "secure_config": "# Restrict NetSessionEnum:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# PAW model + Authentication Policy Silos:\nNew-ADAuthenticationPolicySilo -Name 'DomainAdmin-Silo'\n# Restrict DA logon to PAW computers only\n\n# Protected Users group:\nAdd-ADGroupMember -Identity 'Protected Users' -Members 'DomainAdmin1'\n# No NTLM, no delegatable credentials, no cached creds on logon",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView User Hunting (Find-DomainUserLocation) - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 445\n| summarize hosts=dcount(RemoteIP) by DeviceName, InitiatingProcessAccountName, bin(Timestamp, 5m)\n| where hosts > 20\n| sort by hosts desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1033",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView User Hunting (Find-DomainUserLocation) (1) - Splunk",
+        "logic": "index=sysmon EventCode=3 DestinationPort=445\n| stats dc(DestinationIp) as hosts by SourceHostname, User\n| where hosts>20",
+        "data_source": "sysmon",
+        "attack": [
+          "T1033",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView User Hunting (Find-DomainUserLocation) (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Find-DomainUserLocation*\" OR ScriptBlockText=\"*Invoke-UserHunter*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1033",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_userhunter",
+        "logic": "posh_ps_powerview_userhunter",
+        "data_source": "windows-security",
+        "attack": [
+          "T1033",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_session_enum_recon",
+        "logic": "net_session_enum_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1033",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

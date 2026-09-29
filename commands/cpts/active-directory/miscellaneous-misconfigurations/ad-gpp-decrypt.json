@@ -83,7 +83,57 @@
     ],
     "misconfiguration": "Group Policy Preferences (GPP) allowed administrators to push local administrator credentials to machines via XML files stored in SYSVOL (\\\\domain\\SYSVOL\\...). These files were encrypted with AES-256, but Microsoft published the static key in MSDN documentation. Any authenticated domain user can read SYSVOL, so any account configured this way has its password exposed to every domain user. MS14-025 (KB2962486, May 2014) removed the GUI option but left existing files in place.",
     "vulnerable_config": "# SYSVOL Group Policy file containing encrypted password:\n# Path: \\\\corp.local\\SYSVOL\\corp.local\\Policies\\{GUID}\\Machine\\Preferences\\Groups\\Groups.xml\n# Content:\n# <Properties action='U' userName='Administrator' cpassword='edBSHOwhZLTjt...' />\n# The cpassword value is AES-256 encrypted with the static key Microsoft published:\n# Key: 4e 99 06 e8 fc b6 6c c9 fa f4 93 10 62 0f fe e8 f4 96 e8 06 cc 05 79 90 20 9b 09 a4 33 b6 6c 1b\n# gpp-decrypt or Get-GPPPassword decrypts it instantly",
-    "secure_config": "# 1. Apply MS14-025 (KB2962486) - blocks new GPP passwords from being created\n#    (already applied if any patch from 2014+ is installed)\n\n# 2. Find and delete all existing cpassword entries in SYSVOL:\n# PowerShell - find all GPP files with cpassword:\nGet-ChildItem -Path '\\\\corp.local\\SYSVOL' -Recurse -Include '*.xml' |\n    Select-String -Pattern 'cpassword' | Select-Object Path\n# Then delete or edit those files to remove the cpassword attribute\n\n# 3. Rotate any passwords that were stored in GPP immediately\n# (assume all were read by every domain user since GPP file creation)\n\n# 4. Use LAPS instead of GPP for local admin passwords:\n# LAPS stores unique per-machine passwords in a protected AD attribute\n# Only members of a specific group can read the LAPS attribute"
+    "secure_config": "# 1. Apply MS14-025 (KB2962486) - blocks new GPP passwords from being created\n#    (already applied if any patch from 2014+ is installed)\n\n# 2. Find and delete all existing cpassword entries in SYSVOL:\n# PowerShell - find all GPP files with cpassword:\nGet-ChildItem -Path '\\\\corp.local\\SYSVOL' -Recurse -Include '*.xml' |\n    Select-String -Pattern 'cpassword' | Select-Object Path\n# Then delete or edit those files to remove the cpassword attribute\n\n# 3. Rotate any passwords that were stored in GPP immediately\n# (assume all were read by every domain user since GPP file creation)\n\n# 4. Use LAPS instead of GPP for local admin passwords:\n# LAPS stores unique per-machine passwords in a protected AD attribute\n# Only members of a specific group can read the LAPS attribute",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "gpp-decrypt - Decrypt GPP cpassword - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5145 and ShareName has \"SYSVOL\"\n| where RelativeTargetName has \"Preferences\" or RelativeTargetName endswith \".xml\"\n| project TimeGenerated, Computer, AccountName, RelativeTargetName, IpAddress\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5145"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "gpp-decrypt - Decrypt GPP cpassword - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145\n| where Share_Name=\"\\\\*\\SYSVOL\" AND (Relative_Target_Name=\"*Groups.xml*\" OR Relative_Target_Name=\"*Services.xml*\" OR Relative_Target_Name=\"*Scheduledtasks.xml*\" OR Relative_Target_Name=\"*DataSources.xml*\")\n| table _time, Account_Name, Source_Address, Relative_Target_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5145"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_gpp_password_access",
+        "logic": "win_security_gpp_password_access",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "gpp-decrypt"

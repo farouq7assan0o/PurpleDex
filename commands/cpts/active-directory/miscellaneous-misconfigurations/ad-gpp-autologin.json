@@ -75,7 +75,57 @@
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145\n| where Share_Name=\"\\\\*\\SYSVOL\" AND Relative_Target_Name=\"*Registry.xml*\"\n| table _time, Account_Name, Source_Address, Relative_Target_Name",
     "elastic_kql": "event.code:\"5145\" AND winlog.event_data.ShareName:*SYSVOL* AND winlog.event_data.RelativeTargetName:*Registry.xml*",
     "sentinel_kql": "SecurityEvent\n| where EventID == 5140 and ShareName has \"SYSVOL\"\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, IpAddress, ShareName\n| sort by TimeGenerated desc",
-    "sigma_rules": "win_security_gpp_password_access"
+    "sigma_rules": "win_security_gpp_password_access",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "CrackMapExec - Find AutoLogon Credentials (GPP) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5140 and ShareName has \"SYSVOL\"\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, IpAddress, ShareName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5140"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "CrackMapExec - Find AutoLogon Credentials (GPP) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145\n| where Share_Name=\"\\\\*\\SYSVOL\" AND Relative_Target_Name=\"*Registry.xml*\"\n| table _time, Account_Name, Source_Address, Relative_Target_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5145"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_gpp_password_access",
+        "logic": "win_security_gpp_password_access",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "crackmapexec"

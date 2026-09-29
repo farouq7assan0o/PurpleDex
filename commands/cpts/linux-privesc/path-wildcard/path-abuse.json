@@ -99,7 +99,52 @@
       "HTB M25",
       "MITRE T1574.007",
       "MITRE T1548"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Path Abuse - Hijack a Relative Binary Call - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage matches regex @\"(/home/|/tmp/)\\S*/(ls|id|cat|ps|netstat)\\b\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// a system command name executed from a user-writable directory (PATH hijack)",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574.007"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Path Abuse - Hijack a Relative Binary Call - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" type=EXECVE\n| where match(exe, \"(?i)(/home/|/tmp/).*/(ls|id|cat|ps|netstat)$\")\n| table _time, host, auid, exe",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574.007"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_path_hijack_exec",
+        "logic": "lnx_auditd_path_hijack_exec",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.007"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Hijacks a command a privileged script calls by relative name:\n  PATH=.:${PATH}           prepend the current (writable) directory to PATH so it is searched first\nThen drop a malicious executable named exactly like the command the script invokes (e.g. touch ls; make it executable). When the privileged script runs, your binary executes instead of the real one."
 }

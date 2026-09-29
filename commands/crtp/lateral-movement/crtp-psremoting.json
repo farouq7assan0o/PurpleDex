@@ -114,7 +114,81 @@
     ],
     "misconfiguration": "WinRM enabled on workstations via GPO without access restriction. No host firewall rule limiting WinRM source IPs. JEA not implemented. No monitoring of wsmprovhost.exe process creation from unexpected sessions.",
     "vulnerable_config": "# WinRM enabled on all hosts including workstations:\n# GPO: Computer Config → Windows Settings → Security Settings → Windows Remote Management\n# → WinRM Service: Allow remote server management\n# No source restriction - any authenticated user with admin rights can WinRM from anywhere\n\n# Workstation firewall allows 5985 inbound from entire corporate network:\nGet-NetFirewallRule -DisplayName '*Windows Remote Management*' | Get-NetFirewallAddressFilter",
-    "secure_config": "# Restrict WinRM source IPs via GPO firewall rule:\nNew-NetFirewallRule -DisplayName 'WinRM from PAW only' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.100.0/24 -Action Allow\nNew-NetFirewallRule -DisplayName 'Block WinRM from workstations' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.0.0/8 -Action Block\n\n# JEA endpoint - restrict what DA accounts can run remotely:\nNew-PSSessionConfigurationFile -Path 'C:\\JEA\\DomainAdminJEA.pssc' -SessionType RestrictedRemoteServer -RoleDefinitions @{'CORP\\Domain Admins' = @{RoleCapabilities = 'DomainAdminCaps'}}\nRegister-PSSessionConfiguration -Path 'C:\\JEA\\DomainAdminJEA.pssc' -Name 'DomainAdminJEA' -Force\n\n# SIEM alert:\n# EventID=4688 AND NewProcessName contains 'wsmprovhost.exe' AND\n# SubjectUserName in (DA accounts) AND Computer NOT IN (known servers) → ALERT"
+    "secure_config": "# Restrict WinRM source IPs via GPO firewall rule:\nNew-NetFirewallRule -DisplayName 'WinRM from PAW only' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.100.0/24 -Action Allow\nNew-NetFirewallRule -DisplayName 'Block WinRM from workstations' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.0.0/8 -Action Block\n\n# JEA endpoint - restrict what DA accounts can run remotely:\nNew-PSSessionConfigurationFile -Path 'C:\\JEA\\DomainAdminJEA.pssc' -SessionType RestrictedRemoteServer -RoleDefinitions @{'CORP\\Domain Admins' = @{RoleCapabilities = 'DomainAdminCaps'}}\nRegister-PSSessionConfiguration -Path 'C:\\JEA\\DomainAdminJEA.pssc' -Name 'DomainAdminJEA' -Force\n\n# SIEM alert:\n# EventID=4688 AND NewProcessName contains 'wsmprovhost.exe' AND\n# SubjectUserName in (DA accounts) AND Computer NOT IN (known servers) → ALERT",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Lateral Movement via PowerShell Remoting (WinRM) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"wsmprovhost.exe\"\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Lateral Movement via PowerShell Remoting (WinRM) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Process_Name=\"*wsmprovhost.exe\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Lateral Movement via PowerShell Remoting (WinRM) (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*wsmprovhost.exe\"\n| table _time, Computer, ParentImage, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_remote_powershell_session",
+        "logic": "win_security_remote_powershell_session",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_winrm_remote_execution",
+        "logic": "win_winrm_remote_execution",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

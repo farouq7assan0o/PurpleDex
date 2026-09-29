@@ -81,7 +81,81 @@
     ],
     "misconfiguration": "Non-administrative or service principals hold write access over group membership (GenericAll/GenericWrite/WriteProperty member), often from legacy delegation or nested group ownership.",
     "vulnerable_config": "# BloodHound: GenericAll/GenericWrite/AddMember edge to a group.\nGet-DomainObjectAcl -Identity '<target_group>' -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'GenericAll|GenericWrite|WriteProperty|Self' }",
-    "secure_config": "# Remove the excessive ACE from the group (example with dsacls):\ndsacls \"CN=<target_group>,OU=Groups,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Then monitor 4728/4732/4756 on sensitive groups and require change control for membership."
+    "secure_config": "# Remove the excessive ACE from the group (example with dsacls):\ndsacls \"CN=<target_group>,OU=Groups,DC=<domain>\" /R \"<domain>\\<over_privileged_principal>\"\n# Then monitor 4728/4732/4756 on sensitive groups and require change control for membership.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GenericAll / GenericWrite on a Group (Add Member) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4728, 4732, 4756)\n| project TimeGenerated, Actor=SubjectUserName, MemberAdded=MemberName, Group=TargetUserName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GenericAll / GenericWrite on a Group (Add Member) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4728 OR EventCode=4732 OR EventCode=4756)\n| table _time, SubjectUserName, MemberName, TargetUserName, GroupName\n| sort - _time",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4728",
+          "4732",
+          "4756"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "GenericAll / GenericWrite on a Group (Add Member) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"member\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_group_membership_change",
+        "logic": "win_security_group_membership_change",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_member_added_sensitive_group",
+        "logic": "win_security_member_added_sensitive_group",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "bloodyAD",

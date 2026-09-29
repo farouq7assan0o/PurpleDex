@@ -132,7 +132,100 @@
       "https://attack.mitre.org/techniques/T1552/004/",
       "https://posts.specterops.io/certified-pre-owned-d95910965cd2",
       "CRTP Domain Persistence"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType in (\"ScriptBlockText\",\"PowerShellCommand\")\n| where AdditionalFields has_any (\"crypto::certificates\",\"crypto::capi\",\"crypto::cng\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| union (DeviceProcessEvents | where ProcessCommandLine has \"crypto::certificates\" | project Timestamp, DeviceName, AccountName, ProcessCommandLine)\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1649",
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-CAPI2/Operational\" EventCode=70\n| table _time, ComputerName, User",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "70"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (2) - Splunk",
+        "logic": "index=sysmon EventCode=10 TargetImage=\"*lsass.exe\" OR TargetImage=\"*keyiso*\"\n| table _time, Computer, SourceImage, GrantedAccess",
+        "data_source": "sysmon",
+        "attack": [
+          "T1649",
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "10"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (3) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*crypto::certificates*\" OR ScriptBlockText=\"*crypto::capi*\" OR ScriptBlockText=\"*crypto::cng*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1649",
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_mimikatz_command_line",
+        "logic": "proc_creation_win_hktl_mimikatz_command_line",
+        "data_source": "sysmon",
+        "attack": [
+          "T1649",
+          "T1552.004"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_capi2_private_key_export",
+        "logic": "win_capi2_private_key_export",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Exports certificates AND their private keys from the Windows stores, even keys marked non-exportable:\n  crypto::capi              patch CryptoAPI in memory so CAPI-backed keys become exportable\n  crypto::cng               patch the KeyIso/CNG service so CNG keys become exportable\n  crypto::certificates /export   dump certs+keys from the current-user store (add /systemstore:...LOCAL_MACHINE for the machine store)\nYou get .pfx files; use a client-auth cert with Rubeus asktgt /certificate to PKINIT as its owner."
 }

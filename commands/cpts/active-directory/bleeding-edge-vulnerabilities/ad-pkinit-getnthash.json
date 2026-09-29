@@ -73,7 +73,72 @@
     ],
     "misconfiguration": "PKINIT (Public Key Cryptography for Initial Authentication in Kerberos) allows certificate-based Kerberos authentication. When an attacker obtains a valid certificate for a machine account (e.g., via ADCS ESC8/ESC1 or after NoPac), they can use it to request a TGT and then use S4U2Self to get a TGS as any user - including Domain Admins. The machine account's NTLM hash can also be recovered via PKINIT's AS-REP for offline cracking or PtH.",
     "vulnerable_config": "# Scenario: attacker has a cert for DC$ (obtained via PetitPotam + ADCS ESC8)\n# PKINIT is enabled by default on all AD environments with ADCS\n# impacket-gettgt using the cert:\n#   openssl pkcs12 -in dc.pfx -nocerts -out dc.key (extract key)\n#   gettgt.py -cert-pem dc.crt -key-pem dc.key corp.local/DC$\n# -> returns TGT for DC machine account\n# -> use S4U2Self for impersonation of any user",
-    "secure_config": "# Prevent ADCS misconfigs that enable cert theft (see ESC1/ESC8 cards)\n# Patch NoPac (KB5008102 + KB5008380)\n\n# Monitor PKINIT authentication:\n# Event 4768 with Certificate Info section populated (non-empty)\n# Certificates issued to machine accounts by unexpected CAs\n\n# Enable Strong Certificate Mapping (Windows Server 2022+):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\Kdc\n#   StrongCertificateBindingEnforcement = 2 (full enforcement)\n# This prevents certificate-to-account mapping abuse\n\n# CA hardening: restrict which templates allow machine account enrollment\n# Require Manager Approval on sensitive templates"
+    "secure_config": "# Prevent ADCS misconfigs that enable cert theft (see ESC1/ESC8 cards)\n# Patch NoPac (KB5008102 + KB5008380)\n\n# Monitor PKINIT authentication:\n# Event 4768 with Certificate Info section populated (non-empty)\n# Certificates issued to machine accounts by unexpected CAs\n\n# Enable Strong Certificate Mapping (Windows Server 2022+):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\Kdc\n#   StrongCertificateBindingEnforcement = 2 (full enforcement)\n# This prevents certificate-to-account mapping abuse\n\n# CA hardening: restrict which templates allow machine account enrollment\n# Require Manager Approval on sensitive templates",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "getnthash.py - Get NT Hash from PKINIT TGT - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4768, 4769)\n| summarize events=make_list(EventID), count() by IpAddress, TargetUserName, bin(TimeGenerated, 1m)\n| where events has 4768 and events has 4769\n| sort by TimeGenerated desc\n// PKINIT AS-REQ immediately followed by a U2U TGS-REQ from the same source is the indicator",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "getnthash.py - Get NT Hash from PKINIT TGT (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768\n| where Certificate_Thumbprint!=\"\" AND Ticket_Encryption_Type=\"0x12\"\n| table _time, Account_Name, Client_Address, Certificate_Thumbprint",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "getnthash.py - Get NT Hash from PKINIT TGT (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4771\n| stats count by Account_Name, Client_Address\n| where count>5",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4771"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_pkinit_authentication_certificate",
+        "logic": "win_security_pkinit_authentication_certificate",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "PKINITtools"

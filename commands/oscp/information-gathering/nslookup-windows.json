@@ -107,7 +107,50 @@
       "MITRE T1018",
       "MITRE T1016",
       "MS Docs"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DNS - Windows nslookup Queries - Sentinel",
+        "logic": "DnsEvents\n| summarize queries=count() by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50\n| sort by queries desc\n// nslookup DNS record enumeration from Windows",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1016"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DNS - Windows nslookup Queries - Splunk",
+        "logic": "index=dns sourcetype=\"stream:dns\"\n| stats count by src_ip, bin(_time, 1m)\n| where count>50",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1016"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_dns_enumeration",
+        "logic": "net_dns_enumeration",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1016"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns"
+      ]
+    }
   },
   "explain": "Resolves DNS from a Windows foothold when dig/nmap are absent:\n  nslookup <domain>   forward-resolve the name\nUse '-type=TXT' (or MX, NS, etc.) for specific records and append a server IP to query a chosen DNS server; supports reverse lookups too."
 }

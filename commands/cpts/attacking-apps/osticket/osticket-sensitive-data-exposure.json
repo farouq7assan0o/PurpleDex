@@ -122,6 +122,55 @@
       "MITRE T1078",
       "MITRE T1213",
       "CVE-2020-24881"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "osTicket - Email Harvesting & Sensitive Data Exposure - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has_any (\"/include/\", \"ost-config.php\", \".bak\", \".sql\") or csUriQuery has_any (\"/include/\", \"ost-config.php\", \".bak\", \".sql\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus\n| sort by TimeGenerated desc\n// osticket_exposure",
+        "data_source": "iis",
+        "attack": [
+          "T1078",
+          "T1213"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "osTicket - Email Harvesting & Sensitive Data Exposure - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_query=\\\"*/include/*\\\" OR uri_path=\\\"*/include/*\\\" OR uri_query=\\\"*ost-config.php*\\\" OR uri_path=\\\"*ost-config.php*\\\" OR uri_query=\\\"*.bak*\\\" OR uri_path=\\\"*.bak*\\\" OR uri_query=\\\"*.sql*\\\" OR uri_path=\\\"*.sql*\\\")\n| table _time, clientip, uri_path, uri_query, status",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078",
+          "T1213"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_osticket_exposure",
+        "logic": "web_osticket_exposure",
+        "data_source": "proxy",
+        "attack": [
+          "T1078",
+          "T1213"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

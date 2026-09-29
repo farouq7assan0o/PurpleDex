@@ -92,7 +92,52 @@
     ],
     "misconfiguration": "The target service (HTTP, SSH, RDP, SMB, FTP) accepts unlimited authentication attempts with no delay, lockout, or detection. Credentials are transmitted in a protocol that allows automated testing (HTTP Basic, form POST, SSH password auth). No MFA requirement means a valid password alone grants access.",
     "vulnerable_config": "# SSH - password auth enabled, no rate limiting:\n# /etc/ssh/sshd_config:\nPasswordAuthentication yes       # allows password-based login\nMaxAuthTries 6                   # only 6 per connection, but hydra opens new connections\nLoginGraceTime 120               # 2 minutes per attempt\n# No fail2ban, no AllowUsers whitelist",
-    "secure_config": "# SSH - disable password auth entirely, use keys only:\n# /etc/ssh/sshd_config:\nPasswordAuthentication no\nPubkeyAuthentication yes\nPermitRootLogin prohibit-password\nAllowUsers deploy ops-admin      # whitelist\n\n# fail2ban for SSH:\n# /etc/fail2ban/jail.local:\n[sshd]\nenabled = true\nmaxretry = 3\nfindtime = 300\nbantime = 3600\n\n# For HTTP forms:\n# Rate limit + CAPTCHA after 3 failures\n# Account lockout (10 attempts, 30-min unlock)\n# MFA (TOTP) as primary defense"
+    "secure_config": "# SSH - disable password auth entirely, use keys only:\n# /etc/ssh/sshd_config:\nPasswordAuthentication no\nPubkeyAuthentication yes\nPermitRootLogin prohibit-password\nAllowUsers deploy ops-admin      # whitelist\n\n# fail2ban for SSH:\n# /etc/fail2ban/jail.local:\n[sshd]\nenabled = true\nmaxretry = 3\nfindtime = 300\nbantime = 3600\n\n# For HTTP forms:\n# Rate limit + CAPTCHA after 3 failures\n# Account lockout (10 attempts, 30-min unlock)\n# MFA (TOTP) as primary defense",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Medusa - Service Brute Force - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"Failed password\" or SyslogMessage has \"authentication failure\"\n| extend SrcIP = extract(@\"from ([0-9\\.]+)\", 1, SyslogMessage)\n| summarize attempts=count() by SrcIP, bin(TimeGenerated, 1m)\n| where attempts > 10\n| sort by attempts desc",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Medusa - Service Brute Force - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"Failed password\"\n| stats count by user, src_ip, bin(_time, 1m)\n| where count>10",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auth_bruteforce_failed_password",
+        "logic": "lnx_auth_bruteforce_failed_password",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

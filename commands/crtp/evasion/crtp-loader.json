@@ -122,7 +122,95 @@
       "CRTP",
       "MITRE T1620",
       "MITRE T1562.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) - Sentinel",
+        "logic": "DeviceImageLoadEvents\n| where FileName in~ (\"clr.dll\",\"mscoree.dll\")\n| where InitiatingProcessFileName !in~ (\"powershell.exe\",\"dotnet.exe\",\"msbuild.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1620",
+          "T1562.001",
+          "T1562.006",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) (1) - Splunk",
+        "logic": "index=sysmon EventCode=7 (ImageLoaded=\"*clr.dll\" OR ImageLoaded=\"*mscoree.dll\")\n| where NOT match(Image, \"(?i)(powershell|dotnet|msbuild)\\\\.exe\")\n| table _time, Computer, Image, ImageLoaded",
+        "data_source": "sysmon",
+        "attack": [
+          "T1620",
+          "T1562.001",
+          "T1562.006",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 DestinationIp=\"127.0.0.1\" Image=\"*Loader.exe\"\n| table _time, Computer, Image, DestinationPort",
+        "data_source": "sysmon",
+        "attack": [
+          "T1620",
+          "T1562.001",
+          "T1562.006",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_hktl_assembly_load_loader",
+        "logic": "win_hktl_assembly_load_loader",
+        "data_source": "windows-security",
+        "attack": [
+          "T1620",
+          "T1562.001",
+          "T1562.006",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_clr_load_unusual_process",
+        "logic": "sysmon_clr_load_unusual_process",
+        "data_source": "sysmon",
+        "attack": [
+          "T1620",
+          "T1562.001",
+          "T1562.006",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "CRTP's core execution primitive: unhooks ETW/AMSI in the current process, then reflectively loads a .NET assembly and runs it entirely in memory:\n  Loader.exe               the in-memory loader (no child process, nothing on disk)\n  -path <tool_path_or_url> the assembly to run - a local path or an http:// URL (fileless)\n  -args <tool_arguments>   arguments passed straight to that tool (Rubeus/SafetyKatz/Certify)\nBecause the tool never lands as a file and API hooks are removed, on-host EDR sees far less. Pair with a URL + portproxy to run tools fileless on deep hosts."
 }

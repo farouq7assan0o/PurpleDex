@@ -120,7 +120,58 @@
     ],
     "misconfiguration": "Default directory read left wide open; over-privileged enterprise apps/service principals; standing Global Admins (no PIM).",
     "vulnerable_config": "# Any user can enumerate every app + its permissions:\nGet-MgApplication; (Get-MgApplication -ApplicationId <id>).RequiredResourceAccess",
-    "secure_config": "# Restrict directory read for members/guests; enforce least-privilege app permissions;\n# use Entra PIM for just-in-time admin; alert on bulk Graph directory reads."
+    "secure_config": "# Restrict directory read for members/guests; enforce least-privilege app permissions;\n# use Entra PIM for just-in-time admin; alert on bulk Graph directory reads.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Entra ID (Azure AD) Enumeration via Microsoft Graph - Sentinel",
+        "logic": "AzureActivity\n| where OperationNameValue has_any (\"list\",\"read\")\n| summarize ops=dcount(OperationNameValue), count() by Caller, CallerIpAddress, bin(TimeGenerated, 10m)\n| where count_ > 20\n| sort by count_ desc\n// Entra ID (Azure AD) directory enumeration: bulk user/group/role/app reads",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1087.004",
+          "T1069.003",
+          "T1526"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Entra ID (Azure AD) Enumeration via Microsoft Graph - Splunk",
+        "logic": "index=azure sourcetype=\"azure:activity\" (operationName=\"*list*\" OR operationName=\"*read*\")\n| stats count values(operationName) as ops by caller, callerIpAddress, bin(_time, 10m)\n| where count>20",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1087.004",
+          "T1069.003",
+          "T1526"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "azure_resource_enumeration",
+        "logic": "azure_resource_enumeration",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.004",
+          "T1069.003",
+          "T1526"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "azure-activity",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Enumerates the Entra ID (Azure AD) tenant via Microsoft Graph PowerShell:\n  Get-MgUser -All   list every user object\n  | ConvertTo-Json   full attribute detail\nAfter connecting, this plus Get-MgGroup/Get-MgServicePrincipal/Get-MgUserMemberOf maps users, groups, apps, service principals, and role/app permissions - the identity attack surface; getuserrealm confirms a tenant's auth type pre-auth."
 }

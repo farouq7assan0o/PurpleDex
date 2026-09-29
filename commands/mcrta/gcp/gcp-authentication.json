@@ -90,7 +90,51 @@
     ],
     "misconfiguration": "Downloadable service-account keys enabled and long-lived; no MFA on users; over-privileged service accounts (Owner/Editor).",
     "vulnerable_config": "# Leaked SA key with Editor/Owner -> full access:\ngcloud auth activate-service-account --key-file leaked-sa.json   # now you are the SA",
-    "secure_config": "# Org policy: constraints/iam.disableServiceAccountKeyCreation = true\n# Use Workload Identity Federation / attached SAs instead of keys; enforce 2SV;\n# least-privilege SA roles; alert on SA key usage in Cloud Audit Logs."
+    "secure_config": "# Org policy: constraints/iam.disableServiceAccountKeyCreation = true\n# Use Workload Identity Federation / attached SAs instead of keys; enforce 2SV;\n# least-privilege SA roles; alert on SA key usage in Cloud Audit Logs.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GCP Authentication (gcloud user / service-account / token) - Sentinel",
+        "logic": "GCPAuditLogs\n| where protoPayload_authenticationInfo_principalEmail != \"\"\n| summarize ips=make_set(protoPayload_requestMetadata_callerIp) by principalEmail=protoPayload_authenticationInfo_principalEmail, bin(TimeGenerated, 1h)\n| where array_length(ips) > 1\n| sort by TimeGenerated desc\n// gcloud auth from a new IP for a principal",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GCP Authentication (gcloud user / service-account / token) - Splunk",
+        "logic": "index=gcp sourcetype=\"google:gcp:audit\" protoPayload.methodName=\"*Authenticate*\" OR protoPayload.methodName=\"*tokeninfo*\"\n| stats count by protoPayload.authenticationInfo.principalEmail, protoPayload.requestMetadata.callerIp",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "gcp_authentication_new_ip",
+        "logic": "gcp_authentication_new_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Authenticates to Google Cloud as a compromised service account:\n  gcloud auth activate-service-account   log in as an SA\n  --key-file <sa_key>.json               the SA's JSON key\nEstablishes the gcloud session for all GCP operations; 'gcloud auth login' handles user OAuth, and 'gcloud auth list'/'config list' confirm the active identity and project."
 }

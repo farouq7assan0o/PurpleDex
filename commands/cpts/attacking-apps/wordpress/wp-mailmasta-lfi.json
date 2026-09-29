@@ -86,6 +86,52 @@
       "MITRE T1083",
       "OWASP A05:2021"
     ],
-    "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path."
+    "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WordPress - Mail Masta Plugin LFI - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has_any (\"/wp-content/plugins/mailmasta\", \"pl=\", \"/etc/passwd\", \"php://filter\") or csUriQuery has_any (\"/wp-content/plugins/mailmasta\", \"pl=\", \"/etc/passwd\", \"php://filter\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus\n| sort by TimeGenerated desc\n// wp_mailmasta_lfi",
+        "data_source": "iis",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "WordPress - Mail Masta Plugin LFI - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_query=\\\"*/wp-content/plugins/mailmasta*\\\" OR uri_path=\\\"*/wp-content/plugins/mailmasta*\\\" OR uri_query=\\\"*pl=*\\\" OR uri_path=\\\"*pl=*\\\" OR uri_query=\\\"*/etc/passwd*\\\" OR uri_path=\\\"*/etc/passwd*\\\" OR uri_query=\\\"*php://filter*\\\" OR uri_path=\\\"*php://filter*\\\")\n| table _time, clientip, uri_path, uri_query, status",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_wp_mailmasta_lfi",
+        "logic": "web_wp_mailmasta_lfi",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

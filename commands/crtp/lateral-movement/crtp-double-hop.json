@@ -102,7 +102,87 @@
     ],
     "misconfiguration": "Unconstrained or overly-broad constrained delegation configured on service accounts (lets the double-hop succeed trivially and is separately abusable). CredSSP enabled domain-wide. Admins authenticating interactively to workstations.",
     "vulnerable_config": "# CredSSP enabled on clients (allows plaintext credential delegation):\nGet-Item WSMan:\\localhost\\Client\\Auth\\CredSSP\n# Value True -> credentials delegated in plaintext to the remote host\n\n# Account is NOT in Protected Users, uses RC4, and has delegation -> double-hop trivially works",
-    "secure_config": "# Do not enable CredSSP unless required; if enabled, scope DelegateComputer tightly.\n# Add privileged accounts to Protected Users (blocks delegation + RC4):\nAdd-ADGroupMember -Identity 'Protected Users' -Members <admin>\n\n# Enforce tiering: deny DA interactive/remote logon to non-Tier-0:\n# GPO -> Deny log on through Remote Desktop / Deny access to this computer from the network for Tier-0 accounts on lower tiers\n\n# Alert on Logon Type 9:\n# EventID=4624 AND LogonType=9 AND LogonProcessName='seclogo' -> review"
+    "secure_config": "# Do not enable CredSSP unless required; if enabled, scope DelegateComputer tightly.\n# Add privileged accounts to Protected Users (blocks delegation + RC4):\nAdd-ADGroupMember -Identity 'Protected Users' -Members <admin>\n\n# Enforce tiering: deny DA interactive/remote logon to non-Tier-0:\n# GPO -> Deny log on through Remote Desktop / Deny access to this computer from the network for Tier-0 accounts on lower tiers\n\n# Alert on Logon Type 9:\n# EventID=4624 AND LogonType=9 AND LogonProcessName='seclogo' -> review",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "The Kerberos Double-Hop Problem & Fixes - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 9\n| project TimeGenerated, Computer, TargetUserName, LogonProcessName, ProcessName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "The Kerberos Double-Hop Problem & Fixes (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=9\n| table _time, Computer, Account_Name, Logon_Process, Process_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "The Kerberos Double-Hop Problem & Fixes (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 (CommandLine=\"*createnetonly*\" OR CommandLine=\"*Enable-WSManCredSSP*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1550.003",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_logon_type_9_newcredentials",
+        "logic": "win_security_logon_type_9_newcredentials",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_credssp_enable",
+        "logic": "posh_ps_credssp_enable",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

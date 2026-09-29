@@ -101,7 +101,54 @@
     ],
     "misconfiguration": "Default Compute Engine SA (Editor) attached with the legacy 'cloud-platform' scope on an internet-facing VM; SSRF that can set headers.",
     "vulnerable_config": "# Default SA (Editor) + broad scope + SSRF/RCE:\ncurl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token",
-    "secure_config": "# Attach a dedicated least-privilege SA with narrow scopes (not the default Editor SA).\n# Enable metadata concealment / GKE Workload Identity; block workload egress to 169.254.169.254;\n# remediate SSRF; alert on anomalous SA API usage."
+    "secure_config": "# Attach a dedicated least-privilege SA with narrow scopes (not the default Editor SA).\n# Enable metadata concealment / GKE Workload Identity; block workload egress to 169.254.169.254;\n# remediate SSRF; alert on anomalous SA API usage.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GCP Compute SA Token Theft (Metadata Server) - Sentinel",
+        "logic": "GCPAuditLogs\n| where protoPayload_authenticationInfo_principalEmail has \".gserviceaccount.com\"\n| summarize apis=make_set(methodName) by principalEmail=protoPayload_authenticationInfo_principalEmail, callerIp=protoPayload_requestMetadata_callerIp, bin(TimeGenerated, 10m)\n| sort by TimeGenerated desc\n// compute SA token used for API calls inconsistent with the workload; check app logs for metadata.google.internal hits",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GCP Compute SA Token Theft (Metadata Server) - Splunk",
+        "logic": "index=gcp_audit sourcetype=\"google:gcp:audit\" protoPayload.methodName=\"v1.compute.instances.get\"\n| where like(protoPayload.request.fields, \"%metadata%\")\n| table _time, protoPayload.authenticationInfo.principalEmail, protoPayload.resourceName",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "gcp_metadata_server_token_access",
+        "logic": "gcp_metadata_server_token_access",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Pulls a GCE VM's attached service-account token from the metadata server:\n  curl -s -H \"Metadata-Flavor: Google\"   the required metadata header\n  \"http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token\"   fetch the default SA's OAuth access token\nFrom code execution (or a header-controlling SSRF) on the VM, this returns a token to use with gcloud; Compute default SAs are often over-privileged (Editor)."
 }

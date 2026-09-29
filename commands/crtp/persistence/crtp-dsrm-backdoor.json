@@ -110,7 +110,85 @@
     ],
     "misconfiguration": "DsrmAdminLogonBehavior left at 2 from a previous admin action. DSRM password never rotated (same since DC promotion). No Sysmon rule monitoring Lsa registry key. MDI not deployed on DCs.",
     "vulnerable_config": "# DsrmAdminLogonBehavior = 2 (remote NTLM logon enabled for DSRM account):\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').DsrmAdminLogonBehavior\n# Returns 2 = DSRM account usable for remote PtH to DC = CRITICAL\n\n# DSRM hash extractable via:\n# Invoke-Mimikatz -Command 'lsadump::sam' -ComputerName DC01\n# Then PtH: Invoke-Mimikatz -Command 'sekurlsa::pth /user:Administrator /domain:DC01 /ntlm:<dsrm-hash>'",
-    "secure_config": "# Ensure DsrmAdminLogonBehavior = 0 on all DCs via GPO preferences:\n# Computer Config → Preferences → Windows Settings → Registry → New Registry Item:\n# Hive: HKEY_LOCAL_MACHINE\n# Key: SYSTEM\\CurrentControlSet\\Control\\Lsa\n# Value name: DsrmAdminLogonBehavior\n# Value type: REG_DWORD\n# Value data: 0\n\n# PowerShell (run on each DC):\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name DsrmAdminLogonBehavior -Value 0\n\n# Rotate DSRM password on all DCs:\nntdsutil 'set dsrm password' 'reset password on server DC01' quit quit\n\n# SIEM/Sysmon alert:\n# Sysmon Event 13: TargetObject contains 'DsrmAdminLogonBehavior' AND Details = 'DWORD (0x00000002)' → CRITICAL"
+    "secure_config": "# Ensure DsrmAdminLogonBehavior = 0 on all DCs via GPO preferences:\n# Computer Config → Preferences → Windows Settings → Registry → New Registry Item:\n# Hive: HKEY_LOCAL_MACHINE\n# Key: SYSTEM\\CurrentControlSet\\Control\\Lsa\n# Value name: DsrmAdminLogonBehavior\n# Value type: REG_DWORD\n# Value data: 0\n\n# PowerShell (run on each DC):\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name DsrmAdminLogonBehavior -Value 0\n\n# Rotate DSRM password on all DCs:\nntdsutil 'set dsrm password' 'reset password on server DC01' quit quit\n\n# SIEM/Sysmon alert:\n# Sysmon Event 13: TargetObject contains 'DsrmAdminLogonBehavior' AND Details = 'DWORD (0x00000002)' → CRITICAL",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DSRM Backdoor (DC Local Admin Persistence) - Sentinel",
+        "logic": "DeviceRegistryEvents\n| where RegistryKey has \"Control\\\\Lsa\" and RegistryValueName == \"DsrmAdminLogonBehavior\"\n| where RegistryValueData == \"2\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, RegistryValueData\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1098",
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DSRM Backdoor (DC Local Admin Persistence) (1) - Splunk",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\Control\\\\Lsa\\\\DsrmAdminLogonBehavior\"\n| table _time, Computer, Image, Details",
+        "data_source": "sysmon",
+        "attack": [
+          "T1098",
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "13"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "DSRM Backdoor (DC Local Admin Persistence) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM ComputerName=\"*DC*\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_registry_dsrm_admin_logon_behavior",
+        "logic": "win_registry_dsrm_admin_logon_behavior",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_dsrm_account_ntlm_logon",
+        "logic": "win_security_dsrm_account_ntlm_logon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

@@ -83,7 +83,53 @@
       "MITRE T1589",
       "OWASP A07:2021"
     ],
-    "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic."
+    "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GitLab - User Enumeration - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// gitlab application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GitLab - User Enumeration - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_path=\\\"/api/v4/users\\\" OR uri_path=\\\"/users/sign_in\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_gitlab",
+        "logic": "web_app_scanner_gitlab",
+        "data_source": "proxy",
+        "attack": [
+          "T1087"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Enumerates valid GitLab usernames to build a target list:\n  gitlab_userenum.sh   the enumeration script\n  --url http://<url>:8081/   the GitLab instance\n  --userlist <userlist>      candidate usernames\nConfirms which accounts exist via GitLab's sign-up/internal endpoints; check /users/sign_up for open registration and /help for the version."
 }

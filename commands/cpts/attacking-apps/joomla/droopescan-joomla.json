@@ -96,7 +96,53 @@
       "HTB M24",
       "MITRE T1595.002"
     ],
-    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
+    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Joomla - droopescan / joomscan Enumeration - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// droopescan application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Joomla - droopescan / joomscan Enumeration - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_path=\\\"/administrator/\\\" OR uri_path=\\\"/components/\\\" OR uri_path=\\\"/modules/\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_droopescan",
+        "logic": "web_app_scanner_droopescan",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Fingerprints a Joomla (or Drupal) site with droopescan:\n  droopescan scan joomla   run the Joomla plugin\n  --url http://<url>/       the target\nEnumerates version, components, and modules to guide exploitation; joomscan is the Joomla-specific alternative that also flags known vulnerabilities."
 }

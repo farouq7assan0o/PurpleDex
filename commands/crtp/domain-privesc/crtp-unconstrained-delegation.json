@@ -142,7 +142,88 @@
     ],
     "misconfiguration": "Computer accounts granted TrustedForDelegation=True unnecessarily (often old Exchange/SharePoint setups). Print Spooler enabled on DCs. DCs not in Protected Users (tickets forwardable).",
     "vulnerable_config": "# Find unconstrained delegation hosts:\nGet-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties TrustedForDelegation | Select-Object Name,TrustedForDelegation\n# Output includes non-DC servers → VULNERABLE\n\n# Print Spooler running on DC (enables Printer Bug coercion):\nGet-Service -ComputerName DC01 -Name Spooler | Select-Object Status\n# Running → VULNERABLE to forced auth via MS-RPRN",
-    "secure_config": "# Remove unconstrained delegation:\nGet-ADComputer -Filter {TrustedForDelegation -eq $true} | Where-Object {$_.Name -notlike '*DC*'} | ForEach-Object {\n  Set-ADAccountControl $_ -TrustedForDelegation $false\n  Set-ADComputer $_ -TrustedToAuthForDelegation $false\n  Write-Output \"Fixed: $($_.Name)\"\n}\n\n# Disable Print Spooler on all DCs:\nGet-ADDomainController -Filter * | ForEach-Object {\n  Invoke-Command -ComputerName $_.Name -ScriptBlock { Stop-Service Spooler -Force; Set-Service Spooler -StartupType Disabled }\n}\n\n# Protected Users - blocks TGT forwarding:\nGet-ADGroupMember 'Domain Admins' | ForEach-Object { Add-ADGroupMember 'Protected Users' $_ }\n\n# SIEM: alert on DC-to-non-DC SMB connection:\n# Sysmon Event 3: SourceImage=SYSTEM DestinationPort=445 SourceHost=DC* DestinationHost!=DC* → ALERT"
+    "secure_config": "# Remove unconstrained delegation:\nGet-ADComputer -Filter {TrustedForDelegation -eq $true} | Where-Object {$_.Name -notlike '*DC*'} | ForEach-Object {\n  Set-ADAccountControl $_ -TrustedForDelegation $false\n  Set-ADComputer $_ -TrustedToAuthForDelegation $false\n  Write-Output \"Fixed: $($_.Name)\"\n}\n\n# Disable Print Spooler on all DCs:\nGet-ADDomainController -Filter * | ForEach-Object {\n  Invoke-Command -ComputerName $_.Name -ScriptBlock { Stop-Service Spooler -Force; Set-Service Spooler -StartupType Disabled }\n}\n\n# Protected Users - blocks TGT forwarding:\nGet-ADGroupMember 'Domain Admins' | ForEach-Object { Add-ADGroupMember 'Protected Users' $_ }\n\n# SIEM: alert on DC-to-non-DC SMB connection:\n# Sysmon Event 3: SourceImage=SYSTEM DestinationPort=445 SourceHost=DC* DestinationHost!=DC* → ALERT",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Unconstrained Delegation Abuse (Printer Bug + Rubeus) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4769 and ServiceName endswith \"$\"\n| where TargetUserName endswith \"$\"\n| project TimeGenerated, Computer, TargetUserName, ServiceName, IpAddress\n| join kind=inner (DeviceNetworkEvents | where RemotePort == 445 | project netTime=Timestamp, DeviceName, RemoteIP) on $left.Computer == $right.DeviceName\n| sort by TimeGenerated desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1558",
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Unconstrained Delegation Abuse (Printer Bug + Rubeus) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Service_Name=\"*$\"\n| where match(Account_Name, \"(?i)DC\\\\$\") OR match(Service_Name, \"(?i)(CIFS|HOST)\")\n| table _time, Computer, Account_Name, Service_Name, Client_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558",
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Unconstrained Delegation Abuse (Printer Bug + Rubeus) (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 SourceHostname=\"*DC*\" DestinationPort=445\n| table _time, Computer, SourceIp, DestinationIp",
+        "data_source": "sysmon",
+        "attack": [
+          "T1558",
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_unconstrained_delegation_ticket_capture",
+        "logic": "win_security_unconstrained_delegation_ticket_capture",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558",
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "printnightmare/printerbug coercion",
+        "logic": "printnightmare/printerbug coercion",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558",
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Monitors a host with unconstrained delegation for inbound TGTs to capture the DC's ticket:\n  monitor                   watch LSASS for newly cached Kerberos TGTs\n  /interval:5               poll every 5 seconds\n  /nowrap                   single-line base64 ticket output\n  /targetuser:DC$           only report tickets for the DC machine account\nCoerce the DC to connect (printerbug/DFSCoerce); its TGT is cached here, so Rubeus ptt it and DCSync as the DC."
 }

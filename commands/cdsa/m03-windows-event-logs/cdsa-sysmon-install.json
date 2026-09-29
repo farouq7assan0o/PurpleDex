@@ -108,7 +108,90 @@
     ],
     "misconfiguration": "Installing Sysmon with default flags only (-i -accepteula) without a configuration XML generates high-volume unfiltered events that overwhelm SIEM storage and make analysis impractical. Not including -h md5,sha256,imphash misses hash-based detection (cannot compare against threat intel IOCs). Not enabling -n misses network connection telemetry (cannot correlate C2 connections to processes). Not forwarding to SIEM = telemetry exists only on the endpoint and is lost if host is compromised or reimaged.",
     "vulnerable_config": "# Minimal install - no config, no hash, no network:\nsysmon.exe -i -accepteula\n# Problems:\n# - No file hashes in Event ID 1 (cannot match against malware IOCs)\n# - No network connections logged (cannot find C2 beaconing)\n# - No image load logging (cannot detect DLL injection)\n# - High noise from all events with no filtering\n# - Sysmon events not forwarded to SIEM\n\n# Missing critical config sections:\n# - No NetworkConnect rules (Event ID 3 disabled)\n# - No ImageLoad rules (Event ID 7 disabled)\n# - No CreateRemoteThread rules (Event ID 8 disabled)\n# - No RawAccessRead rules (Event ID 9 disabled)",
-    "secure_config": "# Full install with hashing, image load, and network logging:\nsysmon.exe -i -accepteula -h md5,sha256,imphash -l -n\n#   -h md5,sha256,imphash  = hash all executables (MD5 for compat, SHA256 for IOC matching, ImpHash for malware family)\n#   -l                     = log all loaded images (DLL injection detection via Event ID 7)\n#   -n                     = log all network connections (Event ID 3)\n\n# Apply community config (recommended - suppresses noise, focuses on malicious patterns):\nsysmon.exe -i sysmonconfig-export.xml\n# Source: https://github.com/SwiftOnSecurity/sysmon-config\n\n# Verify installation:\nGet-Service Sysmon | Select Status  # Should show Running\nGet-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -MaxEvents 5 | Select Id,Message\n\n# Forward events via WEF subscription:\n# In GPO: Windows Settings > Security Settings > Event Log > Event Forwarding\n# Subscribe to: Microsoft-Windows-Sysmon/Operational\n\n# Alert on Sysmon service stop (SIEM rule):\n# Source: System log, Event ID 7036\n# Message contains: Sysmon service entered the stopped state"
+    "secure_config": "# Full install with hashing, image load, and network logging:\nsysmon.exe -i -accepteula -h md5,sha256,imphash -l -n\n#   -h md5,sha256,imphash  = hash all executables (MD5 for compat, SHA256 for IOC matching, ImpHash for malware family)\n#   -l                     = log all loaded images (DLL injection detection via Event ID 7)\n#   -n                     = log all network connections (Event ID 3)\n\n# Apply community config (recommended - suppresses noise, focuses on malicious patterns):\nsysmon.exe -i sysmonconfig-export.xml\n# Source: https://github.com/SwiftOnSecurity/sysmon-config\n\n# Verify installation:\nGet-Service Sysmon | Select Status  # Should show Running\nGet-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -MaxEvents 5 | Select Id,Message\n\n# Forward events via WEF subscription:\n# In GPO: Windows Settings > Security Settings > Event Log > Event Forwarding\n# Subscribe to: Microsoft-Windows-Sysmon/Operational\n\n# Alert on Sysmon service stop (SIEM rule):\n# Source: System log, Event ID 7036\n# Message contains: Sysmon service entered the stopped state",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Sysmon - Installation & Configuration - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"sysmon\" and ProcessCommandLine has_any (\"-i \",\"-c \",\"-u \")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// also alert on Sysmon Event ID 4 (service state changed) for tamper attempts",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1059",
+          "T1071",
+          "T1547"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Sysmon - Installation & Configuration (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*sysmon*.exe\" (CommandLine=\"*-i*\" OR CommandLine=\"*-c*\" OR CommandLine=\"*-u*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1059",
+          "T1071",
+          "T1547"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Sysmon - Installation & Configuration (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-Sysmon/Operational\" EventCode=4\n| table _time, Computer, State",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1059",
+          "T1071",
+          "T1547"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_sysmon_config_change",
+        "logic": "win_sysmon_config_change",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1059",
+          "T1071",
+          "T1547"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_sysmon_uninstall",
+        "logic": "proc_creation_win_sysmon_uninstall",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1059",
+          "T1071",
+          "T1547"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon"
+      ]
+    }
   },
   "explain": "Installs Sysmon to capture deep Windows telemetry:\n  -i            install the service and driver\n  -accepteula   accept the license non-interactively\n  -h md5,sha256,imphash   record these hash types for created/loaded images\n  -l            log module (image) loads\n  -n            log network connections\nStarts high-fidelity logging to the Sysmon/Operational channel; for real use install with a curated config ('-i sysmonconfig-export.xml') and update it later with '-c'."
 }

@@ -117,7 +117,69 @@
     "misconfiguration": "Over-privileged database accounts (application/service accounts running as sysdba/DBA). EXECUTE on UTL_FILE granted broadly (to PUBLIC). Permissive file access - legacy utl_file_dir set to '*', or DIRECTORY objects pointing at sensitive/writable locations (a web root, home or cron directories). The Oracle process running as a high-privileged OS account. TNS listener exposed to the network without valid-node checking.",
     "vulnerable_config": "-- UTL_FILE reachable by everyone + a wide-open directory:\nGRANT EXECUTE ON SYS.UTL_FILE TO PUBLIC;\n-- legacy parameter (init.ora):\nutl_file_dir = *\n-- or a DIRECTORY object pointing at the web root, writable by a low-priv account:\nCREATE DIRECTORY web AS '/var/www/html';\nGRANT READ, WRITE ON DIRECTORY web TO app_user;",
     "secure_config": "-- Remove broad UTL_FILE access:\nREVOKE EXECUTE ON SYS.UTL_FILE FROM PUBLIC;\n-- Drop the legacy wildcard; use scoped DIRECTORY objects instead of utl_file_dir:\nALTER SYSTEM RESET utl_file_dir SCOPE=SPFILE;\n-- Grant directory access only where required, least-privilege, never the web root:\nCREATE DIRECTORY data_load AS '/opt/oracle/import';\nGRANT READ ON DIRECTORY data_load TO app_user;   -- add WRITE only if truly needed\n-- Run Oracle as a low-privileged OS account; restrict the TNS listener (valid node checking / firewall); patch.",
-    "code_review": "Not a web-source sink - this is a DATABASE privilege/config review. RED FLAGS (Oracle):\n  GRANT EXECUTE ON UTL_FILE TO PUBLIC (or to broad app roles)\n  utl_file_dir = *   (legacy init.ora/spfile parameter)\n  CREATE DIRECTORY ... AS '<web root or writable path>' + READ/WRITE granted to non-admins\n  application accounts holding the DBA / SYSDBA role\nCHECK:  SELECT grantee,privilege FROM dba_tab_privs WHERE table_name='UTL_FILE';   SELECT * FROM dba_directories;\nSAFE:   revoke EXECUTE on UTL_FILE from PUBLIC; no utl_file_dir wildcard; scoped DIRECTORY objects; app accounts are not sysdba."
+    "code_review": "Not a web-source sink - this is a DATABASE privilege/config review. RED FLAGS (Oracle):\n  GRANT EXECUTE ON UTL_FILE TO PUBLIC (or to broad app roles)\n  utl_file_dir = *   (legacy init.ora/spfile parameter)\n  CREATE DIRECTORY ... AS '<web root or writable path>' + READ/WRITE granted to non-admins\n  application accounts holding the DBA / SYSDBA role\nCHECK:  SELECT grantee,privilege FROM dba_tab_privs WHERE table_name='UTL_FILE';   SELECT * FROM dba_directories;\nSAFE:   revoke EXECUTE on UTL_FILE from PUBLIC; no utl_file_dir wildcard; scoped DIRECTORY objects; app accounts are not sysdba.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Oracle TNS - File Upload via ODAT UTL_FILE - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 1521\n| summarize count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| sort by count_ desc\n// ODAT Oracle TNS utl_file / external-table file upload on 1521",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1105",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Oracle TNS - File Upload via ODAT UTL_FILE (1) - Splunk",
+        "logic": "index=network dest_port=1521\n| stats count by src_ip, dest_ip",
+        "data_source": "network-flow",
+        "attack": [
+          "T1105",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Oracle TNS - File Upload via ODAT UTL_FILE (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" proctitle=\"*odat*\"\n| table _time, host, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1105",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_oracle_tns_odat_abuse",
+        "logic": "net_oracle_tns_odat_abuse",
+        "data_source": "windows-security",
+        "attack": [
+          "T1105",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Writes a local file to the Oracle server's filesystem via UTL_FILE:\n  ./odat.py utlfile   the ODAT file-write module\n  -s <ip> -d <sid>    server and database SID\n  -U/-P --sysdba      credentials, connecting as SYSDBA\n  --putFile <remote_dir> <remote_filename> <file>   destination path/name and the local file\nDropping a file into the web root (e.g. C:\\inetpub\\wwwroot) gives a web-accessible file - a webshell delivery primitive; confirm with a curl GET."
 }

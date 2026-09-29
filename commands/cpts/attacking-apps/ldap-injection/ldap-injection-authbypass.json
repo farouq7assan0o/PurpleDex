@@ -88,7 +88,53 @@
       "HTB M24",
       "MITRE T1190",
       "OWASP A03:2021"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "LDAP Injection - Authentication Bypass - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has_any (\"*)(\", \"*))%00\", \"*)(uid=*\", \"%2a%29\") or csUriQuery has_any (\"*)(\", \"*))%00\", \"*)(uid=*\", \"%2a%29\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus\n| sort by TimeGenerated desc\n// ldap_injection",
+        "data_source": "iis",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "LDAP Injection - Authentication Bypass - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_query=\\\"**)(*\\\" OR uri_path=\\\"**)(*\\\" OR uri_query=\\\"**))%00*\\\" OR uri_path=\\\"**))%00*\\\" OR uri_query=\\\"**)(uid=**\\\" OR uri_path=\\\"**)(uid=**\\\" OR uri_query=\\\"*%2a%29*\\\" OR uri_path=\\\"*%2a%29*\\\")\n| table _time, clientip, uri_path, uri_query, status",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_ldap_injection",
+        "logic": "web_ldap_injection",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Bypasses an LDAP-backed login by injecting a wildcard:\n  Username: *   matches any account entry\n  Password: *   matches any password value\nIf the login builds a filter like (&(sAMAccountName=$user)(userPassword=$pass)), the * makes the filter match any entry and authentication succeeds; test * (and other LDAP metacharacters) in each field."
 }

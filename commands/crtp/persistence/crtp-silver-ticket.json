@@ -110,7 +110,70 @@
     ],
     "misconfiguration": "Service accounts have weak/old NTLM hashes (from Kerberoasting). No PAC validation enabled on services. gMSA not used. No monitoring for KDC-bypass authentication patterns.",
     "vulnerable_config": "# Service account with stale NTLM hash (Kerberoasted + cracked):\n# MSSQL running as svc_sql with password 'Sql2018!' - same hash for 5 years\n# Silver ticket for MSSQLSvc/server.corp.local forged → full DB access as DA\n\n# PAC validation disabled (default - services don't validate PAC with DC):\n# HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\ValidateKdcPacSignature = 0 (or absent)",
-    "secure_config": "# Use gMSA for all service accounts (auto-rotating passwords every 30 days):\nNew-ADServiceAccount -Name 'svc_sql' -DNSHostName 'sql.corp.local' -ManagedPasswordIntervalInDays 30\n\n# Enable PAC validation (forces DC contact for each auth - catches forged PACs):\n# HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\ValidateKdcPacSignature = 1\n# Note: performance impact - evaluate per-environment\n\n# Monitor for Kerberos auth without prior KDC exchange:\n# MDI: 'Suspected Kerberos forged ticket (silver ticket)' alert - enabled by default\n\n# Rotate compromised service account passwords immediately:\nSet-ADAccountPassword svc_sql -Reset -NewPassword (ConvertTo-SecureString (New-Guid) -AsPlainText -Force)"
+    "secure_config": "# Use gMSA for all service accounts (auto-rotating passwords every 30 days):\nNew-ADServiceAccount -Name 'svc_sql' -DNSHostName 'sql.corp.local' -ManagedPasswordIntervalInDays 30\n\n# Enable PAC validation (forces DC contact for each auth - catches forged PACs):\n# HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\ValidateKdcPacSignature = 1\n# Note: performance impact - evaluate per-environment\n\n# Monitor for Kerberos auth without prior KDC exchange:\n# MDI: 'Suspected Kerberos forged ticket (silver ticket)' alert - enabled by default\n\n# Rotate compromised service account passwords immediately:\nSet-ADAccountPassword svc_sql -Reset -NewPassword (ConvertTo-SecureString (New-Guid) -AsPlainText -Force)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Silver Ticket Attack (Rubeus) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"Kerberos\"\n| project ltime=TimeGenerated, Computer, TargetUserName, IpAddress\n| join kind=leftanti (SecurityEvent | where EventID == 4769 | project TargetUserName) on TargetUserName\n| sort by ltime desc\n// Kerberos logon on member server with no matching 4769 on the DC = silver ticket",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Silver Ticket Attack (Rubeus) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=Kerberos\n| join type=left Account_Name [search index=wineventlog EventCode=4769 | stats count by Account_Name]\n| where isnull(count)\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "4769"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_silver_ticket_no_tgs",
+        "logic": "win_security_silver_ticket_no_tgs",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_mdi_forged_ticket",
+        "logic": "win_mdi_forged_ticket",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

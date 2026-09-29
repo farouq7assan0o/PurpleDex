@@ -84,7 +84,81 @@
     ],
     "misconfiguration": "WinRM (Windows Remote Management) is enabled on servers and workstations, and domain admin credentials are used directly on remote hosts - placing their NTLM hash/TGT in LSASS on those machines. Enter-PSSession and evil-winrm both use WinRM to open remote PowerShell sessions. Privileged credentials touching non-Tier-0 machines is the core 'double hop' and credential exposure problem.",
     "vulnerable_config": "# WinRM enabled and listening on all interfaces:\nGet-WSManInstance -ResourceURI winrm/config/listener -SelectorSet @{Transport='HTTP'}\n# Address: *  (all interfaces - not restricted to management VLAN)\n\n# Domain admin used directly on workstations (credential exposure):\nEnter-PSSession -ComputerName workstation01 -Credential domain\\Administrator\n# Administrator hash/TGT now in LSASS on workstation01\n# If workstation01 is compromised, admin credentials are extracted",
-    "secure_config": "# Restrict WinRM listener to management subnet:\nNew-WSManInstance winrm/config/listener \\\n    -SelectorSet @{Transport='HTTP'; Address='10.10.1.0/24'}\n\n# Tier 0 admin accounts NEVER log into Tier 1/2 machines:\n# Privileged Access Workstations (PAW) model\n# Domain Admins only RDP/PSSession to DCs from dedicated PAW machines\n\n# Use JEA (Just Enough Administration) for delegated tasks:\n# Constrained runspaces that only allow specific commands\nNew-PSSessionConfigurationFile -Path admin.pssc -SessionType RestrictedRemoteServer\nRegister-PSSessionConfiguration -Path admin.pssc -Name 'HelpDesk'\n\n# Monitor: Event 4624 (logon type 3) for Domain Admins on non-DC machines\n# Alert on admin credentials used on workstations"
+    "secure_config": "# Restrict WinRM listener to management subnet:\nNew-WSManInstance winrm/config/listener \\\n    -SelectorSet @{Transport='HTTP'; Address='10.10.1.0/24'}\n\n# Tier 0 admin accounts NEVER log into Tier 1/2 machines:\n# Privileged Access Workstations (PAW) model\n# Domain Admins only RDP/PSSession to DCs from dedicated PAW machines\n\n# Use JEA (Just Enough Administration) for delegated tasks:\n# Constrained runspaces that only allow specific commands\nNew-PSSessionConfigurationFile -Path admin.pssc -SessionType RestrictedRemoteServer\nRegister-PSSessionConfiguration -Path admin.pssc -Name 'HelpDesk'\n\n# Monitor: Event 4624 (logon type 3) for Domain Admins on non-DC machines\n# Alert on admin credentials used on workstations",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Evil-WinRM - Shell via WinRM - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort in (5985, 5986)\n| project Timestamp, DeviceName, RemoteIP, InitiatingProcessFileName, InitiatingProcessAccountName\n| union (DeviceProcessEvents | where FileName =~ \"wsmprovhost.exe\" | project Timestamp, DeviceName, AccountName, FileName)\n| sort by Timestamp desc\n// WinRM (5985/5986) from a Linux source IP is anomalous",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Evil-WinRM - Shell via WinRM (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Process_Name=\"*wsmprovhost.exe\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Evil-WinRM - Shell via WinRM (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 (DestinationPort=5985 OR DestinationPort=5986)\n| table _time, Computer, SourceIp, DestinationIp",
+        "data_source": "sysmon",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_remote_powershell_session",
+        "logic": "win_security_remote_powershell_session",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_winrm_from_unusual_source",
+        "logic": "net_winrm_from_unusual_source",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "evil-winrm"

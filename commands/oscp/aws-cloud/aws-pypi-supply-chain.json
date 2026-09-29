@@ -120,6 +120,64 @@
     ],
     "misconfiguration": "No private PyPI mirror - direct public PyPI installation. No hash verification in requirements.txt. No network egress restriction during CI/CD install. Private package names not reserved on public PyPI (dependency confusion risk).",
     "vulnerable_config": "# No hash verification:\n# requirements.txt:\n# requests==2.28.0  (no hash = any version matching could be installed)\n# → Attacker uploads requessts==2.28.0 with malicious code\n# pip install -r requirements.txt  → installs typosquat\n\n# No private index:\n# pip.conf: [global] index-url = https://pypi.org/simple/\n# → All packages from public PyPI = dependency confusion risk",
-    "secure_config": "# Hash verification:\n# Generate: pip-compile --generate-hashes requirements.in\n# requirements.txt:\n# requests==2.28.0 \\\n#   --hash=sha256:2d5730...\n# pip install --require-hashes -r requirements.txt\n# → Only exact approved package installed\n\n# AWS CodeArtifact private mirror:\naws codeartifact create-domain --domain corp-packages\naws codeartifact create-repository --domain corp-packages --repository corp-pypi \\\n  --upstreams repositoryName=pypi-store  # proxy to PyPI\n# Configure pip to use CodeArtifact:\npip config set global.index-url \\\n  https://corp-packages-ACCOUNT.d.codeartifact.REGION.amazonaws.com/pypi/corp-pypi/simple/\n\n# Reserve internal package names on public PyPI:\n# Register internal package names as empty placeholder = prevents dependency confusion"
+    "secure_config": "# Hash verification:\n# Generate: pip-compile --generate-hashes requirements.in\n# requirements.txt:\n# requests==2.28.0 \\\n#   --hash=sha256:2d5730...\n# pip install --require-hashes -r requirements.txt\n# → Only exact approved package installed\n\n# AWS CodeArtifact private mirror:\naws codeartifact create-domain --domain corp-packages\naws codeartifact create-repository --domain corp-packages --repository corp-pypi \\\n  --upstreams repositoryName=pypi-store  # proxy to PyPI\n# Configure pip to use CodeArtifact:\npip config set global.index-url \\\n  https://corp-packages-ACCOUNT.d.codeartifact.REGION.amazonaws.com/pypi/corp-pypi/simple/\n\n# Reserve internal package names on public PyPI:\n# Register internal package names as empty placeholder = prevents dependency confusion",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS - Python Package Supply Chain Attack (Private PyPI) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"pip\" and ProcessCommandLine has \"install\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where RemoteUrl has_any (\"pypi.org\",\"pythonhosted.org\") | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=RemoteUrl)\n| sort by Timestamp desc\n// dependency-confusion / typosquat: pip install of an attacker package, then outbound C2 from python",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1195.001",
+          "T1059.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - Python Package Supply Chain Attack (Private PyPI) (1) - Splunk",
+        "logic": "index=proxy (url=\"*pypi.org*\" OR url=\"*files.pythonhosted.org*\")\n| stats count by src_ip, url",
+        "data_source": "proxy",
+        "attack": [
+          "T1195.001",
+          "T1059.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - Python Package Supply Chain Attack (Private PyPI) (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"pip*\" proctitle=\"*install*\"\n| table _time, host, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1195.001",
+          "T1059.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_pip_install_supply_chain",
+        "logic": "proc_creation_pip_install_supply_chain",
+        "data_source": "sysmon",
+        "attack": [
+          "T1195.001",
+          "T1059.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "proxy",
+        "sysmon"
+      ]
+    }
   }
 }

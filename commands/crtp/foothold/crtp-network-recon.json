@@ -75,7 +75,77 @@
     ],
     "misconfiguration": "Flat internal network - workstations can reach all hosts on all ports. No NDR/netflow analysis between VLANs. Host firewall GPO not enforced.",
     "vulnerable_config": "# No host firewall GPO applied - workstations can reach all internal hosts:\n# Computer Config → Windows Settings → Security Settings → Windows Defender Firewall\n# → Domain Profile: No inbound restrictions between workstation VLANs\n\n# No network segmentation:\n# Workstations and servers in same VLAN",
-    "secure_config": "# GPO: restrict workstation-to-workstation traffic:\nNew-NetFirewallRule -DisplayName 'Block W2W RDP' -Direction Inbound -Protocol TCP -LocalPort 3389 -RemoteAddress 10.0.0.0/8 -Action Block\nNew-NetFirewallRule -DisplayName 'Block W2W SMB' -Direction Inbound -Protocol TCP -LocalPort 445 -RemoteAddress 10.0.0.0/8 -Action Block\nNew-NetFirewallRule -DisplayName 'Block W2W WinRM' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.0.0/8 -Action Block\n\n# Network segmentation:\n# Workstation VLAN → default-deny to Server VLAN except explicitly allowed services"
+    "secure_config": "# GPO: restrict workstation-to-workstation traffic:\nNew-NetFirewallRule -DisplayName 'Block W2W RDP' -Direction Inbound -Protocol TCP -LocalPort 3389 -RemoteAddress 10.0.0.0/8 -Action Block\nNew-NetFirewallRule -DisplayName 'Block W2W SMB' -Direction Inbound -Protocol TCP -LocalPort 445 -RemoteAddress 10.0.0.0/8 -Action Block\nNew-NetFirewallRule -DisplayName 'Block W2W WinRM' -Direction Inbound -Protocol TCP -LocalPort 5985,5986 -RemoteAddress 10.0.0.0/8 -Action Block\n\n# Network segmentation:\n# Workstation VLAN → default-deny to Server VLAN except explicitly allowed services",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Network Recon (CRTP Foothold) - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort in (53,88,135,139,389,445,464,636,3268,3269)\n| summarize ports=dcount(RemotePort), dests=dcount(RemoteIP) by DeviceName, InitiatingProcessAccountName, bin(Timestamp, 5m)\n| where ports > 6 or dests > 10\n| sort by ports desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Network Recon (CRTP Foothold) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5156\n| stats dc(Dest_Port) as ports dc(Dest_Address) as dests by Source_Address\n| where ports>15 OR dests>25",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5156"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Network Recon (CRTP Foothold) (2) - Splunk",
+        "logic": "index=suricata event_type=alert alert.signature=\"*port scan*\"\n| table _time, src_ip, dest_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_port_scan_activity",
+        "logic": "net_port_scan_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "nmap_service_scan",
+        "logic": "nmap_service_scan",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Fingerprints a Domain Controller by scanning the ports AD services live on:\n  nmap -sV                 version-detect each open service\n  -sC                      run default NSE scripts\n  -p 53,88,135,139,389,445,464,636,3268,3269   DNS, Kerberos, RPC, SMB, LDAP, kpasswd, LDAPS, and Global Catalog\n  <dc_ip>                  the suspected DC\nOpen 88 (Kerberos) + 389/636 (LDAP) + 3268 (GC) confirms it is a DC and tells you which AD services to attack next."
 }

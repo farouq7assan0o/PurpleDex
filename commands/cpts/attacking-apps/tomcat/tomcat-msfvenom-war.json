@@ -95,6 +95,82 @@
       "MITRE T1505.003",
       "MITRE T1190"
     ],
-    "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity."
+    "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Tomcat - msfvenom WAR Reverse Shell - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"nginx\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\",\"nc\",\"python\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// malicious WAR deploy to Tomcat Manager - java.exe/tomcat spawning a shell",
+        "data_source": "powershell",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Tomcat - msfvenom WAR Reverse Shell (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php-cgi*\" OR ParentImage=\"*php-fpm*\" OR ParentImage=\"*java.exe\" OR ParentImage=\"*tomcat*\")\n| where match(Image, \"(?i)(cmd|powershell|bash|sh|nc|python)\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Tomcat - msfvenom WAR Reverse Shell (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined (method=POST OR status=500)\n| stats count by clientip, uri_path | where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_tomcat_war_rce",
+        "logic": "web_tomcat_war_rce",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_webserver_spawning_shell",
+        "logic": "proc_creation_webserver_spawning_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   }
 }

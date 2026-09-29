@@ -86,7 +86,56 @@
       "MITRE T1595.002",
       "OWASP A05:2021"
     ],
-    "evasion": "Randomize the uploaded payload name and delete it after the shell connects; restrict activity to a single upload+trigger to limit web-log evidence."
+    "evasion": "Randomize the uploaded payload name and delete it after the shell connects; restrict activity to a single upload+trigger to limit web-log evidence.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ColdFusion - Discovery and Admin Panel - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// coldfusion application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1595",
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "ColdFusion - Discovery and Admin Panel - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_path=\\\"/CFIDE/administrator/index.cfm\\\" OR uri_path=\\\"/cfdocs/\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595",
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_coldfusion",
+        "logic": "web_app_scanner_coldfusion",
+        "data_source": "proxy",
+        "attack": [
+          "T1595",
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Detects a ColdFusion server and locates its admin panel:\n  nmap -p- -sC -Pn <ip> --open   full scan looking for the ColdFusion port 8500\nColdFusion also uses 80/443/1935/5500; the admin console lives at /CFIDE/administrator/index.cfm and .cfm/.cfc are the app extensions - version-match it to CVEs (e.g. CVE-2010-2861 LFI) for exploitation."
 }

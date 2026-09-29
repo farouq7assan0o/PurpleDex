@@ -116,7 +116,80 @@
     ],
     "misconfiguration": "Too many accounts with DA rights - VSS access feasible for many attackers. No EDR on DCs. No alert on ntds.dit file access. VSS creation events not monitored outside backup windows.",
     "vulnerable_config": "# VSS created on DC without monitoring:\nvssadmin create shadow /for=C:\\\n# → shadow copy created → ntds.dit accessible at:\n# \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\Windows\\NTDS\\ntds.dit\n# copy 'C:\\Windows\\system32\\config\\SYSTEM' C:\\temp\\SYSTEM\n# Then offline: secretsdump -ntds ntds.dit -system SYSTEM LOCAL",
-    "secure_config": "# EDR rule: alert on ntds.dit access from non-NTDS service processes\n# Defender for Endpoint: 'NTDS.dit read by non-AD process' built-in alert\n\n# Monitor VSS events outside backup schedule:\n# SIEM: EventID=7036 AND ServiceName='Volume Shadow Copy' AND TimeOfDay NOT IN (backup_window) → ALERT\n\n# Restrict DC logon to DA accounts only:\n# Computer Config → Windows Settings → Security Settings → Local Policies → User Rights Assignment\n# → Allow log on locally: Administrators (only explicit DA, not broad group)\n\n# MDI on all DCs: detects ntds.dit extraction patterns"
+    "secure_config": "# EDR rule: alert on ntds.dit access from non-NTDS service processes\n# Defender for Endpoint: 'NTDS.dit read by non-AD process' built-in alert\n\n# Monitor VSS events outside backup schedule:\n# SIEM: EventID=7036 AND ServiceName='Volume Shadow Copy' AND TimeOfDay NOT IN (backup_window) → ALERT\n\n# Restrict DC logon to DA accounts only:\n# Computer Config → Windows Settings → Security Settings → Local Policies → User Rights Assignment\n# → Allow log on locally: Administrators (only explicit DA, not broad group)\n\n# MDI on all DCs: detects ntds.dit extraction patterns",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Domain Persistence - NTDS.dit Extraction via vshadow.exe - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName in~ (\"vshadow.exe\",\"vssadmin.exe\",\"ntdsutil.exe\") or ProcessCommandLine has \"HarddiskVolumeShadowCopy\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine\n| union (DeviceFileEvents | where FileName =~ \"ntds.dit\" or FolderPath has \"HarddiskVolumeShadowCopy\" | project Timestamp, DeviceName, FileName, FolderPath)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Domain Persistence - NTDS.dit Extraction via vshadow.exe (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*vshadow.exe\" OR Image=\"*diskshadow.exe\" OR CommandLine=\"*create shadow*\")\n| table _time, Computer, User, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Domain Persistence - NTDS.dit Extraction via vshadow.exe (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4688\n| where New_Process_Name=\"*vshadow.exe\" OR New_Process_Name=\"*diskshadow.exe\"\n| table _time, Account_Name, New_Process_Name, Process_Command_Line",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4688"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_shadow_copy_creation",
+        "logic": "proc_creation_win_shadow_copy_creation",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_diskshadow_script_mode",
+        "logic": "proc_creation_win_diskshadow_script_mode",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

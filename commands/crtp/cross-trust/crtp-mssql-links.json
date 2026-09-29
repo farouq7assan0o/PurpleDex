@@ -113,7 +113,69 @@
     ],
     "misconfiguration": "Linked servers configured with SA or sysadmin credentials. xp_cmdshell enabled. Links span domains with overprivileged accounts. No SQL audit enabled. SQL service account has domain admin rights.",
     "vulnerable_config": "-- Check linked servers and their credentials:\nSELECT name, product, provider, data_source FROM sys.servers WHERE is_linked = 1;\nSELECT s.name, l.remote_name, l.uses_self_credential\nFROM sys.servers s JOIN sys.linked_logins l ON s.server_id = l.server_id;\n-- uses_self_credential = 0 AND remote_name = 'sa' → sysadmin link = CRITICAL\n\n-- xp_cmdshell enabled:\nSELECT value_in_use FROM sys.configurations WHERE name = 'xp_cmdshell';\n-- 1 = enabled = OS command execution possible",
-    "secure_config": "-- Remove unnecessary linked servers:\nEXEC sp_dropserver 'LINKED_SERVER_NAME', 'droplogins';\n\n-- Disable xp_cmdshell:\nEXEC sp_configure 'show advanced options', 1; RECONFIGURE;\nEXEC sp_configure 'xp_cmdshell', 0; RECONFIGURE;\n\n-- Audit linked server access:\nCREATE SERVER AUDIT LinkedServerAudit TO FILE (FILEPATH = 'C:\\SQLAudit\\');\nCREATE SERVER AUDIT SPECIFICATION LinkedServerSpec\nFOR SERVER AUDIT LinkedServerAudit\nADD (LINKED_SERVER_ACCESS_GROUP);\nALTER SERVER AUDIT SPECIFICATION LinkedServerSpec WITH (STATE = ON);\nALTER SERVER AUDIT LinkedServerAudit WITH (STATE = ON);\n\n-- Use minimal-privilege account for any required links:\n-- Create read-only SQL Auth login for the link, not SA"
+    "secure_config": "-- Remove unnecessary linked servers:\nEXEC sp_dropserver 'LINKED_SERVER_NAME', 'droplogins';\n\n-- Disable xp_cmdshell:\nEXEC sp_configure 'show advanced options', 1; RECONFIGURE;\nEXEC sp_configure 'xp_cmdshell', 0; RECONFIGURE;\n\n-- Audit linked server access:\nCREATE SERVER AUDIT LinkedServerAudit TO FILE (FILEPATH = 'C:\\SQLAudit\\');\nCREATE SERVER AUDIT SPECIFICATION LinkedServerSpec\nFOR SERVER AUDIT LinkedServerAudit\nADD (LINKED_SERVER_ACCESS_GROUP);\nALTER SERVER AUDIT SPECIFICATION LinkedServerSpec WITH (STATE = ON);\nALTER SERVER AUDIT LinkedServerAudit WITH (STATE = ON);\n\n-- Use minimal-privilege account for any required links:\n-- Create read-only SQL Auth login for the link, not SA",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "MSSQL Linked Server Chain Abuse (PowerUpSQL) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"sqlservr.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine, InitiatingProcessFileName\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.002",
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "MSSQL Linked Server Chain Abuse (PowerUpSQL) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4688\n| where (Parent_Process_Name=\"sqlservr.exe\" AND (New_Process_Name=\"*cmd.exe\" OR New_Process_Name=\"*powershell.exe\"))\n| table _time, ComputerName, Account_Name, New_Process_Name, Process_Command_Line",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.002",
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4688"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "MSSQL Linked Server Chain Abuse (PowerUpSQL) (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 ParentImage=\"*sqlservr.exe\"\n| table _time, Computer, User, Image, CommandLine, ParentImage",
+        "data_source": "sysmon",
+        "attack": [
+          "T1021.002",
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_mssql_xp_cmdshell_execution",
+        "logic": "proc_creation_win_mssql_xp_cmdshell_execution",
+        "data_source": "sysmon",
+        "attack": [
+          "T1021.002",
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

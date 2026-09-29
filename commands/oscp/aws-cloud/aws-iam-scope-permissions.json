@@ -156,7 +156,55 @@
     ],
     "misconfiguration": "No alerting on iam:SimulatePrincipalPolicy. No CloudTrail enabled in all regions. IAM policies not reviewed for escalation paths (iam:PassRole, iam:CreatePolicyVersion, iam:AttachUserPolicy are common escalation primitives).",
     "vulnerable_config": "# IAM escalation path example - has PassRole + CreateFunction:\n# Attacker finds:\n# aws iam get-user-policy → allows lambda:CreateFunction + iam:PassRole\n# → Can create Lambda with admin role → PrivEsc to admin\n\n# IAM Access Analyzer not enabled:\naws accessanalyzer list-analyzers\n# → No analyzers = no proactive permission review",
-    "secure_config": "# Enable IAM Access Analyzer:\naws accessanalyzer create-analyzer --analyzer-name account-analyzer --type ACCOUNT\n# → Identifies external access and cross-account resource sharing\n\n# CloudTrail alert on SimulatePrincipalPolicy:\n# CloudWatch metric filter:\n# { $.eventName = 'SimulatePrincipalPolicy' }\n# Alarm: any occurrence → immediate SNS alert\n\n# Review escalation paths with Cloudsplaining:\n# pip install cloudsplaining\n# aws iam get-account-authorization-details > iam-full.json\n# cloudsplaining scan --input iam-full.json --output report/\n# → Identifies dangerous permission combinations"
+    "secure_config": "# Enable IAM Access Analyzer:\naws accessanalyzer create-analyzer --analyzer-name account-analyzer --type ACCOUNT\n# → Identifies external access and cross-account resource sharing\n\n# CloudTrail alert on SimulatePrincipalPolicy:\n# CloudWatch metric filter:\n# { $.eventName = 'SimulatePrincipalPolicy' }\n# Alarm: any occurrence → immediate SNS alert\n\n# Review escalation paths with Cloudsplaining:\n# pip install cloudsplaining\n# aws iam get-account-authorization-details > iam-full.json\n# cloudsplaining scan --input iam-full.json --output report/\n# → Identifies dangerous permission combinations",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS - IAM Permission Scoping with Compromised Credentials - Sentinel",
+        "logic": "AWSCloudTrail\n| where EventName in (\"SimulatePrincipalPolicy\", \"GetUserPolicy\", \"ListAttachedUserPolicies\", \"GetPolicyVersion\")\n| summarize apis=make_set(EventName), count() by SourceIpAddress, UserIdentityArn, bin(TimeGenerated, 10m)\n| where count_ > 10\n| sort by count_ desc\n// AWS IAM permission scoping",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1069.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - IAM Permission Scoping with Compromised Credentials - Splunk",
+        "logic": "index=aws sourcetype=\"aws:cloudtrail\" (eventName=\\\"SimulatePrincipalPolicy\\\" OR eventName=\\\"GetUserPolicy\\\" OR eventName=\\\"ListAttachedUserPolicies\\\" OR eventName=\\\"GetPolicyVersion\\\")\n| stats count values(eventName) as apis by sourceIPAddress, userIdentity.arn, bin(_time, 10m)\n| where count>10",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1069.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "aws_cloudtrail_enumeration",
+        "logic": "aws_cloudtrail_enumeration",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.004",
+          "T1069.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "cloud-trail",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Maps the exact permissions of a compromised AWS identity:\n  sts get-caller-identity                       find your username/role from the ARN\n  iam list-user-policies / list-attached-user-policies   inline and managed policies on the user\n  iam list-groups-for-user + list-attached-group-policies   policies inherited via groups\n  iam get-policy-version --policy-arn ... --version-id ...   read a managed policy's JSON\nAssembles the full effective policy set so you know your rights and where to escalate."
 }

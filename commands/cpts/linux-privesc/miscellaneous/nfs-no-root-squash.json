@@ -109,7 +109,63 @@
       "HTB M25",
       "MITRE T1548.001",
       "MITRE T1210"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Misc - NFS no_root_squash SUID Abuse - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"mount -t nfs\",\"showmount\",\"no_root_squash\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// SUID binary planted on an NFS share then executed with setuid(0) from the mount path",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - NFS no_root_squash SUID Abuse (1) - Splunk",
+        "logic": "index=linux sourcetype=\"nfs\" (\"mount\" OR \"showmount\")\n| table _time, host, src_ip, share",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - NFS no_root_squash SUID Abuse (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" type=SYSCALL syscall=\"execve\"\n| where match(exe, \"(?i)/mnt/.*\") AND euid=0\n| table _time, host, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_nfs_no_root_squash_suid",
+        "logic": "lnx_nfs_no_root_squash_suid",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Abuses an NFS export set to no_root_squash to run a root-owned SUID shell on the target:\n  sudo mount -t nfs <ip>:/<share> /mnt   mount the export locally as root\nWith no_root_squash, files you create as root on the mount keep uid 0 on the server. Copy a SUID /bin/bash shell into the share, chmod u+s it, then execute it on the target for a root shell. showmount -e and /etc/exports confirm the flag."
 }

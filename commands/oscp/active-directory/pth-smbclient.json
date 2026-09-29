@@ -115,7 +115,72 @@
     ],
     "misconfiguration": "Same local admin password on all workstations (no LAPS). NTLM not restricted. Credential Guard not deployed. MDI not deployed. SMB signing not required.",
     "vulnerable_config": "# Same local admin hash on all workstations (no LAPS):\n# Mimikatz dumps: Administrator:aad3b435b51404eeaad3b435b51404ee:8846f7eaee8fb117ad06bdd830b7586c\n# smbclient -U 'CORP/Administrator%' //ws02/C$ --pw-nt-hash 8846f7eaee8fb117ad06bdd830b7586c\n# → Access to ALL workstations via one hash\n\n# NTLM not restricted:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').LmCompatibilityLevel  # 3 or lower allows NTLMv1",
-    "secure_config": "# LAPS: unique local admin passwords per host:\n# Install LAPS → extend AD schema → GPO:\n# Computer Config → Admin Templates → LAPS → Password Settings: Enabled\n# Length: 25, Complexity: All characters, Age: 30 days\n\n# Disable NTLMv1:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name LmCompatibilityLevel -Value 5\n# 5 = NTLMv2 only on client; DCs refuse anything below NTLMv2\n\n# Restrict NTLM to specific servers:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network security: Restrict NTLM: Outgoing NTLM traffic to remote servers: Deny all\n\n# Protected Users (no NTLM for members):\nAdd-ADGroupMember 'Protected Users' 'DomainAdmin1'"
+    "secure_config": "# LAPS: unique local admin passwords per host:\n# Install LAPS → extend AD schema → GPO:\n# Computer Config → Admin Templates → LAPS → Password Settings: Enabled\n# Length: 25, Complexity: All characters, Age: 30 days\n\n# Disable NTLMv1:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name LmCompatibilityLevel -Value 5\n# 5 = NTLMv2 only on client; DCs refuse anything below NTLMv2\n\n# Restrict NTLM to specific servers:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network security: Restrict NTLM: Outgoing NTLM traffic to remote servers: Deny all\n\n# Protected Users (no NTLM for members):\nAdd-ADGroupMember 'Protected Users' 'DomainAdmin1'",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Pass-the-Hash with smbclient - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"NTLM\"\n| project TimeGenerated, Computer, TargetUserName, IpAddress\n| union (SecurityEvent | where EventID == 4776 | project TimeGenerated, Computer, TargetUserName=Account, IpAddress=Workstation)\n| sort by TimeGenerated desc\n// smbclient --pw-nt-hash: NTLM SMB PtH from a Linux source (4776 on DC validates the hash)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "4776"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Pass-the-Hash with smbclient (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Pass-the-Hash with smbclient (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4776\n| table _time, Computer, Logon_Account, Source_Workstation",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4776"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_pass_the_hash_ntlm",
+        "logic": "win_security_pass_the_hash_ntlm",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tags": [
     "pass-the-hash",

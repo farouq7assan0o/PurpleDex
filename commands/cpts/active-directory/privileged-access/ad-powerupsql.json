@@ -86,7 +86,69 @@
     "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-SQLInstance*\" OR ScriptBlockText=\"*Get-SQLServerInfo*\" OR ScriptBlockText=\"*PowerUpSQL*\")\n| table _time, Computer, User, ScriptBlockText\n\nindex=sysmon EventCode=3 DestinationPort=1433\n| stats dc(DestinationIp) as hosts by SourceHostname | where hosts>5",
     "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-SQLInstance* OR *PowerUpSQL*)",
     "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"Get-SQLInstance\",\"PowerUpSQL\",\"Get-SQLServerInfo\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// PowerUpSQL discovers MSSQL instances domain-wide (LDAP SPN + 1433 probes)",
-    "sigma_rules": "posh_ps_powerupsql_discovery (MSSQL instance enumeration)"
+    "sigma_rules": "posh_ps_powerupsql_discovery (MSSQL instance enumeration)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerUpSQL - Enumerate MSSQL Instances - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"Get-SQLInstance\",\"PowerUpSQL\",\"Get-SQLServerInfo\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// PowerUpSQL discovers MSSQL instances domain-wide (LDAP SPN + 1433 probes)",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerUpSQL - Enumerate MSSQL Instances (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-SQLInstance*\" OR ScriptBlockText=\"*Get-SQLServerInfo*\" OR ScriptBlockText=\"*PowerUpSQL*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerUpSQL - Enumerate MSSQL Instances (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 DestinationPort=1433\n| stats dc(DestinationIp) as hosts by SourceHostname | where hosts>5",
+        "data_source": "sysmon",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerupsql_discovery",
+        "logic": "posh_ps_powerupsql_discovery",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "PowerUpSQL"

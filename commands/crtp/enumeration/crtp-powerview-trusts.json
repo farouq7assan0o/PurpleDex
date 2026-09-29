@@ -93,7 +93,66 @@
     ],
     "misconfiguration": "Forest trust with SID filtering disabled - allows SID History injection across forest boundary. Bidirectional trust where unidirectional was intended. External trust without quarantine.",
     "vulnerable_config": "# Check SID filtering on forest trust:\nGet-ADTrust -Filter * | Select Name,TrustType,TrustDirection,SIDFilteringForestAware\n# SIDFilteringForestAware = False → SID filtering DISABLED → VULNERABLE\n\n# With SID filtering off, attacker can forge ticket with parent DA SID:\n# krbtgt hash + SID history injection = cross-forest DA",
-    "secure_config": "# Enable SID filtering on forest trust:\nnetdom trust ChildDomain.corp.local /domain:corp.local /enablesidhistory:no /filtersids:yes\n\n# Verify:\n(Get-ADTrust -Filter {Target -eq 'ChildDomain.corp.local'}).SIDFilteringForestAware  # Should be True\n\n# Quarantine external trusts:\nnetdom trust ExternalDomain /domain:corp.local /quarantine:yes\n\n# Audit quarterly:\nGet-ADTrust -Filter * | Format-Table Name,TrustType,TrustDirection,SIDFilteringForestAware -AutoSize"
+    "secure_config": "# Enable SID filtering on forest trust:\nnetdom trust ChildDomain.corp.local /domain:corp.local /enablesidhistory:no /filtersids:yes\n\n# Verify:\n(Get-ADTrust -Filter {Target -eq 'ChildDomain.corp.local'}).SIDFilteringForestAware  # Should be True\n\n# Quarantine external trusts:\nnetdom trust ExternalDomain /domain:corp.local /quarantine:yes\n\n# Audit quarterly:\nGet-ADTrust -Filter * | Format-Table Name,TrustType,TrustDirection,SIDFilteringForestAware -AutoSize",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView Trust Enumeration - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainTrust\",\"Get-ForestTrust\",\"Get-NetForestTrust\",\"nltest /domain_trusts\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Trust Enumeration - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-DomainTrust*\" OR ScriptBlockText=\"*Get-ForestTrust*\" OR ScriptBlockText=\"*Get-NetForestTrust*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_trust_enum",
+        "logic": "posh_ps_powerview_trust_enum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

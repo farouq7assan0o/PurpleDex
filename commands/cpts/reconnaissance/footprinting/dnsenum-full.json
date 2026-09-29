@@ -117,7 +117,50 @@
       "HTB M04",
       "OSCP Ch06",
       "MITRE T1018"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DNSenum - Full DNS Enumeration - Sentinel",
+        "logic": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// dnsenum full enumeration (AXFR attempt + subdomain brute)",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DNSenum - Full DNS Enumeration - Splunk",
+        "logic": "index=dns sourcetype=\"stream:dns\"\n| stats count count(eval(reply_code=\\\"NXDOMAIN\\\")) as nx by src_ip, bin(_time, 1m)\n| where count>50 OR nx>30",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_dns_enumeration",
+        "logic": "net_dns_enumeration",
+        "data_source": "dns",
+        "attack": [
+          "T1018",
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns"
+      ]
+    }
   },
   "explain": "Runs full automated DNS enumeration in one command:\n  dnsenum --dnsserver <nameserver>   query this NS\n  --enum -p 0 -s 0                   preset without whois page/scrape steps\n  -o <outfile> -f <wordlist>         save output; brute-force subdomains from the wordlist\n  <domain>                           target\nDiscovers NS/MX/SOA records, attempts AXFR against every nameserver, and brute-forces subdomains together - a one-shot DNS map."
 }

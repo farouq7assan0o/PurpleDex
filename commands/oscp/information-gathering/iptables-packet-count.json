@@ -102,7 +102,52 @@
     "prevention": "N/A - this is a local attacker-side technique. Defenders cannot prevent an operator from measuring their own scan traffic.",
     "sources": [
       "PEN-200 Ch 6"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "iptables - Packet Counter for Scan Verification - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"iptables\" and SyslogMessage has_any (\"-L\",\"-nvL\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// reading iptables packet/byte counters for firewall-rule reconnaissance",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "iptables - Packet Counter for Scan Verification - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"iptables\" proctitle=\"*-L*-v*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_iptables_enumeration",
+        "logic": "lnx_auditd_iptables_enumeration",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Measures exactly how many packets an nmap scan sends and receives:\n  iptables -I INPUT 1 -s <ip> -j ACCEPT   count inbound packets from the target (rule at position 1)\n  (plus an OUTPUT rule for outbound)\n  iptables -Z                              zero the counters before the scan\nRun the scan, then read the counter columns - lets you compare the noise/footprint of different scan types (-sS vs -sT, timing templates) precisely."
 }

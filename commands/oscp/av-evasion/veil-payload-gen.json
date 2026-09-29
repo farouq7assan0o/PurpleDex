@@ -87,6 +87,53 @@
     ],
     "misconfiguration": "Signature-only AV without behavioral detection. AMSI not enabled. Application control not deployed. No network C2 traffic detection.",
     "vulnerable_config": "# Signature-only AV (Windows Defender without EDR):\nGet-MpComputerStatus | Select-Object AMRunningMode\n# AMRunningMode: Normal = signature only, no EDR component\n\n# No application control:\n# Any unsigned executable runs without restriction",
-    "secure_config": "# Application control via WDAC:\n# Start with audit mode policy, monitor unsigned binaries for 30 days\n# Then enforce: only signed/allowed binaries execute\nNew-CIPolicy -Level Publisher -FilePath C:\\Policy\\BasePolicy.xml -UserPEs\nConvertFrom-CIPolicy C:\\Policy\\BasePolicy.xml C:\\Windows\\System32\\CodeIntegrity\\SIPolicy.p7b\n\n# EDR behavioral detection:\n# Defender for Endpoint P2 includes: process injection detection, memory scanning\n# CrowdStrike Falcon: detects shellcode injection patterns regardless of obfuscation"
+    "secure_config": "# Application control via WDAC:\n# Start with audit mode policy, monitor unsigned binaries for 30 days\n# Then enforce: only signed/allowed binaries execute\nNew-CIPolicy -Level Publisher -FilePath C:\\Policy\\BasePolicy.xml -UserPEs\nConvertFrom-CIPolicy C:\\Policy\\BasePolicy.xml C:\\Windows\\System32\\CodeIntegrity\\SIPolicy.p7b\n\n# EDR behavioral detection:\n# Defender for Endpoint P2 includes: process injection detection, memory scanning\n# CrowdStrike Falcon: detects shellcode injection patterns regardless of obfuscation",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Veil - On-Disk AV Evasion Payload - Sentinel",
+        "logic": "// Veil generates an obfuscated payload on the attacker host; detect the artifact + C2 on the victim\n// No victim-side logs; detect the resulting exploit/payload when it is used against a target.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1027",
+          "T1588.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Veil - On-Disk AV Evasion Payload - Splunk",
+        "logic": "# Veil generates an obfuscated payload on the attacker host; detect the artifact + C2 on the victim\n# This runs on the attacker/tester host and generates no victim-side telemetry.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1027",
+          "T1588.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side rule",
+        "logic": "no target-side rule",
+        "data_source": "windows-security",
+        "attack": [
+          "T1027",
+          "T1588.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

@@ -92,7 +92,82 @@
       "MITRE T1505.003",
       "OWASP A04:2021"
     ],
-    "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic."
+    "evasion": "Rename/obfuscate the uploaded webshell and delete it after use; prefer the app's built-in functionality (PHP filter / module) over dropping files; pace requests to blend with normal traffic.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Drupal - PHP Filter Module Webshell - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"tomcat\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"sh\",\"bash\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| union (DeviceFileEvents | where FileName endswith_any (\".php\",\".aspx\",\".jsp\") and FolderPath has_any (\"upload\",\"wwwroot\",\"webroot\",\"htdocs\") | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, InitiatingProcessFileName, ProcessCommandLine=FolderPath)\n| sort by Timestamp desc\n// Drupal PHP-filter webshell - apache/php spawning a shell",
+        "data_source": "powershell",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Drupal - PHP Filter Module Webshell (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php*\" OR ParentImage=\"*tomcat*\" OR ParentImage=\"*java.exe\") (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\" OR Image=\"*sh\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Drupal - PHP Filter Module Webshell (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 (TargetFilename=\"*.php\" OR TargetFilename=\"*.aspx\" OR TargetFilename=\"*.jsp\") (TargetFilename=\"*upload*\" OR TargetFilename=\"*webroot*\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "web_shell_execution",
+        "logic": "web_shell_execution",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_web_shell_written",
+        "logic": "file_event_web_shell_written",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Gains RCE on Drupal by posting PHP through the PHP Filter module:\n  <?php system($_GET['<rand>']); ?>   a node body that executes the 'rand' query parameter as a shell command\nCreate a node with PHP input format enabled, then hit it with ?<rand>=id (or a reverse-shell one-liner); on newer Drupal you must install the PHP module first since it is no longer bundled."
 }

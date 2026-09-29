@@ -82,7 +82,79 @@
     ],
     "misconfiguration": "LLMNR enabled (default on all Windows). NBT-NS enabled. SMB signing not required on workstations (default). No IDS rule for unexpected LLMNR responses.",
     "vulnerable_config": "# LLMNR enabled (Windows default):\n# GPO: Computer Config → Admin Templates → Network → DNS Client\n# → Turn off multicast name resolution: NOT CONFIGURED\n\n# SMB signing not required on workstations:\nGet-SmbServerConfiguration | Select-Object RequireSecuritySignature  # False = relay possible\n\n# NBT-NS enabled (default Windows NIC binding)",
-    "secure_config": "# Disable LLMNR via GPO:\n# Computer Config → Admin Templates → Network → DNS Client\n# → Turn off multicast name resolution: Enabled\n\n# Disable NBT-NS:\n$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True'\nforeach ($a in $adapters) { $a.SetTcpipNetbios(2) }  # 2 = Disable\n\n# Require SMB signing everywhere:\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\n\n# GPO equivalent:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Microsoft network client: Digitally sign communications (always): Enabled\n# → Microsoft network server: Digitally sign communications (always): Enabled"
+    "secure_config": "# Disable LLMNR via GPO:\n# Computer Config → Admin Templates → Network → DNS Client\n# → Turn off multicast name resolution: Enabled\n\n# Disable NBT-NS:\n$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True'\nforeach ($a in $adapters) { $a.SetTcpipNetbios(2) }  # 2 = Disable\n\n# Require SMB signing everywhere:\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\n\n# GPO equivalent:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Microsoft network client: Digitally sign communications (always): Enabled\n# → Microsoft network server: Digitally sign communications (always): Enabled",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "LLMNR/NBT-NS Poisoning (Responder) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"NTLM\"\n| summarize accounts=make_set(TargetUserName), count() by IpAddress, bin(TimeGenerated, 10m)\n| where count_ > 3\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "LLMNR/NBT-NS Poisoning (Responder) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM\n| where Source_Network_Address=\"<attacker_ip>\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "LLMNR/NBT-NS Poisoning (Responder) (2) - Splunk",
+        "logic": "index=suricata event_type=alert (alert.signature=\"*LLMNR*\" OR alert.signature=\"*NBNS*\")\n| table _time, src_ip, dest_ip, alert.signature",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_llmnr_nbns_poisoning_responder",
+        "logic": "net_llmnr_nbns_poisoning_responder",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ntlm_relay_logon",
+        "logic": "win_security_ntlm_relay_logon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Poisons broadcast name resolution to capture NetNTLMv2 hashes - no credentials required:\n  sudo responder           answer LLMNR/NBT-NS/MDNS name-resolution broadcasts as if you own the requested name\n  -I <interface>           the network interface to listen and respond on\n  -d                       also answer NetBIOS domain suffix queries\n  -w                       start the built-in WPAD rogue proxy\n  -v                       verbose (show captured hashes)\nWhen a host mistypes a name, it authenticates to you; crack the captured NetNTLMv2 offline (hashcat -m 5600) or relay it."
 }

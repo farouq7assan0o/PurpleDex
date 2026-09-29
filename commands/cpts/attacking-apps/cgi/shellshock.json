@@ -96,6 +96,55 @@
       "MITRE T1190",
       "MITRE T1059",
       "OWASP A06:2021"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Shellshock - CGI RCE (CVE-2014-6271) - Sentinel",
+        "logic": "W3CIISLog\n| where csUserAgent has \"() {\" or csUriQuery has \"() {\" or csReferer has \"() {\"\n| project TimeGenerated, cIP, csUriStem, csUserAgent\n| sort by TimeGenerated desc\n// Shellshock: '() { :; };' in a CGI header/UA (CVE-2014-6271)",
+        "data_source": "iis",
+        "attack": [
+          "T1190",
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Shellshock - CGI RCE (CVE-2014-6271) - Splunk",
+        "logic": "index=web sourcetype=access_combined (http_user_agent=\"*() {*\" OR uri_query=\"*() {*\" OR referer=\"*() {*\")\n| table _time, clientip, uri_path, http_user_agent",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_shellshock_cve_2014_6271",
+        "logic": "web_shellshock_cve_2014_6271",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1059.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

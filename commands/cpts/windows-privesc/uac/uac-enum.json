@@ -92,7 +92,51 @@
       "MITRE T1548.002",
       "MITRE T1082"
     ],
-    "evasion": "Use a fileless UAC bypass (fodhelper/registry) that self-cleans; remove the added registry keys after elevation."
+    "evasion": "Use a fileless UAC bypass (fodhelper/registry) that self-cleans; remove the added registry keys after elevation.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "UAC - Enumerate Configuration - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"reg.exe\" and ProcessCommandLine has \"EnableLUA\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "UAC - Enumerate Configuration - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*reg.exe\" CommandLine=\"*Policies\\\\System*EnableLUA*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_reg_query_uac_config",
+        "logic": "proc_creation_win_reg_query_uac_config",
+        "data_source": "sysmon",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Confirms UAC state and level before choosing a bypass:\n  REG QUERY HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ /v EnableLUA   read whether UAC is on\nEnableLUA=1 means UAC is active; ConsentPromptBehaviorAdmin sets prompt strictness. The OS build number then determines which UAC bypass technique will work."
 }

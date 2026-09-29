@@ -80,7 +80,53 @@
       "MITRE T1110",
       "OWASP A07:2021"
     ],
-    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
+    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Joomla - Admin Brute Force - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem =~ \"/administrator/index.php\"\n| summarize attempts=count(), fails=countif(scStatus in (401,403)) by cIP, bin(TimeGenerated, 1m)\n| where attempts > 20\n| sort by attempts desc\n// Joomla admin login brute force",
+        "data_source": "iis",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Joomla - Admin Brute Force - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"/administrator/index.php\" status=401 OR status=403 OR (method=POST status=200)\n| stats count by clientip, bin(_time, 1m)\n| where count>20",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_login_bruteforce",
+        "logic": "web_login_bruteforce",
+        "data_source": "proxy",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Brute-forces the Joomla administrator login:\n  python3 joomla-brute.py  the brute tool\n  -u http://<url>          the Joomla site\n  -w <wordlist>            the password list\n  -usr <user>              the admin username to attack\nRecovered admin access allows code execution via the template editor."
 }

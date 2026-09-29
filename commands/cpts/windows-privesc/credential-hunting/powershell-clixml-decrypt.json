@@ -85,7 +85,55 @@
       "MITRE T1552.001",
       "MITRE T1555"
     ],
-    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
+    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Credential Hunting - Decrypt Export-Clixml Secrets - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Import-Clixml\" and ProcessCommandLine has \"GetNetworkCredential\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - Decrypt Export-Clixml Secrets - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Import-Clixml*\" AND ScriptBlockText=\"*GetNetworkCredential*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_import_clixml_credential_decrypt",
+        "logic": "posh_ps_import_clixml_credential_decrypt",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

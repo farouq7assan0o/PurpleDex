@@ -125,7 +125,55 @@
     ],
     "misconfiguration": "Terraform state S3 bucket accessible to all developers (not just CI/CD role). State bucket does not require encryption. No S3 access logging on state bucket. Terraform resources with plaintext sensitive values.",
     "vulnerable_config": "# State bucket accessible to all developers:\naws s3api get-bucket-policy --bucket tf-state-bucket\n# → Principal: arn:aws:iam::ACCOUNT:role/developer (has GetObject)\n# → State file readable by all developer roles\n\n# Sensitive data in state:\naws s3 cp s3://tf-state-bucket/prod/terraform.tfstate - | \\\n  python3 -c 'import sys,json; s=json.load(sys.stdin); \\\n  [print(r[\"type\"],r.get(\"primary\",{}).get(\"attributes\",{})) for r in s.get(\"resources\",[])]'\n# → db_password: SuperSecret123 in plaintext",
-    "secure_config": "# Restrict state bucket to CI/CD role only:\n# S3 bucket policy:\n# {\n#   'Effect': 'Allow',\n#   'Principal': {'AWS': 'arn:aws:iam::ACCOUNT:role/TerraformExecution'},\n#   'Action': ['s3:GetObject', 's3:PutObject'],\n#   'Resource': 'arn:aws:s3:::tf-state-bucket/*'\n# }\n# Default: deny everyone else\n\n# Enable state encryption:\n# terraform backend config:\n# backend \"s3\" {\n#   bucket         = \"tf-state-bucket\"\n#   key            = \"prod/terraform.tfstate\"\n#   region         = \"us-east-1\"\n#   encrypt        = true\n#   kms_key_id     = \"arn:aws:kms:us-east-1:ACCOUNT:key/KEY_ID\"\n# }\n\n# Use Secrets Manager - don't embed in Terraform:\n# data \"aws_secretsmanager_secret_version\" \"db_pass\" {\n#   secret_id = \"prod/rds/password\"\n# }"
+    "secure_config": "# Restrict state bucket to CI/CD role only:\n# S3 bucket policy:\n# {\n#   'Effect': 'Allow',\n#   'Principal': {'AWS': 'arn:aws:iam::ACCOUNT:role/TerraformExecution'},\n#   'Action': ['s3:GetObject', 's3:PutObject'],\n#   'Resource': 'arn:aws:s3:::tf-state-bucket/*'\n# }\n# Default: deny everyone else\n\n# Enable state encryption:\n# terraform backend config:\n# backend \"s3\" {\n#   bucket         = \"tf-state-bucket\"\n#   key            = \"prod/terraform.tfstate\"\n#   region         = \"us-east-1\"\n#   encrypt        = true\n#   kms_key_id     = \"arn:aws:kms:us-east-1:ACCOUNT:key/KEY_ID\"\n# }\n\n# Use Secrets Manager - don't embed in Terraform:\n# data \"aws_secretsmanager_secret_version\" \"db_pass\" {\n#   secret_id = \"prod/rds/password\"\n# }",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS - Terraform State File Credential Extraction - Sentinel",
+        "logic": "AWSCloudTrail\n| where EventName == \"GetObject\"\n| where RequestParameters has \".tfstate\"\n| project TimeGenerated, SourceIpAddress, UserIdentityArn, RequestParameters\n| sort by TimeGenerated desc",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1552.001",
+          "T1213.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - Terraform State File Credential Extraction - Splunk",
+        "logic": "index=aws_cloudtrail sourcetype=\"aws:cloudtrail\" eventName=\"GetObject\"\n| where like(requestParameters.key, \"*terraform.tfstate*\") OR like(requestParameters.key, \"*.tfstate*\")\n| table _time, sourceIPAddress, userIdentity.arn, requestParameters.bucketName, requestParameters.key",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1552.001",
+          "T1213.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "aws_s3_terraform_state_access",
+        "logic": "aws_s3_terraform_state_access",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.001",
+          "T1213.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "cloud-trail",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Finds and loots Terraform state files in S3, which store provisioned resources in cleartext:\n  s3api list-buckets --query 'Buckets[?contains(Name, `tf-state`) || contains(Name, `terraform`)].Name'   find state buckets by name\n  s3 cp s3://<tf-state-bucket>/terraform.tfstate ./   download the state file\n  python3 -c \"... if 'AKIA' in r or len(r)==40\"   grep the JSON for AWS access key IDs (AKIA...) and 40-char secret keys\n.tfstate routinely contains plaintext IAM keys, DB passwords, and other secrets."
 }

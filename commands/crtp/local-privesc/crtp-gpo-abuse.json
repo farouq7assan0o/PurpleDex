@@ -88,7 +88,82 @@
     ],
     "misconfiguration": "Non-admin groups have write permissions on GPOs (often from legacy delegation or mis-scoped admin roles). No Event 5136 monitoring on GPO objects. GPO DACLs not regularly audited.",
     "vulnerable_config": "# Find GPOs with non-admin write permissions:\nGet-NetGPO | ForEach-Object {\n  $gpo = $_\n  Get-ObjectAcl $gpo.AdsPath -ResolveGUIDs | Where-Object {\n    $_.ActiveDirectoryRights -match 'Write|Create|GenericAll' -and\n    $_.IdentityReference -notmatch 'Domain Admins|CREATOR OWNER|SYSTEM|Enterprise Admins'\n  } | Select-Object @{N='GPO';E={$gpo.DisplayName}},IdentityReference,ActiveDirectoryRights\n}\n# Output: 'IT_Computers_GPO' - CORP\\HelpDesk - WriteProperty → VULNERABLE",
-    "secure_config": "# Remove non-admin write ACEs from GPOs:\n# GPMC → right-click GPO → Edit Delegations → remove non-admin edit rights\n\n# Audit GPO DACLs with BloodHound:\n# Cypher: MATCH (g:GPO) WHERE g.owned=true RETURN g.name\n# Or: 'Find GPOs where Domain Users have Modify Rights' built-in query\n\n# Enable Event 5136 on GPO objects:\n# Advanced Audit: DS Access → Audit Directory Service Changes\n# SIEM: EventID=5136 AND ObjectDN contains 'CN=Policies,CN=System' → ALERT\n\n# Change control: require ITSM ticket for GPO modifications\n# Only GPO admins (dedicated group) have write rights - review quarterly"
+    "secure_config": "# Remove non-admin write ACEs from GPOs:\n# GPMC → right-click GPO → Edit Delegations → remove non-admin edit rights\n\n# Audit GPO DACLs with BloodHound:\n# Cypher: MATCH (g:GPO) WHERE g.owned=true RETURN g.name\n# Or: 'Find GPOs where Domain Users have Modify Rights' built-in query\n\n# Enable Event 5136 on GPO objects:\n# Advanced Audit: DS Access → Audit Directory Service Changes\n# SIEM: EventID=5136 AND ObjectDN contains 'CN=Policies,CN=System' → ALERT\n\n# Change control: require ITSM ticket for GPO modifications\n# Only GPO admins (dedicated group) have write rights - review quarterly",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GPO Misconfiguration Abuse (SharpGPOAbuse) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5136 and ObjectClass == \"groupPolicyContainer\"\n| project TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeLDAPDisplayName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "GPO Misconfiguration Abuse (SharpGPOAbuse) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 Object_Class=groupPolicyContainer\n| table _time, Computer, Subject_Account_Name, Object_DN",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "GPO Misconfiguration Abuse (SharpGPOAbuse) (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*\\\\SYSVOL\\\\*\\\\GptTmpl.inf\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_gpo_object_modification",
+        "logic": "win_security_gpo_object_modification",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_win_sysvol_gptmpl_write",
+        "logic": "file_event_win_sysvol_gptmpl_write",
+        "data_source": "sysmon",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

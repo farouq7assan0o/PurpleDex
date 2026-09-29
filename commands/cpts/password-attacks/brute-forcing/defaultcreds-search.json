@@ -82,7 +82,52 @@
     "splunk_spl": "index=* \"creds\"\n| table _time, host, user, _raw\n// creds-search queries a local default-credentials database; detection is only in the subsequent login attempt against the target",
     "elastic_kql": "process.name:creds*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"creds\" or ProcessCommandLine has \"creds\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// creds-search queries a local default-credentials database; detection is only in the subsequent login attempt against the target",
-    "sigma_rules": "no target-side telemetry (creds runs on the attacker host)"
+    "sigma_rules": "no target-side telemetry (creds runs on the attacker host)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DefaultCreds - Search Default Credentials - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"creds\" or ProcessCommandLine has \"creds\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// creds-search queries a local default-credentials database; detection is only in the subsequent login attempt against the target",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1078.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DefaultCreds - Search Default Credentials - Splunk",
+        "logic": "index=* \"creds\"\n| table _time, host, user, _raw\n// creds-search queries a local default-credentials database; detection is only in the subsequent login attempt against the target",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "explain": "Looks up factory default credentials for a product:\n  creds search <product>   query the DefaultCreds-cheat-sheet database for that vendor/product's default user:pass pairs\nAlways try defaults against appliances, routers, databases, and web apps before brute forcing - they are often unchanged."

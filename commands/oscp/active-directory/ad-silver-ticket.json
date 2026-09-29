@@ -107,7 +107,70 @@
     ],
     "misconfiguration": "Service accounts with stale NTLM hashes (Kerberoastable). PAC validation disabled. gMSA not used. No monitoring for Kerberos auth without prior DC exchange.",
     "vulnerable_config": "# Stale service account hash (Kerberoasted and cracked):\n# svc_mssql password 'Sql@2019' - unchanged since 2019\n# Silver ticket forged for MSSQLSvc/sql01.corp.local\n# → Full DB access as 'Administrator' with no DC events\n\n# PAC validation off (default):\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').ValidateKdcPacSignature  # null = off",
-    "secure_config": "# gMSA for all service accounts:\nNew-ADServiceAccount -Name svc_mssql -DNSHostName sql.corp.local -ManagedPasswordIntervalInDays 30\n\n# Enable PAC validation:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name ValidateKdcPacSignature -Value 1\n\n# MDI: silver ticket detection enabled by default"
+    "secure_config": "# gMSA for all service accounts:\nNew-ADServiceAccount -Name svc_mssql -DNSHostName sql.corp.local -ManagedPasswordIntervalInDays 30\n\n# Enable PAC validation:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name ValidateKdcPacSignature -Value 1\n\n# MDI: silver ticket detection enabled by default",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Silver Ticket - Forge Service Ticket (mimikatz) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"Kerberos\"\n| project ltime=TimeGenerated, Computer, TargetUserName, IpAddress\n| join kind=leftanti (SecurityEvent | where EventID == 4769 | project TargetUserName) on TargetUserName\n| sort by ltime desc\n// Kerberos logon on a service host with no matching 4769 on the DC = silver ticket",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Silver Ticket - Forge Service Ticket (mimikatz) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=Kerberos\n| join type=left Account_Name [search index=wineventlog EventCode=4769 | stats count by Account_Name]\n| where isnull(count)\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "4769"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_silver_ticket_no_tgs",
+        "logic": "win_security_silver_ticket_no_tgs",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_mdi_forged_ticket",
+        "logic": "win_mdi_forged_ticket",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Forges a Silver Ticket - a TGS for one service, signed with the service account's hash, never contacting the KDC:\n  kerberos::golden         (Mimikatz forges the ticket offline; /target+/service make it a silver TGS)\n  /sid:<domain_sid> /domain:<domain>   the domain and its SID\n  /target:<svc_host>.<domain> /service:<svc_name>   the specific host and service (e.g. cifs)\n  /rc4:<svc_account_nt_hash>   the service/machine account hash that signs it\n  /user:<fake_user> /ptt   the impersonated user, injected\nBecause no AS/TGS request hits a DC, there is no 4768/4769 to detect; access is limited to that one service."
 }

@@ -101,7 +101,66 @@
       "MITRE T1505.001",
       "MITRE T1078"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "MSSQL - Connect and Enable xp_cmdshell - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"sqlservr.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "MSSQL - Connect and Enable xp_cmdshell (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 ParentImage=\"*sqlservr.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "MSSQL - Connect and Enable xp_cmdshell (2) - Splunk",
+        "logic": "index=mssql sourcetype=\"mssql:audit\" (\"sp_configure\" AND \"xp_cmdshell\")\n| table _time, host, statement",
+        "data_source": "windows-security",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_mssql_xp_cmdshell_execution",
+        "logic": "proc_creation_win_mssql_xp_cmdshell_execution",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

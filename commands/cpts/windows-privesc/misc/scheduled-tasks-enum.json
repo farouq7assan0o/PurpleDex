@@ -97,7 +97,51 @@
       "HTB M26",
       "MITRE T1053.005"
     ],
-    "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
+    "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Misc - Scheduled Task Enumeration - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"schtasks.exe\" and ProcessCommandLine has \"/query\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// task enumeration by a standard user, hunting writable task scripts",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1053.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - Scheduled Task Enumeration - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*schtasks.exe\" CommandLine=\"*/query*\")\n| where NOT match(User, \"(?i)(SYSTEM|admin)\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1053.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_schtasks_enumeration",
+        "logic": "proc_creation_win_schtasks_enumeration",
+        "data_source": "sysmon",
+        "attack": [
+          "T1053.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Lists scheduled tasks to find one whose target you can write:\n  schtasks /query          enumerate scheduled tasks\n  /fo LIST /v              full verbose list output (shows Run As User and the task action)\nA task run by a privileged account whose script/binary is writable by you is an escalation path - replace the target and wait for the trigger."
 }

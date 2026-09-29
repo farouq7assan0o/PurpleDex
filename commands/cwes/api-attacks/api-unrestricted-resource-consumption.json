@@ -103,6 +103,55 @@
       "CWE-400",
       "MITRE T1499.001"
     ],
-    "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir."
+    "code_review": "RED FLAGS (source): file saved using client-supplied name/extension; MIME trusted from the request.\n  move_uploaded_file(..., $_FILES['f']['name'])  |  extension blacklist  |  type check on $_FILES['f']['type'] (client-controlled)\nGREP:  grep -rniE \"move_uploaded_file|\\$_FILES|multer|formidable|MultipartFile|SaveAs\\(\" .\nSAFE:  extension ALLOWLIST + magic-byte MIME (finfo/mime_content_type), server-generated random filename, store outside webroot in a no-execute dir.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "API - Unrestricted Resource Consumption (API4:2023) - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has \"/api/\"\n| summarize reqs=count() by cIP, bin(TimeGenerated, 1m)\n| where reqs > 500\n| sort by reqs desc\n// unrestricted resource consumption (API rate abuse / large page sizes)",
+        "data_source": "iis",
+        "attack": [
+          "T1499.001",
+          "T1608.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "API - Unrestricted Resource Consumption (API4:2023) - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"*/api/*\"\n| stats count by clientip, bin(_time, 1m)\n| where count>500",
+        "data_source": "windows-security",
+        "attack": [
+          "T1499.001",
+          "T1608.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_api_rate_abuse",
+        "logic": "web_api_rate_abuse",
+        "data_source": "proxy",
+        "attack": [
+          "T1499.001",
+          "T1608.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

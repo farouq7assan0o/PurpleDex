@@ -70,7 +70,52 @@
     "splunk_spl": "index=* \"openssl\"\n| table _time, host, user, _raw\n// brute-forcing an encrypted archive password locally; no target-side telemetry",
     "elastic_kql": "process.name:openssl*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"openssl\" or ProcessCommandLine has \"openssl\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// brute-forcing an encrypted archive password locally; no target-side telemetry",
-    "sigma_rules": "no target-side telemetry (openssl runs on the attacker host)"
+    "sigma_rules": "no target-side telemetry (openssl runs on the attacker host)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "OpenSSL - Brute Force Encrypted Archive - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"openssl\" or ProcessCommandLine has \"openssl\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// brute-forcing an encrypted archive password locally; no target-side telemetry",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "OpenSSL - Brute Force Encrypted Archive - Splunk",
+        "logic": "index=* \"openssl\"\n| table _time, host, user, _raw\n// brute-forcing an encrypted archive password locally; no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "explain": "Brute-forces an OpenSSL-encrypted gzip archive against a wordlist:\n  for i in $(cat rockyou.txt)   try each word as the passphrase\n  openssl enc -aes-256-cbc -d -in <file> -k $i   attempt to decrypt with that key\n  2>/dev/null | tar xz     pipe the output to tar; only the correct key yields valid tar data to extract\nWhen the extraction succeeds you have both the passphrase and the files."

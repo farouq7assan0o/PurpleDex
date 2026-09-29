@@ -86,7 +86,64 @@
       "MITRE T1557.001",
       "MITRE T1040"
     ],
-    "evasion": "Use passive sources first (cert transparency, public records); rate-limit active zone-transfer/brute attempts; a single AXFR attempt is quiet, brute-forcing is not."
+    "evasion": "Use passive sources first (cert transparency, public records); rate-limit active zone-transfer/brute attempts; a single AXFR attempt is quiet, brute-forcing is not.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DnsAdmins - WPAD Record Injection - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Add-DnsServerResourceRecordA\" and ProcessCommandLine has \"wpad\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// WPAD A record added, then clients fetch /wpad.dat pointing at attacker IP",
+        "data_source": "powershell",
+        "attack": [
+          "T1557"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DnsAdmins - WPAD Record Injection (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:DNS Server\" (\"wpad\" AND \"record added\")\n| table _time, Computer, record_name, source_user",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DnsAdmins - WPAD Record Injection (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"/wpad.dat\"\n| stats count by clientip, dest_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_dns_wpad_record_added",
+        "logic": "win_dns_wpad_record_added",
+        "data_source": "dns",
+        "attack": [
+          "T1557"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns",
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Alternative DnsAdmins abuse - hijack WPAD for credential capture:\n  Add-DnsServerResourceRecordA   add a DNS A record\n  -Name wpad               the Web Proxy Auto-Discovery name clients look up\n  -ZoneName <domain> -ComputerName <dc>   the zone and DC to write it on\n  -IPv4Address <lhost>     point wpad at your host\nAfter disabling the Global Query Block List, domain clients route proxy auto-config through you, enabling credential capture / MITM."
 }

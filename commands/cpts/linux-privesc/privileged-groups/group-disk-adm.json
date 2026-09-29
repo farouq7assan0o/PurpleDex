@@ -82,7 +82,52 @@
       "MITRE T1078.001",
       "MITRE T1083"
     ],
-    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running."
+    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Privileged Groups - disk and adm Groups - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"debugfs\",\"/dev/sda\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// debugfs / raw block-device access by a disk-group member",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privileged Groups - disk and adm Groups - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (comm=\"debugfs\" OR name=\"/dev/sda*\")\n| where auid!=0\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_disk_group_raw_device_access",
+        "logic": "lnx_auditd_disk_group_raw_device_access",
+        "data_source": "windows-security",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

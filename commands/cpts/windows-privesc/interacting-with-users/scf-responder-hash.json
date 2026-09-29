@@ -102,6 +102,68 @@
       "MITRE T1187",
       "MITRE T1557.001"
     ],
-    "evasion": "Blend the lure (SCF/LNK/clipboard) into a share users already browse; keep the capture window short; remove the planted file after a hash lands."
+    "evasion": "Blend the lure (SCF/LNK/clipboard) into a share users already browse; keep the capture window short; remove the planted file after a hash lands.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Interacting with Users - SCF Forced Auth - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName endswith \".scf\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, FolderPath\n| union (DeviceNetworkEvents | where RemotePort == 445 and RemoteIPType == \"Public\" | project Timestamp, DeviceName, InitiatingProcessAccountName=InitiatingProcessFileName, FolderPath=RemoteIP)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Interacting with Users - SCF Forced Auth (1) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*.scf\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Interacting with Users - SCF Forced Auth (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM\n| where Source_Network_Address!=\"\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_win_scf_file_on_share",
+        "logic": "file_event_win_scf_file_on_share",
+        "data_source": "sysmon",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   }
 }

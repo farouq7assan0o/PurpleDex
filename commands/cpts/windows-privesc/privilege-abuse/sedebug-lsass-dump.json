@@ -96,7 +96,76 @@
       "MITRE T1003.001",
       "MITRE T1078"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SeDebugPrivilege - Dump LSASS and Parse - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"procdump\" and ProcessCommandLine has \"lsass\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceEvents | where ActionType == \"OpenProcessApiCall\" and FileName =~ \"lsass.exe\" and InitiatingProcessFileName startswith \"procdump\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=InitiatingProcessCommandLine)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SeDebugPrivilege - Dump LSASS and Parse (1) - Splunk",
+        "logic": "index=sysmon EventCode=10 TargetImage=\"*lsass.exe\" SourceImage=\"*procdump*\"\n| table _time, Computer, SourceImage, GrantedAccess",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "10"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "SeDebugPrivilege - Dump LSASS and Parse (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*procdump*\" CommandLine=\"*lsass*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_procdump_lsass",
+        "logic": "proc_creation_win_procdump_lsass",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_lsass_memory_dump",
+        "logic": "sysmon_lsass_memory_dump",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

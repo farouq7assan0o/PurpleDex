@@ -98,7 +98,53 @@
       "HTB M24",
       "MITRE T1595.002",
       "OWASP A05:2021"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WordPress - Detect and Enumerate via cURL - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// wordpress application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "WordPress - Detect and Enumerate via cURL - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_path=\\\"/wp-login.php\\\" OR uri_path=\\\"/wp-content/\\\" OR uri_path=\\\"/readme.html\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_wordpress",
+        "logic": "web_app_scanner_wordpress",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

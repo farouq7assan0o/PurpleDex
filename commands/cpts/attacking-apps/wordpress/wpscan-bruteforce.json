@@ -89,7 +89,53 @@
       "HTB M24",
       "MITRE T1110",
       "OWASP A07:2021"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WPScan - Password Brute Force (xmlrpc) - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem =~ \"/wp-login.php\"\n| summarize attempts=count(), fails=countif(scStatus in (401,403)) by cIP, bin(TimeGenerated, 1m)\n| where attempts > 20\n| sort by attempts desc\n// WordPress login/xmlrpc brute force",
+        "data_source": "iis",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "WPScan - Password Brute Force (xmlrpc) - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"/wp-login.php\" status=401 OR status=403 OR (method=POST status=200)\n| stats count by clientip, bin(_time, 1m)\n| where count>20",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_login_bruteforce",
+        "logic": "web_login_bruteforce",
+        "data_source": "proxy",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

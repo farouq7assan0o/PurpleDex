@@ -126,7 +126,55 @@
     ],
     "misconfiguration": "Secrets, API keys, or authorization logic placed in client-side JavaScript under the assumption that obfuscation/minification hides them.",
     "vulnerable_config": "// shipped app.js (minified/obfuscated but recoverable):\nconst API_KEY='sk_live_2b9...';\nfetch('/api/admin/users',{headers:{'x-api-key':API_KEY}})\n// beautify -> key + hidden /api/admin/ endpoint recovered by any visitor",
-    "secure_config": "// Keep secrets server-side; proxy privileged calls through the backend.\n// Client holds NO API keys; the server authenticates the session and authorizes each action.\n// Treat all client code as public; enforce authZ server-side; rotate leaked keys."
+    "secure_config": "// Keep secrets server-side; proxy privileged calls through the backend.\n// Client holds NO API keys; the server authenticates the session and authorizes each action.\n// Treat all client code as public; enforce authZ server-side; rotate leaked keys.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "JavaScript Deobfuscation - Recover Endpoints & Secrets - Sentinel",
+        "logic": "// Deobfuscating client-side JavaScript is offline analysis on the tester host.\n// The only server-side trace is the ordinary GET for the .js file in W3CIISLog.",
+        "data_source": "iis",
+        "attack": [
+          "T1592.002",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "JavaScript Deobfuscation - Recover Endpoints & Secrets - Splunk",
+        "logic": "# JavaScript deobfuscation is offline analysis on the tester host (client-side JS retrieved from the app).\n# No server-side telemetry beyond the normal page/script GET requests.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1592.002",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side rule",
+        "logic": "no target-side rule",
+        "data_source": "windows-security",
+        "attack": [
+          "T1592.002",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command"
 }

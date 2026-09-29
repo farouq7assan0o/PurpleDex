@@ -84,7 +84,51 @@
       "MITRE T1046",
       "MITRE T1082"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "MSSQL - Discover Instance & Service Account - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName in~ (\"sc.exe\",\"wmic.exe\",\"net.exe\") and ProcessCommandLine has \"SQL\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1007"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "MSSQL - Discover Instance & Service Account - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*sc.exe\" CommandLine=\"*query*\") OR (Image=\"*wmic.exe\" CommandLine=\"*service*SQL*\")\n| where CommandLine=\"*SQL*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1007"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_sql_service_discovery",
+        "logic": "proc_creation_win_sql_service_discovery",
+        "data_source": "sysmon",
+        "attack": [
+          "T1007"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

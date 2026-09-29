@@ -89,7 +89,83 @@
       "HTB M24",
       "MITRE T1059.007",
       "MITRE T1552.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Jenkins - Script Console Command Execution - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"nginx\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\",\"nc\",\"python\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// Jenkins /script console RCE - java.exe spawning a shell",
+        "data_source": "powershell",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Jenkins - Script Console Command Execution (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php-cgi*\" OR ParentImage=\"*php-fpm*\" OR ParentImage=\"*java.exe\" OR ParentImage=\"*tomcat*\")\n| where match(Image, \"(?i)(cmd|powershell|bash|sh|nc|python)\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Jenkins - Script Console Command Execution (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined (method=POST OR status=500)\n| stats count by clientip, uri_path | where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_jenkins_script_console_rce",
+        "logic": "web_jenkins_script_console_rce",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_webserver_spawning_shell",
+        "logic": "proc_creation_webserver_spawning_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Runs an OS command from the Jenkins Groovy script console (/script):\n  def cmd = '<command>'          the command to execute\n  def proc = cmd.execute()       run it\n  consumeProcessOutput(sout,serr) + waitForOrKill   capture stdout/stderr\n  println sout                   print the result\nExecutes as the Jenkins user - instant RCE with admin (or misconfigured anonymous) access to the console; escalate from there to a full reverse shell."
 }

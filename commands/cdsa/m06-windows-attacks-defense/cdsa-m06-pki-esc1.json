@@ -83,7 +83,73 @@
     "misconfiguration": "An ADCS certificate template is misconfigured with ESC1 conditions: (1) 'Enrollee supplies subject' (CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT) is enabled, allowing the requester to specify any SAN (Subject Alternative Name) - including a Domain Admin UPN; (2) Low-privilege users (Domain Users, Authenticated Users) have Enroll or AutoEnroll rights on the template; (3) Client Authentication EKU is set. This lets any domain user request a certificate that authenticates as any other user.",
     "vulnerable_config": "# Certificate template properties (via Certify or ADCS MMC):\n# Template: UserWebAuth\n#   Subject Name: 'Supply in the request' (CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT = 1)\n#   EKU: Client Authentication (1.3.6.1.5.5.7.3.2)\n#   Enrollment: Domain Users (Enroll)\n# -> Any domain user can request a cert claiming UPN administrator@corp.local\n\n# Certify scan:\n# Certify.exe find /vulnerable\n# [+] ESC1: UserWebAuth  -- 'Supply in request', Domain Users Enroll, Client Auth",
     "secure_config": "# Fix CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT:\n# ADCS MMC -> Certificate Templates -> UserWebAuth -> Properties\n# Subject Name tab -> change 'Supply in the request' to\n#   'Build from this Active Directory information'\n\n# Remove broad enrollment rights:\n# Security tab -> remove 'Domain Users' -> add only the specific group that needs the cert\n\n# Enable CA Manager Approval for sensitive templates:\n# Issuance Requirements tab -> 'CA certificate manager approval' = checked\n# This requires a human review before each certificate is issued\n\n# Run Certify/PSPKIAudit quarterly to detect new vulnerable templates:\n# Invoke-PKIAudit\n\n# Enforce SID extension (Windows Server 2022+):\n# Prevents certificate from authenticating as another user even with alt SAN",
-    "evasion": "Request the certificate once and use it for the TGT; delete the local .pfx/.pem after; ESC relays are noisy - trigger the coercion briefly."
+    "evasion": "Request the certificate once and use it for the TGT; delete the local .pfx/.pem after; ESC relays are noisy - trigger the coercion briefly.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PKI ESC1 - Misconfigured Certificate Template (SAN Abuse) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4886, 4887)\n| extend Requester = tostring(RequesterName), SAN = tostring(SubjectAltName)\n| where isnotempty(SAN) and not(SAN has Requester)\n| project TimeGenerated, Computer, Requester, CertificateTemplate, SAN\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PKI ESC1 - Misconfigured Certificate Template (SAN Abuse) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Computer, Requester_Name, Attributes, Subject",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4886",
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PKI ESC1 - Misconfigured Certificate Template (SAN Abuse) (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*Certify.exe\" OR CommandLine=\"*request*template*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1649",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_esc1_san_mismatch",
+        "logic": "win_security_adcs_esc1_san_mismatch",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "steps": [
     {

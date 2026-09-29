@@ -93,7 +93,52 @@
       "HTB M25",
       "MITRE T1040",
       "MITRE T1552"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Misc - Passive Traffic Capture - Sentinel",
+        "logic": "Syslog\n| where ProcessName == \"tcpdump\" or SyslogMessage has \"tcpdump\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// long-running packet capture launched by a non-admin (sudo/capability)",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1040"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - Passive Traffic Capture - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"tcpdump\"\n| where auid!=0\n| table _time, host, auid, exe, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1040"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_packet_capture_nonroot",
+        "logic": "lnx_auditd_packet_capture_nonroot",
+        "data_source": "windows-security",
+        "attack": [
+          "T1040"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Sniffs local traffic for cleartext credentials on a multi-user host:\n  tcpdump                  capture packets on the host's interfaces\nOn a shared box you may see other users' cleartext logins; feed the capture to net-creds or PCredz to extract credentials automatically."
 }

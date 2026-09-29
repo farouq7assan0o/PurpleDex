@@ -139,7 +139,88 @@
     "sources": [
       "CRTP",
       "MITRE T1615"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "OU & GPO Enumeration (PowerView) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662 and (ObjectType has \"groupPolicyContainer\" or ObjectType has \"organizationalUnit\")\n| summarize count() by SubjectUserName, IpAddress, bin(TimeGenerated, 5m)\n| where count_ > 20\n| sort by count_ desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1615",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "OU & GPO Enumeration (PowerView) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 (Object_Type=\"*groupPolicyContainer*\" OR Object_Type=\"*organizationalUnit*\")\n| stats count by Account_Name, Client_Address\n| where count>20",
+        "data_source": "windows-security",
+        "attack": [
+          "T1615",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "OU & GPO Enumeration (PowerView) (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 ScriptBlockText=\"*Get-DomainGPO*\"\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1615",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_gpo_enum",
+        "logic": "posh_ps_powerview_gpo_enum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1615",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1615",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Maps GPOs so you can spot policy you can abuse for code execution or local admin:\n  Get-DomainGPO            list every Group Policy Object\n  | select displayname,gpcfilesyspath   the friendly name and its SYSVOL path\nFollow up by resolving OU gplinks to GPOs (which computers a policy hits), Get-DomainGPOLocalGroup (GPO-granted local admin), and checking GPO ACLs for WriteProperty/WriteDacl - a writable GPO is a foothold on every computer in its OU."
 }

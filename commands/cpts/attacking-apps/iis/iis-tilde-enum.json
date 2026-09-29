@@ -89,7 +89,53 @@
       "MITRE T1083",
       "OWASP A05:2021"
     ],
-    "evasion": "The 8.3 short-name probe is inherently noisy (many 404s) - throttle requests and target a single path prefix to reduce log volume."
+    "evasion": "The 8.3 short-name probe is inherently noisy (many 404s) - throttle requests and target a single path prefix to reduce log volume.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "IIS - Tilde (8.3 Short Name) Enumeration - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has \"~1\" or csUriStem has \"*~\"\n| summarize count() by cIP, bin(TimeGenerated, 1m)\n| where count_ > 20\n| sort by count_ desc\n// IIS 8.3 short-name (tilde) enumeration: many requests with ~1 and varying status",
+        "data_source": "iis",
+        "attack": [
+          "T1595.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "IIS - Tilde (8.3 Short Name) Enumeration - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"*~1*\"\n| stats count by clientip, bin(_time, 1m)\n| where count>20",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_iis_tilde_shortname_enum",
+        "logic": "web_iis_tilde_shortname_enum",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Recovers IIS 8.3 short file names via the tilde disclosure bug:\n  java -jar iis_shortname_scanner.jar   the scanner\n  0 5                                    request/retry timing parameters\n  http://<ip>/                           the target\nLeaks the first 6 characters of files/dirs (e.g. TRANSF~1.ASP); build a wordlist from the recovered prefix and brute-force the full names with gobuster -x .asp,.aspx."
 }

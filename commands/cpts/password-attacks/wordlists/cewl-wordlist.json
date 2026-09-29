@@ -80,7 +80,53 @@
     "splunk_spl": "index=web sourcetype=access_combined http_user_agent=\"*CeWL*\"\n| stats count dc(uri_path) as pages by clientip\n| where pages>20",
     "elastic_kql": "event.category:web AND user_agent.original:*CeWL*",
     "sentinel_kql": "W3CIISLog\n| where csUserAgent has \"CeWL\"\n| summarize pages=dcount(csUriStem), hits=count() by cIP, bin(TimeGenerated, 5m)\n| where pages > 20\n| sort by hits desc\n// CeWL crawls the site to build a wordlist (spider-like fetch pattern + CeWL UA)",
-    "sigma_rules": "web_cewl_wordlist_crawl (site spidering with CeWL User-Agent)"
+    "sigma_rules": "web_cewl_wordlist_crawl (site spidering with CeWL User-Agent)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "CeWL - Scrape Site for Wordlist - Sentinel",
+        "logic": "W3CIISLog\n| where csUserAgent has \"CeWL\"\n| summarize pages=dcount(csUriStem), hits=count() by cIP, bin(TimeGenerated, 5m)\n| where pages > 20\n| sort by hits desc\n// CeWL crawls the site to build a wordlist (spider-like fetch pattern + CeWL UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "CeWL - Scrape Site for Wordlist - Splunk",
+        "logic": "index=web sourcetype=access_combined http_user_agent=\"*CeWL*\"\n| stats count dc(uri_path) as pages by clientip\n| where pages>20",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_cewl_wordlist_crawl",
+        "logic": "web_cewl_wordlist_crawl",
+        "data_source": "proxy",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

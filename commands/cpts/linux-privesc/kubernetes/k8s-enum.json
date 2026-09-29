@@ -97,7 +97,75 @@
       "HTB M25",
       "MITRE T1613",
       "MITRE T1078.004"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Kubernetes - Enumerate API and Kubelet - Sentinel",
+        "logic": "let anon = _GetWatchlist(\"none\");\nSyslog\n| where SyslogMessage has_any (\"kubeletctl\",\":10250\",\"system:anonymous\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// anonymous Kubelet/API access on 10250/6443 from outside the cluster",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1613"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Kubernetes - Enumerate API and Kubelet (1) - Splunk",
+        "logic": "index=k8s sourcetype=\"kube:apiserver:audit\" (user.username=\"system:anonymous\" OR verb=\"list\" objectRef.resource=\"pods\")\n| stats count by sourceIPs{}, user.username\n| where count>20",
+        "data_source": "windows-security",
+        "attack": [
+          "T1613"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Kubernetes - Enumerate API and Kubelet (2) - Splunk",
+        "logic": "index=network dest_port=10250 OR dest_port=6443\n| stats dc(dest_ip) by src_ip | where dc>5",
+        "data_source": "network-flow",
+        "attack": [
+          "T1613"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "k8s_audit_anonymous_access",
+        "logic": "k8s_audit_anonymous_access",
+        "data_source": "windows-security",
+        "attack": [
+          "T1613"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "k8s_kubelet_api_exposure",
+        "logic": "k8s_kubelet_api_exposure",
+        "data_source": "windows-security",
+        "attack": [
+          "T1613"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Probes a Kubernetes cluster for anonymous access:\n  kubeletctl               Kubelet API client\n  -i                       ignore TLS certificate errors\n  --server <ip>            the node's Kubelet API (port 10250)\n  pods                     list pods running on that node\nAlso probe the API server on 6443 for anonymous access. A readable pod list points you at pods that allow command execution."
 }

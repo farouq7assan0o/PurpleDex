@@ -88,7 +88,57 @@
     ],
     "misconfiguration": "Service accounts are registered with a Service Principal Name (SPN) but use weak, human-chosen passwords - or even share a password with other accounts. Any authenticated domain user can request a TGS for any SPN account, receiving a blob encrypted with that account's NTLM hash. The SPN registration itself is not the flaw; the flaw is weak passwords on SPN accounts and permitting RC4 encryption (which produces a shorter, faster-to-crack blob).",
     "vulnerable_config": "# Service account set up manually with a weak password + SPN\n# Attacker can find these with:\nGet-ADUser -Filter {ServicePrincipalName -ne '$null'} -Properties ServicePrincipalName,PasswordLastSet\n\n# Bad state - password set 4 years ago, RC4 permitted:\n# Name: svc_sql  PasswordLastSet: 2020-01-15  SPN: MSSQLSvc/db01.corp.local:1433\n# RC4 (0x17) requested in TGS ticket - short hash, GPU-crackable\n\n# Confirming RC4 is available:\nGet-ADUser svc_sql -Properties msDS-SupportedEncryptionTypes\n# msDS-SupportedEncryptionTypes: 0 (= RC4+AES both permitted if 0 or blank)",
-    "secure_config": "# Fix 1 - Use Group Managed Service Accounts (gMSA): 240-char random passwords,\n# auto-rotated by AD, no human ever knows the password\nNew-ADServiceAccount -Name gmsa_sql -DNSHostName sql.corp.local \\\n    -PrincipalsAllowedToRetrieveManagedPassword 'db-servers-grp'\nInstall-ADServiceAccount gmsa_sql\n\n# Fix 2 - For legacy accounts that must keep SPNs:\n# Set a 100+ character random password (AD max is 127 chars):\n$pw = [System.Web.Security.Membership]::GeneratePassword(127,20)\nSet-ADAccountPassword svc_sql -NewPassword (ConvertTo-SecureString $pw -AsPlainText -Force)\n\n# Fix 3 - Disable RC4, require AES-only:\nSet-ADUser svc_sql -KerberosEncryptionType AES128,AES256\n# msDS-SupportedEncryptionTypes = 24 (AES128+AES256 only)"
+    "secure_config": "# Fix 1 - Use Group Managed Service Accounts (gMSA): 240-char random passwords,\n# auto-rotated by AD, no human ever knows the password\nNew-ADServiceAccount -Name gmsa_sql -DNSHostName sql.corp.local \\\n    -PrincipalsAllowedToRetrieveManagedPassword 'db-servers-grp'\nInstall-ADServiceAccount gmsa_sql\n\n# Fix 2 - For legacy accounts that must keep SPNs:\n# Set a 100+ character random password (AD max is 127 chars):\n$pw = [System.Web.Security.Membership]::GeneratePassword(127,20)\nSet-ADAccountPassword svc_sql -NewPassword (ConvertTo-SecureString $pw -AsPlainText -Force)\n\n# Fix 3 - Disable RC4, require AES-only:\nSet-ADUser svc_sql -KerberosEncryptionType AES128,AES256\n# msDS-SupportedEncryptionTypes = 24 (AES128+AES256 only)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Impacket GetUserSPNs - Request TGS Hashes - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4769 and TicketEncryptionType == \"0x17\" and ServiceName != \"krbtgt\" and ServiceName !endswith \"$\"\n| summarize spns=dcount(ServiceName) by TargetUserName, IpAddress, bin(TimeGenerated, 5m)\n| where spns > 3\n| sort by spns desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Impacket GetUserSPNs - Request TGS Hashes - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!=\"krbtgt\" Service_Name!=\"*$\"\n| stats dc(Service_Name) as spns by Account_Name, Client_Address, bin(_time, 5m)\n| where spns>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberoasting_activity",
+        "logic": "win_security_kerberoasting_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "impacket"

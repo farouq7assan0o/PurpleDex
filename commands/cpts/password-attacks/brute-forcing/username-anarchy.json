@@ -79,7 +79,52 @@
     "splunk_spl": "index=* \"username-anarchy\"\n| table _time, host, user, _raw\n// generates username permutations locally; detection is only when the list is used in the brute-force/enum phase",
     "elastic_kql": "process.name:username-anarchy*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"username-anarchy\" or ProcessCommandLine has \"username-anarchy\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// generates username permutations locally; detection is only when the list is used in the brute-force/enum phase",
-    "sigma_rules": "no target-side telemetry (username-anarchy runs on the attacker host)"
+    "sigma_rules": "no target-side telemetry (username-anarchy runs on the attacker host)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Username Anarchy - Generate Usernames - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"username-anarchy\" or ProcessCommandLine has \"username-anarchy\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// generates username permutations locally; detection is only when the list is used in the brute-force/enum phase",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1589.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Username Anarchy - Generate Usernames - Splunk",
+        "logic": "index=* \"username-anarchy\"\n| table _time, host, user, _raw\n// generates username permutations locally; detection is only when the list is used in the brute-force/enum phase",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

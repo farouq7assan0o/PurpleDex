@@ -147,7 +147,93 @@
       "CRTP",
       "MITRE T1049",
       "MITRE T1135"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Session & Share Hunting (SessionHunter / PowerHuntShares) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5140\n| summarize hosts=dcount(Computer) by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 15\n| sort by hosts desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1049",
+          "T1135",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5140"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Session & Share Hunting (SessionHunter / PowerHuntShares) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5140\n| stats dc(Computer) as hosts by Account_Name, Source_Address\n| where hosts>15",
+        "data_source": "windows-security",
+        "attack": [
+          "T1049",
+          "T1135",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5140"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Session & Share Hunting (SessionHunter / PowerHuntShares) (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-SessionHunter*\" OR ScriptBlockText=\"*PowerHuntShares*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1049",
+          "T1135",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "net_session_enum_recon",
+        "logic": "net_session_enum_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1049",
+          "T1135",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_share_access_fanout",
+        "logic": "win_security_share_access_fanout",
+        "data_source": "windows-security",
+        "attack": [
+          "T1049",
+          "T1135",
+          "T1033"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Finds where privileged users are logged on and which shares hold secrets, without needing admin:\n  Invoke-SessionHunter     map user->host sessions via remote registry (no admin required)\n  -NoPortScan              skip the port scan (faster/quieter)\n  -RawResults              return objects, not a formatted table\n  | select Hostname,UserSession,Access   host, the user session found, and whether you can reach it\nWhere an admin session sits on a box you can access, that is your lateral target; PowerHuntShares then inventories readable SMB shares for sensitive data."
 }

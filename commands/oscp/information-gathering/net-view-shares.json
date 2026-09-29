@@ -98,7 +98,57 @@
       "PEN-200 Ch 6",
       "MITRE T1135",
       "MS Docs"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Windows - net view Share Enumeration - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5140\n| summarize hosts=dcount(Computer) by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 10\n| sort by hosts desc\n// net view SMB share enumeration (one-to-many tree-connects)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1135"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5140"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows - net view Share Enumeration - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5140\n| stats dc(Computer) as hosts by Account_Name, Source_Address, bin(_time, 10m)\n| where hosts>10",
+        "data_source": "windows-security",
+        "attack": [
+          "T1135"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5140"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_smb_share_enum_fanout",
+        "logic": "win_security_smb_share_enum_fanout",
+        "data_source": "windows-security",
+        "attack": [
+          "T1135"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Lists shared resources on a remote host with the built-in net view:\n  net view \\\\<ip>   query the host's shares\n  /all             include hidden admin shares (ADMIN$, C$, IPC$)\nA no-tools way from an authenticated Windows session to see what a host shares; 'net view' alone lists computers in the domain."
 }

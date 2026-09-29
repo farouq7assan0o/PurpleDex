@@ -81,7 +81,87 @@
     ],
     "misconfiguration": "The MS-EFSRPC interface (LSARPC/EfsRpcOpenFileRaw) allows unauthenticated (or authenticated in older variants) callers to coerce a Windows machine into authenticating to an arbitrary host via NTLM. When combined with an ADCS web enrollment endpoint (http://CA/certsrv/) that does not require HTTPS or Extended Protection for Authentication (EPA), the relayed authentication can be used to request a certificate for the DC machine account - which can then be used to obtain a TGT and perform DCSync.",
     "vulnerable_config": "# ADCS web enrollment without EPA or HTTPS:\n# URL reachable: http://CA01/certsrv/  (no HTTPS redirect)\n# EPA (Extended Protection for Authentication) = NOT configured\n\n# IIS applicationHost.config (vulnerable):\n# <security><authentication><windowsAuthentication>\n#   <extendedProtection tokenChecking=\"None\" />\n# </windowsAuthentication></authentication></security>\n\n# MS-EFSRPC coercion: unauthenticated (pre-patch) or low-priv user can call:\n# EfsRpcOpenFileRaw(\\\\attacker@443\\share) -> DC authenticates outbound",
-    "secure_config": "# Fix 1 - Enable EPA on ADCS web enrollment (IIS):\n# IIS Manager -> certsrv site -> Authentication -> Windows Auth -> Providers\n# Set Extended Protection to 'Required'\n# OR via command:\nImport-Module WebAdministration\nSet-WebConfigurationProperty -Filter '//security/authentication/windowsAuthentication' \\\n    -Name extendedProtection -Value @{tokenChecking='Require'} -PSPath 'IIS:\\\\' -Location 'Default Web Site/certsrv'\n\n# Fix 2 - Enable HTTPS only on certsrv:\nNew-WebBinding -Name 'Default Web Site' -Protocol https -Port 443\n# Redirect HTTP to HTTPS\n\n# Fix 3 - Patch MS-EFSRPC: KB5005413 (Aug 2021)\n# Fix 4 - Enable SMB signing on all hosts (blocks NTLM relay)\n# GPO: 'Microsoft network server: Digitally sign communications (always)' = Enabled"
+    "secure_config": "# Fix 1 - Enable EPA on ADCS web enrollment (IIS):\n# IIS Manager -> certsrv site -> Authentication -> Windows Auth -> Providers\n# Set Extended Protection to 'Required'\n# OR via command:\nImport-Module WebAdministration\nSet-WebConfigurationProperty -Filter '//security/authentication/windowsAuthentication' \\\n    -Name extendedProtection -Value @{tokenChecking='Require'} -PSPath 'IIS:\\\\' -Location 'Default Web Site/certsrv'\n\n# Fix 2 - Enable HTTPS only on certsrv:\nNew-WebBinding -Name 'Default Web Site' -Protocol https -Port 443\n# Redirect HTTP to HTTPS\n\n# Fix 3 - Patch MS-EFSRPC: KB5005413 (Aug 2021)\n# Fix 4 - Enable SMB signing on all hosts (blocks NTLM relay)\n# GPO: 'Microsoft network server: Digitally sign communications (always)' = Enabled",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PetitPotam + NTLM Relay → ADCS Certificate - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\" and TargetUserName has \"DC\"\n| project TimeGenerated, Computer, TargetUserName, IpAddress\n| sort by TimeGenerated desc\n// DC$ authenticating to the ADCS web enrollment host is anomalous (coerce + relay)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PetitPotam + NTLM Relay → ADCS Certificate (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3\n| where Account_Name=\"*$\" AND Source_Network_Address!=\"<dc_ip>\"\n| table _time, Account_Name, Source_Network_Address, Workstation_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PetitPotam + NTLM Relay → ADCS Certificate (2) - Splunk",
+        "logic": "index=sysmon EventCode=18 PipeName=\"\\\\lsarpc\" OR PipeName=\"\\\\efsrpc\"\n| table _time, Computer, Image, PipeName",
+        "data_source": "sysmon",
+        "attack": [
+          "T1557.001",
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "18"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_petitpotam_coercion",
+        "logic": "win_security_petitpotam_coercion",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_named_pipe_efs",
+        "logic": "sysmon_named_pipe_efs",
+        "data_source": "sysmon",
+        "attack": [
+          "T1557.001",
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "PetitPotam",

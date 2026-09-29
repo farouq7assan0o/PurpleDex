@@ -94,7 +94,69 @@
       "MITRE T1543.003",
       "MITRE T1068"
     ],
-    "evasion": "Load the driver for execution then remove it; SeLoadDriver abuse is a single event - do it once."
+    "evasion": "Load the driver for execution then remove it; SeLoadDriver abuse is a single event - do it once.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Print Operators - SeLoadDriver Capcom Abuse - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"DriverLoad\" or (ActionType == \"RegistryValueSet\" and RegistryKey has \"CurrentControlSet\\\\Capcom\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, AdditionalFields\n| union (DeviceProcessEvents | where FileName in~ (\"EoPLoadDriver.exe\",\"ExploitCapcom.exe\") | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, AdditionalFields=ProcessCommandLine)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Print Operators - SeLoadDriver Capcom Abuse (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:System\" EventCode=7045\n| table _time, Computer, Service_Name, Service_File_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7045"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Print Operators - SeLoadDriver Capcom Abuse (2) - Splunk",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*HKU\\\\*\\\\CurrentControlSet\\\\Capcom*\"\n| table _time, Computer, Image, TargetObject",
+        "data_source": "sysmon",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "13"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_vulnerable_driver_load_capcom (SeLoadDriverPrivilege abuse",
+        "logic": "win_vulnerable_driver_load_capcom (SeLoadDriverPrivilege abuse",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Abuses Print Operators' SeLoadDriverPrivilege to load a vulnerable driver and get SYSTEM:\n  EoPLoadDriver.exe        register the driver under HKCU and load it via NtLoadDriver\n  System\\CurrentControlSet\\Capcom   the registry path it creates for the service\n  c:\\Tools\\Capcom.sys      the vulnerable Capcom driver to load\nWith the driver loaded, ExploitCapcom runs a shell as SYSTEM by abusing its kernel primitive."
 }

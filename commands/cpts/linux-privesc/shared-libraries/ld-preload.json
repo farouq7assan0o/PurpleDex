@@ -100,7 +100,63 @@
       "HTB M25",
       "MITRE T1574.006",
       "MITRE T1548.003"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Shared Libraries - LD_PRELOAD via sudo - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"LD_PRELOAD\" and SyslogMessage has \"sudo\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// sudo executed with LD_PRELOAD set to a user-writable .so",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Shared Libraries - LD_PRELOAD via sudo (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" type=EXECVE proctitle=\"*LD_PRELOAD=*\"\n| where auid!=0\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Shared Libraries - LD_PRELOAD via sudo (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"sudo:\" \"LD_PRELOAD\"\n| table _time, host, user, _raw",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_sudo_ld_preload",
+        "logic": "lnx_auditd_sudo_ld_preload",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Loads a malicious shared library into a sudo-allowed command when LD_PRELOAD is kept:\n  sudo LD_PRELOAD=/tmp/root.so   force the loader to preload your library first\n  /usr/sbin/apache2 restart   an allowed sudo command that will load it\nRequires env_keep+=LD_PRELOAD in sudoers (check sudo -l). Your library's _init() constructor runs as root, spawning a root shell. Compile it with gcc -fPIC -shared -nostartfiles."
 }

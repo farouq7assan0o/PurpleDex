@@ -77,7 +77,60 @@
     ],
     "misconfiguration": "An account has constrained delegation configured (msDS-AllowedToDelegateTo) but the 'Use any authentication protocol' (protocol transition) option is enabled. This allows the account to impersonate ANY user - including Domain Admins - to the listed services, without requiring the user's TGT. Combined with S4U2Self (service for user to self), an attacker who compromises this account can forge service tickets for privileged users.",
     "vulnerable_config": "# Accounts with constrained delegation + protocol transition:\nGet-ADUser -Filter {msDS-AllowedToDelegateTo -ne '$null'} \\\n    -Properties TrustedToAuthForDelegation, 'msDS-AllowedToDelegateTo' |\n    Where-Object {$_.TrustedToAuthForDelegation -eq $true}\n\n# TrustedToAuthForDelegation = True means 'Use any auth protocol' is checked\n# This allows S4U2Self (impersonate any user) + S4U2Proxy (delegate to target service)",
-    "secure_config": "# Use 'Use Kerberos only' delegation (not protocol transition):\n# In ADUC: Account tab -> uncheck 'Trust this computer for delegation to specified services only'\n# -> choose 'Use Kerberos only' not 'Use any authentication protocol'\n\n# Set-ADUser svc_web -TrustedToAuthForDelegation $false\n\n# Use Resource-Based Constrained Delegation (RBCD) instead:\n# More granular - controlled by the resource, not the delegating account\n\n# Audit delegation rights quarterly:\nGet-ADUser -Filter {TrustedToAuthForDelegation -eq $true} |\n    Select-Object SamAccountName, 'msDS-AllowedToDelegateTo'\n\n# Add highly privileged accounts to Protected Users (blocks all delegation)"
+    "secure_config": "# Use 'Use Kerberos only' delegation (not protocol transition):\n# In ADUC: Account tab -> uncheck 'Trust this computer for delegation to specified services only'\n# -> choose 'Use Kerberos only' not 'Use any authentication protocol'\n\n# Set-ADUser svc_web -TrustedToAuthForDelegation $false\n\n# Use Resource-Based Constrained Delegation (RBCD) instead:\n# More granular - controlled by the resource, not the delegating account\n\n# Audit delegation rights quarterly:\nGet-ADUser -Filter {TrustedToAuthForDelegation -eq $true} |\n    Select-Object SamAccountName, 'msDS-AllowedToDelegateTo'\n\n# Add highly privileged accounts to Protected Users (blocks all delegation)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Kerberos Constrained Delegation Abuse (S4U) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624\n| where isnotempty(TransmittedServices) and TransmittedServices != \"-\"\n| project TimeGenerated, Computer, TargetUserName, TransmittedServices, IpAddress\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Kerberos Constrained Delegation Abuse (S4U) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Transited_Services!=\"-\" Transited_Services!=\"\"\n| where match(Account_Name, \"(?i)Administrator\")\n| table _time, Computer, Account_Name, Transited_Services, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberos_constrained_delegation",
+        "logic": "win_security_kerberos_constrained_delegation",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003",
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

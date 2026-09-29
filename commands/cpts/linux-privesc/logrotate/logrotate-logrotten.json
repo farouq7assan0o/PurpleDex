@@ -114,7 +114,52 @@
       "HTB M25",
       "MITRE T1053.003",
       "MITRE T1574"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Logrotate - logrotten Exploit - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"logrotten\",\"/etc/bash_completion.d\") and SyslogMessage has_any (\"write\",\"O_CREAT\")\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Logrotate - logrotten Exploit - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"/etc/bash_completion.d/*\" (a1=\"*O_WRONLY*\" OR a1=\"*O_CREAT*\")\n| where NOT match(exe, \"(?i)(dpkg|apt)\")\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_logrotten_bash_completion_write",
+        "logic": "lnx_auditd_logrotten_bash_completion_write",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

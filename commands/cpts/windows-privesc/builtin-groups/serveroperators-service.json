@@ -99,7 +99,69 @@
       "MITRE T1543.003",
       "MITRE T1078.002"
     ],
-    "evasion": "Modify the service binPath, trigger once, then restore the original service configuration."
+    "evasion": "Modify the service binPath, trigger once, then restore the original service configuration.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Server Operators - Modify Service binPath - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"sc.exe\" and ProcessCommandLine has \"config\" and ProcessCommandLine has \"binPath\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// Server Operators reconfiguring a service binPath to add a local admin (Event 7040)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Server Operators - Modify Service binPath (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:System\" EventCode=7040\n| table _time, Computer, param1, param3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7040"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Server Operators - Modify Service binPath (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*sc.exe\" CommandLine=\"*config*binPath*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_sc_config_binpath_change",
+        "logic": "proc_creation_win_sc_config_binpath_change",
+        "data_source": "sysmon",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Abuses Server Operators (can reconfigure SYSTEM services) to run a command as SYSTEM:\n  sc config AppReadiness   reconfigure this service\n  binPath= \"cmd /c net localgroup Administrators <user> /add\"   point its executable at a command that adds you to Administrators\nStart the service to execute it as SYSTEM. On a DC this yields Domain Admin, after which you dump the DC hashes."
 }

@@ -143,7 +143,85 @@
     ],
     "misconfiguration": "Service accounts with SPNs have stale passwords (Kerberoastable). Accounts have DoesNotRequirePreAuth set. Nested group memberships not audited - hidden DA pathways.",
     "vulnerable_config": "# Service accounts with old SPN passwords:\nGet-ADUser -Filter {ServicePrincipalName -ne '$null'} -Properties ServicePrincipalName,PasswordLastSet\n# PasswordLastSet: 2015-01-01 - crackable Kerberos ticket\n\n# AS-REP roastable accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true}",
-    "secure_config": "# Use gMSA for service accounts (auto-rotate passwords):\nNew-ADServiceAccount -Name 'svc_web' -DNSHostName 'dc01.corp.local' -ManagedPasswordIntervalInDays 30\n\n# Ensure pre-auth required:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# Alert on SPN enumeration:\n# SIEM: Event 4769 volume spike from unexpected source"
+    "secure_config": "# Use gMSA for service accounts (auto-rotate passwords):\nNew-ADServiceAccount -Name 'svc_web' -DNSHostName 'dc01.corp.local' -ManagedPasswordIntervalInDays 30\n\n# Ensure pre-auth required:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# Alert on SPN enumeration:\n# SIEM: Event 4769 volume spike from unexpected source",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView Users, Groups & Computers Enumeration - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainUser\",\"Get-DomainGroup\",\"Get-DomainGroupMember\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Users, Groups & Computers Enumeration (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-DomainUser*\" OR ScriptBlockText=\"*Get-DomainGroup*\" OR ScriptBlockText=\"*Get-DomainGroupMember*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Users, Groups & Computers Enumeration (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Object_Type=\"*user*\"\n| stats count by Account_Name, Client_Address | where count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_user_group_enum",
+        "logic": "posh_ps_powerview_user_group_enum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

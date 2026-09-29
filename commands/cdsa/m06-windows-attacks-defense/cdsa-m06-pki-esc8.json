@@ -90,7 +90,90 @@
     "misconfiguration": "The MS-EFSRPC interface (LSARPC/EfsRpcOpenFileRaw) allows unauthenticated (or authenticated in older variants) callers to coerce a Windows machine into authenticating to an arbitrary host via NTLM. When combined with an ADCS web enrollment endpoint (http://CA/certsrv/) that does not require HTTPS or Extended Protection for Authentication (EPA), the relayed authentication can be used to request a certificate for the DC machine account - which can then be used to obtain a TGT and perform DCSync.",
     "vulnerable_config": "# ADCS web enrollment without EPA or HTTPS:\n# URL reachable: http://CA01/certsrv/  (no HTTPS redirect)\n# EPA (Extended Protection for Authentication) = NOT configured\n\n# IIS applicationHost.config (vulnerable):\n# <security><authentication><windowsAuthentication>\n#   <extendedProtection tokenChecking=\"None\" />\n# </windowsAuthentication></authentication></security>\n\n# MS-EFSRPC coercion: unauthenticated (pre-patch) or low-priv user can call:\n# EfsRpcOpenFileRaw(\\\\attacker@443\\share) -> DC authenticates outbound",
     "secure_config": "# Fix 1 - Enable EPA on ADCS web enrollment (IIS):\n# IIS Manager -> certsrv site -> Authentication -> Windows Auth -> Providers\n# Set Extended Protection to 'Required'\n# OR via command:\nImport-Module WebAdministration\nSet-WebConfigurationProperty -Filter '//security/authentication/windowsAuthentication' \\\n    -Name extendedProtection -Value @{tokenChecking='Require'} -PSPath 'IIS:\\\\' -Location 'Default Web Site/certsrv'\n\n# Fix 2 - Enable HTTPS only on certsrv:\nNew-WebBinding -Name 'Default Web Site' -Protocol https -Port 443\n# Redirect HTTP to HTTPS\n\n# Fix 3 - Patch MS-EFSRPC: KB5005413 (Aug 2021)\n# Fix 4 - Enable SMB signing on all hosts (blocks NTLM relay)\n# GPO: 'Microsoft network server: Digitally sign communications (always)' = Enabled",
-    "evasion": "Request the certificate once and use it for the TGT; delete the local .pfx/.pem after; ESC relays are noisy - trigger the coercion briefly."
+    "evasion": "Request the certificate once and use it for the TGT; delete the local .pfx/.pem after; ESC relays are noisy - trigger the coercion briefly.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4886, 4887)\n| where CertificateTemplate has \"DomainController\"\n| project TimeGenerated, Computer, RequesterName, CertificateTemplate\n// alert when RequesterName is not the DC computer account (web-enroll relay)\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887) Attributes=\"*DomainController*\"\n| where Requester_Name!=\"*DC$\"\n| table _time, Computer, Requester_Name, Attributes",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4886",
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4624 Account_Name=\"*DC$\" | where Source_Network_Address!=\"<dc_ip>\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_esc8_ntlm_relay",
+        "logic": "win_security_adcs_esc8_ntlm_relay",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_ntlmrelayx_adcs",
+        "logic": "net_ntlmrelayx_adcs",
+        "data_source": "windows-security",
+        "attack": [
+          "T1557.001",
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "steps": [
     {

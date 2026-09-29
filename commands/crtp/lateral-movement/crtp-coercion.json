@@ -117,7 +117,79 @@
     "sources": [
       "CRTP",
       "MITRE T1187"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Authentication Coercion (MS-RPRN / DFSCoerce / WSPCoerce) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\"\n| where IpAddress != \"<dc_ip>\"\n| project TimeGenerated, Computer, TargetUserName, IpAddress\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Authentication Coercion (MS-RPRN / DFSCoerce / WSPCoerce) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3\n| where match(Account_Name, \"(?i)(DC|.*\\\\$)$\") AND Source_Network_Address!=\"<dc_ip>\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Authentication Coercion (MS-RPRN / DFSCoerce / WSPCoerce) (2) - Splunk",
+        "logic": "index=suricata (alert.signature=\"*MS-RPRN*\" OR alert.signature=\"*PetitPotam*\" OR alert.signature=\"*DFSCoerce*\")\n| table _time, src_ip, dest_ip, alert.signature",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_rpc_printerbug_coercion",
+        "logic": "win_rpc_printerbug_coercion",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_dfscoerce_petitpotam",
+        "logic": "net_dfscoerce_petitpotam",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Forces a remote machine (often a DC) to authenticate to a host you control:\n  MS-RPRN.exe               trigger the Print System 'printerbug' RPC (RpcRemoteFindFirstPrinterChangeNotification)\n  \\\\<target_dc_fqdn>       the victim you coerce (it will authenticate outbound)\n  \\\\<listener_host_fqdn>   where it authenticates TO - your listener\nPoint it at an unconstrained-delegation host running Rubeus monitor to capture the DC's TGT, or at ntlmrelayx to relay. DFSCoerce/WSPCoerce are alternatives when the print service is disabled."
 }

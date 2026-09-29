@@ -95,7 +95,52 @@
       "HTB M25",
       "MITRE T1083",
       "MITRE T1543"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Enumeration - World-Writable Files and Directories - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"find\" and SyslogMessage has_any (\"-o+w\",\"-perm -2\",\"-perm -o+w\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Enumeration - World-Writable Files and Directories - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"find\" proctitle=\"*-perm*-o+w*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_find_world_writable",
+        "logic": "lnx_auditd_find_world_writable",
+        "data_source": "windows-security",
+        "attack": [
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Finds world-writable files, a prime escalation vector:\n  find /                   search from root\n  -path /proc -prune -o    skip /proc to cut noise\n  -type f -perm -o+w       files with the world-writable bit set\n  2>/dev/null              discard permission errors\nA root-run script or cron target that is world-writable lets you inject a payload; the variation finds writable directories too."
 }

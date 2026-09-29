@@ -90,7 +90,51 @@
       "MITRE T1552",
       "MITRE T1552.006"
     ],
-    "evasion": "Read only the events you need (targeted query) rather than exporting whole logs."
+    "evasion": "Read only the events you need (targeted query) rather than exporting whole logs.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Event Log Readers - Hunt Credentials in Security Logs - Sentinel",
+        "logic": "DeviceProcessEvents\n| where (FileName =~ \"wevtutil.exe\" and ProcessCommandLine has \"Security\") or ProcessCommandLine has \"Get-WinEvent\"\n| where AccountName !has \"admin\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1654"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Event Log Readers - Hunt Credentials in Security Logs - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*wevtutil.exe\" CommandLine=\"*qe Security*\") OR (CommandLine=\"*Get-WinEvent*Security*\")\n| where NOT match(User, \"(?i)(SYSTEM|admin)\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1654"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_wevtutil_security_query",
+        "logic": "proc_creation_win_wevtutil_security_query",
+        "data_source": "sysmon",
+        "attack": [
+          "T1654"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Abuses Event Log Readers membership to mine the Security log for passwords:\n  wevtutil qe Security     query the Security event log\n  /rd:true                 read newest events first\n  /f:text                  plain-text output\n  | Select-String \"/user\"  filter to lines containing /user\nProcess-creation events (4688) often capture command lines with plaintext passwords passed via /user - grep them out."
 }

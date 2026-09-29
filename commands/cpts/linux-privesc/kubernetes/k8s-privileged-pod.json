@@ -106,7 +106,55 @@
       "HTB M25",
       "MITRE T1610",
       "MITRE T1611"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"pods\" and SyslogMessage has_any (\"privileged\",\"hostPath\",\"apply -f\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// pod created with privileged=true or a hostPath mount (OPA/Kyverno policy violation)",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1610",
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Splunk",
+        "logic": "index=k8s sourcetype=\"kube:apiserver:audit\" verb=\"create\" objectRef.resource=\"pods\"\n| spath requestObject.spec.containers{}.securityContext.privileged\n| search requestObject.spec.containers{}.securityContext.privileged=true\n| table _time, user.username, sourceIPs{}",
+        "data_source": "windows-security",
+        "attack": [
+          "T1610",
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "k8s_audit_privileged_pod_created",
+        "logic": "k8s_audit_privileged_pod_created",
+        "data_source": "windows-security",
+        "attack": [
+          "T1610",
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Deploys a pod that mounts the host root filesystem to escape to the node:\n  kubectl                  the K8s client\n  --token=$token           the stolen service-account token\n  --certificate-authority=ca.crt   the cluster CA cert\n  --server=https://<ip>:6443   the API server\n  apply -f privesc.yaml    create the pod defined in privesc.yaml (hostPath / mounted in)\nRequires a token that can create pods. Once running, exec in and read the node's root SSH key or write to the host filesystem."
 }

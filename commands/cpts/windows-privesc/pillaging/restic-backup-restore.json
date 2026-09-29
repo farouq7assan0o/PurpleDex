@@ -104,7 +104,65 @@
       "MITRE T1003.002",
       "MITRE T1552.001"
     ],
-    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
+    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Pillaging - restic Backup Restore - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"restic.exe\" and ProcessCommandLine has \"restore\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// restic restore of a backup snapshot containing SAM/SYSTEM to a staging directory",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - restic Backup Restore (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*restic.exe\" CommandLine=\"*restore*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - restic Backup Restore (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 (TargetFilename=\"*\\\\config\\\\SAM\" OR TargetFilename=\"*\\\\config\\\\SYSTEM\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_restic_restore_hives",
+        "logic": "proc_creation_win_restic_restore_hives",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Recovers registry hives from a found restic backup repo to extract hashes:\n  restic.exe -r <repo>     open the repository (needs its password)\n  restore <snapshot_id>    restore this snapshot\n  --target C:\\Restore      where to write the restored files\nRestore a snapshot containing C:\\Windows\\System32\\config to get SAM/SYSTEM/SECURITY, then secretsdump them offline for the Administrator hash (pass-the-hash)."
 }

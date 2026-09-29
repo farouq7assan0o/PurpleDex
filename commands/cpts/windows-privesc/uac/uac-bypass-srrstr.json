@@ -89,7 +89,69 @@
       "HTB M26",
       "MITRE T1548.002"
     ],
-    "evasion": "Use a fileless UAC bypass (fodhelper/registry) that self-cleans; remove the added registry keys after elevation."
+    "evasion": "Use a fileless UAC bypass (fodhelper/registry) that self-cleans; remove the added registry keys after elevation.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "UAC Bypass - SystemPropertiesAdvanced DLL Hijack - Sentinel",
+        "logic": "DeviceImageLoadEvents\n| where InitiatingProcessFileName =~ \"SystemPropertiesAdvanced.exe\"\n| where FileName =~ \"srrstr.dll\" and FolderPath has \"WindowsApps\"\n| project Timestamp, DeviceName, FolderPath, InitiatingProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "UAC Bypass - SystemPropertiesAdvanced DLL Hijack (1) - Splunk",
+        "logic": "index=sysmon EventCode=7 Image=\"*SystemPropertiesAdvanced.exe\" ImageLoaded=\"*WindowsApps*srrstr.dll\"\n| table _time, Computer, ImageLoaded",
+        "data_source": "sysmon",
+        "attack": [
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "UAC Bypass - SystemPropertiesAdvanced DLL Hijack (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*WindowsApps\\\\srrstr.dll\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_uac_bypass_srrstr_dll_hijack",
+        "logic": "win_uac_bypass_srrstr_dll_hijack",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Bypasses UAC via an auto-elevating binary that loads a hijackable DLL (egre55 technique):\n  C:\\Windows\\SysWOW64\\SystemPropertiesAdvanced.exe   an auto-elevating binary that loads srrstr.dll from a user-writable WindowsApps path\nDrop a malicious srrstr.dll into that path, then launch this binary; it loads your DLL and runs your code in a high-integrity (elevated) context without a UAC prompt."
 }

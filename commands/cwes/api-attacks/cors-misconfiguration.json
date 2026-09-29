@@ -106,7 +106,56 @@
     ],
     "misconfiguration": "Server reflects the Origin header into ACAO with ACAC:true, trusts Origin: null, or validates origins by substring/suffix instead of exact allowlist.",
     "vulnerable_config": "// Express - reflects any origin WITH credentials (critical):\napp.use((req,res,next)=>{\n  res.header('Access-Control-Allow-Origin', req.headers.origin);\n  res.header('Access-Control-Allow-Credentials','true');\n  next();\n});",
-    "secure_config": "// Strict allowlist, exact match, no credential+reflection:\nconst allow = new Set(['https://app.example.com']);\napp.use((req,res,next)=>{\n  const o = req.headers.origin;\n  if (allow.has(o)) {\n    res.header('Access-Control-Allow-Origin', o);\n    res.header('Access-Control-Allow-Credentials','true');\n    res.header('Vary','Origin');\n  }\n  next();\n});\n// Reject 'null'; set cookies SameSite=Lax/Strict."
+    "secure_config": "// Strict allowlist, exact match, no credential+reflection:\nconst allow = new Set(['https://app.example.com']);\napp.use((req,res,next)=>{\n  const o = req.headers.origin;\n  if (allow.has(o)) {\n    res.header('Access-Control-Allow-Origin', o);\n    res.header('Access-Control-Allow-Credentials','true');\n    res.header('Vary','Origin');\n  }\n  next();\n});\n// Reject 'null'; set cookies SameSite=Lax/Strict.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "CORS Misconfiguration - Cross-Origin Data Theft - Sentinel",
+        "logic": "W3CIISLog\n| where csReferer != \"\" or csUriQuery has \"origin\"\n| project TimeGenerated, cIP, csUriStem, csReferer\n| sort by TimeGenerated desc\n// CORS misconfig probing: requests with a foreign Origin, checking for a reflected ACAO header",
+        "data_source": "iis",
+        "attack": [
+          "T1190",
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "CORS Misconfiguration - Cross-Origin Data Theft - Splunk",
+        "logic": "index=web sourcetype=access_combined\n| where isnotnull(origin) AND origin!=\"\"\n| stats count by clientip, origin | where match(origin, \"(?i)(attacker|evil|null)\")",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_cors_misconfiguration_probe",
+        "logic": "web_cors_misconfiguration_probe",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command"
 }

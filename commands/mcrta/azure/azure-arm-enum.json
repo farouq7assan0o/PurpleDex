@@ -114,7 +114,55 @@
     ],
     "misconfiguration": "Broad Reader/Contributor at high scope; Owner or User Access Administrator granted to non-admins; unreviewed custom roles with wildcard actions.",
     "vulnerable_config": "# Contributor at subscription scope can enumerate everything and run most resource actions:\naz role assignment list --assignee <me> --all   # shows Contributor / Subscription scope",
-    "secure_config": "# Scope RBAC tightly (resource-group not subscription); use PIM; review custom roles for wildcard actions;\n# alert on roleAssignments list/write spikes in Activity Log."
+    "secure_config": "# Scope RBAC tightly (resource-group not subscription); use PIM; review custom roles for wildcard actions;\n# alert on roleAssignments list/write spikes in Activity Log.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Azure Resource Manager (ARM) Enumeration - Sentinel",
+        "logic": "AzureActivity\n| where OperationNameValue has_any (\"list\",\"read\")\n| summarize ops=dcount(OperationNameValue), count() by Caller, CallerIpAddress, bin(TimeGenerated, 10m)\n| where count_ > 20\n| sort by count_ desc\n// Azure ARM resource enumeration (bulk list/read across resource groups)",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1580",
+          "T1526"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Azure Resource Manager (ARM) Enumeration - Splunk",
+        "logic": "index=azure sourcetype=\"azure:activity\" (operationName=\"*list*\" OR operationName=\"*read*\")\n| stats count values(operationName) as ops by caller, callerIpAddress, bin(_time, 10m)\n| where count>20",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1580",
+          "T1526"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "azure_resource_enumeration",
+        "logic": "azure_resource_enumeration",
+        "data_source": "windows-security",
+        "attack": [
+          "T1580",
+          "T1526"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "azure-activity",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Enumerates the Azure Resource Manager layer with the az CLI:\n  az resource list -o table   list every resource your principal can see\nThe card walks accounts/subscriptions (az account list), resource groups (az group list), and - most importantly - RBAC via 'az role assignment list --all' and role definitions to find what you can do and where to escalate."
 }

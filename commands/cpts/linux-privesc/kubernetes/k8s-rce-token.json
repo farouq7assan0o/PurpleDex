@@ -106,7 +106,67 @@
       "HTB M25",
       "MITRE T1528",
       "MITRE T1078.004"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Kubernetes - Pod RCE and Token Theft - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"kubeletctl\" and SyslogMessage has \"exec\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// Kubelet exec (POST /exec) to steal a service-account token, then API calls with that token from a new IP",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1528",
+          "T1610"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Kubernetes - Pod RCE and Token Theft - Splunk",
+        "logic": "index=k8s sourcetype=\"kube:apiserver:audit\" (objectRef.subresource=\"exec\" OR verb=\"create\" objectRef.resource=\"pods/exec\")\n| table _time, user.username, sourceIPs{}, objectRef.name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1528",
+          "T1610"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "k8s_audit_pod_exec",
+        "logic": "k8s_audit_pod_exec",
+        "data_source": "windows-security",
+        "attack": [
+          "T1528",
+          "T1610"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "k8s_service_account_token_reuse",
+        "logic": "k8s_service_account_token_reuse",
+        "data_source": "windows-security",
+        "attack": [
+          "T1528",
+          "T1610"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Runs a command in an exposed pod via the Kubelet API and steals its identity:\n  kubeletctl -i --server <ip>   the Kubelet API (10250), ignoring TLS errors\n  exec \"id\" -p <pod> -c <container>   execute a command in this pod/container\nThen cat /var/run/secrets/kubernetes.io/serviceaccount/token and ca.crt to grab the mounted service-account token and CA, and authenticate to the API server as that pod (kubectl auth can-i --list to see what it can do)."
 }

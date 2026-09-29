@@ -103,7 +103,71 @@
     ],
     "misconfiguration": "MachineAccountQuota > 0 (any domain user can add computer accounts). GenericWrite on computer objects for non-admin groups. No monitoring of msDS-AllowedToActOnBehalfOfOtherIdentity modifications.",
     "vulnerable_config": "# MachineAccountQuota allows any user to create computer accounts (default = 10):\n(Get-ADDomain).MillionBytesPerSecond  # wrong attr\nGet-ADObject (Get-ADDomain).DistinguishedName -Properties 'ms-DS-MachineAccountQuota' | Select-Object 'ms-DS-MachineAccountQuota'\n# ms-DS-MachineAccountQuota : 10 → any domain user can add 10 computer accounts\n\n# GenericWrite on a computer object:\nGet-ObjectAcl -Identity 'SERVER01$' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'GenericWrite'}",
-    "secure_config": "# Set MachineAccountQuota to 0:\nSet-ADDomain -Identity corp.local -Replace @{'ms-DS-MachineAccountQuota' = 0}\n\n# Verify:\n(Get-ADDomain corp.local).'ms-DS-MachineAccountQuota'  # Should be 0\n\n# Remove GenericWrite ACEs on computer objects:\n# Audit with BloodHound: 'Find Computers where Domain Users can RDP' / custom ACL queries\n\n# Monitor RBCD attribute changes:\n# Enable DS Access auditing → Event 5136\n# SIEM: EventID=5136 AND AttributeLDAPDisplayName='msDS-AllowedToActOnBehalfOfOtherIdentity' → CRITICAL ALERT"
+    "secure_config": "# Set MachineAccountQuota to 0:\nSet-ADDomain -Identity corp.local -Replace @{'ms-DS-MachineAccountQuota' = 0}\n\n# Verify:\n(Get-ADDomain corp.local).'ms-DS-MachineAccountQuota'  # Should be 0\n\n# Remove GenericWrite ACEs on computer objects:\n# Audit with BloodHound: 'Find Computers where Domain Users can RDP' / custom ACL queries\n\n# Monitor RBCD attribute changes:\n# Enable DS Access auditing → Event 5136\n# SIEM: EventID=5136 AND AttributeLDAPDisplayName='msDS-AllowedToActOnBehalfOfOtherIdentity' → CRITICAL ALERT",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Resource-Based Constrained Delegation (RBCD) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| project TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeValue\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Resource-Based Constrained Delegation (RBCD) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 LDAP_Display_Name=\"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| table _time, Computer, Subject_Account_Name, Object_DN, Value",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Resource-Based Constrained Delegation (RBCD) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 (Service_Name=\"*$\")\n| stats count by Account_Name, Service_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_rbcd_modification",
+        "logic": "win_security_rbcd_modification",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

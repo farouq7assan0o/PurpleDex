@@ -95,7 +95,79 @@
     ],
     "misconfiguration": "LSASS PPL disabled on DCs (common on older DCs - PPL requires Secure Boot or explicit configuration). EDR not deployed on DCs. MDI not deployed. DCs not rebooted regularly (patch persists longer).",
     "vulnerable_config": "# LSASS PPL disabled on DC:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').RunAsPPL\n# Returns $null or 0 = PPL NOT enabled on DC = LSASS patchable\n\n# EDR absent on DC:\n# Get-Service CsFalconService,MDEClient  # Not found = no EDR on DC\n\n# Result: Skeleton Key injected via Mimikatz:\n# sekurlsa::skeleton\n# DC LSASS patched - password 'mimikatz' now works for all domain users",
-    "secure_config": "# Enable LSASS PPL on DCs:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RunAsPPL -Value 1\n# With Secure Boot: Set RunAsPPLBoot = 1 in addition\n\n# Via GPO:\n# Computer Config → Admin Templates → MS Security Guide\n# → Configure LSASS to run as a protected process: Enabled\n\n# Deploy MDI on all DCs:\n# MDI 'Skeleton Key malware attack' detection is built-in\n\n# Deploy EDR (Defender for Endpoint) on DCs:\n# LSASS Memory → PsProtectedSignerWindows-Light verification\n\n# Sysmon Rule on DCs:\n# <ProcessAccess onmatch='include'>\n#   <TargetImage condition='is'>C:\\Windows\\System32\\lsass.exe</TargetImage>\n# </ProcessAccess>"
+    "secure_config": "# Enable LSASS PPL on DCs:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RunAsPPL -Value 1\n# With Secure Boot: Set RunAsPPLBoot = 1 in addition\n\n# Via GPO:\n# Computer Config → Admin Templates → MS Security Guide\n# → Configure LSASS to run as a protected process: Enabled\n\n# Deploy MDI on all DCs:\n# MDI 'Skeleton Key malware attack' detection is built-in\n\n# Deploy EDR (Defender for Endpoint) on DCs:\n# LSASS Memory → PsProtectedSignerWindows-Light verification\n\n# Sysmon Rule on DCs:\n# <ProcessAccess onmatch='include'>\n#   <TargetImage condition='is'>C:\\Windows\\System32\\lsass.exe</TargetImage>\n# </ProcessAccess>",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Skeleton Key (LSASS Patch on DC) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"OpenProcessApiCall\" and FileName =~ \"lsass.exe\"\n| where DeviceName has \"DC\"\n| where InitiatingProcessFileName !in~ (\"MsMpEng.exe\",\"wininit.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1556.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Skeleton Key (LSASS Patch on DC) (1) - Splunk",
+        "logic": "index=sysmon EventCode=10 TargetImage=\"*lsass.exe\" ComputerName=\"*DC*\"\n| where NOT match(SourceImage, \"(?i)(MsMpEng|wininit)\\\\.exe\")\n| table _time, Computer, SourceImage, GrantedAccess",
+        "data_source": "sysmon",
+        "attack": [
+          "T1556.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "10"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Skeleton Key (LSASS Patch on DC) (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 CommandLine=\"*misc::skeleton*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1556.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_mimikatz_command_line",
+        "logic": "proc_creation_win_hktl_mimikatz_command_line",
+        "data_source": "sysmon",
+        "attack": [
+          "T1556.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_mdi_skeleton_key_malware",
+        "logic": "win_mdi_skeleton_key_malware",
+        "data_source": "windows-security",
+        "attack": [
+          "T1556.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

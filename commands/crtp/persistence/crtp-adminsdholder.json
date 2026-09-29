@@ -99,7 +99,57 @@
     ],
     "misconfiguration": "No monitoring of AdminSDHolder DACL. No SIEM alert on CN=AdminSDHolder modifications. SDProp interval not adjusted (60 min window for detection and response).",
     "vulnerable_config": "# No audit on AdminSDHolder:\n# DS Access auditing not enabled → Event 5136 not generated\n\n# AdminSDHolder DACL with backdoor ACE:\nGet-ObjectAcl 'CN=AdminSDHolder,CN=System,DC=corp,DC=local' -ResolveGUIDs | Where-Object {\n  $_.IdentityReference -match 'backdoor_account'\n}\n# Output: backdoor_account - GenericAll - propagates to ALL protected group members in 60 min",
-    "secure_config": "# Audit AdminSDHolder specifically:\n# Enable DS Access → Event 5136, then:\n# SIEM: EventID=5136 AND ObjectDN='CN=AdminSDHolder,CN=System,DC=corp,DC=local' → CRITICAL ALERT\n\n# Baseline and monitor AdminSDHolder DACL:\n$base = Get-ObjectAcl 'CN=AdminSDHolder,CN=System,DC=corp,DC=local' -ResolveGUIDs\n# Save $base to file; run daily comparison:\n$current = Get-ObjectAcl 'CN=AdminSDHolder,CN=System,DC=corp,DC=local' -ResolveGUIDs\nCompare-Object $base $current -Property IdentityReference,ActiveDirectoryRights\n# Any addition → INCIDENT RESPONSE\n\n# Reduce SDProp interval (reduces window for ACE to take effect):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters\n# AdminSDProtectFrequency = 300  (5 minutes instead of 60)"
+    "secure_config": "# Audit AdminSDHolder specifically:\n# Enable DS Access → Event 5136, then:\n# SIEM: EventID=5136 AND ObjectDN='CN=AdminSDHolder,CN=System,DC=corp,DC=local' → CRITICAL ALERT\n\n# Baseline and monitor AdminSDHolder DACL:\n$base = Get-ObjectAcl 'CN=AdminSDHolder,CN=System,DC=corp,DC=local' -ResolveGUIDs\n# Save $base to file; run daily comparison:\n$current = Get-ObjectAcl 'CN=AdminSDHolder,CN=System,DC=corp,DC=local' -ResolveGUIDs\nCompare-Object $base $current -Property IdentityReference,ActiveDirectoryRights\n# Any addition → INCIDENT RESPONSE\n\n# Reduce SDProp interval (reduces window for ACE to take effect):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\NTDS\\Parameters\n# AdminSDProtectFrequency = 300  (5 minutes instead of 60)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AdminSDHolder Abuse (SDProp Persistence) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5136 and ObjectDN has \"AdminSDHolder\"\n| project TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AdminSDHolder Abuse (SDProp Persistence) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 Object_DN=\"CN=AdminSDHolder,CN=System,*\"\n| table _time, Computer, Subject_Account_Name, Object_DN, Value",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adminsdholder_dacl_modification",
+        "logic": "win_security_adminsdholder_dacl_modification",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

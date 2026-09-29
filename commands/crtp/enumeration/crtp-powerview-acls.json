@@ -87,7 +87,80 @@
     ],
     "misconfiguration": "GenericAll/GenericWrite ACE on DA accounts/GPOs/DCs granted to non-admin groups. WriteDACL on domain object allows self-granting DCSync rights. Legacy admin delegation never cleaned up.",
     "vulnerable_config": "# Dangerous ACE - HelpDesk has GenericAll on a DA account:\nGet-ObjectAcl 'DomainAdmin1' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'GenericAll'}\n# Output: CORP\\HelpDesk - GenericAll → can reset DA password\n\n# WriteDACL on domain object:\nGet-ObjectAcl 'DC=corp,DC=local' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'WriteDacl'}",
-    "secure_config": "# Remove dangerous ACE:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# Enable AD object auditing via GPO:\n# Computer Config → Windows Settings → Security Settings → Advanced Audit Policy\n# → DS Access → Audit Directory Service Changes: Success,Failure\n# Event 5136 fires on every AD object modification\n\n# Quarterly BloodHound ACL audit:\n# Query: 'Find Principals with DCSync Rights' / 'Find Dangerous Rights for Domain Users'"
+    "secure_config": "# Remove dangerous ACE:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# Enable AD object auditing via GPO:\n# Computer Config → Windows Settings → Security Settings → Advanced Audit Policy\n# → DS Access → Audit Directory Service Changes: Success,Failure\n# Event 5136 fires on every AD object modification\n\n# Quarterly BloodHound ACL audit:\n# Query: 'Find Principals with DCSync Rights' / 'Find Dangerous Rights for Domain Users'",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView ACL Enumeration (Find-InterestingDomainAcl) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Find-InterestingDomainAcl\",\"Get-DomainObjectAcl\",\"ResolveGUIDs\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView ACL Enumeration (Find-InterestingDomainAcl) (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Find-InterestingDomainAcl*\" OR ScriptBlockText=\"*Get-DomainObjectAcl*\" OR ScriptBlockText=\"*-ResolveGUIDs*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView ACL Enumeration (Find-InterestingDomainAcl) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Access_Mask=\"0x20000\"\n| stats count by Account_Name, Client_Address | where count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_acl_enum",
+        "logic": "posh_ps_powerview_acl_enum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

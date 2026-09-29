@@ -91,6 +91,50 @@
     ],
     "misconfiguration": "System modules compiled without /DYNAMICBASE (fixed base addresses - common in older or legacy applications). DEP not enforced for the vulnerable process. Application opts out of DEP via IMAGE_DLLCHARACTERISTICS_NO_ISOLATION.",
     "vulnerable_config": "# Find modules without ASLR in Immunity Debugger:\n# !mona modules\n# Look for: ASLR: False, Rebase: False\n# → Module loaded at fixed address every time\n# → JMP ESP at that address is reliable\n\n# Check DEP status for process:\n# !mona nxopt\n# AlwaysOff or OptOut with process opting out = no DEP",
-    "secure_config": "# Force DEP for all processes (AlwaysOn policy):\nbcdedit /set nx AlwaysOn\n# → Prevents shellcode execution from stack even via JMP ESP\n\n# Recompile all modules with /DYNAMICBASE:\n# cl.exe /DYNAMICBASE all_modules.c\n# → All modules participate in ASLR\n# → No fixed JMP ESP address available\n\n# Application compatibility: test after enabling ASLR/DEP\n# Most modern applications support these without changes"
+    "secure_config": "# Force DEP for all processes (AlwaysOn policy):\nbcdedit /set nx AlwaysOn\n# → Prevents shellcode execution from stack even via JMP ESP\n\n# Recompile all modules with /DYNAMICBASE:\n# cl.exe /DYNAMICBASE all_modules.c\n# → All modules participate in ASLR\n# → No fixed JMP ESP address available\n\n# Application compatibility: test after enabling ASLR/DEP\n# Most modern applications support these without changes",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Windows BOF - Step 4: Find JMP ESP - Sentinel",
+        "logic": "// locating a JMP ESP gadget in a non-ASLR module (offline exploit development)\n// No victim-side logs; detect the resulting exploit/payload when it is used against a target.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows BOF - Step 4: Find JMP ESP - Splunk",
+        "logic": "# locating a JMP ESP gadget in a non-ASLR module (offline exploit development)\n# This runs on the attacker/tester host and generates no victim-side telemetry.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side rule",
+        "logic": "no target-side rule",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

@@ -117,7 +117,87 @@
     ],
     "misconfiguration": "SID filtering not enforced between parent and child domains (default within a forest - by design). No MDI deployment. krbtgt passwords stale in child domains (attackers work down the trust chain systematically).",
     "vulnerable_config": "# SID filtering typically NOT applied within a forest (by design):\nGet-ADTrust -Filter {Target -eq 'CHILD.CORP.LOCAL'} | Select-Object SIDFilteringForestAware,SIDFilteringQuarantined\n# SIDFilteringForestAware: False, SIDFilteringQuarantined: False\n# → SID History in tickets crosses the trust = child DA → Forest EA\n\n# Required: child domain krbtgt hash (from child domain compromise):\n# Then: Rubeus /golden /user:DA /domain:child.corp.local /sid:<child-SID> /sids:<parent-EA-SID> /rc4:<krbtgt-hash>",
-    "secure_config": "# Enable SID filtering on parent-child trust (breaks SID History but hardens forest):\nnetdom trust CHILD.CORP.LOCAL /domain:CORP.LOCAL /enablesidhistory:no /filtersids:yes\n\n# Or use Selective Authentication on forest trust:\nSet-ADTrust CHILD.CORP.LOCAL -SelectiveAuthentication $true\n\n# Deploy MDI on ALL DCs including child domain DCs:\n# MDI cross-domain correlation detects privilege escalation across trust boundaries\n\n# Treat child domain compromise as forest compromise:\n# Incident response: rotate krbtgt in BOTH child and parent domains\n# + change all DA passwords in both domains"
+    "secure_config": "# Enable SID filtering on parent-child trust (breaks SID History but hardens forest):\nnetdom trust CHILD.CORP.LOCAL /domain:CORP.LOCAL /enablesidhistory:no /filtersids:yes\n\n# Or use Selective Authentication on forest trust:\nSet-ADTrust CHILD.CORP.LOCAL -SelectiveAuthentication $true\n\n# Deploy MDI on ALL DCs including child domain DCs:\n# MDI cross-domain correlation detects privilege escalation across trust boundaries\n\n# Treat child domain compromise as forest compromise:\n# Incident response: rotate krbtgt in BOTH child and parent domains\n# + change all DA passwords in both domains",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Child-to-Parent Domain Escalation (krbtgt SID-History OR Trust Key) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4769\n| where TargetDomainName != \"<domain>\"\n| project TimeGenerated, Computer, TargetUserName, ServiceName, TargetDomainName, IpAddress\n| join kind=leftouter (IdentityDirectoryEvents | where ActionType has \"SID History\") on $left.TargetUserName == $right.AccountName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Child-to-Parent Domain Escalation (krbtgt SID-History OR Trust Key) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769\n| where like(Account_Domain, \"%child%\") AND Service_Name!=\"krbtgt\"\n| table _time, Account_Name, Account_Domain, Service_Name, Client_Address, Ticket_Encryption_Type",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Child-to-Parent Domain Escalation (krbtgt SID-History OR Trust Key) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768\n| where Ticket_Encryption_Type=\"0x17\" AND Account_Domain!=\"<parent_domain>\"\n| table _time, Account_Name, Account_Domain, Client_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberos_golden_ticket_activity",
+        "logic": "win_security_kerberos_golden_ticket_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_sid_history_addition",
+        "logic": "win_security_sid_history_addition",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

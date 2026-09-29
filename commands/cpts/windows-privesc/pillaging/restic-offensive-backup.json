@@ -90,7 +90,69 @@
       "MITRE T1003.003",
       "MITRE T1048"
     ],
-    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
+    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Pillaging - restic VSS Backup of Locked Hives - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"restic.exe\" and ProcessCommandLine has \"backup\" and ProcessCommandLine has \"use-fs-snapshot\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// restic --use-fs-snapshot backup of config dir to an unknown repo (VSS Event 8222)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - restic VSS Backup of Locked Hives (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*restic.exe\" (CommandLine=\"*backup*\" AND CommandLine=\"*--use-fs-snapshot*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - restic VSS Backup of Locked Hives (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:System\" EventCode=8222\n| table _time, Computer, Message",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "8222"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_restic_fs_snapshot_backup",
+        "logic": "proc_creation_win_restic_fs_snapshot_backup",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Backs up locked registry hives using restic's VSS support, then dumps them offline:\n  restic.exe -r <repo> backup   create a backup into the repo\n  C:\\Windows\\System32\\config   the live SAM/SYSTEM/SECURITY hives (normally locked)\n  --use-fs-snapshot        use a Volume Shadow Copy so the locked files can be read\nRestore the snapshot elsewhere and run secretsdump for the local hashes."
 }

@@ -108,7 +108,65 @@
     "misconfiguration": "Services expose excessive information: version banners, supported auth methods, valid usernames via error responses. IPMI has no authentication (version 2.0 cipher 0 vulnerability). RSH/rexec trust .rhosts files. rsync shares readable anonymously. Oracle TNS allows remote poisoning in older versions.",
     "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
     "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
-    "evasion": "Enumerate SIDs sparingly; use valid creds where possible; avoid brute loops that trip account lockout."
+    "evasion": "Enumerate SIDs sparingly; use valid creds where possible; avoid brute loops that trip account lockout.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Oracle TNS - Enumeration & Exploitation - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 1521\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// Oracle TNS listener enumeration on port 1521",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Oracle TNS - Enumeration & Exploitation (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"tnscmd*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Oracle TNS - Enumeration & Exploitation (2) - Splunk",
+        "logic": "index=network dest_port=1521\n| stats count by src_ip, dest_ip | where count>5",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_service_enumeration_tnscmd",
+        "logic": "net_service_enumeration_tnscmd",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Runs a full Oracle assessment with ODAT:\n  ./odat.py all   run every check module\n  -s <ip>         the Oracle server\nProbes the listener, brute-forces the SID, tests default creds, and reports privilege-escalation and file-access paths; scan 1521 with the oracle-sid-brute NSE script first, then log in with 'sqlplus user/pass@ip/SID'."
 }

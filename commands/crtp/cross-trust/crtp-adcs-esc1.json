@@ -115,7 +115,75 @@
     ],
     "misconfiguration": "Certificate template has CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT enabled AND Client Authentication EKU AND is enrollable by Domain Users. No CA Manager Approval. CA auditing not enabled.",
     "vulnerable_config": "# Find vulnerable templates (Certify / Certipy):\nCertify.exe find /vulnerable\n# [!] Vulnerable Certificate Templates:\n# Template: UserTemplate\n# Enrollee Supplies Subject: True\n# Extended Key Usages: Client Authentication\n# Enrollment Permissions: Domain Users\n# → ANY domain user can request cert as DA!\n\n# CA has no Manager Approval:\n# Certificate Templates → UserTemplate → Properties → Issuance Requirements\n# → CA certificate manager approval: unchecked = auto-issue = VULNERABLE",
-    "secure_config": "# Fix ESC1: disable 'Supply in the request':\n# Certificate Templates MMC → right-click template → Properties\n# → Subject Name tab → 'Supply in the request': UNCHECK\n# → 'Build from Active Directory information': CHECK\n\n# Or require CA Manager Approval:\n# → Issuance Requirements → CA certificate manager approval: CHECK\n\n# Audit vulnerable templates:\nCertify.exe find /vulnerable\nCertipy find -u user@corp.local -p pass -dc-ip 10.0.0.1 -vulnerable\n\n# Enable CA audit logging:\n# CA Properties → Auditing → Issue and manage certificate requests: CHECK\n# Event 4887 will log all certificate issuances"
+    "secure_config": "# Fix ESC1: disable 'Supply in the request':\n# Certificate Templates MMC → right-click template → Properties\n# → Subject Name tab → 'Supply in the request': UNCHECK\n# → 'Build from Active Directory information': CHECK\n\n# Or require CA Manager Approval:\n# → Issuance Requirements → CA certificate manager approval: CHECK\n\n# Audit vulnerable templates:\nCertify.exe find /vulnerable\nCertipy find -u user@corp.local -p pass -dc-ip 10.0.0.1 -vulnerable\n\n# Enable CA audit logging:\n# CA Properties → Auditing → Issue and manage certificate requests: CHECK\n# Event 4887 will log all certificate issuances",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD CS ESC1 - Subject Alt Name (SAN) Abuse - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4887\n| extend Requester = tostring(RequesterName), SAN = tostring(SubjectAltName)\n| where isnotempty(SAN) and not(SAN has Requester)\n| project TimeGenerated, Computer, Requester, CertificateTemplate, SAN\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC1 - Subject Alt Name (SAN) Abuse (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4887\n| eval SAN=mvindex(split(Message,\"\\n\"),5)\n| where like(SAN, \"%SubjectAltName%\")\n| table _time, ComputerName, Requester, CertificateTemplate, SAN",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC1 - Subject Alt Name (SAN) Abuse (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x12\n| where Certificate_Thumbprint!=\"\"\n| table _time, Account_Name, Client_Address, Certificate_Thumbprint",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_certificate_enrollment_with_san",
+        "logic": "win_security_adcs_certificate_enrollment_with_san",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

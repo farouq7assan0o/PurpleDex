@@ -83,7 +83,92 @@
     "misconfiguration": "AD objects (users, groups, OUs, GPOs) have overly permissive ACEs granting non-privileged users GenericAll, GenericWrite, WriteDACL, WriteOwner, or ExtendedRight (ForceChangePassword, AddMember). Because AD ACEs are not prominently visible in standard tools and can be inherited from parent OUs, these misconfigurations accumulate over time - especially after large provisioning events or mergers.",
     "vulnerable_config": "# Finding objects where Domain Users have dangerous rights:\nGet-DomainObjectAcl -ResolveGUIDs |\n    Where-Object {\n        $_.IdentityReference -eq 'CORP\\Domain Users' -and\n        $_.ActiveDirectoryRights -match 'GenericAll|GenericWrite|WriteDACL|WriteOwner'\n    }\n\n# Or via BloodHound:\n# 'Shortest Paths to Domain Admins from Domain Users' query\n# Shows every ACE path from low-privilege to DA",
     "secure_config": "# Remove dangerous ACEs using PowerView:\nRemove-DomainObjectAcl -TargetIdentity 'Domain Admins' \\\n    -PrincipalIdentity 'Domain Users' -Rights GenericWrite\n\n# Quarterly ACL audit script:\nGet-DomainObjectAcl -ResolveGUIDs | Where-Object {\n    $_.ActiveDirectoryRights -match 'GenericAll|WriteDACL|WriteOwner' -and\n    $_.IdentityReference -notmatch 'Domain Admins|Enterprise Admins|SYSTEM'\n} | Export-Csv acl_audit_$(Get-Date -f yyyyMMdd).csv\n\n# Enable AD Recycle Bin and Protected Users group\n# Use Tiered Administration model to limit blast radius of any single compromise\n# Enable MDI (Microsoft Defender for Identity) - detects ACL abuse chains",
-    "evasion": "Make the DACL/attribute change, use it, then REVERT it (remove the added SPN/rights) to erase the persistence artifact; a single scoped edit is low-signal without object auditing."
+    "evasion": "Make the DACL/attribute change, use it, then REVERT it (remove the added SPN/rights) to erase the persistence artifact; a single scoped edit is low-signal without object auditing.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Object ACL Abuse in Active Directory - BloodHound & Detection - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4738, 4742, 4724, 4662)\n| where SubjectUserName !endswith \"$\"\n| project TimeGenerated, Computer, EventID, SubjectUserName, TargetUserName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1078.002",
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Object ACL Abuse in Active Directory - BloodHound & Detection (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4738 OR EventCode=4742 OR EventCode=4724 OR EventCode=4662)\n| where Subject_Account_Name!=\"*$\"\n| table _time, Computer, Subject_Account_Name, Target_Account_Name, EventCode",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1078.002",
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662",
+          "4724",
+          "4738",
+          "4742"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Object ACL Abuse in Active Directory - BloodHound & Detection (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*SharpHound.exe\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1222.001",
+          "T1078.002",
+          "T1484.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ad_object_dacl_change",
+        "logic": "win_security_ad_object_dacl_change",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1078.002",
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_priv_account_modified_by_nonadmin",
+        "logic": "win_security_priv_account_modified_by_nonadmin",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1078.002",
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "steps": [
     {

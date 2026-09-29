@@ -82,7 +82,55 @@
       "HTB M26",
       "MITRE T1574.011"
     ],
-    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service."
+    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Weak Permissions - Writable Service Registry (ImagePath) - Sentinel",
+        "logic": "DeviceRegistryEvents\n| where RegistryValueName == \"ImagePath\" and RegistryKey has \"CurrentControlSet\\\\Services\"\n| where InitiatingProcessFileName !in~ (\"services.exe\",\"TrustedInstaller.exe\",\"msiexec.exe\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryKey, RegistryValueData\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1574.011"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Writable Service Registry (ImagePath) - Splunk",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\CurrentControlSet\\\\Services\\\\*\\\\ImagePath\"\n| where NOT match(Image, \"(?i)(services|trustedinstaller|msiexec)\\\\.exe\")\n| table _time, Computer, Image, TargetObject, Details",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574.011"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "13"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_registry_service_imagepath_modification (weak service key ACL",
+        "logic": "win_registry_service_imagepath_modification (weak service key ACL",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.011"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

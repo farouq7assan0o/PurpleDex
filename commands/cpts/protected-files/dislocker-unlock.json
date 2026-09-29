@@ -99,7 +99,53 @@
     "splunk_spl": "index=* \"dislocker\"\n| table _time, host, user, _raw\n// unlocks a BitLocker volume with a recovered key; local operation, no network signal",
     "elastic_kql": "process.name:dislocker*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"dislocker\" or ProcessCommandLine has \"dislocker\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// unlocks a BitLocker volume with a recovered key; local operation, no network signal",
-    "sigma_rules": "no target-side telemetry (dislocker runs on the attacker host)"
+    "sigma_rules": "no target-side telemetry (dislocker runs on the attacker host)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Dislocker - Unlock a BitLocker Volume - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"dislocker\" or ProcessCommandLine has \"dislocker\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// unlocks a BitLocker volume with a recovered key; local operation, no network signal",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Dislocker - Unlock a BitLocker Volume - Splunk",
+        "logic": "index=* \"dislocker\"\n| table _time, host, user, _raw\n// unlocks a BitLocker volume with a recovered key; local operation, no network signal",
+        "data_source": "network-flow",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Mounts a BitLocker volume on Linux once you have the recovery key:\n  sudo dislocker            decrypt the BitLocker partition\n  /dev/loop0p2             the BitLocker partition (attach the image with losetup -f -P first)\n  -u<recovery_key>         unlock with the recovery password/key\n  -- /media/bitlocker      expose the decrypted virtual file here\nThen mount /media/bitlocker/dislocker-file to read the drive - the counterpart to cracking, used once you have the key."
 }

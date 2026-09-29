@@ -109,7 +109,82 @@
     ],
     "misconfiguration": "Accounts created with 'Do not require Kerberos preauthentication' checked - often legacy service accounts or misconfigured automation accounts. No periodic audit for this attribute.",
     "vulnerable_config": "# Accounts vulnerable to AS-REP roasting:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth\n# Output: svc_legacy - DoesNotRequirePreAuth: True → VULNERABLE\n\n# Can be exploited without any credentials:\n# Rubeus.exe asreproast /user:svc_legacy /format:hashcat /outfile:asrep.txt\n# → $krb5asrep$23$svc_legacy@CORP.LOCAL:... (crack with hashcat -m 18200)",
-    "secure_config": "# Audit and fix all pre-auth disabled accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | ForEach-Object {\n  Set-ADAccountControl $_ -DoesNotRequirePreAuth $false\n  Write-Output \"Fixed: $($_.SamAccountName)\"\n}\n\n# Scheduled task / quarterly audit:\n$vuln = Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true}\nif ($vuln) { Send-MailMessage -To 'security@corp.local' -Subject 'AS-REP Roastable Accounts Found' -Body ($vuln | Out-String) }\n\n# MDI: 'AS-REP roasting attack' alert enabled by default on MDI deployment"
+    "secure_config": "# Audit and fix all pre-auth disabled accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} | ForEach-Object {\n  Set-ADAccountControl $_ -DoesNotRequirePreAuth $false\n  Write-Output \"Fixed: $($_.SamAccountName)\"\n}\n\n# Scheduled task / quarterly audit:\n$vuln = Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true}\nif ($vuln) { Send-MailMessage -To 'security@corp.local' -Subject 'AS-REP Roastable Accounts Found' -Body ($vuln | Out-String) }\n\n# MDI: 'AS-REP roasting attack' alert enabled by default on MDI deployment",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AS-REP Roasting (Rubeus) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"0\" and TicketEncryptionType == \"0x17\"\n| summarize accounts=make_set(TargetUserName), count() by IpAddress, bin(TimeGenerated, 10m)\n| where count_ > 3\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AS-REP Roasting (Rubeus) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Pre_Authentication_Type=0 Ticket_Encryption_Type=0x17\n| stats count values(Account_Name) as accounts by Client_Address\n| where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AS-REP Roasting (Rubeus) (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 (CommandLine=\"*asreproast*\" OR CommandLine=\"*Rubeus*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberos_asrep_roasting",
+        "logic": "win_security_kerberos_asrep_roasting",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_rubeus",
+        "logic": "proc_creation_win_hktl_rubeus",
+        "data_source": "sysmon",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

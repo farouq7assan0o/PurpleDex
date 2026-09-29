@@ -89,7 +89,77 @@
     ],
     "misconfiguration": "Active Directory's default read ACL allows any authenticated domain user to enumerate nearly the entire directory: all user accounts, groups, SPNs, computer objects, trust relationships, and many sensitive attributes. There is no built-in 'need to know' principle on LDAP reads. BloodHound, PowerView, and ldapsearch all exploit these open default ACLs to map attack paths.",
     "vulnerable_config": "# AD default permissions - authenticated users can read:\n# All user objects: sAMAccountName, userPrincipalName, memberOf, servicePrincipalName\n# All computer objects: DNS names, OS versions, operating system attributes\n# All group memberships, GPOs, OU structure, domain trusts\n\n# Verify with any low-priv account:\nGet-ADUser -Filter * -Properties *  # returns all users + attributes\nGet-ADGroup -Filter * | Get-ADGroupMember  # all group memberships",
-    "secure_config": "# 1. Enable AD Recycle Bin + Protected Users group\n# 2. Audit and tighten ACLs on sensitive attributes:\n#    msDS-AllowedToDelegateTo, adminCount, memberOf for privileged groups\n\n# 3. Disable SMB null sessions + restrict LDAP anonymous binds (see smb/ldap cards)\n\n# 4. Detect enumeration via volume:\n# Sysmon Event 3 (network connection) from non-DC to DC on port 389/636\n# Event 4661 - access to SAM objects (high-volume; baseline first)\n# Microsoft Defender for Identity: 'Account Enumeration Reconnaissance' alert\n\n# 5. Deploy Honey accounts/objects:\n# Fake high-priv account (no real access) - any LDAP query for it = attacker\n# BloodHound run from non-DC = detectable via DC LDAP traffic volume\n\n# 6. Tiered administration: Tier 0 DCs, Tier 1 servers, Tier 2 workstations\n#    Each tier can only query its own tier's objects"
+    "secure_config": "# 1. Enable AD Recycle Bin + Protected Users group\n# 2. Audit and tighten ACLs on sensitive attributes:\n#    msDS-AllowedToDelegateTo, adminCount, memberOf for privileged groups\n\n# 3. Disable SMB null sessions + restrict LDAP anonymous binds (see smb/ldap cards)\n\n# 4. Detect enumeration via volume:\n# Sysmon Event 3 (network connection) from non-DC to DC on port 389/636\n# Event 4661 - access to SAM objects (high-volume; baseline first)\n# Microsoft Defender for Identity: 'Account Enumeration Reconnaissance' alert\n\n# 5. Deploy Honey accounts/objects:\n# Fake high-priv account (no real access) - any LDAP query for it = attacker\n# BloodHound run from non-DC = detectable via DC LDAP traffic volume\n\n# 6. Tiered administration: Tier 0 DCs, Tier 1 servers, Tier 2 workstations\n#    Each tier can only query its own tier's objects",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "BloodHound.py - Remote AD Data Collection (Linux) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| summarize reads=count() by SubjectUserName, IpAddress, bin(TimeGenerated, 5m)\n| where reads > 50\n| sort by reads desc\n// bloodhound.py: massive LDAP+SMB collection burst from a Linux host",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "BloodHound.py - Remote AD Data Collection (Linux) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Access_Mask=0x100\n| stats count by Account_Name, Client_Address, bin(_time, 5m)\n| where count>50",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "BloodHound.py - Remote AD Data Collection (Linux) (2) - Splunk",
+        "logic": "index=zeek sourcetype=\"zeek:ldap\"\n| stats count by id.orig_h | where count>100",
+        "data_source": "network-flow",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "bloodhound-python"

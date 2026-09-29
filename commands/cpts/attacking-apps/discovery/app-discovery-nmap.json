@@ -89,7 +89,64 @@
       "HTB M24",
       "MITRE T1046",
       "MITRE T1595.002"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Application Discovery - Nmap Web Ports - Sentinel",
+        "logic": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap http-enum application discovery across web ports",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Application Discovery - Nmap Web Ports (1) - Splunk",
+        "logic": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Application Discovery - Nmap Web Ports (2) - Splunk",
+        "logic": "index=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_port_scan_activity",
+        "logic": "net_port_scan_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Sweeps a scope for common web/app ports with nmap:\n  -p 80,443,8000,8080,8180,8888,10000   HTTP and alternate HTTP ports\n  --open                                 only report open ports\n  -oA web_discovery                      save all output formats (the XML feeds screenshot tools)\n  -iL <scope_file>                       read targets from file\nBuilds the list of live web apps to triage; pipe web_discovery.xml into EyeWitness or Aquatone next."
 }

@@ -89,6 +89,54 @@
     ],
     "misconfiguration": "No stack canary: EIP overwrite reaches saved return address undetected. ASLR disabled: return addresses are predictable. No CFG: arbitrary EIP redirection succeeds without control flow validation.",
     "vulnerable_config": "# Verify no stack canary (Immunity Debugger/mona):\n# !mona modules\n# → GS: False (no stack canary) for vulnerable module\n# → ASLR: False (fixed base address)\n# → Rebase: False\n# → SafeSEH: False\n# → NXCompat: False\n# ALL False = fully exploitable",
-    "secure_config": "# Enable all binary mitigations:\n# cl.exe /GS /DYNAMICBASE /NXCOMPAT /GUARD:cf vuln.c\n\n# Verify mitigations on existing binary:\n# PowerShell:\n$binary = 'C:\\Program Files\\App\\app.exe'\n$pe = [System.Reflection.Assembly]::LoadFile($binary)\n# Or use:\n# Get-PEHeader $binary | Select-Object ASLR, DEP, SafeSEH, CFGuard\n\n# Process Mitigation Policy via PowerShell:\nSet-ProcessMitigation -Name app.exe -Enable DEP,ASLR,StrictHandleChecks,CFG"
+    "secure_config": "# Enable all binary mitigations:\n# cl.exe /GS /DYNAMICBASE /NXCOMPAT /GUARD:cf vuln.c\n\n# Verify mitigations on existing binary:\n# PowerShell:\n$binary = 'C:\\Program Files\\App\\app.exe'\n$pe = [System.Reflection.Assembly]::LoadFile($binary)\n# Or use:\n# Get-PEHeader $binary | Select-Object ASLR, DEP, SafeSEH, CFGuard\n\n# Process Mitigation Policy via PowerShell:\nSet-ProcessMitigation -Name app.exe -Enable DEP,ASLR,StrictHandleChecks,CFG",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Windows BOF - Step 2: EIP Control (Pattern Offset) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"ProcessCrash\" or AdditionalFields has \"AccessViolation\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, AdditionalFields\n| sort by Timestamp desc\n// EIP overwrite crashes the service (Application Error 1000 with the offset in EIP)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows BOF - Step 2: EIP Control (Pattern Offset) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Application\" (EventCode=1000 OR EventCode=1001)\n| table _time, Computer, param1, param2",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1000",
+          "1001"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_application_error_service_crash",
+        "logic": "win_application_error_service_crash",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

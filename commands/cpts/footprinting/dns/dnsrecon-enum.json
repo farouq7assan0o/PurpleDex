@@ -121,7 +121,47 @@
     "splunk_spl": "index=dns sourcetype=\"stream:dns\"\n| stats count count(eval(reply_code=\\\"NXDOMAIN\\\")) as nx by src_ip, bin(_time, 1m)\n| where count>50 OR nx>30",
     "elastic_kql": "event.category:network AND dns.question.name:* AND source.ip:*",
     "sentinel_kql": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// dnsrecon multi-technique enumeration (AXFR attempt + brute)",
-    "sigma_rules": "net_dns_enumeration (dnsrecon multi-technique enumeration (AXFR attempt + brute))"
+    "sigma_rules": "net_dns_enumeration (dnsrecon multi-technique enumeration (AXFR attempt + brute))",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DNS - dnsrecon Standard & Brute Force - Sentinel",
+        "logic": "DnsEvents\n| summarize queries=count(), nx=countif(ResultCode == 3) by ClientIP, bin(TimeGenerated, 1m)\n| where queries > 50 or nx > 30\n| sort by queries desc\n// dnsrecon multi-technique enumeration (AXFR attempt + brute)",
+        "data_source": "dns",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DNS - dnsrecon Standard & Brute Force - Splunk",
+        "logic": "index=dns sourcetype=\"stream:dns\"\n| stats count count(eval(reply_code=\\\"NXDOMAIN\\\")) as nx by src_ip, bin(_time, 1m)\n| where count>50 OR nx>30",
+        "data_source": "dns",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_dns_enumeration",
+        "logic": "net_dns_enumeration",
+        "data_source": "dns",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns"
+      ]
+    }
   },
   "explain": "Runs standard DNS enumeration with dnsrecon:\n  dnsrecon -d <domain>   the target domain\n  -t std                 standard record enumeration (SOA, NS, A, AAAA, MX, TXT, SPF) plus wildcard and AXFR checks\nGives a broad DNS picture in one pass; switch to '-t brt -D <wordlist>' to brute-force subdomains from a list."
 }

@@ -102,7 +102,52 @@
     "splunk_spl": "index=* (\"hashcat\" AND \"-a 0\")\n| table _time, host, user, _raw",
     "elastic_kql": "process.name:hashcat* AND process.args:\"-a 0\"",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"-a 0\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline dictionary attack; no victim signal - focus on preventing the hash dump",
-    "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
+    "sigma_rules": "proc_creation_hashcat_offline_cracking (no target-side telemetry - detect the preceding hash theft)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Hashcat - Dictionary Attack - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"hashcat\" and ProcessCommandLine has \"-a 0\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline dictionary attack; no victim signal - focus on preventing the hash dump",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Hashcat - Dictionary Attack - Splunk",
+        "logic": "index=* (\"hashcat\" AND \"-a 0\")\n| table _time, host, user, _raw",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_hashcat_offline_cracking",
+        "logic": "proc_creation_hashcat_offline_cracking",
+        "data_source": "sysmon",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "type": "command",
   "explain": "Runs a straight dictionary attack with hashcat:\n  hashcat -a 0             attack mode 0 = straight (hash each wordlist entry and compare)\n  -m <mode>                the hash algorithm number\n  <hash>                   the target hash\n  /usr/share/wordlists/rockyou.txt   the wordlist\nAdd -r <rule_file> (e.g. best64.rule) to mutate each candidate, greatly expanding coverage at little cost."

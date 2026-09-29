@@ -87,7 +87,62 @@
       "MITRE T1552.001",
       "MITRE T1078"
     ],
-    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
+    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Credential Hunting - Stored Credentials (cmdkey/runas) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where (FileName =~ \"cmdkey.exe\" and ProcessCommandLine has \"/list\") or (FileName =~ \"runas.exe\" and ProcessCommandLine has \"/savecred\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - Stored Credentials (cmdkey/runas) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*cmdkey.exe\" CommandLine=\"*/list*\") OR (Image=\"*runas.exe\" CommandLine=\"*/savecred*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_cmdkey_recon",
+        "logic": "proc_creation_win_cmdkey_recon",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_runas_savecred",
+        "logic": "proc_creation_win_runas_savecred",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

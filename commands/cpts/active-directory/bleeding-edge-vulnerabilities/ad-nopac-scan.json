@@ -70,7 +70,56 @@
     ],
     "misconfiguration": "Two AD design flaws combined: (1) CVE-2021-42278 - non-admin domain users can rename computer accounts to impersonate DCs (the sAMAccountName attribute on a computer object they own can be set to any value); (2) CVE-2021-42287 - the KDC's PAC validation falls back to a user-account lookup when a machine-account ticket is requested, allowing privilege escalation. Together, a low-priv user creates a computer (ms-DS-MachineAccountQuota default = 10), renames it to the DC name, requests a TGT, renames it back, then obtains a ticket with Domain Admin rights.",
     "vulnerable_config": "# Default insecure settings that enable NoPac:\n# 1. ms-DS-MachineAccountQuota >= 1 (default = 10)\nGet-ADObject (Get-ADDomain).DistinguishedName -Properties ms-DS-MachineAccountQuota\n# ms-DS-MachineAccountQuota: 10  <-- any user can add 10 computers\n\n# 2. November 2021 patches NOT applied:\n# KB5008102 (CVE-2021-42278) + KB5008380 (CVE-2021-42287)\nGet-HotFix -Id KB5008102  # empty output = unpatched",
-    "secure_config": "# Fix 1 - Set MachineAccountQuota to 0 (block non-admin machine joins):\nSet-ADDomain -Identity corp.local -Replace @{'ms-DS-MachineAccountQuota'=0}\n\n# Fix 2 - Apply patches:\n# KB5008102 (Oct 2021 cumulative) + KB5008380 (Nov 2021 cumulative)\n# Verify: Get-HotFix -Id KB5008102, KB5008380\n\n# Fix 3 - Enforce PAC validation (registry, post-patch):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\Kdc\n#   PacRequestorEnforcement = 2  (fully enforce after 2023-04-11 deadline)\n\n# Detection: 4741 (computer account created) + 4781 (renamed) in rapid succession"
+    "secure_config": "# Fix 1 - Set MachineAccountQuota to 0 (block non-admin machine joins):\nSet-ADDomain -Identity corp.local -Replace @{'ms-DS-MachineAccountQuota'=0}\n\n# Fix 2 - Apply patches:\n# KB5008102 (Oct 2021 cumulative) + KB5008380 (Nov 2021 cumulative)\n# Verify: Get-HotFix -Id KB5008102, KB5008380\n\n# Fix 3 - Enforce PAC validation (registry, post-patch):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\Kdc\n#   PacRequestorEnforcement = 2  (fully enforce after 2023-04-11 deadline)\n\n# Detection: 4741 (computer account created) + 4781 (renamed) in rapid succession",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "NoPac Scanner - CVE-2021-42278/42287 Check - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4741, 4742, 4781)\n| project TimeGenerated, Computer, SubjectUserName, TargetUserName, EventID\n| sort by TimeGenerated desc\n// noPac scanner: machine account created (4741) then sAMAccountName changed to a DC name (4742/4781)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "NoPac Scanner - CVE-2021-42278/42287 Check - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4741 OR EventCode=4742 OR EventCode=4781)\n| table _time, Computer, Subject_Account_Name, Target_Account_Name, EventCode",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4741",
+          "4742",
+          "4781"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_machine_account_name_change",
+        "logic": "win_security_machine_account_name_change",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "noPac"

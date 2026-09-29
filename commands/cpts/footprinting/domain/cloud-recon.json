@@ -94,7 +94,47 @@
     ],
     "misconfiguration": "Services expose excessive information: version banners, supported auth methods, valid usernames via error responses. IPMI has no authentication (version 2.0 cipher 0 vulnerability). RSH/rexec trust .rhosts files. rsync shares readable anonymously. Oracle TNS allows remote poisoning in older versions.",
     "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
-    "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)"
+    "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Cloud Resources - Discovery - Sentinel",
+        "logic": "DnsEvents\n| where Name has_any (\".s3.amazonaws.com\",\".blob.core.windows.net\",\".storage.googleapis.com\")\n| summarize count() by ClientIP, Name, bin(TimeGenerated, 5m)\n| sort by count_ desc\n// cloud asset recon: bucket/blob name resolution enumeration",
+        "data_source": "dns",
+        "attack": [
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Cloud Resources - Discovery - Splunk",
+        "logic": "index=dns sourcetype=\"stream:dns\" (query=\"*.s3.amazonaws.com\" OR query=\"*.blob.core.windows.net\" OR query=\"*.storage.googleapis.com\")\n| stats count by src_ip, query",
+        "data_source": "dns",
+        "attack": [
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_dns_cloud_storage_enum",
+        "logic": "net_dns_cloud_storage_enum",
+        "data_source": "dns",
+        "attack": [
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns"
+      ]
+    }
   },
   "explain": "Finds a company's exposed cloud storage with search-engine dorks:\n  intext:<company> inurl:amazonaws.com   Google dork for S3 URLs referencing the target\nMisconfigured buckets/blobs leak keys, backups, and source; the card pairs it with inurl:blob.core.windows.net for Azure and a host loop to resolve discovered subdomains to cloud IPs."
 }

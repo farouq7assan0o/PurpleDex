@@ -87,7 +87,82 @@
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4624 Logon_Type=3 OR EventCode=4648)\n| where Process_Name=\"*wsmprovhost.exe\" OR Logon_Process=\"*\"\n| table _time, Computer, Account_Name, Source_Network_Address\n\nindex=sysmon EventCode=3 DestinationPort=5985\n| table _time, Computer, SourceIp, DestinationIp",
     "elastic_kql": "event.code:\"4648\" OR (event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND process.name:wsmprovhost.exe)",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName =~ \"wsmprovhost.exe\"\n| project Timestamp, DeviceName, AccountName, InitiatingProcessRemoteSessionDeviceName\n| union (DeviceNetworkEvents | where RemotePort == 5985 | project Timestamp, DeviceName, RemoteIP, InitiatingProcessFileName)\n| sort by Timestamp desc",
-    "sigma_rules": "win_security_remote_powershell_session (Enter-PSSession, wsmprovhost + 4624 type 3)"
+    "sigma_rules": "win_security_remote_powershell_session (Enter-PSSession, wsmprovhost + 4624 type 3)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Enter-PSSession - WinRM Shell (Windows) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"wsmprovhost.exe\"\n| project Timestamp, DeviceName, AccountName, InitiatingProcessRemoteSessionDeviceName\n| union (DeviceNetworkEvents | where RemotePort == 5985 | project Timestamp, DeviceName, RemoteIP, InitiatingProcessFileName)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Enter-PSSession - WinRM Shell (Windows) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4624 Logon_Type=3 OR EventCode=4648)\n| where Process_Name=\"*wsmprovhost.exe\" OR Logon_Process=\"*\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "4648"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Enter-PSSession - WinRM Shell (Windows) (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 DestinationPort=5985\n| table _time, Computer, SourceIp, DestinationIp",
+        "data_source": "sysmon",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_remote_powershell_session (Enter-PSSession",
+        "logic": "win_security_remote_powershell_session (Enter-PSSession",
+        "data_source": "powershell",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "wsmprovhost + 4624 type 3)",
+        "logic": "wsmprovhost + 4624 type 3)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "powershell"

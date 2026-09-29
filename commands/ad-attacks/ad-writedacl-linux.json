@@ -81,7 +81,88 @@
     ],
     "misconfiguration": "Non-Tier-0 principals hold WriteDACL / Owns / WriteOwner over the domain object, letting them self-grant replication rights.",
     "vulnerable_config": "# BloodHound: WriteDacl/Owns/WriteOwner edge to the domain.\nGet-DomainObjectAcl -Identity '<domain>' -ResolveGUIDs |\n  ? { $_.ActiveDirectoryRights -match 'WriteDacl|WriteOwner' }",
-    "secure_config": "# Remove the excessive ACE on the domain object; restrict to Domain Admins / Tier-0.\n# Alert on Event 4662 with replication GUIDs where the account is not a Domain Controller."
+    "secure_config": "# Remove the excessive ACE on the domain object; restrict to Domain Admins / Tier-0.\n# Alert on Event 4662 with replication GUIDs where the account is not a Domain Controller.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WriteDACL to DCSync (bloodyAD, Linux) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662 and (Properties has \"1131f6aa\" or Properties has \"1131f6ad\")\n| where SubjectUserName !endswith \"$\"\n| project TimeGenerated, Actor=SubjectUserName, Object=ObjectName\n| union (SecurityEvent | where EventID == 5136 and AttributeLDAPDisplayName == \"nTSecurityDescriptor\" | project TimeGenerated, Actor=SubjectUserName, Object=ObjectDN)\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662",
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "WriteDACL to DCSync (bloodyAD, Linux) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"nTSecurityDescriptor\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "WriteDACL to DCSync (bloodyAD, Linux) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Properties=\"*1131f6aa*\" OR Properties=\"*1131f6ad*\"\n| where Account_Name!=\"*$\"\n| table _time, Account_Name, ObjectName",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_dcsync_replication_rights",
+        "logic": "win_security_dcsync_replication_rights",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_domain_dacl_modification",
+        "logic": "win_security_domain_dacl_modification",
+        "data_source": "windows-security",
+        "attack": [
+          "T1222.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "bloodyAD",

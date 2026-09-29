@@ -92,7 +92,83 @@
     ],
     "misconfiguration": "CA has the SID security extension disabled globally (ESC16), and a controllable account can both enroll for client-authentication certificates and have its userPrincipalName rewritten.",
     "vulnerable_config": "# certipy flags it:\ncertipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -stdout\n# Look for: [!] ESC16 / 'Security Extension Disabled' on the CA.\n# Registry on the CA (bad): szOID_NTDS_CA_SECURITY_EXT disabled via DisableExtensionList / EDITF flags.",
-    "secure_config": "# Re-enable the SID security extension on the CA (remove it from the disable list), then restart certsvc:\ncertutil -setreg policy\\DisableExtensionList -szOID_NTDS_CA_SECURITY_EXT\ncertutil -setreg policy\\EditFlags +EDITF_... # (undo any weakening flags)\nnet stop certsvc && net start certsvc\n# Enforce strong certificate mapping on DCs (KB5014754 Full Enforcement) so UPN-only mapping is rejected."
+    "secure_config": "# Re-enable the SID security extension on the CA (remove it from the disable list), then restart certsvc:\ncertutil -setreg policy\\DisableExtensionList -szOID_NTDS_CA_SECURITY_EXT\ncertutil -setreg policy\\EditFlags +EDITF_... # (undo any weakening flags)\nnet stop certsvc && net start certsvc\n# Enforce strong certificate mapping on DCs (KB5014754 Full Enforcement) so UPN-only mapping is rejected.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD CS ESC16 - Security Extension Disabled (UPN Spoof to DA) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"userPrincipalName\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, NewUPN=tostring(AttributeValue), OperationType\n| join kind=leftouter (\n    SecurityEvent | where EventID in (4886, 4887)\n    | project CaTime=TimeGenerated, Requester, CertificateTemplate\n) on $left.Actor == $right.Requester\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC16 - Security Extension Disabled (UPN Spoof to DA) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"userPrincipalName\"\n| table _time, SubjectUserName, ObjectDN, AttributeValue, OperationType",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC16 - Security Extension Disabled (UPN Spoof to DA) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Requester, CertificateTemplate, ComputerName",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4886",
+          "4887"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_esc16_upn_manipulation",
+        "logic": "win_security_adcs_esc16_upn_manipulation",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_userprincipalname_change_privileged",
+        "logic": "win_security_userprincipalname_change_privileged",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "certipy"

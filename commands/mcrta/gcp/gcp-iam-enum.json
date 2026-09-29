@@ -98,7 +98,57 @@
     ],
     "misconfiguration": "Basic roles granted broadly; service accounts with Owner/Editor; allUsers/allAuthenticatedUsers on resources; Data Access logs disabled (blind to enumeration).",
     "vulnerable_config": "# SA bound as Owner at project scope -> enumeration reveals the escalation target:\ngcloud projects get-iam-policy <proj> --flatten=\"bindings[].members\" --filter=\"bindings.members=serviceAccount:<sa>\" --format=\"value(bindings.role)\"  # roles/owner",
-    "secure_config": "# Replace Basic roles with least-privilege predefined/custom roles;\n# remove allUsers/allAuthenticatedUsers; enable Data Access audit logs;\n# use IAM Recommender + Security Command Center to enforce least privilege."
+    "secure_config": "# Replace Basic roles with least-privilege predefined/custom roles;\n# remove allUsers/allAuthenticatedUsers; enable Data Access audit logs;\n# use IAM Recommender + Security Command Center to enforce least privilege.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GCP IAM & Resource Enumeration (gcloud) - Sentinel",
+        "logic": "GCPAuditLogs\n| where methodName endswith \".list\" or methodName endswith \".get\"\n| summarize count() by principalEmail=protoPayload_authenticationInfo_principalEmail, callerIp=protoPayload_requestMetadata_callerIp, bin(TimeGenerated, 10m)\n| where count_ > 20\n| sort by count_ desc\n// GCP IAM enumeration: getIamPolicy / roles.list / serviceAccounts.list bursts",
+        "data_source": "windows-security",
+        "attack": [
+          "T1069.003",
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GCP IAM & Resource Enumeration (gcloud) - Splunk",
+        "logic": "index=gcp sourcetype=\"google:gcp:audit\" (protoPayload.methodName=\"*.list\" OR protoPayload.methodName=\"*.get\")\n| stats count by protoPayload.authenticationInfo.principalEmail, protoPayload.requestMetadata.callerIp, bin(_time, 10m)\n| where count>20",
+        "data_source": "windows-security",
+        "attack": [
+          "T1069.003",
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "gcp_resource_enumeration",
+        "logic": "gcp_resource_enumeration",
+        "data_source": "windows-security",
+        "attack": [
+          "T1069.003",
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Enumerates GCP IAM, which is resource-based rather than identity-based:\n  gcloud projects get-iam-policy <project_id>   read the role bindings on a project\nYou cannot list an identity's permissions directly, so you read policies on orgs/projects/resources and enumerate service accounts; --flatten/--filter isolates a given member's roles, and 'iam service-accounts keys list' finds usable keys."
 }

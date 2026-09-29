@@ -127,7 +127,98 @@
       "https://attack.mitre.org/techniques/T1135/",
       "https://attack.mitre.org/techniques/T1552/001/",
       "CRTP Domain Enumeration"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView Interesting File & Share ACL Hunting - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5145 and (RelativeTargetName has \"pass\" or RelativeTargetName endswith \".config\" or RelativeTargetName endswith \".xml\")\n| summarize hosts=dcount(Computer), count() by SubjectUserName, IpAddress, bin(TimeGenerated, 10m)\n| where hosts > 5\n| sort by count_ desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1083",
+          "T1135",
+          "T1039",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5145"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Interesting File & Share ACL Hunting (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5145 (Relative_Target_Name=\"*pass*\" OR Relative_Target_Name=\"*.config\" OR Relative_Target_Name=\"*.xml\")\n| stats dc(Computer) as hosts count by Account_Name, Source_Address\n| where hosts>5",
+        "data_source": "windows-security",
+        "attack": [
+          "T1083",
+          "T1135",
+          "T1039",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5145"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Interesting File & Share ACL Hunting (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 ScriptBlockText=\"*Find-InterestingDomainShareFile*\"\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1083",
+          "T1135",
+          "T1039",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_share_file_hunt",
+        "logic": "posh_ps_powerview_share_file_hunt",
+        "data_source": "sysmon",
+        "attack": [
+          "T1083",
+          "T1135",
+          "T1039",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_share_file_enum",
+        "logic": "win_security_share_file_enum",
+        "data_source": "sysmon",
+        "attack": [
+          "T1083",
+          "T1135",
+          "T1039",
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "The PowerView-native equivalent of Snaffler - finds secrets sitting on domain shares:\n  Find-InterestingDomainShareFile   walk readable shares for files matching name patterns\n  -Include *pass*,*.config,*.xml,*.vbs,*.ps1   the sensitive filename patterns to flag\nRun Find-DomainShare -CheckShareAccess first to know which shares you can read, then inspect promising hits with Get-PathAcl. Often surfaces cleartext creds in scripts/configs."
 }

@@ -105,7 +105,71 @@
     "misconfiguration": "SMB null sessions are allowed - the server accepts anonymous (unauthenticated) IPC$ connections, exposing share lists, user lists, password policy, and domain information. On older Windows versions (pre-2008 R2) this was the default. On modern systems it can be re-enabled by misconfiguration or GPO rollback. Additionally, SMB signing may be disabled, enabling relay attacks.",
     "vulnerable_config": "# Windows Registry - null sessions enabled:\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RestrictAnonymous = 0      <-- allows null session enumeration\n#   RestrictAnonymousSAM = 0   <-- exposes SAM account list anonymously\n\n# SMB signing disabled (relay attack enabler):\n# HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\n#   RequireSecuritySignature = 0\n#   EnableSecuritySignature  = 0\n\n# Verify current state:\nGet-SmbServerConfiguration | Select-Object EnableSMBQUIC,RequireSecuritySignature",
     "secure_config": "# Disable null sessions:\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters' \\\n    -Name RestrictAnonymous -Value 2\nSet-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' \\\n    -Name RestrictAnonymous -Value 1\n\n# Enable SMB signing (blocks NTLM relay attacks):\nSet-SmbServerConfiguration -RequireSecuritySignature $true -Force\nSet-SmbClientConfiguration -RequireSecuritySignature $true -Force\n\n# GPO path:\n# Computer Config > Windows Settings > Security Settings > Local Policies > Security Options:\n#   'Microsoft network server: Digitally sign communications (always)' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts' = Enabled\n#   'Network access: Do not allow anonymous enumeration of SAM accounts and shares' = Enabled",
-    "evasion": "Authenticate with valid creds so it blends with normal admin traffic; prefer wmiexec/atexec (no service creation) over psexec's noisy service-install path; avoid touching every host - target only what you need."
+    "evasion": "Authenticate with valid creds so it blends with normal admin traffic; prefer wmiexec/atexec (no service creation) over psexec's noisy service-install path; avoid touching every host - target only what you need.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SMB - enum4linux-ng & samrdump - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort in (139, 445)\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 10\n| sort by conns desc\n// enum4linux SMB/RPC null-session enumeration",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SMB - enum4linux-ng & samrdump (1) - Splunk",
+        "logic": "index=network (dest_port=445 OR dest_port=139)\n| stats count by src_ip | where count>10",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SMB - enum4linux-ng & samrdump (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4661\n| table _time, Computer, Account_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4661"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "net_smb_null_session_enum",
+        "logic": "net_smb_null_session_enum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Runs the full automated SMB/RPC enumeration suite:\n  ./enum4linux-ng.py <ip>   the modern enum4linux rewrite\n  -A                        run all checks (users, groups, shares, policy, OS)\nOne command gives a complete SMB picture; Impacket's samrdump.py is a focused alternative that dumps users via the SAMR interface."
 }

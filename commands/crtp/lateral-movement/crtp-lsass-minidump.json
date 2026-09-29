@@ -108,7 +108,76 @@
     "sources": [
       "CRTP",
       "MITRE T1003.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Offline LSASS Minidump -> Mimikatz (sekurlsa::minidump) - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName endswith \".dmp\"\n| where InitiatingProcessCommandLine has_any (\"lsass\",\"MiniDump\",\"comsvcs\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName, FolderPath\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Offline LSASS Minidump -> Mimikatz (sekurlsa::minidump) (1) - Splunk",
+        "logic": "index=sysmon EventCode=10 TargetImage=\"*lsass.exe\" (GrantedAccess=\"0x1010\" OR GrantedAccess=\"0x1410\")\n| table _time, Computer, SourceImage, GrantedAccess",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "10"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Offline LSASS Minidump -> Mimikatz (sekurlsa::minidump) (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*.dmp\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_lsass_memory_dump",
+        "logic": "sysmon_lsass_memory_dump",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_win_lsass_dmp_creation",
+        "logic": "file_event_win_lsass_dmp_creation",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Dumps LSASS on the target and parses it offline, so Mimikatz never runs on the victim (evades on-host EDR):\n  mimikatz.exe              runs on YOUR box, not the target\n  \"sekurlsa::minidump <dump_file>\"   load the exfiltrated LSASS dump instead of live memory\n  \"sekurlsa::ekeys\"         extract Kerberos AES/RC4 keys from it\n  \"exit\"                    quit\nCreate the dump on the target with a managed minidump tool, exfil it (repair with Reverse.exe if byte-reversed), then parse locally."
 }

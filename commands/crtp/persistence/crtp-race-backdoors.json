@@ -134,7 +134,93 @@
       "CRTP",
       "MITRE T1098",
       "MITRE T1546"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ACL Backdoors with RACE.ps1 (WMI / PSRemoting / Registry) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4670\n| where ObjectType == \"WMI\" or ObjectName has_any (\"root\\\\cimv2\",\"WSMAN\")\n| project TimeGenerated, Computer, SubjectUserName, ObjectName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1546",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4670"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "ACL Backdoors with RACE.ps1 (WMI / PSRemoting / Registry) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4670\n| where Object_Type=\"WMI\" OR match(Object_Name, \"(?i)(root\\\\\\\\cimv2|WSMAN)\")\n| table _time, Computer, Subject_Account_Name, Object_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1546",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4670"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "ACL Backdoors with RACE.ps1 (WMI / PSRemoting / Registry) (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Set-RemoteWMI*\" OR ScriptBlockText=\"*Set-RemotePSRemoting*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1098",
+          "T1546",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_wmi_namespace_dacl_change",
+        "logic": "win_security_wmi_namespace_dacl_change",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1546",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_race_backdoor_functions",
+        "logic": "posh_ps_race_backdoor_functions",
+        "data_source": "windows-security",
+        "attack": [
+          "T1098",
+          "T1546",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Drops stealthy DACL-based remote-access backdoors so a chosen low-priv user keeps access with no new accounts:\n  Set-RemoteWMI             edit the security descriptor so <user> can query WMI remotely\n  -SamAccountName <user>   the principal granted access\n  -ComputerName <host>     the machine backdoored (e.g. the DC)\n  -namespace 'root\\cimv2'  the WMI namespace to open up\n  -Verbose                  show what it changes\nCompanion functions do the same for PSRemoting (Set-RemotePSRemoting) and remote registry (Add-RemoteRegBackdoor, which also reads the machine hash)."
 }

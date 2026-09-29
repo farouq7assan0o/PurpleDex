@@ -97,7 +97,67 @@
       "HTB M25",
       "MITRE T1068",
       "OWASP A06:2021"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Polkit - PwnKit (CVE-2021-4034) - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"pkexec\" and (SyslogMessage has \"SEGV\" or SyslogMessage has \"GCONV_PATH\" or SyslogMessage has \"error\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// CVE-2021-4034 PwnKit: pkexec with empty/crafted argv and GCONV_PATH abuse",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Polkit - PwnKit (CVE-2021-4034) (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"pkexec\"\n| where auid!=0\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Polkit - PwnKit (CVE-2021-4034) (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" type=SYSCALL\n| where auid=1000 AND euid=0 AND match(exe, \"pkexec\")\n| table _time, host, exe",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_pwnkit_pkexec_exploitation",
+        "logic": "lnx_auditd_pwnkit_pkexec_exploitation",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Runs the PwnKit exploit (CVE-2021-4034) against pkexec for instant local root:\n  ./poc                    trigger the pkexec memory-corruption bug to spawn a root shell\nPwnKit is a 12-year-old flaw in polkit's SUID-root pkexec affecting default installs. Confirm pkexec exists, clone and gcc the tiny PoC, then run it and check id."
 }

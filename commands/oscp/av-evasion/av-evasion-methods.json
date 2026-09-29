@@ -82,6 +82,85 @@
     ],
     "misconfiguration": "AV configured for signature-only detection (no behavioral/EDR component). AMSI disabled or not updated. ETW telemetry not collected. No memory scanning capability.",
     "vulnerable_config": "# AV with only signature detection (Windows Defender without Defender for Endpoint):\n# Test: (Get-MpPreference).DisableRealtimeMonitoring - False (real-time on)\n# But: no behavioral EDR component\n# → Obfuscated payload evades signature = no detection\n\n# AMSI disabled by Group Policy:\n(Get-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Features').TamperProtection  # 0",
-    "secure_config": "# Deploy Defender for Endpoint (P2 license) for EDR:\n# Not just AV - includes: memory scanning, behavioral detection, EDR, threat analytics\n\n# Enable Tamper Protection (prevents AMSI disable):\nSet-MpPreference -DisableTamperProtection $false\n# Or via Intune/MDE Security Center\n\n# Enable all Defender features:\nSet-MpPreference -MAPSReporting Advanced\nSet-MpPreference -SubmitSamplesConsent SendAllSamples\nSet-MpPreference -CloudBlockLevel High\nSet-MpPreference -CloudExtendedTimeout 50\n\n# WDAC: block unapproved binaries at kernel level"
+    "secure_config": "# Deploy Defender for Endpoint (P2 license) for EDR:\n# Not just AV - includes: memory scanning, behavioral detection, EDR, threat analytics\n\n# Enable Tamper Protection (prevents AMSI disable):\nSet-MpPreference -DisableTamperProtection $false\n# Or via Intune/MDE Security Center\n\n# Enable all Defender features:\nSet-MpPreference -MAPSReporting Advanced\nSet-MpPreference -SubmitSamplesConsent SendAllSamples\nSet-MpPreference -CloudBlockLevel High\nSet-MpPreference -CloudExtendedTimeout 50\n\n# WDAC: block unapproved binaries at kernel level",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AV Evasion - Detection Methods & Approach - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has_any (\"amsiInitFailed\",\"AmsiUtils\",\"VirtualAlloc\",\"Reflection.Emit\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// AV evasion methods (encoding, obfuscation, in-memory load)",
+        "data_source": "powershell",
+        "attack": [
+          "T1027",
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AV Evasion - Detection Methods & Approach (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*amsiInitFailed*\" OR ScriptBlockText=\"*AmsiUtils*\" OR ScriptBlockText=\"*VirtualAlloc*\" OR ScriptBlockText=\"*Reflection.Emit*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1027",
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AV Evasion - Detection Methods & Approach (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-Windows Defender/Operational\" (EventCode=5001 OR EventCode=5007)\n| table _time, Computer, New_Value",
+        "data_source": "windows-security",
+        "attack": [
+          "T1027",
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5001",
+          "5007"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_obfuscated_shellcode_load",
+        "logic": "posh_ps_obfuscated_shellcode_load",
+        "data_source": "windows-security",
+        "attack": [
+          "T1027",
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_defender_tamper",
+        "logic": "win_defender_tamper",
+        "data_source": "windows-security",
+        "attack": [
+          "T1027",
+          "T1518.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

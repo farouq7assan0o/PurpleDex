@@ -120,7 +120,56 @@
       "HTB M04",
       "OSCP Ch06",
       "MITRE T1110.003"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "onesixtyone - SNMP Community String Brute Force - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 161\n| summarize probes=count(), hosts=dcount(RemoteIP) by LocalIP, bin(Timestamp, 1m)\n| where probes > 20 or hosts > 10\n| sort by probes desc\n// onesixtyone SNMP community/OID enumeration on UDP 161",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.003",
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "onesixtyone - SNMP Community String Brute Force - Splunk",
+        "logic": "index=network dest_port=161 protocol=udp\n| stats count dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where count>20 OR hosts>10",
+        "data_source": "network-flow",
+        "attack": [
+          "T1110.003",
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_snmp_enumeration_onesixtyone",
+        "logic": "net_snmp_enumeration_onesixtyone",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.003",
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Brute-forces SNMP community strings quickly over UDP:\n  onesixtyone   the scanner\n  -c <community_wordlist>   list of community strings to try\n  <ip>          the target (or -i <file> for many)\nFinds the valid community string that unlocks snmpwalk; it is fast enough to sweep a whole /24."
 }

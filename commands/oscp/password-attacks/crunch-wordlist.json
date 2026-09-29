@@ -103,7 +103,52 @@
     ],
     "misconfiguration": "No account lockout policy configured. No MFA. Weak password policy (minimum 8 chars with common patterns). Auth failures not monitored or alerted. Rate limiting not implemented on authentication endpoints.",
     "vulnerable_config": "# No lockout policy (Active Directory):\nGet-ADDefaultDomainPasswordPolicy | Select-Object LockoutThreshold, LockoutDuration\n# LockoutThreshold: 0 = no lockout\n# → Unlimited password guessing allowed\n\n# Weak policy:\n# MinPasswordLength: 8, MaxPasswordAge: 0 (never expires)\n# → Short, never-rotated passwords = high crack success rate",
-    "secure_config": "# Set lockout policy via GPO:\n# Computer Config → Windows Settings → Security Settings → Account Policies → Account Lockout\n# Lockout threshold: 5 attempts\n# Lockout duration: 30 minutes\n# Reset counter: 15 minutes\n\n# Or PowerShell:\nSet-ADDefaultDomainPasswordPolicy -LockoutThreshold 5 -LockoutDuration (New-TimeSpan -Minutes 30) -LockoutObservationWindow (New-TimeSpan -Minutes 15)\n\n# Modern: enforce passphrase policy:\nSet-ADDefaultDomainPasswordPolicy -MinPasswordLength 16 -ComplexityEnabled $false\n# 16-char passphrases > complex 8-char passwords for cracking resistance\n\n# MFA for all external-facing authentication"
+    "secure_config": "# Set lockout policy via GPO:\n# Computer Config → Windows Settings → Security Settings → Account Policies → Account Lockout\n# Lockout threshold: 5 attempts\n# Lockout duration: 30 minutes\n# Reset counter: 15 minutes\n\n# Or PowerShell:\nSet-ADDefaultDomainPasswordPolicy -LockoutThreshold 5 -LockoutDuration (New-TimeSpan -Minutes 30) -LockoutObservationWindow (New-TimeSpan -Minutes 15)\n\n# Modern: enforce passphrase policy:\nSet-ADDefaultDomainPasswordPolicy -MinPasswordLength 16 -ComplexityEnabled $false\n# 16-char passphrases > complex 8-char passwords for cracking resistance\n\n# MFA for all external-facing authentication",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Crunch Wordlist Generator - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"crunch\" or ProcessCommandLine has \"crunch\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// generates a wordlist locally; detection is only in the subsequent online brute force (4625/4740)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Crunch Wordlist Generator - Splunk",
+        "logic": "index=* \"crunch\"\n| table _time, host, user, _raw\n// generates a wordlist locally; detection is only in the subsequent online brute force (4625/4740)",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tags": [
     "crunch",

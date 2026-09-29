@@ -76,7 +76,57 @@
     "misconfiguration": "Group Policy Objects (GPOs) are linked to OUs containing domain computers and users, but non-admin accounts have been granted CreateChild, WriteProperty, or GenericAll rights on those GPOs or the OUs they're linked to. An attacker with GPO write access can push immediate configuration changes to all machines in the scope - including adding themselves to local admins, deploying startup scripts, or disabling AV.",
     "vulnerable_config": "# Finding GPOs with weak ACEs:\nGet-DomainGPO | Get-DomainObjectAcl -ResolveGUIDs |\n    Where-Object {\n        $_.ActiveDirectoryRights -match 'CreateChild|WriteProperty|GenericAll' -and\n        $_.IdentityReference -notmatch 'Domain Admins|SYSTEM|Enterprise Admins'\n    } | Select-Object ObjectDN, IdentityReference, ActiveDirectoryRights",
     "secure_config": "# Remove edit rights from non-admin accounts:\n# Group Policy Management Console (GPMC):\n# GPO -> Delegation tab -> Remove non-admin entries or change to Read-only\n\n# PowerShell - enumerate and review:\nGet-GPPermissions -Guid <gpo-guid> -All\n# Remove write access:\nSet-GPPermissions -Guid <gpo-guid> -TargetName 'helpdesk' \\\n    -TargetType Group -PermissionLevel GpoRead\n\n# Alert on GPO changes:\n# Event 5136 (Directory Service Object Modified) with objectClass = groupPolicyContainer\n# Event 4657 (Registry value modified) after GPO applies\n# Microsoft Defender for Identity: 'Suspicious GPO modification' alert",
-    "evasion": "Revert the GPO change after it executes; scope the malicious setting to one OU; time it around a normal gpupdate window."
+    "evasion": "Revert the GPO change after it executes; scope the malicious setting to one OU; time it around a normal gpupdate window.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Abusing GPO Permissions - Attack, Detection & Honeypot - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5136 and ObjectDN has \"CN=Policies,CN=System\"\n| project TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeLDAPDisplayName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Abusing GPO Permissions - Attack, Detection & Honeypot - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 Object_DN=\"*CN=POLICIES,CN=SYSTEM*\"\n| table _time, Computer, Subject_Account_Name, Object_DN, LDAP_Display_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_gpo_object_modification",
+        "logic": "win_security_gpo_object_modification",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "steps": [
     {

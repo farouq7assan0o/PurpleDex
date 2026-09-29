@@ -90,7 +90,51 @@
       "MITRE T1078.002",
       "MITRE T1611"
     ],
-    "evasion": "Use the symlink/takeown path once to grab the target file, then restore ownership/permissions."
+    "evasion": "Use the symlink/takeown path once to grab the target file, then restore ownership/permissions.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Hyper-V Administrators - Service Binary Hijack - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"takeown.exe\" and ProcessCommandLine has \"Program Files\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// Hyper-V Admin taking ownership of a SYSTEM-owned service binary",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Hyper-V Administrators - Service Binary Hijack - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*takeown.exe\" CommandLine=\"*Program Files*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_takeown_system_binary",
+        "logic": "proc_creation_win_takeown_system_binary",
+        "data_source": "sysmon",
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Abuses Hyper-V Administrators (effectively SYSTEM file access) by hijacking a SYSTEM-run service binary:\n  takeown /F \"C:\\Program Files (x86)\\Mozilla Maintenance Service\\maintenanceservice.exe\"   take ownership of the service executable\nThen grant yourself write, replace the binary with a payload, and start the service so it runs as SYSTEM. CVE-2018-0952/CVE-2019-0841 symlink abuse is the underlying primitive."
 }

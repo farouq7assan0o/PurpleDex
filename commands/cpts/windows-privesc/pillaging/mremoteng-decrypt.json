@@ -94,7 +94,66 @@
       "MITRE T1552.001",
       "MITRE T1555"
     ],
-    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop."
+    "evasion": "Collect only the files you need and pull them over an existing channel; avoid staging large toolsets on the host; delete anything you drop.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Pillaging - Decrypt mRemoteNG Passwords - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName =~ \"confCons.xml\"\n| where InitiatingProcessFileName !has \"mRemoteNG\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, FolderPath\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - Decrypt mRemoteNG Passwords (1) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*confCons.xml\"\n| where NOT match(Image, \"(?i)mRemoteNG\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Pillaging - Decrypt mRemoteNG Passwords (2) - Splunk",
+        "logic": "index=* \"mremoteng_decrypt\"\n| table _time, host, _raw",
+        "data_source": "windows-security",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "file_access_mremoteng_confcons",
+        "logic": "file_access_mremoteng_confcons",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Decrypts passwords stored by mRemoteNG:\n  python3 mremoteng_decrypt.py   the decryptor\n  -s \"<encrypted_string>\"   the encrypted password from confCons.xml\nmRemoteNG encrypts connection passwords with a hardcoded default key (mR3m), so they decrypt directly; add a wordlist option to brute-force a custom master password."
 }

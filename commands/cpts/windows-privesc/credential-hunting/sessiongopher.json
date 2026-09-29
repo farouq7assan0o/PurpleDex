@@ -87,7 +87,55 @@
       "MITRE T1552.001",
       "MITRE T1555"
     ],
-    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
+    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Credential Hunting - SessionGopher - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"SessionGopher\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc\n// SessionGopher reads PuTTY/WinSCP/FileZilla saved-session registry paths",
+        "data_source": "powershell",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - SessionGopher - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-SessionGopher*\" OR ScriptBlockText=\"*SessionGopher*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_sessiongopher",
+        "logic": "posh_ps_sessiongopher",
+        "data_source": "windows-security",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

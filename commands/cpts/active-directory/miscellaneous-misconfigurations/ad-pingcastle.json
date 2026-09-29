@@ -118,7 +118,85 @@
     ],
     "misconfiguration": "Stale user/computer accounts, excessive privileged group membership, misconfigured trusts, GPO weaknesses, missing LAPS deployment, disabled SMB signing, enabled Print Spooler on DCs.",
     "vulnerable_config": "# PingCastle healthcheck reveals common issues:\n# - Domain Admins group has 15 members (should be <5)\n# - 200 stale computer accounts (no logon in 90+ days)\n# - Forest trust with SID filtering disabled\n# - SMB signing not required on DCs",
-    "secure_config": "# Address PingCastle findings:\n# 1. Reduce DA membership to minimum required\n# 2. Disable/remove stale accounts (Get-ADComputer -Filter {LastLogonDate -lt (Get-Date).AddDays(-90)})\n# 3. Enable SID filtering on all trusts\n# 4. Require SMB signing (GPO: Microsoft network server: Digitally sign communications (always) = Enabled)\n# 5. Run PingCastle quarterly to track improvement scores"
+    "secure_config": "# Address PingCastle findings:\n# 1. Reduce DA membership to minimum required\n# 2. Disable/remove stale accounts (Get-ADComputer -Filter {LastLogonDate -lt (Get-Date).AddDays(-90)})\n# 3. Enable SID filtering on all trusts\n# 4. Require SMB signing (GPO: Microsoft network server: Digitally sign communications (always) = Enabled)\n# 5. Run PingCastle quarterly to track improvement scores",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PingCastle - AD Security Posture Assessment - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName has \"PingCastle\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// PingCastle: broad AD health/attack-path scan (LDAP + SMB burst)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PingCastle - AD Security Posture Assessment (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*PingCastle*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PingCastle - AD Security Posture Assessment (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| stats count by Account_Name, Client_Address | where count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_pingcastle",
+        "logic": "proc_creation_win_pingcastle",
+        "data_source": "sysmon",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Scores an AD environment's security posture:\n  PingCastle.exe --healthcheck   run the health-check assessment\nProduces a CMMI-scored report of misconfigurations and risky settings (delegation, weak trusts, stale accounts, privileged groups) - fast situational awareness for both attackers mapping weaknesses and defenders prioritizing fixes."
 }

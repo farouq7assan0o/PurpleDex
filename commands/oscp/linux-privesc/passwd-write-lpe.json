@@ -99,7 +99,63 @@
       "OSCP PEN-200 Ch17",
       "MITRE T1548",
       "MITRE T1136.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Linux PrivEsc - /etc/passwd World-Writable - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"/etc/passwd\" and SyslogMessage has_any (\"write\",\"openat\",\"modif\")\n| project TimeGenerated, Computer, ProcessName, SyslogMessage\n| sort by TimeGenerated desc\n// new uid=0 entry written to /etc/passwd by a non-root process",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Linux PrivEsc - /etc/passwd World-Writable (1) - Splunk",
+        "logic": "index=linux sourcetype=\"syslog\" OR sourcetype=\"linux:audit\"\n| where (file_path=\"/etc/passwd\" OR file_path=\"/etc/shadow\") AND (action=\"write\" OR action=\"modify\")\n| table _time, host, user, file_path, action",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Linux PrivEsc - /etc/passwd World-Writable (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" type=SYSCALL comm=\"openat\" a1=\"/etc/passwd\"\n| where (a2 LIKE \"%O_WRONLY%\" OR a2 LIKE \"%O_RDWR%\")\n| table _time, hostname, auid, comm, exe",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_file_modification_etc_passwd",
+        "logic": "lnx_file_modification_etc_passwd",
+        "data_source": "sysmon",
+        "attack": [
+          "T1548",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Escalates when /etc/passwd is writable by adding a root-equivalent account:\n  openssl passwd <password>   generate a crypt hash to put in the password field\nAppend an entry with uid 0 (e.g. root2:<hash>:0:0:...:/bin/bash) and su to it for root. The variation uses an empty password field (root3::0:0:...) so no password is needed at all."
 }

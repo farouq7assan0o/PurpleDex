@@ -77,7 +77,69 @@
     ],
     "misconfiguration": "WMI (Windows Management Instrumentation) is enabled and accessible remotely (TCP 135 + dynamic RPC ports) with no namespace-level ACLs. Domain admin or local admin credentials are usable to execute methods on DCOM objects. WMI event subscriptions can be used for persistence. The same issue applies to WinRM (TCP 5985/5986) - if enabled, any account in the local administrators or Remote Management Users group can connect.",
     "vulnerable_config": "# WMI namespace with broad remote access:\n# Default WMI namespace security - 'Remote Enable' granted to local admins\n# Any account with local admin can:\nInvoke-WmiMethod -Class Win32_Process -Name Create -ArgumentList 'calc.exe' -ComputerName target\n\n# WinRM enabled (common on servers):\n# winrm quickconfig (enables WinRM on all interfaces)\n# Any local admin can: Enter-PSSession -ComputerName target -Credential admin",
-    "secure_config": "# Restrict WMI remote access (namespace ACL):\n# WMI Control (wmimgmt.msc) -> Root\\CIMV2 -> Security:\n# Remove 'Remote Enable' from non-admin groups\n# Only grant specific service accounts the 'Execute Methods' right\n\n# Restrict WinRM to specific hosts/subnets:\n# New-Item -Path WSMan:\\localhost\\Listener\\* -Transport HTTP -Force\n# Set-Item -Path WSMan:\\localhost\\Listener\\*\\Address -Value 10.10.1.0/24\n\n# Disable WinRM on workstations (leave enabled only on servers that need it):\nDisable-PSRemoting -Force\n\n# Monitor WMI persistence:\n# Event 5861 (WMI event subscription created)\n# Event 4688 (Process creation via WMI) - look for wmiprvse.exe as parent\n\n# Firewall - block WMI ports from non-admin subnets:\n# New-NetFirewallRule -Name 'Block WMI Remote' -Direction Inbound -Protocol TCP -LocalPort 135 -Action Block"
+    "secure_config": "# Restrict WMI remote access (namespace ACL):\n# WMI Control (wmimgmt.msc) -> Root\\CIMV2 -> Security:\n# Remove 'Remote Enable' from non-admin groups\n# Only grant specific service accounts the 'Execute Methods' right\n\n# Restrict WinRM to specific hosts/subnets:\n# New-Item -Path WSMan:\\localhost\\Listener\\* -Transport HTTP -Force\n# Set-Item -Path WSMan:\\localhost\\Listener\\*\\Address -Value 10.10.1.0/24\n\n# Disable WinRM on workstations (leave enabled only on servers that need it):\nDisable-PSRemoting -Force\n\n# Monitor WMI persistence:\n# Event 5861 (WMI event subscription created)\n# Event 4688 (Process creation via WMI) - look for wmiprvse.exe as parent\n\n# Firewall - block WMI ports from non-admin subnets:\n# New-NetFirewallRule -Name 'Block WMI Remote' -Direction Inbound -Protocol TCP -LocalPort 135 -Action Block",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Evil-WinRM - Pass the Hash - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"NTLM\"\n| join kind=inner (DeviceNetworkEvents | where RemotePort in (5985,5986) | project Computer=DeviceName, RemoteIP) on Computer\n| project TimeGenerated, Computer, TargetUserName, IpAddress\n| sort by TimeGenerated desc\n// evil-winrm -H: PtH over WinRM (5985/5986)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Evil-WinRM - Pass the Hash - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Authentication_Package=NTLM Logon_Process=NtLmSsp Process_Name=\"*wsmprovhost.exe\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_pass_the_hash_ntlm",
+        "logic": "win_security_pass_the_hash_ntlm",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_winrm_from_unusual_source",
+        "logic": "net_winrm_from_unusual_source",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

@@ -132,7 +132,90 @@
       "https://attack.mitre.org/techniques/T1016/",
       "https://attack.mitre.org/techniques/T1018/",
       "CRTP Domain Enumeration"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView Sites, Subnets & AD Topology Enumeration - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainSite\",\"Get-DomainSubnet\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1016",
+          "T1018",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Sites, Subnets & AD Topology Enumeration (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Get-DomainSite*\" OR ScriptBlockText=\"*Get-DomainSubnet*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1016",
+          "T1018",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView Sites, Subnets & AD Topology Enumeration (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 (DestinationPort=389 OR DestinationPort=636)\n| stats count by SourceHostname, DestinationIp | where count>50",
+        "data_source": "sysmon",
+        "attack": [
+          "T1016",
+          "T1018",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_functions",
+        "logic": "posh_ps_powerview_functions",
+        "data_source": "windows-security",
+        "attack": [
+          "T1016",
+          "T1018",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1016",
+          "T1018",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Maps the physical/logical topology of the forest with PowerView:\n  Get-DomainSite           enumerate AD Sites\n  | select name,siteobjectbl   the site name and its linked subnet backlinks\nPair with Get-DomainSubnet (subnet->site), Get-ForestGlobalCatalog, and Get-NetComputerSiteName to learn network segmentation and where DCs/GCs/file servers physically sit - useful for planning pivots."
 }

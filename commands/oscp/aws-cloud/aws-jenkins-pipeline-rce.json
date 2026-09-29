@@ -132,6 +132,57 @@
     ],
     "misconfiguration": "Jenkins internet-accessible with weak/default credentials. Jenkins service account has production AWS admin credentials. No approval gate for Jenkinsfile changes. Jenkins Script Console enabled for all admins without audit. All AWS environments use same Jenkins IAM role (no environment separation).",
     "vulnerable_config": "# Jenkins Script Console RCE (Groovy):\n# Navigate to: http://jenkins/script\n# println 'id'.execute().text\n# → Executes as Jenkins service account\n\n# AWS credentials in Jenkins environment:\n# println System.getenv('AWS_ACCESS_KEY_ID')\n# → AKIAIOSFODNN7EXAMPLE (plaintext)\n\n# Same admin role for all environments:\naws iam get-role --role-name jenkins-deploy\n# → AdministratorAccess policy attached = full admin on all environments",
-    "secure_config": "# Restrict Jenkins Script Console to no one (or specific admin IP):\n# Jenkins → Manage Jenkins → Security → Script Console: Disable or restrict\n\n# Least-privilege, environment-separated roles:\n# jenkins-deploy-dev: deploy to dev only\n# jenkins-deploy-prod: deploy to prod only, requires 2-person approval\n\n# Pipeline approval for prod deployments:\n# Jenkinsfile:\n# stage('Deploy to Prod') {\n#   input message: 'Approve deployment to production?', submitter: 'prod-approvers'\n# }\n\n# Jenkins network: not internet-accessible\n# Place behind VPN / corporate network only\n\n# Scan Jenkinsfile for credential access patterns in code review"
+    "secure_config": "# Restrict Jenkins Script Console to no one (or specific admin IP):\n# Jenkins → Manage Jenkins → Security → Script Console: Disable or restrict\n\n# Least-privilege, environment-separated roles:\n# jenkins-deploy-dev: deploy to dev only\n# jenkins-deploy-prod: deploy to prod only, requires 2-person approval\n\n# Pipeline approval for prod deployments:\n# Jenkinsfile:\n# stage('Deploy to Prod') {\n#   input message: 'Approve deployment to production?', submitter: 'prod-approvers'\n# }\n\n# Jenkins network: not internet-accessible\n# Place behind VPN / corporate network only\n\n# Scan Jenkinsfile for credential access patterns in code review",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS - Jenkins Pipeline Modification for RCE & Credential Theft - Sentinel",
+        "logic": "AWSCloudTrail\n| where EventName in (\"AssumeRole\", \"GetSessionToken\", \"CreateAccessKey\")\n| project TimeGenerated, SourceIpAddress, UserIdentityArn, EventName\n| sort by TimeGenerated desc\n// AWS Jenkins pipeline RCE stealing the instance/CI role credentials",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1059.004",
+          "T1552.001",
+          "T1612"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AWS - Jenkins Pipeline Modification for RCE & Credential Theft - Splunk",
+        "logic": "index=aws sourcetype=\"aws:cloudtrail\" (eventName=\\\"AssumeRole\\\" OR eventName=\\\"GetSessionToken\\\" OR eventName=\\\"CreateAccessKey\\\")\n| table _time, sourceIPAddress, userIdentity.arn, eventName",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1059.004",
+          "T1552.001",
+          "T1612"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "aws_cloudtrail_aws",
+        "logic": "aws_cloudtrail_aws",
+        "data_source": "windows-security",
+        "attack": [
+          "T1059.004",
+          "T1552.001",
+          "T1612"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "cloud-trail",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

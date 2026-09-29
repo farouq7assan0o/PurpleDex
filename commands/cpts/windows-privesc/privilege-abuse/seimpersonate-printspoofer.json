@@ -103,7 +103,65 @@
       "MITRE T1134.001",
       "MITRE T1068"
     ],
-    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel."
+    "evasion": "Pick the potato that matches the OS (GodPotato for 2019/2022) to avoid crashes and alerts; run it in-memory; the SeImpersonate abuse itself is quiet - the noisy part is the spawned shell, so route it through an existing C2 channel.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SeImpersonate - PrintSpoofer to SYSTEM - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName has \"PrintSpoofer\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceEvents | where ActionType == \"NamedPipeEvent\" and AdditionalFields has \"spoolss\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=InitiatingProcessCommandLine)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SeImpersonate - PrintSpoofer to SYSTEM (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*PrintSpoofer*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "SeImpersonate - PrintSpoofer to SYSTEM (2) - Splunk",
+        "logic": "index=sysmon EventCode=17 PipeName=\"*spoolss*\"\n| table _time, Computer, Image, PipeName",
+        "data_source": "sysmon",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "17"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_printspoofer",
+        "logic": "proc_creation_win_hktl_printspoofer",
+        "data_source": "sysmon",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

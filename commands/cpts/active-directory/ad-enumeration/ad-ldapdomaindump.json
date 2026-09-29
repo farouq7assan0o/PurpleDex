@@ -86,7 +86,77 @@
     ],
     "misconfiguration": "Anonymous LDAP bind enabled on the DC, or the default authenticated-users read ACL left wide open, lets low/no-privilege clients inventory the whole domain.",
     "vulnerable_config": "# Anonymous bind allowed -> no creds needed:\nsudo ldapdomaindump ldap://<dc_ip> -o anon/   # succeeds -> misconfig\n# Any authenticated user can read all users/groups/computers/policy/trusts by default",
-    "secure_config": "# Disable anonymous binds (should be default):\n#   dsHeuristics 7th char must NOT be 2 (2 = anonymous read enabled)\n# Monitor LDAP recon:\n#   Enable 'Field Engineering' LDAP diagnostics (Event 1644) and baseline\n#   Deploy Microsoft Defender for Identity (Account Enumeration Reconnaissance)\n# Least privilege + tiering; restrict LDAP source hosts via firewall."
+    "secure_config": "# Disable anonymous binds (should be default):\n#   dsHeuristics 7th char must NOT be 2 (2 = anonymous read enabled)\n# Monitor LDAP recon:\n#   Enable 'Field Engineering' LDAP diagnostics (Event 1644) and baseline\n#   Deploy Microsoft Defender for Identity (Account Enumeration Reconnaissance)\n# Least privilege + tiering; restrict LDAP source hosts via firewall.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ldapdomaindump - AD Dump via LDAP (HTML/JSON/greppable) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| summarize reads=count() by SubjectUserName, IpAddress, bin(TimeGenerated, 5m)\n| where reads > 50\n| sort by reads desc\n// ldapdomaindump: bulk LDAP dump of users/groups/computers",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "ldapdomaindump - AD Dump via LDAP (HTML/JSON/greppable) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Access_Mask=0x100\n| stats count by Account_Name, Client_Address, bin(_time, 5m)\n| where count>50",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "ldapdomaindump - AD Dump via LDAP (HTML/JSON/greppable) (2) - Splunk",
+        "logic": "index=zeek sourcetype=\"zeek:ldap\"\n| stats count by id.orig_h | where count>100",
+        "data_source": "network-flow",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002",
+          "T1482"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "ldapdomaindump"

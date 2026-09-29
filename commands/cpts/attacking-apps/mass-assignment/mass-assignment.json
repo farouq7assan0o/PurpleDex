@@ -100,7 +100,53 @@
       "HTB M24",
       "MITRE T1190",
       "OWASP A01:2021"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Web Mass Assignment - Inject Extra Parameters - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has_any (\"isAdmin\", \"role=admin\", \"is_admin\", \"\"admin\":true\") or csUriQuery has_any (\"isAdmin\", \"role=admin\", \"is_admin\", \"\"admin\":true\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus\n| sort by TimeGenerated desc\n// mass_assignment",
+        "data_source": "iis",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Web Mass Assignment - Inject Extra Parameters - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_query=\\\"*isAdmin*\\\" OR uri_path=\\\"*isAdmin*\\\" OR uri_query=\\\"*role=admin*\\\" OR uri_path=\\\"*role=admin*\\\" OR uri_query=\\\"*is_admin*\\\" OR uri_path=\\\"*is_admin*\\\" OR uri_query=\\\"*\"admin\":true*\\\" OR uri_path=\\\"*\"admin\":true*\\\")\n| table _time, clientip, uri_path, uri_query, status",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_mass_assignment",
+        "logic": "web_mass_assignment",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Exploits mass assignment by adding parameters the form never exposed:\n  username=<user>&password=<pass>&confirmed=true   the extra 'confirmed=true' binds to a model field the UI hides\nFrameworks that auto-bind all request params to model attributes let you set privileged fields (confirmed=true, admin=true) to self-approve or escalate; diff the object's JSON keys (jq 'keys') to discover bindable fields to inject."
 }

@@ -127,7 +127,65 @@
     "misconfiguration": "The FTP server allows anonymous login (username 'anonymous', any password), which may expose sensitive files. Additionally, FTP transmits credentials in cleartext over the network - any passive eavesdropper on the same network segment can capture usernames and passwords. FTPS or SFTP should replace FTP in all cases.",
     "vulnerable_config": "# vsftpd - anonymous login enabled (common default):\n# /etc/vsftpd.conf:\nanonymous_enable=YES       # allows login as 'anonymous'\nanon_upload_enable=YES     # anonymous can upload files\nanon_mkdir_write_enable=YES # anonymous can create directories\nwrite_enable=YES\n# No encryption - credentials and data in cleartext (port 21)",
     "secure_config": "# vsftpd - disable anonymous, enforce encryption:\n# /etc/vsftpd.conf:\nanonymous_enable=NO        # disable anonymous login\nlocal_enable=YES\nwrite_enable=NO            # read-only by default\nchroot_local_user=YES      # jail users to their home directory\n\n# Enable FTPS (TLS):\nssl_enable=YES\nrsa_cert_file=/etc/ssl/certs/vsftpd.crt\nrsa_private_key_file=/etc/ssl/private/vsftpd.key\nforce_local_logins_ssl=YES  # require TLS for all logins\nforce_local_data_ssl=YES    # require TLS for all data transfers\nssl_tlsv1_2=YES\n\n# Better alternative: use SFTP (SSH subsystem) instead of FTP entirely:\n# sshd_config: Subsystem sftp /usr/lib/openssh/sftp-server\n# chroot via Match User block",
-    "evasion": "Anonymous/valid-cred access blends in; avoid bulk downloads that spike transfer logs; pull only what you need."
+    "evasion": "Anonymous/valid-cred access blends in; avoid bulk downloads that spike transfer logs; pull only what you need.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "FTP - Enumeration - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 21\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// FTP banner/anonymous-login enumeration on port 21",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "FTP - Enumeration (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"ftp*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "FTP - Enumeration (2) - Splunk",
+        "logic": "index=network dest_port=21\n| stats count by src_ip, dest_ip | where count>5",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_service_enumeration_ftp",
+        "logic": "net_service_enumeration_ftp",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Enumerates an FTP service interactively:\n  ftp <ip>   open a session and try anonymous login\nOnce in, ls/ls -R to browse, get/put to test read/write, and 'status' for TLS/mode info; the card also shows raw banner grabbing with nc/telnet and TLS interaction via openssl s_client -starttls ftp."
 }

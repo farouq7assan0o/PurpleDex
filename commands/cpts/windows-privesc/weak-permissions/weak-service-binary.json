@@ -98,7 +98,69 @@
       "HTB M26",
       "MITRE T1574.010"
     ],
-    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service."
+    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Weak Permissions - Replace Modifiable Service Binary - Sentinel",
+        "logic": "DeviceFileEvents\n| where FolderPath has \"Program Files\" and FileName endswith \".exe\"\n| where InitiatingProcessFileName !in~ (\"msiexec.exe\",\"TrustedInstaller.exe\")\n| where ActionType in (\"FileModified\",\"FileCreated\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, FolderPath\n| sort by Timestamp desc\n// writable service binary replaced by a non-installer process",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1574.010"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Replace Modifiable Service Binary (1) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*\\\\Services\\\\*\\\\*.exe\" OR TargetFilename=\"*\\\\Program Files*\\\\*service*.exe\"\n| where NOT match(Image, \"(?i)(msiexec|trustedinstaller)\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574.010"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Replace Modifiable Service Binary (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4663 Object_Name=\"*service*.exe\"\n| table _time, Computer, Account_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.010"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4663"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_win_service_binary_overwrite (weak service binary permissions",
+        "logic": "file_event_win_service_binary_overwrite (weak service binary permissions",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574.010"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

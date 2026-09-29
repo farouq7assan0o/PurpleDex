@@ -76,7 +76,80 @@
       "MITRE T1547.001",
       "MITRE T1543.003"
     ],
-    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service."
+    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Weak Permissions - Startup / Autorun Enumeration - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Win32_StartupCommand\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| union (DeviceFileEvents | where FolderPath has \"Start Menu\\\\Programs\\\\Startup\" | project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine=FolderPath)\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1547.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Startup / Autorun Enumeration (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 ScriptBlockText=\"*Win32_StartupCommand*\"\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1547.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Startup / Autorun Enumeration (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*\\\\Start Menu\\\\Programs\\\\Startup\\\\*\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1547.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_startup_command_enum",
+        "logic": "posh_ps_startup_command_enum",
+        "data_source": "windows-security",
+        "attack": [
+          "T1547.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_startup_folder_write",
+        "logic": "win_startup_folder_write",
+        "data_source": "windows-security",
+        "attack": [
+          "T1547.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

@@ -80,7 +80,55 @@
     "splunk_spl": "# username-anarchy-style generation runs on the attacker host with no network activity.\n# Detection is only in the subsequent user-enumeration / spray phase (4768 0x6 or 4625 bursts).",
     "elastic_kql": "/* local username list generation; no target-side event */",
     "sentinel_kql": "// Username list generation is local to the attacker host - no target-side logs.\n// Detect the follow-on enumeration: SecurityEvent EventID 4768 Status 0x6 burst from one IP.",
-    "sigma_rules": "no target-side rule (local username generation; detect the enum/spray phase)"
+    "sigma_rules": "no target-side rule (local username generation; detect the enum/spray phase)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Username Generator - Build AD Wordlist from Names - Sentinel",
+        "logic": "// Username list generation is local to the attacker host - no target-side logs.\n// Detect the follow-on enumeration: SecurityEvent EventID 4768 Status 0x6 burst from one IP.",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.003",
+          "T1110.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Username Generator - Build AD Wordlist from Names - Splunk",
+        "logic": "# username-anarchy-style generation runs on the attacker host with no network activity.\n# Detection is only in the subsequent user-enumeration / spray phase (4768 0x6 or 4625 bursts).",
+        "data_source": "network-flow",
+        "attack": [
+          "T1589.003",
+          "T1110.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side rule",
+        "logic": "no target-side rule",
+        "data_source": "windows-security",
+        "attack": [
+          "T1589.003",
+          "T1110.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "username-anarchy"

@@ -77,7 +77,76 @@
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769\n| where like(Account_Domain, \"%child%\") AND Service_Name!=\"krbtgt\"\n| table _time, Account_Name, Account_Domain, Service_Name, Client_Address\n\nindex=sysmon EventCode=1 CommandLine=\"*raiseChild*\"\n| table _time, Computer, User, Image, CommandLine",
     "elastic_kql": "event.code:\"4769\" AND source.domain:*child* AND NOT winlog.event_data.ServiceName:krbtgt\n\nevent.code:\"1\" AND process.command_line:*raiseChild*",
     "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| where Properties has \"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\"\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| union (SecurityEvent | where EventID == 7045 | project TimeGenerated, Computer, AccountName=SubjectUserName, ObjectName=ServiceName)\n| sort by TimeGenerated desc\n// raiseChild automates DCSync (4662) + cross-realm golden ticket + psexec (7045) in one burst",
-    "sigma_rules": "win_security_kerberos_golden_ticket_activity"
+    "sigma_rules": "win_security_kerberos_golden_ticket_activity",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "raiseChild.py - Automated Child→Parent Escalation - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| where Properties has \"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\"\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| union (SecurityEvent | where EventID == 7045 | project TimeGenerated, Computer, AccountName=SubjectUserName, ObjectName=ServiceName)\n| sort by TimeGenerated desc\n// raiseChild automates DCSync (4662) + cross-realm golden ticket + psexec (7045) in one burst",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "4662",
+          "7045"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "raiseChild.py - Automated Child→Parent Escalation (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769\n| where like(Account_Domain, \"%child%\") AND Service_Name!=\"krbtgt\"\n| table _time, Account_Name, Account_Domain, Service_Name, Client_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "raiseChild.py - Automated Child→Parent Escalation (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 CommandLine=\"*raiseChild*\"\n| table _time, Computer, User, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberos_golden_ticket_activity",
+        "logic": "win_security_kerberos_golden_ticket_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1134.005",
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "impacket"

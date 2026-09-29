@@ -99,7 +99,66 @@
       "HTB M26",
       "MITRE T1543.003",
       "MITRE T1574.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DnsAdmins - Malicious DLL via dnscmd - Sentinel",
+        "logic": "DeviceRegistryEvents\n| where RegistryValueName == \"ServerLevelPluginDll\" or RegistryKey has \"Services\\\\DNS\\\\Parameters\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryValueData\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DnsAdmins - Malicious DLL via dnscmd (1) - Splunk",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\Services\\\\DNS\\\\Parameters\\\\ServerLevelPluginDll\"\n| table _time, Computer, Image, Details",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "13"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "DnsAdmins - Malicious DLL via dnscmd (2) - Splunk",
+        "logic": "index=sysmon EventCode=7 Image=\"*dns.exe\" ImageLoaded=\"*\"\n| where NOT match(ImageLoaded, \"(?i)(system32|winsxs)\")\n| table _time, Computer, ImageLoaded",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_dns_serverlevelplugindll_abuse",
+        "logic": "win_dns_serverlevelplugindll_abuse",
+        "data_source": "dns",
+        "attack": [
+          "T1574"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "dns",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Abuses DnsAdmins membership to run a DLL as SYSTEM on a DC:\n  dnscmd.exe /config       change DNS server configuration\n  /serverlevelplugindll C:\\path\\adduser.dll   register a custom plugin DLL the DNS service loads on restart\nThe DNS service runs as SYSTEM on a DC, so restarting it loads your DLL (e.g. one that adds a domain admin) with SYSTEM privilege."
 }

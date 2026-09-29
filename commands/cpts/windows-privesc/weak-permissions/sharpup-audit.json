@@ -96,7 +96,51 @@
       "MITRE T1057",
       "MITRE T1082"
     ],
-    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service."
+    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Weak Permissions - SharpUp Audit - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName has \"SharpUp\" or ProcessVersionInfoOriginalFileName has \"SharpUp\" or ProcessCommandLine has \"SharpUp\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - SharpUp Audit - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*SharpUp*\" OR OriginalFileName=\"*SharpUp*\" OR CommandLine=\"*SharpUp*audit*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_sharpup",
+        "logic": "proc_creation_win_hktl_sharpup",
+        "data_source": "sysmon",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

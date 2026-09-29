@@ -89,7 +89,69 @@
       "HTB M26",
       "MITRE T1574.009"
     ],
-    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service."
+    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Weak Permissions - Unquoted Service Path - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"services.exe\"\n| where FileName endswith \"Program.exe\" or FolderPath matches regex @\"C:\\\\Program \\w+\\\\Program\\.exe\"\n| project Timestamp, DeviceName, AccountName, FolderPath\n| sort by Timestamp desc\n// binary planted at an unquoted intermediate service path, executed by SCM",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1574.009"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Unquoted Service Path (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*wmic.exe\" CommandLine=\"*service*pathname*\") OR (Image=\"*sc.exe\" CommandLine=\"*qc*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574.009"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Unquoted Service Path (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 ParentImage=\"*services.exe\"\n| where match(Image, \"(?i)(program|common)\\\\.exe$\")\n| table _time, Computer, Image",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574.009"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_unquoted_service_path_exploitation",
+        "logic": "win_unquoted_service_path_exploitation",
+        "data_source": "windows-security",
+        "attack": [
+          "T1574.009"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

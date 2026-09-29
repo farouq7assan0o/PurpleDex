@@ -83,7 +83,66 @@
     "splunk_spl": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-DomainGPO*\\\" OR ScriptBlockText=\\\"*Get-GPO*\\\" OR ScriptBlockText=\\\"*gpcfilesyspath*\\\")\n| table _time, Computer, User, ScriptBlockText",
     "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*Get-DomainGPO* OR *Get-GPO* OR *gpcfilesyspath*)",
     "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainGPO\", \"Get-GPO\", \"gpcfilesyspath\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
-    "sigma_rules": "posh_ps_powerview_gpo_recon, win_security_ldap_recon"
+    "sigma_rules": "posh_ps_powerview_gpo_recon, win_security_ldap_recon",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView - Enumerate GPO Permissions - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainGPO\", \"Get-GPO\", \"gpcfilesyspath\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView - Enumerate GPO Permissions - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-DomainGPO*\\\" OR ScriptBlockText=\\\"*Get-GPO*\\\" OR ScriptBlockText=\\\"*gpcfilesyspath*\\\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_gpo_recon",
+        "logic": "posh_ps_powerview_gpo_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "PowerView"

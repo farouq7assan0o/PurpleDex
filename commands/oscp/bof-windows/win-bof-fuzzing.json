@@ -70,6 +70,65 @@
     ],
     "misconfiguration": "Application compiled without stack canaries (/GS-). DEP disabled or application opted out (IMAGE_DLLCHARACTERISTICS_NO_SEH, NX not enforced). No input validation or bounds checking in application code. No crash telemetry monitoring.",
     "vulnerable_config": "# C code vulnerable to overflow:\n# void vulnerable(char *input) {\n#   char buf[256];\n#   strcpy(buf, input);  // no bounds check\n# }\n\n# Compiled without protections:\n# cl.exe /GS- /DYNAMICBASE:NO /NXCOMPAT:NO vuln.c\n# → No stack canary, no ASLR, no DEP",
-    "secure_config": "# Compile with all mitigations:\n# cl.exe /GS /DYNAMICBASE /NXCOMPAT /LTCG vuln.c\n# → /GS: stack canary\n# → /DYNAMICBASE: ASLR enabled\n# → /NXCOMPAT: DEP enabled\n\n# Safe string function:\n# strncpy(buf, input, sizeof(buf) - 1);\n# buf[sizeof(buf) - 1] = '\\0';\n\n# Or use safer alternatives:\n# StringCbCopy(buf, sizeof(buf), input);  // Windows StrSafe.h\n# strlcpy(buf, input, sizeof(buf));       // BSD/Linux"
+    "secure_config": "# Compile with all mitigations:\n# cl.exe /GS /DYNAMICBASE /NXCOMPAT /LTCG vuln.c\n# → /GS: stack canary\n# → /DYNAMICBASE: ASLR enabled\n# → /NXCOMPAT: DEP enabled\n\n# Safe string function:\n# strncpy(buf, input, sizeof(buf) - 1);\n# buf[sizeof(buf) - 1] = '\\0';\n\n# Or use safer alternatives:\n# StringCbCopy(buf, sizeof(buf), input);  // Windows StrSafe.h\n# strlcpy(buf, input, sizeof(buf));       // BSD/Linux",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Windows BOF - Step 1: Fuzzing - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"ProcessCrash\"\n| summarize crashes=count() by DeviceName, InitiatingProcessFileName, bin(Timestamp, 5m)\n| where crashes > 3\n| sort by crashes desc\n// fuzzing: repeated service crashes as increasingly long inputs are sent",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows BOF - Step 1: Fuzzing (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Application\" EventCode=1000\n| stats count by param1, bin(_time, 5m) | where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1000"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows BOF - Step 1: Fuzzing (2) - Splunk",
+        "logic": "index=network\n| stats count by dest_ip, dest_port | where count>50",
+        "data_source": "network-flow",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_application_error_repeated_crash",
+        "logic": "win_application_error_repeated_crash",
+        "data_source": "windows-security",
+        "attack": [
+          "T1210"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   }
 }

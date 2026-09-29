@@ -94,6 +94,68 @@
       "MITRE T1068",
       "MITRE T1203"
     ],
-    "evasion": "Exploit once and restore the service; prefer in-memory execution of the payload."
+    "evasion": "Exploit once and restore the service; prefer in-memory execution of the payload.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Vulnerable Service - Druva inSync Local RPC - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemoteIP == \"127.0.0.1\" and RemotePort == 6064\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine\n| union (DeviceProcessEvents | where InitiatingProcessFileName has_any (\"inSync\",\"Druva\") and FileName in~ (\"cmd.exe\",\"powershell.exe\") | project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine=ProcessCommandLine)\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Vulnerable Service - Druva inSync Local RPC (1) - Splunk",
+        "logic": "index=sysmon EventCode=3 DestinationIp=\"127.0.0.1\" DestinationPort=6064\n| table _time, Computer, Image, DestinationPort",
+        "data_source": "sysmon",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Vulnerable Service - Druva inSync Local RPC (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 ParentImage=\"*inSync*\" OR ParentImage=\"*Druva*\"\n| where match(Image, \"(?i)(cmd|powershell)\")\n| table _time, Computer, ParentImage, Image",
+        "data_source": "sysmon",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_druva_insync_rpc_privesc",
+        "logic": "win_druva_insync_rpc_privesc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   }
 }

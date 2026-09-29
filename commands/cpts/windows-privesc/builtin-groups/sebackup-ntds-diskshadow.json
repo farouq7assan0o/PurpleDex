@@ -104,7 +104,70 @@
       "MITRE T1003.003",
       "MITRE T1078.002"
     ],
-    "evasion": "Copy the hives/ntds via the shadow copy, parse OFFLINE, and remove the shadow copy + copied files after."
+    "evasion": "Copy the hives/ntds via the shadow copy, parse OFFLINE, and remove the shadow copy + copied files after.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Backup Operators - Dump NTDS.dit via diskshadow - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"diskshadow.exe\" or ProcessCommandLine has \"Copy-FileSeBackupPrivilege\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceFileEvents | where FileName =~ \"ntds.dit\" | project Timestamp, DeviceName, AccountName=InitiatingProcessAccountName, ProcessCommandLine=FolderPath)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Backup Operators - Dump NTDS.dit via diskshadow (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*diskshadow.exe\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Backup Operators - Dump NTDS.dit via diskshadow (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:System\" (EventCode=8222 OR EventCode=7036) \"Volume Shadow Copy\"\n| table _time, Computer, Message",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7036",
+          "8222"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_diskshadow_ntds_backup",
+        "logic": "proc_creation_win_diskshadow_ntds_backup",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Extracts the AD database on a DC using SeBackupPrivilege plus a shadow copy:\n  diskshadow.exe           script a Volume Shadow Copy of C: (works around the NTDS lock)\nThen Copy-FileSeBackupPrivilege the NTDS.dit off the snapshot and reg save the SYSTEM hive; run impacket-secretsdump -ntds -system LOCAL to dump every domain hash offline. Backup Operators on a DC = domain compromise."
 }

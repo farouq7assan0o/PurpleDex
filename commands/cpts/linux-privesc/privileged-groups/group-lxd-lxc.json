@@ -105,7 +105,52 @@
       "MITRE T1610",
       "MITRE T1611"
     ],
-    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running."
+    "evasion": "Use a single container/mount escape that reads what you need and exits; remove images/containers you created (docker rmi / lxc delete); avoid leaving a privileged container running.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Privileged Groups - LXD/LXC Container Escape - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has \"lxc\" and SyslogMessage has_any (\"security.privileged=true\",\"disk source=/\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// lxd-group member creating a privileged container with a host root device",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privileged Groups - LXD/LXC Container Escape - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"lxc\" proctitle=\"*security.privileged=true*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_lxd_privileged_container",
+        "logic": "lnx_lxd_privileged_container",
+        "data_source": "windows-security",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

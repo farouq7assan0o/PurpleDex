@@ -93,7 +93,58 @@
     ],
     "misconfiguration": "Password policies are insufficiently strict: minimum length too short (< 12 chars), no complexity requirement, no history check (allows password reuse), no lockout or too-lenient lockout threshold. Combined with credential reuse across services, a single cracked hash grants access to multiple systems.",
     "vulnerable_config": "# Weak domain password policy:\nGet-ADDefaultDomainPasswordPolicy\n# MinPasswordLength:    8    <-- too short\n# PasswordHistoryCount: 0    <-- no history, password reuse allowed\n# ComplexityEnabled:    False <-- no complexity\n# LockoutThreshold:     0    <-- NO lockout\n\n# Local SAM policy (workgroup machines):\n# Control Panel -> Local Security Policy -> Account Policies -> Password Policy\n# Same weak defaults as above",
-    "secure_config": "# Set a strong domain password policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local \\\n    -MinPasswordLength 14 \\\n    -PasswordHistoryCount 24 \\\n    -ComplexityEnabled $true \\\n    -MaxPasswordAge 90.00:00:00 \\\n    -LockoutThreshold 5 \\\n    -LockoutDuration 00:30:00 \\\n    -LockoutObservationWindow 00:30:00\n\n# Fine-Grained PSO for privileged accounts (stricter):\nNew-ADFineGrainedPasswordPolicy -Name PrivilegedPSO \\\n    -MinPasswordLength 20 -PasswordHistoryCount 48 \\\n    -ComplexityEnabled $true -LockoutThreshold 3 \\\n    -LockoutDuration 01:00:00 -Precedence 1\nAdd-ADFineGrainedPasswordPolicySubject PrivilegedPSO -Subjects 'Domain Admins'\n\n# Deploy Azure AD Password Protection (blocks common passwords on-prem too)\n# Enable Microsoft Entra ID Smart Lockout"
+    "secure_config": "# Set a strong domain password policy:\nSet-ADDefaultDomainPasswordPolicy -Identity corp.local \\\n    -MinPasswordLength 14 \\\n    -PasswordHistoryCount 24 \\\n    -ComplexityEnabled $true \\\n    -MaxPasswordAge 90.00:00:00 \\\n    -LockoutThreshold 5 \\\n    -LockoutDuration 00:30:00 \\\n    -LockoutObservationWindow 00:30:00\n\n# Fine-Grained PSO for privileged accounts (stricter):\nNew-ADFineGrainedPasswordPolicy -Name PrivilegedPSO \\\n    -MinPasswordLength 20 -PasswordHistoryCount 48 \\\n    -ComplexityEnabled $true -LockoutThreshold 3 \\\n    -LockoutDuration 01:00:00 -Precedence 1\nAdd-ADFineGrainedPasswordPolicySubject PrivilegedPSO -Subjects 'Domain Admins'\n\n# Deploy Azure AD Password Protection (blocks common passwords on-prem too)\n# Enable Microsoft Entra ID Smart Lockout",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Metasploit - SMB Login Scanner - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4625 and LogonType == 3\n| summarize fails=count(), hosts=dcount(Computer) by IpAddress, bin(TimeGenerated, 5m)\n| where fails > 15 or hosts > 5\n| sort by fails desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4625"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Metasploit - SMB Login Scanner - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4625 OR EventCode=4624) Logon_Type=3\n| stats count(eval(EventCode=4625)) as fails dc(Computer) as hosts by Source_Network_Address\n| where fails>15 OR hosts>5",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "4625"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_smb_login_bruteforce",
+        "logic": "win_security_smb_login_bruteforce",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

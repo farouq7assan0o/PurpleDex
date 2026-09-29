@@ -95,7 +95,73 @@
     ],
     "misconfiguration": "Relying solely on Sysmon for process monitoring without ETW-level telemetry misses PPID spoofing (Sysmon records the spoofed parent, not the real one). Not monitoring Microsoft-Windows-DotNETRuntime misses PowerShell injection into running processes. Running SilkETW output to a local file without SIEM forwarding = telemetry dies with the host if compromised.",
     "vulnerable_config": "# Sysmon-only configuration - misses PPID spoofing:\n# Sysmon Event ID 1 records ParentProcessId from process creation\n# When attacker uses PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:\n#   Sysmon reports the SPOOFED parent (e.g., explorer.exe)\n#   NOT the real parent (malicious process)\n# Result: malicious process appears to have legitimate lineage\n\n# No ETW DotNETRuntime monitoring = PowerShell injection invisible:\n# Invoke-PSInject loads PS assembly into target process\n# No Event ID generated in Security or Sysmon logs\n# AMSI bypass means PS script block logging also silent",
-    "secure_config": "# Deploy SilkETW for PPID spoofing detection:\nSilkETW.exe -t user -pn Microsoft-Windows-Kernel-Process -ot eventlog -l Microsoft-Windows-SilkETW\n\n# Deploy SilkETW for .NET injection detection:\nSilkETW.exe -t user -pn Microsoft-Windows-DotNETRuntime -uk 0x2038 -ot eventlog -l Microsoft-Windows-SilkETW\n\n# PowerShell to parse SilkETW JSON for PPID anomalies:\nGet-Content C:\\ETWLogs\\etw.json | ConvertFrom-Json |\n  Where-Object {$_.EventName -eq 'MSNT_SystemTrace/Process/Start'} |\n  Select-Object ProcessName, ProcessID, ParentProcessID, ImageFileName\n\n# Alert rule: ProcessName = cmd.exe or powershell.exe\n#   where ParentProcessID != expected parent (explorer.exe, svchost.exe)"
+    "secure_config": "# Deploy SilkETW for PPID spoofing detection:\nSilkETW.exe -t user -pn Microsoft-Windows-Kernel-Process -ot eventlog -l Microsoft-Windows-SilkETW\n\n# Deploy SilkETW for .NET injection detection:\nSilkETW.exe -t user -pn Microsoft-Windows-DotNETRuntime -uk 0x2038 -ot eventlog -l Microsoft-Windows-SilkETW\n\n# PowerShell to parse SilkETW JSON for PPID anomalies:\nGet-Content C:\\ETWLogs\\etw.json | ConvertFrom-Json |\n  Where-Object {$_.EventName -eq 'MSNT_SystemTrace/Process/Start'} |\n  Select-Object ProcessName, ProcessID, ParentProcessID, ImageFileName\n\n# Alert rule: ProcessName = cmd.exe or powershell.exe\n#   where ParentProcessID != expected parent (explorer.exe, svchost.exe)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SilkETW - ETW Provider Collection for Detection - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"SilkETW.exe\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| union (DeviceFileEvents | where FileName endswith \".json\" and FolderPath has \"temp\" and InitiatingProcessFileName =~ \"SilkETW.exe\" | project Timestamp, DeviceName, FileName, FolderPath)\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1055.001",
+          "T1134.004",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SilkETW - ETW Provider Collection for Detection (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*SilkETW.exe\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055.001",
+          "T1134.004",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "SilkETW - ETW Provider Collection for Detection (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*\\\\temp\\\\*etw*.json\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055.001",
+          "T1134.004",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_silketw",
+        "logic": "proc_creation_win_hktl_silketw",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055.001",
+          "T1134.004",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Subscribes to an ETW provider and writes its events to JSON with SilkETW:\n  -t user                          collect from a user-mode provider\n  -pn Microsoft-Windows-Kernel-Process   the provider to consume (process telemetry)\n  -ot file                         output type: file\n  -p C:\\windows\\temp\\etw.json      the output path\nGives deeper telemetry than Sysmon (e.g. parent-PID spoofing, .NET assembly loads); parse the JSON with ConvertFrom-Json, and use -uk to set keyword flags for providers like DotNETRuntime."
 }

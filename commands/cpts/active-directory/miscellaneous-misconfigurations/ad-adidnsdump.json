@@ -79,7 +79,69 @@
     ],
     "misconfiguration": "Active-Directory-Integrated DNS stores every DNS record as an object in AD. The default ACL lets any authenticated domain user read the whole zone over LDAP (adidnsdump), exposing all internal hostnames, IPs, and naming conventions - including records hidden from normal DNS queries. The exposure is the default read access on the DNS partition, not a zone-transfer (AXFR) misconfiguration; adidnsdump never issues AXFR.",
     "vulnerable_config": "# BIND (named) - zone transfer unrestricted (vulnerable):\n# /etc/bind/named.conf or named.conf.local:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { any; };  // <-- allows AXFR from ANY host = zone exposure\n};\n\n# Windows DNS - no transfer restriction:\n# DNS Manager -> Zone -> Properties -> Zone Transfers tab:\n# 'Allow zone transfers' checked, 'To any server' selected",
-    "secure_config": "# BIND - restrict zone transfers to secondary DNS IPs only:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { 10.10.1.5; 10.10.1.6; };  // only secondary DNS servers\n    // Or disable entirely if using AD-integrated zones:\n    // allow-transfer { none; };\n};\n\n# Windows DNS (integrated zones) - disable zone transfers:\n# DNS Manager -> Zone -> Properties -> Zone Transfers:\n# Uncheck 'Allow zone transfers' entirely (AD-integrated zones replicate via AD replication)\n\n# Additional hardening:\n# Disable DNS recursion for external clients\n# Response Rate Limiting (RRL) to prevent DNS amplification\n# Split-horizon DNS - internal and external zones serve different records"
+    "secure_config": "# BIND - restrict zone transfers to secondary DNS IPs only:\nzone 'corp.local' {\n    type master;\n    file '/etc/bind/db.corp.local';\n    allow-transfer { 10.10.1.5; 10.10.1.6; };  // only secondary DNS servers\n    // Or disable entirely if using AD-integrated zones:\n    // allow-transfer { none; };\n};\n\n# Windows DNS (integrated zones) - disable zone transfers:\n# DNS Manager -> Zone -> Properties -> Zone Transfers:\n# Uncheck 'Allow zone transfers' entirely (AD-integrated zones replicate via AD replication)\n\n# Additional hardening:\n# Disable DNS recursion for external clients\n# Response Rate Limiting (RRL) to prevent DNS amplification\n# Split-horizon DNS - internal and external zones serve different records",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "adidnsdump - Dump All AD DNS Records - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| summarize reads=count() by SubjectUserName, IpAddress, bin(TimeGenerated, 5m)\n| where reads > 50\n| sort by reads desc\n// adidnsdump: LDAP query of the DNS zone (DomainDnsZones) partition",
+        "data_source": "windows-security",
+        "attack": [
+          "T1018"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "adidnsdump - Dump All AD DNS Records (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Access_Mask=0x100\n| stats count by Account_Name, Client_Address, bin(_time, 5m)\n| where count>50",
+        "data_source": "windows-security",
+        "attack": [
+          "T1018"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "adidnsdump - Dump All AD DNS Records (2) - Splunk",
+        "logic": "index=zeek sourcetype=\"zeek:ldap\"\n| stats count by id.orig_h | where count>100",
+        "data_source": "network-flow",
+        "attack": [
+          "T1018"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1018"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "adidnsdump"

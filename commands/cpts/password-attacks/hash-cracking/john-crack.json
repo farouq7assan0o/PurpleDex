@@ -121,7 +121,52 @@
     "splunk_spl": "index=* (\"john\")\n| table _time, host, user, _raw",
     "elastic_kql": "process.name:john*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline John the Ripper crack; detect the credential dump that produced <hash_file>",
-    "sigma_rules": "proc_creation_john_offline_cracking (no target-side telemetry - detect the preceding hash theft)"
+    "sigma_rules": "proc_creation_john_offline_cracking (no target-side telemetry - detect the preceding hash theft)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "John the Ripper - Crack Hashes - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// offline John the Ripper crack; detect the credential dump that produced <hash_file>",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "John the Ripper - Crack Hashes - Splunk",
+        "logic": "index=* (\"john\")\n| table _time, host, user, _raw",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_john_offline_cracking",
+        "logic": "proc_creation_john_offline_cracking",
+        "data_source": "sysmon",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "type": "command",
   "explain": "Cracks hashes with John the Ripper:\n  john                     the cracker\n  --wordlist=/usr/share/wordlists/rockyou.txt   dictionary mode\n  <hash_file>              the hashes\nSingle mode (--single) derives candidates from GECOS/username data (ideal for Linux passwd); --format sets the algorithm, --show reveals cracked results, --restore resumes a session."

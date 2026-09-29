@@ -102,7 +102,63 @@
       "MITRE T1548.003",
       "HTB Academy - Getting Started Module"
     ],
-    "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating."
+    "evasion": "Use the GTFOBins one-shot that spawns a shell without writing files; remove any dropped .so/binary; the sudo call is logged, so do it once and pivot rather than repeating.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Privilege Escalation - Sudo Writable Script Abuse - Sentinel",
+        "logic": "Syslog\n| where ProcessName == \"sudo\" and SyslogMessage has \"COMMAND=\"\n| where SyslogMessage has_any (\"/home/\",\"/tmp/\") and SyslogMessage has \".sh\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privilege Escalation - Sudo Writable Script Abuse (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux_secure\" \"sudo:\" \"COMMAND=\"\n| where match(_raw, \"(?i)(/home/|/tmp/).*\\\\.sh\")\n| table _time, host, user, _raw",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Privilege Escalation - Sudo Writable Script Abuse (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (comm=\"nc\" OR comm=\"mkfifo\") auid=0\n| table _time, host, comm, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_sudo_script_from_home",
+        "logic": "lnx_auditd_sudo_script_from_home",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "certifications": [
     "CPTS"

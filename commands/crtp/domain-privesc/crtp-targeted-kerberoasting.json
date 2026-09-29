@@ -107,7 +107,83 @@
     ],
     "misconfiguration": "Non-admin groups have GenericWrite ACEs on user objects (from legacy delegation, help desk roles). No monitoring of SPN changes on user accounts. Sensitive accounts have weak passwords.",
     "vulnerable_config": "# GenericWrite on DA account by HelpDesk:\nGet-ObjectAcl 'DAUser1' -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'GenericWrite' -and $_.IdentityReference -match 'HelpDesk'}\n# HelpDesk has GenericWrite → can set SPN → targeted Kerberoast\n\n# Set fake SPN on target (requires GenericWrite):\nSet-DomainObject -Identity DAUser1 -Set @{serviceprincipalname='fake/dc01'}\n# Then: Rubeus.exe kerberoast /user:DAUser1 /outfile:hash.txt",
-    "secure_config": "# Remove GenericWrite ACEs via AD ACL cleanup:\nRemove-ADPermission -Identity 'DAUser1' -User 'HelpDesk' -AccessRights WriteProperty -Properties 'servicePrincipalName'\n\n# Monitor SPN changes via Event 4738:\n# SIEM: EventID=4738 AND ChangedAttributes contains 'ServicePrincipalName' AND\n# TargetUserName NOT IN (known service accounts) → ALERT: possible targeted Kerberoasting\n\n# Force AES-only on sensitive accounts:\nSet-ADUser DAUser1 -KerberosEncryptionType AES256\n# msDS-SupportedEncryptionTypes = 16 (AES256 only) → RC4 TGS not issuable"
+    "secure_config": "# Remove GenericWrite ACEs via AD ACL cleanup:\nRemove-ADPermission -Identity 'DAUser1' -User 'HelpDesk' -AccessRights WriteProperty -Properties 'servicePrincipalName'\n\n# Monitor SPN changes via Event 4738:\n# SIEM: EventID=4738 AND ChangedAttributes contains 'ServicePrincipalName' AND\n# TargetUserName NOT IN (known service accounts) → ALERT: possible targeted Kerberoasting\n\n# Force AES-only on sensitive accounts:\nSet-ADUser DAUser1 -KerberosEncryptionType AES256\n# msDS-SupportedEncryptionTypes = 16 (AES256 only) → RC4 TGS not issuable",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Targeted Kerberoasting (Add SPN via GenericWrite) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"servicePrincipalName\"\n| project setTime=TimeGenerated, Computer, SubjectUserName, ObjectDN, AttributeValue\n| join kind=inner (SecurityEvent | where EventID == 4769 and TicketEncryptionType == \"0x17\" | project roastTime=TimeGenerated, TargetUserName, ServiceName) on $left.ObjectDN == $right.TargetUserName\n| where roastTime between (setTime .. (setTime + 10m))\n| sort by setTime desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769",
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Targeted Kerberoasting (Add SPN via GenericWrite) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 LDAP_Display_Name=\"servicePrincipalName\" Operation_Type=\"%%14674\"\n| table _time, Computer, Subject_Account_Name, Object_DN, Value",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "5136"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Targeted Kerberoasting (Add SPN via GenericWrite) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17\n| stats count by Account_Name, Service_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_addition_spn_to_user",
+        "logic": "win_security_addition_spn_to_user",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberoasting_activity",
+        "logic": "win_security_kerberoasting_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

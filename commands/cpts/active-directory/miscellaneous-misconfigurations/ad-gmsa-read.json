@@ -69,7 +69,57 @@
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where Properties=\"*msDS-ManagedPassword*\"\n| table _time, Account_Name, ObjectName, Properties",
     "elastic_kql": "event.code:\"4662\" AND winlog.event_data.Properties:*msDS-ManagedPassword*",
     "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| where Properties has \"msDS-ManagedPassword\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| sort by TimeGenerated desc",
-    "sigma_rules": "win_security_gmsa_password_read"
+    "sigma_rules": "win_security_gmsa_password_read",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "NetExec - Read gMSA Password - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| where Properties has \"msDS-ManagedPassword\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "NetExec - Read gMSA Password - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where Properties=\"*msDS-ManagedPassword*\"\n| table _time, Account_Name, ObjectName, Properties",
+        "data_source": "windows-security",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_gmsa_password_read",
+        "logic": "win_security_gmsa_password_read",
+        "data_source": "windows-security",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "netexec"

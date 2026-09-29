@@ -94,7 +94,69 @@
       "HTB M26",
       "MITRE T1543.003"
     ],
-    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service."
+    "evasion": "Restore the original service binary/ACL/registry value after execution; trigger via a scheduled restart instead of an obvious sc stop/start; name the payload to blend with the legitimate service.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Weak Permissions - Reconfigure Service binPath - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"sc.exe\" and ProcessCommandLine has \"config\" and ProcessCommandLine has \"binpath\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// SERVICE_CHANGE_CONFIG abuse to point binPath at cmd.exe (Event 7040)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Reconfigure Service binPath (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*sc.exe\" (CommandLine=\"*config*\" AND CommandLine=\"*binpath*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Weak Permissions - Reconfigure Service binPath (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:System\" EventCode=7040\n| table _time, Computer, param1",
+        "data_source": "windows-security",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7040"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_sc_config_binpath_change",
+        "logic": "proc_creation_win_sc_config_binpath_change",
+        "data_source": "sysmon",
+        "attack": [
+          "T1543.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

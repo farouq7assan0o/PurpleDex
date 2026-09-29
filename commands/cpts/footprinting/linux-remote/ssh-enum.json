@@ -103,7 +103,65 @@
     "misconfiguration": "Services expose excessive information: version banners, supported auth methods, valid usernames via error responses. IPMI has no authentication (version 2.0 cipher 0 vulnerability). RSH/rexec trust .rhosts files. rsync shares readable anonymously. Oracle TNS allows remote poisoning in older versions.",
     "vulnerable_config": "# IPMI cipher 0 - no authentication required:\n# ipmitool -H <ip> -U admin -P '' -I lanplus -C 0 chassis status\n# Returns valid data - auth bypassed entirely\n\n# rsync anonymous access:\n# rsync --list-only rsync://<ip>/  # lists all modules without auth\n# rsync rsync://<ip>/backup /tmp   # downloads backup files\n\n# Oracle TNS - version banner reveals exact version:\n# nmap -p 1521 -sV -> Oracle Database 11.2.0.4 (exact version)",
     "secure_config": "# IPMI - disable cipher 0, enable only strong ciphers:\n# /etc/ipmi/ipmievd.conf: IPMI_CIPHER_SUITE=17  (AES, mandatory auth)\n# Or disable IPMI entirely if not needed (BMC IPMI = critical attack surface)\n\n# rsync - require auth:\n# /etc/rsyncd.conf:\n# [backup]\n#   auth users = backupuser\n#   secrets file = /etc/rsyncd.secrets\n#   hosts allow = 10.10.1.0/24\n\n# RSH/rexec - disable entirely (replaced by SSH):\nsystemctl disable rsh.socket rexec.socket rlogin.socket\n\n# Oracle TNS - disable remote admin, enforce auth:\n# sqlnet.ora: SQLNET.AUTHENTICATION_SERVICES = (BEQ, TCPS)  (not NONE)",
-    "evasion": "Use key/valid-cred auth so it blends with admin activity; avoid writing tools to disk - pipe commands over the session; clean shell history."
+    "evasion": "Use key/valid-cred auth so it blends with admin activity; avoid writing tools to disk - pipe commands over the session; clean shell history.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SSH - Enumeration - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 22\n| summarize conns=count() by LocalIP, RemoteIP, bin(Timestamp, 5m)\n| where conns > 5\n| sort by conns desc\n// SSH banner/algorithm/auth-method enumeration on port 22",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SSH - Enumeration (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"ssh*\"\n| table _time, host, auid, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "SSH - Enumeration (2) - Splunk",
+        "logic": "index=network dest_port=22\n| stats count by src_ip, dest_ip | where count>5",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_service_enumeration_ssh",
+        "logic": "net_service_enumeration_ssh",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Audits an SSH server's configuration and auth methods:\n  ./ssh-audit.py <ip>   fingerprint the server's key-exchange, cipher, and MAC algorithms\nFlags weak/deprecated crypto and the software version; a verbose connect ('ssh -v <user>@<ip>') then reveals which authentication methods (password, publickey, keyboard-interactive) the server accepts."
 }

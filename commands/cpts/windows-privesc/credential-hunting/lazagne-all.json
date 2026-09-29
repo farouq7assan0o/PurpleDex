@@ -86,7 +86,51 @@
       "MITRE T1555.003",
       "MITRE T1555"
     ],
-    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
+    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Credential Hunting - LaZagne (All Modules) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName has \"lazagne\" or ProcessVersionInfoOriginalFileName has \"LaZagne\" or ProcessCommandLine has \"lazagne\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - LaZagne (All Modules) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*lazagne*\" OR OriginalFileName=\"*LaZagne*\" OR CommandLine=\"*lazagne*all*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_lazagne",
+        "logic": "proc_creation_win_hktl_lazagne",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

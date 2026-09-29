@@ -100,7 +100,57 @@
       "HTB M13",
       "MITRE T1087.002",
       "MITRE T1059.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD - Living Off the Land Enumeration - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName in~ (\"net.exe\", \"net1.exe\", \"nltest.exe\", \"dsquery.exe\", \"whoami.exe\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// lotl domain/host reconnaissance",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1087.002",
+          "T1016",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AD - Living Off the Land Enumeration - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\\\"*net.exe\\\" OR Image=\\\"*net1.exe\\\" OR Image=\\\"*nltest.exe\\\" OR Image=\\\"*dsquery.exe\\\" OR Image=\\\"*whoami.exe\\\")\n| table _time, Computer, User, ParentImage, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1087.002",
+          "T1016",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_lotl_recon",
+        "logic": "proc_creation_win_lotl_recon",
+        "data_source": "sysmon",
+        "attack": [
+          "T1087.002",
+          "T1016",
+          "T1059.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "references": [
     {

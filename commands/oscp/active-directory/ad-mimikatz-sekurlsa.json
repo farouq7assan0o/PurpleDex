@@ -127,7 +127,84 @@
     ],
     "misconfiguration": "RunAsPPL = 0 (default on older systems). WDigest UseLogonCredential = 1 (stores cleartext). Credential Guard not deployed. EDR absent. DA/EA accounts log on interactively to workstations (credentials cached there).",
     "vulnerable_config": "# RunAsPPL disabled:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa').RunAsPPL  # null or 0\n\n# WDigest enabled:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest').UseLogonCredential  # 1\n\n# Credential Guard absent:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard').EnableVirtualizationBasedSecurity  # 0",
-    "secure_config": "# Enable RunAsPPL:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RunAsPPL -Value 1\n\n# Disable WDigest:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest' -Name UseLogonCredential -Value 0\n\n# Credential Guard via GPO:\n# Computer Config → Admin Templates → System → Device Guard\n# → Turn on Virtualization Based Security: Enabled\n# → Credential Guard: Enabled with UEFI lock\n\n# Sysmon rule:\n# <ProcessAccess onmatch='include'><TargetImage condition='is'>C:\\Windows\\system32\\lsass.exe</TargetImage></ProcessAccess>"
+    "secure_config": "# Enable RunAsPPL:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RunAsPPL -Value 1\n\n# Disable WDigest:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest' -Name UseLogonCredential -Value 0\n\n# Credential Guard via GPO:\n# Computer Config → Admin Templates → System → Device Guard\n# → Turn on Virtualization Based Security: Enabled\n# → Credential Guard: Enabled with UEFI lock\n\n# Sysmon rule:\n# <ProcessAccess onmatch='include'><TargetImage condition='is'>C:\\Windows\\system32\\lsass.exe</TargetImage></ProcessAccess>",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Mimikatz - Dump Cached Credentials (sekurlsa) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"OpenProcessApiCall\" and FileName =~ \"lsass.exe\"\n| where InitiatingProcessFileName !in~ (\"MsMpEng.exe\",\"wininit.exe\",\"csrss.exe\",\"services.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.001",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Mimikatz - Dump Cached Credentials (sekurlsa) (1) - Splunk",
+        "logic": "index=sysmon EventCode=10 TargetImage=\"*lsass.exe\"\n| where GrantedAccess=\"0x1010\" OR GrantedAccess=\"0x1038\" OR GrantedAccess=\"0x1FFFFF\"\n| table _time, Computer, SourceImage, SourceUser, GrantedAccess",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "10"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Mimikatz - Dump Cached Credentials (sekurlsa) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4656\n| where ObjectName=\"*\\lsass.exe\" AND AccessMask=\"0x1010\"\n| table _time, Process_Name, Account_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.001",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4656"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_lsass_access_credential_dumping",
+        "logic": "sysmon_lsass_access_credential_dumping",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_mimikatz_command_line",
+        "logic": "proc_creation_win_hktl_mimikatz_command_line",
+        "data_source": "sysmon",
+        "attack": [
+          "T1003.001",
+          "T1558"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "variations": [
     {

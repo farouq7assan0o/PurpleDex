@@ -100,6 +100,82 @@
       "MITRE T1059",
       "OWASP A03:2021"
     ],
-    "code_review": "RED FLAGS (source): user input reaches a shell/exec call.\n  system( / exec( / shell_exec( / passthru( / popen( / proc_open(  |  os.system / subprocess(..., shell=True)  |  child_process.exec(  |  backticks `...`\nGREP:  grep -rniE \"system\\(|exec\\(|shell_exec|passthru|popen|proc_open|os\\.system|subprocess.*shell=True|child_process\\.exec\\(|`.*\\$\" .\nSAFE:  avoid the shell; use argument arrays / execve-style APIs (subprocess.run([...], shell=False)); strict allowlist; escapeshellarg only as last resort."
+    "code_review": "RED FLAGS (source): user input reaches a shell/exec call.\n  system( / exec( / shell_exec( / passthru( / popen( / proc_open(  |  os.system / subprocess(..., shell=True)  |  child_process.exec(  |  backticks `...`\nGREP:  grep -rniE \"system\\(|exec\\(|shell_exec|passthru|popen|proc_open|os\\.system|subprocess.*shell=True|child_process\\.exec\\(|`.*\\$\" .\nSAFE:  avoid the shell; use argument arrays / execve-style APIs (subprocess.run([...], shell=False)); strict allowlist; escapeshellarg only as last resort.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PRTG - Notification Command Injection (CVE-2018-9276) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"nginx\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\",\"nc\",\"python\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// PRTG notification command injection (CVE-2018-9276) - PRTG spawning cmd",
+        "data_source": "powershell",
+        "attack": [
+          "T1190",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PRTG - Notification Command Injection (CVE-2018-9276) (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php-cgi*\" OR ParentImage=\"*php-fpm*\" OR ParentImage=\"*java.exe\" OR ParentImage=\"*tomcat*\")\n| where match(Image, \"(?i)(cmd|powershell|bash|sh|nc|python)\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PRTG - Notification Command Injection (CVE-2018-9276) (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined (method=POST OR status=500)\n| stats count by clientip, uri_path | where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_prtg_rce",
+        "logic": "web_prtg_rce",
+        "data_source": "proxy",
+        "attack": [
+          "T1190",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_webserver_spawning_shell",
+        "logic": "proc_creation_webserver_spawning_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190",
+          "T1136.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   }
 }

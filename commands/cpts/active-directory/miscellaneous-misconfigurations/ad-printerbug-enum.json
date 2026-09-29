@@ -78,7 +78,66 @@
     ],
     "misconfiguration": "Administrative shortcuts create persistent misconfigurations: passwords stored in AD Description/Info attributes (visible to all users), accounts with PasswordNotRequired flag set (blank passwords allowed), LAPS attribute readable by non-admin groups, gMSA readable by unintended principals, or SYSVOL containing scripts with embedded credentials.",
     "vulnerable_config": "# Passwords in AD Description field:\nGet-ADUser -Filter * -Properties Description | Where-Object {$_.Description -ne $null}\n# Returns: svc_backup  Description: 'Temp password: Welcome1!'\n\n# PasswordNotRequired flag (UAC 0x20 = PASSWD_NOTREQD):\nGet-ADUser -Filter {PasswordNotRequired -eq $true}\n\n# LAPS password readable by Domain Users (misconfigured ACL):\nGet-ADComputer -Filter * -Properties ms-Mcs-AdmPwd | Select-Object Name,'ms-Mcs-AdmPwd'\n# Should only be readable by admins + specific LAPS readers group",
-    "secure_config": "# Remove passwords from Description/Info fields:\nGet-ADUser -Filter * -Properties Description,Info |\n    Where-Object {$_.Description -match 'pass|pwd|temp|welcome'} |\n    Set-ADUser -Description $null\n\n# Fix PasswordNotRequired accounts:\nGet-ADUser -Filter {PasswordNotRequired -eq $true} |\n    Set-ADAccountControl -PasswordNotRequired $false\n\n# LAPS ACL hardening - restrict ms-Mcs-AdmPwd reads:\n# Only specific LAPS-Readers security group should have Read on this attribute\n# Run: Set-AdmPwdComputerSelfPermission, Set-AdmPwdReadPasswordPermission\n\n# Audit gMSA readers:\nGet-ADServiceAccount -Filter * -Properties PrincipalsAllowedToRetrieveManagedPassword |\n    Select-Object Name, PrincipalsAllowedToRetrieveManagedPassword"
+    "secure_config": "# Remove passwords from Description/Info fields:\nGet-ADUser -Filter * -Properties Description,Info |\n    Where-Object {$_.Description -match 'pass|pwd|temp|welcome'} |\n    Set-ADUser -Description $null\n\n# Fix PasswordNotRequired accounts:\nGet-ADUser -Filter {PasswordNotRequired -eq $true} |\n    Set-ADAccountControl -PasswordNotRequired $false\n\n# LAPS ACL hardening - restrict ms-Mcs-AdmPwd reads:\n# Only specific LAPS-Readers security group should have Read on this attribute\n# Run: Set-AdmPwdComputerSelfPermission, Set-AdmPwdReadPasswordPermission\n\n# Audit gMSA readers:\nGet-ADServiceAccount -Filter * -Properties PrincipalsAllowedToRetrieveManagedPassword |\n    Select-Object Name, PrincipalsAllowedToRetrieveManagedPassword",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Check Print Spooler Status on Domain Hosts - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainComputer\", \"Get-SpoolStatus\", \"rpcdump\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Check Print Spooler Status on Domain Hosts - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-DomainComputer*\\\" OR ScriptBlockText=\\\"*Get-SpoolStatus*\\\" OR ScriptBlockText=\\\"*rpcdump*\\\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_printerbug_enum_recon",
+        "logic": "posh_ps_printerbug_enum_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "impacket"

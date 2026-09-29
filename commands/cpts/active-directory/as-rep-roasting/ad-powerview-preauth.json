@@ -80,7 +80,66 @@
     ],
     "misconfiguration": "The 'Do Not Require Kerberos Preauthentication' checkbox is enabled on the user account (msDS-SupportedEncryptionTypes or the UAC flag UF_DONT_REQUIRE_PREAUTH = 0x400000). This means the KDC issues an AS-REP with the user's session key encrypted by their password hash - without demanding proof of identity first.",
     "vulnerable_config": "# Active Directory user account attribute (via ADUC or ADSI Edit)\n# 'Do not require Kerberos preauthentication' = CHECKED\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $true\n\n# UAC flag value: 0x400000 (4194304)\n# Confirmed with:\nGet-ADUser svc_backup -Properties DoesNotRequirePreAuth",
-    "secure_config": "# Enforce Kerberos pre-authentication (the secure default)\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $false\n\n# Bulk fix - find and fix all no-preauth accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth |\n  Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# GPO path (Kerberos policy):\n# Computer Configuration > Windows Settings > Security Settings >\n# Account Policies > Kerberos Policy\n# 'Maximum lifetime for user ticket' should be set (forces preauth implicitly)"
+    "secure_config": "# Enforce Kerberos pre-authentication (the secure default)\n# In PowerShell:\nSet-ADAccountControl -Identity svc_backup -DoesNotRequirePreAuth $false\n\n# Bulk fix - find and fix all no-preauth accounts:\nGet-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth |\n  Set-ADAccountControl -DoesNotRequirePreAuth $false\n\n# GPO path (Kerberos policy):\n# Computer Configuration > Windows Settings > Security Settings >\n# Account Policies > Kerberos Policy\n# 'Maximum lifetime for user ticket' should be set (forces preauth implicitly)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PowerView - Find AS-REP Roastable Accounts - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-DomainUser\", \"PreauthNotRequired\", \"DoesNotRequirePreAuth\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PowerView - Find AS-REP Roastable Accounts - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-DomainUser*\\\" OR ScriptBlockText=\\\"*PreauthNotRequired*\\\" OR ScriptBlockText=\\\"*DoesNotRequirePreAuth*\\\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_powerview_recon",
+        "logic": "posh_ps_powerview_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "PowerView"

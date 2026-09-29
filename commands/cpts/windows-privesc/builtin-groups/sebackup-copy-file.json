@@ -90,7 +90,72 @@
       "MITRE T1003.002",
       "MITRE T1078.002"
     ],
-    "evasion": "Copy the hives/ntds via the shadow copy, parse OFFLINE, and remove the shadow copy + copied files after."
+    "evasion": "Copy the hives/ntds via the shadow copy, parse OFFLINE, and remove the shadow copy + copied files after.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Backup Operators - Copy Protected File (SeBackupPrivilege) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\" and ProcessCommandLine has \"Copy-FileSeBackupPrivilege\"\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| union (SecurityEvent | where EventID == 4656 and ObjectName has_any (\"config\\\\SAM\",\"ntds.dit\") | project Timestamp=TimeGenerated, DeviceName=Computer, InitiatingProcessAccountName=SubjectUserName, ProcessCommandLine=ObjectName)\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4656"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Backup Operators - Copy Protected File (SeBackupPrivilege) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4656 Object_Name=\"*\\\\config\\\\SAM\" Accesses=\"*BACKUP*\"\n| table _time, Computer, Account_Name, Object_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4656"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Backup Operators - Copy Protected File (SeBackupPrivilege) (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 ScriptBlockText=\"*Copy-FileSeBackupPrivilege*\"\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_sebackupprivilege_file_read",
+        "logic": "win_security_sebackupprivilege_file_read",
+        "data_source": "sysmon",
+        "attack": [
+          "T1006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Abuses Backup Operators' SeBackupPrivilege (which bypasses file ACLs on read) to copy any protected file:\n  Copy-FileSeBackupPrivilege   copy using the backup semantics that ignore the DACL\n  '<protected_file>'       the file you cannot normally read\n  .\\out.txt                the local copy\nImport the SeBackupPrivilege cmdlets and enable the privilege first; then read otherwise-denied files (configs, hive backups, flags)."
 }

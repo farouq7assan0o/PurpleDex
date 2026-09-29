@@ -115,7 +115,71 @@
     ],
     "misconfiguration": "Enrollment agent certificate template accessible to Domain Users. Templates allowing enrollment agent to supply subject. No CA Manager Approval on enrollment agent issuance. CA auditing not enabled.",
     "vulnerable_config": "# ESC3 requires two vulnerable templates:\n# Template 1: Enrollment Agent (Certificate Request Agent EKU) - accessible to Domain Users\n# Template 2: User template - allows Enrollment Agent to enroll on behalf of others\n\nCertify.exe find /vulnerable\n# [ESC3] Enrollment Agent Certificate:\n# Template: ESC3-CertRequestAgent\n# Enrollment: Domain Users\n# EKU: Certificate Request Agent\n# [ESC3] Template allowing enrollment agent:\n# Template: User\n# Enrollment: Domain Users\n# No enrollment agent restriction",
-    "secure_config": "# Restrict enrollment agent template to CA admins only:\n# Certificate Templates → ESC3-CertRequestAgent → Security\n# Remove 'Domain Users' enrollment permission\n# Add only 'CA Administrators' or specific smart card enrollment station accounts\n\n# Require Manager Approval on all enrollment agent issuances:\n# Template Properties → Issuance Requirements\n# → 'This number of authorized signatures': 1\n# → 'Application policy': Certificate Request Agent\n# → CA certificate manager approval: CHECK\n\n# Audit enrollment agent certificate usage:\n# CA audit Event 4887 → filter for Certificate Request Agent EKU in certificate chain"
+    "secure_config": "# Restrict enrollment agent template to CA admins only:\n# Certificate Templates → ESC3-CertRequestAgent → Security\n# Remove 'Domain Users' enrollment permission\n# Add only 'CA Administrators' or specific smart card enrollment station accounts\n\n# Require Manager Approval on all enrollment agent issuances:\n# Template Properties → Issuance Requirements\n# → 'This number of authorized signatures': 1\n# → 'Application policy': Certificate Request Agent\n# → CA certificate manager approval: CHECK\n\n# Audit enrollment agent certificate usage:\n# CA audit Event 4887 → filter for Certificate Request Agent EKU in certificate chain",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD CS ESC3 - Enrollment Agent Certificate Abuse - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4887\n| where AttributesAppl has \"Certificate Request Agent\" or CertificateTemplate has \"EnrollmentAgent\"\n| project TimeGenerated, Computer, RequesterName, CertificateTemplate, SubjectName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC3 - Enrollment Agent Certificate Abuse (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4887\n| where like(Message, \"%Certificate Request Agent%\") OR like(Message, \"%Enrollment Agent%\")\n| table _time, ComputerName, Requester, CertificateTemplate",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC3 - Enrollment Agent Certificate Abuse (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x12\n| where Certificate_Thumbprint!=\"\"\n| stats count by Account_Name, Client_Address, Certificate_Thumbprint",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_certificate_enrollment_agent",
+        "logic": "win_security_adcs_certificate_enrollment_agent",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Step 1 of the ESC3 chain - obtain an Enrollment Agent certificate:\n  request                          enroll a certificate\n  /ca:<ca_server>\\<ca_name>        the issuing CA\n  /template:<enrollment_agent_template>   a template granting the Certificate Request Agent EKU\nWith the resulting EA cert you then enroll on behalf of any user (/onbehalfof:<domain>\\Administrator /enrollcert:ea_cert.pfx) against a second template, then Rubeus asktgt to get that user's TGT."
 }

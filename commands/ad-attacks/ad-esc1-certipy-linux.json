@@ -87,7 +87,72 @@
     ],
     "misconfiguration": "A certificate template grants low-privileged users enrollment, permits an enrollee-supplied SAN, includes a client-authentication EKU, and does not require manager approval.",
     "vulnerable_config": "# certipy flags it:\ncertipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout\n# Look for: [!] ESC1 - 'Enrollee Supplies Subject' + Client Authentication + low-priv enroll.",
-    "secure_config": "# On the template: clear 'Supply in the request' for the subject name, OR require CA manager approval.\n# Restrict enrollment to specific groups. Enable strong certificate mapping on DCs (KB5014754 Full Enforcement)."
+    "secure_config": "# On the template: clear 'Supply in the request' for the subject name, OR require CA manager approval.\n# Restrict enrollment to specific groups. Enable strong certificate mapping on DCs (KB5014754 Full Enforcement).",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD CS ESC1 via Certipy (Linux - Enrollee-Supplied SAN) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID in (4886, 4887)\n| project TimeGenerated, Requester, CertificateTemplate, ComputerName\n| join kind=leftouter (\n    SecurityEvent | where EventID == 4768 and isnotempty(CertificateThumbprint)\n    | project PkinitTime=TimeGenerated, TargetUserName, IpAddress, CertificateThumbprint\n) on $left.Requester == $right.TargetUserName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC1 via Certipy (Linux - Enrollee-Supplied SAN) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Requester, CertificateTemplate, ComputerName, Attributes",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4886",
+          "4887"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD CS ESC1 via Certipy (Linux - Enrollee-Supplied SAN) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Certificate_Thumbprint=*\n| stats count by Account_Name, Client_Address, Certificate_Thumbprint",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_esc1_san_certificate_request",
+        "logic": "win_security_adcs_esc1_san_certificate_request",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "certipy"

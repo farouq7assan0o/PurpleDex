@@ -88,7 +88,53 @@
       "MITRE T1595.002",
       "OWASP A05:2021"
     ],
-    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
+    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Joomla - Detect and Version Enumeration - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// joomla application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Joomla - Detect and Version Enumeration - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_path=\\\"/administrator/\\\" OR uri_path=\\\"/language/en-GB/en-GB.xml\\\" OR uri_path=\\\"/README.txt\\\")\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_joomla",
+        "logic": "web_app_scanner_joomla",
+        "data_source": "proxy",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

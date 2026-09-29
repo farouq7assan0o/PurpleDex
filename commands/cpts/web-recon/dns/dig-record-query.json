@@ -119,7 +119,47 @@
     ],
     "misconfiguration": "Web application and infrastructure information is inadvertently exposed: verbose HTTP headers (Server, X-Powered-By) revealing exact version numbers, directory listing enabled on web servers, .git repositories or .env files accessible in the web root, robots.txt listing sensitive paths, and WHOIS data exposing internal contact details.",
     "vulnerable_config": "# Apache with version disclosure in headers:\n# HTTP response: Server: Apache/2.4.41 (Ubuntu)\n# X-Powered-By: PHP/7.4.3  <-- exact version, enables targeted exploit search\n\n# Directory listing enabled:\n# nginx: autoindex on;  <- any directory without index.html lists files\n# Apache: Options +Indexes\n\n# .git accessible from web root:\n# http://target.com/.git/config  -- exposes repo + credentials in config\n# http://target.com/.env  -- exposes DB_PASSWORD, API keys",
-    "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)"
+    "secure_config": "# Apache - remove version disclosure:\n# /etc/apache2/conf-enabled/security.conf:\nServerTokens Prod          # shows only 'Apache' not version\nServerSignature Off        # removes version from error pages\n\n# nginx:\nserver_tokens off;         # hides nginx version\n\n# Disable directory listing:\n# Apache: Options -Indexes\n# nginx: remove 'autoindex on' from all location blocks\n\n# Block sensitive files/directories:\n# Apache:\n<DirectoryMatch '(\\.git|\\.env|\\.svn|backup|config)'>\n    Require all denied\n</DirectoryMatch>\n\n# nginx:\nlocation ~* /(\\.git|\\.env|\\.svn|backup\\/) { deny all; return 404; }\n\n# Remove X-Powered-By header:\n# PHP: expose_php = Off (php.ini)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DNS - dig Record Queries - Sentinel",
+        "logic": "DnsEvents\n| summarize queries=count() by ClientIP, Name, bin(TimeGenerated, 1m)\n| where queries > 50\n| sort by queries desc\n// individual queries blend in; high-frequency enumeration of one domain is abnormal",
+        "data_source": "dns",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DNS - dig Record Queries - Splunk",
+        "logic": "index=dns sourcetype=\"stream:dns\"\n| stats count by src_ip, query, record_type, bin(_time, 1m)\n| where count>50",
+        "data_source": "dns",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_dns_high_frequency_enumeration",
+        "logic": "net_dns_high_frequency_enumeration",
+        "data_source": "dns",
+        "attack": [
+          "T1590.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "dns"
+      ]
+    }
   },
   "explain": "Queries DNS with dig for a specific record type:\n  dig <domain>        the name to look up\n  <record_type>       A, MX, NS, TXT, CNAME, SOA, etc.\nReturns the matching records; add +short for terse output, +trace to follow delegation, and -x <ip> for reverse lookups."
 }

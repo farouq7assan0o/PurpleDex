@@ -77,7 +77,83 @@
     ],
     "misconfiguration": "Domain trusts (especially bidirectional and forest trusts) extend authentication boundaries. SID filtering is often disabled on forest trusts to support legacy applications - but this allows an attacker with Domain Admin in a child domain to forge a golden ticket with ExtraSids claiming Domain Admin SID in the parent/trusted forest. Without SID filtering (SIDHistory filtering), domain boundaries offer no security isolation.",
     "vulnerable_config": "# Bidirectional forest trust without SID filtering:\nGet-ADTrust -Filter * | Select-Object Name, Direction, SIDFilteringQuarantined\n# SIDFilteringQuarantined: False  <-- SID filtering DISABLED\n# Direction: BiDirectional        <-- both domains trust each other\n\n# Child domain to parent: SID filtering is always disabled by default\n# Enterprise Admin SID (S-1-5-21-<root>-519) can be added to ExtraSids\n# Golden ticket with ExtraSids = cross-domain privilege escalation",
-    "secure_config": "# Enable SID filtering on external/forest trusts:\nnetdom trust <TrustingDomain> /domain:<TrustedDomain> /quarantine:yes\n# 'Quarantine' = SID filtering enabled - ExtraSids from other domain are stripped\n\n# For child-to-parent trusts (SID filtering can't be enabled without breaking functionality):\n# Use Selective Authentication instead of full trust\n# Only accounts explicitly granted 'Allowed to Authenticate' can use the trust\nnetdom trust <ParentDomain> /domain:<ChildDomain> /SelectiveAuth:yes\n\n# Restrict SIDHistory (prevents ExtraSids abuse):\n# Audit accounts with SIDHistory:\nGet-ADUser -Filter {SIDHistory -like '*'} -Properties SIDHistory\n\n# Monitor cross-forest authentication:\n# Event 4769 on parent DC with ticket from child domain user"
+    "secure_config": "# Enable SID filtering on external/forest trusts:\nnetdom trust <TrustingDomain> /domain:<TrustedDomain> /quarantine:yes\n# 'Quarantine' = SID filtering enabled - ExtraSids from other domain are stripped\n\n# For child-to-parent trusts (SID filtering can't be enabled without breaking functionality):\n# Use Selective Authentication instead of full trust\n# Only accounts explicitly granted 'Allowed to Authenticate' can use the trust\nnetdom trust <ParentDomain> /domain:<ChildDomain> /SelectiveAuth:yes\n\n# Restrict SIDHistory (prevents ExtraSids abuse):\n# Audit accounts with SIDHistory:\nGet-ADUser -Filter {SIDHistory -like '*'} -Properties SIDHistory\n\n# Monitor cross-forest authentication:\n# Event 4769 on parent DC with ticket from child domain user",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "psexec.py - Shell via Kerberos Ticket - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 7045\n| where ServiceName has \"PSEXESVC\" or ServiceFileName has \"PSEXESVC\"\n| project TimeGenerated, Computer, ServiceName, ServiceFileName, AccountName\n| union (SecurityEvent | where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"Kerberos\" | project TimeGenerated, Computer, TargetUserName, IpAddress)\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624",
+          "7045"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "psexec.py - Shell via Kerberos Ticket (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3\n| where Account_Name!=\"*$\" AND Source_Network_Address!=\"<dc_ip>\"\n| stats count by Account_Name, Source_Network_Address, Workstation_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "psexec.py - Shell via Kerberos Ticket (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 ParentImage=\"*services.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")\n| table _time, Computer, User, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1021.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_sysinternals_psexec_execution",
+        "logic": "proc_creation_win_sysinternals_psexec_execution",
+        "data_source": "sysmon",
+        "attack": [
+          "T1021.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_psexec_service_start",
+        "logic": "win_security_psexec_service_start",
+        "data_source": "windows-security",
+        "attack": [
+          "T1021.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "impacket"

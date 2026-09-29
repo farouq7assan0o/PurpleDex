@@ -80,7 +80,92 @@
     "misconfiguration": "A non-DC computer or service account has unconstrained Kerberos delegation enabled (TrustedForDelegation = True). When any user authenticates to that machine, their TGT is forwarded to it automatically. If an attacker compromises the machine, they can extract all the forwarded TGTs - including Domain Admin TGTs if a DA was coerced to authenticate (e.g., via PrinterBug/PetitPotam).",
     "vulnerable_config": "# Finding unconstrained delegation hosts:\nGet-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties TrustedForDelegation |\n    Select-Object Name, TrustedForDelegation\n# Legitimate: Domain Controllers\n# NOT legitimate: fileserver01, webserver02, etc.\n\n# Service account with unconstrained delegation:\nGet-ADUser -Filter {TrustedForDelegation -eq $true} -Properties TrustedForDelegation",
     "secure_config": "# Remove unconstrained delegation from all non-DC hosts:\nGet-ADComputer -Filter {TrustedForDelegation -eq $true} |\n    Where-Object {$_.Name -notmatch 'DC'} |\n    Set-ADComputer -TrustedForDelegation $false\n\n# Use constrained delegation instead (specific services only):\nSet-ADComputer fileserver01 -TrustedForDelegation $false\n# Then configure resource-based constrained delegation:\nSet-ADComputer fileserver01 -PrincipalsAllowedToDelegateToAccount webserver01\n\n# Protected Users group - members cannot be delegated:\nAdd-ADGroupMember 'Protected Users' -Members 'Domain Admins'\n\n# Enable Kerberos Armoring (FAST) to prevent TGT forwarding abuse",
-    "evasion": "Fire the coercion briefly to grab one authentication, then stop; choose whichever coercion protocol (printerbug/DFSCoerce/PetitPotam) is unpatched to avoid failed-attempt noise."
+    "evasion": "Fire the coercion briefly to grab one authentication, then stop; choose whichever coercion protocol (printerbug/DFSCoerce/PetitPotam) is unpatched to avoid failed-attempt noise.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Coercing + Unconstrained Delegation - TGT Capture Attack - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"DC$\" and IpAddress != \"<dc_ip>\"\n| project TimeGenerated, Computer, TargetUserName, IpAddress\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1558.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Coercing + Unconstrained Delegation - TGT Capture Attack (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*Rubeus.exe\" CommandLine=\"*monitor*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1187",
+          "T1558.001",
+          "T1003.006"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Coercing + Unconstrained Delegation - TGT Capture Attack (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 Logon_Type=3 Account_Name=\"*DC$\"\n| where Source_Network_Address!=\"<dc_ip>\"\n| table _time, Computer, Account_Name, Source_Network_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1558.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4624"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_rpc_printerbug_coercion",
+        "logic": "win_rpc_printerbug_coercion",
+        "data_source": "windows-security",
+        "attack": [
+          "T1187",
+          "T1558.001",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_rubeus",
+        "logic": "proc_creation_win_hktl_rubeus",
+        "data_source": "sysmon",
+        "attack": [
+          "T1187",
+          "T1558.001",
+          "T1003.006"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "steps": [
     {

@@ -79,7 +79,80 @@
     ],
     "misconfiguration": "The Windows Print Spooler service (spoolsv.exe) runs as SYSTEM and allows low-privilege users to install printer drivers via RpcAddPrinterDriverEx(). The service does not validate the driver path or check driver signatures when called remotely (or locally with a specific flag). Any authenticated user - domain or local - can trigger driver load, resulting in arbitrary DLL execution as SYSTEM.",
     "vulnerable_config": "# Print Spooler running on non-print-server machines (extremely common default):\nGet-Service Spooler | Select-Object Status, StartType\n# Status: Running  StartType: Automatic  <-- enabled everywhere by default\n\n# Checking from network:\nimpacket-rpcdump <ip> | grep -i 'spoolss'\n# If spoolsv responds -> exploitable\n\n# No driver signature enforcement (default):\n# HKLM\\SYSTEM\\CurrentControlSet\\Control\\Print\\Environments\\...\n# Driver installations via MS-RPRN or MS-PAR succeed without admin rights",
-    "secure_config": "# Fix 1 - Disable Print Spooler on non-print-servers:\nStop-Service Spooler; Set-Service Spooler -StartupType Disabled\n\n# Fix 2 - Block remote printing while keeping local printing:\n# GPO: Computer Config > Admin Templates > Printers\n#   'Allow Print Spooler to accept client connections' = Disabled\n# This blocks MS-RPRN remotely but keeps local printing functional\n\n# Fix 3 - Apply patches:\n# KB5004945 (July 2021 OOB), then KB5005033 (Aug 2021)\n# Verify: Get-HotFix -Id KB5004945\n\n# Fix 4 - Point and Print restrictions:\n# GPO: 'Point and Print Restrictions' = Enabled\n#   'When installing drivers for a new connection' = Show warning and elevation prompt"
+    "secure_config": "# Fix 1 - Disable Print Spooler on non-print-servers:\nStop-Service Spooler; Set-Service Spooler -StartupType Disabled\n\n# Fix 2 - Block remote printing while keeping local printing:\n# GPO: Computer Config > Admin Templates > Printers\n#   'Allow Print Spooler to accept client connections' = Disabled\n# This blocks MS-RPRN remotely but keeps local printing functional\n\n# Fix 3 - Apply patches:\n# KB5004945 (July 2021 OOB), then KB5005033 (Aug 2021)\n# Verify: Get-HotFix -Id KB5004945\n\n# Fix 4 - Point and Print restrictions:\n# GPO: 'Point and Print Restrictions' = Enabled\n#   'When installing drivers for a new connection' = Show warning and elevation prompt",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PrintNightmare - RCE via Print Spooler (CVE-2021-1675) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"spoolsv.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"rundll32.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// spoolsv.exe spawning a shell after a remote DLL driver load (PrintService 316/808)",
+        "data_source": "powershell",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "PrintNightmare - RCE via Print Spooler (CVE-2021-1675) (1) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"C:\\\\Windows\\\\System32\\\\spool\\\\drivers\\\\*\"\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PrintNightmare - RCE via Print Spooler (CVE-2021-1675) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4688\n| where New_Process_Name=\"*spoolsv.exe\" AND Parent_Process_Name=\"*cmd.exe\"\n| table _time, Account_Name, New_Process_Name, Process_Command_Line",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4688"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_file_creation_print_spool_driver",
+        "logic": "sysmon_file_creation_print_spool_driver",
+        "data_source": "sysmon",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_exploit_printnightmare",
+        "logic": "proc_creation_win_exploit_printnightmare",
+        "data_source": "sysmon",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tools": [
     "impacket"

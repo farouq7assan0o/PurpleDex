@@ -110,7 +110,90 @@
     ],
     "misconfiguration": "All domain users can read most AD object attributes by default. No Script Block Logging. No CLM enforcement. MDI not deployed. No LDAP-tier restriction.",
     "vulnerable_config": "# PowerShell execution unrestricted:\nGet-ExecutionPolicy -List  # All scopes: Unrestricted or RemoteSigned\n\n# No Script Block Logging:\n# HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging\n# EnableScriptBlockLogging = 0\n\n# ADWS port 9389 accessible from all workstations",
-    "secure_config": "# Enable Script Block Logging via GPO:\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging' -Name EnableScriptBlockLogging -Value 1\n\n# CLM via WDAC (AllowMicrosoft base policy):\n# Unsigned scripts → Constrained Language Mode\n\n# MDI: built-in LDAP reconnaissance detection\n\n# Tiering: block workstations from DC LDAP/ADWS ports at firewall:\n# deny tcp 10.0.1.0/24 (workstations) 10.0.0.10/32 (DC) eq 389,636,9389"
+    "secure_config": "# Enable Script Block Logging via GPO:\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging' -Name EnableScriptBlockLogging -Value 1\n\n# CLM via WDAC (AllowMicrosoft base policy):\n# Unsigned scripts → Constrained Language Mode\n\n# MDI: built-in LDAP reconnaissance detection\n\n# Tiering: block workstations from DC LDAP/ADWS ports at firewall:\n# deny tcp 10.0.1.0/24 (workstations) 10.0.0.10/32 (DC) eq 389,636,9389",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD Module Enumeration (Microsoft ActiveDirectory Module) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Import-Module ActiveDirectory\",\"Get-ADDomain\",\"Get-ADUser\",\"Get-ADTrust\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1482",
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AD Module Enumeration (Microsoft ActiveDirectory Module) (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Import-Module ActiveDirectory*\" OR ScriptBlockText=\"*Get-ADDomain*\" OR ScriptBlockText=\"*Get-ADUser*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1482",
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AD Module Enumeration (Microsoft ActiveDirectory Module) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662 Object_Type=\"*domainDNS*\"\n| stats count by Account_Name, Computer",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482",
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_ad_module_recon",
+        "logic": "posh_ps_ad_module_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482",
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1482",
+          "T1069.002",
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

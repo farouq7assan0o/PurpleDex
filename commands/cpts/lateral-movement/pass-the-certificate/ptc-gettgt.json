@@ -92,7 +92,83 @@
     ],
     "misconfiguration": "Pass-the-Certificate (PtC) attacks exploit ADCS certificate abuse (ESC1/ESC8) combined with Kerberos PKINIT. Shadow credentials (pywhisker) exploit write access to msDS-KeyCredentialLink to add a certificate-based authentication mechanism to any account. Pass-the-Ticket works because Kerberos tickets are extractable from LSASS memory.",
     "vulnerable_config": "# msDS-KeyCredentialLink writable by attacker (GenericWrite on target account):\n# pywhisker.py -t targetuser -a add\n# Adds a fake device credential -> obtain certificate for targetuser\n# -> PKINIT TGT as targetuser -> NTLM hash via UnPAC\n\n# LSASS memory contains TGTs for all logged-in users:\n# Mimikatz: sekurlsa::tickets /export\n# Rubeus: dump /all",
-    "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes"
+    "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PKINITtools - Get TGT from Certificate - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4768 and isnotempty(CertificateThumbprint)\n| project TimeGenerated, Computer, TargetUserName, CertificateThumbprint, IpAddress\n| sort by TimeGenerated desc\n// PKINIT TGT request using a stolen/forged certificate",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PKINITtools - Get TGT from Certificate (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Certificate_Thumbprint=\"*\"\n| table _time, Computer, Account_Name, Certificate_Thumbprint, Client_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "PKINITtools - Get TGT from Certificate (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" (EventCode=4886 OR EventCode=4887)\n| table _time, Computer, Requester_Name, Subject",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4886",
+          "4887"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_pkinit_certificate_logon",
+        "logic": "win_security_pkinit_certificate_logon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_adcs_cert_request_san_mismatch",
+        "logic": "win_security_adcs_cert_request_san_mismatch",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "variations": [

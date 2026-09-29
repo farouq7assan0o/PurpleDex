@@ -100,7 +100,54 @@
     ],
     "misconfiguration": "Non-admins granted actAs/getAccessToken over privileged SAs, serviceAccountKeys.create, iam.roles.update, or *.setIamPolicy; default Editor SAs reusable as escalation targets.",
     "vulnerable_config": "# Principal can impersonate a project-Editor SA:\ngcloud iam service-accounts get-iam-policy <priv_sa>   # shows you as roles/iam.serviceAccountTokenCreator\ngcloud storage ls --impersonate-service-account <priv_sa>",
-    "secure_config": "# Remove actAs/getAccessToken/keys.create/roles.update/setIamPolicy from non-admin roles;\n# use IAM Recommender + Policy Analyzer to prune escalation paths; disable SA key creation via org policy;\n# alert on GenerateAccessToken/CreateServiceAccountKey/UpdateRole/SetIamPolicy in audit logs."
+    "secure_config": "# Remove actAs/getAccessToken/keys.create/roles.update/setIamPolicy from non-admin roles;\n# use IAM Recommender + Policy Analyzer to prune escalation paths; disable SA key creation via org policy;\n# alert on GenerateAccessToken/CreateServiceAccountKey/UpdateRole/SetIamPolicy in audit logs.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Sentinel",
+        "logic": "GCPAuditLogs\n| where methodName has_any (\"GenerateAccessToken\",\"SignJwt\",\"CreateServiceAccountKey\",\"UpdateRole\",\"SetIamPolicy\")\n| project TimeGenerated, methodName, principalEmail=protoPayload_authenticationInfo_principalEmail, resourceName\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548",
+          "T1098.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Splunk",
+        "logic": "index=gcp_audit sourcetype=\"google:gcp:audit\" (protoPayload.methodName=\"google.iam.admin.v1.SetIAMPolicy\" OR protoPayload.methodName=\"SetIamPolicy\")\n| table _time, protoPayload.authenticationInfo.principalEmail, protoPayload.resourceName, protoPayload.request.policy.bindings{}.role",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548",
+          "T1098.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "gcp_iam_policy_modification",
+        "logic": "gcp_iam_policy_modification",
+        "data_source": "windows-security",
+        "attack": [
+          "T1548",
+          "T1098.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Escalates a low-priv GCP identity by abusing dangerous IAM permissions:\n  python3 check_for_privesc.py   enumerate your permissions and flag exploitable ones\nLooks for rights like iam.roles.update, iam.serviceAccounts.getAccessToken/actAs, serviceAccountKeys.create, and setIamPolicy - each lets you grant yourself more or impersonate a higher-privileged service account. gcp_enum.sh does broader enumeration."
 }

@@ -111,7 +111,95 @@
       "CRTP",
       "MITRE T1574.012",
       "MITRE T1562.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "InviShell - AMSI & PowerShell Logging Bypass (COR_PROFILER) - Sentinel",
+        "logic": "DeviceImageLoadEvents\n| where InitiatingProcessFileName =~ \"powershell.exe\"\n| where FileName =~ \"InShellProf.dll\"\n| project Timestamp, DeviceName, InitiatingProcessCommandLine, FolderPath\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1574.012",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "InviShell - AMSI & PowerShell Logging Bypass (COR_PROFILER) (1) - Splunk",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\Classes\\\\CLSID\\\\*\\\\InprocServer32*\"\n| table _time, Computer, Image, TargetObject, Details",
+        "data_source": "sysmon",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1574.012",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "13"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "InviShell - AMSI & PowerShell Logging Bypass (COR_PROFILER) (2) - Splunk",
+        "logic": "index=sysmon EventCode=7 Image=\"*powershell.exe\" ImageLoaded=\"*InShellProf.dll\"\n| table _time, Computer, ImageLoaded",
+        "data_source": "sysmon",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1574.012",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_susp_cor_profiler_env",
+        "logic": "win_susp_cor_profiler_env",
+        "data_source": "windows-security",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1574.012",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_registry_clsid_inprocserver32",
+        "logic": "sysmon_registry_clsid_inprocserver32",
+        "data_source": "sysmon",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1574.012",
+          "T1112"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Launches a PowerShell session with AMSI, Script Block Logging, and Module Logging disabled - no admin needed - via a COR_PROFILER COM hijack under HKCU:\n  RunWithRegistryNonAdmin.bat   registers the InprocServer32 CLSID in HKCU, then starts powershell so the CLR loads InShellProf.dll as a profiler that neuters logging/AMSI\nUse the non-admin .bat (registry-based) as a low-priv user, or RunWithPathAsAdmin.bat when elevated. Then dot-source PowerView/Mimikatz quietly in that cloaked shell."
 }

@@ -95,7 +95,54 @@
     ],
     "misconfiguration": "Failure to enumerate ETW provider coverage leaves defenders blind to detection gaps. Not knowing which providers produce which telemetry = inability to identify when ETW tampering has occurred. Not configuring custom trace sessions for high-value providers (e.g., Microsoft-Windows-DotNETRuntime) = missing .NET-based attack telemetry.",
     "vulnerable_config": "# Default Windows - no custom ETW sessions configured\n# Only built-in Event Log sessions active\nlogman query -ets\n# Result: Only EventLog-Application, EventLog-Security, EventLog-System visible\n# Microsoft-Windows-DotNETRuntime events NOT captured\n# Microsoft-Windows-Kernel-Process events NOT captured",
-    "secure_config": "# Verify ETW coverage - run as part of baseline\nlogman query -ets\n# Should show custom sessions for high-value providers:\n#   SilkETW sessions for DotNETRuntime, Kernel-Process\n#   Any EDR provider sessions\n\n# Create a persistent custom trace session for .NET telemetry:\nlogman create trace DotNETTrace -p Microsoft-Windows-DotNETRuntime 0x2038 4 -o C:\\ETWLogs\\dotnet.etl -ets\n\n# Monitor for ETW tamper events:\n# Sysmon Rule: detect WriteProcessMemory to ntdll.dll EtwEventWrite offset"
+    "secure_config": "# Verify ETW coverage - run as part of baseline\nlogman query -ets\n# Should show custom sessions for high-value providers:\n#   SilkETW sessions for DotNETRuntime, Kernel-Process\n#   Any EDR provider sessions\n\n# Create a persistent custom trace session for .NET telemetry:\nlogman create trace DotNETTrace -p Microsoft-Windows-DotNETRuntime 0x2038 4 -o C:\\ETWLogs\\dotnet.etl -ets\n\n# Monitor for ETW tamper events:\n# Sysmon Rule: detect WriteProcessMemory to ntdll.dll EtwEventWrite offset",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "logman.exe - ETW Session & Provider Enumeration - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"logman.exe\" and ProcessCommandLine has \"-ets\"\n| where InitiatingProcessFileName in~ (\"powershell.exe\",\"cmd.exe\",\"wscript.exe\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1059",
+          "T1055"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "logman.exe - ETW Session & Provider Enumeration - Splunk",
+        "logic": "index=sysmon EventCode=1 Image=\"*logman.exe\" CommandLine=\"*-ets*\"\n| where NOT match(ParentImage, \"(?i)(services|svchost)\\\\.exe\")\n| table _time, Computer, User, ParentImage, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059",
+          "T1055"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_logman_etw_session_enum",
+        "logic": "proc_creation_win_logman_etw_session_enum",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059",
+          "T1055"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Lists the currently running ETW trace sessions with the built-in logman tool:\n  logman.exe query   query configured/active data collectors\n  -ets               operate on Event Trace Sessions directly (running traces, not saved collector sets)\nShows what telemetry is being captured on the host; 'logman query providers' lists available ETW providers and their GUIDs so you know what you could subscribe to."
 }

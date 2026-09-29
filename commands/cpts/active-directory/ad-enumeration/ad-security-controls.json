@@ -86,7 +86,74 @@
       "HTB M13",
       "MITRE T1518.001",
       "MITRE T1562.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD - Enumerate Security Controls (Defender / AppLocker / CLM) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"Get-MpComputerStatus\", \"Get-AppLockerPolicy\", \"AMSI\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1518.001",
+          "T1562.001",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AD - Enumerate Security Controls (Defender / AppLocker / CLM) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\\\"*Get-MpComputerStatus*\\\" OR ScriptBlockText=\\\"*Get-AppLockerPolicy*\\\" OR ScriptBlockText=\\\"*AMSI*\\\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1518.001",
+          "T1562.001",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_defender_recon_recon",
+        "logic": "posh_ps_defender_recon_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1518.001",
+          "T1562.001",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon",
+        "logic": "win_security_ldap_recon",
+        "data_source": "windows-security",
+        "attack": [
+          "T1518.001",
+          "T1562.001",
+          "T1685"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "references": [
     {

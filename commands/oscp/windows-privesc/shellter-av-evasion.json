@@ -116,7 +116,85 @@
     ],
     "misconfiguration": "WDAC not deployed - unsigned/modified executables run freely. SmartScreen disabled. No behavioral monitoring for application network behavior anomalies. No file hash validation on delivered executables.",
     "vulnerable_config": "# WDAC not configured:\n# Any PE (including shellter-infected) runs without signature check\n\n# SmartScreen disabled:\n(Get-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System').EnableSmartScreen  # 0 or absent\n\n# No file hash validation:\n# Delivery mechanism (email, file share) doesn't compare against known-good hashes\n# → shellter-infected PuTTY.exe indistinguishable from real one to users",
-    "secure_config": "# WDAC publisher rules catch signature breakage:\n# If PuTTY.exe was signed by Simon Tatham and Shellter breaks the signature:\n# WDAC enforced policy: binary fails publisher check → blocked\nNew-CIPolicy -Level Publisher -FilePath C:\\Policy\\BasePolicy.xml -UserPEs\nConvertFrom-CIPolicy C:\\Policy\\BasePolicy.xml C:\\Windows\\System32\\CodeIntegrity\\SIPolicy.p7b\n\n# Enable SmartScreen:\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System' -Name EnableSmartScreen -Value 1\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System' -Name ShellSmartScreenLevel -Value Block\n\n# Behavioral: Defender for Endpoint network protection:\nSet-MpPreference -EnableNetworkProtection Enabled\n# Alert: putty.exe connecting to non-SSH port = anomaly"
+    "secure_config": "# WDAC publisher rules catch signature breakage:\n# If PuTTY.exe was signed by Simon Tatham and Shellter breaks the signature:\n# WDAC enforced policy: binary fails publisher check → blocked\nNew-CIPolicy -Level Publisher -FilePath C:\\Policy\\BasePolicy.xml -UserPEs\nConvertFrom-CIPolicy C:\\Policy\\BasePolicy.xml C:\\Windows\\System32\\CodeIntegrity\\SIPolicy.p7b\n\n# Enable SmartScreen:\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System' -Name EnableSmartScreen -Value 1\nSet-ItemProperty 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System' -Name ShellSmartScreenLevel -Value Block\n\n# Behavioral: Defender for Endpoint network protection:\nSet-MpPreference -EnableNetworkProtection Enabled\n# Alert: putty.exe connecting to non-SSH port = anomaly",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Shellter AV Evasion (PE Injection) - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName endswith \".exe\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName, FolderPath\n| union (AlertInfo | where Title has_any (\"Meterpreter\",\"Metasploit\",\"Shellcode\") | project Timestamp, DeviceName, InitiatingProcessFileName=\"\", FileName=Title, FolderPath=\"\")\n| sort by Timestamp desc\n// Shellter injects shellcode into a legit PE; behavioural EDR still flags the runtime injection/C2",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1055",
+          "T1027"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Shellter AV Evasion (PE Injection) (1) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*.exe\"\n| where NOT match(Image, \"(?i)(msiexec|trustedinstaller)\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1027"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Shellter AV Evasion (PE Injection) (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Microsoft-Windows-Windows Defender/Operational\" EventCode=1116\n| table _time, Computer, Threat_Name",
+        "data_source": "windows-security",
+        "attack": [
+          "T1055",
+          "T1027"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1116"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "file_event_msfvenom_payload",
+        "logic": "file_event_msfvenom_payload",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1027"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "av_detection_meterpreter",
+        "logic": "av_detection_meterpreter",
+        "data_source": "windows-security",
+        "attack": [
+          "T1055",
+          "T1027"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "tags": [
     "shellter",

@@ -97,7 +97,67 @@
       "HTB M25",
       "MITRE T1053.003",
       "MITRE T1574"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Wildcard Abuse - tar checkpoint (root cron) - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"--checkpoint\",\"checkpoint-action=exec\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// tar --checkpoint-action=exec argument-injection files in a cron-processed directory",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1053.003",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Wildcard Abuse - tar checkpoint (root cron) (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (name=\"--checkpoint=1\" OR name=\"--checkpoint-action*\" OR name=\"root.sh\")\n| table _time, host, auid, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1053.003",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Wildcard Abuse - tar checkpoint (root cron) (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"tar\" ppid_comm=\"cron*\"\n| table _time, host, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1053.003",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_tar_checkpoint_wildcard_injection",
+        "logic": "lnx_auditd_tar_checkpoint_wildcard_injection",
+        "data_source": "windows-security",
+        "attack": [
+          "T1053.003",
+          "T1548"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Weaponizes a root cron running tar with a wildcard in a writable directory:\n  echo '...sudoers append...' > root.sh   create the payload script tar will execute\nBecause tar * expands your filenames as arguments, also create files named --checkpoint=1 and --checkpoint-action=exec=sh root.sh. When the cron's tar runs, it treats them as options and executes root.sh as root (here appending a NOPASSWD sudoers line)."
 }

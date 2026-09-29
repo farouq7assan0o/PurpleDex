@@ -116,7 +116,82 @@
     ],
     "misconfiguration": "Service accounts with constrained delegation to powerful services (ldap/dc01, cifs/dc01, host/dc01). Account not protected as sensitive. Delegation to HOST SPN - grants full code execution on the target host.",
     "vulnerable_config": "# Accounts with constrained delegation:\nGet-ADUser -Filter {msDS-AllowedToDelegateTo -ne '$null'} -Properties msDS-AllowedToDelegateTo | Select-Object Name,msDS-AllowedToDelegateTo\n# svc_web - AllowedToDelegateTo: [ldap/DC01.corp.local] → can impersonate DA to DC LDAP\n\nGet-ADComputer -Filter {msDS-AllowedToDelegateTo -ne '$null'} -Properties msDS-AllowedToDelegateTo",
-    "secure_config": "# Mark sensitive accounts non-delegatable:\nGet-ADGroupMember 'Domain Admins' | ForEach-Object {\n  Set-ADAccountControl $_ -AccountNotDelegated $true\n}\n\n# Replace constrained delegation with RBCD (more controlled):\nClear-ADAccountAttribute -Identity svc_web -Attribute msDS-AllowedToDelegateTo\n# Then set RBCD on the target resource instead of the service account\n\n# Use gMSA for delegation-capable service accounts:\nNew-ADServiceAccount -Name 'svc_web_gmsa' -DNSHostName 'web.corp.local' -PrincipalsAllowedToRetrieveManagedPassword 'WEB01$'\n\n# SIEM: alert on S4U delegation from non-expected accounts:\n# EventID=4769 AND TicketOptions=0x50800000 (includes forwardable via S4U) AND ServiceName != expected_service → ALERT"
+    "secure_config": "# Mark sensitive accounts non-delegatable:\nGet-ADGroupMember 'Domain Admins' | ForEach-Object {\n  Set-ADAccountControl $_ -AccountNotDelegated $true\n}\n\n# Replace constrained delegation with RBCD (more controlled):\nClear-ADAccountAttribute -Identity svc_web -Attribute msDS-AllowedToDelegateTo\n# Then set RBCD on the target resource instead of the service account\n\n# Use gMSA for delegation-capable service accounts:\nNew-ADServiceAccount -Name 'svc_web_gmsa' -DNSHostName 'web.corp.local' -PrincipalsAllowedToRetrieveManagedPassword 'WEB01$'\n\n# SIEM: alert on S4U delegation from non-expected accounts:\n# EventID=4769 AND TicketOptions=0x50800000 (includes forwardable via S4U) AND ServiceName != expected_service → ALERT",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Constrained Delegation Abuse (S4U) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4769\n| where isnotempty(TransmittedServices) and TransmittedServices != \"-\"\n| project TimeGenerated, Computer, TargetUserName, ServiceName, TransmittedServices, IpAddress\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Constrained Delegation Abuse (S4U) (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769\n| where Transited_Services!=\"-\" OR match(Service_Name, \"(?i)Administrator\")\n| stats count by Account_Name, Service_Name, Client_Address\n| where count>2",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4769"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Constrained Delegation Abuse (S4U) (2) - Splunk",
+        "logic": "index=sysmon EventCode=1 CommandLine=\"*s4u*\" (CommandLine=\"*Rubeus*\" OR CommandLine=\"*impersonateuser*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberos_constrained_delegation",
+        "logic": "win_security_kerberos_constrained_delegation",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_rubeus",
+        "logic": "proc_creation_win_hktl_rubeus",
+        "data_source": "sysmon",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Abuses msDS-AllowedToDelegateTo (constrained delegation) to impersonate any user to the allowed service:\n  s4u                       run S4U2Self + S4U2Proxy\n  /user:<user>             the account trusted for delegation (its identity)\n  /rc4:<nt_hash>           that account's hash to authenticate\n  /impersonateuser:Administrator   the user to impersonate (S4U2Self)\n  /msdsspn:'<spn>'         the service it is allowed to delegate to\n  /nowrap                   single-line ticket output\nInject the resulting service ticket (Rubeus ptt) to access that SPN as Administrator; /altservice swaps the service class (e.g. to ldap for DCSync)."
 }

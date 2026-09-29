@@ -95,6 +95,71 @@
     ],
     "misconfiguration": "No EDR with memory injection detection. HVCI not enabled. No Sysmon Event 8 rule. PPL not configured for critical processes.",
     "vulnerable_config": "# No Sysmon Event 8 configured:\n# sysmon -accepteula -i (no config) → missing CreateRemoteThread monitoring\n\n# HVCI not enabled:\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard').HypervisorEnforcedCodeIntegrity  # 0\n# → Unsigned code injectable into any non-PPL process",
-    "secure_config": "# Enable Sysmon with CreateRemoteThread monitoring:\n# sysmon config:\n# <CreateRemoteThread onmatch='include'>\n#   <TargetImage condition='is not'>C:\\Windows\\system32\\svchost.exe</TargetImage>\n# </CreateRemoteThread>\n\n# Enable HVCI (Hypervisor-Protected Code Integrity):\n# Computer Config → Admin Templates → System → Device Guard\n# → Turn on Virtualization Based Security: Enabled\n# → Code Integrity Policy: HVCI Enabled\n\n# EDR: Defender for Endpoint behavioral injection detection\n# 'Remote process injection technique' detection alert"
+    "secure_config": "# Enable Sysmon with CreateRemoteThread monitoring:\n# sysmon config:\n# <CreateRemoteThread onmatch='include'>\n#   <TargetImage condition='is not'>C:\\Windows\\system32\\svchost.exe</TargetImage>\n# </CreateRemoteThread>\n\n# Enable HVCI (Hypervisor-Protected Code Integrity):\n# Computer Config → Admin Templates → System → Device Guard\n# → Turn on Virtualization Based Security: Enabled\n# → Code Integrity Policy: HVCI Enabled\n\n# EDR: Defender for Endpoint behavioral injection detection\n# 'Remote process injection technique' detection alert",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "C# Shellcode Runner & Process Injection - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"CreateRemoteThreadApiCall\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName\n| union (DeviceEvents | where ActionType == \"WriteToLsassProcessMemory\" or ActionType == \"OpenProcessApiCall\" | project Timestamp, DeviceName, InitiatingProcessFileName, FileName)\n| sort by Timestamp desc\n// process injection: OpenProcess + WriteProcessMemory + CreateRemoteThread into a remote process",
+        "data_source": "windows-security",
+        "attack": [
+          "T1055",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "C# Shellcode Runner & Process Injection (1) - Splunk",
+        "logic": "index=sysmon EventCode=8\n| table _time, Computer, SourceImage, TargetImage, StartAddress",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "8"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "C# Shellcode Runner & Process Injection (2) - Splunk",
+        "logic": "index=sysmon EventCode=10 (GrantedAccess=\"0x1f0fff\" OR GrantedAccess=\"0x1fffff\")\n| table _time, Computer, SourceImage, TargetImage",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "10"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_createremotethread_injection",
+        "logic": "sysmon_createremotethread_injection",
+        "data_source": "sysmon",
+        "attack": [
+          "T1055",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   }
 }

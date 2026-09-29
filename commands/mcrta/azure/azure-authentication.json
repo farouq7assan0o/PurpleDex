@@ -96,7 +96,53 @@
     ],
     "misconfiguration": "No Conditional Access / MFA; long-lived service-principal secrets; over-privileged users/SPs.",
     "vulnerable_config": "# SP with a long-lived secret and Contributor at subscription scope, no CA/MFA:\naz login --service-principal -u <app_id> -p <secret> --tenant <tid>   # succeeds from anywhere",
-    "secure_config": "# Enforce Conditional Access + MFA; block ROPC/legacy auth.\n# Use managed identities or cert-based SP auth; rotate secrets; scope RBAC to least privilege."
+    "secure_config": "# Enforce Conditional Access + MFA; block ROPC/legacy auth.\n# Use managed identities or cert-based SP auth; rotate secrets; scope RBAC to least privilege.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Azure Authentication (az / Az PowerShell / Mg Graph) - Sentinel",
+        "logic": "SigninLogs\n| where AppDisplayName has_any (\"Azure CLI\",\"PowerShell\",\"Az\")\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName, ResultType\n| sort by TimeGenerated desc\n// az login / device-code auth from an unusual IP or client",
+        "data_source": "powershell",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Azure Authentication (az / Az PowerShell / Mg Graph) - Splunk",
+        "logic": "index=azure sourcetype=\"azure:signin\"\n| stats count by userPrincipalName, ipAddress, appDisplayName, bin(_time, 10m)",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "azure_signin_from_cli_unusual_ip",
+        "logic": "azure_signin_from_cli_unusual_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "azure-activity",
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Authenticates to Azure/Entra as a compromised service principal:\n  az login --service-principal   non-interactive SP login\n  -u <app_id> -p <secret>        the app's client id and secret\n  --tenant <tenant_id>           the directory to sign into\nEstablishes a session for ARM/Entra enumeration; interactive 'az login' (or --use-device-code) works for user creds, and 'az account get-access-token' extracts a bearer token for raw API calls."
 }

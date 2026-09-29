@@ -104,7 +104,63 @@
       "HTB M25",
       "MITRE T1068",
       "MITRE T1574.006"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Vulnerable Service - GNU screen 4.5.0 root - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"ld.so.preload\",\"/tmp/rootshell\",\"/tmp/libhax.so\",\"screen -D -m -L\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// CVE-2017-5618 screen SUID: write to /etc/ld.so.preload then a SUID /tmp/rootshell",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Vulnerable Service - GNU screen 4.5.0 root (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" name=\"/etc/ld.so.preload\" (a1=\"*O_WRONLY*\" OR a1=\"*O_CREAT*\")\n| where auid!=0\n| table _time, host, auid, exe",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Vulnerable Service - GNU screen 4.5.0 root (2) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (name=\"/tmp/rootshell\" OR name=\"/tmp/libhax.so\")\n| table _time, host, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_screen_suid_ldpreload",
+        "logic": "lnx_auditd_screen_suid_ldpreload",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Exploits setuid GNU screen 4.5.0 to load an attacker library as root:\n  screen -v                print the version to confirm 4.05.00 / v4.5.0\nThe bug lets you overwrite /etc/ld.so.preload so a library of yours loads with root privilege; the screenroot.sh PoC compiles libhax.so + a rootshell and triggers it, dropping /tmp/rootshell."
 }

@@ -89,7 +89,78 @@
       "MITRE T1190",
       "OWASP A06:2021"
     ],
-    "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic."
+    "evasion": "Use valid session/token auth; clean up any runner/CI job or dropped file used for execution; blend into normal CI traffic.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GitLab - Authenticated RCE (CVE-2021-22205) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"w3wp.exe\",\"httpd\",\"apache2\",\"php-fpm\",\"php-cgi\",\"java.exe\",\"nginx\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\",\"nc\",\"python\")\n| project Timestamp, DeviceName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc\n// GitLab ExifTool RCE (CVE-2021-22205) - gitlab/ruby spawning a shell",
+        "data_source": "powershell",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "GitLab - Authenticated RCE (CVE-2021-22205) (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (ParentImage=\"*w3wp.exe\" OR ParentImage=\"*httpd*\" OR ParentImage=\"*apache*\" OR ParentImage=\"*php-cgi*\" OR ParentImage=\"*php-fpm*\" OR ParentImage=\"*java.exe\" OR ParentImage=\"*tomcat*\")\n| where match(Image, \"(?i)(cmd|powershell|bash|sh|nc|python)\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "GitLab - Authenticated RCE (CVE-2021-22205) (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined (method=POST OR status=500)\n| stats count by clientip, uri_path | where count>3",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_gitlab_rce",
+        "logic": "web_gitlab_rce",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_webserver_spawning_shell",
+        "logic": "proc_creation_webserver_spawning_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Exploits the GitLab ExifTool/DjVu flaw for RCE (CVE-2021-22205):\n  python3 gitlab_13_10_2_rce.py   the exploit\n  -t http://<url>:8081            target\n  -u/-p                           GitLab credentials (some versions are unauthenticated)\n  -c '<reverse_shell>'            the command to run\nMalicious image metadata is passed to a vulnerable ExifTool, executing your command; give it a reverse-shell one-liner and catch it with 'nc -lnvp'."
 }

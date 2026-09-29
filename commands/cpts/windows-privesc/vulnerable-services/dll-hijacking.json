@@ -100,6 +100,50 @@
       "HTB M26",
       "MITRE T1574.001"
     ],
-    "evasion": "Place the hijack DLL, trigger the load, then remove it and restore the directory to reduce the on-disk window."
+    "evasion": "Place the hijack DLL, trigger the load, then remove it and restore the directory to reduce the on-disk window.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DLL Hijacking - Missing / Proxy DLL - Sentinel",
+        "logic": "DeviceImageLoadEvents\n| where FolderPath !has \"System32\" and FolderPath !has \"SysWOW64\" and FolderPath !has \"Program Files\"\n| where InitiatingProcessFolderPath !has \"System32\"\n| project Timestamp, DeviceName, FileName, FolderPath, InitiatingProcessFileName\n| sort by Timestamp desc\n// DLL loaded from a writable app directory instead of System32 (search-order hijack)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1574.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "DLL Hijacking - Missing / Proxy DLL - Splunk",
+        "logic": "index=sysmon EventCode=7 ImageLoaded=\"*\"\n| where NOT match(ImageLoaded, \"(?i)(system32|syswow64|winsxs|program files)\") AND Signed=\"false\"\n| table _time, Computer, Image, ImageLoaded, Signed",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "7"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "sysmon_dll_sideload_unsigned_nonsystem (DLL search-order hijack",
+        "logic": "sysmon_dll_sideload_unsigned_nonsystem (DLL search-order hijack",
+        "data_source": "sysmon",
+        "attack": [
+          "T1574.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   }
 }

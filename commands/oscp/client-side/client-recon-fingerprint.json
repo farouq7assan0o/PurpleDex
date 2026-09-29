@@ -96,7 +96,56 @@
     ],
     "misconfiguration": "No DNS filtering. Web proxy without category-based blocking. No user training on phishing identification. Browser plugins enabled (Flash, Java - each increases attack surface).",
     "vulnerable_config": "# No DNS filtering:\n# Users can resolve any domain → attacker fingerprinting domain accessible\n\n# Browser plugins enabled (each is an attack surface):\n# Java plugin: enables Java applet exploits\n# Flash: CVE-2018-15982 and hundreds more\n# PDF reader plugins: numerous exploits\n\n# No web proxy content filtering for newly registered domains",
-    "secure_config": "# DNS filtering (Cisco Umbrella, Cloudflare Gateway, or internal RPZ):\n# Block: newly registered domains, phishing categories, malware categories\n\n# Disable browser plugins:\n# Group Policy: disable Java, Flash, and other NPAPI plugins in Chrome/Firefox\n# Chrome: chrome://settings/content/plugins → Block all plugins\n\n# Web proxy: block uncategorized and newly registered domains for 30 days\n\n# User awareness: report phishing training program (GoPhish, KnowBe4)"
+    "secure_config": "# DNS filtering (Cisco Umbrella, Cloudflare Gateway, or internal RPZ):\n# Block: newly registered domains, phishing categories, malware categories\n\n# Disable browser plugins:\n# Group Policy: disable Java, Flash, and other NPAPI plugins in Chrome/Firefox\n# Chrome: chrome://settings/content/plugins → Block all plugins\n\n# Web proxy: block uncategorized and newly registered domains for 30 days\n\n# User awareness: report phishing training program (GoPhish, KnowBe4)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Client-Side Recon - Fingerprint the Target - Sentinel",
+        "logic": "W3CIISLog\n| summarize urls=dcount(csUriStem), hits=count() by cIP, csUserAgent, bin(TimeGenerated, 1m)\n| where urls > 20 or hits > 100\n| sort by hits desc\n// client-recon application fingerprinting/enumeration (path burst, scanner UA)",
+        "data_source": "iis",
+        "attack": [
+          "T1592.002",
+          "T1598.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Client-Side Recon - Fingerprint the Target - Splunk",
+        "logic": "index=web sourcetype=access_combined\n| stats count dc(uri_path) as urls by clientip, useragent, bin(_time, 1m)\n| where urls>20 OR count>100",
+        "data_source": "windows-security",
+        "attack": [
+          "T1592.002",
+          "T1598.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_app_scanner_client-recon",
+        "logic": "web_app_scanner_client-recon",
+        "data_source": "proxy",
+        "attack": [
+          "T1592.002",
+          "T1598.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Fingerprints a phishing target before building a client-side payload:\n  python3 -m http.server 80   host a benign resource and watch the connecting client's User-Agent\nThe UA reveals OS build and browser so your payload matches the victim; embed a 1x1 tracking image in a lure, and exiftool on a returned document leaks the Office/producer version."
 }

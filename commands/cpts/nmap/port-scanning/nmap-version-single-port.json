@@ -85,7 +85,64 @@
     ],
     "misconfiguration": "Network perimeters that do not filter ICMP, do not use egress filtering, or expose unnecessary services (all ports open) allow comprehensive port scanning. Systems without host-based firewalls or IDS/IPS allow scan traffic to enumerate every open service, revealing attack surface. No rate-limiting on inbound probes means stealth scans complete quickly.",
     "vulnerable_config": "# No firewall between attacker and target (or overly permissive rules):\n# iptables -L  ->  Chain INPUT (policy ACCEPT)  [no rules]\n# Or: Windows Firewall disabled\n# Every service's port is reachable from any source\n\n# No IDS/IPS:\n# Snort/Suricata not deployed; no AWS GuardDuty / Azure Defender\n# Nmap SYN scan completes in seconds with no alert generated",
-    "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules"
+    "secure_config": "# Linux host-based firewall - default-deny inbound:\niptables -P INPUT DROP\niptables -P FORWARD DROP\niptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\niptables -A INPUT -i lo -j ACCEPT\n# Only open required services:\niptables -A INPUT -p tcp --dport 443 -j ACCEPT  # HTTPS only\niptables -A INPUT -p tcp --dport 22 -s 10.10.1.0/24 -j ACCEPT  # SSH from mgmt network\n\n# Rate-limit scan detection (drops SYN floods):\niptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT\niptables -A INPUT -p tcp --syn -j DROP\n\n# Deploy IDS/IPS:\n# Snort/Suricata rules detect nmap OS detection probes\n# AWS: GuardDuty (detects port scans from EC2)\n# Cloud: Security Groups default-deny with explicit allow rules",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Nmap - Version Detection on a Port - Sentinel",
+        "logic": "DeviceNetworkEvents\n| summarize ports=dcount(RemotePort), hosts=dcount(RemoteIP), conns=count() by LocalIP, bin(Timestamp, 1m)\n| where ports > 15 or hosts > 25\n| sort by ports desc\n// nmap -sV version detection on a single port",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Nmap - Version Detection on a Port (1) - Splunk",
+        "logic": "index=network\n| stats dc(dest_port) as ports dc(dest_ip) as hosts by src_ip, bin(_time, 1m)\n| where ports>15 OR hosts>25",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Nmap - Version Detection on a Port (2) - Splunk",
+        "logic": "index=suricata event_type=alert alert.signature=\"*scan*\"\n| table _time, src_ip, dest_ip",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "net_port_scan_activity",
+        "logic": "net_port_scan_activity",
+        "data_source": "windows-security",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "network-flow",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Fingerprints the exact service on one port:\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show the probes\n  -p 445 --reason             the port, with the state reason\n  -sV                         version detection\nThe exact product/version is the pivot from an open port to a known-vulnerability lookup."
 }

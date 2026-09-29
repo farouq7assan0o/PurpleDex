@@ -85,7 +85,53 @@
       "OWASP A05:2021"
     ],
     "code_review": "RED FLAGS (source): user input passed to include/require/file functions.\n  include($_GET['page'])  |  require($base.$user)  |  file_get_contents($_REQUEST['f'])  |  fopen($path)\nGREP:  grep -rniE \"(include|include_once|require|require_once|fopen|readfile|file_get_contents|file\\()\\s*\\(.*\\$_\" .\nSAFE:  allowlist map of includable pages (basename + whitelist), open_basedir, allow_url_include=Off, no user input in path.",
-    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled."
+    "evasion": "Obfuscate the injected template webshell and remove it after; blend admin actions into normal usage; avoid leaving the malicious extension/template enabled.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Joomla - Authenticated Directory Traversal (CVE-2019-10945) - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has_any (\"../\", \"%2e%2e\", \"com_\", \"configuration.php\") or csUriQuery has_any (\"../\", \"%2e%2e\", \"com_\", \"configuration.php\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus\n| sort by TimeGenerated desc\n// joomla_traversal",
+        "data_source": "iis",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Joomla - Authenticated Directory Traversal (CVE-2019-10945) - Splunk",
+        "logic": "index=web sourcetype=access_combined (uri_query=\\\"*../*\\\" OR uri_path=\\\"*../*\\\" OR uri_query=\\\"*%2e%2e*\\\" OR uri_path=\\\"*%2e%2e*\\\" OR uri_query=\\\"*com_*\\\" OR uri_path=\\\"*com_*\\\" OR uri_query=\\\"*configuration.php*\\\" OR uri_path=\\\"*configuration.php*\\\")\n| table _time, clientip, uri_path, uri_query, status",
+        "data_source": "windows-security",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_joomla_traversal",
+        "logic": "web_joomla_traversal",
+        "data_source": "proxy",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Reads files outside the webroot via Joomla Media Manager traversal (CVE-2019-10945):\n  python2.7 joomla_dir_trav.py   the exploit\n  --url \"http://<url>/administrator/\"   the admin base\n  --username/--password          valid admin credentials\n  --dir /                        the directory to list/read\nAuthenticated directory traversal lets you enumerate and read arbitrary files on the host - point --dir at sensitive paths to loot configs."
 }

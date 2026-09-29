@@ -105,7 +105,53 @@
       "MITRE T1110",
       "OWASP A07:2021"
     ],
-    "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity."
+    "evasion": "Undeploy the malicious WAR after getting a shell; name it innocuously; manager access over a valid session looks like admin activity.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Tomcat - Manager Brute Force (Metasploit) - Sentinel",
+        "logic": "W3CIISLog\n| where csUriStem has \"/manager/html\"\n| summarize fails=countif(scStatus == 401), ok=countif(scStatus == 200) by cIP, bin(TimeGenerated, 5m)\n| where fails > 10\n| sort by fails desc\n// Tomcat Manager Basic-Auth brute force (401 burst then 200)",
+        "data_source": "iis",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Tomcat - Manager Brute Force (Metasploit) - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"/manager/html\" (status=401 OR status=200)\n| stats count(eval(status=401)) as fails count(eval(status=200)) as ok by clientip\n| where fails>10",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_tomcat_manager_bruteforce",
+        "logic": "web_tomcat_manager_bruteforce",
+        "data_source": "proxy",
+        "attack": [
+          "T1110"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "iis",
+        "proxy",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Brute-forces Tomcat Manager HTTP Basic auth with Metasploit:\n  use auxiliary/scanner/http/tomcat_mgr_login   the module (set RHOSTS and it tries default credential lists)\nManager/Host-Manager access lets you deploy a malicious WAR for RCE."
 }

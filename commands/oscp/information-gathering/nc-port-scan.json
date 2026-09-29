@@ -104,7 +104,61 @@
     "sources": [
       "PEN-200 Ch 6",
       "MITRE T1046"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Netcat - TCP/UDP Port Sweep (-z) - Sentinel",
+        "logic": "DeviceNetworkEvents\n| where InitiatingProcessFileName in~ (\"nc\",\"ncat\")\n| summarize ports=dcount(RemotePort) by LocalIP, RemoteIP, bin(Timestamp, 1m)\n| where ports > 15\n| sort by ports desc\n// nc -z port sweep",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Netcat - TCP/UDP Port Sweep (-z) (1) - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" (comm=\"nc\" OR comm=\"ncat\") proctitle=\"*-z*\"\n| table _time, host, proctitle",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Netcat - TCP/UDP Port Sweep (-z) (2) - Splunk",
+        "logic": "index=network\n| stats dc(dest_port) as ports by src_ip, bin(_time, 1m) | where ports>15",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_netcat_port_scan",
+        "logic": "proc_creation_netcat_port_scan",
+        "data_source": "sysmon",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "linux-audit",
+        "network-flow",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Does a quick TCP connect scan with netcat when a full scanner is overkill:\n  nc   the tool\n  -n   no DNS resolution\n  -vv  very verbose (report each port)\n  -w 1 one-second per-connection timeout\n  -z   zero-I/O: connect then close without sending data\n  <ip> <port>   target and port (or a range like 3388-3390)\nReports which ports accept a connection; add -u for a UDP sweep."
 }

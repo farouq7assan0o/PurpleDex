@@ -95,7 +95,65 @@
       "MITRE T1555",
       "MITRE T1110.002"
     ],
-    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools."
+    "evasion": "Copy the credential store (browser Login Data, .kdbx, PSReadline history) and decrypt/crack it OFFLINE rather than running signatured binaries (LaZagne/SharpChrome) on the host; scope searches to likely paths to limit disk I/O; use built-in cmdlets over dropped tools.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Credential Hunting - Crack KeePass Database - Sentinel",
+        "logic": "DeviceFileEvents\n| where FileName endswith \".kdbx\"\n| where InitiatingProcessFileName !has \"KeePass\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, FolderPath\n| sort by Timestamp desc\n// .kdbx read by a non-KeePass process, then keepass2john + hashcat mode 13400",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1555.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - Crack KeePass Database (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*keepass2john*\" OR CommandLine=\"*keepass2john*\" OR CommandLine=\"*-m 13400*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Credential Hunting - Crack KeePass Database (2) - Splunk",
+        "logic": "index=sysmon EventCode=11 TargetFilename=\"*.kdbx\"\n| where NOT match(Image, \"(?i)keepass\")\n| table _time, Computer, Image, TargetFilename",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "11"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "file_access_keepass_database_nonkeepass",
+        "logic": "file_access_keepass_database_nonkeepass",
+        "data_source": "sysmon",
+        "attack": [
+          "T1555.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

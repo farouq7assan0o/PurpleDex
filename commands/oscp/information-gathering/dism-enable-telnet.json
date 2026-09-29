@@ -91,7 +91,51 @@
     "sources": [
       "PEN-200 Ch 6",
       "MS Docs"
-    ]
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Windows - Enable Telnet Client via DISM - Sentinel",
+        "logic": "DeviceProcessEvents\n| where (FileName =~ \"dism.exe\" and ProcessCommandLine has \"TelnetClient\") or ProcessCommandLine has \"Enable-WindowsOptionalFeature\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// enabling the Telnet client feature to reach a service",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Windows - Enable Telnet Client via DISM - Splunk",
+        "logic": "index=sysmon EventCode=1 (Image=\"*dism.exe\" CommandLine=\"*TelnetClient*\") OR CommandLine=\"*Enable-WindowsOptionalFeature*Telnet*\"\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_dism_enable_telnet_client",
+        "logic": "proc_creation_win_dism_enable_telnet_client",
+        "data_source": "sysmon",
+        "attack": [
+          "T1046"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Installs the Telnet client on a Windows foothold via DISM:\n  dism /online   operate on the running OS\n  /Enable-Feature /FeatureName:TelnetClient   turn on the optional Telnet client feature\nGives you telnet for banner grabbing and manual protocol interaction (e.g. SMTP VRFY) when it is not installed; needs local admin, and /Get-Features confirms the state."
 }

@@ -96,7 +96,52 @@
       "MITRE T1003.002",
       "MITRE T1552.001"
     ],
-    "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create."
+    "evasion": "Touch only what you need; remove any scheduled task/mounted disk/dropped file you create.",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Misc - Mount Virtual Disk & Dump Hashes - Sentinel",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"guestmount\",\".vmdk\",\".vhdx\") and SyslogMessage has_any (\"mount\",\"secretsdump\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// mounting a stolen VM disk image to extract SAM/SYSTEM offline",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Misc - Mount Virtual Disk & Dump Hashes - Splunk",
+        "logic": "index=linux sourcetype=\"linux:auditd\" comm=\"guestmount\" OR name=\"*.vmdk\" OR name=\"*.vhdx\"\n| table _time, host, auid, exe, name",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "lnx_auditd_virtual_disk_mount_secret_extraction",
+        "logic": "lnx_auditd_virtual_disk_mount_secret_extraction",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "linux-audit",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "explain": "Mounts a found virtual disk to extract its credentials offline:\n  guestmount -a <disk>.vmdk   attach the VMDK/VHD(X) image\n  -i                       inspect it and mount its filesystems automatically\n  --ro /mnt/vmdk           read-only, at this mount point\nThen run impacket-secretsdump against the mounted SAM/SYSTEM/SECURITY hives to recover local account hashes."
 }

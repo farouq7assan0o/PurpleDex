@@ -101,7 +101,83 @@
     ],
     "misconfiguration": "Jenkins Script Console accessible to non-admin users or anonymously. Jenkins runs as SYSTEM or domain admin. Jenkins has domain credentials in its store. No audit logging of script console usage. Jenkins accessible from workstations without WAF.",
     "vulnerable_config": "# Jenkins running as SYSTEM (check service account):\nGet-WmiObject Win32_Service -Filter {Name='Jenkins'} | Select-Object Name,StartName\n# StartName: LocalSystem = SYSTEM = CRITICAL\n\n# Script Console accessible to all authenticated users:\n# Manage Jenkins → Global Security → Authorization:\n# → 'Logged-in users can do anything' = Script Console open to all\n\n# Anonymous read access enabled (even worse):\n# Allow anonymous read access: True → Script Console publicly accessible",
-    "secure_config": "# Run Jenkins as dedicated low-privilege account:\n# Services → Jenkins → Log On → This account → svc_jenkins\n# svc_jenkins: no local admin, no domain rights, no RDP\n\n# Restrict Script Console to Jenkins administrators only:\n# Manage Jenkins → Security → Enable Jenkins' own user database\n# → Project-based Matrix Authorization Strategy\n# → Only admin group has Administer permission\n\n# Block /script from non-admin hosts via reverse proxy (nginx):\n# location /script {\n#   allow 10.0.100.0/24;  # Admin VLAN only\n#   deny all;\n# }\n\n# Disable Script Console entirely if not needed:\n# Jenkins → Plugin Manager: install 'Script Security' plugin to sandbox Groovy\n\n# Sysmon rule:\n# Event 1: ParentImage contains 'java.exe' AND Image contains 'cmd.exe' → ALERT"
+    "secure_config": "# Run Jenkins as dedicated low-privilege account:\n# Services → Jenkins → Log On → This account → svc_jenkins\n# svc_jenkins: no local admin, no domain rights, no RDP\n\n# Restrict Script Console to Jenkins administrators only:\n# Manage Jenkins → Security → Enable Jenkins' own user database\n# → Project-based Matrix Authorization Strategy\n# → Only admin group has Administer permission\n\n# Block /script from non-admin hosts via reverse proxy (nginx):\n# location /script {\n#   allow 10.0.100.0/24;  # Admin VLAN only\n#   deny all;\n# }\n\n# Disable Script Console entirely if not needed:\n# Jenkins → Plugin Manager: install 'Script Security' plugin to sandbox Groovy\n\n# Sysmon rule:\n# Event 1: ParentImage contains 'java.exe' AND Image contains 'cmd.exe' → ALERT",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Jenkins Groovy Script Console RCE - Sentinel",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"java.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine\n| sort by Timestamp desc",
+        "data_source": "powershell",
+        "attack": [
+          "T1059",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Jenkins Groovy Script Console RCE (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 ParentImage=\"*java.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Jenkins Groovy Script Console RCE (2) - Splunk",
+        "logic": "index=web sourcetype=access_combined uri_path=\"/script\" method=POST\n| table _time, clientip, uri_path, status",
+        "data_source": "windows-security",
+        "attack": [
+          "T1059",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_susp_java_child_shell",
+        "logic": "proc_creation_win_susp_java_child_shell",
+        "data_source": "sysmon",
+        "attack": [
+          "T1059",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "web_jenkins_script_console_access",
+        "logic": "web_jenkins_script_console_access",
+        "data_source": "proxy",
+        "attack": [
+          "T1059",
+          "T1505.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "proxy",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "explain": "Executes OS commands through the Jenkins Script Console (Groovy), which often runs as SYSTEM or a domain service account:\n  println                   print the result to the console output\n  'whoami'.execute().text   run the OS command and capture its stdout\nBrowse to http://<ip>:8080/script, run this to confirm RCE, then escalate (e.g. ['cmd','/c','net localgroup administrators <user> /add'].execute())."
 }

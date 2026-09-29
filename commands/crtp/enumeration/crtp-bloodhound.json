@@ -111,7 +111,88 @@
     ],
     "misconfiguration": "NetSessionEnum not restricted - any user can enumerate sessions. RestrictRemoteSam not configured. Excessive ACLs (GenericAll/GenericWrite on DA accounts by non-admin groups). MDI not deployed.",
     "vulnerable_config": "# RestrictRemoteSam not set (any auth user can enumerate local accounts):\n(Get-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -EA SilentlyContinue).RestrictRemoteSam\n# Returns $null = NOT restricted = VULNERABLE\n\n# Dangerous ACE example:\nGet-ObjectAcl 'Domain Admins' | Where-Object {$_.ActiveDirectoryRights -match 'GenericAll'}",
-    "secure_config": "# Restrict SAMR enumeration:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# Via GPO:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network access: Restrict clients allowed to make remote calls to SAM\n\n# Remediate dangerous ACEs:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# WDAC: deny SharpHound.exe by hash"
+    "secure_config": "# Restrict SAMR enumeration:\nSet-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa' -Name RestrictRemoteSam -Value 'O:BAG:BAD:(A;;RC;;;BA)'\n\n# Via GPO:\n# Computer Config → Windows Settings → Security Settings → Local Policies → Security Options\n# → Network access: Restrict clients allowed to make remote calls to SAM\n\n# Remediate dangerous ACEs:\nRemove-ADPermission -Identity 'DomainAdmin1' -User 'HelpDesk' -AccessRights GenericAll\n\n# WDAC: deny SharpHound.exe by hash",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "BloodHound / SharpHound Collection - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| summarize ldap_reads=count() by SubjectUserName, IpAddress, bin(TimeGenerated, 5m)\n| where ldap_reads > 200\n| sort by ldap_reads desc",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "BloodHound / SharpHound Collection (1) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| stats count by Account_Name, Client_Address\n| where count>200",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4662"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "BloodHound / SharpHound Collection (2) - Splunk",
+        "logic": "index=wineventlog EventCode=4104 (ScriptBlockText=\"*Invoke-BloodHound*\" OR ScriptBlockText=\"*SharpHound*\" OR ScriptBlockText=\"*CollectionMethod*\")\n| table _time, Computer, User, ScriptBlockText",
+        "data_source": "powershell",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "4104"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "posh_ps_bloodhound_invoke",
+        "logic": "posh_ps_bloodhound_invoke",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_ldap_recon_high_volume",
+        "logic": "win_security_ldap_recon_high_volume",
+        "data_source": "windows-security",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "powershell",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "variations": [
     {

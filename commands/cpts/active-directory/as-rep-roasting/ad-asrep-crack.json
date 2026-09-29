@@ -82,7 +82,57 @@
     "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x17 Pre_Authentication_Type=0\n| table _time, Account_Name, Client_Address, Service_Name\n| sort - _time",
     "elastic_kql": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"0\" AND winlog.event_data.TicketEncryptionType:\"0x17\"",
     "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"0\" and TicketEncryptionType == \"0x17\"\n| summarize accounts=make_set(TargetUserName), count() by IpAddress, bin(TimeGenerated, 10m)\n| sort by count_ desc\n// offline hashcat 18200 crack has no host telemetry; detect the preceding AS-REP roast",
-    "sigma_rules": "win_security_kerberos_asrep_roasting"
+    "sigma_rules": "win_security_kerberos_asrep_roasting",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Hashcat - Crack AS-REP Hash (Mode 18200) - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"0\" and TicketEncryptionType == \"0x17\"\n| summarize accounts=make_set(TargetUserName), count() by IpAddress, bin(TimeGenerated, 10m)\n| sort by count_ desc\n// offline hashcat 18200 crack has no host telemetry; detect the preceding AS-REP roast",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Hashcat - Crack AS-REP Hash (Mode 18200) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x17 Pre_Authentication_Type=0\n| table _time, Account_Name, Client_Address, Service_Name\n| sort - _time",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_kerberos_asrep_roasting",
+        "logic": "win_security_kerberos_asrep_roasting",
+        "data_source": "windows-security",
+        "attack": [
+          "T1558.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "tools": [
     "hashcat"

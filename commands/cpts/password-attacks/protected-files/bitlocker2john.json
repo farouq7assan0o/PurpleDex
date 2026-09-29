@@ -89,7 +89,52 @@
     "splunk_spl": "index=* \"bitlocker2john\"\n| table _time, host, user, _raw\n// extracts a BitLocker hash from a VHD locally; the subsequent hashcat crack is also offline",
     "elastic_kql": "process.name:bitlocker2john*",
     "sentinel_kql": "DeviceProcessEvents\n| where FileName startswith \"bitlocker2john\" or ProcessCommandLine has \"bitlocker2john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// extracts a BitLocker hash from a VHD locally; the subsequent hashcat crack is also offline",
-    "sigma_rules": "no target-side telemetry (bitlocker2john runs on the attacker host)"
+    "sigma_rules": "no target-side telemetry (bitlocker2john runs on the attacker host)",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Crack BitLocker Volume (bitlocker2john) - Sentinel",
+        "logic": "DeviceProcessEvents\n| where FileName startswith \"bitlocker2john\" or ProcessCommandLine has \"bitlocker2john\"\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine\n| sort by Timestamp desc\n// extracts a BitLocker hash from a VHD locally; the subsequent hashcat crack is also offline",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "splunk",
+        "name": "Crack BitLocker Volume (bitlocker2john) - Splunk",
+        "logic": "index=* \"bitlocker2john\"\n| table _time, host, user, _raw\n// extracts a BitLocker hash from a VHD locally; the subsequent hashcat crack is also offline",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "no target-side telemetry",
+        "logic": "no target-side telemetry",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr",
+        "sysmon"
+      ]
+    }
   },
   "type": "command",
   "explain": "Extracts a BitLocker hash from a disk image and cracks it:\n  bitlocker2john -i <vhd_file>   parse the VHD/volume for crackable BitLocker hashes\n  > backup.hashes          save all of them\n  grep 'bitlocker\\$0' ... > backup.hash   keep only the password-hash line ($bitlocker$0)\nCrack backup.hash with hashcat -m 22100, then mount the unlocked volume with dislocker."

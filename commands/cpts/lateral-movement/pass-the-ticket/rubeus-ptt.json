@@ -113,7 +113,83 @@
     ],
     "misconfiguration": "Pass-the-Certificate (PtC) attacks exploit ADCS certificate abuse (ESC1/ESC8) combined with Kerberos PKINIT. Shadow credentials (pywhisker) exploit write access to msDS-KeyCredentialLink to add a certificate-based authentication mechanism to any account. Pass-the-Ticket works because Kerberos tickets are extractable from LSASS memory.",
     "vulnerable_config": "# msDS-KeyCredentialLink writable by attacker (GenericWrite on target account):\n# pywhisker.py -t targetuser -a add\n# Adds a fake device credential -> obtain certificate for targetuser\n# -> PKINIT TGT as targetuser -> NTLM hash via UnPAC\n\n# LSASS memory contains TGTs for all logged-in users:\n# Mimikatz: sekurlsa::tickets /export\n# Rubeus: dump /all",
-    "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes"
+    "secure_config": "# Prevent msDS-KeyCredentialLink abuse:\n# Audit who has GenericWrite on privileged accounts\n# Only SYSTEM/DCs should write msDS-KeyCredentialLink\nGet-ObjectAcl -Identity admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match 'Write'}\n\n# Prevent ticket extraction:\n# Enable Credential Guard (blocks LSASS memory reads)\n# Protected Users group members: tickets not cached in LSASS\n\n# ADCS: prevent ESC1/ESC8 (see those cards)\n# Monitor: Event 4768 with certificate auth, Event 4769 unusual ticket lifetimes",
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Rubeus - Pass the Ticket / OverPass the Hash - Sentinel",
+        "logic": "SecurityEvent\n| where EventID == 4768 and TicketEncryptionType == \"0x17\"\n| project TimeGenerated, Computer, TargetUserName, IpAddress\n| union (DeviceProcessEvents | where ProcessCommandLine has \"asktgt\" and ProcessCommandLine has \"/ptt\" | project TimeGenerated=Timestamp, Computer=DeviceName, TargetUserName=AccountName, IpAddress=\"\")\n| sort by TimeGenerated desc",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Rubeus - Pass the Ticket / OverPass the Hash (1) - Splunk",
+        "logic": "index=sysmon EventCode=1 CommandLine=\"*asktgt*\" (CommandLine=\"*/ptt*\" OR CommandLine=\"*Rubeus*\")\n| table _time, Computer, User, CommandLine",
+        "data_source": "sysmon",
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "log_ids": [
+          "1"
+        ]
+      },
+      {
+        "platform": "splunk",
+        "name": "Rubeus - Pass the Ticket / OverPass the Hash (2) - Splunk",
+        "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Ticket_Encryption_Type=0x17\n| table _time, Computer, Account_Name, Client_Address",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "log_ids": [
+          "4768"
+        ]
+      },
+      {
+        "platform": "sigma",
+        "name": "proc_creation_win_hktl_rubeus",
+        "logic": "proc_creation_win_hktl_rubeus",
+        "data_source": "sysmon",
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium"
+      },
+      {
+        "platform": "sigma",
+        "name": "win_security_overpass_the_hash_rc4",
+        "logic": "win_security_overpass_the_hash_rc4",
+        "data_source": "windows-security",
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium"
+      }
+    ],
+    "visibility": {
+      "requires": [
+        "defender-endpoint",
+        "sysmon",
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    }
   },
   "type": "command",
   "explain": "Over-pass-the-hash with Rubeus - turn a key into a TGT and inject it:\n  asktgt                   request a TGT from the KDC\n  /domain:<domain> /user:<user>   the account\n  /rc4:<nt_hash>           the NT hash used as the Kerberos key (/aes256 for opsec)\n  /ptt                     inject the resulting ticket into this session\nThen tools authenticate as that user over Kerberos. dump lists tickets, ptt /ticket loads a .kirbi, createnetonly spawns a sacrificial logon session."

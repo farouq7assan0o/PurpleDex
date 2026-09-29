@@ -156,6 +156,34 @@
         "powershell",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Base64 - Copy/Paste Transfer - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Base64 - Copy/Paste Transfer (1) - Splunk"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_base64_decode_pipe"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Encodes a file to text so you can carry it through a shell with no file transfer:\n  cat id_rsa    read the file bytes\n  base64 -w 0   encode to one unwrapped line (no newlines to break the paste)\n  echo          print a trailing newline so the blob is easy to select\nCopy the text to the other host and decode it back (base64 -d on Linux, [Convert]::FromBase64String on Windows); md5sum both ends to prove nothing was truncated."

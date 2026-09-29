@@ -171,6 +171,38 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "event_id": "4670"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4670"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_takeown_protected_file"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_dacl_modified_4670"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

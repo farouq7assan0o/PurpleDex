@@ -195,6 +195,34 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "SMTP - Enumeration - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "SMTP - Enumeration (1) - Splunk"
+        },
+        {
+          "source": "network-flow",
+          "description": "SMTP - Enumeration (2) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_service_enumeration_smtp-user-enum"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Interacts with SMTP over telnet to enumerate and test the server:\n  telnet <ip> 25   open a raw connection to the SMTP port\nGrab the banner with HELO/EHLO, enumerate users with VRFY <user> (valid vs unknown responses differ), and even send mail with MAIL FROM/RCPT TO/DATA; nmap's smtp-open-relay script checks for relaying."

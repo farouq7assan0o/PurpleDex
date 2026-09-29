@@ -148,6 +148,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "Web Recon - Headers & Fingerprinting - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Web Recon - Headers & Fingerprinting - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_app_scanner_whatweb"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Fingerprints a web server from its HTTP headers:\n  curl   HTTP client\n  -I     fetch headers only (HEAD)\n  -L     follow redirects\n  https://<host>   the target\nServer/X-Powered-By headers reveal the tech stack; always also read robots.txt and page source for hidden paths, and run whatweb for a fuller fingerprint."

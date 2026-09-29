@@ -144,6 +144,31 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4625",
+          "description": "Failed logon"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4624",
+          "description": "Successful logon"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_smb_login_bruteforce"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "type": "command",

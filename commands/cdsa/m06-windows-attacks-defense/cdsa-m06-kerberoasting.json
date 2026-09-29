@@ -91,8 +91,12 @@
         "name": "Kerberoast - RC4 TGS burst",
         "logic": "SecurityEvent\n| where EventID == 4769 and TicketEncryptionType == \"0x17\" and ServiceName != \"krbtgt\"\n| summarize spns=dcount(ServiceName) by TargetUserName, IpAddress, bin(TimeGenerated, 1m)\n| where spns > 10\n| sort by spns desc",
         "data_source": "windows-security",
-        "log_ids": ["4769"],
-        "attack": ["T1558.003"],
+        "log_ids": [
+          "4769"
+        ],
+        "attack": [
+          "T1558.003"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Service accounts requesting multiple TGS tickets during normal operations (rare with RC4 filter)",
@@ -103,8 +107,12 @@
         "name": "Kerberoast - RC4 TGS burst",
         "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!=\"krbtgt\"\n| stats dc(Service_Name) as spns by Account_Name, Client_Address, bin(_time, 1m)\n| where spns>10",
         "data_source": "windows-security",
-        "log_ids": ["4769"],
-        "attack": ["T1558.003"],
+        "log_ids": [
+          "4769"
+        ],
+        "attack": [
+          "T1558.003"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Legitimate bulk TGS requests (unusual with RC4 filter)",
@@ -115,14 +123,42 @@
         "name": "Kerberoasting activity (Sigma)",
         "logic": "win_security_kerberoasting_activity",
         "data_source": "windows-security",
-        "attack": ["T1558.003"],
+        "attack": [
+          "T1558.003"
+        ],
         "fidelity": "behavioral",
         "confidence": "high"
       }
     ],
     "visibility": {
-      "requires": ["windows-security"],
-      "better_with": ["sysmon", "edr"]
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "sysmon",
+        "edr"
+      ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4769",
+          "description": "Kerberos service ticket requested"
+        },
+        {
+          "source": "windows-security",
+          "description": "Kerberoasting activity (Sigma)"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

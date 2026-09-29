@@ -150,6 +150,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Privileged Groups - LXD/LXC Container Escape - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_lxd_privileged_container"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

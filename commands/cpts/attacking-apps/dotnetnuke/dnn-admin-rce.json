@@ -195,6 +195,38 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "DotNetNuke (DNN) - Authenticated RCE (SQL Console + File-Extension Bypass) - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "DotNetNuke (DNN) - Authenticated RCE (SQL Console + File-Extension Bypass) (2) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_dotnetnuke_rce"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_webserver_spawning_shell"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Gets code execution on DotNetNuke with SuperUser/admin creds via the built-in SQL console:\n  sp_configure 'show advanced options','1'; RECONFIGURE;   unlock advanced settings\n  sp_configure 'xp_cmdshell','1'; RECONFIGURE;              enable the OS-command stored proc\n  xp_cmdshell 'whoami'                                     run commands as the SQL/IIS service account\nDNN's Settings > SQL console runs arbitrary T-SQL, so enabling xp_cmdshell yields RCE; from there upload nc/PrintSpoofer to escalate (creds are often pillaged from an exposed web.config)."

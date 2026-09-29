@@ -136,6 +136,30 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "UAC - Enumerate Configuration - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_reg_query_uac_config"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Confirms UAC state and level before choosing a bypass:\n  REG QUERY HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ /v EnableLUA   read whether UAC is on\nEnableLUA=1 means UAC is active; ConsentPromptBehaviorAdmin sets prompt strictness. The OS build number then determines which UAC bypass technique will work."

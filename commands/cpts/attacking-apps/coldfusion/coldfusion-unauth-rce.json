@@ -191,6 +191,38 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "ColdFusion - Unauthenticated RCE (CVE-2009-2265) - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "ColdFusion - Unauthenticated RCE (CVE-2009-2265) (2) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_coldfusion_rce"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_webserver_spawning_shell"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Exploits the ColdFusion FCKeditor upload flaw for unauth RCE (CVE-2009-2265):\n  python3 50057.py   the EDB exploit, after editing lhost/lport/rhost/rport inside it\nColdFusion 8.0.1 and earlier ship a vulnerable FCKeditor file manager; the script uploads a JSP payload and triggers a shell - fetch it with 'searchsploit -p 50057' and set the callback details before running."

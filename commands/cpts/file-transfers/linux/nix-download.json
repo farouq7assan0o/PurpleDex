@@ -154,6 +154,33 @@
         "proxy",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Linux - Download (wget/curl/dev-tcp) - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Linux - Download (wget/curl/dev-tcp) (1) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "Linux - Download (wget/curl/dev-tcp) (2) - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_lnx_wget_curl_download"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Web proxy logs, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Pulls a file onto a Linux host over HTTP with wget:\n  wget <url>    request the file\n  -O /tmp/out.sh   write it to this path\nSaves the file locally; pipe to bash/python for fileless execution, or fall back to bash's built-in /dev/tcp when neither wget nor curl exists."

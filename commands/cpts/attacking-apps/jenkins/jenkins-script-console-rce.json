@@ -165,6 +165,38 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Jenkins - Script Console Command Execution - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "Jenkins - Script Console Command Execution (2) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_jenkins_script_console_rce"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_webserver_spawning_shell"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs an OS command from the Jenkins Groovy script console (/script):\n  def cmd = '<command>'          the command to execute\n  def proc = cmd.execute()       run it\n  consumeProcessOutput(sout,serr) + waitForOrKill   capture stdout/stderr\n  println sout                   print the result\nExecutes as the Jenkins user - instant RCE with admin (or misconfigured anonymous) access to the console; escalate from there to a full reverse shell."

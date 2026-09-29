@@ -186,6 +186,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS - IAM Privilege Escalation & Backdoor User Creation - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_cloudtrail_aws"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Creates a full-admin backdoor IAM user when you hold the right IAM write permissions:\n  iam create-user --user-name backdoor                              make a new user\n  iam attach-user-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess   grant it full admin\n  iam create-access-key --user-name backdoor                        mint programmatic keys for it\nGives persistent credential-based admin access independent of the compromised identity; requires iam:CreateUser/AttachUserPolicy/CreateAccessKey (check yours first with get-caller-identity + list-attached-user-policies)."

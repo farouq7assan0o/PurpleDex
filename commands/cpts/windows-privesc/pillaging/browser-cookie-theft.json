@@ -153,6 +153,35 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Pillaging - Steal Browser Cookies - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "file_access_browser_cookie_theft_nonbrowser"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Steals browser session cookies to hijack authenticated web sessions:\n  Invoke-SharpChromium     SharpChromium loader\n  -Command \"cookies slack.com\"   extract Chrome cookies for this domain (e.g. a Slack session)\nImport the stolen cookie into your own browser to ride the session without a password. For Firefox, copy cookies.sqlite and use cookieextractor.py."

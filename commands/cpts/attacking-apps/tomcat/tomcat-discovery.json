@@ -131,6 +131,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "Tomcat - Detect and Enumerate - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Tomcat - Detect and Enumerate - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_app_scanner_tomcat"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Detects Apache Tomcat and its version:\n  curl -s http://<url>:8080/docs/   fetch the docs page\n  | grep Tomcat                     read the version string\nConfirms Tomcat; then brute-force paths with gobuster for /manager and /host-manager (WAR deployment endpoints) and look for tomcat-users.xml, which often holds the manager credentials."

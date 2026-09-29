@@ -129,6 +129,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Misc - Hijack Shared tmux Session - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_tmux_shared_socket_attach"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Attaches to a privileged user's tmux session left on a group-writable socket:\n  tmux -S /shareds         attach to the tmux server listening on this socket file\nIf a higher-privileged user started tmux on a socket your group can write, attaching drops you straight into their shell with their privileges."

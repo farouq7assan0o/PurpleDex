@@ -194,6 +194,21 @@
       "requires": [
         "dns"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "dns",
+          "description": "host - DNS Forward/Reverse Lookup and Brute Force - Sentinel"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review DNS logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Performs DNS lookups with the host command:\n  host <domain>   forward-resolve the name to its A/AAAA records\nAdd -t mx/txt/ns for specific record types; the card also covers forward brute-forcing a subdomain wordlist and reverse PTR sweeps of an IP range to map a target's DNS."

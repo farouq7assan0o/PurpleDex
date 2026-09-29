@@ -160,6 +160,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Vulnerable Service - GNU screen 4.5.0 root - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_screen_suid_ldpreload"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Exploits setuid GNU screen 4.5.0 to load an attacker library as root:\n  screen -v                print the version to confirm 4.05.00 / v4.5.0\nThe bug lets you overwrite /etc/ld.so.preload so a library of yours loads with root privilege; the screenroot.sh PoC compiles libhax.so + a rootshell and triggers it, dropping /tmp/rootshell."

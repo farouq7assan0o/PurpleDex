@@ -152,6 +152,34 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4886"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4887"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4768",
+          "description": "Kerberos TGT requested"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_adcs_esc1_san_certificate_request"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "tools": [

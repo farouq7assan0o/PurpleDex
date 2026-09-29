@@ -134,6 +134,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "LDAP Injection - Authentication Bypass - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "LDAP Injection - Authentication Bypass - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_ldap_injection"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Bypasses an LDAP-backed login by injecting a wildcard:\n  Username: *   matches any account entry\n  Password: *   matches any password value\nIf the login builds a filter like (&(sAMAccountName=$user)(userPassword=$pass)), the * makes the filter match any entry and authentication succeeds; test * (and other LDAP metacharacters) in each field."

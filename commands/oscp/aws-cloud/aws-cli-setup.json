@@ -163,6 +163,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS CLI - Configure Profile & Verify Identity - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_cloudtrail_get_caller_identity"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Configures the AWS CLI with obtained keys and confirms whose they are:\n  aws configure --profile <name>   store the access key id + secret under a named profile\n  aws --profile <name> sts get-caller-identity   ask AWS who this identity is\nget-caller-identity returns the UserId, 12-digit Account, and full IAM ARN - your starting point for scoping permissions; keys go in ~/.aws/credentials."

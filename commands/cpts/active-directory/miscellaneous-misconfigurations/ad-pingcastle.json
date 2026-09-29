@@ -196,6 +196,39 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "PingCastle - AD Security Posture Assessment - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4662",
+          "description": "Operation on AD object"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_pingcastle"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_ldap_recon"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Scores an AD environment's security posture:\n  PingCastle.exe --healthcheck   run the health-check assessment\nProduces a CMMI-scored report of misconfigurations and risky settings (delegation, weak trusts, stale accounts, privileged groups) - fast situational awareness for both attackers mapping weaknesses and defenders prioritizing fixes."

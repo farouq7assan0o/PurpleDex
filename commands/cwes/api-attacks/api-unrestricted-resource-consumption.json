@@ -152,6 +152,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "API - Unrestricted Resource Consumption (API4:2023) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "API - Unrestricted Resource Consumption (API4:2023) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_api_rate_abuse"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   }
 }

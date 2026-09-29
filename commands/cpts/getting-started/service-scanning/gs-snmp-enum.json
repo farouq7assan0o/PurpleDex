@@ -133,6 +133,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "SNMP - Enumeration (Getting Started) - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "SNMP - Enumeration (Getting Started) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_snmp_enumeration_snmpwalk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Walks SNMP to dump device and system information:\n  snmpwalk   traverse the MIB tree\n  -v 2c      SNMP version 2c\n  -c public  the community string (try public, then private)\n  <ip>       the target\nReturns system info, users, running software, and sometimes credentials; append an OID (e.g. 1.3.6.1.2.1.1.5.0) to target one value, and brute-force community strings with onesixtyone."

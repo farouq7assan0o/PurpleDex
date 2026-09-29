@@ -156,6 +156,34 @@
         "powershell",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Protected Transfers - Encrypt Files - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Protected Transfers - Encrypt Files (1) - Splunk"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_openssl_enc_staging"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Encrypts a file with AES-256 before moving it, so an intercepted transfer is useless without the key:\n  openssl enc -aes256   symmetric AES-256 encryption\n  -iter 100000 -pbkdf2  derive the key from your passphrase with 100000 PBKDF2 rounds\n  -in <file>            plaintext input\n  -out <file>.enc       ciphertext output\nProduces an encrypted blob to transfer; reverse with -d to decrypt (Invoke-AESEncryption is the Windows equivalent)."

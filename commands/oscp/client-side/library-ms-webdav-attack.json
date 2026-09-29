@@ -177,6 +177,34 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Windows Library File + WebDAV Delivery - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "7036"
+        },
+        {
+          "source": "sysmon",
+          "description": "file_event_win_library_ms_webdav"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "A no-macro phishing chain using a .Library-ms file pointed at your WebDAV share:\n  <libraryDescription>...<url>http://<lhost></url>   the library file that mounts your share in Explorer\nWhen the user opens the .library-ms, Explorer transparently mounts the WebDAV share and shows it as a trusted folder; a malicious .lnk staged there (running a PowerShell download cradle) fires when clicked - host the share with wsgidav and catch the callback."

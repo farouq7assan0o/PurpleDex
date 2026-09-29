@@ -145,6 +145,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Evasion - OS Detection & Source Spoofing - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Evasion - OS Detection & Source Spoofing (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "Evasion - OS Detection & Source Spoofing (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Fingerprints the OS and can spoof the source address:\n  -n -Pn      no DNS or host discovery\n  -p445       the port to probe\n  -O          OS detection\nThe card's key variant adds -S <spoofed_ip> -e <iface> to send from a chosen source IP over a specific interface - useful when a firewall rule trusts a particular address."

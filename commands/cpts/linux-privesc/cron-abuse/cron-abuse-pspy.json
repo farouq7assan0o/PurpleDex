@@ -198,6 +198,26 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Cron Abuse - Writable Script + pspy - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_cron_script_modification"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for new scheduled tasks, services, or registry autoruns on the affected host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Watches for root cron jobs without needing root, so you can abuse a writable one:\n  ./pspy64                 monitor process creation and scheduled tasks in real time (no privileges needed)\n  -pf                      print commands and file-system events\n  -i 1000                  poll every 1000 ms\nWhen you spot a root cron running a world-writable script, append a reverse shell to that script (back up the original first) and wait for the next run."

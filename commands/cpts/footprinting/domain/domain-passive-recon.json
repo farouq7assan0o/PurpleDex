@@ -158,6 +158,21 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "description": "Domain Information - Passive Recon - Sentinel"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Maps a company's internet presence passively via CT logs:\n  curl -s 'https://crt.sh/?q=<domain>.com&output=json'   every logged certificate for the domain\n  | jq .   parse the JSON to extract subdomain names\nCertificate transparency reveals subdomains without touching the target; the card then resolves them to IPs with a host loop, and cross-references Shodan for exposed services."

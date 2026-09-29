@@ -143,6 +143,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "DnsAdmins - WPAD Record Injection - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "DnsAdmins - WPAD Record Injection (1) - Splunk"
+        },
+        {
+          "source": "dns",
+          "description": "win_dns_wpad_record_added"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Windows Security Event Log, DNS logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Alternative DnsAdmins abuse - hijack WPAD for credential capture:\n  Add-DnsServerResourceRecordA   add a DNS A record\n  -Name wpad               the Web Proxy Auto-Discovery name clients look up\n  -ZoneName <domain> -ComputerName <dc>   the zone and DC to write it on\n  -IPv4Address <lhost>     point wpad at your host\nAfter disabling the Global Query Block List, domain clients route proxy auto-config through you, enabling credential capture / MITM."

@@ -142,6 +142,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Nmap - Version Detection on a Port - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Nmap - Version Detection on a Port (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "Nmap - Version Detection on a Port (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Fingerprints the exact service on one port:\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show the probes\n  -p 445 --reason             the port, with the state reason\n  -sV                         version detection\nThe exact product/version is the pivot from an open port to a known-vulnerability lookup."

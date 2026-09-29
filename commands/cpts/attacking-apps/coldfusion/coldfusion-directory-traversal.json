@@ -167,6 +167,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "ColdFusion - Directory Traversal (CVE-2010-2861) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "ColdFusion - Directory Traversal (CVE-2010-2861) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_coldfusion_traversal"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Exploits ColdFusion's unauthenticated locale traversal (CVE-2010-2861):\n  python2 14641.py <ip> <port> \"<file_path>\"   the EDB exploit: target, port, and the file to read\nColdFusion 9.0.1 and earlier let the unvalidated locale parameter of admin .cfm pages read arbitrary files; reading /lib/password.properties leaks the encrypted admin hash - grab the script with 'searchsploit -p 14641'."

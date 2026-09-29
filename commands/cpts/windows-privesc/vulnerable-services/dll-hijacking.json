@@ -144,6 +144,30 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "DLL Hijacking - Missing / Proxy DLL - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "7",
+          "description": "Image loaded (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "sysmon_dll_sideload_unsigned_nonsystem (DLL search-order hijack"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   }
 }

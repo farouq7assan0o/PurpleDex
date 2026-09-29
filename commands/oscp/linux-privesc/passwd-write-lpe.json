@@ -155,6 +155,25 @@
         "linux-audit",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Linux PrivEsc - /etc/passwd World-Writable - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "description": "lnx_file_modification_etc_passwd"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Escalates when /etc/passwd is writable by adding a root-equivalent account:\n  openssl passwd <password>   generate a crypt hash to put in the password field\nAppend an entry with uid 0 (e.g. root2:<hash>:0:0:...:/bin/bash) and su to it for root. The variation uses an empty password field (root3::0:0:...) so no password is needed at all."

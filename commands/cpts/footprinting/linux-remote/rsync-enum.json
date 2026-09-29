@@ -147,6 +147,34 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Rsync - Enumeration - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Rsync - Enumeration (1) - Splunk"
+        },
+        {
+          "source": "network-flow",
+          "description": "Rsync - Enumeration (2) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_service_enumeration_rsync"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Enumerates an rsync daemon's exposed modules:\n  rsync -av        archive mode, verbose\n  --list-only      list contents without transferring\n  rsync://127.0.0.1/dev   the daemon URL and module name\nRsync daemons on 873 often expose modules without auth; list them, then pull files by dropping --list-only (tunnel over SSH if the daemon is bound to localhost)."

@@ -150,6 +150,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Dirty Pipe (CVE-2022-0847) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_dirtypipe_readonly_overwrite"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs the Dirty Pipe (CVE-2022-0847) exploit to overwrite read-only files as an unprivileged user (kernels 5.8-5.17):\n  ./exploit-1              rewrite /etc/passwd to give root a known password, then su to root\nCheck uname -r is in range and build with compile.sh first. exploit-2 instead hijacks a chosen SUID binary (./exploit-2 /usr/bin/sudo) to pop a root shell - clean up /tmp/sh after."

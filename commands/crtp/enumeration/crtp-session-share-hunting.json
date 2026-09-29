@@ -233,6 +233,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "5140"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_session_enum_recon"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log, PowerShell Script Block / Module Logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Finds where privileged users are logged on and which shares hold secrets, without needing admin:\n  Invoke-SessionHunter     map user->host sessions via remote registry (no admin required)\n  -NoPortScan              skip the port scan (faster/quieter)\n  -RawResults              return objects, not a formatted table\n  | select Hostname,UserSession,Access   host, the user session found, and whether you can reach it\nWhere an admin session sits on a box you can access, that is your lateral target; PowerHuntShares then inventories readable SMB shares for sensitive data."

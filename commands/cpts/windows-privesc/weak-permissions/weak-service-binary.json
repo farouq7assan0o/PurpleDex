@@ -160,6 +160,35 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Weak Permissions - Replace Modifiable Service Binary - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4663",
+          "description": "Object access attempt"
+        },
+        {
+          "source": "sysmon",
+          "description": "file_event_win_service_binary_overwrite (weak service binary permissions"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

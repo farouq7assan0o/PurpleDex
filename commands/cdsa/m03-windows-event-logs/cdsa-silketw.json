@@ -161,6 +161,35 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "SilkETW - ETW Provider Collection for Detection - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_hktl_silketw"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Subscribes to an ETW provider and writes its events to JSON with SilkETW:\n  -t user                          collect from a user-mode provider\n  -pn Microsoft-Windows-Kernel-Process   the provider to consume (process telemetry)\n  -ot file                         output type: file\n  -p C:\\windows\\temp\\etw.json      the output path\nGives deeper telemetry than Sysmon (e.g. parent-PID spoofing, .NET assembly loads); parse the JSON with ConvertFrom-Json, and use -uk to set keyword flags for providers like DotNETRuntime."

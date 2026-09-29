@@ -141,6 +141,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Enumeration - Flag / Keyword Search - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_recursive_filesystem_search"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Recursively hunts the filesystem for a flag or keyword:\n  grep -r 'HTB{'           search recursively for the flag prefix (swap for any keyword)\n  / 2>/dev/null            start at root, discard permission-denied noise\nHandy on lab/exam boxes once you have read access, to confirm you can reach a flag or locate secrets."

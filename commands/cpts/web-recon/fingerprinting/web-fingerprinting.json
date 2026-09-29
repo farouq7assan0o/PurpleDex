@@ -156,6 +156,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "Web Fingerprinting - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Web Fingerprinting - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_banner_grab_head_request"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Identifies the web stack from HTTP response headers:\n  curl -I https://<domain>   send a HEAD request and print only the response headers\nServer, X-Powered-By, and cookie headers reveal the technology and sometimes the version; follow up with wafw00f for WAF detection and nikto for misconfigurations."

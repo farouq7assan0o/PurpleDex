@@ -162,6 +162,39 @@
         "proxy",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Joomla - Template Editor Webshell (RCE) - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "proxy",
+          "description": "web_shell_execution"
+        },
+        {
+          "source": "sysmon",
+          "description": "file_event_web_shell_written"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Turns Joomla admin access into RCE by editing a template file:\n  system($_GET['<rand>']);   add this to a template PHP file (e.g. error.php) via Templates > Customise\nJoomla lets admins edit template source, so injecting a system() call and then requesting /templates/<theme>/error.php?<rand>=id runs commands as the web-server user."

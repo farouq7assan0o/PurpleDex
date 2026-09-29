@@ -143,6 +143,29 @@
         "linux-audit",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Linux - SCP Transfer - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Linux - SCP Transfer (1) - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_lnx_scp_transfer"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Copies a file over SSH using scp:\n  <user>@<ip>:/path/file   remote source (user and host to authenticate as)\n  .                        local destination (current directory)\nMoves the file encrypted over port 22; swap the argument order to push instead of pull, and start sshd on your box first to receive uploads."

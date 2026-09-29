@@ -223,6 +223,37 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "event_id": "4769",
+          "description": "Kerberos service ticket requested"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4769",
+          "description": "Kerberos service ticket requested"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "3",
+          "description": "Network connection (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_unconstrained_delegation_ticket_capture"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Monitors a host with unconstrained delegation for inbound TGTs to capture the DC's ticket:\n  monitor                   watch LSASS for newly cached Kerberos TGTs\n  /interval:5               poll every 5 seconds\n  /nowrap                   single-line base64 ticket output\n  /targetuser:DC$           only report tickets for the DC machine account\nCoerce the DC to connect (printerbug/DFSCoerce); its TGT is cached here, so Rubeus ptt it and DCSync as the DC."

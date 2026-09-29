@@ -162,6 +162,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "azure-activity",
+          "description": "Azure Resource Manager (ARM) Enumeration - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "azure_resource_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Azure Activity Log, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Enumerates the Azure Resource Manager layer with the az CLI:\n  az resource list -o table   list every resource your principal can see\nThe card walks accounts/subscriptions (az account list), resource groups (az group list), and - most importantly - RBAC via 'az role assignment list --all' and role definitions to find what you can do and where to escalate."

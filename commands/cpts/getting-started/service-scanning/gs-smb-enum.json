@@ -132,6 +132,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "SMB - Share Enumeration (Getting Started) - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "SMB - Share Enumeration (Getting Started) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_smb_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Lists SMB shares on a host with smbclient:\n  smbclient   the SMB client\n  -N          no password (null session)\n  -L \\\\<ip>   list the available shares\nShows what shares exist so you can connect to interesting ones (\\\\<ip>\\<share>) as guest or with -U <user>, then ls/get to pull files."

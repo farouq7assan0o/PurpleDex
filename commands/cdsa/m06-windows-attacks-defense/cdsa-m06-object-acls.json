@@ -168,6 +168,46 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4738",
+          "description": "User account changed"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4742",
+          "description": "Computer account changed"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4724",
+          "description": "Password reset attempt"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4662",
+          "description": "Operation on AD object"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_ad_object_dacl_change"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "steps": [

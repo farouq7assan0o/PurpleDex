@@ -37,7 +37,7 @@ const VALID_DEFENSE_KEYS = ['why_it_works', 'prerequisites', 'detection', 'preve
                             'misconfiguration', 'vulnerable_config', 'secure_config',
                             'code_review',
                             'splunk_spl', 'elastic_kql', 'sigma_rules', 'sentinel_kql',
-                            'detections', 'visibility'];
+                            'detections', 'visibility', 'validation'];
 // structured detection schema (defense.detections[])
 const VALID_DETECTION_PLATFORMS = ['splunk', 'elastic', 'sentinel', 'sigma'];
 const VALID_FIDELITY = ['behavioral', 'signature', 'telemetry'];
@@ -176,9 +176,35 @@ for (const { file, data } of cards) {
                 err(file, id, 'defense has content but sources[] is missing/empty (every defense must cite its source)');
             if (src != null && !Array.isArray(src))
                 err(file, id, 'defense.sources must be an array of strings');
+            // validation object (purple-team fields)
+            if (data.defense.validation != null) {
+                const val = data.defense.validation;
+                if (typeof val !== 'object' || Array.isArray(val)) {
+                    err(file, id, 'defense.validation must be an object');
+                } else {
+                    if (val.expected_events != null) {
+                        if (!Array.isArray(val.expected_events)) err(file, id, 'defense.validation.expected_events must be an array');
+                        else val.expected_events.forEach((ev, i) => {
+                            if (!ev || typeof ev !== 'object') { err(file, id, `validation.expected_events[${i}] must be an object`); return; }
+                            if (!ev.source) err(file, id, `validation.expected_events[${i}] missing source`);
+                            if (!ev.event_id && !ev.description) err(file, id, `validation.expected_events[${i}] needs event_id or description`);
+                        });
+                    }
+                    if (val.test_command != null && typeof val.test_command !== 'string')
+                        err(file, id, 'defense.validation.test_command must be a string');
+                    if (val.success_criteria != null && typeof val.success_criteria !== 'string')
+                        err(file, id, 'defense.validation.success_criteria must be a string');
+                    if (val.response_steps != null) {
+                        if (!Array.isArray(val.response_steps)) err(file, id, 'defense.validation.response_steps must be an array');
+                        else val.response_steps.forEach((s, i) => {
+                            if (typeof s !== 'string') err(file, id, `validation.response_steps[${i}] must be a string`);
+                        });
+                    }
+                }
+            }
             // string sub-fields must actually be strings
             for (const k of VALID_DEFENSE_KEYS) {
-                if (k === 'sources' || k === 'detections' || k === 'visibility') continue;
+                if (k === 'sources' || k === 'detections' || k === 'visibility' || k === 'validation') continue;
                 if (data.defense[k] != null && typeof data.defense[k] !== 'string')
                     err(file, id, `defense.${k} must be a string`);
             }

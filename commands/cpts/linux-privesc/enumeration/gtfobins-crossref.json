@@ -153,6 +153,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Enumeration - GTFOBins Cross-Reference - Sentinel"
+        },
+        {
+          "source": "proxy",
+          "description": "Enumeration - GTFOBins Cross-Reference (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_package_enum"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Web proxy logs, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Auto-flags installed binaries that GTFOBins documents an escalation for:\n  curl -s https://gtfobins.github.io/gtfobins.json | jq -r 'keys[]'   pull every GTFOBins entry name\n  grep -q \"$i\" installed_pkgs.list   check each against your installed-packages list\n  echo \"Check GTFO: $i\"    print the ones present on the target\nEach match is a candidate for a SUID/sudo/shell-escape technique - look it up on GTFOBins."

@@ -173,6 +173,38 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Drupalgeddon3 - Authenticated RCE (Metasploit) - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "Drupalgeddon3 - Authenticated RCE (Metasploit) (2) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_drupalgeddon3_rce"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_webserver_spawning_shell"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Authenticated Drupal RCE via CVE-2018-7602 in Metasploit:\n  use exploit/multi/http/drupal_drupageddon3   the module\nRequires a valid Drupal session cookie and a node id, so set DRUPAL_SESSION, DRUPAL_NODE, VHOST, RHOSTS, and LHOST before exploit; it abuses the same Form API flaw as Drupalgeddon2 but on a path that needs authentication."

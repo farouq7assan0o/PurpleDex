@@ -126,6 +126,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "Joomla - Admin Brute Force - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Joomla - Admin Brute Force - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_login_bruteforce"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Brute-forces the Joomla administrator login:\n  python3 joomla-brute.py  the brute tool\n  -u http://<url>          the Joomla site\n  -w <wordlist>            the password list\n  -usr <user>              the admin username to attack\nRecovered admin access allows code execution via the template editor."

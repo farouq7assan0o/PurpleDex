@@ -146,6 +146,36 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "event_id": "4624",
+          "description": "Successful logon"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4624",
+          "description": "Successful logon"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "3",
+          "description": "Network connection (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_pass_the_hash_rdp_restricted_admin"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "type": "command",

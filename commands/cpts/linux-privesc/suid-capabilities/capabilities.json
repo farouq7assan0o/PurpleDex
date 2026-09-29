@@ -165,6 +165,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Capabilities - Enumerate and Abuse - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_capability_enum_abuse"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Enumerates file capabilities and abuses a high-value one:\n  find /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -type f   scan the common binary dirs\n  -exec getcap {} \\;       print each file's capabilities\nCapabilities grant slices of root without SUID; e.g. a binary with cap_dac_override (like vim.basic) can rewrite /etc/passwd to blank root's password, then su -."

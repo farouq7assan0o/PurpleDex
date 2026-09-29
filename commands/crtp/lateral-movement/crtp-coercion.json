@@ -189,6 +189,26 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4624",
+          "description": "Successful logon"
+        },
+        {
+          "source": "windows-security",
+          "description": "Authentication Coercion (MS-RPRN / DFSCoerce / WSPCoerce) (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Forces a remote machine (often a DC) to authenticate to a host you control:\n  MS-RPRN.exe               trigger the Print System 'printerbug' RPC (RpcRemoteFindFirstPrinterChangeNotification)\n  \\\\<target_dc_fqdn>       the victim you coerce (it will authenticate outbound)\n  \\\\<listener_host_fqdn>   where it authenticates TO - your listener\nPoint it at an unconstrained-delegation host running Rubeus monitor to capture the DC's TGT, or at ntlmrelayx to relay. DFSCoerce/WSPCoerce are alternatives when the print service is disabled."

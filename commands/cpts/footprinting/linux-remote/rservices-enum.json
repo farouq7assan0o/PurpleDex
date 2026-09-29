@@ -157,6 +157,34 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "R-Services - Enumeration - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "R-Services - Enumeration (1) - Splunk"
+        },
+        {
+          "source": "network-flow",
+          "description": "R-Services - Enumeration (2) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_service_enumeration_rlogin"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Enumerates legacy r-services (rlogin/rsh/rexec):\n  sudo nmap -sV   version-detect\n  -p 512,513,514  the r-services ports\n  <ip>            target\nThese trust hosts listed in .rhosts/hosts.equiv; a wildcard '+ +' entry lets anyone authenticate with no password - 'rusers -al' lists users, and rlogin gets you in."

@@ -184,6 +184,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Nmap - Service Scanning - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Nmap - Service Scanning (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "Nmap - Service Scanning (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs the standard thorough nmap enumeration scan:\n  nmap   the scanner\n  -sV    version-detect each service\n  -sC    run the default safe NSE scripts\n  -p-    scan all 65535 TCP ports\n  <ip>   the target\nGives ports, service versions, and script findings in one pass; follow up with targeted per-service NSE scripts (e.g. --script smb-os-discovery -p445) once you see what is open."

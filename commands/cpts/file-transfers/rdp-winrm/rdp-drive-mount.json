@@ -152,6 +152,35 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "RDP - Mount a Local Drive - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4624",
+          "description": "Successful logon"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_rdp_drive_redirection_tsclient"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Redirects a local folder into an RDP session so you can drag files across the RDP channel:\n  xfreerdp /v:<ip>          connect to the target\n  /u:<user> /p:<pass>       credentials\n  /drive:linux,/home/user/share   share this local folder into the session as drive 'linux'\nInside the session the folder appears under 'This PC', letting you copy files both ways when other channels are blocked."

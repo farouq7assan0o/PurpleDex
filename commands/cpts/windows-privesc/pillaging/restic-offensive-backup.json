@@ -152,6 +152,35 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Pillaging - restic VSS Backup of Locked Hives - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "8222"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_restic_fs_snapshot_backup"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Backs up locked registry hives using restic's VSS support, then dumps them offline:\n  restic.exe -r <repo> backup   create a backup into the repo\n  C:\\Windows\\System32\\config   the live SAM/SYSTEM/SECURITY hives (normally locked)\n  --use-fs-snapshot        use a Volume Shadow Copy so the locked files can be read\nRestore the snapshot elsewhere and run secretsdump for the local hashes."

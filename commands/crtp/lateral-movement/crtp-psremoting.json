@@ -188,6 +188,39 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Lateral Movement via PowerShell Remoting (WinRM) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4624",
+          "description": "Successful logon"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "powershell",
+          "description": "win_security_remote_powershell_session"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_winrm_remote_execution"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon, PowerShell Script Block / Module Logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

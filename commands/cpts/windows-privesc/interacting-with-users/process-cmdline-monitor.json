@@ -124,6 +124,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Interacting with Users - Monitor Process Command Lines - Sentinel"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "windows-security",
+          "description": "posh_ps_wmi_process_polling_loop"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Polls process command lines to catch credentials passed as arguments:\n  Get-WmiObject Win32_Process | select CommandLine   snapshot every process's command line\n  sleep 1; ... Compare-Object $a $b   diff two snapshots a second apart to reveal newly launched processes\nScheduled tasks/scripts that pass passwords on the command line show up here; a helper like procmon.ps1 does this continuously."

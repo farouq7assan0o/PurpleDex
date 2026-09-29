@@ -198,6 +198,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS - Pacu Framework (Automated IAM & Cloud Enumeration) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_cloudtrail_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Automates AWS post-exploitation enumeration with the Pacu framework:\n  pacu                     launch (creates/opens a named session backed by SQLite)\n  import_keys <profile>    load creds from an aws CLI profile\n  run iam__enum_users_roles_policies_groups   enumerate the IAM landscape\n  run iam__enum_permissions   resolve what the current identity can do\n  data IAM                 view the collected data\nGives structured, stored enumeration and a launchpad for Pacu's attack modules."

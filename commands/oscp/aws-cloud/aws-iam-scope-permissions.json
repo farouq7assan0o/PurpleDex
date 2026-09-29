@@ -204,6 +204,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS - IAM Permission Scoping with Compromised Credentials - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_cloudtrail_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Maps the exact permissions of a compromised AWS identity:\n  sts get-caller-identity                       find your username/role from the ARN\n  iam list-user-policies / list-attached-user-policies   inline and managed policies on the user\n  iam list-groups-for-user + list-attached-group-policies   policies inherited via groups\n  iam get-policy-version --policy-arn ... --version-id ...   read a managed policy's JSON\nAssembles the full effective policy set so you know your rights and where to escalate."

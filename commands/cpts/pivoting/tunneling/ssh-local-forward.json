@@ -123,6 +123,29 @@
         "linux-audit",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "SSH - Local Port Forwarding - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "SSH - Local Port Forwarding - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_lnx_ssh_local_forward"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

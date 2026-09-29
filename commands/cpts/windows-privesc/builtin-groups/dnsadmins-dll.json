@@ -158,6 +158,35 @@
         "dns",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "DnsAdmins - Malicious DLL via dnscmd - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "13",
+          "description": "Registry value set (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "7",
+          "description": "Image loaded (Sysmon)"
+        },
+        {
+          "source": "dns",
+          "description": "win_dns_serverlevelplugindll_abuse"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, DNS logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Abuses DnsAdmins membership to run a DLL as SYSTEM on a DC:\n  dnscmd.exe /config       change DNS server configuration\n  /serverlevelplugindll C:\\path\\adduser.dll   register a custom plugin DLL the DNS service loads on restart\nThe DNS service runs as SYSTEM on a DC, so restarting it loads your DLL (e.g. one that adds a domain admin) with SYSTEM privilege."

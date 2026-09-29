@@ -138,6 +138,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Misc - Passive Traffic Capture - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_packet_capture_nonroot"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Sniffs local traffic for cleartext credentials on a multi-user host:\n  tcpdump                  capture packets on the host's interfaces\nOn a shared box you may see other users' cleartext logins; feed the capture to net-creds or PCredz to extract credentials automatically."

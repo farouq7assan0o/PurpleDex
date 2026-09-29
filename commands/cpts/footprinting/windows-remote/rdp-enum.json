@@ -148,6 +148,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "RDP - Enumeration & Connect - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "RDP - Enumeration & Connect - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_rdp_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Enumerates an RDP service and its security settings:\n  nmap -sV -sC <ip> -p3389   version + default scripts on RDP\n  --script rdp*              run the RDP-specific NSE scripts\nReports the RDP config; rdp-sec-check.pl then flags weak security layers (e.g. no NLA, downgrade to RDP Security), and xfreerdp connects once you have creds."

@@ -140,6 +140,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Enumeration - World-Writable Files and Directories - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_find_world_writable"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Finds world-writable files, a prime escalation vector:\n  find /                   search from root\n  -path /proc -prune -o    skip /proc to cut noise\n  -type f -perm -o+w       files with the world-writable bit set\n  2>/dev/null              discard permission errors\nA root-run script or cron target that is world-writable lets you inject a payload; the variation finds writable directories too."

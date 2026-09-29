@@ -206,6 +206,45 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "event_id": "7045",
+          "description": "New service installed"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "7045",
+          "description": "New service installed"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4697",
+          "description": "Service installed"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_wmiprvse_spawning_shell"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_impacket_psexec_service"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs commands / gets a semi-interactive shell on Windows over a chosen channel:\n  impacket-wmiexec         execute over WMI (semi-interactive, relatively quiet)\n  <domain>/<user>:<password>@<ip>   credentials and target\nPick the channel by stealth and what is allowed: smbexec (SMB, no Python on target), atexec (single command via Task Scheduler), psexec (drops a service, SYSTEM, loudest). Add -hashes :<nt_hash> for pass-the-hash, or prefix proxychains to run through a pivot."

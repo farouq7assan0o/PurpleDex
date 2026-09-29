@@ -165,6 +165,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Kubernetes - Enumerate API and Kubelet - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Kubernetes - Enumerate API and Kubelet (1) - Splunk"
+        },
+        {
+          "source": "network-flow",
+          "description": "Kubernetes - Enumerate API and Kubelet (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log, NetFlow / sFlow for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Probes a Kubernetes cluster for anonymous access:\n  kubeletctl               Kubelet API client\n  -i                       ignore TLS certificate errors\n  --server <ip>            the node's Kubelet API (port 10250)\n  pods                     list pods running on that node\nAlso probe the API server on 6443 for anonymous access. A readable pod list points you at pods that allow command execution."

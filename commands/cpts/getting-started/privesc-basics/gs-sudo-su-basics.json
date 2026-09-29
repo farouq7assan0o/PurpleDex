@@ -147,6 +147,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Privilege Escalation - sudo / su - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auth_sudo_su_usage"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Escalates directly when you already have sudo rights or a password:\n  sudo -l                  list what commands you may run as root\nIf it shows broad rights (or you know the password), sudo su - or su - drops you into a root shell immediately."

@@ -147,6 +147,21 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "description": "GCP IAM Privilege Escalation (misconfigured permissions) - Sentinel"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Escalates a low-priv GCP identity by abusing dangerous IAM permissions:\n  python3 check_for_privesc.py   enumerate your permissions and flag exploitable ones\nLooks for rights like iam.roles.update, iam.serviceAccounts.getAccessToken/actAs, serviceAccountKeys.create, and setIamPolicy - each lets you grant yourself more or impersonate a higher-privileged service account. gcp_enum.sh does broader enumeration."

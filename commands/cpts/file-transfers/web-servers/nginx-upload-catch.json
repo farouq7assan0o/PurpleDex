@@ -153,6 +153,33 @@
         "proxy",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Hosting - Catch Files via Nginx PUT - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Hosting - Catch Files via Nginx PUT (1) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "Hosting - Catch Files via Nginx PUT (2) - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_curl_http_put_upload"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Web proxy logs, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

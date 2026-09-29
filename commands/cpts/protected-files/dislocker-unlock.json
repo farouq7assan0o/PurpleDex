@@ -145,6 +145,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Dislocker - Unlock a BitLocker Volume - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Dislocker - Unlock a BitLocker Volume - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "no target-side telemetry"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Mounts a BitLocker volume on Linux once you have the recovery key:\n  sudo dislocker            decrypt the BitLocker partition\n  /dev/loop0p2             the BitLocker partition (attach the image with losetup -f -P first)\n  -u<recovery_key>         unlock with the recovery password/key\n  -- /media/bitlocker      expose the decrypted virtual file here\nThen mount /media/bitlocker/dislocker-file to read the drive - the counterpart to cracking, used once you have the key."

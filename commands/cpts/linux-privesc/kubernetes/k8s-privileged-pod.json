@@ -154,6 +154,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Kubernetes - Deploy Privileged Pod (Host Mount) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Kubernetes - Deploy Privileged Pod (Host Mount) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Deploys a pod that mounts the host root filesystem to escape to the node:\n  kubectl                  the K8s client\n  --token=$token           the stolen service-account token\n  --certificate-authority=ca.crt   the cluster CA cert\n  --server=https://<ip>:6443   the API server\n  apply -f privesc.yaml    create the pod defined in privesc.yaml (hostPath / mounted in)\nRequires a token that can create pods. Once running, exec in and read the node's root SSH key or write to the host filesystem."

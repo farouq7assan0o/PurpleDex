@@ -139,6 +139,29 @@
         "linux-audit",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Sshuttle - Transparent SSH VPN Pivot - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Sshuttle - Transparent SSH VPN Pivot (1) - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_lnx_sshuttle_vpn"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "type": "command",

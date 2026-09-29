@@ -159,6 +159,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS - Account ID Fingerprinting & Cross-Account IAM Enumeration - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_cloudtrail_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Fingerprints an AWS account and probes for IAM users without target creds:\n  sts get-access-key-info --access-key-id <target_akid>   returns the 12-digit Account ID behind any access key (needs only your own profile)\n  s3 mb + put-bucket-policy referencing a target principal   a bucket policy naming a real user succeeds; a fake one errors MalformedPolicy\nLets you confirm the account ID and enumerate which IAM users/roles exist by policy-validation side channel - pure recon, no target authentication."

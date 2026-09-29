@@ -142,6 +142,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Azure Authentication (az / Az PowerShell / Mg Graph) - Sentinel"
+        },
+        {
+          "source": "azure-activity",
+          "description": "Azure Authentication (az / Az PowerShell / Mg Graph) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "azure_signin_from_cli_unusual_ip"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Azure Activity Log, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Authenticates to Azure/Entra as a compromised service principal:\n  az login --service-principal   non-interactive SP login\n  -u <app_id> -p <secret>        the app's client id and secret\n  --tenant <tenant_id>           the directory to sign into\nEstablishes a session for ARM/Entra enumeration; interactive 'az login' (or --use-device-code) works for user creds, and 'az account get-access-token' extracts a bearer token for raw API calls."

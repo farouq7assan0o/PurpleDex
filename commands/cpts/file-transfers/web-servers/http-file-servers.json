@@ -161,6 +161,33 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Hosting - Quick HTTP Servers - Sentinel"
+        },
+        {
+          "source": "proxy",
+          "description": "Hosting - Quick HTTP Servers (1) - Splunk"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Hosting - Quick HTTP Servers (2) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_download_from_python_http_server"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Web proxy logs, Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Serves the current directory over HTTP so a target can download from you:\n  python3 -m http.server 8000   run Python's built-in web server on port 8000\nEverything in the folder becomes downloadable at http://<your-ip>:8000/; php -S, ruby -run, and uploadserver are drop-in alternatives when python is missing."

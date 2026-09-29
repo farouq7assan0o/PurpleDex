@@ -220,6 +220,31 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4662",
+          "description": "Operation on AD object"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "windows-security",
+          "description": "posh_ps_powerview_gpo_enum"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log, PowerShell Script Block / Module Logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Maps GPOs so you can spot policy you can abuse for code execution or local admin:\n  Get-DomainGPO            list every Group Policy Object\n  | select displayname,gpcfilesyspath   the friendly name and its SYSVOL path\nFollow up by resolving OU gplinks to GPOs (which computers a policy hits), Get-DomainGPOLocalGroup (GPO-granted local admin), and checking GPO ACLs for WriteProperty/WriteDacl - a writable GPO is a foothold on every computer in its OU."

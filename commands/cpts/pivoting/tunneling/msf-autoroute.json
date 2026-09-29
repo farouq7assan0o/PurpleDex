@@ -150,6 +150,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Metasploit - AutoRoute and SOCKS Proxy - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Metasploit - AutoRoute and SOCKS Proxy - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_pivot_internal_fanout"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

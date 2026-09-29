@@ -174,6 +174,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS - Full IAM Account Dump & JMESPath Querying - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_cloudtrail_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Dumps the entire IAM configuration in one call and slices it with JMESPath:\n  iam get-account-authorization-details --filter User Group LocalManagedPolicy Role   pull all users, groups, roles, and their attached policies\n  --query \"UserDetailList[].UserName\"   JMESPath to extract just the fields you want\nRequires iam:GetAccountAuthorizationDetails (in SecurityAudit/ReadOnlyAccess); tee the JSON, then query it offline to map who can do what and find escalation paths."

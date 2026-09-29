@@ -192,6 +192,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "5140"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_security_smb_share_enum_fanout"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Lists and reads SMB shares over a null session:\n  smbclient   the SMB client\n  -N          no password (null session)\n  -L //<ip>   list shares\nConnect to an interesting share (smbclient //<ip>/<share>) and use ls/get to pull files; smbmap and crackmapexec show per-share read/write permissions at a glance."

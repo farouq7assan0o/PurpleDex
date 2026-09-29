@@ -218,6 +218,32 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "5145",
+          "description": "Network share access checked"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "sysmon",
+          "description": "posh_ps_powerview_share_file_hunt"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log, PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "The PowerView-native equivalent of Snaffler - finds secrets sitting on domain shares:\n  Find-InterestingDomainShareFile   walk readable shares for files matching name patterns\n  -Include *pass*,*.config,*.xml,*.vbs,*.ps1   the sensitive filename patterns to flag\nRun Find-DomainShare -CheckShareAccess first to know which shares you can read, then inspect promising hits with Get-PathAcl. Often surfaces cleartext creds in scripts/configs."

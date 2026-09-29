@@ -152,6 +152,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Restricted Shell - Escape Techniques - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_restricted_shell_escape"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Breaks out of a restricted shell (rbash/rksh/rzsh) using allowed built-ins:\n  ls -l `pwd`              command substitution - backticks run pwd even though cd/redirection are blocked\nRestricted shells block cd, redirection, and PATH changes but often still allow $()/backticks, built-ins, and chaining metacharacters - use those to read files or spawn an unrestricted shell."

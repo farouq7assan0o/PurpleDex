@@ -181,6 +181,26 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS - Docker Container Post-Exploitation Enumeration - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_sts_assumerole_from_container"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Enumerates a container you landed in (e.g. via pipeline RCE) to find escape and credential paths:\n  cat /proc/mounts | grep overlay   confirm you are in a container (overlay root filesystem)\n  cat /proc/1/status | grep Cap     read the container's Linux capability bitmasks\n  capsh --decode=<hex_value>        turn a Cap bitmask into named capabilities (spot dangerous ones like SYS_ADMIN)\n  env | grep -i aws ; printenv      look for AWS keys leaked into the environment\n  curl http://169.254.169.254/latest/meta-data/iam/security-credentials/   query the instance metadata service for IAM role creds\nTogether these reveal whether you can escape the container or assume a cloud role."

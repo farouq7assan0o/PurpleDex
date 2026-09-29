@@ -158,6 +158,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Nmap NSE Vulnerability Scanning - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Nmap NSE Vulnerability Scanning (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "Nmap NSE Vulnerability Scanning (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs Nmap's built-in vulnerability checks (exam-legal, unlike Nessus):\n  -sV               version-detect first (many vuln scripts key off it)\n  -p <port>         the port to test\n  --script vuln     run every NSE script in the 'vuln' category\n  <ip>              target\nFlags known CVEs on detected services; drop a downloaded CVE .nse into /usr/share/nmap/scripts, run --script-updatedb, then call it by name for a specific check."

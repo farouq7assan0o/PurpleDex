@@ -151,6 +151,35 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "UAC Bypass - SystemPropertiesAdvanced DLL Hijack - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "7",
+          "description": "Image loaded (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_uac_bypass_srrstr_dll_hijack"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Bypasses UAC via an auto-elevating binary that loads a hijackable DLL (egre55 technique):\n  C:\\Windows\\SysWOW64\\SystemPropertiesAdvanced.exe   an auto-elevating binary that loads srrstr.dll from a user-writable WindowsApps path\nDrop a malicious srrstr.dll into that path, then launch this binary; it loads your DLL and runs your code in a high-integrity (elevated) context without a UAC prompt."

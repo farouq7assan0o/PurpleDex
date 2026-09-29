@@ -134,6 +134,21 @@
       "requires": [
         "dns"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "dns",
+          "description": "Cloud Resources - Discovery - Sentinel"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review DNS logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Finds a company's exposed cloud storage with search-engine dorks:\n  intext:<company> inurl:amazonaws.com   Google dork for S3 URLs referencing the target\nMisconfigured buckets/blobs leak keys, backups, and source; the card pairs it with inurl:blob.core.windows.net for Azure and a host loop to resolve discovered subdomains to cloud IPs."

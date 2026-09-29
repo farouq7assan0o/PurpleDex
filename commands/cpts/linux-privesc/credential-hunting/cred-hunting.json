@@ -141,6 +141,26 @@
         "linux-audit",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Credential Hunting - Configs, Keys and Secrets - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "description": "lnx_auditd_config_file_credential_hunt"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Sweeps the filesystem for stored credentials in config files:\n  find /                   search from root\n  ! -path \"*/proc/*\"       skip /proc noise\n  -iname \"*config*\"        match any file with 'config' in the name (case-insensitive)\n  -type f 2>/dev/null      files only, discard permission errors\nInspect hits like wp-config.php and app configs, plus SSH key directories - recovered keys/passwords enable lateral movement or direct root."

@@ -136,6 +136,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Privilege Escalation - Enumeration Basics - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_linpeas_enum_burst"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs the go-to Linux enumeration script right after a foothold:\n  ./linpeas.sh             sweep the host for privesc vectors (SUID/SGID, sudo rights, cron, writable files, creds in configs, kernel version) and colour-highlight the wins\nStart here, then chase the obvious findings - installed packages, sudo rights, and readable configs with credentials."

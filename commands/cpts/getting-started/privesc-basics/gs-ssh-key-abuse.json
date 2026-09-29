@@ -129,6 +129,26 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Privilege Escalation - SSH Key Abuse - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_ssh_private_key_access"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Logs in as a user with a recovered SSH private key:\n  ssh <user>@<ip>          connect as that user\n  -i id_rsa                authenticate with this private key file (chmod 600 it first)\nA found private key gives instant access as its owner. If instead you can write a user's ~/.ssh/authorized_keys, append your own public key for a guaranteed login."

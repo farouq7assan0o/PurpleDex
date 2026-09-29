@@ -158,6 +158,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Nmap Scripting Engine (NSE) - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Nmap Scripting Engine (NSE) (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "Nmap Scripting Engine (NSE) (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs Nmap Scripting Engine checks for deeper enumeration:\n  -sC   run the default script category\nNSE Lua scripts do version-specific enumeration and vuln checks; target categories (--script <category>) or named scripts (--script banner,smtp-commands), and -A bundles -sC -sV -O --traceroute."

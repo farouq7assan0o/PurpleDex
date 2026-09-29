@@ -147,6 +147,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "iptables - Packet Counter for Scan Verification - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_iptables_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Measures exactly how many packets an nmap scan sends and receives:\n  iptables -I INPUT 1 -s <ip> -j ACCEPT   count inbound packets from the target (rule at position 1)\n  (plus an OUTPUT rule for outbound)\n  iptables -Z                              zero the counters before the scan\nRun the scan, then read the counter columns - lets you compare the noise/footprint of different scan types (-sS vs -sT, timing templates) precisely."

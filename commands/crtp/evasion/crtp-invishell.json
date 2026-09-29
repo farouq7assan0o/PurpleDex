@@ -199,6 +199,39 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "InviShell - AMSI & PowerShell Logging Bypass (COR_PROFILER) - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "13",
+          "description": "Registry value set (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "7",
+          "description": "Image loaded (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_susp_cor_profiler_env"
+        },
+        {
+          "source": "sysmon",
+          "description": "sysmon_registry_clsid_inprocserver32"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Launches a PowerShell session with AMSI, Script Block Logging, and Module Logging disabled - no admin needed - via a COR_PROFILER COM hijack under HKCU:\n  RunWithRegistryNonAdmin.bat   registers the InprocServer32 CLSID in HKCU, then starts powershell so the CLR loads InShellProf.dll as a profiler that neuters logging/AMSI\nUse the non-admin .bat (registry-based) as a low-priv user, or RunWithPathAsAdmin.bat when elevated. Then dot-source PowerView/Mimikatz quietly in that cloaked shell."

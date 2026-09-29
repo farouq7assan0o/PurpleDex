@@ -144,6 +144,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "PowerShell - Test-NetConnection Port Check - Sentinel"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "windows-security",
+          "description": "posh_ps_test_netconnection_sweep"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Tests TCP connectivity to a port from Windows PowerShell:\n  Test-NetConnection   built-in connectivity test\n  -Port <port>         the TCP port to probe\n  <ip>                 the target\nReturns TcpTestSucceeded True/False plus the remote address - a quick no-tools port check from a foothold (aliased as tnc)."

@@ -166,6 +166,34 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Oracle TNS - Enumeration & Exploitation - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "Oracle TNS - Enumeration & Exploitation (1) - Splunk"
+        },
+        {
+          "source": "network-flow",
+          "description": "Oracle TNS - Enumeration & Exploitation (2) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_service_enumeration_tnscmd"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Runs a full Oracle assessment with ODAT:\n  ./odat.py all   run every check module\n  -s <ip>         the Oracle server\nProbes the listener, brute-forces the SID, tests default creds, and reports privilege-escalation and file-access paths; scan 1521 with the oracle-sid-brute NSE script first, then log in with 'sqlplus user/pass@ip/SID'."

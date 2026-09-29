@@ -177,6 +177,36 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Offline LSASS Minidump -> Mimikatz (sekurlsa::minidump) - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "10",
+          "description": "Process access (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "sysmon_lsass_memory_dump"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Dumps LSASS on the target and parses it offline, so Mimikatz never runs on the victim (evades on-host EDR):\n  mimikatz.exe              runs on YOUR box, not the target\n  \"sekurlsa::minidump <dump_file>\"   load the exfiltrated LSASS dump instead of live memory\n  \"sekurlsa::ekeys\"         extract Kerberos AES/RC4 keys from it\n  \"exit\"                    quit\nCreate the dump on the target with a managed minidump tool, exfil it (repair with Reverse.exe if byte-reversed), then parse locally."

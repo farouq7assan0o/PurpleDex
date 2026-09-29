@@ -136,6 +136,30 @@
         "powershell",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "File Transfers - Basics - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_lolbin_download"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Core file-transfer loop: host from your box, pull onto the target, verify integrity:\n  python3 -m http.server 8000   serve the current directory over HTTP\n  wget/curl <url>               download onto the target\n  scp file user@host:/tmp/      or push over SSH\nGets tools onto the target (or loot off it); base64 copy/paste covers the case with no network path, and file/md5sum confirm the transfer was clean."

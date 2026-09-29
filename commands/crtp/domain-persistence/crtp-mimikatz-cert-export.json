@@ -225,6 +225,44 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "70"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "10",
+          "description": "Process access (Sysmon)"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_hktl_mimikatz_command_line"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_capi2_private_key_export"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Exports certificates AND their private keys from the Windows stores, even keys marked non-exportable:\n  crypto::capi              patch CryptoAPI in memory so CAPI-backed keys become exportable\n  crypto::cng               patch the KeyIso/CNG service so CNG keys become exportable\n  crypto::certificates /export   dump certs+keys from the current-user store (add /systemstore:...LOCAL_MACHINE for the machine store)\nYou get .pfx files; use a client-auth cert with Rubeus asktgt /certificate to PKINIT as its owner."

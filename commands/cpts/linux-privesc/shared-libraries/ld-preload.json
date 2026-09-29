@@ -156,6 +156,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Shared Libraries - LD_PRELOAD via sudo - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_sudo_ld_preload"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Loads a malicious shared library into a sudo-allowed command when LD_PRELOAD is kept:\n  sudo LD_PRELOAD=/tmp/root.so   force the loader to preload your library first\n  /usr/sbin/apache2 restart   an allowed sudo command that will load it\nRequires env_keep+=LD_PRELOAD in sudoers (check sudo -l). Your library's _init() constructor runs as root, spawning a root shell. Compile it with gcc -fPIC -shared -nostartfiles."

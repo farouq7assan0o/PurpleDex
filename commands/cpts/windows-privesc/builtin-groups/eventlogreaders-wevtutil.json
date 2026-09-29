@@ -134,6 +134,30 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Event Log Readers - Hunt Credentials in Security Logs - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_wevtutil_security_query"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Abuses Event Log Readers membership to mine the Security log for passwords:\n  wevtutil qe Security     query the Security event log\n  /rd:true                 read newest events first\n  /f:text                  plain-text output\n  | Select-String \"/user\"  filter to lines containing /user\nProcess-creation events (4688) often capture command lines with plaintext passwords passed via /user - grep them out."

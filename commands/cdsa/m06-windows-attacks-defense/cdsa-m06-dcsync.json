@@ -82,8 +82,12 @@
         "name": "DCSync - non-DC replication request",
         "logic": "SecurityEvent\n| where EventID == 4662\n| where Properties has_any (\"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\",\"1131f6ad-9c07-11d1-f79f-00c04fc2dcd2\")\n| where AccountName !endswith \"$\"\n| project TimeGenerated, Computer, AccountName, ObjectName\n| sort by TimeGenerated desc",
         "data_source": "windows-security",
-        "log_ids": ["4662"],
-        "attack": ["T1003.006"],
+        "log_ids": [
+          "4662"
+        ],
+        "attack": [
+          "T1003.006"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Azure AD Connect replication account, legitimate third-party SIEM agents with replication rights",
@@ -94,8 +98,12 @@
         "name": "DCSync - non-DC replication request",
         "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where (Properties=\"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*\" OR Properties=\"*1131f6ad-9c07-11d1-f79f-00c04fc2dcd2*\") AND Account_Name!=\"*$\"\n| table _time, Computer, Account_Name, Object_Name",
         "data_source": "windows-security",
-        "log_ids": ["4662"],
-        "attack": ["T1003.006"],
+        "log_ids": [
+          "4662"
+        ],
+        "attack": [
+          "T1003.006"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Azure AD Connect, third-party tools with replication rights",
@@ -106,14 +114,41 @@
         "name": "DCSync replication rights abuse (Sigma)",
         "logic": "win_security_dcsync_replication_rights",
         "data_source": "windows-security",
-        "attack": ["T1003.006"],
+        "attack": [
+          "T1003.006"
+        ],
         "fidelity": "behavioral",
         "confidence": "high"
       }
     ],
     "visibility": {
-      "requires": ["windows-security"],
-      "better_with": ["edr"]
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "edr"
+      ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4662",
+          "description": "Operation on AD object"
+        },
+        {
+          "source": "windows-security",
+          "description": "DCSync replication rights abuse (Sigma)"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "steps": [

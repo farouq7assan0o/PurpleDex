@@ -119,6 +119,29 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Hashcat - Mask Attack - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Hashcat - Mask Attack - Splunk"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_hashcat_offline_cracking"
+        }
+      ],
+      "success_criteria": "Expected log events appear in the configured SIEM within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "type": "command",

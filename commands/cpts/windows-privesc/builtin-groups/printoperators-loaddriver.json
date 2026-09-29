@@ -156,6 +156,35 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Print Operators - SeLoadDriver Capcom Abuse - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "7045",
+          "description": "New service installed"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "13",
+          "description": "Registry value set (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "win_vulnerable_driver_load_capcom (SeLoadDriverPrivilege abuse"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Abuses Print Operators' SeLoadDriverPrivilege to load a vulnerable driver and get SYSTEM:\n  EoPLoadDriver.exe        register the driver under HKCU and load it via NtLoadDriver\n  System\\CurrentControlSet\\Capcom   the registry path it creates for the service\n  c:\\Tools\\Capcom.sys      the vulnerable Capcom driver to load\nWith the driver loaded, ExploitCapcom runs a shell as SYSTEM by abusing its kernel primitive."

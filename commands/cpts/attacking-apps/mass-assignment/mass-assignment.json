@@ -146,6 +146,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "Web Mass Assignment - Inject Extra Parameters - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Web Mass Assignment - Inject Extra Parameters - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_mass_assignment"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Exploits mass assignment by adding parameters the form never exposed:\n  username=<user>&password=<pass>&confirmed=true   the extra 'confirmed=true' binds to a model field the UI hides\nFrameworks that auto-bind all request params to model attributes let you set privileged fields (confirmed=true, admin=true) to self-approve or escalate; diff the object's JSON keys (jq 'keys') to discover bindable fields to inject."

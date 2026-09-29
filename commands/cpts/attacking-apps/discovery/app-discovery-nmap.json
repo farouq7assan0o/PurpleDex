@@ -146,6 +146,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Application Discovery - Nmap Web Ports - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Application Discovery - Nmap Web Ports (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "Application Discovery - Nmap Web Ports (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Sweeps a scope for common web/app ports with nmap:\n  -p 80,443,8000,8080,8180,8888,10000   HTTP and alternate HTTP ports\n  --open                                 only report open ports\n  -oA web_discovery                      save all output formats (the XML feeds screenshot tools)\n  -iL <scope_file>                       read targets from file\nBuilds the list of live web apps to triage; pipe web_discovery.xml into EyeWitness or Aquatone next."

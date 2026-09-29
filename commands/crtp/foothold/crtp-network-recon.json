@@ -145,6 +145,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Network Recon (CRTP Foothold) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "5156",
+          "description": "Windows Filtering Platform allowed connection"
+        },
+        {
+          "source": "windows-security",
+          "description": "Network Recon (CRTP Foothold) (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Fingerprints a Domain Controller by scanning the ports AD services live on:\n  nmap -sV                 version-detect each open service\n  -sC                      run default NSE scripts\n  -p 53,88,135,139,389,445,464,636,3268,3269   DNS, Kerberos, RPC, SMB, LDAP, kpasswd, LDAPS, and Global Catalog\n  <dc_ip>                  the suspected DC\nOpen 88 (Kerberos) + 389/636 (LDAP) + 3268 (GC) confirms it is a DC and tells you which AD services to attack next."

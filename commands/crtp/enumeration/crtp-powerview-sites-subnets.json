@@ -215,6 +215,35 @@
       "better_with": [
         "edr"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "PowerView Sites, Subnets & AD Topology Enumeration - Sentinel"
+        },
+        {
+          "source": "powershell",
+          "event_id": "4104",
+          "description": "PowerShell script block logging"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "3",
+          "description": "Network connection (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "posh_ps_powerview_functions"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Maps the physical/logical topology of the forest with PowerView:\n  Get-DomainSite           enumerate AD Sites\n  | select name,siteobjectbl   the site name and its linked subnet backlinks\nPair with Get-DomainSubnet (subnet->site), Get-ForestGlobalCatalog, and Get-NetComputerSiteName to learn network segmentation and where DCs/GCs/file servers physically sit - useful for planning pivots."

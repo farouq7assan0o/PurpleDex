@@ -85,8 +85,12 @@
         "name": "AS-REP roast - RC4 pre-auth type 0",
         "logic": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"0\" and TicketEncryptionType == \"0x17\"\n| summarize accounts=make_set(TargetUserName), count() by IpAddress, bin(TimeGenerated, 10m)\n| sort by count_ desc",
         "data_source": "windows-security",
-        "log_ids": ["4768"],
-        "attack": ["T1558.004"],
+        "log_ids": [
+          "4768"
+        ],
+        "attack": [
+          "T1558.004"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Legitimate accounts with pre-auth disabled (rare - should be inventoried)",
@@ -97,8 +101,12 @@
         "name": "AS-REP roast - RC4 pre-auth type 0",
         "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4768 Pre_Authentication_Type=0 Ticket_Encryption_Type=0x17\n| table _time, Computer, Account_Name, Client_Address",
         "data_source": "windows-security",
-        "log_ids": ["4768"],
-        "attack": ["T1558.004"],
+        "log_ids": [
+          "4768"
+        ],
+        "attack": [
+          "T1558.004"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Legitimate accounts with pre-auth disabled",
@@ -109,7 +117,9 @@
         "name": "Rubeus AS-REProast process creation",
         "logic": "index=sysmon EventCode=1 (Image=\"*Rubeus.exe\" OR CommandLine=\"*asreproast*\")\n| table _time, Computer, User, CommandLine",
         "data_source": "sysmon",
-        "attack": ["T1558.004"],
+        "attack": [
+          "T1558.004"
+        ],
         "fidelity": "signature",
         "confidence": "high",
         "false_positives": "None expected - Rubeus is an attack tool",
@@ -120,7 +130,9 @@
         "name": "Kerberos AS-REP roasting (Sigma)",
         "logic": "win_security_kerberos_asrep_roasting",
         "data_source": "windows-security",
-        "attack": ["T1558.004"],
+        "attack": [
+          "T1558.004"
+        ],
         "fidelity": "behavioral",
         "confidence": "high"
       },
@@ -129,14 +141,51 @@
         "name": "Rubeus hacking tool (Sigma)",
         "logic": "proc_creation_win_hktl_rubeus",
         "data_source": "sysmon",
-        "attack": ["T1558.004"],
+        "attack": [
+          "T1558.004"
+        ],
         "fidelity": "signature",
         "confidence": "high"
       }
     ],
     "visibility": {
-      "requires": ["windows-security"],
-      "better_with": ["sysmon", "edr"]
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "sysmon",
+        "edr"
+      ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "4768",
+          "description": "Kerberos TGT requested"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "windows-security",
+          "description": "Kerberos AS-REP roasting (Sigma)"
+        },
+        {
+          "source": "sysmon",
+          "description": "Rubeus hacking tool (Sigma)"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "variations": [

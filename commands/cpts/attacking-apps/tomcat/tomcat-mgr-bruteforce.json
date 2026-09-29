@@ -151,6 +151,29 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "iis",
+          "description": "Tomcat - Manager Brute Force (Metasploit) - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "Tomcat - Manager Brute Force (Metasploit) - Splunk"
+        },
+        {
+          "source": "proxy",
+          "description": "web_tomcat_manager_bruteforce"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Brute-forces Tomcat Manager HTTP Basic auth with Metasploit:\n  use auxiliary/scanner/http/tomcat_mgr_login   the module (set RHOSTS and it tries default credential lists)\nManager/Host-Manager access lets you deploy a malicious WAR for RCE."

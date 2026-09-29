@@ -172,6 +172,25 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "cloud-trail",
+          "description": "AWS - Enumerate Public S3 Buckets & EC2 Shared Resources - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "aws_cloudtrail_enumeration"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Finds publicly shared AWS resources with the CLI:\n  s3 ls <bucket_name>   list a public bucket's objects (no auth needed for public buckets)\n  ec2 describe-images --executable-users all --filters \"Name=name,Values=*<keyword>*\"   AMIs shared with everyone\n  ec2 describe-snapshots --filters \"Name=description,Values=*<keyword>*\"   broadly shared EBS snapshots\nSurfaces data and machine images the account exposed - a frequent source of secrets and pre-baked credentials."

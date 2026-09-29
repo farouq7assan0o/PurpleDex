@@ -88,8 +88,13 @@
         "name": "Targeted kerberoast - transient SPN set/remove",
         "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"servicePrincipalName\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType\n| join kind=leftouter (\n    SecurityEvent | where EventID == 4769 and TicketEncryptionType == \"0x17\"\n    | project RoastTime=TimeGenerated, ServiceName, IpAddress\n) on $left.Target == $right.ServiceName\n| sort by TimeGenerated desc",
         "data_source": "windows-security",
-        "log_ids": ["5136", "4769"],
-        "attack": ["T1558.003"],
+        "log_ids": [
+          "5136",
+          "4769"
+        ],
+        "attack": [
+          "T1558.003"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Legitimate SPN provisioning (rare for user objects; common for computer objects)",
@@ -100,8 +105,12 @@
         "name": "Targeted kerberoast - SPN modification on user",
         "logic": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"servicePrincipalName\"\n| table _time, SubjectUserName, ObjectDN, OperationType, AttributeValue",
         "data_source": "windows-security",
-        "log_ids": ["5136"],
-        "attack": ["T1558.003"],
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1558.003"
+        ],
         "fidelity": "behavioral",
         "confidence": "high",
         "false_positives": "Admin SPN provisioning during deployment",
@@ -112,7 +121,9 @@
         "name": "SPN added to user account (Sigma)",
         "logic": "win_security_spn_added_to_user_account",
         "data_source": "windows-security",
-        "attack": ["T1558.003"],
+        "attack": [
+          "T1558.003"
+        ],
         "fidelity": "behavioral",
         "confidence": "high"
       },
@@ -121,14 +132,46 @@
         "name": "Kerberoasting RC4 (Sigma)",
         "logic": "win_security_kerberoasting_rc4",
         "data_source": "windows-security",
-        "attack": ["T1558.003"],
+        "attack": [
+          "T1558.003"
+        ],
         "fidelity": "behavioral",
         "confidence": "medium"
       }
     ],
     "visibility": {
-      "requires": ["windows-security"],
-      "better_with": ["sysmon"]
+      "requires": [
+        "windows-security"
+      ],
+      "better_with": [
+        "sysmon"
+      ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "windows-security",
+          "event_id": "5136",
+          "description": "Directory service object modified"
+        },
+        {
+          "source": "windows-security",
+          "event_id": "4769",
+          "description": "Kerberos service ticket requested"
+        },
+        {
+          "source": "windows-security",
+          "description": "SPN added to user account (Sigma)"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "tools": [

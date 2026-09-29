@@ -152,6 +152,34 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "NetBIOS Discovery (nbtscan) - Sentinel"
+        },
+        {
+          "source": "linux-audit",
+          "description": "NetBIOS Discovery (nbtscan) (1) - Splunk"
+        },
+        {
+          "source": "network-flow",
+          "description": "NetBIOS Discovery (nbtscan) (2) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "net_service_enumeration_nbtscan"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, Linux Audit (auditd), NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Sweeps a subnet for NetBIOS name-service responders:\n  sudo nbtscan   NetBIOS scanner (UDP 137, needs root)\n  -r <cidr>      use source port 137 and scan this range\nQuickly maps Windows hosts with their NetBIOS names, workgroup/domain, and logged-in users before deeper SMB work; nmap --script smb-os-discovery on 139/445 confirms details."

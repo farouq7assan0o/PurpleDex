@@ -165,6 +165,30 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "defender-endpoint",
+          "description": "Nmap - Host Discovery Sweep (-sn) - Sentinel"
+        },
+        {
+          "source": "network-flow",
+          "description": "Nmap - Host Discovery Sweep (-sn) (1) - Splunk"
+        },
+        {
+          "source": "windows-security",
+          "description": "Nmap - Host Discovery Sweep (-sn) (2) - Splunk"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Microsoft Defender for Endpoint, NetFlow / sFlow, Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for unusual network connections to/from the source host",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Ping-sweeps a range to list live hosts:\n  <cidr>   the network to sweep\n  -sn      host discovery only, no port scan\n  -oA tnet save all output formats\n  | grep for | cut -d\" \" -f5   pull just the live IPs out of the output\nProduces a clean live-host list to feed a follow-up service scan."

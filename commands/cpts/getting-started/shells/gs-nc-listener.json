@@ -142,6 +142,35 @@
         "powershell",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Netcat - Start a Listener - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "3",
+          "description": "Network connection (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "description": "proc_creation_reverse_shell_indicators"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Starts a netcat listener to catch a reverse shell:\n  nc   the tool\n  -l   listen mode\n  -v   verbose (report the connection)\n  -n   no DNS resolution\n  -p <port>   the port to listen on\nWhen the target's reverse-shell payload connects back, you get an interactive shell; set your payload's LHOST to this host's tun0 IP."

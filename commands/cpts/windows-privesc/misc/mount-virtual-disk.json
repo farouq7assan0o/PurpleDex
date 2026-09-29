@@ -141,6 +141,26 @@
         "edr",
         "sysmon"
       ]
+    },
+    "validation": {
+      "expected_events": [
+        {
+          "source": "linux-audit",
+          "description": "Misc - Mount Virtual Disk & Dump Hashes - Sentinel"
+        },
+        {
+          "source": "windows-security",
+          "description": "lnx_auditd_virtual_disk_mount_secret_extraction"
+        }
+      ],
+      "success_criteria": "At least one behavioral detection fires within 60 seconds of attack execution",
+      "response_steps": [
+        "Correlate alert with source host, user account, and timestamp",
+        "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
+        "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
+        "Verify whether the activity matches known administrative baselines or change windows",
+        "If confirmed malicious, isolate the host and escalate to incident response"
+      ]
     }
   },
   "explain": "Mounts a found virtual disk to extract its credentials offline:\n  guestmount -a <disk>.vmdk   attach the VMDK/VHD(X) image\n  -i                       inspect it and mount its filesystems automatically\n  --ro /mnt/vmdk           read-only, at this mount point\nThen run impacket-secretsdump against the mounted SAM/SYSTEM/SECURITY hives to recover local account hashes."

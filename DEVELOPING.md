@@ -1,7 +1,7 @@
 > **This is the developer / maintainer guide** (architecture, build protocol, repo layout).
 > For the user-facing overview see [README.md](README.md). For the card workflow see [AUTHORING.md](AUTHORING.md).
 
-# Command Reference - CPTS and more
+# Command Reference - Offensive Security & Detection Engineering
 
 > **NEW SESSION / AI AGENT: Read this entire section before touching anything.**
 > Then read `PROGRESS.md` (mandatory process + module checklist) and `AUTHORING.md` (card workflow).

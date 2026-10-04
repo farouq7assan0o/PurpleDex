@@ -1,7 +1,7 @@
 {
   "name": "command-reference",
   "version": "1.0.0",
-  "description": "Multi-certification command reference for penetration testing (CPTS and more)",
+  "description": "950+ offensive security commands with detection engineering, MITRE ATT&CK coverage, and SOC triage - fully offline",
   "scripts": {
     "build": "node build-commands.js",
     "validate": "node validate.js --errors-only",

@@ -1,7 +1,7 @@
 {
-  "name": "Command Reference - Pentest Cheatsheet",
+  "name": "Command Reference - Offensive Security & Detection Engineering",
   "short_name": "CmdRef",
-  "description": "Offline pentest command reference and builder (CPTS, OSCP, CWES, CRTP, CDSA).",
+  "description": "950+ offensive security commands with detection engineering, MITRE ATT&CK coverage, SIEM queries, purple-team validation, and SOC triage - fully offline.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

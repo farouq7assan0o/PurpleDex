@@ -658,13 +658,18 @@ mark { background: rgba(226,181,61,0.32); color: inherit; border-radius: 2px; pa
     .workspace { min-height: 0; }
     #targetContext { padding: 0.5rem 0.6rem; }
     .tc-field input { width: 72px; }
-    .topbar { flex-wrap: wrap; }
-    #examModeLink span, #clearContext span { display: none; }
+    .topbar { flex-wrap: wrap; gap: 0.4rem; }
+    .topbar .ghost-btn span, #examModeLink span, #clearContext span { display: none; }
+    .ghost-btn { padding: 0.35rem 0.55rem; font-size: 0.75rem; }
+    #examModeLink { padding: 0.35rem 0.55rem; font-size: 0.75rem; }
+    .mode-toggle { order: 10; }
 }
 
 @media (max-width: 420px) {
     .tc-field input { width: 64px; }
     #commandList .command-card { padding: 0.6rem; }
+    .topbar h2 { font-size: 1.1rem; }
+    .view-btn span { display: none; }
 }
 
 /* ---------- Red / Blue / Both mode toggle ---------- */
@@ -978,9 +983,10 @@ body[data-mode="both"] .team-dot { opacity: 1; }
 @media (max-width: 760px) { .graph-toolbar { flex-direction: column; align-items: flex-start; } .graph-focus input { max-width: 100%; } }
 
 /* ===================== Study Mode ===================== */
-.study-overlay, .cov-overlay { position: fixed; inset: 0; background: rgba(1,4,9,.72); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.study-overlay, .cov-overlay { position: fixed; inset: 0; background: rgba(1,4,9,.92); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 .study-overlay[hidden], .cov-overlay[hidden] { display: none; }
-.study-modal, .cov-modal { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: min(940px, 96vw); height: min(86vh, 840px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.study-modal, .cov-modal { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: min(940px, 96vw); height: min(86vh, 840px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.cov-modal { width: min(1100px, 96vw); height: min(90vh, 900px); }
 .study-head, .cov-head { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--border); }
 .study-head h2, .cov-head h2 { font-size: 1.05rem; margin: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .study-head h2 i, .cov-head h2 i { color: var(--accent); }

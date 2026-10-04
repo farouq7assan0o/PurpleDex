@@ -107,7 +107,8 @@
           "T1110.004"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -119,7 +120,8 @@
           "T1110.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -131,7 +133,8 @@
           "T1110.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -142,7 +145,9 @@
           "T1110.001",
           "T1110.004"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -177,7 +182,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "ffuf -w /usr/share/seclists/Passwords/xato-net-10-million-passwords-10000.txt:PASS -w <userlist>:EMAIL -u http://<target>/api/v1/authentication/<role>/sign-in -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"EMAIL\", \"Password\": \"PASS\"}' -fr \"Invalid Credentials\" -t 100"
     }
   },
   "tags": [

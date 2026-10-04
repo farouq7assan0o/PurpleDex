@@ -113,7 +113,8 @@
           "T1505.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -128,7 +129,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -140,7 +142,8 @@
           "T1505.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -152,7 +155,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "sigma",
@@ -164,7 +168,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "elastic",
@@ -175,7 +180,9 @@
           "T1059",
           "T1505.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -219,7 +226,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "println 'whoami'.execute().text"
     }
   },
   "explain": "Executes OS commands through the Jenkins Script Console (Groovy), which often runs as SYSTEM or a domain service account:\n  println                   print the result to the console output\n  'whoami'.execute().text   run the OS command and capture its stdout\nBrowse to http://<ip>:8080/script, run this to confirm RCE, then escalate (e.g. ['cmd','/c','net localgroup administrators <user> /add'].execute())."

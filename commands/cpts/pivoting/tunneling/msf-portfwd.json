@@ -102,7 +102,8 @@
           "T1090.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate NTLM authentication in environments without signing enforcement"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
           "T1090.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate NTLM authentication in environments without signing enforcement"
       },
       {
         "platform": "sigma",
@@ -124,7 +126,8 @@
           "T1090.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -134,7 +137,9 @@
         "attack": [
           "T1090.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -170,7 +175,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "portfwd add -l <local_port> -p <remote_port> -r <target>"
     }
   },
   "type": "command",

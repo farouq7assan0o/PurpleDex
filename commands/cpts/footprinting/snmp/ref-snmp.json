@@ -53,5 +53,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1595.002"
-  ]
+  ],
+  "explain": "SNMP config, ports, and the settings that grant unauthenticated read/write access.\nConfig: /etc/snmp/snmpd.conf\nPorts: 161/udp (queries), 162/udp (traps)\nDangerous: rwuser noauth, rwcommunity <string> <ipv4>, rwcommunity6 <string> <ipv6>\nDefault community strings: public, private"
 }

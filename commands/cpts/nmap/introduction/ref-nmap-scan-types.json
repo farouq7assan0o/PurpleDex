@@ -64,5 +64,6 @@
   "mitre": [
     "T1595.001",
     "T1046"
-  ]
+  ],
+  "explain": "The scan-technique flags and what each does - the first part of any Nmap command.\n-sS  TCP SYN (stealth, default w/ root)\n-sT  TCP connect (no root)\n-sA  TCP ACK (firewall mapping)\n-sW  TCP Window   -sM  TCP Maimon\n-sU  UDP scan\n-sN/-sF/-sX  Null / FIN / Xmas\n--scanflags <flags>..."
 }

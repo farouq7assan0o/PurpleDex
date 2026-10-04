@@ -126,7 +126,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -137,7 +138,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -148,7 +150,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -159,7 +162,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -169,7 +173,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -210,7 +216,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 mssqlclient.py Administrator@<ip> -windows-auth"
     }
   },
   "explain": "Connects to MSSQL with Impacket's client using Windows authentication:\n  python3 mssqlclient.py   the Impacket MSSQL client\n  Administrator@<ip>       user and target\n  -windows-auth            authenticate via NTLM/Windows auth (not SQL logins)\nGives an interactive SQL prompt to enumerate databases (select name from sys.databases) and, with rights, run xp_cmdshell; the ms-sql-* NSE scripts and mssql_ping cover discovery."

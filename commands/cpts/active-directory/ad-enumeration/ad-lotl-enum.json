@@ -113,7 +113,8 @@
           "T1059.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -129,7 +130,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -142,7 +144,8 @@
           "T1059.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -154,7 +157,9 @@
           "T1016",
           "T1059.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -185,7 +190,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "systeminfo"
     }
   },
   "references": [

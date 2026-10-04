@@ -94,7 +94,8 @@
           "T1087"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -105,7 +106,8 @@
           "T1087"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -116,7 +118,8 @@
           "T1087"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -126,7 +129,9 @@
         "attack": [
           "T1087"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -161,7 +166,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "./gitlab_userenum.sh --url http://<url>:8081/ --userlist <userlist>"
     }
   },
   "explain": "Enumerates valid GitLab usernames to build a target list:\n  gitlab_userenum.sh   the enumeration script\n  --url http://<url>:8081/   the GitLab instance\n  --userlist <userlist>      candidate usernames\nConfirms which accounts exist via GitLab's sign-up/internal endpoints; check /users/sign_up for open registration and /help for the version."

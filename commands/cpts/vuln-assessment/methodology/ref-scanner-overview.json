@@ -56,5 +56,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1595.002"
-  ]
+  ],
+  "explain": "Scan modes and the mainstream scanner options.\nScan types: Unauthenticated (external view) vs Authenticated (credentialed, deeper); Static testing (code/config) vs Dynamic (running app)."
 }

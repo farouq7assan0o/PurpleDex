@@ -94,7 +94,8 @@
           "T1518.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -109,7 +110,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Admin scripts using the same cmdlets for legitimate management tasks"
       },
       {
         "platform": "splunk",
@@ -125,7 +127,8 @@
         "log_ids": [
           "5001",
           "5007"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -137,7 +140,8 @@
           "T1518.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -149,7 +153,8 @@
           "T1518.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -160,7 +165,9 @@
           "T1027",
           "T1518.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -205,5 +212,6 @@
         "If confirmed malicious, isolate the host and escalate to incident response"
       ]
     }
-  }
+  },
+  "explain": "Reference for how antivirus catches payloads and how evasion maps to it.\nAV uses signature matching (known byte patterns), heuristic analysis (suspicious structure/API imports), and behavioral/emulation detection (running the sample in a sandbox).\nDetection methods: (1) signature = hash/byte-pattern match, beaten by any byte-level change (encoding/encryption); (2) heuristic = flags suspicious imports (VirtualAlloc, WriteProcessMemory) and PE structure, beaten by obfuscation and legit-looking wrappers; (3) behavioral/emulation = detonates the sample, beaten by in-memory-only execution, sleeps, and environment checks."
 }

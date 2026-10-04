@@ -47,5 +47,6 @@
   ],
   "mitre": [
     "T1591"
-  ]
+  ],
+  "explain": "Pre-Engagement - Documents & Timing - reference (methodology, not a runnable command).\nOrder and timing:\n1. NDA - after initial contact.\n2. Scoping Questionnaire - before the pre-engagement meeting.\n3. Scoping Document - during the pre-engagement meeting.\n4. Penetration Testing Propo..."
 }

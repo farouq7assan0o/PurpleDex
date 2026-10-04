@@ -100,7 +100,8 @@
           "T1595.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -111,7 +112,8 @@
           "T1595.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -122,7 +124,8 @@
           "T1595.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -132,7 +135,9 @@
         "attack": [
           "T1595.003"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -167,7 +172,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "java -jar iis_shortname_scanner.jar 0 5 http://<ip>/"
     }
   },
   "explain": "Recovers IIS 8.3 short file names via the tilde disclosure bug:\n  java -jar iis_shortname_scanner.jar   the scanner\n  0 5                                    request/retry timing parameters\n  http://<ip>/                           the target\nLeaks the first 6 characters of files/dirs (e.g. TRANSF~1.ASP); build a wordlist from the recovered prefix and brute-force the full names with gobuster -x .asp,.aspx."

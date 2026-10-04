@@ -53,5 +53,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1595"
-  ]
+  ],
+  "explain": "HTB's layered enumeration model - a mental checklist so you enumerate systematically rather than randomly poking ports.\nLayer 1 Internet Presence: domains, subdomains, vHosts, ASN, netblocks, IPs, cloud, security measures\nLayer 2 Gateway: firewalls, DMZ, IPS/IDS, EDR, proxies, NAC, segmentation, VPN, Cloudflare\nLaye..."
 }

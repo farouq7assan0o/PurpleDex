@@ -109,7 +109,8 @@
           "T1046"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -121,7 +122,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -133,7 +135,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -145,7 +148,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -156,7 +160,9 @@
           "T1595.002",
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -192,7 +198,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap -sV -p <port> --script vuln <ip>"
     }
   },
   "explain": "Runs Nmap's built-in vulnerability checks (exam-legal, unlike Nessus):\n  -sV               version-detect first (many vuln scripts key off it)\n  -p <port>         the port to test\n  --script vuln     run every NSE script in the 'vuln' category\n  <ip>              target\nFlags known CVEs on detected services; drop a downloaded CVE .nse into /usr/share/nmap/scripts, run --script-updatedb, then call it by name for a specific check."

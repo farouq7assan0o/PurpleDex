@@ -103,7 +103,8 @@
           "T1098"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate group membership changes by IT admins"
       },
       {
         "platform": "splunk",
@@ -119,7 +120,8 @@
           "4728",
           "4732",
           "4756"
-        ]
+        ],
+        "false_positives": "Legitimate group membership changes by IT admins"
       },
       {
         "platform": "splunk",
@@ -133,7 +135,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate AD replication, backup agents querying AD"
       },
       {
         "platform": "sigma",
@@ -144,7 +147,8 @@
           "T1098"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -154,7 +158,9 @@
         "attack": [
           "T1098"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate AD replication, backup agents querying AD",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -199,7 +205,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Add-DomainGroupMember -Identity '<group>' -Members '<user>' -Credential $Cred -Verbose"
     }
   },
   "tools": [

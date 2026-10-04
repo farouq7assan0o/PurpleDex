@@ -120,7 +120,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -131,7 +132,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -145,7 +147,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -156,7 +159,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -166,7 +170,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -202,7 +208,8 @@
         "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 -c 'import urllib.request;urllib.request.urlretrieve(\"<url>\",\"out\")'"
     }
   },
   "explain": "Fetches a file using a scripting interpreter when wget/curl are missing or blocked:\n  python3 -c '...'   run an inline Python program\n  urllib.request.urlretrieve(<url>,\"out\")   download <url> and save it as out\nGives you the file on a hardened host; php, ruby, perl, and cscript variants do the same when python is absent."

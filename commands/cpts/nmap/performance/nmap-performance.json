@@ -111,7 +111,8 @@
           "T1046"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -122,7 +123,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "splunk",
@@ -133,7 +135,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -144,7 +147,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -154,7 +158,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -190,7 +196,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap <cidr> -F --initial-rtt-timeout 50ms --max-rtt-timeout 100ms"
     }
   },
   "explain": "Tunes Nmap timing to speed up large scans:\n  <cidr> -F                     fast mode (top 100 ports) over the range\n  --initial-rtt-timeout 50ms    starting round-trip estimate\n  --max-rtt-timeout 100ms       cap per-probe wait\nLowers latency at the cost of missing hosts on lossy links; save outputs (-oN) with and without tuning and diff the open-port counts to judge the trade-off (--min-rate raises packet rate)."

@@ -117,7 +117,8 @@
           "T1087.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -129,7 +130,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -144,7 +146,8 @@
         "confidence": "medium",
         "log_ids": [
           "4661"
-        ]
+        ],
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "sigma",
@@ -156,7 +159,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "elastic",
@@ -167,7 +171,9 @@
           "T1046",
           "T1087.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Normal file share access, printer connections, domain operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -207,7 +213,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "./enum4linux-ng.py <ip> -A"
     }
   },
   "explain": "Runs the full automated SMB/RPC enumeration suite:\n  ./enum4linux-ng.py <ip>   the modern enum4linux rewrite\n  -A                        run all checks (users, groups, shares, policy, OS)\nOne command gives a complete SMB picture; Impacket's samrdump.py is a focused alternative that dumps users via the SAMR interface."

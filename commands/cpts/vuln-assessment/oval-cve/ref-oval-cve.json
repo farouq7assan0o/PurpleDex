@@ -56,5 +56,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1190"
-  ]
+  ],
+  "explain": "OVAL/SCAP for automated compliance checks and the CVE lifecycle/identifier scheme.\nOVAL (part of SCAP): definition classes Vulnerability/Compliance/Inventory/Patch."
 }

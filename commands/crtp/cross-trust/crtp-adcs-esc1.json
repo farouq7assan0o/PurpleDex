@@ -130,7 +130,8 @@
         "confidence": "medium",
         "log_ids": [
           "4887"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -145,7 +146,8 @@
         "confidence": "medium",
         "log_ids": [
           "4887"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -160,7 +162,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "sigma",
@@ -172,7 +175,8 @@
           "T1558"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "elastic",
@@ -183,7 +187,9 @@
           "T1649",
           "T1558"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -218,7 +224,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<template_name> /altname:<user>"
     }
   },
   "variations": [

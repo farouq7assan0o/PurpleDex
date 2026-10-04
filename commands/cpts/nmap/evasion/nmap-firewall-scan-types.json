@@ -94,7 +94,8 @@
           "T1046"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -105,7 +106,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -116,7 +118,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -127,7 +130,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -137,7 +141,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -173,7 +179,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap <ip> -p 21,22,25 -sA -Pn -n --disable-arp-ping --packet-trace"
     }
   },
   "explain": "Maps firewall behaviour by contrasting scan types:\n  -sA         ACK scan (probes filtering, not open/closed)\n  -p 21,22,25 the ports to test\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show responses\nUnfiltered ports answer an ACK with RST; filtered ports drop it - comparing SYN (-sS) vs ACK (-sA) results reveals whether a stateful firewall sits in front."

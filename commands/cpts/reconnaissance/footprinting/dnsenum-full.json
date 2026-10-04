@@ -129,7 +129,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -141,7 +142,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -153,7 +155,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -164,7 +167,9 @@
           "T1018",
           "T1590.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -185,7 +190,8 @@
         "Review DNS logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "dnsenum --dnsserver <nameserver> --enum -p 0 -s 0 -o <outfile> -f <wordlist> <domain>"
     }
   },
   "explain": "Runs full automated DNS enumeration in one command:\n  dnsenum --dnsserver <nameserver>   query this NS\n  --enum -p 0 -s 0                   preset without whois page/scrape steps\n  -o <outfile> -f <wordlist>         save output; brute-force subdomains from the wordlist\n  <domain>                           target\nDiscovers NS/MX/SOA records, attempts AXFR against every nameserver, and brute-forces subdomains together - a one-shot DNS map."

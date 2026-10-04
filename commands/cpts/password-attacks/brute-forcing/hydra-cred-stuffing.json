@@ -87,7 +87,8 @@
           "T1110.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -98,7 +99,8 @@
           "T1110.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -109,7 +111,8 @@
           "T1110.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -120,7 +123,8 @@
           "T1110.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -130,7 +134,9 @@
         "attack": [
           "T1110.004"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -160,7 +166,8 @@
         "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "hydra -C <userpass_list> ssh://<ip>"
     }
   },
   "type": "command",

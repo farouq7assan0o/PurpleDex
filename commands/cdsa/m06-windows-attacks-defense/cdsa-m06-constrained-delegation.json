@@ -92,7 +92,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "splunk",
@@ -107,7 +108,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "sigma",
@@ -119,7 +121,8 @@
           "T1134.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -130,7 +133,9 @@
           "T1558.003",
           "T1134.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Service accounts with automated logons, scheduled tasks",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -161,7 +166,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": ".\\Rubeus.exe s4u /user:<delegate_user> /rc4:<ntlm_hash> /domain:<domain> /impersonateuser:Administrator /msdsspn:\"http/<dc_hostname>\" /dc:<dc_fqdn> /ptt"
     }
   },
   "variations": [

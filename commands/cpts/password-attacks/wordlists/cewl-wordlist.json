@@ -91,7 +91,8 @@
           "T1110.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web requests with similar patterns, security scanners, health checks"
       },
       {
         "platform": "splunk",
@@ -102,7 +103,8 @@
           "T1110.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -113,7 +115,8 @@
           "T1110.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "elastic",
@@ -123,7 +126,9 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -158,8 +163,10 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "cewl <url> -d <depth> -m <min_length> --lowercase -w wordlist.txt"
+    },
+    "detection": "Monitor web server access logs for rapid, sequential crawling from a single IP. Detect the subsequent password spraying or brute-force attempts that use the generated wordlist."
   },
   "type": "command",
   "variations": [

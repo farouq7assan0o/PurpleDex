@@ -123,7 +123,8 @@
           "T1087.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -139,7 +140,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -155,7 +157,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -168,7 +171,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -181,7 +185,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "elastic",
@@ -193,7 +198,9 @@
           "T1069.002",
           "T1087.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -233,7 +240,8 @@
         "Review PowerShell Script Block / Module Logs, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Get-ADDomain | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator"
     }
   },
   "variations": [

@@ -107,7 +107,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -118,7 +119,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -129,7 +131,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -139,7 +142,9 @@
         "attack": [
           "T1595.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -174,7 +179,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "droopescan scan joomla --url http://<url>/"
     }
   },
   "explain": "Fingerprints a Joomla (or Drupal) site with droopescan:\n  droopescan scan joomla   run the Joomla plugin\n  --url http://<url>/       the target\nEnumerates version, components, and modules to guide exploitation; joomscan is the Joomla-specific alternative that also flags known vulnerabilities."

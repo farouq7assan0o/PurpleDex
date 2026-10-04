@@ -122,7 +122,8 @@
         "log_ids": [
           "4624",
           "4769"
-        ]
+        ],
+        "false_positives": "Service tickets with unusual encryption types in environments using legacy configs"
       },
       {
         "platform": "splunk",
@@ -137,7 +138,8 @@
         "log_ids": [
           "4624",
           "4769"
-        ]
+        ],
+        "false_positives": "Service tickets with unusual encryption types in environments using legacy configs"
       },
       {
         "platform": "sigma",
@@ -148,7 +150,8 @@
           "T1558.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service tickets with unusual encryption types in environments using legacy configs"
       },
       {
         "platform": "sigma",
@@ -159,7 +162,8 @@
           "T1558.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service tickets with unusual encryption types in environments using legacy configs"
       },
       {
         "platform": "elastic",
@@ -169,7 +173,9 @@
         "attack": [
           "T1558.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Service tickets with unusual encryption types in environments using legacy configs",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -205,7 +211,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "kerberos::golden /sid:<domain_sid> /domain:<domain> /ptt /target:<svc_host>.<domain> /service:<svc_name> /rc4:<svc_account_nt_hash> /user:<fake_user>"
     }
   },
   "explain": "Forges a Silver Ticket - a TGS for one service, signed with the service account's hash, never contacting the KDC:\n  kerberos::golden         (Mimikatz forges the ticket offline; /target+/service make it a silver TGS)\n  /sid:<domain_sid> /domain:<domain>   the domain and its SID\n  /target:<svc_host>.<domain> /service:<svc_name>   the specific host and service (e.g. cifs)\n  /rc4:<svc_account_nt_hash>   the service/machine account hash that signs it\n  /user:<fake_user> /ptt   the impersonated user, injected\nBecause no AS/TGS request hits a DC, there is no 4768/4769 to detect; access is limited to that one service."

@@ -8,11 +8,22 @@
   "opsec": "silent",
   "category": "Incident Response",
   "subcategory": "IR Process",
-  "certifications": ["CDSA"],
+  "certifications": [
+    "CDSA"
+  ],
   "source": "CDSA Module 01: Incident Handling Process",
-  "tags": ["methodology", "reference", "nist", "ir-process"],
+  "tags": [
+    "methodology",
+    "reference",
+    "nist",
+    "ir-process"
+  ],
   "notes": "Stage 1 - Preparation: Build the capability to respond. Policies, playbooks, communication plans, jump bags, training, TheHive/SIEM setup.\nStage 2 - Detection & Analysis: Identify and validate incidents. Alert triage, log correlation, IOC extraction, severity classification, stakeholder notification.\nStage 3 - Containment/Eradication/Recovery: Limit damage (isolate hosts, block IPs, disable accounts), remove root cause (delete malware, patch), restore operations.\nStage 4 - Post-Incident Activity: Lessons learned meeting, root cause analysis, update playbooks, report to management, close case in TheHive.",
-  "mitre": ["T1595", "T1078", "T1190"],
+  "mitre": [
+    "T1595",
+    "T1078",
+    "T1190"
+  ],
   "examples": [
     {
       "label": "Stage 1 - Preparation checklist",
@@ -52,5 +63,6 @@
       "rel": "next",
       "note": "Classify the incident type during Detection & Analysis."
     }
-  ]
+  ],
+  "explain": "The four-stage incident handling process as defined by NIST SP 800-61.\nEach stage has clear objectives and feeds the next.\nStage 1 - Preparation: Build the capability to respond."
 }

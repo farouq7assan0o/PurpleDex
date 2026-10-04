@@ -98,7 +98,8 @@
           "T1558.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services"
       },
       {
         "platform": "splunk",
@@ -112,7 +113,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services"
       },
       {
         "platform": "sigma",
@@ -123,7 +125,8 @@
           "T1558.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services"
       },
       {
         "platform": "sigma",
@@ -134,7 +137,8 @@
           "T1558.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services"
       },
       {
         "platform": "elastic",
@@ -144,7 +148,9 @@
         "attack": [
           "T1558.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -180,7 +186,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Get-DomainUser -SPN -Properties samaccountname,ServicePrincipalName"
     }
   },
   "tools": [

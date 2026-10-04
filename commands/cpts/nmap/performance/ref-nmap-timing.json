@@ -64,5 +64,6 @@
   "mitre": [
     "T1595.001",
     "T1046"
-  ]
+  ],
+  "explain": "Timing templates and the fine-grained performance parameters they wrap.\n-T0 paranoid | -T1 sneaky | -T2 polite | -T3 normal (default) | -T4 aggressive | -T5 insane\nFine controls:\n  --initial-rtt-timeout 50ms\n  --max-rtt-timeout 100ms\n  --max-retries 0\n  --min-rate 300\n..."
 }

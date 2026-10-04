@@ -60,5 +60,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1190"
-  ]
+  ],
+  "explain": "CVSS metric groups used to score vulnerability severity, plus the DREAD alternative.\nBase Metric Group: Attack Vector, Attack Complexity, Privileges Required, User Interaction, Scope, Confidentiality/Integrity/Availability impact."
 }

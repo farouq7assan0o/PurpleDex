@@ -117,5 +117,10 @@
       "note": "Network-layer detection of the same AD attacks using Zeek/Bro logs in Splunk."
     }
   ],
-  "explain": "An SPL query detecting the network logon that credential theft leaves on a DC:\n  source=\"WinEventLog:Security\" EventCode=4624   successful logons\n  Logon_Type=9                                   NewCredentials logon (runas /netonly - overpass-the-hash pattern)\n  Logon_Process=seclogo                          the secondary logon service\n  | table _time, ComputerName, user, Network_Account_Name, ...   surface who/where\nCatches pass-the-hash/overpass-the-hash tradecraft; the card bundles SPL for domain recon, password spraying, Kerberoasting, DCSync, and golden-ticket patterns."
+  "explain": "An SPL query detecting the network logon that credential theft leaves on a DC:\n  source=\"WinEventLog:Security\" EventCode=4624   successful logons\n  Logon_Type=9                                   NewCredentials logon (runas /netonly - overpass-the-hash pattern)\n  Logon_Process=seclogo                          the secondary logon service\n  | table _time, ComputerName, user, Network_Account_Name, ...   surface who/where\nCatches pass-the-hash/overpass-the-hash tradecraft; the card bundles SPL for domain recon, password spraying, Kerberoasting, DCSync, and golden-ticket patterns.",
+  "mitre": [
+    "T1558",
+    "T1003",
+    "T1087"
+  ]
 }

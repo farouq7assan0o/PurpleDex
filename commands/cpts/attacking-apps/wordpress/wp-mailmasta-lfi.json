@@ -97,7 +97,8 @@
           "T1190"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "splunk",
@@ -108,7 +109,8 @@
           "T1190"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "sigma",
@@ -119,7 +121,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "elastic",
@@ -129,7 +132,9 @@
         "attack": [
           "T1190"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized remote desktop sessions by IT staff",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -164,7 +169,9 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "curl -s http://<url>/wp-content/plugins/mail-masta/inc/campaign/count_of_send.php?pl=/etc/passwd"
     }
-  }
+  },
+  "explain": "The vulnerable Mail Masta plugin includes a user-controlled path, allowing local file inclusion to read arbitrary files such as /etc/passwd.:\n  -s http://<url>/wp-content/plugins/mail-masta/inc/campaign/count_of_send.php?pl=/etc/passwdSSL / secret / source\n  <url>                    target URL\nClassic unauthenticated LFI - no login needed, so it's a good first probe once the plugin is confirmed."
 }

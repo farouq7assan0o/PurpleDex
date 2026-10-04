@@ -94,7 +94,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "splunk",
@@ -108,7 +109,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "splunk",
@@ -122,7 +124,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "sigma",
@@ -133,7 +136,8 @@
           "T1558.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "sigma",
@@ -144,7 +148,8 @@
           "T1558.001"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "elastic",
@@ -154,7 +159,9 @@
         "attack": [
           "T1558.001"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -200,7 +207,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": ".\\Rubeus.exe golden /rc4:<child_krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_EA_sid> /user:Administrator /ptt"
     }
   },
   "tools": [

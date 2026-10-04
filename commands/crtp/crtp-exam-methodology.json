@@ -117,5 +117,6 @@
       "note": "Phase 7: escalate to Enterprise Admin",
       "rel": "next"
     }
-  ]
+  ],
+  "explain": "Start-to-finish orientation for the 24h CRTP exam: the phase order, which card to reach for at each step, and the gotchas that silently break chains.\nKey sections:\n  1. Setup on your foothold (studentx)\n  2. Domain enumeration (no external tools if CLM)\n  3. Local privilege escalation on studentx\n  4. Hunt where a Domain Admin is logged in\n  5. Move laterally to that box (mind the DOUBLE HOP)\nOpen this first, then drill into the linked cards.\nPHASE ORDER matters: enumerate -> local admin -> find a DA session -> steal it -> DCSync -> cross-trust."
 }

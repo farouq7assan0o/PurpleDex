@@ -95,7 +95,8 @@
           "T1087.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "splunk",
@@ -106,7 +107,8 @@
           "T1087.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "sigma",
@@ -117,7 +119,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "elastic",
@@ -127,7 +130,9 @@
         "attack": [
           "T1087.002"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Authorized AD enumeration by security teams or auditors",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -152,7 +157,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo neo4j start && bloodhound"
     }
   },
   "tools": [

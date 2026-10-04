@@ -109,7 +109,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -120,7 +121,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -131,7 +133,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -142,7 +145,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -152,7 +156,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -193,7 +199,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "showmount -e <ip>"
     }
   },
   "explain": "Enumerates and mounts NFS exports:\n  showmount -e <ip>   list the exported shares and their allowed clients\nThen scan 111/2049 with the nfs* NSE scripts, mount an export ('mount -t nfs <ip>:/ ./dir -o nolock'), and 'ls -n' to see raw UID/GID - important where the export trusts UIDs (no_root_squash lets you drop root-owned files)."

@@ -102,7 +102,8 @@
           "T1210"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
           "T1210"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -124,7 +126,8 @@
           "T1210"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -134,7 +137,9 @@
         "attack": [
           "T1210"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -159,7 +164,9 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "!mona bytearray -b \"\\x00\"\n!mona compare -f C:\\mona\\<app>\\bytearray.bin -a <ESP_address>"
     }
-  }
+  },
+  "explain": "Bad characters are byte values that corrupt, truncate, or alter the payload when it passes through the vulnerable service.:\n  -f C:\\mona\\<app>\\bytearray.binformat / file\n\\x00 (null byte) is ALWAYS bad - exclude it from the start."
 }

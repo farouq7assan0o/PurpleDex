@@ -53,5 +53,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1210"
-  ]
+  ],
+  "explain": "MSSQL ports, default system databases, named-pipe paths, and the settings that make it attackable.\nPorts: 1433/tcp (MSSQL), 1434/tcp (DAC)\nSystem DBs: master, model, msdb, tempdb, resource\nNamed pipe: \\\\<host>\\pipe\\sql\\query\nDangerous: unencrypted client connections, self-signed certs, named pip..."
 }

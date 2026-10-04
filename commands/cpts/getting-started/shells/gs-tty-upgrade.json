@@ -95,7 +95,8 @@
           "T1059.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "splunk",
@@ -106,7 +107,8 @@
           "T1059.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -117,7 +119,8 @@
           "T1059.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -127,7 +130,9 @@
         "attack": [
           "T1059.004"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -157,7 +162,8 @@
         "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python -c 'import pty; pty.spawn(\"/bin/bash\")'"
     }
   },
   "explain": "Upgrades a dumb reverse shell into a fully interactive TTY:\n  python -c 'import pty; pty.spawn(\"/bin/bash\")'   spawn a proper pseudo-terminal\nThen background with Ctrl+Z, run 'stty raw -echo; fg' locally and 'export TERM=xterm-256color' to get tab-completion, job control, arrow keys, and working editors/su - essential before serious post-exploitation."

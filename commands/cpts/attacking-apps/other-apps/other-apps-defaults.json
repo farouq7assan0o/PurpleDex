@@ -70,5 +70,6 @@
   "mitre": [
     "T1078.001"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Quick reference for other common enterprise apps and their standard attack paths - default creds and the deploy/RCE primitive for each.\nDefault creds are the fastest win on enterprise apps: system:manager (Tomcat/JBoss), nagiosadmin:PASSW0RD, prtgadmin:prtgadmin, admin:changeme (Splunk)."
 }

@@ -99,7 +99,8 @@
           "T1046"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -110,7 +111,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "splunk",
@@ -121,7 +123,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -132,7 +135,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -142,7 +146,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -178,7 +184,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap <ip> -n -Pn -p445 -O"
     }
   },
   "explain": "Fingerprints the OS and can spoof the source address:\n  -n -Pn      no DNS or host discovery\n  -p445       the port to probe\n  -O          OS detection\nThe card's key variant adds -S <spoofed_ip> -e <iface> to send from a chosen source IP over a specific interface - useful when a firewall rule trusts a particular address."

@@ -52,5 +52,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1590"
-  ]
+  ],
+  "explain": "The major compliance regimes you'll be assessing against.\nPCI DSS: payment card data (Cardholder Data Environment / CDE)."
 }

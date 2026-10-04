@@ -109,7 +109,8 @@
           "T1505.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -124,7 +125,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -136,7 +138,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web application deployments, CMS plugin installations"
       },
       {
         "platform": "sigma",
@@ -148,7 +151,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web application deployments, CMS plugin installations"
       },
       {
         "platform": "sigma",
@@ -160,7 +164,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web application deployments, CMS plugin installations"
       },
       {
         "platform": "elastic",
@@ -171,7 +176,9 @@
           "T1190",
           "T1505.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -215,7 +222,9 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "zip -r backup.war cmd.jsp   # then deploy via /manager and run"
     }
-  }
+  },
+  "explain": "Packages a JSP command-shell into a WAR, deploys it through the authenticated Manager app, and executes commands via the deployed endpoint.:\n  -r backup.war  recursive\nDeploying a WAR through /manager/html requires manager-script or manager-gui role."
 }

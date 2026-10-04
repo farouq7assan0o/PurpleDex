@@ -101,7 +101,8 @@
           "T1003.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -115,7 +116,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -129,7 +131,8 @@
         "confidence": "medium",
         "log_ids": [
           "8222"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -140,7 +143,8 @@
           "T1003.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -150,7 +154,9 @@
         "attack": [
           "T1003.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -190,7 +196,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "restic.exe -r <repo> backup C:\\Windows\\System32\\config --use-fs-snapshot"
     }
   },
   "explain": "Backs up locked registry hives using restic's VSS support, then dumps them offline:\n  restic.exe -r <repo> backup   create a backup into the repo\n  C:\\Windows\\System32\\config   the live SAM/SYSTEM/SECURITY hives (normally locked)\n  --use-fs-snapshot        use a Volume Shadow Copy so the locked files can be read\nRestore the snapshot elsewhere and run secretsdump for the local hashes."

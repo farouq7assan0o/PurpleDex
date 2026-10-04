@@ -110,7 +110,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -121,7 +122,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -135,7 +137,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Admin scripts using the same cmdlets for legitimate management tasks"
       },
       {
         "platform": "sigma",
@@ -146,7 +149,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Internal IPC by legitimate management or monitoring tools"
       },
       {
         "platform": "elastic",
@@ -156,7 +160,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -193,7 +199,8 @@
         "Review Microsoft Defender for Endpoint, Linux Audit (auditd), PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "cat id_rsa | base64 -w 0; echo"
     }
   },
   "explain": "Encodes a file to text so you can carry it through a shell with no file transfer:\n  cat id_rsa    read the file bytes\n  base64 -w 0   encode to one unwrapped line (no newlines to break the paste)\n  echo          print a trailing newline so the blob is easy to select\nCopy the text to the other host and decode it back (base64 -d on Linux, [Convert]::FromBase64String on Windows); md5sum both ends to prove nothing was truncated."

@@ -111,7 +111,8 @@
           "T1552.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -122,7 +123,8 @@
           "T1552.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "sigma",
@@ -133,7 +135,8 @@
           "T1552.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "elastic",
@@ -143,7 +146,9 @@
         "attack": [
           "T1552.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -170,7 +175,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "find / ! -path \"*/proc/*\" -iname \"*config*\" -type f 2>/dev/null"
     }
   },
   "explain": "Sweeps the filesystem for stored credentials in config files:\n  find /                   search from root\n  ! -path \"*/proc/*\"       skip /proc noise\n  -iname \"*config*\"        match any file with 'config' in the name (case-insensitive)\n  -type f 2>/dev/null      files only, discard permission errors\nInspect hits like wp-config.php and app configs, plus SSH key directories - recovered keys/passwords enable lateral movement or direct root."

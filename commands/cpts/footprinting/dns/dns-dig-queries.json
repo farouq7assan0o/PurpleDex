@@ -153,7 +153,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate DNS lookups for CDNs, cloud services, or internal subdomains"
       },
       {
         "platform": "splunk",
@@ -164,7 +165,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate DNS lookups for CDNs, cloud services, or internal subdomains"
       },
       {
         "platform": "sigma",
@@ -175,7 +177,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -185,7 +188,9 @@
         "attack": [
           "T1590.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -206,7 +211,8 @@
         "Review DNS logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "dig axfr <domain> @<ip>"
     }
   },
   "explain": "Queries DNS with dig and attempts a zone transfer:\n  dig axfr <domain>   request a full zone transfer (AXFR)\n  @<ip>               ask this specific name server\nA misconfigured NS returns every record - internal hostnames and IPs in one shot; plain 'host'/'dig <domain> <type>' cover normal record lookups when AXFR is refused."

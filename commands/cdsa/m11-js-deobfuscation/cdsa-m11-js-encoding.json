@@ -94,5 +94,9 @@
     "curl",
     "python3"
   ],
-  "explain": "Decodes a Base64 string, e.g. one pulled from obfuscated JavaScript:\n  echo '<blob>'   feed the encoded text\n  base64 -d       decode it back to the original bytes\nRecovers the hidden value (URL, command, key); tell the encoding by shape - '=' padding = Base64, 0-9a-f pairs = hex ('xxd -p -r'), shifted letters = ROT13 ('tr A-Za-z N-ZA-Mn-za-m')."
+  "explain": "Decodes a Base64 string, e.g. one pulled from obfuscated JavaScript:\n  echo '<blob>'   feed the encoded text\n  base64 -d       decode it back to the original bytes\nRecovers the hidden value (URL, command, key); tell the encoding by shape - '=' padding = Base64, 0-9a-f pairs = hex ('xxd -p -r'), shifted letters = ROT13 ('tr A-Za-z N-ZA-Mn-za-m').",
+  "mitre": [
+    "T1027",
+    "T1140"
+  ]
 }

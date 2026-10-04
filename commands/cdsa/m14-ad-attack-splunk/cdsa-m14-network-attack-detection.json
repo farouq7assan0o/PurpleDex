@@ -113,5 +113,9 @@
       "note": "Network tunneling/covert channel detection - DNS and HTTP exfiltration techniques covered in that card."
     }
   ],
-  "explain": "An SPL query that detects C2 beaconing from Zeek HTTP logs by timing regularity:\n  sourcetype=\"bro:http:json\"       Zeek HTTP records\n  streamstats ... last(_time) ... eval timedelta   time between consecutive connections per src/dest\n  eventstats avg(timedelta) ... eval upper/lower = avg +/-10%   a tolerance band around the mean interval\n  where timedelta in band | eval prcnt=(count/total)*100 | where prcnt>90 AND total>10   keep beacons that are >90% regular\nFlags callbacks that fire at a near-constant interval; the card also covers RDP/Kerberos brute force, Nmap scans, Zerologon, and ransomware over Zeek logs."
+  "explain": "An SPL query that detects C2 beaconing from Zeek HTTP logs by timing regularity:\n  sourcetype=\"bro:http:json\"       Zeek HTTP records\n  streamstats ... last(_time) ... eval timedelta   time between consecutive connections per src/dest\n  eventstats avg(timedelta) ... eval upper/lower = avg +/-10%   a tolerance band around the mean interval\n  where timedelta in band | eval prcnt=(count/total)*100 | where prcnt>90 AND total>10   keep beacons that are >90% regular\nFlags callbacks that fire at a near-constant interval; the card also covers RDP/Kerberos brute force, Nmap scans, Zerologon, and ransomware over Zeek logs.",
+  "mitre": [
+    "T1040",
+    "T1557"
+  ]
 }

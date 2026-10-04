@@ -70,5 +70,6 @@
   "mitre": [
     "T1552.001"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Lookup list of sensitive files worth reading for credentials, hashes, or config once you can access protected paths.\n=== Files of Interest Reference - Extended Credential and Sensitive Data Locations ===\nComprehensive checklist of high-value file locations to check during post-exploitation.\n\n=== HIGH-VALUE REGIST..."
 }

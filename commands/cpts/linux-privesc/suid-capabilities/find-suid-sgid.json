@@ -114,7 +114,8 @@
           "T1548.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -125,7 +126,8 @@
           "T1548.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -136,7 +138,8 @@
           "T1548.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -146,7 +149,9 @@
         "attack": [
           "T1548.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -176,7 +181,8 @@
         "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "find / -user root -perm -4000 -exec ls -ldb {} \\; 2>/dev/null"
     }
   },
   "explain": "Finds root-owned SUID/SGID binaries to abuse via GTFOBins:\n  find /                   search the whole filesystem\n  -user root               owned by root\n  -perm -4000              the SUID bit set (SGID is -6000)\n  -exec ls -ldb {} \\; 2>/dev/null   list each, discarding errors\nLook up each unusual binary on GTFOBins for a SUID escalation (e.g. apt-get's Pre-Invoke shell escape)."

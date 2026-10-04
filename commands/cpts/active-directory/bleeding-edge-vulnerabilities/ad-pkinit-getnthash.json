@@ -85,7 +85,8 @@
           "T1003.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal Kerberos TGT requests during user logon"
       },
       {
         "platform": "splunk",
@@ -100,7 +101,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -115,7 +117,8 @@
         "confidence": "medium",
         "log_ids": [
           "4771"
-        ]
+        ],
+        "false_positives": "Expired passwords, clock skew, legitimate pre-auth failures"
       },
       {
         "platform": "sigma",
@@ -127,7 +130,8 @@
           "T1003.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "elastic",
@@ -138,7 +142,9 @@
           "T1649",
           "T1003.006"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -179,7 +185,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<dc_host>$"
     }
   },
   "tools": [

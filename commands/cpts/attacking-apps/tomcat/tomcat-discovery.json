@@ -96,7 +96,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -107,7 +108,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -118,7 +120,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -128,7 +131,9 @@
         "attack": [
           "T1595.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -163,7 +168,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "curl -s http://<url>:8080/docs/ | grep Tomcat"
     }
   },
   "explain": "Detects Apache Tomcat and its version:\n  curl -s http://<url>:8080/docs/   fetch the docs page\n  | grep Tomcat                     read the version string\nConfirms Tomcat; then brute-force paths with gobuster for /manager and /host-manager (WAR deployment endpoints) and look for tomcat-users.xml, which often holds the manager credentials."

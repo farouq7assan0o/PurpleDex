@@ -99,7 +99,8 @@
           "T1588.005"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote administration tools (TeamViewer, AnyDesk) or cloud sync"
       },
       {
         "platform": "splunk",
@@ -111,7 +112,8 @@
           "T1588.005"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote administration tools (TeamViewer, AnyDesk) or cloud sync"
       },
       {
         "platform": "sigma",
@@ -123,7 +125,8 @@
           "T1588.005"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -134,7 +137,9 @@
           "T1027",
           "T1588.005"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -159,7 +164,9 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo veil"
     }
-  }
+  },
+  "explain": "Veil is a standalone framework that wraps shellcode in Python, PowerShell, C, and other language templates to defeat signature-based AV on disk.:\n  sudo veil\nVeil has two tools: Evasion (generates AV-evading payloads) and Ordeal (obfuscates shellcode)."
 }

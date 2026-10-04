@@ -108,7 +108,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -119,7 +120,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -130,7 +132,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -140,7 +143,9 @@
         "attack": [
           "T1590.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -161,7 +166,8 @@
         "Review DNS logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "dnsenum --dnsserver <ns> --enum -p 0 -s 0 -o subdomains.txt -f <wordlist> <domain>"
     }
   },
   "explain": "Brute-forces subdomains when a zone transfer is refused:\n  dnsenum --dnsserver <ns>   resolve against this name server\n  --enum -p 0 -s 0           enumeration preset, no whois/scrape delays\n  -o subdomains.txt          save results\n  -f <wordlist>              candidate subdomain names\n  <domain>                   the target domain\nResolves each guess to find hosts that DNS does not otherwise reveal; a dig for-loop over the wordlist does the same manually."

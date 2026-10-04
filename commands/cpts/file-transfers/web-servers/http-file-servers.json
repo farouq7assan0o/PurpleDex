@@ -114,7 +114,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -125,7 +126,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "splunk",
@@ -136,7 +138,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -147,7 +150,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -157,7 +161,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -197,7 +203,8 @@
         "Review PowerShell Script Block / Module Logs, Web proxy logs, Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 -m http.server 8000"
     }
   },
   "explain": "Serves the current directory over HTTP so a target can download from you:\n  python3 -m http.server 8000   run Python's built-in web server on port 8000\nEverything in the folder becomes downloadable at http://<your-ip>:8000/; php -S, ruby -run, and uploadserver are drop-in alternatives when python is missing."

@@ -118,7 +118,8 @@
           "T1090.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -132,7 +133,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -146,7 +148,8 @@
         "confidence": "medium",
         "log_ids": [
           "13"
-        ]
+        ],
+        "false_positives": "Software installations, GPO updates, or IT management tools modifying registry"
       },
       {
         "platform": "sigma",
@@ -157,7 +160,8 @@
           "T1090.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "sigma",
@@ -168,7 +172,8 @@
           "T1090.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Software installations, GPO updates, or IT management tools modifying registry"
       },
       {
         "platform": "elastic",
@@ -178,7 +183,9 @@
         "attack": [
           "T1090.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -214,7 +221,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "netsh.exe interface portproxy add v4tov4 listenport=<listen_port> listenaddress=<pivot_ip> connectport=<target_port> connectaddress=<target_ip>"
     }
   },
   "type": "command",

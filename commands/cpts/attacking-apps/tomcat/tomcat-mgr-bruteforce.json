@@ -116,7 +116,8 @@
           "T1110"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -127,7 +128,8 @@
           "T1110"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -138,7 +140,8 @@
           "T1110"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -148,7 +151,9 @@
         "attack": [
           "T1110"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -183,7 +188,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "use auxiliary/scanner/http/tomcat_mgr_login"
     }
   },
   "explain": "Brute-forces Tomcat Manager HTTP Basic auth with Metasploit:\n  use auxiliary/scanner/http/tomcat_mgr_login   the module (set RHOSTS and it tries default credential lists)\nManager/Host-Manager access lets you deploy a malicious WAR for RCE."

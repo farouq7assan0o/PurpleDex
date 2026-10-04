@@ -100,7 +100,8 @@
           "T1210"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -115,7 +116,8 @@
         "log_ids": [
           "1000",
           "1001"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -126,7 +128,8 @@
           "T1210"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -136,7 +139,9 @@
         "attack": [
           "T1210"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -169,7 +174,9 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "msf-pattern_create -l <crash_length>\nmsf-pattern_offset -l <crash_length> -q <EIP_value>"
     }
-  }
+  },
+  "explain": "Send a de Bruijn cyclic pattern instead of 'A's.:\n  -q <EIP_value>  quiet mode\nMake the pattern longer than your fuzz crash length to be safe (add 400 bytes)."
 }

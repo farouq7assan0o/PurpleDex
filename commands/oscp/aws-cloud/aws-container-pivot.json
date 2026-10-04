@@ -145,7 +145,8 @@
           "T1570"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "splunk",
@@ -158,7 +159,8 @@
           "T1570"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "sigma",
@@ -171,7 +173,8 @@
           "T1570"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote management sessions between admin workstations"
       },
       {
         "platform": "elastic",
@@ -183,7 +186,9 @@
           "T1021",
           "T1570"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -213,7 +218,9 @@
         "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "meterpreter > ifconfig\n# eth0: 172.18.0.4/16 (Docker bridge)\n# eth1: 172.30.0.5/16 (shared network with other containers)\n# Multiple interfaces reveal additional container networks"
     }
-  }
+  },
+  "explain": "After getting a Meterpreter shell inside a container, pivot into the container's internal network to reach services not exposed externally.\nSteps: (1) enumerate network interfaces to identify internal subnets, (2) upload a Python port scanner to map live hosts and open ports on the container network, (3) set up MSF SOCKS proxy with route to pivot traffic through the Meterpreter session, (4) if the Meterpreter session is on a cloud Kali instance, SSH-forward the SOCKS proxy back to local Kali for browser/tool access.\nauxiliary/server/socks_proxy is exam-ok (it is an auxiliary server module, not an exploit)."
 }

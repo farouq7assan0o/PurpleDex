@@ -157,7 +157,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "splunk",
@@ -172,7 +173,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "splunk",
@@ -187,7 +189,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "sigma",
@@ -199,7 +202,8 @@
           "T1187"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "sigma",
@@ -211,7 +215,8 @@
           "T1187"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "elastic",
@@ -222,7 +227,9 @@
           "T1558",
           "T1187"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Authorized Kerberos testing by security teams",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -264,7 +271,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Rubeus.exe monitor /interval:5 /nowrap /targetuser:DC$"
     }
   },
   "explain": "Monitors a host with unconstrained delegation for inbound TGTs to capture the DC's ticket:\n  monitor                   watch LSASS for newly cached Kerberos TGTs\n  /interval:5               poll every 5 seconds\n  /nowrap                   single-line base64 ticket output\n  /targetuser:DC$           only report tickets for the DC machine account\nCoerce the DC to connect (printerbug/DFSCoerce); its TGT is cached here, so Rubeus ptt it and DCSync as the DC."

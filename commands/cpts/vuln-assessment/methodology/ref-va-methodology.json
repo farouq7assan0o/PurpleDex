@@ -51,5 +51,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1595"
-  ]
+  ],
+  "explain": "The structured VA process and the risk model that drives prioritization.\nSteps: identify/analyze risk -> set scanning policies -> configure (targets, ports, protocols, aggressiveness, timing) -> scan -> evaluate risk -> interpret results -> remediation/mitigation plan."
 }

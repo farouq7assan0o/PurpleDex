@@ -104,5 +104,6 @@
       "note": "Score findings for the report",
       "rel": "next"
     }
-  ]
+  ],
+  "explain": "Orientation for the CWES exam and web assessments: how to work a web target end to end - map it, fingerprint the stack, test each vulnerability class in a sensible order, chain findings, and write them up with CVSS.\nKey sections:\n  1. Recon & mapping (know the surface before attacking)\n  2. Fingerprint the stack\n  3. Content & parameter discovery\n  4. Test each vulnerability class (inject where input is reflected/used)\n  5. Broken auth & access control (high-value, often overlooked)\nOpen this when you start a target or get stuck.\nORDER: map -> fingerprint -> discover content/params -> test each class -> chain -> score -> report."
 }

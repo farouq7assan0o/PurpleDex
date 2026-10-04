@@ -166,7 +166,8 @@
           "T1082"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -178,7 +179,8 @@
           "T1082"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -190,7 +192,8 @@
           "T1082"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -201,7 +204,9 @@
           "T1046",
           "T1082"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -237,7 +242,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "snmpwalk -c <community> -v2c <ip>"
     }
   },
   "explain": "Dumps the SNMP MIB tree with a known community string:\n  snmpwalk   the walker\n  -c <community>   the validated community string\n  -v2c             SNMP version\n  <ip>             target\nReturns OS, running processes, users, installed software, interfaces, and the routing table; append an OID to target a specific branch and -t to raise the timeout on slow hosts."

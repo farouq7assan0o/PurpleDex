@@ -100,7 +100,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -111,7 +112,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -122,7 +124,8 @@
           "T1110.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -132,7 +135,9 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -162,8 +167,10 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "bitlocker2john -i <vhd_file> > backup.hashes && grep 'bitlocker\\$0' backup.hashes > backup.hash"
+    },
+    "detection": "Offline attack - no direct network detection. Monitor for the credential acquisition step that produced the hashes. Alert on new logon events (4624) using the cracked account from unexpected sources."
   },
   "type": "command",
   "explain": "Extracts a BitLocker hash from a disk image and cracks it:\n  bitlocker2john -i <vhd_file>   parse the VHD/volume for crackable BitLocker hashes\n  > backup.hashes          save all of them\n  grep 'bitlocker\\$0' ... > backup.hash   keep only the password-hash line ($bitlocker$0)\nCrack backup.hash with hashcat -m 22100, then mount the unlocked volume with dislocker."

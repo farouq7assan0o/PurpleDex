@@ -91,5 +91,9 @@
   "tools": [
     "yara"
   ],
-  "explain": "Scans a Windows disk path with YARA rules to hunt for malware:\n  yara64.exe        the YARA engine\n  -s                also print the matching strings for each hit\n  rule.yar          the rule file to apply\n  C:\\Samples\\       the path to scan\n  -r                recurse into subfolders\n  2>nul             discard access-denied errors\nReports files that match the rules; the same engine scans process memory (by PID), ETW telemetry via SilkETW, and memory images through Volatility's yarascan."
+  "explain": "Scans a Windows disk path with YARA rules to hunt for malware:\n  yara64.exe        the YARA engine\n  -s                also print the matching strings for each hit\n  rule.yar          the rule file to apply\n  C:\\Samples\\       the path to scan\n  -r                recurse into subfolders\n  2>nul             discard access-denied errors\nReports files that match the rules; the same engine scans process memory (by PID), ETW telemetry via SilkETW, and memory images through Volatility's yarascan.",
+  "mitre": [
+    "T1027",
+    "T1055"
+  ]
 }

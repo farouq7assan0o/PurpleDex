@@ -94,7 +94,8 @@
           "T1046"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -105,7 +106,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "splunk",
@@ -116,7 +118,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -127,7 +130,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -137,7 +141,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -173,7 +179,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap <ip> -p50000 -sS -Pn -n --disable-arp-ping --packet-trace --source-port 53"
     }
   },
   "explain": "Scans from a trusted source port to slip past a firewall:\n  -p50000 -sS   SYN-scan the target port\n  -Pn -n --disable-arp-ping --packet-trace   no discovery/DNS/ARP, show packets\n  --source-port 53   send from port 53 (DNS), which many firewalls implicitly trust\nIf a port looked filtered normally but responds from source-port 53, the firewall trusts DNS traffic; connect through with 'ncat --source-port 53'."

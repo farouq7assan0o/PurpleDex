@@ -58,5 +58,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1590.002"
-  ]
+  ],
+  "explain": "BIND config file locations, DNS ports, and the directives that expose zone data.\nConfig: /etc/bind/named.conf.local, named.conf.options, named.conf.log, db.<domain>, db.<reverse>\nPorts: 53/udp (queries), 53/tcp (zone transfers/AXFR)\nDangerous directives: allow-query, allow-recu..."
 }

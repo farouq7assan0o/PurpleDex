@@ -112,7 +112,8 @@
           "T1595.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -123,7 +124,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "splunk",
@@ -134,7 +136,8 @@
           "T1595.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -145,7 +148,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -155,7 +159,9 @@
         "attack": [
           "T1595.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -191,7 +197,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap <target> -sC"
     }
   },
   "explain": "Runs Nmap Scripting Engine checks for deeper enumeration:\n  -sC   run the default script category\nNSE Lua scripts do version-specific enumeration and vuln checks; target categories (--script <category>) or named scripts (--script banner,smtp-commands), and -A bundles -sC -sV -O --traceroute."

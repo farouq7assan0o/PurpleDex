@@ -51,5 +51,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1591"
-  ]
+  ],
+  "explain": "The sections and per-vulnerability fields a VA report should contain.\nSections: Executive Summary, Overview of Assessment, Scope, Vulnerabilities and Recommendations."
 }

@@ -109,7 +109,8 @@
           "T1105"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -123,7 +124,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -137,7 +139,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "sigma",
@@ -148,7 +151,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "elastic",
@@ -158,7 +162,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Normal file share access, printer connections, domain operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -198,7 +204,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo impacket-smbserver share -smb2support /tmp/smbshare"
     }
   },
   "variations": [

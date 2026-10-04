@@ -57,6 +57,9 @@
     }
   ],
   "opsec": "silent",
-  "mitre": [],
-  "exam": "exam-ok"
+  "mitre": [
+    "T1190"
+  ],
+  "exam": "exam-ok",
+  "explain": "Reference index of the OWASP API Security Top 10 (2023).\nFor each risk: the one-line test approach and the card in this library that exploits it."
 }

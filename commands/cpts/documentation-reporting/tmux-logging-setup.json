@@ -77,7 +77,9 @@
     }
   ],
   "opsec": "silent",
-  "mitre": [],
+  "mitre": [
+    "T1592"
+  ],
   "exam": "exam-ok",
   "explain": "Installs the tmux plugin manager so you can add the tmux-logging plugin:\n  git clone ...tpm ~/.tmux/plugins/tpm   fetch TPM into the plugins directory\nAfter adding the tmux-logging plugin line to ~/.tmux.conf and pressing prefix+I, prefix+shift+P starts/stops writing the pane's full I/O to a log file - your engagement evidence trail (plain 'script -a file.log' is the no-tmux fallback)."
 }

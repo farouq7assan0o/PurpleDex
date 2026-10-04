@@ -93,7 +93,8 @@
         "log_ids": [
           "4662",
           "7045"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "splunk",
@@ -108,7 +109,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc."
       },
       {
         "platform": "splunk",
@@ -123,7 +125,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -135,7 +138,8 @@
           "T1558.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "elastic",
@@ -146,7 +150,9 @@
           "T1134.005",
           "T1558.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc.",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -192,7 +198,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "raiseChild.py -target-exec <parent_dc_ip> <child_domain>/<child_admin>:<password>"
     }
   },
   "tools": [

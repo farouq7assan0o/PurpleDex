@@ -132,7 +132,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "splunk",
@@ -146,7 +147,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "sigma",
@@ -157,7 +159,8 @@
           "T1003.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "elastic",
@@ -167,7 +170,9 @@
         "attack": [
           "T1003.006"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -198,7 +203,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "SafetyKatz.exe \"lsadump::dcsync /user:<domain>\\krbtgt\" \"exit\""
     }
   },
   "explain": "Impersonates a DC's replication to pull password hashes for any account, without touching LSASS:\n  SafetyKatz.exe            Mimikatz\n  \"lsadump::dcsync /user:<domain>\\krbtgt\"   ask a DC to replicate this account's secrets (krbtgt = keys to forge golden tickets)\n  \"exit\"                    quit\nRequires Replicating Directory Changes (DCSync) rights. Use /all /csv to dump every hash, or run impacket-secretsdump -just-dc from Linux."

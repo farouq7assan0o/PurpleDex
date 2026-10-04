@@ -103,7 +103,8 @@
           "T1190"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web requests with similar patterns, security scanners, health checks"
       },
       {
         "platform": "splunk",
@@ -115,7 +116,8 @@
           "T1190"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -127,7 +129,8 @@
           "T1190"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -138,7 +141,9 @@
           "T1595.002",
           "T1190"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -173,7 +178,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "nikto -h <url> -Tuning b"
     }
   },
   "tags": [

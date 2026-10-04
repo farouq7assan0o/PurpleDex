@@ -95,5 +95,6 @@
       "command": "curl -k -X POST 'https://localhost:8834/scans/<scan_id>/export' \\\n  -H 'X-ApiKeys: accessKey=<ak>;secretKey=<sk>' \\\n  -d '{\"format\":\"csv\"}' | jq .",
       "label": "POST request"
     }
-  ]
+  ],
+  "explain": "Nessus scan templates and the authentication methods for credentialed scans.\nTemplates: Host Discovery, Basic Network Scan, Advanced Scan, Advanced Dynamic, Malware, Mobile Device, Web Application Tests, Credentialed Patch Audit, Badlock/Shellshock/DROWN detection."
 }

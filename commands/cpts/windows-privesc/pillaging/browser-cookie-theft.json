@@ -106,7 +106,8 @@
           "T1539"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -120,7 +121,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -134,7 +136,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "sigma",
@@ -145,7 +148,8 @@
           "T1539"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "elastic",
@@ -155,7 +159,9 @@
         "attack": [
           "T1539"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -191,7 +197,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Invoke-SharpChromium -Command \"cookies slack.com\""
     }
   },
   "explain": "Steals browser session cookies to hijack authenticated web sessions:\n  Invoke-SharpChromium     SharpChromium loader\n  -Command \"cookies slack.com\"   extract Chrome cookies for this domain (e.g. a Slack session)\nImport the stolen cookie into your own browser to ride the session without a password. For Firefox, copy cookies.sqlite and use cookieextractor.py."

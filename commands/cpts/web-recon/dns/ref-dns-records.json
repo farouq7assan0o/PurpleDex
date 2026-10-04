@@ -56,5 +56,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1590.002"
-  ]
+  ],
+  "explain": "Lookup for DNS record types and the local hosts file used to map hostnames to IPs (needed to reach vhosts by name).\nRecord types:\n A -> IPv4 | AAAA -> IPv6 | CNAME -> alias | MX -> mail | NS -> name server\n TXT -> text (SPF/verification) | SOA -> zone authority | SRV -> service | PTR -> reverse\nHosts file: /etc/..."
 }

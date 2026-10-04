@@ -69,5 +69,6 @@
       "command": "# Sysmon EID 1: process creation - look for:\n#   certutil.exe with -urlcache flag\n#   bitsadmin.exe with /transfer flag\n#   powershell.exe with WebClient/IEX\n# Sysmon EID 3: network connection from unusual process",
       "label": "Sysmon EID 1: process creation - l…"
     }
-  ]
+  ],
+  "explain": "Default User-Agent strings per Windows download method - useful to know what a blue team watches for (and why changing the UA helps).\nInvoke-WebRequest -> Mozilla/5.0 (Windows NT ...) WindowsPowerShell/5.1..."
 }

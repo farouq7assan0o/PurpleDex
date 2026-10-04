@@ -117,7 +117,8 @@
         "confidence": "medium",
         "log_ids": [
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -131,7 +132,8 @@
         "confidence": "medium",
         "log_ids": [
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -145,7 +147,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc."
       },
       {
         "platform": "sigma",
@@ -156,7 +159,8 @@
           "T1558"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -166,7 +170,9 @@
         "attack": [
           "T1558"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -202,7 +208,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Set-ADComputer -Identity <target_computer> -PrincipalsAllowedToDelegateToAccount <attacker_computer>$"
     }
   },
   "variations": [

@@ -163,7 +163,8 @@
         "confidence": "medium",
         "log_ids": [
           "5140"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -179,7 +180,8 @@
         "confidence": "medium",
         "log_ids": [
           "5140"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -195,7 +197,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Admin scripts using the same cmdlets for legitimate management tasks"
       },
       {
         "platform": "sigma",
@@ -208,7 +211,8 @@
           "T1033"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -221,7 +225,8 @@
           "T1033"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -233,7 +238,9 @@
           "T1135",
           "T1033"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -268,7 +275,8 @@
         "Review Windows Security Event Log, PowerShell Script Block / Module Logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Invoke-SessionHunter -NoPortScan -RawResults | select Hostname,UserSession,Access"
     }
   },
   "explain": "Finds where privileged users are logged on and which shares hold secrets, without needing admin:\n  Invoke-SessionHunter     map user->host sessions via remote registry (no admin required)\n  -NoPortScan              skip the port scan (faster/quieter)\n  -RawResults              return objects, not a formatted table\n  | select Hostname,UserSession,Access   host, the user session found, and whether you can reach it\nWhere an admin session sits on a box you can access, that is your lateral target; PowerHuntShares then inventories readable SMB shares for sensitive data."

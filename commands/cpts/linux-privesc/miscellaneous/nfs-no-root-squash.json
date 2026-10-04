@@ -120,7 +120,8 @@
           "T1548.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -131,7 +132,8 @@
           "T1548.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -142,7 +144,8 @@
           "T1548.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -153,7 +156,8 @@
           "T1548.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -163,7 +167,9 @@
         "attack": [
           "T1548.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -193,7 +199,8 @@
         "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo mount -t nfs <ip>:/<share> /mnt"
     }
   },
   "explain": "Abuses an NFS export set to no_root_squash to run a root-owned SUID shell on the target:\n  sudo mount -t nfs <ip>:/<share> /mnt   mount the export locally as root\nWith no_root_squash, files you create as root on the mount keep uid 0 on the server. Copy a SUID /bin/bash shell into the share, chmod u+s it, then execute it on the target for a root shell. showmount -e and /etc/exports confirm the flag."

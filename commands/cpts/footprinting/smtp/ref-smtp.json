@@ -53,5 +53,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1595.002"
-  ]
+  ],
+  "explain": "SMTP ports, protocol commands, and the Postfix setting that turns a server into an open relay.\nPorts: 25/tcp (SMTP), 587/tcp (submission/STARTTLS), 465/tcp (SMTPS)\nCommands: HELO, EHLO, AUTH PLAIN, MAIL FROM, RCPT TO, DATA, RSET, VRFY, EXPN, NOOP, QUIT, STARTTLS\nOpen relay misconfig (Postfix..."
 }

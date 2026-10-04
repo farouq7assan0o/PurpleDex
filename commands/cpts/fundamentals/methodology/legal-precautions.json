@@ -47,5 +47,6 @@
   ],
   "mitre": [
     "T1591"
-  ]
+  ],
+  "explain": "Pre-Engagement - Legal Precautions - reference (methodology, not a runnable command).\nPrecautions during a test: obtain WRITTEN consent from the owner/authorized rep; test ONLY within the consented scope and respect limitations; take measures to avoid damage; do not access/use/disclose personal data without permission; do not intercept communications without consent of a party; do not test HIPAA-covered systems without proper authorization."
 }

@@ -138,7 +138,8 @@
           "T1140"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web requests with similar patterns, security scanners, health checks"
       },
       {
         "platform": "splunk",
@@ -150,7 +151,8 @@
           "T1140"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -162,7 +164,8 @@
           "T1140"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -173,7 +176,9 @@
           "T1592.002",
           "T1140"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -203,8 +208,10 @@
         "Review IIS Web Server logs, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "curl -s http://<target>/js/<file>.js | js-beautify -"
     }
   },
-  "type": "command"
+  "type": "command",
+  "explain": "Client-side JS often hides API endpoints, hardcoded credentials/keys, hidden parameters, and logic behind minification, packing, or obfuscation.:\n  -s http://<target>/js/<file>.jsSSL / secret / source\n  <target>                 target host\n  <file>                   file path\nM06 flow: minify/pack/obfuscate are reversible - beautify (prettier / js-beautify / CyberChef 'JavaScript Beautify') to restore structure, then deobfuscate (de4js, deobfuscate.io, or manually resolve packer arrays and eval() chains)."
 }

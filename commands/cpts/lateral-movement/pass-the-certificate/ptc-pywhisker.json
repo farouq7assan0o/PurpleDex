@@ -96,7 +96,8 @@
         "confidence": "medium",
         "log_ids": [
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -110,7 +111,8 @@
         "confidence": "medium",
         "log_ids": [
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -124,7 +126,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "sigma",
@@ -135,7 +138,8 @@
           "T1649"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -145,7 +149,9 @@
         "attack": [
           "T1649"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -180,7 +186,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "pywhisker --dc-ip <dc_ip> -d <domain> -u <user> -p '<password>' --target <target_user> --action add"
     }
   },
   "type": "command",

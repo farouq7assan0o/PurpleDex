@@ -122,5 +122,6 @@
       "command": "site:news.com -inurl:sports",
       "label": "Exclude - a path"
     }
-  ]
+  ],
+  "explain": "Advanced search operators surface login pages, exposed files, config files, and backups indexed by search engines - all without touching the target.\nOperators: site:  inurl:  intitle:  intext:  filetype:/ext:  cache:  related:  AND/OR/NOT/-  ..range\nLogin pages: site:example.com (inurl:login OR inurl:admin)\nExposed files: site:example.com filet..."
 }

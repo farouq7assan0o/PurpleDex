@@ -102,7 +102,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "splunk",
@@ -124,7 +126,8 @@
           "T1190"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -135,7 +138,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -145,7 +149,9 @@
         "attack": [
           "T1190"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -181,7 +187,9 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python2.7 tomcat-ajp.lfi.py <url> -p 8009 -f WEB-INF/web.xml"
     }
-  }
+  },
+  "explain": "Ghostcat abuses the AJP connector (port 8009) to read files inside the web app, disclosing WEB-INF/web.xml and other sensitive files; can lead to RCE if uploads are possible.:\n  -p 8009             password (or port, depending on context)\n  -f WEB-INF/web.xml  format / file\n  <url>               target URL\nCVE-2020-1938 reads (and sometimes includes) files under the app root via AJP/8009 with no credentials - ideal for pulling WEB-INF/web.xml and leaked manager creds."
 }

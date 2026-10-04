@@ -100,7 +100,8 @@
           "T1190"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -114,7 +115,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -125,7 +127,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -136,7 +139,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "sigma",
@@ -147,7 +151,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -157,7 +162,9 @@
         "attack": [
           "T1190"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -201,7 +208,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 gitlab_13_10_2_rce.py -t http://<url>:8081 -u <user> -p <password> -c '<reverse_shell>'"
     }
   },
   "explain": "Exploits the GitLab ExifTool/DjVu flaw for RCE (CVE-2021-22205):\n  python3 gitlab_13_10_2_rce.py   the exploit\n  -t http://<url>:8081            target\n  -u/-p                           GitLab credentials (some versions are unauthenticated)\n  -c '<reverse_shell>'            the command to run\nMalicious image metadata is passed to a vulnerable ExifTool, executing your command; give it a reverse-shell one-liner and catch it with 'nc -lnvp'."

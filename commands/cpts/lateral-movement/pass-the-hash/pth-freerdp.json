@@ -95,7 +95,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "splunk",
@@ -109,7 +110,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "splunk",
@@ -123,7 +125,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "sigma",
@@ -134,7 +137,8 @@
           "T1550.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "elastic",
@@ -144,7 +148,9 @@
         "attack": [
           "T1550.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -185,7 +191,8 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "xfreerdp /v:<ip> /u:<user> /pth:<nt_hash>"
     }
   },
   "type": "command",

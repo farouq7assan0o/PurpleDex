@@ -103,7 +103,8 @@
           "T1552.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web requests with similar patterns, security scanners, health checks"
       },
       {
         "platform": "splunk",
@@ -115,7 +116,8 @@
           "T1552.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -127,7 +129,8 @@
           "T1552.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "elastic",
@@ -138,7 +141,9 @@
           "T1190",
           "T1552.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -176,5 +181,6 @@
         "If confirmed malicious, isolate the host and escalate to incident response"
       ]
     }
-  }
+  },
+  "explain": "Java thick clients can be decompiled, modified to inject payloads their UI blocks (path traversal ../../../etc/passwd, SQLi in a field, or client-side password-hash bypass), then recompiled and run...\nainst the server.\nThe client is just a front end to a server API - decompile the jar, patch a request method (path traversal, SQLi), recompile, and the server trusts it."
 }

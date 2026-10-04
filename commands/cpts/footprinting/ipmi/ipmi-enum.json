@@ -101,7 +101,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -112,7 +113,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -123,7 +125,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -133,7 +136,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -169,7 +174,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "use auxiliary/scanner/ipmi/ipmi_dumphashes"
     }
   },
   "explain": "Dumps IPMI/BMC password hashes over the RAKP protocol with Metasploit:\n  use auxiliary/scanner/ipmi/ipmi_dumphashes   the module that abuses RAKP\nIPMI leaks the hash to any unauthenticated client, so setting RHOSTS and running it yields crackable hashes with no login; scan first with ipmi_version (UDP 623) and crack the output with hashcat -m 7300."

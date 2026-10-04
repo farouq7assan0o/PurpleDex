@@ -97,7 +97,8 @@
           "T1135"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -108,7 +109,8 @@
           "T1135"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "sigma",
@@ -119,7 +121,8 @@
           "T1135"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "elastic",
@@ -129,7 +132,9 @@
         "attack": [
           "T1135"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Normal file share access, printer connections, domain operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -165,7 +170,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "smbclient -N -L \\\\\\\\<ip>"
     }
   },
   "explain": "Lists SMB shares on a host with smbclient:\n  smbclient   the SMB client\n  -N          no password (null session)\n  -L \\\\<ip>   list the available shares\nShows what shares exist so you can connect to interesting ones (\\\\<ip>\\<share>) as guest or with -U <user>, then ls/get to pull files."

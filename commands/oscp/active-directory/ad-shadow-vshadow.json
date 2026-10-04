@@ -127,7 +127,8 @@
           "T1003.003"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "splunk",
@@ -141,7 +142,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "splunk",
@@ -155,7 +157,8 @@
         "confidence": "medium",
         "log_ids": [
           "4688"
-        ]
+        ],
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "sigma",
@@ -166,7 +169,8 @@
           "T1003.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "sigma",
@@ -177,7 +181,8 @@
           "T1003.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "elastic",
@@ -187,7 +192,9 @@
         "attack": [
           "T1003.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate software installations, startup script changes by IT",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -228,7 +235,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "vshadow.exe -nw -p C:\nrobocopy /b \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy2\\windows\\ntds\\ntds.dit C:\\ntds.dit.bak\nreg.exe save hklm\\system C:\\system.bak\nimpacket-secretsdump -ntds ntds.dit.bak -system system.bak LOCAL"
     }
   },
   "variations": [

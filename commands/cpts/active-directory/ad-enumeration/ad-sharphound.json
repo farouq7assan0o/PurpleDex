@@ -112,7 +112,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "splunk",
@@ -128,7 +129,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "splunk",
@@ -141,7 +143,8 @@
           "T1482"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "sigma",
@@ -154,7 +157,8 @@
           "T1482"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "elastic",
@@ -166,7 +170,9 @@
           "T1069.002",
           "T1482"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Authorized AD enumeration by security teams or auditors",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -202,7 +208,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": ".\\SharpHound.exe -c All --zipfilename <name>"
     }
   },
   "tools": [

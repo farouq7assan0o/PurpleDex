@@ -111,7 +111,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "splunk",
@@ -125,7 +126,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "splunk",
@@ -139,7 +141,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "sigma",
@@ -150,7 +153,8 @@
           "T1558.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "elastic",
@@ -160,7 +164,9 @@
         "attack": [
           "T1558.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -196,7 +202,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<krbtgt_hash> /sids:<parent_EA_sid> /ptt"
     }
   },
   "tools": [

@@ -97,7 +97,8 @@
         "confidence": "medium",
         "log_ids": [
           "5145"
-        ]
+        ],
+        "false_positives": "Normal file share access, backup operations"
       },
       {
         "platform": "splunk",
@@ -111,7 +112,8 @@
         "confidence": "medium",
         "log_ids": [
           "5145"
-        ]
+        ],
+        "false_positives": "Normal file share access, backup operations"
       },
       {
         "platform": "sigma",
@@ -122,7 +124,8 @@
           "T1552.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -132,7 +135,9 @@
         "attack": [
           "T1552.006"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Normal file share access, backup operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -163,7 +168,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "gpp-decrypt <cpassword>"
     }
   },
   "tools": [

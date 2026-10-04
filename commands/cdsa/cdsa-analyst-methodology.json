@@ -101,5 +101,9 @@
       "rel": "prereq",
       "note": "The IR lifecycle this workflow sits inside"
     }
+  ],
+  "explain": "Orientation for the CDSA exam and day-to-day SOC work: how to take an alert or dataset, investigate it across log sources, build an evidence-backed timeline, map it to ATT&CK, and write the incident report.\nKey sections:\n  1. Triage the alert (is it real? how bad?)\n  2. Scope it (what/when/where/who)\n  3. Investigate - pivot across log sources + build a TIMELINE\n  4. Attribute - map activity to ATT&CK / kill chain (Pyramid of Pain)\n  5. Contain / Eradicate / Recover\nThe CDSA exam is investigation + report writing - this is the workflow and what the report must contain.\nMINDSET: the CDSA exam gives you data (SIEM/logs/PCAP/disk) and questions, and you write a professional incident report - so investigate to ANSWER with evidence, and record timestamps as you go (you will rebuild the timeline for the report).",
+  "mitre": [
+    "T1059"
   ]
 }

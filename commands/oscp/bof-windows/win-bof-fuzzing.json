@@ -81,7 +81,8 @@
           "T1210"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -95,7 +96,8 @@
         "confidence": "medium",
         "log_ids": [
           "1000"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -106,7 +108,8 @@
           "T1210"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "sigma",
@@ -117,7 +120,8 @@
           "T1210"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -127,7 +131,9 @@
         "attack": [
           "T1210"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -162,7 +168,9 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 fuzzer.py"
     }
-  }
+  },
+  "explain": "First step of the OSCP Windows stack BOF methodology: send incrementally longer buffers to crash the target service and identify the approximate size at which EIP gets overwritten.:\n  python3 fuzzer.py\nWatch Immunity Debugger: when EIP shows '41414141' (AAAA) the service has crashed and the return address is overwritten."
 }

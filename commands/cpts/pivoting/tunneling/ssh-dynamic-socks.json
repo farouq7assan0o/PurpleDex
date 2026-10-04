@@ -115,7 +115,8 @@
           "T1572"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "splunk",
@@ -126,7 +127,8 @@
           "T1572"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "sigma",
@@ -137,7 +139,8 @@
           "T1572"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "elastic",
@@ -147,7 +150,9 @@
         "attack": [
           "T1572"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized SSH sessions by system administrators",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -178,7 +183,8 @@
         "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "ssh -D <socks_port> <user>@<pivot>"
     }
   },
   "type": "command",

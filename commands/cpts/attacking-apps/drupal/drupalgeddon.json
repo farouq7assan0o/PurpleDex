@@ -98,7 +98,8 @@
           "T1136"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -125,7 +127,8 @@
           "T1136"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -137,7 +140,8 @@
           "T1136"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "sigma",
@@ -149,7 +153,8 @@
           "T1136"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -160,7 +165,9 @@
           "T1190",
           "T1136"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -204,7 +211,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python2.7 drupalgeddon.py -t http://<url> -u <newuser> -p <newpass>"
     }
   },
   "explain": "Creates a Drupal admin account via the Drupalgeddon SQLi (CVE-2014-3704):\n  python2.7 drupalgeddon.py   the exploit\n  -t http://<url>             target\n  -u <newuser> -p <newpass>   the admin account it inserts\nDrupal 7 < 7.32 mishandles the SQL API, letting the exploit inject a new administrator - giving full CMS control with no prior credentials."

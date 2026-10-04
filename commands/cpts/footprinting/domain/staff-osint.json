@@ -65,5 +65,6 @@
   "mitre": [
     "T1589"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Employee profiles, job posts, and public repos reveal the target's technology stack and often leak credentials, JWTs, and internal details.\nPlatforms: linkedin.com, xing.de, github.com, jwt.io\nLook for in repos: personal emails, hardcoded JWT tokens, framework config files.\nJob posts reveal languages/DBs/frameworks/containers in use ->..."
 }

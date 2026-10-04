@@ -89,7 +89,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -103,7 +104,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -114,7 +116,8 @@
           "T1201"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "sigma",
@@ -125,7 +128,8 @@
           "T1201"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "elastic",
@@ -135,7 +139,9 @@
         "attack": [
           "T1201"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -171,7 +177,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "ldapsearch -h <dc_ip> -x -b \"<base_dn>\" -s sub \"*\" | grep -m 1 -A 20 'pwdHistoryLength'"
     }
   },
   "tools": [

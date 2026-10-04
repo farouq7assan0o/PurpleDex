@@ -47,5 +47,6 @@
   ],
   "mitre": [
     "T1591"
-  ]
+  ],
+  "explain": "Pre-Engagement - Scoping Questions - reference (methodology, not a runnable command).\nCore scoping inputs: # of live hosts; # of IPs/CIDR ranges; # of domains/subdomains; # of wireless SSIDs; # of web/mobile apps; authenticated roles; phishing target count; will client provide the l..."
 }

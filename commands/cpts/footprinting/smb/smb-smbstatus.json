@@ -100,7 +100,8 @@
           "T1049"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -111,7 +112,8 @@
           "T1049"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "sigma",
@@ -122,7 +124,8 @@
           "T1049"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "elastic",
@@ -132,7 +135,9 @@
         "attack": [
           "T1049"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Normal file share access, printer connections, domain operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -162,7 +167,8 @@
         "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "smbstatus"
     }
   },
   "explain": "Shows the local Samba server's live activity:\n  smbstatus   list current connections, open files, and locks\nConfirms which shares are in use and by whom; --shares and --processes narrow the view to connected shares or the smbd processes serving them."

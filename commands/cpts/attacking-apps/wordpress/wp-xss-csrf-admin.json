@@ -127,7 +127,8 @@
           "T1548"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "splunk",
@@ -139,7 +140,8 @@
           "T1548"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "sigma",
@@ -151,7 +153,8 @@
           "T1548"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "elastic",
@@ -162,7 +165,9 @@
           "T1059.007",
           "T1548"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized remote desktop sessions by IT staff",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -197,7 +202,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "var ajaxRequest = new XMLHttpRequest();\nvar requestURL = \"/wp-admin/user-new.php\";\nvar nonceRegex = /ser\" value=\"([^\"]*?)\"/g;\n# ... (see full command in card)"
     }
   },
   "examples": [
@@ -209,5 +215,6 @@
       "label": "Effect",
       "command": "# forces the logged-in admin's browser to POST /wp-admin/user-new.php -> creates a new administrator account"
     }
-  ]
+  ],
+  "explain": "Exploit a stored XSS vulnerability in a WordPress plugin that reflects unsanitized input (e.g. HTTP_USER_AGENT) to execute a two-stage CSRF attack: (1) extract the wp-admin nonce via XHR, (2) POST a new administrator account using that nonce.\nThe XSS fires in the victim admin's browser session, so same-origin XHR can read wp-admin pages and submit authenticated forms."
 }

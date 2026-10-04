@@ -53,5 +53,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1210"
-  ]
+  ],
+  "explain": "MySQL config, port, default databases, and the settings that expose the server.\nConfig: /etc/mysql/mysql.conf.d/mysqld.cnf\nPort: 3306/tcp\nDefault DBs: information_schema, mysql, performance_schema, sys\nDangerous: user, password (in config), admin_address, debug, sql_warnings, ..."
 }

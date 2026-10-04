@@ -95,7 +95,8 @@
           "T1059"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -109,7 +110,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -123,7 +125,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -134,7 +137,8 @@
           "T1059"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "elastic",
@@ -144,7 +148,9 @@
         "attack": [
           "T1059"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -180,7 +186,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "nc -lvnp <port>"
     }
   },
   "explain": "Starts a netcat listener to catch a reverse shell:\n  nc   the tool\n  -l   listen mode\n  -v   verbose (report the connection)\n  -n   no DNS resolution\n  -p <port>   the port to listen on\nWhen the target's reverse-shell payload connects back, you get an interactive shell; set your payload's LHOST to this host's tun0 IP."

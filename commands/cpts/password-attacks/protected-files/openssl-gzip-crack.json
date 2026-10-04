@@ -81,7 +81,8 @@
           "T1110.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -92,7 +93,8 @@
           "T1110.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -103,7 +105,8 @@
           "T1110.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -113,7 +116,9 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -143,8 +148,10 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "for i in $(cat rockyou.txt); do openssl enc -aes-256-cbc -d -in <file> -k $i 2>/dev/null | tar xz; done"
+    },
+    "detection": "Offline brute-force of encrypted files - no network signature. Monitor for unauthorized access to the encrypted files themselves, and for execution of OpenSSL with unusual parameters on endpoints."
   },
   "type": "command",
   "explain": "Brute-forces an OpenSSL-encrypted gzip archive against a wordlist:\n  for i in $(cat rockyou.txt)   try each word as the passphrase\n  openssl enc -aes-256-cbc -d -in <file> -k $i   attempt to decrypt with that key\n  2>/dev/null | tar xz     pipe the output to tar; only the correct key yields valid tar data to extract\nWhen the extraction succeeds you have both the passphrase and the files."

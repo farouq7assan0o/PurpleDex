@@ -107,7 +107,8 @@
           "T1027"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -119,7 +120,8 @@
           "T1027"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -134,7 +136,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Admin scripts using the same cmdlets for legitimate management tasks"
       },
       {
         "platform": "sigma",
@@ -146,7 +149,8 @@
           "T1027"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -157,7 +161,9 @@
           "T1105",
           "T1027"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -194,7 +200,8 @@
         "Review Microsoft Defender for Endpoint, Linux Audit (auditd), PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "openssl enc -aes256 -iter 100000 -pbkdf2 -in <file> -out <file>.enc"
     }
   },
   "explain": "Encrypts a file with AES-256 before moving it, so an intercepted transfer is useless without the key:\n  openssl enc -aes256   symmetric AES-256 encryption\n  -iter 100000 -pbkdf2  derive the key from your passphrase with 100000 PBKDF2 rounds\n  -in <file>            plaintext input\n  -out <file>.enc       ciphertext output\nProduces an encrypted blob to transfer; reverse with -d to decrypt (Invoke-AESEncryption is the Windows equivalent)."

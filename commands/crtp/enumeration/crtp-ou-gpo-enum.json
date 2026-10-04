@@ -154,7 +154,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -169,7 +170,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -184,7 +186,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -196,7 +199,8 @@
           "T1069.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -208,7 +212,8 @@
           "T1069.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "elastic",
@@ -219,7 +224,9 @@
           "T1615",
           "T1069.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -255,7 +262,8 @@
         "Review Windows Security Event Log, PowerShell Script Block / Module Logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Get-DomainGPO | select displayname,gpcfilesyspath"
     }
   },
   "explain": "Maps GPOs so you can spot policy you can abuse for code execution or local admin:\n  Get-DomainGPO            list every Group Policy Object\n  | select displayname,gpcfilesyspath   the friendly name and its SYSVOL path\nFollow up by resolving OU gplinks to GPOs (which computers a policy hits), Get-DomainGPOLocalGroup (GPO-granted local admin), and checking GPO ACLs for WriteProperty/WriteDacl - a writable GPO is a foothold on every computer in its OU."

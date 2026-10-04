@@ -102,7 +102,8 @@
           "T1082"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
           "T1082"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -124,7 +126,8 @@
           "T1082"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -134,7 +137,9 @@
         "attack": [
           "T1082"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -164,7 +169,8 @@
         "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "./linpeas.sh"
     }
   },
   "explain": "Runs the go-to Linux enumeration script right after a foothold:\n  ./linpeas.sh             sweep the host for privesc vectors (SUID/SGID, sudo rights, cron, writable files, creds in configs, kernel version) and colour-highlight the wins\nStart here, then chase the obvious findings - installed packages, sudo rights, and readable configs with credentials."

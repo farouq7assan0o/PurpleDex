@@ -130,7 +130,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -141,7 +142,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate DNS lookups for CDNs, cloud services, or internal subdomains"
       },
       {
         "platform": "sigma",
@@ -152,7 +154,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -162,7 +165,9 @@
         "attack": [
           "T1590.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -183,7 +188,8 @@
         "Review DNS logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "dig <domain> <record_type>"
     }
   },
   "explain": "Queries DNS with dig for a specific record type:\n  dig <domain>        the name to look up\n  <record_type>       A, MX, NS, TXT, CNAME, SOA, etc.\nReturns the matching records; add +short for terse output, +trace to follow delegation, and -x <ip> for reverse lookups."

@@ -132,7 +132,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate security tools scanning for weak credentials, password auditing"
       },
       {
         "platform": "splunk",
@@ -143,7 +144,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -154,7 +156,8 @@
           "T1110.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -164,7 +167,9 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -198,8 +203,10 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "john --wordlist=/usr/share/wordlists/rockyou.txt <hash_file>"
+    },
+    "detection": "Offline attack - no direct network detection. Monitor for the credential acquisition step that produced the hashes. Alert on new logon events (4624) using the cracked account from unexpected sources."
   },
   "type": "command",
   "explain": "Cracks hashes with John the Ripper:\n  john                     the cracker\n  --wordlist=/usr/share/wordlists/rockyou.txt   dictionary mode\n  <hash_file>              the hashes\nSingle mode (--single) derives candidates from GECOS/username data (ideal for Linux passwd); --format sets the algorithm, --show reveals cracked results, --restore resumes a session."

@@ -112,7 +112,8 @@
         "confidence": "medium",
         "log_ids": [
           "5140"
-        ]
+        ],
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -126,7 +127,8 @@
         "confidence": "medium",
         "log_ids": [
           "5140"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -137,7 +139,8 @@
           "T1135"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "elastic",
@@ -147,7 +150,9 @@
         "attack": [
           "T1135"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -176,7 +181,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "net view \\\\<ip> /all"
     }
   },
   "explain": "Lists shared resources on a remote host with the built-in net view:\n  net view \\\\<ip>   query the host's shares\n  /all             include hidden admin shares (ADMIN$, C$, IPC$)\nA no-tools way from an authenticated Windows session to see what a host shares; 'net view' alone lists computers in the domain."

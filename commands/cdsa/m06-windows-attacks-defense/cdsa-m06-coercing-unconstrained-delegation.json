@@ -96,7 +96,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "splunk",
@@ -112,7 +113,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "splunk",
@@ -128,7 +130,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "sigma",
@@ -141,7 +144,8 @@
           "T1003.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -154,7 +158,8 @@
           "T1003.006"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized Kerberos testing by security teams"
       },
       {
         "platform": "elastic",
@@ -166,7 +171,9 @@
           "T1558.001",
           "T1003.006"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Service accounts with automated logons, scheduled tasks",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -206,7 +213,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": ".\\Rubeus.exe monitor /interval:1 /nowrap"
     }
   },
   "steps": [

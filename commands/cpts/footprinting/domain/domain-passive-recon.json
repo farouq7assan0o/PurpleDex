@@ -125,7 +125,8 @@
           "T1590"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -136,7 +137,8 @@
           "T1590"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -147,7 +149,8 @@
           "T1590"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -157,7 +160,9 @@
         "attack": [
           "T1590"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -182,7 +187,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "curl -s 'https://crt.sh/?q=<domain>.com&output=json' | jq ."
     }
   },
   "explain": "Maps a company's internet presence passively via CT logs:\n  curl -s 'https://crt.sh/?q=<domain>.com&output=json'   every logged certificate for the domain\n  | jq .   parse the JSON to extract subdomain names\nCertificate transparency reveals subdomains without touching the target; the card then resolves them to IPs with a host loop, and cross-references Shodan for exposed services."

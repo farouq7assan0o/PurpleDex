@@ -116,7 +116,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc."
       },
       {
         "platform": "splunk",
@@ -131,7 +132,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Normal service ticket requests for file shares, SQL, etc."
       },
       {
         "platform": "splunk",
@@ -146,7 +148,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "sigma",
@@ -158,7 +161,8 @@
           "T1482"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "sigma",
@@ -170,7 +174,8 @@
           "T1482"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -181,7 +186,9 @@
           "T1558.001",
           "T1482"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Service accounts with automated logons, scheduled tasks",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -217,7 +224,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /sids:<target_enterprise_admin_sid> /user:Administrator /service:krbtgt /target:<target_domain> /ptt"
     }
   },
   "variations": [

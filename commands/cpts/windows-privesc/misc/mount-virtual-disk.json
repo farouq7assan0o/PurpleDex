@@ -107,7 +107,8 @@
           "T1003.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -118,7 +119,8 @@
           "T1003.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -129,7 +131,8 @@
           "T1003.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -139,7 +142,9 @@
         "attack": [
           "T1003.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -170,7 +175,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "guestmount -a <disk>.vmdk -i --ro /mnt/vmdk"
     }
   },
   "explain": "Mounts a found virtual disk to extract its credentials offline:\n  guestmount -a <disk>.vmdk   attach the VMDK/VHD(X) image\n  -i                       inspect it and mount its filesystems automatically\n  --ro /mnt/vmdk           read-only, at this mount point\nThen run impacket-secretsdump against the mounted SAM/SYSTEM/SECURITY hives to recover local account hashes."

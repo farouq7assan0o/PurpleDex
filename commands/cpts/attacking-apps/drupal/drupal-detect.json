@@ -104,7 +104,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -115,7 +116,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -126,7 +128,8 @@
           "T1595.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -136,7 +139,9 @@
         "attack": [
           "T1595.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -171,7 +176,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "curl -s http://<url>/CHANGELOG.txt | grep -m2 \"\""
     }
   },
   "explain": "Detects Drupal and reads its version:\n  curl -s http://<url>/CHANGELOG.txt   fetch the changelog\n  | grep -m2 \"\"                         show the first lines (top entry = current version)\nConfirms Drupal and the version to match against exploits (e.g. Drupalgeddon); droopescan scan drupal enumerates modules more deeply."

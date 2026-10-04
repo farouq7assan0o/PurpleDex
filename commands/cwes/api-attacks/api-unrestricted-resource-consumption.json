@@ -115,7 +115,8 @@
           "T1608.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web requests with similar patterns, security scanners, health checks"
       },
       {
         "platform": "splunk",
@@ -127,7 +128,8 @@
           "T1608.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -139,7 +141,8 @@
           "T1608.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "elastic",
@@ -150,7 +153,9 @@
           "T1499.001",
           "T1608.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -185,7 +190,9 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "dd if=/dev/urandom of=big.pdf bs=1M count=30   # upload via the vulnerable endpoint - no size/type/rate limit"
     }
-  }
+  },
+  "explain": "An API that doesn't limit file size, file type, or request rate on an upload endpoint (CWE-400) lets an attacker exhaust disk/bandwidth (DoS + financial cost), bypass extension checks to upload exe...\nThree failures compound here: (1) no file-size cap -> repeat uploads exhaust disk = DoS + cloud-storage cost; (2) no file-type/extension validation -> upload a real msfvenom .exe instead of a PDF; (3) ASP.NET Core serves /wwwroot statically by default, so uploaded files are publicly downloadable - the API becomes free malware hosting, and a socially-engineered admin opening the .exe yields RCE."
 }

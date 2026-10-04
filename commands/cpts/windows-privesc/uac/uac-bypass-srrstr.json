@@ -100,7 +100,8 @@
           "T1548.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -114,7 +115,8 @@
         "confidence": "medium",
         "log_ids": [
           "7"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -128,7 +130,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "sigma",
@@ -139,7 +142,8 @@
           "T1548.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -149,7 +153,9 @@
         "attack": [
           "T1548.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -189,7 +195,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "C:\\Windows\\SysWOW64\\SystemPropertiesAdvanced.exe"
     }
   },
   "explain": "Bypasses UAC via an auto-elevating binary that loads a hijackable DLL (egre55 technique):\n  C:\\Windows\\SysWOW64\\SystemPropertiesAdvanced.exe   an auto-elevating binary that loads srrstr.dll from a user-writable WindowsApps path\nDrop a malicious srrstr.dll into that path, then launch this binary; it loads your DLL and runs your code in a high-integrity (elevated) context without a UAC prompt."

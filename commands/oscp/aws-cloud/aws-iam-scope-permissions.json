@@ -168,7 +168,8 @@
           "T1069.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "splunk",
@@ -180,7 +181,8 @@
           "T1069.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "sigma",
@@ -192,7 +194,8 @@
           "T1069.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -203,7 +206,9 @@
           "T1087.004",
           "T1069.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -233,7 +238,8 @@
         "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "aws --profile <profile> iam list-user-policies --user-name <username>\naws --profile <profile> iam list-attached-user-policies --user-name <username>\naws --profile <profile> iam list-groups-for-user --user-name <username>\naws --profile <profile> iam list-attached-group-policies --group-name <groupname>\naws --profile <profile> iam get-policy-version --policy-arn <arn> --version-id <version>"
     }
   },
   "explain": "Maps the exact permissions of a compromised AWS identity:\n  sts get-caller-identity                       find your username/role from the ARN\n  iam list-user-policies / list-attached-user-policies   inline and managed policies on the user\n  iam list-groups-for-user + list-attached-group-policies   policies inherited via groups\n  iam get-policy-version --policy-arn ... --version-id ...   read a managed policy's JSON\nAssembles the full effective policy set so you know your rights and where to escalate."

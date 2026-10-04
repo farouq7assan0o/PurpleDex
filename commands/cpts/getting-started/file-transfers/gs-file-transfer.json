@@ -103,7 +103,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -117,7 +118,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "sigma",
@@ -128,7 +130,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -138,7 +141,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -169,7 +174,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 -m http.server 8000"
     }
   },
   "explain": "Core file-transfer loop: host from your box, pull onto the target, verify integrity:\n  python3 -m http.server 8000   serve the current directory over HTTP\n  wget/curl <url>               download onto the target\n  scp file user@host:/tmp/      or push over SSH\nGets tools onto the target (or loot off it); base64 copy/paste covers the case with no network path, and file/md5sum confirm the transfer was clean."

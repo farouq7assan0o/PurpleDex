@@ -115,5 +115,9 @@
       "note": "Disk forensics: Autopsy, MFTECmd, EvtxECmd, Registry Explorer, Timeline Explorer."
     }
   ],
-  "explain": "Analyzes a memory dump with Volatility 3:\n  python vol.py       run Volatility 3\n  -q                  quiet (suppress progress noise)\n  -f PhysicalMemory.raw   the memory image to analyze\n  windows.malfind     plugin that finds PAGE_EXECUTE_READWRITE regions - a code-injection indicator\nFlags injected/hidden code; swap the plugin for pslist, pstree, psscan, cmdline, netscan, etc. to build the full picture of the captured system."
+  "explain": "Analyzes a memory dump with Volatility 3:\n  python vol.py       run Volatility 3\n  -q                  quiet (suppress progress noise)\n  -f PhysicalMemory.raw   the memory image to analyze\n  windows.malfind     plugin that finds PAGE_EXECUTE_READWRITE regions - a code-injection indicator\nFlags injected/hidden code; swap the plugin for pslist, pstree, psscan, cmdline, netscan, etc. to build the full picture of the captured system.",
+  "mitre": [
+    "T1055",
+    "T1003"
+  ]
 }

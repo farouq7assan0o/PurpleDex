@@ -132,7 +132,8 @@
           "T1059.006"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote administration tools (TeamViewer, AnyDesk) or cloud sync"
       },
       {
         "platform": "splunk",
@@ -144,7 +145,8 @@
           "T1059.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "splunk",
@@ -156,7 +158,8 @@
           "T1059.006"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -168,7 +171,8 @@
           "T1059.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -179,7 +183,9 @@
           "T1195.001",
           "T1059.006"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -215,7 +221,9 @@
         "Review Microsoft Defender for Endpoint, Web proxy logs, Linux Audit (auditd), Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "cat ~/.pip/pip.conf\ncat /etc/pip.conf\n# Look for: index-url = http://internal-pypi.offseclab.io/simple/\n# Or check ~/.pypirc for upload targets"
     }
-  }
+  },
+  "explain": "Dependency confusion / supply-chain attack against a private PyPI server: create a malicious Python package with the same name as an internal library dependency.\nWhen the target installs it (via pip or build pipeline), the malicious code in setup.py executes with the permissions of the installer.\nDependency confusion attack: if the internal PyPI server is configured to fall through to pypi.org for unknown packages, publishing the package to public PyPI may auto-install it (no internal server write access needed)."
 }

@@ -98,7 +98,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -110,7 +111,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -122,7 +124,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -133,7 +136,9 @@
           "T1595",
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -168,7 +173,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "nmap -p- -sC -Pn <ip> --open   # look for 8500, then /CFIDE/administrator/index.cfm"
     }
   },
   "explain": "Detects a ColdFusion server and locates its admin panel:\n  nmap -p- -sC -Pn <ip> --open   full scan looking for the ColdFusion port 8500\nColdFusion also uses 80/443/1935/5500; the admin console lives at /CFIDE/administrator/index.cfm and .cfm/.cfc are the app extensions - version-match it to CVEs (e.g. CVE-2010-2861 LFI) for exploitation."

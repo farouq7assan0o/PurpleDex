@@ -117,5 +117,9 @@
       "note": "Memory forensics - identify suspicious PIDs before hunting disk artifacts."
     }
   ],
-  "explain": "Runs Chainsaw to hunt Sigma detections across collected Windows event logs:\n  hunt <logs_path>   scan this folder of .evtx logs (here the KAPE-collected winevt\\Logs)\n  -s sigma/          match against the Sigma rules directory\n  --mapping ...sigma-event-logs-all.yml   tells Chainsaw which event fields each rule maps to\n  -r rules/          also apply Chainsaw's own detection rules\n  --csv --output output_csv   write hits to CSV in this folder\nSurfaces malicious activity in the logs; the card also covers MFTECmd, EvtxECmd, PECmd, and RegRipper for the rest of a disk-forensics timeline."
+  "explain": "Runs Chainsaw to hunt Sigma detections across collected Windows event logs:\n  hunt <logs_path>   scan this folder of .evtx logs (here the KAPE-collected winevt\\Logs)\n  -s sigma/          match against the Sigma rules directory\n  --mapping ...sigma-event-logs-all.yml   tells Chainsaw which event fields each rule maps to\n  -r rules/          also apply Chainsaw's own detection rules\n  --csv --output output_csv   write hits to CSV in this folder\nSurfaces malicious activity in the logs; the card also covers MFTECmd, EvtxECmd, PECmd, and RegRipper for the rest of a disk-forensics timeline.",
+  "mitre": [
+    "T1070",
+    "T1005"
+  ]
 }

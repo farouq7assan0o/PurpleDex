@@ -113,7 +113,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -124,7 +125,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -135,7 +137,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -145,7 +148,9 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -179,8 +184,10 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "hashcat -a 0 -m <mode> <hash> /usr/share/wordlists/rockyou.txt"
+    },
+    "detection": "Offline attack - no direct network detection. Monitor for the initial credential theft (hash capture, dump, or relay) that provides the hashes. Alert on the use of cracked credentials via new logon events (4624) with previously unseen source IPs."
   },
   "type": "command",
   "explain": "Runs a straight dictionary attack with hashcat:\n  hashcat -a 0             attack mode 0 = straight (hash each wordlist entry and compare)\n  -m <mode>                the hash algorithm number\n  <hash>                   the target hash\n  /usr/share/wordlists/rockyou.txt   the wordlist\nAdd -r <rule_file> (e.g. best64.rule) to mutate each candidate, greatly expanding coverage at little cost."

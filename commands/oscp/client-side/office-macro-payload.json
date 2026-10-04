@@ -119,7 +119,8 @@
           "T1059.001"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -135,7 +136,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -148,7 +150,8 @@
           "T1059.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -160,7 +163,9 @@
           "T1204.002",
           "T1059.001"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -191,7 +196,9 @@
         "Review PowerShell Script Block / Module Logs, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Sub AutoOpen()\n    MyMacro\nEnd Sub\n# ... (see full command in card)"
     }
-  }
+  },
+  "explain": "Classic client-side phishing vector: embed a VBA macro in a Word document that fires on open (AutoOpen / Document_Open) and runs a PowerShell download-and-execute cradle.\nSplit the PowerShell string across VBA variables (Str = Str + \"...\") to defeat trivial AV string matching."
 }

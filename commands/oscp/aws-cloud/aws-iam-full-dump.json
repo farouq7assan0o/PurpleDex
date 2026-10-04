@@ -138,7 +138,8 @@
           "T1069.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -150,7 +151,8 @@
           "T1069.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "sigma",
@@ -162,7 +164,8 @@
           "T1069.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -173,7 +176,9 @@
           "T1087.004",
           "T1069.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -203,7 +208,8 @@
         "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "aws --profile <profile> iam get-account-authorization-details --filter User Group LocalManagedPolicy Role | tee account-auth-details.json\naws --profile <profile> iam get-account-authorization-details --filter User --query \"UserDetailList[].UserName\""
     }
   },
   "explain": "Dumps the entire IAM configuration in one call and slices it with JMESPath:\n  iam get-account-authorization-details --filter User Group LocalManagedPolicy Role   pull all users, groups, roles, and their attached policies\n  --query \"UserDetailList[].UserName\"   JMESPath to extract just the fields you want\nRequires iam:GetAccountAuthorizationDetails (in SecurityAudit/ReadOnlyAccess); tee the JSON, then query it offline to map who can do what and find escalation paths."

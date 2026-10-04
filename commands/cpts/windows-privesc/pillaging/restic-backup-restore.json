@@ -115,7 +115,8 @@
           "T1003.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -129,7 +130,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -143,7 +145,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "sigma",
@@ -154,7 +157,8 @@
           "T1003.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -164,7 +168,9 @@
         "attack": [
           "T1003.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -201,7 +207,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "restic.exe -r <repo> restore <snapshot_id> --target C:\\Restore"
     }
   },
   "explain": "Recovers registry hives from a found restic backup repo to extract hashes:\n  restic.exe -r <repo>     open the repository (needs its password)\n  restore <snapshot_id>    restore this snapshot\n  --target C:\\Restore      where to write the restored files\nRestore a snapshot containing C:\\Windows\\System32\\config to get SAM/SYSTEM/SECURITY, then secretsdump them offline for the Administrator hash (pass-the-hash)."

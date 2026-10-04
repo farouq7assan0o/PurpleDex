@@ -47,5 +47,6 @@
   ],
   "mitre": [
     "T1591"
-  ]
+  ],
+  "explain": "Post-Engagement - Report Structure - reference (methodology, not a runnable command).\nReport components: attack chain narrative; executive summary (non-technical); detailed findings (risk rating, impact, remediation, external refs); steps to reproduce each finding; near/medium/long-term recommendations; appendices (scope, OSINT, cracked passwords, ports/services, compromised hosts/accounts, files transferred, system modifications, AD analysis, scan data)."
 }

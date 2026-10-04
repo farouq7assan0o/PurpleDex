@@ -98,7 +98,8 @@
           "T1649"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
         "log_ids": [
           "4886",
           "4887"
-        ]
+        ],
+        "false_positives": "Legitimate NTLM authentication in environments without signing enforcement"
       },
       {
         "platform": "splunk",
@@ -124,7 +126,8 @@
           "T1649"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate NTLM authentication in environments without signing enforcement"
       },
       {
         "platform": "sigma",
@@ -135,7 +138,8 @@
           "T1649"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate NTLM authentication in environments without signing enforcement"
       },
       {
         "platform": "elastic",
@@ -145,7 +149,9 @@
         "attack": [
           "T1649"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate NTLM authentication in environments without signing enforcement",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -178,7 +184,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "impacket-ntlmrelayx -t http://<ca_ip>/certsrv/certfnsh.asp --adcs -smb2support --template <template>"
     }
   },
   "type": "command",

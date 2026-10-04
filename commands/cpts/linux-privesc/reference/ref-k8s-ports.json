@@ -65,5 +65,6 @@
   "mitre": [
     "T1613"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Default Kubernetes component ports - useful for identifying an attackable cluster during enumeration.\netcd                2379, 2380\nAPI server          6443\nScheduler           10251\nController Manager   10252\nKubelet API         10250\nRead-Only Kubelet   10255"
 }

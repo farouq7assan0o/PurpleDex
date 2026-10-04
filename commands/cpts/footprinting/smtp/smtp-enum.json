@@ -145,7 +145,8 @@
           "T1087"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -157,7 +158,8 @@
           "T1087"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -169,7 +171,8 @@
           "T1087"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -181,7 +184,8 @@
           "T1087"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -192,7 +196,9 @@
           "T1046",
           "T1087"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -233,7 +239,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "telnet <ip> 25"
     }
   },
   "explain": "Interacts with SMTP over telnet to enumerate and test the server:\n  telnet <ip> 25   open a raw connection to the SMTP port\nGrab the banner with HELO/EHLO, enumerate users with VRFY <user> (valid vs unknown responses differ), and even send mail with MAIL FROM/RCPT TO/DATA; nmap's smtp-open-relay script checks for relaying."

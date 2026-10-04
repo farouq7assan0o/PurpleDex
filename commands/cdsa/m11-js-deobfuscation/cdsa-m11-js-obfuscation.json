@@ -89,5 +89,9 @@
   "tools": [
     "curl"
   ],
-  "explain": "Fetches a suspicious JavaScript file so you can deobfuscate it:\n  curl -s http://<target_ip>:<port>/secret.js   silently download the script\nHaving the raw source lets you spot the obfuscation type (minified, packed eval(function(p,a,c,k,e,d)), obfuscator.io arrays, JSFuck) and reverse it - beautify it, or replace eval( with console.log( and run it to print the real source."
+  "explain": "Fetches a suspicious JavaScript file so you can deobfuscate it:\n  curl -s http://<target_ip>:<port>/secret.js   silently download the script\nHaving the raw source lets you spot the obfuscation type (minified, packed eval(function(p,a,c,k,e,d)), obfuscator.io arrays, JSFuck) and reverse it - beautify it, or replace eval( with console.log( and run it to print the real source.",
+  "mitre": [
+    "T1027",
+    "T1059.007"
+  ]
 }

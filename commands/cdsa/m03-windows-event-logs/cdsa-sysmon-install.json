@@ -122,7 +122,8 @@
           "T1547"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -139,7 +140,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -156,7 +158,8 @@
         "confidence": "medium",
         "log_ids": [
           "4"
-        ]
+        ],
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "sigma",
@@ -170,7 +173,8 @@
           "T1547"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "sigma",
@@ -184,7 +188,8 @@
           "T1547"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -197,7 +202,9 @@
           "T1071",
           "T1547"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -228,7 +235,8 @@
         "Check for new scheduled tasks, services, or registry autoruns on the affected host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sysmon.exe -i -accepteula -h md5,sha256,imphash -l -n"
     }
   },
   "explain": "Installs Sysmon to capture deep Windows telemetry:\n  -i            install the service and driver\n  -accepteula   accept the license non-interactively\n  -h md5,sha256,imphash   record these hash types for created/loaded images\n  -l            log module (image) loads\n  -n            log network connections\nStarts high-fidelity logging to the Sysmon/Operational channel; for real use install with a curated config ('-i sysmonconfig-export.xml') and update it later with '-c'."

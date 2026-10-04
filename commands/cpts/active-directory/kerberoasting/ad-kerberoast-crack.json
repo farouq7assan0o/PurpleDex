@@ -109,7 +109,8 @@
           "T1558.003"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services"
       },
       {
         "platform": "splunk",
@@ -120,7 +121,8 @@
           "T1558.003"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services"
       },
       {
         "platform": "sigma",
@@ -131,7 +133,8 @@
           "T1558.003"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services"
       },
       {
         "platform": "elastic",
@@ -141,7 +144,9 @@
         "attack": [
           "T1558.003"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Service accounts legitimately requesting tickets for authorized services",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -176,8 +181,10 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "hashcat -m 13100 <hashfile> /usr/share/wordlists/rockyou.txt"
+    },
+    "detection": "Offline attack - no direct network detection. Monitor for the initial credential theft (hash capture, dump, or relay) that provides the hashes. Alert on the use of cracked credentials via new logon events (4624) with previously unseen source IPs."
   },
   "tools": [
     "hashcat"

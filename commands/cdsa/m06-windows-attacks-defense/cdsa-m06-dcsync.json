@@ -118,7 +118,8 @@
           "T1003.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "high"
+        "confidence": "high",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "elastic",
@@ -128,7 +129,9 @@
         "attack": [
           "T1003.006"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -158,7 +161,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "mimikatz # lsadump::dcsync /domain:<domain> /user:Administrator"
     }
   },
   "steps": [

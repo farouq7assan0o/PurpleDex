@@ -85,5 +85,9 @@
       "note": "Analyze the PhysicalMemory.raw dump with Volatility v2/v3."
     }
   ],
-  "explain": "Uses KAPE to triage-collect forensic artifacts from a Windows drive:\n  --tsource D:            the source volume to collect from\n  --tdest C:\\investigation   where to write the collected artifacts\n  --target !SANS_Triage   the compound target that grabs all the critical artifacts (MFT, registry, event logs, etc.)\nGives you a defensible artifact set without imaging the whole disk; add --module !EZParser to parse it, and pair with WinPmem/LiME for memory acquisition."
+  "explain": "Uses KAPE to triage-collect forensic artifacts from a Windows drive:\n  --tsource D:            the source volume to collect from\n  --tdest C:\\investigation   where to write the collected artifacts\n  --target !SANS_Triage   the compound target that grabs all the critical artifacts (MFT, registry, event logs, etc.)\nGives you a defensible artifact set without imaging the whole disk; add --module !EZParser to parse it, and pair with WinPmem/LiME for memory acquisition.",
+  "mitre": [
+    "T1005",
+    "T1070"
+  ]
 }

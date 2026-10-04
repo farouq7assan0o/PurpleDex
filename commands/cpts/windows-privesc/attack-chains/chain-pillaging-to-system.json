@@ -144,7 +144,8 @@
           "T1003.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -158,7 +159,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -172,7 +174,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "sigma",
@@ -183,7 +186,8 @@
           "T1003.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "sigma",
@@ -194,7 +198,8 @@
           "T1003.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "elastic",
@@ -204,7 +209,9 @@
         "attack": [
           "T1003.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -249,7 +256,9 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 mremoteng_decrypt.py -s \"<blob>\"   # -> next user's password"
     }
-  }
+  },
+  "explain": "The full Pillaging kill chain: harvest stored creds, pivot through users, restore backup hives, extract the Administrator hash, and pass-the-hash to SYSTEM.\nKey sections:\n  1. Decrypt mRemoteNG password\n  2. Steal Firefox/Slack cookie\n  3. Get restic repo password (next user)\n  4. Restore hives from backup\n  5. Exfil SAM/SYSTEM/SECURITY via SMB\n=== Attack Chain: Pillaging  Credential Chain  SYSTEM ===\nSystematic post-exploitation sweep converting information access into privilege escalation.\n\n=== CHAIN OVERVIEW ===\nInitial low-priv foot..."
 }

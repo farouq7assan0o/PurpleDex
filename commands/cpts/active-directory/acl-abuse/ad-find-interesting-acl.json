@@ -121,7 +121,8 @@
           "T1222.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -135,7 +136,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Admin scripts using the same cmdlets for legitimate management tasks"
       },
       {
         "platform": "sigma",
@@ -146,7 +148,8 @@
           "T1222.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -157,7 +160,8 @@
           "T1222.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "elastic",
@@ -167,7 +171,9 @@
         "attack": [
           "T1222.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -202,7 +208,8 @@
         "Review PowerShell Script Block / Module Logs, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Find-InterestingDomainAcl -ResolveGUIDs"
     }
   },
   "tools": [

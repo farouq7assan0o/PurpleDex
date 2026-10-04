@@ -60,5 +60,6 @@
   "mitre": [
     "T1110.002"
   ],
-  "exam": "exam-ok"
+  "exam": "exam-ok",
+  "explain": "Map the $id$ prefix in /etc/shadow hashes to the algorithm so you choose the correct cracking mode.\n$1$      Salted MD5\n$5$      SHA-256\n$6$      SHA-512\n$2a$     bcrypt\n$7$      scrypt\n$argon2i$  Argon2"
 }

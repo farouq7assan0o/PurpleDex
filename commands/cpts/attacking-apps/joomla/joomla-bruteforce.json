@@ -91,7 +91,8 @@
           "T1110"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -102,7 +103,8 @@
           "T1110"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -113,7 +115,8 @@
           "T1110"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -123,7 +126,9 @@
         "attack": [
           "T1110"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -158,7 +163,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python3 joomla-brute.py -u http://<url> -w <wordlist> -usr <user>"
     }
   },
   "explain": "Brute-forces the Joomla administrator login:\n  python3 joomla-brute.py  the brute tool\n  -u http://<url>          the Joomla site\n  -w <wordlist>            the password list\n  -usr <user>              the admin username to attack\nRecovered admin access allows code execution via the template editor."

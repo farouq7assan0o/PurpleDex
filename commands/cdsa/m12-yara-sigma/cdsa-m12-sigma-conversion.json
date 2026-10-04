@@ -97,5 +97,8 @@
     "pySigma",
     "chainsaw"
   ],
-  "explain": "Converts a generic Sigma rule into a backend-specific query with sigmac:\n  python sigmac      the Sigma converter\n  -t powershell      target backend (here a Get-WinEvent PowerShell filter; also splunk, es-qs, qradar)\n  'C:\\Rules\\sigma\\rule.yml'   the Sigma rule to convert\nEmits a query you can run in that platform; add -c <config.yml> for field mappings, or use Chainsaw 'hunt' to apply the rule directly against .evtx logs."
+  "explain": "Converts a generic Sigma rule into a backend-specific query with sigmac:\n  python sigmac      the Sigma converter\n  -t powershell      target backend (here a Get-WinEvent PowerShell filter; also splunk, es-qs, qradar)\n  'C:\\Rules\\sigma\\rule.yml'   the Sigma rule to convert\nEmits a query you can run in that platform; add -c <config.yml> for field mappings, or use Chainsaw 'hunt' to apply the rule directly against .evtx logs.",
+  "mitre": [
+    "T1059"
+  ]
 }

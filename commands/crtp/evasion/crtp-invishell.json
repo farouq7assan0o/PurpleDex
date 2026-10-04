@@ -125,7 +125,8 @@
           "T1112"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -142,7 +143,8 @@
         "confidence": "medium",
         "log_ids": [
           "13"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -159,7 +161,8 @@
         "confidence": "medium",
         "log_ids": [
           "7"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -173,7 +176,8 @@
           "T1112"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -187,7 +191,8 @@
           "T1112"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "elastic",
@@ -200,7 +205,9 @@
           "T1574.012",
           "T1112"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -244,7 +251,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "C:\\AD\\Tools\\InviShell\\RunWithRegistryNonAdmin.bat"
     }
   },
   "explain": "Launches a PowerShell session with AMSI, Script Block Logging, and Module Logging disabled - no admin needed - via a COR_PROFILER COM hijack under HKCU:\n  RunWithRegistryNonAdmin.bat   registers the InprocServer32 CLSID in HKCU, then starts powershell so the CLR loads InShellProf.dll as a profiler that neuters logging/AMSI\nUse the non-admin .bat (registry-based) as a low-priv user, or RunWithPathAsAdmin.bat when elevated. Then dot-source PowerView/Mimikatz quietly in that cloaked shell."

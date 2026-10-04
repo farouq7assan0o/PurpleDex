@@ -105,7 +105,8 @@
           "T1068"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -119,7 +120,8 @@
         "confidence": "medium",
         "log_ids": [
           "7045"
-        ]
+        ],
+        "false_positives": "Legitimate service installations during software deployment"
       },
       {
         "platform": "splunk",
@@ -133,7 +135,8 @@
         "confidence": "medium",
         "log_ids": [
           "13"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -144,7 +147,8 @@
           "T1068"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -154,7 +158,9 @@
         "attack": [
           "T1068"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -194,7 +200,8 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "EoPLoadDriver.exe System\\CurrentControlSet\\Capcom c:\\Tools\\Capcom.sys"
     }
   },
   "explain": "Abuses Print Operators' SeLoadDriverPrivilege to load a vulnerable driver and get SYSTEM:\n  EoPLoadDriver.exe        register the driver under HKCU and load it via NtLoadDriver\n  System\\CurrentControlSet\\Capcom   the registry path it creates for the service\n  c:\\Tools\\Capcom.sys      the vulnerable Capcom driver to load\nWith the driver loaded, ExploitCapcom runs a shell as SYSTEM by abusing its kernel primitive."

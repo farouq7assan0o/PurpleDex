@@ -51,5 +51,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1591"
-  ]
+  ],
+  "explain": "The spectrum of security assessments and how they differ - so you frame findings correctly for the engagement type.\nVulnerability Assessment: breadth, automated scanning, list findings (no exploitation)."
 }

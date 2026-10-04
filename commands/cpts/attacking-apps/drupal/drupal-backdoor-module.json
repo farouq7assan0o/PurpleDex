@@ -80,12 +80,13 @@
   "defense": {
     "why_it_works": "An admin with the 'administer modules' permission can install arbitrary module archives, and Drupal executes module PHP. Bundling a webshell plus a .htaccess that re-enables PHP execution in the module directory yields RCE. The platform trusts uploaded module code by design, so an admin-level compromise becomes server code execution.",
     "prerequisites": "Drupal admin session with module-install permission (or a compromised admin account); ability to upload/point to a module archive; the web server executes PHP under the module directory.",
-    "impact": "T1190 Exploit Public-Facing Application + T1505.003 Server Software Component: Web Shell \u2014 persistent RCE as the web-server user.",
+    "impact": "T1190 Exploit Public-Facing Application + T1505.003 Server Software Component: Web Shell — persistent RCE as the web-server user.",
     "detection": "New .php (webshell) and .htaccess written under modules/ (file-integrity monitoring / Sysmon 11). Web logs: requests to an unexpected module path returning command output. Drupal watchdog: module install events. Outbound connections from the web-server process.",
     "prevention": "Restrict 'administer modules' to trusted admins; disable UI module installation in production ($settings['allow_authorize_operations']=FALSE); enforce signed/reviewed modules; make the web root read-only to the runtime user; WAF on /admin.",
     "sources": [
       "https://attack.mitre.org/techniques/T1190/",
       "https://attack.mitre.org/techniques/T1505/003/"
     ]
-  }
+  },
+  "explain": "Downloads a legitimate module, injects a PHP webshell plus a .htaccess to allow execution, repackages it, and installs it via Extend > Install new module for RCE.\nBackdooring a legit module (adding shell.php + a permissive .htaccess) is the go-to when the PHP filter is unavailable."
 }

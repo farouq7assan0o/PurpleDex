@@ -92,7 +92,8 @@
           "T1596"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -103,7 +104,8 @@
           "T1596"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -114,7 +116,8 @@
           "T1596"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -124,7 +127,9 @@
         "attack": [
           "T1596"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -165,5 +170,6 @@
       "label": "Wayback CDX API",
       "command": "curl -s \"http://web.archive.org/cdx/search/cdx?url=*.<domain>/*&output=text&fl=original&collapse=urlkey\""
     }
-  ]
+  ],
+  "explain": "The Wayback Machine stores historical snapshots of a site - old pages, removed endpoints, and files that no longer exist live can reveal past vulnerabilities or hidden paths.\nThe Wayback Machine (web.archive.org) reveals old endpoints, removed pages, and dev artifacts that still exist server-side."
 }

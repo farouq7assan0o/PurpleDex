@@ -113,7 +113,8 @@
           "T1187"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -127,7 +128,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "splunk",
@@ -141,7 +143,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "sigma",
@@ -152,7 +155,8 @@
           "T1187"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "elastic",
@@ -162,7 +166,9 @@
         "attack": [
           "T1187"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -204,5 +210,6 @@
         "If confirmed malicious, isolate the host and escalate to incident response"
       ]
     }
-  }
+  },
+  "explain": "An SCF file with an IconFile pointing at your SMB host forces any user who browses the folder to authenticate to you.\nCapture the NTLMv2 hash with Responder and crack it offline.\n=== SCF/LNK File on Share - NTLMv2 Hash Capture ===\nPlace malicious file on file share to capture NTLMv2 hashes when users browse the directory.\n\n=== SCF FILE METHOD ===\nShell Command Files (.scf) ..."
 }

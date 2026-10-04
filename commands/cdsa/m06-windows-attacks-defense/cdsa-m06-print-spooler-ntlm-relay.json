@@ -97,7 +97,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "sigma",
@@ -126,7 +128,8 @@
           "T1557.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "sigma",
@@ -139,7 +142,8 @@
           "T1557.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "elastic",
@@ -151,7 +155,9 @@
           "T1003.006",
           "T1557.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -182,7 +188,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "impacket-ntlmrelayx -t dcsync://<dc2_ip> -smb2support"
     }
   },
   "steps": [

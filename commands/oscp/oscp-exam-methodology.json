@@ -104,5 +104,6 @@
       "note": "Map the AD set once you have a foothold",
       "rel": "next"
     }
-  ]
+  ],
+  "explain": "Orientation for the 24-hour proctored OSCP exam: the point structure and rules (esp.\nKey sections:\n  1. Know the rules (before you touch anything)\n  2. Enumerate EVERY host thoroughly (don't jump to exploit)\n  3. Foothold (manual first, public exploits adapted)\n  4. Local enumeration after every shell\n  5. Privilege escalation -> grab proof\nthe Metasploit-once limit), the per-host loop, the AD-set flow, and the anti-rabbit-hole habits."
 }

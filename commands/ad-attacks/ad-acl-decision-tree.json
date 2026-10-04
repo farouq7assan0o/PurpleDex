@@ -63,5 +63,6 @@
     "bloodhound",
     "bloodyAD",
     "PowerView"
-  ]
+  ],
+  "explain": "Master reference: given an ACL edge from BloodHound (GenericAll, GenericWrite, WriteDACL, WriteOwner, ForceChangePassword, AddMember, AddKeyCredentialLink, etc.), which attack to run and which card covers it.\nStart here after BloodHound flags an outbound control edge.\n=== ACL EDGE -> ATTACK -> CARD ===\n\nGenericAll (user):\n  - Shadow Credentials (stealth)          -> ad-shadow-credentials\n  - ForceChangePassword (loud)            -> ad-force-change-password\n  - T..."
 }

@@ -96,7 +96,8 @@
           "T1518"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -107,7 +108,8 @@
           "T1518"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -118,7 +120,8 @@
           "T1518"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -129,7 +132,8 @@
           "T1518"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -140,7 +144,8 @@
           "T1518"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -150,7 +155,9 @@
         "attack": [
           "T1518"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -185,7 +192,8 @@
         "Review Linux Audit (auditd), Web proxy logs, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "for i in $(curl -s https://gtfobins.github.io/gtfobins.json | jq -r 'keys[]'); do if grep -q \"$i\" installed_pkgs.list; then echo \"Check GTFO: $i\"; fi; done"
     }
   },
   "explain": "Auto-flags installed binaries that GTFOBins documents an escalation for:\n  curl -s https://gtfobins.github.io/gtfobins.json | jq -r 'keys[]'   pull every GTFOBins entry name\n  grep -q \"$i\" installed_pkgs.list   check each against your installed-packages list\n  echo \"Check GTFO: $i\"    print the ones present on the target\nEach match is a candidate for a SUID/sudo/shell-escape technique - look it up on GTFOBins."

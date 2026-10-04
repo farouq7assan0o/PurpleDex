@@ -96,7 +96,8 @@
           "T1190"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web requests with similar patterns, security scanners, health checks"
       },
       {
         "platform": "splunk",
@@ -107,7 +108,8 @@
           "T1190"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -118,7 +120,8 @@
           "T1190"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings"
       },
       {
         "platform": "elastic",
@@ -128,7 +131,9 @@
         "attack": [
           "T1190"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate web traffic to similar domains or using similar user-agent strings",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -163,7 +168,8 @@
         "Review IIS Web Server logs, Windows Security Event Log, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "python2.7 joomla_dir_trav.py --url \"http://<url>/administrator/\" --username <user> --password <pass> --dir /"
     }
   },
   "explain": "Reads files outside the webroot via Joomla Media Manager traversal (CVE-2019-10945):\n  python2.7 joomla_dir_trav.py   the exploit\n  --url \"http://<url>/administrator/\"   the admin base\n  --username/--password          valid admin credentials\n  --dir /                        the directory to list/read\nAuthenticated directory traversal lets you enumerate and read arbitrary files on the host - point --dir at sensitive paths to loot configs."

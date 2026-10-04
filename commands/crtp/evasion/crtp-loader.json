@@ -136,7 +136,8 @@
           "T1685"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -153,7 +154,8 @@
         "confidence": "medium",
         "log_ids": [
           "7"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -170,7 +172,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -184,7 +187,8 @@
           "T1685"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -198,7 +202,8 @@
           "T1685"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "elastic",
@@ -211,7 +216,9 @@
           "T1562.006",
           "T1685"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -255,7 +262,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Loader.exe -path <tool_path_or_url> -args <tool_arguments>"
     }
   },
   "explain": "CRTP's core execution primitive: unhooks ETW/AMSI in the current process, then reflectively loads a .NET assembly and runs it entirely in memory:\n  Loader.exe               the in-memory loader (no child process, nothing on disk)\n  -path <tool_path_or_url> the assembly to run - a local path or an http:// URL (fileless)\n  -args <tool_arguments>   arguments passed straight to that tool (Rubeus/SafetyKatz/Certify)\nBecause the tool never lands as a file and API hooks are removed, on-host EDR sees far less. Pair with a URL + portproxy to run tools fileless on deep hosts."

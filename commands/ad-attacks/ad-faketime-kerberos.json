@@ -22,7 +22,9 @@
     "ntpdate",
     "troubleshooting"
   ],
-  "mitre": [],
+  "mitre": [
+    "T1558"
+  ],
   "exam": "exam-ok",
   "notes": "=== THE ERROR ===\n  Kerberos SessionError: KRB_AP_ERR_SKEW(Clock skew too great)\nKerberos rejects tickets when the client and KDC clocks differ by more than the\nallowed skew (default 5 minutes). AD labs and HTB boxes often run a different time\nthan your attack host.\n\n=== OPTION A - SYNC THE WHOLE HOST (simplest, but changes your clock) ===\n  sudo timedatectl set-ntp off        # stop NTP from re-correcting\n  sudo ntpdate <dc_ip>                 # set host clock to the DC\n  # or: sudo rdate -n <dc_ip>\n  # when done, re-enable normal time: sudo timedatectl set-ntp on\n\n=== OPTION B - faketime (does NOT touch your real clock) ===\n  faketime \"$(ntpdate -q <dc_ip> | cut -d ' ' -f 1,2)\" impacket-getST ...\n  # only the wrapped command sees the DC's time; the rest of your system is unaffected.\n  # preferred when other tools/logging depend on your real clock.\n\n=== OPTION C - per-tool time ===\n  Some tools accept an explicit time or auto-handle skew; when in doubt, use faketime.\n\n=== WHY IT MATTERS IN A CHAIN ===\n  PKINIT (Shadow Credentials, ESC1/ESC16 cert auth) and getST/getTGT all fail on skew.\n  Fix skew FIRST, before shadow creds, ADCS, or getST, or you will chase phantom errors.",
   "examples": [

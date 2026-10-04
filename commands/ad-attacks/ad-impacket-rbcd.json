@@ -102,7 +102,8 @@
         "log_ids": [
           "4741",
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -117,7 +118,8 @@
         "confidence": "medium",
         "log_ids": [
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -132,7 +134,8 @@
         "confidence": "medium",
         "log_ids": [
           "4741"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -144,7 +147,8 @@
           "T1558.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -156,7 +160,8 @@
           "T1558.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -167,7 +172,9 @@
           "T1134.001",
           "T1558.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -202,7 +209,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "impacket-rbcd -delegate-to '<target_account>$' -delegate-from 'EVIL$' -action write -dc-ip <dc_ip> <domain>/<user>:<password>"
     }
   },
   "tools": [

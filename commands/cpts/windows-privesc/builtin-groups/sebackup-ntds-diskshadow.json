@@ -115,7 +115,8 @@
           "T1003.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -129,7 +130,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -144,7 +146,8 @@
         "log_ids": [
           "7036",
           "8222"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -155,7 +158,8 @@
           "T1003.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -165,7 +169,9 @@
         "attack": [
           "T1003.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -209,7 +215,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "diskshadow.exe   # script a shadow copy, then Copy-FileSeBackupPrivilege the ntds.dit"
     }
   },
   "explain": "Extracts the AD database on a DC using SeBackupPrivilege plus a shadow copy:\n  diskshadow.exe           script a Volume Shadow Copy of C: (works around the NTDS lock)\nThen Copy-FileSeBackupPrivilege the NTDS.dit off the snapshot and reg save the SYSTEM hive; run impacket-secretsdump -ntds -system LOCAL to dump every domain hash offline. Backup Operators on a DC = domain compromise."

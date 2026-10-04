@@ -111,7 +111,8 @@
           "T1580"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -124,7 +125,8 @@
           "T1580"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -137,7 +139,8 @@
           "T1580"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -149,7 +152,9 @@
           "T1087.004",
           "T1580"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -174,7 +179,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "gcloud projects get-iam-policy <project_id>"
     }
   },
   "explain": "Enumerates GCP IAM, which is resource-based rather than identity-based:\n  gcloud projects get-iam-policy <project_id>   read the role bindings on a project\nYou cannot list an identity's permissions directly, so you read policies on orgs/projects/resources and enumerate service accounts; --flatten/--filter isolates a given member's roles, and 'iam service-accounts keys list' finds usable keys."

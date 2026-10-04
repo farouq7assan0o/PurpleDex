@@ -126,7 +126,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -141,7 +142,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -153,7 +155,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -164,7 +167,9 @@
           "T1049",
           "T1087.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -199,7 +204,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Get-NetSession -ComputerName <target>\nFind-LocalAdminAccess"
     }
   },
   "explain": "Finds active sessions and tests local admin rights with PowerView:\n  Get-NetSession -ComputerName <target>   list SMB sessions on the host (who is connected)\n  Find-LocalAdminAccess                    scan the domain for hosts where you are local admin\nTogether they show where privileged users are logged on and where you can already act as admin - the map for lateral movement and credential harvesting."

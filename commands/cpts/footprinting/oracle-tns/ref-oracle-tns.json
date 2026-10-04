@@ -58,5 +58,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1210"
-  ]
+  ],
+  "explain": "Oracle TNS ports and default credential sets to try first.\nPorts: 1521/tcp (TNS listener), 1434/tcp (DAC)\nDefault creds: scott/tiger, Oracle 9 CHANGE_ON_INSTALL, DBSNMP/dbsnmp\nWebroots for file upload: Linux /var/www/html, Windows C:\\inetpub\\wwwroot"
 }

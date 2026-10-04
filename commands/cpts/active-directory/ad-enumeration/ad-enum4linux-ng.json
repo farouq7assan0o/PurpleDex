@@ -93,7 +93,8 @@
           "T1087.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -109,7 +110,8 @@
         "log_ids": [
           "4661",
           "5140"
-        ]
+        ],
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -121,7 +123,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "sigma",
@@ -133,7 +136,8 @@
           "T1087.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "elastic",
@@ -144,7 +148,9 @@
           "T1201",
           "T1087.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Normal file share access, printer connections, domain operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -188,7 +194,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "enum4linux-ng -P <dc_ip> -oA <outfile>"
     }
   },
   "tools": [

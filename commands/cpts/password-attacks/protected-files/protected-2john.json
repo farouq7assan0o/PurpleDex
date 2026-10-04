@@ -135,7 +135,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "splunk",
@@ -146,7 +147,8 @@
           "T1110.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized SSH sessions by system administrators"
       },
       {
         "platform": "sigma",
@@ -157,7 +159,8 @@
           "T1110.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -167,7 +170,9 @@
         "attack": [
           "T1110.002"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Authorized SSH sessions by system administrators",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -197,8 +202,10 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "ssh2john.py <file> > file.hash && john --wordlist=/usr/share/wordlists/rockyou.txt file.hash"
+    },
+    "detection": "Offline attack - no direct network detection. Monitor for the credential acquisition step that produced the hashes. Alert on new logon events (4624) using the cracked account from unexpected sources."
   },
   "type": "command",
   "explain": "Converts a password-protected file into a John-crackable hash:\n  ssh2john.py <file>       extract the hash from a protected artifact (SSH key here; office2john/pdf2john/zip2john for others)\n  > file.hash              save it\n  john --wordlist=/usr/share/wordlists/rockyou.txt file.hash   crack it\nReveal the recovered password with john --show; locate all helpers with 'locate *2john*'."

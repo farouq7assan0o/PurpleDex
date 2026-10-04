@@ -110,7 +110,8 @@
           "T1543.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -124,7 +125,8 @@
         "confidence": "medium",
         "log_ids": [
           "7040"
-        ]
+        ],
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -138,7 +140,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -149,7 +152,8 @@
           "T1543.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -159,7 +163,9 @@
         "attack": [
           "T1543.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -199,7 +205,8 @@
         "Check for new scheduled tasks, services, or registry autoruns on the affected host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sc config AppReadiness binPath= \"cmd /c net localgroup Administrators <user> /add\""
     }
   },
   "explain": "Abuses Server Operators (can reconfigure SYSTEM services) to run a command as SYSTEM:\n  sc config AppReadiness   reconfigure this service\n  binPath= \"cmd /c net localgroup Administrators <user> /add\"   point its executable at a command that adds you to Administrators\nStart the service to execute it as SYSTEM. On a DC this yields Domain Admin, after which you dump the DC hashes."

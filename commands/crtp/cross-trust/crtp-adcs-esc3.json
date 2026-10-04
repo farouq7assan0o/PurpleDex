@@ -129,7 +129,8 @@
         "confidence": "medium",
         "log_ids": [
           "4887"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -143,7 +144,8 @@
         "confidence": "medium",
         "log_ids": [
           "4887"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -157,7 +159,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "sigma",
@@ -168,7 +171,8 @@
           "T1649"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "elastic",
@@ -178,7 +182,9 @@
         "attack": [
           "T1649"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -212,7 +218,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<enrollment_agent_template>"
     }
   },
   "explain": "Step 1 of the ESC3 chain - obtain an Enrollment Agent certificate:\n  request                          enroll a certificate\n  /ca:<ca_server>\\<ca_name>        the issuing CA\n  /template:<enrollment_agent_template>   a template granting the Certificate Request Agent EKU\nWith the resulting EA cert you then enroll on behalf of any user (/onbehalfof:<domain>\\Administrator /enrollcert:ea_cert.pfx) against a second template, then Rubeus asktgt to get that user's TGT."

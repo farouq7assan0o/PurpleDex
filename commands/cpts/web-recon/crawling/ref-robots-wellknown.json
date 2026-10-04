@@ -84,5 +84,6 @@
       "command": "curl https://<domain>/sitemap.xml",
       "label": "GET sitemap.xml"
     }
-  ]
+  ],
+  "explain": "Standard discovery endpoints and the file types worth hunting while crawling.\nrobots.txt (www.example.com/robots.txt): Disallow/Allow paths often point at admin/private areas; Sitemap: lists pages."
 }

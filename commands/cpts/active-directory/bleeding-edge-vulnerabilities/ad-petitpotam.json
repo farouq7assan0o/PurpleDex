@@ -96,7 +96,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -111,7 +112,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "splunk",
@@ -126,7 +128,8 @@
         "confidence": "medium",
         "log_ids": [
           "18"
-        ]
+        ],
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "sigma",
@@ -138,7 +141,8 @@
           "T1649"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "sigma",
@@ -150,7 +154,8 @@
           "T1649"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services"
       },
       {
         "platform": "elastic",
@@ -161,7 +166,9 @@
           "T1557.001",
           "T1649"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate certificate enrollment for users, computers, or services",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -200,7 +207,8 @@
         "Review Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo ntlmrelayx.py -debug -smb2support --target http://<ca_host>/certsrv/certfnsh.asp --adcs --template DomainController"
     }
   },
   "tools": [

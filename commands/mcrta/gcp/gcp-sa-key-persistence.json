@@ -97,7 +97,8 @@
           "T1098.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "splunk",
@@ -108,7 +109,8 @@
           "T1098.001"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "sigma",
@@ -119,7 +121,8 @@
           "T1098.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software installations, startup script changes by IT"
       },
       {
         "platform": "elastic",
@@ -129,7 +132,9 @@
         "attack": [
           "T1098.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate software installations, startup script changes by IT",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -154,7 +159,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "gcloud iam service-accounts keys create key.json --iam-account <sa_email>"
     }
   },
   "explain": "Creates a long-lived JSON key for a service account you can manage - stealthy GCP persistence:\n  gcloud iam service-accounts keys create key.json   generate a new key and save it locally\n  --iam-account <sa_email>   the service account to mint the key for\nRequires iam.serviceAccountKeys.create. The downloaded key authenticates as the SA indefinitely, is MFA-independent, and survives user password resets - activate it later with gcloud auth activate-service-account."

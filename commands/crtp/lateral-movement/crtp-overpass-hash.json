@@ -122,7 +122,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "splunk",
@@ -137,7 +138,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "splunk",
@@ -152,7 +154,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "sigma",
@@ -164,7 +167,8 @@
           "T1558.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "sigma",
@@ -176,7 +180,8 @@
           "T1558.001"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "elastic",
@@ -187,7 +192,9 @@
           "T1550.002",
           "T1558.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -227,7 +234,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Rubeus.exe asktgt /user:<user> /rc4:<nt_hash> /domain:<domain> /ptt /opsec"
     }
   },
   "variations": [

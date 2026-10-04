@@ -53,5 +53,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1210"
-  ]
+  ],
+  "explain": "vsFTPd config locations, the settings that make FTP exploitable, and the useful NSE scripts.\nConfig: /etc/vsftpd.conf (settings), /etc/ftpusers (denied users)\nDangerous: anonymous_enable=YES, anon_upload_enable=YES, anon_mkdir_write_enable=YES, no_anon_password=YES, write_enable=YES, anon_..."
 }

@@ -98,7 +98,8 @@
         "confidence": "medium",
         "log_ids": [
           "4625"
-        ]
+        ],
+        "false_positives": "NTLM authentication from legitimate admin tools (SCCM, remote management)"
       },
       {
         "platform": "splunk",
@@ -113,7 +114,8 @@
         "confidence": "medium",
         "log_ids": [
           "4625"
-        ]
+        ],
+        "false_positives": "Authorized password testing by security teams, multiple failed logins from help desk"
       },
       {
         "platform": "sigma",
@@ -125,7 +127,8 @@
           "T1550.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized password testing by security teams, multiple failed logins from help desk"
       },
       {
         "platform": "elastic",
@@ -136,7 +139,9 @@
           "T1110.003",
           "T1550.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Authorized password testing by security teams, multiple failed logins from help desk",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -166,7 +171,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "crackmapexec smb --local-auth <cidr> -u administrator -H <nt_hash> | grep +"
     }
   },
   "tools": [

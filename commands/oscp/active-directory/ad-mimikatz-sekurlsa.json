@@ -139,7 +139,8 @@
           "T1558"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "splunk",
@@ -154,7 +155,8 @@
         "confidence": "medium",
         "log_ids": [
           "10"
-        ]
+        ],
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "splunk",
@@ -169,7 +171,8 @@
         "confidence": "medium",
         "log_ids": [
           "4656"
-        ]
+        ],
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "sigma",
@@ -181,7 +184,8 @@
           "T1558"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate security tools scanning for weak credentials, password auditing"
       },
       {
         "platform": "sigma",
@@ -193,7 +197,8 @@
           "T1558"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Security assessment tools performing authorized credential testing"
       },
       {
         "platform": "elastic",
@@ -204,7 +209,9 @@
           "T1003.001",
           "T1558"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Security assessment tools performing authorized credential testing",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -243,7 +250,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "privilege::debug\nsekurlsa::logonpasswords"
     }
   },
   "variations": [

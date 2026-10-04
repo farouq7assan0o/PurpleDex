@@ -96,7 +96,8 @@
           "T1484.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "splunk",
@@ -115,7 +116,8 @@
           "4724",
           "4738",
           "4742"
-        ]
+        ],
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "splunk",
@@ -131,7 +133,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "sigma",
@@ -144,7 +147,8 @@
           "T1484.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "sigma",
@@ -157,7 +161,8 @@
           "T1484.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized AD enumeration by security teams or auditors"
       },
       {
         "platform": "elastic",
@@ -169,7 +174,9 @@
           "T1078.002",
           "T1484.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Authorized AD enumeration by security teams or auditors",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -219,7 +226,8 @@
         "Review Windows Security Event Log, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": ".\\SharpHound.exe -c All --zipfilename bh_output"
     }
   },
   "steps": [

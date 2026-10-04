@@ -97,7 +97,8 @@
         "log_ids": [
           "4662",
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "splunk",
@@ -112,7 +113,8 @@
         "confidence": "medium",
         "log_ids": [
           "5136"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "splunk",
@@ -127,7 +129,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "sigma",
@@ -139,7 +142,8 @@
           "T1003.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "sigma",
@@ -151,7 +155,8 @@
           "T1003.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)"
       },
       {
         "platform": "elastic",
@@ -162,7 +167,9 @@
           "T1222.001",
           "T1003.006"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate domain controller replication (additional DCs, Azure AD Connect)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -198,7 +205,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add dcsync <user>"
     }
   },
   "tools": [

@@ -113,7 +113,8 @@
           "T1046"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "splunk",
@@ -124,7 +125,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "sigma",
@@ -135,7 +137,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized remote desktop sessions by IT staff"
       },
       {
         "platform": "elastic",
@@ -145,7 +148,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized remote desktop sessions by IT staff",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -181,7 +186,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "nmap -sV -sC <ip> -p3389 --script rdp*"
     }
   },
   "explain": "Enumerates an RDP service and its security settings:\n  nmap -sV -sC <ip> -p3389   version + default scripts on RDP\n  --script rdp*              run the RDP-specific NSE scripts\nReports the RDP config; rdp-sec-check.pl then flags weak security layers (e.g. no NLA, downgrade to RDP Security), and xfreerdp connects once you have creds."

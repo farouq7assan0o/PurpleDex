@@ -60,5 +60,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1059.004"
-  ]
+  ],
+  "explain": "Persistent, splittable terminal sessions - essential for keeping listeners and scans alive and organizing engagement panes.\nPrefix is CTRL+B.\n[CTRL+B] c   new window\n[CTRL+B] 0/1 switch to window 0/1\n[CTRL+B] SHIFT+%  split vertical pane\n[CTRL+B] SHIFT+\"  split horizontal pane\n[CTRL+B] arrows   move between panes"
 }

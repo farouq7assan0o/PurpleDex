@@ -160,7 +160,8 @@
           "T1526"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -173,7 +174,8 @@
           "T1526"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -186,7 +188,8 @@
           "T1526"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -198,7 +201,9 @@
           "T1580",
           "T1526"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -228,7 +233,8 @@
         "Review AWS CloudTrail, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "pacu\n# Inside Pacu:\nimport_keys <profile_name>\n# ... (see full command in card)"
     }
   },
   "explain": "Automates AWS post-exploitation enumeration with the Pacu framework:\n  pacu                     launch (creates/opens a named session backed by SQLite)\n  import_keys <profile>    load creds from an aws CLI profile\n  run iam__enum_users_roles_policies_groups   enumerate the IAM landscape\n  run iam__enum_permissions   resolve what the current identity can do\n  data IAM                 view the collected data\nGives structured, stored enumeration and a launchpad for Pacu's attack modules."

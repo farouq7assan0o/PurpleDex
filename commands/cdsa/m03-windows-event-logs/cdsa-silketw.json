@@ -108,7 +108,8 @@
           "T1620"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -124,7 +125,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -140,7 +142,8 @@
         "confidence": "medium",
         "log_ids": [
           "11"
-        ]
+        ],
+        "false_positives": "Backup software, AV scans, or IT deployment tools creating similar files"
       },
       {
         "platform": "sigma",
@@ -153,7 +156,8 @@
           "T1620"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "elastic",
@@ -165,7 +169,9 @@
           "T1134.004",
           "T1620"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -201,7 +207,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "SilkETW.exe -t user -pn Microsoft-Windows-Kernel-Process -ot file -p C:\\windows\\temp\\etw.json"
     }
   },
   "explain": "Subscribes to an ETW provider and writes its events to JSON with SilkETW:\n  -t user                          collect from a user-mode provider\n  -pn Microsoft-Windows-Kernel-Process   the provider to consume (process telemetry)\n  -ot file                         output type: file\n  -p C:\\windows\\temp\\etw.json      the output path\nGives deeper telemetry than Sysmon (e.g. parent-PID spoofing, .NET assembly loads); parse the JSON with ConvertFrom-Json, and use -uk to set keyword flags for providers like DotNETRuntime."

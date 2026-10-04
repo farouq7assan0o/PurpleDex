@@ -98,7 +98,8 @@
           "T1046"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -109,7 +110,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -120,7 +122,8 @@
           "T1046"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -131,7 +134,8 @@
           "T1046"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -141,7 +145,9 @@
         "attack": [
           "T1046"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -177,7 +183,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap <ip> -p 80 -sS -Pn -n --disable-arp-ping --packet-trace -D RND:5"
     }
   },
   "explain": "Hides your real IP among decoys to confuse the target/IDS:\n  -p 80 -sS   SYN-scan port 80\n  -Pn -n      skip host discovery and DNS\n  --disable-arp-ping   force IP-level probes (not ARP)\n  --packet-trace       show the packets sent\n  -D RND:5             mix in 5 random spoofed source addresses\nThe scan appears to come from several IPs at once; use -D ip1,ip2,ME to place your own address explicitly among named decoys."

@@ -104,7 +104,8 @@
           "T1552.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate large file transfers (backups, migrations, cloud sync)"
       },
       {
         "platform": "splunk",
@@ -116,7 +117,8 @@
           "T1552.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate large file transfers (backups, migrations, cloud sync)"
       },
       {
         "platform": "sigma",
@@ -128,7 +130,8 @@
           "T1552.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate large file transfers (backups, migrations, cloud sync)"
       },
       {
         "platform": "elastic",
@@ -139,7 +142,9 @@
           "T1530",
           "T1552.001"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate large file transfers (backups, migrations, cloud sync)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -165,7 +170,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "gcloud storage ls gs://<bucket> --access-token-file token.txt"
     }
   },
   "explain": "Enumerates and pulls objects from Cloud Storage buckets:\n  gcloud storage ls gs://<bucket>   list a bucket's contents\n  --access-token-file token.txt     authenticate with a stolen OAuth token (or use an activated SA)\nBuckets often hold SA key files, .env, terraform state, and backups; 'gcloud storage cp' downloads them, and a recovered SA key frequently unlocks a more privileged identity."

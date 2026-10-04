@@ -116,7 +116,8 @@
           "T1110.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -131,7 +132,8 @@
         "log_ids": [
           "4625",
           "4771"
-        ]
+        ],
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -145,7 +147,8 @@
         "confidence": "medium",
         "log_ids": [
           "4740"
-        ]
+        ],
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -156,7 +159,8 @@
           "T1110.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -166,7 +170,9 @@
         "attack": [
           "T1110.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -206,7 +212,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "netexec <proto> <ip> -u <userlist> -p <wordlist>"
     }
   },
   "type": "command",

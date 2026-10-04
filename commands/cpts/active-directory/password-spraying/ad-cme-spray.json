@@ -102,7 +102,8 @@
           "T1110.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "splunk",
@@ -117,7 +118,8 @@
         "log_ids": [
           "4625",
           "4771"
-        ]
+        ],
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "sigma",
@@ -128,7 +130,8 @@
           "T1110.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "sigma",
@@ -139,7 +142,8 @@
           "T1110.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Normal file share access, printer connections, domain operations"
       },
       {
         "platform": "elastic",
@@ -149,7 +153,9 @@
         "attack": [
           "T1110.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Normal file share access, printer connections, domain operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -184,7 +190,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "crackmapexec smb <dc_ip> -u <userlist> -p <password> | grep +"
     }
   },
   "tools": [

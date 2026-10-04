@@ -60,5 +60,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1059.004"
-  ]
+  ],
+  "explain": "The editor that is present on virtually every Linux host - knowing the core motions lets you edit files on any target.\nNormal mode: x cut char | dw cut word | dd cut line | yw copy word | yy copy line | p paste | i insert | Esc normal\nCommand mode: :1 go to line 1 | :w save | :q quit | :q! quit no save | :wq write+..."
 }

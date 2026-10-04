@@ -95,7 +95,8 @@
           "T1558.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "splunk",
@@ -110,7 +111,8 @@
         "confidence": "medium",
         "log_ids": [
           "4769"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "splunk",
@@ -125,7 +127,8 @@
         "confidence": "medium",
         "log_ids": [
           "4672"
-        ]
+        ],
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "sigma",
@@ -137,7 +140,8 @@
           "T1558.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "sigma",
@@ -149,7 +153,8 @@
           "T1558.001"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)"
       },
       {
         "platform": "elastic",
@@ -160,7 +165,9 @@
           "T1134.005",
           "T1558.001"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Very long-lived Kerberos tickets in environments with extended lifetimes (uncommon)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -201,7 +208,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "ticketer.py -nthash <child_krbtgt_hash> -domain <child_domain> -domain-sid <child_sid> -extra-sid <parent_EA_sid> Administrator"
     }
   },
   "tools": [

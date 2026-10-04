@@ -69,5 +69,6 @@
       "rel": "prereq",
       "note": "Event IDs to monitor in dashboard panels."
     }
-  ]
+  ],
+  "explain": "Step-by-step workflow for creating Kibana Lens visualizations and SOC dashboards from Windows event log data in Elastic SIEM.\nVisualization workflow (Kibana Lens):\n1. Dashboard  Create new dashboard  Create visualization\n2. Set time range: calendar icon  Last 15 years  Apply\n3. Set index pattern: windows* (or logs-*, ..."
 }

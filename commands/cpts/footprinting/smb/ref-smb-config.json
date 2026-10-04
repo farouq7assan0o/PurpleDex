@@ -64,5 +64,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1210"
-  ]
+  ],
+  "explain": "Samba config location, SMB ports, and the share settings that lead to file read/write or code execution.\nConfig: /etc/samba/smb.conf\nPorts: 139/tcp (NetBIOS), 445/tcp (SMB/CIFS), 137-138/tcp (older)\nDangerous share settings: browseable=yes, read only=no, writable=yes, guest ok=yes, enable privileges=y..."
 }

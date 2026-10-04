@@ -108,7 +108,8 @@
           "T1613"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -119,7 +120,8 @@
           "T1613"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -130,7 +132,8 @@
           "T1613"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -141,7 +144,8 @@
           "T1613"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -152,7 +156,8 @@
           "T1613"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -162,7 +167,9 @@
         "attack": [
           "T1613"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -198,7 +205,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "kubeletctl -i --server <ip> pods"
     }
   },
   "explain": "Probes a Kubernetes cluster for anonymous access:\n  kubeletctl               Kubelet API client\n  -i                       ignore TLS certificate errors\n  --server <ip>            the node's Kubelet API (port 10250)\n  pods                     list pods running on that node\nAlso probe the API server on 6443 for anonymous access. A readable pod list points you at pods that allow command execution."

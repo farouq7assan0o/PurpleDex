@@ -106,5 +106,6 @@
       "rel": "next",
       "note": "AWS IAM escalation + persistence"
     }
-  ]
+  ],
+  "explain": "Orientation for MCRTA and multi-cloud red-team ops: the common attack loop across AWS, Azure, and GCP, with the equivalent commands/services in each cloud and links to the per-cloud cards.\nKey sections:\n  1. Initial access - get a credential or a token\n  2. Identity - who am I?\n  3. Enumerate IAM / RBAC - what can I do, and who is over-privileged?\n  4. Privilege escalation - abuse IAM misconfigs\n  5. Lateral movement - across accounts / subscriptions / projects\nCloud attacks are identity attacks - know who you are, what you can do, and how to become someone better.\nCORE IDEA: cloud attacks are identity attacks - every step is 'what can this principal do, and how do I become a more-privileged one?'."
 }

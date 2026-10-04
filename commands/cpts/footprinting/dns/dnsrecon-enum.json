@@ -132,7 +132,8 @@
           "T1590.002"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "splunk",
@@ -143,7 +144,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "sigma",
@@ -154,7 +156,8 @@
           "T1590.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Password spraying by authorized security testing, account lockout events"
       },
       {
         "platform": "elastic",
@@ -164,7 +167,9 @@
         "attack": [
           "T1590.002"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Password spraying by authorized security testing, account lockout events",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -185,7 +190,8 @@
         "Review DNS logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "dnsrecon -d <domain> -t std"
     }
   },
   "explain": "Runs standard DNS enumeration with dnsrecon:\n  dnsrecon -d <domain>   the target domain\n  -t std                 standard record enumeration (SOA, NS, A, AAAA, MX, TXT, SPF) plus wildcard and AXFR checks\nGives a broad DNS picture in one pass; switch to '-t brt -D <wordlist>' to brute-force subdomains from a list."

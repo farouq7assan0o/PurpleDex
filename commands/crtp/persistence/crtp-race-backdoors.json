@@ -150,7 +150,8 @@
         "confidence": "medium",
         "log_ids": [
           "4670"
-        ]
+        ],
+        "false_positives": "Legitimate WMI queries from management tools (SCCM, monitoring agents)"
       },
       {
         "platform": "splunk",
@@ -166,7 +167,8 @@
         "confidence": "medium",
         "log_ids": [
           "4670"
-        ]
+        ],
+        "false_positives": "Legitimate WMI queries from management tools (SCCM, monitoring agents)"
       },
       {
         "platform": "splunk",
@@ -182,7 +184,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Legitimate WMI queries from management tools (SCCM, monitoring agents)"
       },
       {
         "platform": "sigma",
@@ -195,7 +198,8 @@
           "T1112"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate WMI queries from management tools (SCCM, monitoring agents)"
       },
       {
         "platform": "sigma",
@@ -208,7 +212,8 @@
           "T1112"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate WMI queries from management tools (SCCM, monitoring agents)"
       },
       {
         "platform": "elastic",
@@ -220,7 +225,9 @@
           "T1546",
           "T1112"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate WMI queries from management tools (SCCM, monitoring agents)",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -256,7 +263,8 @@
         "Check for new scheduled tasks, services, or registry autoruns on the affected host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Set-RemoteWMI -SamAccountName <user> -ComputerName <host> -namespace 'root\\cimv2' -Verbose"
     }
   },
   "explain": "Drops stealthy DACL-based remote-access backdoors so a chosen low-priv user keeps access with no new accounts:\n  Set-RemoteWMI             edit the security descriptor so <user> can query WMI remotely\n  -SamAccountName <user>   the principal granted access\n  -ComputerName <host>     the machine backdoored (e.g. the DC)\n  -namespace 'root\\cimv2'  the WMI namespace to open up\n  -Verbose                  show what it changes\nCompanion functions do the same for PSRemoting (Set-RemotePSRemoting) and remote registry (Add-RemoteRegBackdoor, which also reads the machine hash)."

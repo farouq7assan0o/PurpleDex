@@ -58,7 +58,9 @@
     }
   ],
   "opsec": "silent",
-  "mitre": [],
+  "mitre": [
+    "T1592"
+  ],
   "exam": "exam-ok",
   "explain": "Creates a standard engagement evidence directory tree in one command:\n  mkdir -p ENGAGEMENT/{...}   the -p flag makes parents, and the brace expansion builds all subfolders at once\n  Admin, Deliverables, Evidence/{Findings,Scans/...,Notes,OSINT,...}, Retest   the predictable layout\nStanding this up first means scans, screenshots, notes, and logs always land in known places - faster report writing and nothing misfiled; run 'tree' to verify."
 }

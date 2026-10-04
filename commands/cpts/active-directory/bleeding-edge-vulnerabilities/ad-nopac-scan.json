@@ -81,7 +81,8 @@
           "T1558"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "splunk",
@@ -97,7 +98,8 @@
           "4741",
           "4742",
           "4781"
-        ]
+        ],
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -108,7 +110,8 @@
           "T1558"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -118,7 +121,9 @@
         "attack": [
           "T1558"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -157,7 +162,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo python3 scanner.py <domain>/<user>:<password> -dc-ip <dc_ip> -use-ldap"
     }
   },
   "tools": [

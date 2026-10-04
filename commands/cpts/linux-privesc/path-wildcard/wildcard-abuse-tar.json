@@ -109,7 +109,8 @@
           "T1548"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "splunk",
@@ -121,7 +122,8 @@
           "T1548"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "splunk",
@@ -133,7 +135,8 @@
           "T1548"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -145,7 +148,8 @@
           "T1548"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate software using DLL injection for hooking (AV, accessibility tools)"
       },
       {
         "platform": "elastic",
@@ -156,7 +160,9 @@
           "T1053.003",
           "T1548"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -187,7 +193,8 @@
         "Check for new scheduled tasks, services, or registry autoruns on the affected host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "echo 'echo \"<user> ALL=(root) NOPASSWD: ALL\" >> /etc/sudoers' > root.sh"
     }
   },
   "explain": "Weaponizes a root cron running tar with a wildcard in a writable directory:\n  echo '...sudoers append...' > root.sh   create the payload script tar will execute\nBecause tar * expands your filenames as arguments, also create files named --checkpoint=1 and --checkpoint-action=exec=sh root.sh. When the cron's tar runs, it treats them as options and executes root.sh as root (here appending a NOPASSWD sudoers line)."

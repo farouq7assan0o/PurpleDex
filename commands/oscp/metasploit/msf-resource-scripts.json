@@ -103,7 +103,8 @@
           "T1059.004"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote management tools with reverse connection patterns"
       },
       {
         "platform": "splunk",
@@ -114,7 +115,8 @@
           "T1059.004"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate remote administration tools (TeamViewer, AnyDesk) or cloud sync"
       },
       {
         "platform": "sigma",
@@ -125,7 +127,8 @@
           "T1059.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -135,7 +138,9 @@
         "attack": [
           "T1059.004"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Legitimate remote administration tools (TeamViewer, AnyDesk) or cloud sync",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -165,7 +170,9 @@
         "Review Microsoft Defender for Endpoint, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "msfconsole -r setup.rc"
     }
-  }
+  },
+  "explain": "Resource scripts (.rc files) automate sequences of msfconsole commands.:\n  -r setup.rc  recursive\nmakerc inside msfconsole captures your typed history to a .rc file - useful for creating a replay script after finding a working attack chain."
 }

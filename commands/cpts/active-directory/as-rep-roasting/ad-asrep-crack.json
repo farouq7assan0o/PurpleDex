@@ -96,7 +96,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "Accounts intentionally configured without pre-auth (rare but possible in some environments)"
       },
       {
         "platform": "splunk",
@@ -110,7 +111,8 @@
         "confidence": "medium",
         "log_ids": [
           "4768"
-        ]
+        ],
+        "false_positives": "Accounts intentionally configured without pre-auth (rare but possible in some environments)"
       },
       {
         "platform": "sigma",
@@ -121,7 +123,8 @@
           "T1558.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Accounts intentionally configured without pre-auth (rare but possible in some environments)"
       },
       {
         "platform": "elastic",
@@ -131,7 +134,9 @@
         "attack": [
           "T1558.004"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Accounts intentionally configured without pre-auth (rare but possible in some environments)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -162,8 +167,10 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "hashcat -m 18200 <hashfile> /usr/share/wordlists/rockyou.txt"
+    },
+    "detection": "Offline attack - no direct network detection. Monitor for the initial credential theft (hash capture, dump, or relay) that provides the hashes. Alert on the use of cracked credentials via new logon events (4624) with previously unseen source IPs."
   },
   "tools": [
     "hashcat"

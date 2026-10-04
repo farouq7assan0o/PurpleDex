@@ -108,7 +108,8 @@
           "T1078.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Azure automation runbooks, authorized admin operations, or Azure DevOps pipelines"
       },
       {
         "platform": "splunk",
@@ -120,7 +121,8 @@
           "T1078.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Azure automation runbooks, authorized admin operations, or Azure DevOps pipelines"
       },
       {
         "platform": "splunk",
@@ -132,7 +134,8 @@
           "T1078.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Azure automation runbooks, authorized admin operations, or Azure DevOps pipelines"
       },
       {
         "platform": "sigma",
@@ -144,7 +147,8 @@
           "T1078.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -155,7 +159,9 @@
           "T1552.005",
           "T1078.004"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Azure automation runbooks, authorized admin operations, or Azure DevOps pipelines",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -186,7 +192,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "curl -H \"Metadata:true\" \"http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/\""
     }
   },
   "explain": "Steals an Azure VM's managed-identity token from the Instance Metadata Service:\n  curl -H \"Metadata:true\"   the required IMDS header\n  \"http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/\"   request an ARM access token for the VM's managed identity\nFrom code execution on the VM, this returns a bearer token; use it against the Azure APIs as that identity, which frequently holds RBAC roles."

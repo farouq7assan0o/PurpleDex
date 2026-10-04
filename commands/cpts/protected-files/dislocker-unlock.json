@@ -110,7 +110,8 @@
           "T1555"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -121,7 +122,8 @@
           "T1555"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "sigma",
@@ -132,7 +134,8 @@
           "T1555"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -142,7 +145,9 @@
         "attack": [
           "T1555"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -178,8 +183,10 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
-    }
+      ],
+      "test_command": "sudo dislocker /dev/loop0p2 -u<recovery_key> -- /media/bitlocker"
+    },
+    "detection": "Offline attack against encrypted volume. Monitor for unauthorized physical access to devices, suspicious disk imaging, or unusual BitLocker recovery key lookups in Active Directory."
   },
   "explain": "Mounts a BitLocker volume on Linux once you have the recovery key:\n  sudo dislocker            decrypt the BitLocker partition\n  /dev/loop0p2             the BitLocker partition (attach the image with losetup -f -P first)\n  -u<recovery_key>         unlock with the recovery password/key\n  -- /media/bitlocker      expose the decrypted virtual file here\nThen mount /media/bitlocker/dislocker-file to read the drive - the counterpart to cracking, used once you have the key."
 }

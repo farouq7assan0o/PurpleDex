@@ -105,7 +105,8 @@
           "T1068"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "splunk",
@@ -119,7 +120,8 @@
         "confidence": "medium",
         "log_ids": [
           "3"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -133,7 +135,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts using similar cmdlets for legitimate system management"
       },
       {
         "platform": "sigma",
@@ -144,7 +147,8 @@
           "T1068"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized privilege elevation by IT admins using Run As or UAC"
       },
       {
         "platform": "elastic",
@@ -154,7 +158,9 @@
         "attack": [
           "T1068"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -194,7 +200,9 @@
         "Review PowerShell Script Block / Module Logs, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "netstat -ano | findstr 6064"
     }
-  }
+  },
+  "explain": "Druva inSync's local RPC service (port 6064) runs as SYSTEM and executes a path-traversal-reachable cmd.exe with attacker-supplied arguments.\nEnumerate the listening port/PID/service, then run the PoC to add a user or catch a reverse shell.\n=== Druva inSync - Local RPC Command Injection  SYSTEM ===\nThird-party backup software running as SYSTEM with no authentication on local RPC port.\n\n=== VULNERABILITY DETAILS ===\nDruva inSync Clien..."
 }

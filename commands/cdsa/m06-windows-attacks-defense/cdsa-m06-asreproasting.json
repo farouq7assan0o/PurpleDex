@@ -134,7 +134,8 @@
           "T1558.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "high"
+        "confidence": "high",
+        "false_positives": "Accounts intentionally configured without pre-auth (rare but possible in some environments)"
       },
       {
         "platform": "sigma",
@@ -145,7 +146,8 @@
           "T1558.004"
         ],
         "fidelity": "signature",
-        "confidence": "high"
+        "confidence": "high",
+        "false_positives": "Accounts intentionally configured without pre-auth (rare but possible in some environments)"
       },
       {
         "platform": "elastic",
@@ -155,7 +157,9 @@
         "attack": [
           "T1558.004"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Accounts intentionally configured without pre-auth (rare but possible in some environments)",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -195,7 +199,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": ".\\Rubeus.exe asreproast /outfile:asrep.txt"
     }
   },
   "variations": [

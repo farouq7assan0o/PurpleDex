@@ -57,5 +57,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1210"
-  ]
+  ],
+  "explain": "NFS export config, ports, and the export options that enable SUID abuse / privilege escalation.\nConfig: /etc/exports\nPorts: 111/tcp+udp (rpcbind), 2049/tcp+udp (NFS)\nDangerous export options: rw, insecure, nohide, no_root_squash (keeps root -> SUID abuse)\nFiles worth grabbing: id_rsa, *.priv ..."
 }

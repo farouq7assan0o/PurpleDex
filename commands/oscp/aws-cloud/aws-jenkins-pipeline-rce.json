@@ -145,7 +145,8 @@
           "T1612"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "splunk",
@@ -158,7 +159,8 @@
           "T1612"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls"
       },
       {
         "platform": "sigma",
@@ -171,7 +173,8 @@
           "T1612"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -183,7 +186,9 @@
           "T1552.001",
           "T1612"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Automated cloud management tools, CI/CD pipelines, or authorized admin API calls",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -214,7 +219,9 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "msf6 > use auxiliary/scanner/http/jenkins_enum\nmsf6 auxiliary(scanner/http/jenkins_enum) > set RHOSTS app.offseclab.io\nmsf6 auxiliary(scanner/http/jenkins_enum) > set RPORT 80\nmsf6 auxiliary(scanner/http/jenkins_enum) > run\n# Check: Jenkins version, auth status, build history, user enumeration"
     }
-  }
+  },
+  "explain": "Jenkins pipelines that have write access to their Jenkinsfile (in SCM or directly) can be modified to inject arbitrary shell commands.\nThe withAWS() pipeline step injects IAM credentials as environment variables - running a reverse shell inside this block leaks those credentials.\nThe withAWS() step is from the AWS Steps Jenkins plugin - it retrieves credentials stored in Jenkins Credential Manager and injects them as environment variables for the duration of the block."
 }

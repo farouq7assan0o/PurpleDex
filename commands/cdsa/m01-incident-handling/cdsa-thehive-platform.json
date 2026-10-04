@@ -58,5 +58,6 @@
       "rel": "prereq",
       "note": "IR lifecycle context for when and how TheHive is used."
     }
-  ]
+  ],
+  "explain": "TheHive is the SOC's case management system.\nUsed to triage alerts, create/manage incident cases, assign tasks, enrich IOCs via Cortex, and document investigation findings.\nHTB lab credentials: htb-analyst / P3n#31337@LOG\n\nKey TheHive concepts:\n Alert - inbound detection from SIEM/sensor, not yet a case. Triage first.\n Case - confirmed incident being actively invest..."
 }

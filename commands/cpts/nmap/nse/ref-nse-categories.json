@@ -63,5 +63,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1595.001"
-  ]
+  ],
+  "explain": "The NSE script categories you can pass to --script.\nsafe = non-disruptive; intrusive/dos/exploit can crash or attack the target.\nauth       bypass/enumerate authentication\nbroadcast  discover hosts via broadcast\nbrute      credential brute forcing\ndefault    run with -sC\ndiscovery  enumerate services/network\ndos        denia..."
 }

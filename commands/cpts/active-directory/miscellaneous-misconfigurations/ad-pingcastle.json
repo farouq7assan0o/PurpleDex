@@ -130,7 +130,8 @@
           "T1069.002"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "splunk",
@@ -145,7 +146,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Admin scripts, management agents, or IT tools launching similar processes"
       },
       {
         "platform": "splunk",
@@ -160,7 +162,8 @@
         "confidence": "medium",
         "log_ids": [
           "4662"
-        ]
+        ],
+        "false_positives": "Legitimate AD replication, backup agents querying AD"
       },
       {
         "platform": "sigma",
@@ -172,7 +175,8 @@
           "T1069.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate system tools performing similar operations (e.g. admin scripts, management agents)"
       },
       {
         "platform": "sigma",
@@ -184,7 +188,8 @@
           "T1069.002"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate LDAP queries from applications, directory sync tools"
       },
       {
         "platform": "elastic",
@@ -195,7 +200,9 @@
           "T1087.002",
           "T1069.002"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -239,7 +246,8 @@
         "Review Microsoft Defender for Endpoint, Sysmon, Windows Security Event Log for surrounding context (5 min before/after)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "PingCastle.exe --healthcheck"
     }
   },
   "explain": "Scores an AD environment's security posture:\n  PingCastle.exe --healthcheck   run the health-check assessment\nProduces a CMMI-scored report of misconfigurations and risky settings (delegation, weak trusts, stale accounts, privileged groups) - fast situational awareness for both attackers mapping weaknesses and defenders prioritizing fixes."

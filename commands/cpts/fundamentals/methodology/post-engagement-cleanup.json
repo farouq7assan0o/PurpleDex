@@ -47,5 +47,6 @@
   ],
   "mitre": [
     "T1070"
-  ]
+  ],
+  "explain": "Post-Engagement - Cleanup & Data Retention - reference (methodology, not a runnable command).\nCleanup: delete uploaded tools/scripts; revert config changes; document anything that couldn't be removed and all changes made (accounts, configs) in appendices."
 }

@@ -53,5 +53,6 @@
   "exam": "exam-ok",
   "mitre": [
     "T1595.002"
-  ]
+  ],
+  "explain": "IMAP/POP3 ports and the Dovecot debug settings that expose credentials in logs.\nPorts: 110 POP3, 143 IMAP, 993 IMAPS, 995 POP3S\nDangerous (Dovecot): auth_debug, auth_debug_passwords, auth_verbose, auth_verbose_passwords, auth_anonymous_username"
 }

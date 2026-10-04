@@ -108,7 +108,8 @@
           "T1053.005"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "splunk",
@@ -122,7 +123,8 @@
         "confidence": "medium",
         "log_ids": [
           "1"
-        ]
+        ],
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "sigma",
@@ -133,7 +135,8 @@
           "T1053.005"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate network discovery, IT asset management scans"
       },
       {
         "platform": "elastic",
@@ -143,7 +146,9 @@
         "attack": [
           "T1053.005"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate network discovery, IT asset management scans",
+        "confidence": "high"
       }
     ],
     "visibility": {
@@ -175,7 +180,8 @@
         "Check for new scheduled tasks, services, or registry autoruns on the affected host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "schtasks /query /fo LIST /v"
     }
   },
   "explain": "Lists scheduled tasks to find one whose target you can write:\n  schtasks /query          enumerate scheduled tasks\n  /fo LIST /v              full verbose list output (shows Run As User and the task action)\nA task run by a privileged account whose script/binary is writable by you is an escalation path - replace the target and wait for the trigger."

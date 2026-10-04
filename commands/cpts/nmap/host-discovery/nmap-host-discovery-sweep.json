@@ -119,7 +119,8 @@
           "T1018"
         ],
         "fidelity": "signature",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -130,7 +131,8 @@
           "T1018"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "splunk",
@@ -141,7 +143,8 @@
           "T1018"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "sigma",
@@ -152,7 +155,8 @@
           "T1018"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized vulnerability scanners, network inventory tools"
       },
       {
         "platform": "elastic",
@@ -162,7 +166,9 @@
         "attack": [
           "T1018"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -198,7 +204,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "sudo nmap <cidr> -sn -oA tnet | grep for | cut -d\" \" -f5"
     }
   },
   "explain": "Ping-sweeps a range to list live hosts:\n  <cidr>   the network to sweep\n  -sn      host discovery only, no port scan\n  -oA tnet save all output formats\n  | grep for | cut -d\" \" -f5   pull just the live IPs out of the output\nProduces a clean live-host list to feed a follow-up service scan."

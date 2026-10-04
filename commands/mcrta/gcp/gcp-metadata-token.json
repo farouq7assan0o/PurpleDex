@@ -113,7 +113,8 @@
           "T1078.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "splunk",
@@ -125,7 +126,8 @@
           "T1078.004"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "sigma",
@@ -137,7 +139,8 @@
           "T1078.004"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -148,7 +151,9 @@
           "T1552.005",
           "T1078.004"
         ],
-        "fidelity": "behavioral"
+        "fidelity": "behavioral",
+        "false_positives": "Legitimate admin tools or management agents performing similar endpoint operations",
+        "confidence": "medium"
       }
     ],
     "visibility": {
@@ -174,7 +179,8 @@
         "Check for credential dumping artifacts (LSASS access, SAM hive reads, Kerberos anomalies)",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "curl -s -H \"Metadata-Flavor: Google\" \"http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token\""
     }
   },
   "explain": "Pulls a GCE VM's attached service-account token from the metadata server:\n  curl -s -H \"Metadata-Flavor: Google\"   the required metadata header\n  \"http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token\"   fetch the default SA's OAuth access token\nFrom code execution (or a header-controlling SSRF) on the VM, this returns a token to use with gcloud; Compute default SAs are often over-privileged (Editor)."

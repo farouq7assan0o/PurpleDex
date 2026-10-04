@@ -129,7 +129,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "IT admin tools, endpoint management agents, or security scanners performing similar actions"
       },
       {
         "platform": "splunk",
@@ -141,7 +142,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate high-volume data transfers (backups, replication, large file downloads)"
       },
       {
         "platform": "splunk",
@@ -153,7 +155,8 @@
           "T1505.003"
         ],
         "fidelity": "telemetry",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Authorized admin commands, cron jobs, or configuration management tools (Ansible, Puppet)"
       },
       {
         "platform": "sigma",
@@ -165,7 +168,8 @@
           "T1505.003"
         ],
         "fidelity": "behavioral",
-        "confidence": "medium"
+        "confidence": "medium",
+        "false_positives": "Legitimate admin activity using the same Windows APIs or tools"
       },
       {
         "platform": "elastic",
@@ -176,7 +180,9 @@
           "T1105",
           "T1505.003"
         ],
-        "fidelity": "telemetry"
+        "fidelity": "telemetry",
+        "false_positives": "Legitimate network traffic matching similar patterns (VPN, remote management, file transfers)",
+        "confidence": "low"
       }
     ],
     "visibility": {
@@ -217,7 +223,8 @@
         "Check for unusual network connections to/from the source host",
         "Verify whether the activity matches known administrative baselines or change windows",
         "If confirmed malicious, isolate the host and escalate to incident response"
-      ]
+      ],
+      "test_command": "./odat.py utlfile -s <ip> -d <sid> -U <user> -P <password> --sysdba --putFile <remote_dir> <remote_filename> <file>"
     }
   },
   "explain": "Writes a local file to the Oracle server's filesystem via UTL_FILE:\n  ./odat.py utlfile   the ODAT file-write module\n  -s <ip> -d <sid>    server and database SID\n  -U/-P --sysdba      credentials, connecting as SYSDBA\n  --putFile <remote_dir> <remote_filename> <file>   destination path/name and the local file\nDropping a file into the web root (e.g. C:\\inetpub\\wwwroot) gives a web-accessible file - a webshell delivery primitive; confirm with a curl GET."

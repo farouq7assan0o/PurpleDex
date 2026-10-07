@@ -275,11 +275,34 @@ main { flex: 1; padding: 1rem 1.3rem; overflow-y: auto; display: flex; flex-dire
 }
 .param-field input:focus { outline: none; border-color: var(--accent); }
 
+/* ---------- Resize handles ---------- */
+.resize-handle {
+    flex-shrink: 0; z-index: 5; transition: background 0.15s; cursor: col-resize;
+    position: relative;
+}
+.resize-handle::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px; height: 32px; border-radius: 2px;
+    background: var(--border); opacity: 0; transition: opacity 0.15s;
+}
+.resize-handle:hover::after, .resize-handle.active::after { opacity: 1; }
+.resize-handle:hover, .resize-handle.active { background: rgba(88,166,255,0.15); }
+.resize-sidebar {
+    width: 6px; align-self: stretch;
+}
+.resize-builder {
+    width: 6px; align-self: stretch;
+}
+body.resizing { cursor: col-resize !important; user-select: none !important; }
+body.resizing * { cursor: col-resize !important; user-select: none !important; pointer-events: none !important; }
+body.resizing .resize-handle { pointer-events: auto !important; }
+
 /* ---------- Workspace split ---------- */
-.workspace { display: flex; gap: 1rem; flex: 1; min-height: 0; }
+.workspace { display: flex; gap: 0; flex: 1; min-height: 0; }
 #commandList { flex: 1; display: flex; flex-direction: column; gap: 0.7rem; overflow-y: auto; padding-right: 0.3rem; }
 #builder {
-    width: 42%; max-width: 560px; flex-shrink: 0;
+    width: 42%; max-width: none; flex-shrink: 0;
     background: var(--panel); border: 1px solid var(--border);
     border-radius: 8px; padding: 1rem; overflow-y: auto;
 }
@@ -642,12 +665,14 @@ mark { background: rgba(226,181,61,0.32); color: inherit; border-radius: 2px; pa
 @media (max-width: 1100px) {
     .workspace { flex-direction: column; }
     #builder { width: 100%; max-width: none; }
+    .resize-builder { display: none; }
 }
 
 /* ---------- Mobile: sidebar becomes a slide-in drawer ---------- */
 @media (max-width: 760px) {
     #app { flex-direction: column; height: auto; min-height: 100vh; }
     .menu-toggle { display: inline-flex; align-items: center; }
+    .resize-handle { display: none; }
     #sidebar {
         position: fixed; top: 0; left: 0; height: 100vh; width: 84%; max-width: 320px;
         z-index: 50; transform: translateX(-100%); transition: transform 0.22s ease;

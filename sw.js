@@ -1,5 +1,5 @@
 /* Service worker - offline app-shell cache. Bump CACHE when assets change. */
-const CACHE = 'purpledex-v1';
+const CACHE = 'purpledex-v2';
 const ASSETS = [
   '.', 'index.html', 'exam.html',
   'css/styles.css', 'css/icons.css', 'css/exam.css',

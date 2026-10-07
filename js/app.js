@@ -2653,4 +2653,60 @@ class CommandManager {
     }
 }
 
+/* ---------- Resizable panels ---------- */
+(function initResizePanels() {
+    function setupResize(handleId, getTarget, axis, storageKey, applySize, reverse) {
+        const handle = document.getElementById(handleId);
+        if (!handle) return;
+        const saved = localStorage.getItem(storageKey);
+        if (saved) { try { applySize(getTarget(), parseFloat(saved)); } catch (e) {} }
+
+        let startPos, startSize;
+        function onDown(e) {
+            e.preventDefault();
+            const target = getTarget();
+            if (!target) return;
+            startPos = axis === 'x' ? e.clientX : e.clientY;
+            startSize = target.getBoundingClientRect().width;
+            handle.classList.add('active');
+            document.body.classList.add('resizing');
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+        function onMove(e) {
+            const raw = (axis === 'x' ? e.clientX : e.clientY) - startPos;
+            const delta = reverse ? -raw : raw;
+            const newSize = Math.max(140, startSize + delta);
+            applySize(getTarget(), newSize);
+        }
+        function onUp() {
+            handle.classList.remove('active');
+            document.body.classList.remove('resizing');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            const target = getTarget();
+            if (target) localStorage.setItem(storageKey, target.getBoundingClientRect().width);
+        }
+        handle.addEventListener('mousedown', onDown);
+        handle.addEventListener('dblclick', () => {
+            const target = getTarget();
+            if (target) { target.style.width = ''; localStorage.removeItem(storageKey); }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setupResize('resizeSidebar',
+            () => document.getElementById('sidebar'), 'x', 'purpledex-sidebar-w',
+            (el, w) => { el.style.width = Math.min(w, window.innerWidth * 0.4) + 'px'; });
+
+        setupResize('resizeBuilder',
+            () => document.getElementById('builder'), 'x', 'purpledex-builder-w',
+            (el, w) => {
+                const ws = el.closest('.workspace');
+                if (!ws || getComputedStyle(ws).flexDirection !== 'row') return;
+                el.style.width = Math.min(w, window.innerWidth * 0.65) + 'px';
+            }, true);
+    });
+})();
+
 document.addEventListener('DOMContentLoaded', () => { window.app = new CommandManager(); });

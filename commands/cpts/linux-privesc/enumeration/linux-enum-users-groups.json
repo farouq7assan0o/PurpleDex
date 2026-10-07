@@ -73,11 +73,13 @@
   "variations": [
     {
       "label": "Users",
-      "command": "cat /etc/passwd\ncat /etc/passwd | cut -f1 -d:\ngrep \"sh$\" /etc/passwd"
+      "command": "cat /etc/passwd\ncat /etc/passwd | cut -f1 -d:\ngrep \"sh$\" /etc/passwd",
+      "description": "Reads the local user list from /etc/passwd. Every user on the system is listed here including their home directory and shell - identifies potential targets and service accounts."
     },
     {
       "label": "Groups",
-      "command": "cat /etc/group\ngetent group sudo\nls /home"
+      "command": "cat /etc/group\ngetent group sudo\nls /home",
+      "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
     }
   ],
   "opsec": "moderate",

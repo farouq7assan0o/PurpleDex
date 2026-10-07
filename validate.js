@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * validate.js - Schema + completeness validator for the Command Reference.
+ * validate.js - Schema + completeness validator for Purpledex.
  *
  * Enforces SCHEMA.md (the FROZEN contract) across every card under commands/.
  * Two layers:
@@ -483,7 +483,7 @@ if (opt.json) {
     process.exit(errors.length ? 1 : 0);
 }
 
-console.log(bold(`\n  Command Reference - Validation Report`));
+console.log(bold(`\n  Purpledex - Validation Report`));
 console.log(dim(`  ${cards.length} active cards scanned` + (opt.module ? ` (module ${opt.module} filter)` : '')) + '\n');
 
 // hard errors

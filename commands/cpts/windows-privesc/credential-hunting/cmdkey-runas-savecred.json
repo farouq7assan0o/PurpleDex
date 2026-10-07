@@ -188,7 +188,8 @@
   "variations": [
     {
       "label": "Reuse the saved credential",
-      "command": "runas /savecred /user:<domain>\\<user> \"cmd /c <command>\""
+      "command": "runas /savecred /user:<domain>\\<user> \"cmd /c <command>\"",
+      "description": "Reuse the saved credential. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

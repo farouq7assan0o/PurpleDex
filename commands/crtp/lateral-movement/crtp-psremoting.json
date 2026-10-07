@@ -244,23 +244,28 @@
   "variations": [
     {
       "label": "New-PSSession (persistent reusable session)",
-      "command": "$sess = New-PSSession -ComputerName <host>\nEnter-PSSession -Session $sess"
+      "command": "$sess = New-PSSession -ComputerName <host>\nEnter-PSSession -Session $sess",
+      "description": "New-PSSession (persistent reusable session). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Invoke-Command via saved session",
-      "command": "Invoke-Command -Session $sess -ScriptBlock { whoami }"
+      "command": "Invoke-Command -Session $sess -ScriptBlock { whoami }",
+      "description": "Executes a command or script block on a remote machine via PowerShell Remoting (WinRM). Uses the trusted PSRemoting channel for lateral movement - appears as legitimate admin activity."
     },
     {
       "label": "Discover where you have PSRemoting admin",
-      "command": "Find-PSRemotingLocalAdminAccess -Domain <domain> -Verbose"
+      "command": "Find-PSRemotingLocalAdminAccess -Domain <domain> -Verbose",
+      "description": "Discover where you have PSRemoting admin. See the command syntax for exact parameters and flags."
     },
     {
       "label": "winrs one-liner (cmd on remote host)",
-      "command": "winrs -r:<host> cmd /c \"set computername && set username\""
+      "command": "winrs -r:<host> cmd /c \"set computername && set username\"",
+      "description": "Winrs one-liner (cmd on remote host). See the command syntax for exact parameters and flags."
     },
     {
       "label": "WSManWinRM.exe (when winrs is blocked)",
-      "command": "WSManWinRM.exe <host_fqdn> \"cmd /c <command>\""
+      "command": "WSManWinRM.exe <host_fqdn> \"cmd /c <command>\"",
+      "description": "WSManWinRM.exe (when winrs is blocked). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Moves laterally over PowerShell Remoting (WinRM, 5985/5986):\n  Enter-PSSession           open an interactive remote shell\n  -ComputerName <dc_host>  the target machine\n  -Credential (Get-Credential)   the credentials to authenticate with\nUse Invoke-Command -ScriptBlock/-FilePath for non-interactive execution or to load tools remotely; New-PSSession keeps a reusable session. Beware the double-hop issue when reaching a further host."

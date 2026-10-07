@@ -89,19 +89,23 @@
   "variations": [
     {
       "label": "Quick default scan",
-      "command": "nmap <ip>"
+      "command": "nmap <ip>",
+      "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
     },
     {
       "label": "Named script on a port",
-      "command": "nmap --script <script> -p<port> <ip>"
+      "command": "nmap --script <script> -p<port> <ip>",
+      "description": "Runs an nmap scan with default scripts for detailed service enumeration and target analysis."
     },
     {
       "label": "Banner-grab script",
-      "command": "nmap -sV --script=banner <ip>"
+      "command": "nmap -sV --script=banner <ip>",
+      "description": "Grabs service banners using nmap NSE scripts. Banners reveal software versions and sometimes internal hostnames or OS details."
     },
     {
       "label": "Aggressive SMB",
-      "command": "nmap -A -p445 <ip>"
+      "command": "nmap -A -p445 <ip>",
+      "description": "Runs an nmap scan with aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
     }
   ],
   "opsec": "moderate",

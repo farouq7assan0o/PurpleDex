@@ -168,15 +168,18 @@
   "variations": [
     {
       "label": "NetExec",
-      "command": "nxc smb <dc_ip> -u <user> -p <password> --pass-pol"
+      "command": "nxc smb <dc_ip> -u <user> -p <password> --pass-pol",
+      "description": "Uses CrackMapExec to retrieve the domain password policy via SMB. Shows lockout threshold, minimum length, and complexity requirements - essential information before password spraying."
     },
     {
       "label": "Null session",
-      "command": "crackmapexec smb <dc_ip> -u '' -p '' --pass-pol"
+      "command": "crackmapexec smb <dc_ip> -u '' -p '' --pass-pol",
+      "description": "Uses CrackMapExec to retrieve the domain password policy via SMB. Shows lockout threshold, minimum length, and complexity requirements - essential information before password spraying."
     },
     {
       "label": "PowerView - Get-DomainPolicy (password policy from LDAP)",
-      "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess"
+      "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess",
+      "description": "Uses PowerView to dump domain password and Kerberos policies. Shows password complexity requirements, lockout thresholds, and ticket lifetimes - critical for planning brute-force, spraying, and ticket-based attacks."
     }
   ],
   "explain": "Reads the domain password policy over SMB:\n  crackmapexec smb <dc_ip>   query the DC\n  -u/-p                      credentials (a null session '' '' sometimes works)\n  --pass-pol                 return lockout threshold, window, complexity, min length\nRun this BEFORE any password spray so you stay under the lockout threshold and do not lock accounts."

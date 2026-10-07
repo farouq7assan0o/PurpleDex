@@ -186,11 +186,13 @@
   "variations": [
     {
       "label": "NetExec",
-      "command": "nxc smb <dc_ip> -u <user> -p <password> --users"
+      "command": "nxc smb <dc_ip> -u <user> -p <password> --users",
+      "description": "Uses CrackMapExec to enumerate domain users via SMB. A quick way to get a user list for password spraying or account analysis."
     },
     {
       "label": "RID brute (null/guest)",
-      "command": "crackmapexec smb <dc_ip> -u guest -p '' --rid-brute"
+      "command": "crackmapexec smb <dc_ip> -u guest -p '' --rid-brute",
+      "description": "Uses CrackMapExec to brute-force RID values over SMB, enumerating domain users and groups. Works with null sessions or guest access when other enumeration is blocked."
     }
   ],
   "steps": [

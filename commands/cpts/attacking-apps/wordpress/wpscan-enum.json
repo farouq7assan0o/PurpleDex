@@ -179,11 +179,13 @@
   "variations": [
     {
       "label": "Vulnerable plugins + users",
-      "command": "wpscan --url http://<url> --enumerate vp,u --api-token <token>"
+      "command": "wpscan --url http://<url> --enumerate vp,u --api-token <token>",
+      "description": "Vulnerable plugins + users. See the command syntax for exact parameters and flags."
     },
     {
       "label": "All plugins (aggressive)",
-      "command": "wpscan --url http://<url> --enumerate ap --plugins-detection aggressive"
+      "command": "wpscan --url http://<url> --enumerate ap --plugins-detection aggressive",
+      "description": "Scans a WordPress site for vulnerabilities, misconfigurations, and outdated components using wpscan."
     }
   ],
   "steps": [

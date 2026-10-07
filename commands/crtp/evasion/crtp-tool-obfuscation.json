@@ -33,31 +33,38 @@
   "variations": [
     {
       "label": "Obfuscate a C# project (Loader/Rubeus)",
-      "command": "Codecepticon.exe --action obfuscate --module csharp --verbose --path <solution> --map-file <map_file>"
+      "command": "Codecepticon.exe --action obfuscate --module csharp --verbose --path <solution> --map-file <map_file>",
+      "description": "Obfuscate a C# project (Loader/Rubeus). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Obfuscate a PowerShell script (Invoke-Mimikatz)",
-      "command": "Codecepticon.exe --action obfuscate --module powershell --verbose --path <script_ps1> --map-file <map_file>"
+      "command": "Codecepticon.exe --action obfuscate --module powershell --verbose --path <script_ps1> --map-file <map_file>",
+      "description": "Obfuscate a PowerShell script (Invoke-Mimikatz). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Refresh the embedded Mimikatz DLL in the PS wrapper",
-      "command": "Invoke-UpdateMimikatzScript -DllPath <dll_file> -ScriptPath .\\Invoke-Mimikatz.ps1"
+      "command": "Invoke-UpdateMimikatzScript -DllPath <dll_file> -ScriptPath .\\Invoke-Mimikatz.ps1",
+      "description": "Refresh the embedded Mimikatz DLL in the PS wrapper. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Locate a flagged byte offset in a script",
-      "command": ".\\ByteToLineNumber.ps1 <script_ps1> <0xNNN>"
+      "command": ".\\ByteToLineNumber.ps1 <script_ps1> <0xNNN>",
+      "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
     },
     {
       "label": "Regenerate AES-encrypted strings",
-      "command": ".\\CustomAES-Generator-Encryption.ps1 > enc.txt"
+      "command": ".\\CustomAES-Generator-Encryption.ps1 > enc.txt",
+      "description": "Regenerate AES-encrypted strings. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Find the flagged bytes with DefenderCheck",
-      "command": "DefenderCheck.exe <binary_or_script>"
+      "command": "DefenderCheck.exe <binary_or_script>",
+      "description": "Find the flagged bytes with DefenderCheck. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Compile/execute via LOLBAS (csc.exe / MSBuild.exe)",
-      "command": "MSBuild.exe <inline_task>   # or: csc.exe /out:<out_exe> <source_cs>"
+      "command": "MSBuild.exe <inline_task>   # or: csc.exe /out:<out_exe> <source_cs>",
+      "description": "Bypasses application whitelisting by executing code through a signed Microsoft binary (LOLBin). These trusted binaries can load and execute arbitrary code, circumventing AppLocker and WDAC policies."
     }
   ],
   "notes": "Workflow when a signatured tool gets caught: (1) find what's flagged - AMSI/Defender byte offset -> ByteToLineNumber.ps1 maps it to a source line; (2) obfuscate the source with Codecepticon (renames symbols, encrypts strings) and rebuild; (3) for Invoke-Mimikatz, swap in a fresh/obfuscated powerkatz.dll via Invoke-UpdateMimikatzScript. Use the resulting binaries with crtp-loader (in-memory) and the PS scripts inside crtp-invishell. Reference card - no single command; see the linked tools. DefenderCheck locates the exact bytes Windows Defender flags; map the offset to a source line with ByteToLineNumber.ps1, then obfuscate that part. csc.exe/MSBuild.exe (LOLBAS) compile/run code inline to bypass application control (UMCI/AppLocker).",

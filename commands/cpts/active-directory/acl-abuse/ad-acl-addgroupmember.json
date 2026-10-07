@@ -215,11 +215,13 @@
   "variations": [
     {
       "label": "net (if you have the rights interactively)",
-      "command": "net group \"<group>\" <user> /add /domain"
+      "command": "net group \"<group>\" <user> /add /domain",
+      "description": "Enumerates domain groups and their members using the net command. Quick way to check domain group memberships from a basic command prompt."
     },
     {
       "label": "AD module",
-      "command": "Add-ADGroupMember -Identity '<group>' -Members '<user>'"
+      "command": "Add-ADGroupMember -Identity '<group>' -Members '<user>'",
+      "description": "Adds a user or computer to an Active Directory group using the AD PowerShell module. Use this when you have the required permissions (e.g., GenericAll or WriteProperty on the group) to escalate privileges by joining a more privileged group."
     }
   ],
   "steps": [

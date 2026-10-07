@@ -167,7 +167,8 @@
   "variations": [
     {
       "label": "Read shadow via debugfs",
-      "command": "debugfs -R 'cat /etc/shadow' /dev/sda1"
+      "command": "debugfs -R 'cat /etc/shadow' /dev/sda1",
+      "description": "Reads password hashes from /etc/shadow (requires root). Hashes can be cracked offline with Hashcat or John to recover plaintext passwords."
     }
   ],
   "steps": [

@@ -60,15 +60,18 @@
   "variations": [
     {
       "label": "OpenSSL encrypt / decrypt",
-      "command": "openssl enc -aes256 -iter 100000 -pbkdf2 -in /etc/passwd -out passwd.enc\nopenssl enc -d -aes256 -iter 100000 -pbkdf2 -in passwd.enc -out passwd"
+      "command": "openssl enc -aes256 -iter 100000 -pbkdf2 -in /etc/passwd -out passwd.enc\nopenssl enc -d -aes256 -iter 100000 -pbkdf2 -in passwd.enc -out passwd",
+      "description": "Encrypts or decrypts data using OpenSSL. Used for file encryption, data obfuscation, or decrypting captured encrypted content."
     },
     {
       "label": "PowerShell AES - file",
-      "command": "Import-Module .\\Invoke-AESEncryption.ps1\nInvoke-AESEncryption -Mode Encrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt\nInvoke-AESEncryption -Mode Decrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt.aes"
+      "command": "Import-Module .\\Invoke-AESEncryption.ps1\nInvoke-AESEncryption -Mode Encrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt\nInvoke-AESEncryption -Mode Decrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt.aes",
+      "description": "Encrypts or decrypts data using AES in PowerShell. Used to protect payloads or exfiltrated data in transit, or to decrypt captured AES-encrypted content."
     },
     {
       "label": "PowerShell AES - string",
-      "command": "Invoke-AESEncryption -Mode Encrypt -Key \"p@ssw0rd\" -Text \"Secret Text\"\nInvoke-AESEncryption -Mode Decrypt -Key \"p@ssw0rd\" -Text \"<base64>\""
+      "command": "Invoke-AESEncryption -Mode Encrypt -Key \"p@ssw0rd\" -Text \"Secret Text\"\nInvoke-AESEncryption -Mode Decrypt -Key \"p@ssw0rd\" -Text \"<base64>\"",
+      "description": "Encrypts or decrypts data using AES in PowerShell. Used to protect payloads or exfiltrated data in transit, or to decrypt captured AES-encrypted content."
     }
   ],
   "opsec": "quiet",

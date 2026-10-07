@@ -189,11 +189,13 @@
   "variations": [
     {
       "label": "Recursive across the drive",
-      "command": "findstr /S /I /M /C:\"password\" C:\\*.txt C:\\*.ini C:\\*.config C:\\*.xml"
+      "command": "findstr /S /I /M /C:\"password\" C:\\*.txt C:\\*.ini C:\\*.config C:\\*.xml",
+      "description": "Recursive across the drive. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Registry passwords",
-      "command": "reg query HKLM /f password /t REG_SZ /s"
+      "command": "reg query HKLM /f password /t REG_SZ /s",
+      "description": "Queries Windows registry keys for stored configuration and potential credentials. Registry often contains passwords, service account details, and exploitable settings."
     }
   ],
   "explain": "Greps the Windows filesystem for credentials in config and script files:\n  findstr /S               recurse into subdirectories\n  /I                       case-insensitive\n  /M                       print only matching filenames\n  /C:\"password\"           the literal string to find\n  *.txt *.ini *.cfg *.config *.xml   the file types to scan\nAlso hunt by name/extension (.rdp, .vnc, unattend.xml, web.config) and reg query HKLM /f password /t REG_SZ /s for registry-stored secrets."

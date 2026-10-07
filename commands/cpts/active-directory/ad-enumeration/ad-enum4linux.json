@@ -195,7 +195,8 @@
   "variations": [
     {
       "label": "Verbose all",
-      "command": "enum4linux -a -v <dc_ip>"
+      "command": "enum4linux -a -v <dc_ip>",
+      "description": "Runs enum4linux-ng in full enumeration mode, collecting users, groups, shares, password policy, and OS info via SMB/RPC. Comprehensive Linux-based Windows domain enumeration tool."
     }
   ],
   "steps": [

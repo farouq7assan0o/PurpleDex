@@ -218,15 +218,18 @@
   "variations": [
     {
       "label": "Stealth (session loop, DC-only)",
-      "command": ".\\SharpHound.exe -c DCOnly --zipfilename bh"
+      "command": ".\\SharpHound.exe -c DCOnly --zipfilename bh",
+      "description": "Runs SharpHound collector to gather Active Directory data for BloodHound analysis. Collects user sessions, group memberships, ACLs, and trust relationships - the dataset that powers attack path analysis."
     },
     {
       "label": "Loop sessions over time",
-      "command": ".\\SharpHound.exe -c Session --loop --loopduration 02:00:00"
+      "command": ".\\SharpHound.exe -c Session --loop --loopduration 02:00:00",
+      "description": "Runs SharpHound in session collection mode only. Gathers active user sessions across the network - lighter weight and less noisy than a full collection, good for periodic session updates."
     },
     {
       "label": "ADRecon (Excel report, alt to BloodHound)",
-      "command": ".\\ADRecon.ps1 -DomainController <dc> -Credential <domain>\\<user>"
+      "command": ".\\ADRecon.ps1 -DomainController <dc> -Credential <domain>\\<user>",
+      "description": "ADRecon (Excel report, alt to BloodHound). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

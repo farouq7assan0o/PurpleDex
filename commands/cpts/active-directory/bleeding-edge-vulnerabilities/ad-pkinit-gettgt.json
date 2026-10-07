@@ -169,7 +169,8 @@
   "variations": [
     {
       "label": "From a PEM instead of base64",
-      "command": "python3 /opt/PKINITtools/gettgtpkinit.py -cert-pem <cert_pem> -key-pem <key_pem> <domain>/<user> user.ccache"
+      "command": "python3 /opt/PKINITtools/gettgtpkinit.py -cert-pem <cert_pem> -key-pem <key_pem> <domain>/<user> user.ccache",
+      "description": "Uses Impacket getTGT to request a Kerberos Ticket Granting Ticket (TGT) from the domain controller. Authenticates with a password, hash, or AES key and saves the TGT to a ccache file for use with other tools."
     }
   ],
   "steps": [

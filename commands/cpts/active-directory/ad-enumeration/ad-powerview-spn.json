@@ -196,7 +196,8 @@
   "variations": [
     {
       "label": "Then roast",
-      "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat"
+      "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat",
+      "description": "Uses PowerView to find domain users with SPNs set - targets for Kerberoasting. PowerView provides richer output formatting and filtering than the native AD module."
     }
   ],
   "explain": "Lists Kerberoastable SPN accounts with PowerView:\n  Get-DomainUser -SPN   users that have a ServicePrincipalName set\n  -Properties samaccountname,ServicePrincipalName   return the SPN\nThese accounts can be Kerberoasted; prioritize ones with admincount=1 or RC4 support - feed them to Rubeus kerberoast or GetUserSPNs.py."

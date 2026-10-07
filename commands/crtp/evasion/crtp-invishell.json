@@ -33,11 +33,13 @@
   "variations": [
     {
       "label": "Admin variant (uses PATH env)",
-      "command": "C:\\AD\\Tools\\InviShell\\RunWithPathAsAdmin.bat"
+      "command": "C:\\AD\\Tools\\InviShell\\RunWithPathAsAdmin.bat",
+      "description": "Launches PowerShell with InviShell to bypass AMSI, ScriptBlock logging, Module logging, and Transcription. Provides an unmonitored PowerShell session by hooking CLR-level functions."
     },
     {
       "label": "Manual COR_PROFILER setup (what the .bat does)",
-      "command": "set COR_ENABLE_PROFILING=1 & set COR_PROFILER={cf0d821e-299b-5307-a3d8-b283c03916db}"
+      "command": "set COR_ENABLE_PROFILING=1 & set COR_PROFILER={cf0d821e-299b-5307-a3d8-b283c03916db}",
+      "description": "Manual COR_PROFILER setup (what the .bat does). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

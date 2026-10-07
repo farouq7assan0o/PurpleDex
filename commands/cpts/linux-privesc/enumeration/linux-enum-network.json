@@ -75,15 +75,18 @@
   "variations": [
     {
       "label": "Interfaces / hosts",
-      "command": "ip a\nifconfig\ncat /etc/hosts"
+      "command": "ip a\nifconfig\ncat /etc/hosts",
+      "description": "Shows network interface configuration including IP addresses, subnets, and additional network segments. Identifies dual-homed hosts for pivoting to other networks."
     },
     {
       "label": "Routing / DNS / ARP",
-      "command": "route\nnetstat -rn\ncat /etc/resolv.conf\narp -a"
+      "command": "route\nnetstat -rn\ncat /etc/resolv.conf\narp -a",
+      "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
     },
     {
       "label": "Logged-in users",
-      "command": "lastlog\nw\nwho\nfinger"
+      "command": "lastlog\nw\nwho\nfinger",
+      "description": "Shows the last login time for all user accounts. Identifies accounts that are actively used versus dormant accounts."
     }
   ],
   "opsec": "moderate",

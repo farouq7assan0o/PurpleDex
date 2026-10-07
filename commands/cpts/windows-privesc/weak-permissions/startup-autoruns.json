@@ -202,11 +202,13 @@
   "variations": [
     {
       "label": "Check writable autoruns (PowerUp)",
-      "command": "Get-ModifiableScheduledTaskFile -Verbose"
+      "command": "Get-ModifiableScheduledTaskFile -Verbose",
+      "description": "Check writable autoruns (PowerUp). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Startup folder",
-      "command": "Get-ChildItem \"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\""
+      "command": "Get-ChildItem \"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\"",
+      "description": "Lists files and directories. Used for filesystem enumeration to find sensitive files, writable paths, and installed applications."
     }
   ],
   "explain": "Lists autostart programs to find a writable one that runs at another user's logon:\n  Get-CimInstance Win32_StartupCommand   enumerate autostart entries\n  | select Name, command, Location, User | fl   show each entry's command, where it is registered, and which user it runs for\nIf an entry or its target binary is writable by you, replace it with a payload that executes when a higher-privileged user logs in."

@@ -166,11 +166,13 @@
   "variations": [
     {
       "label": "Pick a specific format",
-      "command": "./username-anarchy --select-format first.last -i <names_file>"
+      "command": "./username-anarchy --select-format first.last -i <names_file>",
+      "description": "Generates username permutations from a name list. Creates variations (jsmith, j.smith, smithj, john.smith, etc.) for username enumeration and password spraying."
     },
     {
       "label": "Generate from a single name",
-      "command": "./username-anarchy Jane Doe"
+      "command": "./username-anarchy Jane Doe",
+      "description": "Generate from a single name. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Generates corporate username permutations from real names:\n  ./username-anarchy       the generator\n  -i <names_file>          input file of first/last names\nProduces jdoe, john.doe, doe.john, etc.; feed the output to kerbrute or a spray to discover which username format the org actually uses. --select-format picks one scheme."

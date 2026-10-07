@@ -170,11 +170,13 @@
   "variations": [
     {
       "label": "Show JtR format too (-j)",
-      "command": "hashid -j '<hash>'"
+      "command": "hashid -j '<hash>'",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "From a file, hashcat+JtR+extended",
-      "command": "hashid -mje hashes.txt"
+      "command": "hashid -mje hashes.txt",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     }
   ],
   "explain": "Identifies an unknown hash and prints its hashcat mode:\n  hashid                   the identifier\n  -m                       also print the matching Hashcat mode number\n  '<hash>'                 the hash to analyze\nUse the printed mode with hashcat -m; -j shows the John format, -mje reads a file and shows both plus extended info. Always confirm the mode before a long crack."

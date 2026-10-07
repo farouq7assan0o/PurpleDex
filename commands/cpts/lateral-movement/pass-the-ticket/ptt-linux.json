@@ -93,19 +93,23 @@
   "variations": [
     {
       "label": "Use ccache",
-      "command": "cp /tmp/krb5cc_* .\nexport KRB5CCNAME=$PWD/krb5cc_*\nklist"
+      "command": "cp /tmp/krb5cc_* .\nexport KRB5CCNAME=$PWD/krb5cc_*\nklist",
+      "description": "Copies files to a different location. Used post-exploitation to stage tools, backup files before modification, or copy sensitive files for exfiltration."
     },
     {
       "label": "kinit from keytab",
-      "command": "kinit <user>@<realm> -k -t <keytab>"
+      "command": "kinit <user>@<realm> -k -t <keytab>",
+      "description": "Requests a Kerberos TGT from the Linux command line using kinit. Authenticates with a password or keytab file and caches the ticket for use with Kerberos-aware tools."
     },
     {
       "label": "SMB with Kerberos",
-      "command": "smbclient //dc01/<share> -k -c ls -no-pass"
+      "command": "smbclient //dc01/<share> -k -c ls -no-pass",
+      "description": "Executes an SMB command non-interactively. Useful for scripting file downloads/uploads or share access checks in automated workflows."
     },
     {
       "label": "Convert ccache to kirbi",
-      "command": "impacket-ticketConverter <ccache> <ticket>"
+      "command": "impacket-ticketConverter <ccache> <ticket>",
+      "description": "Uses Impacket ticketConverter to convert Kerberos tickets between ccache (Linux/Impacket) and kirbi (Windows/Rubeus) formats. Needed when moving tickets between Linux and Windows attack tools."
     }
   ],
   "opsec": "loud",

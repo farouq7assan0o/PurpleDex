@@ -33,23 +33,28 @@
   "variations": [
     {
       "label": "Search a specific path for interesting files",
-      "command": "Find-InterestingFile -Path \\\\<host>\\<share>\\ -Include *.txt,*.xml,*.config,*.kdbx"
+      "command": "Find-InterestingFile -Path \\\\<host>\\<share>\\ -Include *.txt,*.xml,*.config,*.kdbx",
+      "description": "Uses PowerView to crawl accessible network shares looking for sensitive files (configs, scripts, passwords, private keys). Searches file names and extensions for common patterns that indicate credential exposure."
     },
     {
       "label": "ACLs on a filesystem path (SYSVOL / share perms)",
-      "command": "Get-PathAcl -Path \\\\<dc>\\sysvol"
+      "command": "Get-PathAcl -Path \\\\<dc>\\sysvol",
+      "description": "ACLs on a filesystem path (SYSVOL / share perms). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Find reachable domain shares first",
-      "command": "Find-DomainShare -CheckShareAccess"
+      "command": "Find-DomainShare -CheckShareAccess",
+      "description": "Discovers network shares across domain computers. Identifies accessible file shares for data mining, credential harvesting, and finding writable deployment shares."
     },
     {
       "label": "Interesting files, last-accessed filter",
-      "command": "Find-InterestingDomainShareFile -Include *cred*,*.ps1 -LastAccessTime (Get-Date).AddDays(-30)"
+      "command": "Find-InterestingDomainShareFile -Include *cred*,*.ps1 -LastAccessTime (Get-Date).AddDays(-30)",
+      "description": "Uses PowerView to crawl accessible network shares looking for sensitive files (configs, scripts, passwords, private keys). Searches file names and extensions for common patterns that indicate credential exposure."
     },
     {
       "label": "PowerView recursive file finder",
-      "command": "Invoke-FileFinder -Verbose   # PowerView: find files by name/pattern across reachable shares"
+      "command": "Invoke-FileFinder -Verbose   # PowerView: find files by name/pattern across reachable shares",
+      "description": "PowerView recursive file finder. See the command syntax for exact parameters and flags."
     }
   ],
   "examples": [

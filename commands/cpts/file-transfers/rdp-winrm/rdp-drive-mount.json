@@ -60,11 +60,13 @@
   "variations": [
     {
       "label": "xfreerdp",
-      "command": "xfreerdp /v:<ip> /u:<user> /p:'HTB_@cademy_stdnt!' /drive:linux,/home/user/rdp-share"
+      "command": "xfreerdp /v:<ip> /u:<user> /p:'HTB_@cademy_stdnt!' /drive:linux,/home/user/rdp-share",
+      "description": "Connects to a Windows host via RDP using xfreerdp from Linux. Provides a graphical remote desktop session with file sharing and clipboard support."
     },
     {
       "label": "rdesktop",
-      "command": "rdesktop <ip> -d HTB -u administrator -p 'Password0@' -r disk:linux='/home/user/rdesktop/files'"
+      "command": "rdesktop <ip> -d HTB -u administrator -p 'Password0@' -r disk:linux='/home/user/rdesktop/files'",
+      "description": "Connects to a Windows host via RDP using rdesktop from Linux. Basic RDP client for graphical remote access to Windows machines."
     }
   ],
   "opsec": "quiet",

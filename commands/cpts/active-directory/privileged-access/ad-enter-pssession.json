@@ -226,11 +226,13 @@
   "variations": [
     {
       "label": "With PSCredential",
-      "command": "Enter-PSSession -ComputerName <target> -Credential (Get-Credential)"
+      "command": "Enter-PSSession -ComputerName <target> -Credential (Get-Credential)",
+      "description": "Opens an interactive PowerShell Remoting session to a remote machine. Provides a live shell on the target through WinRM - similar to SSH for Windows environments."
     },
     {
       "label": "Over an existing session var",
-      "command": "$s = New-PSSession -ComputerName <target> -Credential $cred; Enter-PSSession $s"
+      "command": "$s = New-PSSession -ComputerName <target> -Credential $cred; Enter-PSSession $s",
+      "description": "Over an existing session var. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

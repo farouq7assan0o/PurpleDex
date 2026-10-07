@@ -69,11 +69,13 @@
   "variations": [
     {
       "label": "rlogin",
-      "command": "rlogin <ip> -l <user>"
+      "command": "rlogin <ip> -l <user>",
+      "description": "Connects to a remote host using the legacy rlogin protocol. Rlogin trusts .rhosts-based authentication - if configured, allows login without a password based on the source host and user."
     },
     {
       "label": "Enumerate users on the network",
-      "command": "rwho\nrusers -al <ip>"
+      "command": "rwho\nrusers -al <ip>",
+      "description": "Enumerate users on the network. See the command syntax for exact parameters and flags."
     }
   ],
   "opsec": "moderate",

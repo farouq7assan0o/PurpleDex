@@ -77,7 +77,8 @@
   "variations": [
     {
       "label": "SGID (-6000)",
-      "command": "find / -uid 0 -perm -6000 -type f 2>/dev/null\nfind / -user root -perm -6000 -exec ls -ldb {} \\; 2>/dev/null"
+      "command": "find / -uid 0 -perm -6000 -type f 2>/dev/null\nfind / -user root -perm -6000 -exec ls -ldb {} \\; 2>/dev/null",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     }
   ],
   "opsec": "loud",

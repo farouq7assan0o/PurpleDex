@@ -201,15 +201,18 @@
   "variations": [
     {
       "label": "Domain admins",
-      "command": "net group \"Domain Admins\" /domain"
+      "command": "net group \"Domain Admins\" /domain",
+      "description": "Enumerates domain groups and their members using the net command. Quick way to check domain group memberships from a basic command prompt."
     },
     {
       "label": "Current user's groups",
-      "command": "net user <user> /domain"
+      "command": "net user <user> /domain",
+      "description": "Enumerates local or domain user accounts using the net command. Built-in Windows tool that works without importing modules - useful for initial enumeration from a basic shell."
     },
     {
       "label": "Password policy",
-      "command": "net accounts /domain"
+      "command": "net accounts /domain",
+      "description": "Displays the domain password and lockout policy. Shows minimum password length, lockout threshold, lockout duration, and password history - essential for calibrating password spray attacks."
     }
   ],
   "explain": "Enumerates the domain with the built-in net command (LOTL):\n  net <object> /domain   query the domain rather than the local host\nWith no tools to install, 'net user /domain', 'net group \"Domain Admins\" /domain', and 'net accounts /domain' list users, group membership, and the password policy from any domain-joined host."

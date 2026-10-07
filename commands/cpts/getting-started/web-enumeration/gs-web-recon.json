@@ -68,15 +68,18 @@
   "variations": [
     {
       "label": "Headers (curl)",
-      "command": "curl -IL https://www.<domain>.com"
+      "command": "curl -IL https://www.<domain>.com",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "Fingerprint one target",
-      "command": "whatweb <ip>"
+      "command": "whatweb <ip>",
+      "description": "Identifies web technologies, frameworks, and server versions using WhatWeb. Fingerprints the technology stack for targeted vulnerability research."
     },
     {
       "label": "Fingerprint a subnet",
-      "command": "whatweb --no-errors <cidr>"
+      "command": "whatweb --no-errors <cidr>",
+      "description": "Identifies web technologies, frameworks, and server versions using WhatWeb. Fingerprints the technology stack for targeted vulnerability research."
     }
   ],
   "opsec": "moderate",

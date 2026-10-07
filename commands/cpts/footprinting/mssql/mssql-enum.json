@@ -86,11 +86,13 @@
   "variations": [
     {
       "label": "Nmap ms-sql script suite",
-      "command": "sudo nmap --script ms-sql-info,ms-sql-empty-password,ms-sql-xp-cmdshell,ms-sql-config,ms-sql-ntlm-info,ms-sql-tables,ms-sql-hasdbaccess,ms-sql-dac,ms-sql-dump-hashes --script-args mssql.instance-port=1433,mssql.username=sa,mssql.password=,mssql.instance-name=MSSQLSERVER -sV -p 1433 <ip>"
+      "command": "sudo nmap --script ms-sql-info,ms-sql-empty-password,ms-sql-xp-cmdshell,ms-sql-config,ms-sql-ntlm-info,ms-sql-tables,ms-sql-hasdbaccess,ms-sql-dac,ms-sql-dump-hashes --script-args mssql.instance-port=1433,mssql.username=sa,mssql.password=,mssql.instance-name=MSSQLSERVER -sV -p 1433 <ip>",
+      "description": "Scans Microsoft SQL Server with nmap NSE scripts for instance discovery, version detection, and configuration enumeration."
     },
     {
       "label": "Metasploit mssql_ping",
-      "command": "use auxiliary/scanner/mssql/mssql_ping\nset rhosts <ip>\nrun"
+      "command": "use auxiliary/scanner/mssql/mssql_ping\nset rhosts <ip>\nrun",
+      "description": "Configures a Metasploit module for exploitation. Sets the target, payload, and options before launching the exploit."
     }
   ],
   "opsec": "loud",

@@ -247,35 +247,43 @@
   "variations": [
     {
       "label": "Computers + OS (spot the DCs/servers)",
-      "command": "Get-ADComputer -Filter * -Properties OperatingSystem | select Name,OperatingSystem,DNSHostName"
+      "command": "Get-ADComputer -Filter * -Properties OperatingSystem | select Name,OperatingSystem,DNSHostName",
+      "description": "Enumerates all computer objects in AD with their operating system details. Use this to identify domain controllers, servers, and workstations - older OS versions may have unpatched vulnerabilities."
     },
     {
       "label": "Organizational Units",
-      "command": "Get-ADOrganizationalUnit -Filter * | select Name,DistinguishedName"
+      "command": "Get-ADOrganizationalUnit -Filter * | select Name,DistinguishedName",
+      "description": "Lists all Organizational Units (OUs) in the domain. OUs define the administrative boundary structure and GPO application scope - understanding the OU tree helps target specific departments and identify where GPO-based attacks will land."
     },
     {
       "label": "Domain trusts",
-      "command": "Get-ADTrust -Filter * | select Source,Target,Direction,TrustType"
+      "command": "Get-ADTrust -Filter * | select Source,Target,Direction,TrustType",
+      "description": "Enumerates Active Directory trust relationships showing direction, type, and trust attributes. Cross-domain and cross-forest trusts create attack paths - a bidirectional trust means you can potentially pivot between domains."
     },
     {
       "label": "Forest / global catalogs",
-      "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
+      "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs",
+      "description": "Retrieves forest-level information including root domain, child domains, global catalogs, and forest functional level. Maps the forest topology to identify all domains and potential trust-based attack paths."
     },
     {
       "label": "LDAP recursive memberOf (nested group resolution via 1.2.840.113556.1.4.1941)",
-      "command": "Get-ADGroup -LDAPFilter '(member:1.2.840.113556.1.4.1941:=<user_DN>)' | select Name"
+      "command": "Get-ADGroup -LDAPFilter '(member:1.2.840.113556.1.4.1941:=<user_DN>)' | select Name",
+      "description": "Resolves nested group memberships using the LDAP_MATCHING_RULE_IN_CHAIN OID. Finds all groups a user belongs to through any depth of nesting, revealing indirect privilege paths that flat lookups miss."
     },
     {
       "label": "LDAP recursive members of a group (1941)",
-      "command": "Get-ADUser -LDAPFilter '(memberOf:1.2.840.113556.1.4.1941:=<group_DN>)'"
+      "command": "Get-ADUser -LDAPFilter '(memberOf:1.2.840.113556.1.4.1941:=<group_DN>)'",
+      "description": "Performs recursive (nested) group membership resolution using the LDAP_MATCHING_RULE_IN_CHAIN OID. Finds users who are members of a group through any level of nesting - critical for finding hidden privilege paths that flat membership queries miss."
     },
     {
       "label": "LDAP bitwise OR filter (1.2.840.113556.1.4.804)",
-      "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.804:=<bitmask>)'"
+      "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.804:=<bitmask>)'",
+      "description": "Finds accounts with Kerberos pre-authentication disabled (userAccountControl flag 0x400000). These accounts are vulnerable to AS-REP Roasting - their AS-REP can be requested without credentials and cracked offline."
     },
     {
       "label": "Ping sweep via AD Module",
-      "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}"
+      "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}",
+      "description": "Lists all computer accounts joined to the domain. Provides a full inventory of machines for network mapping, identifying targets, and understanding the environment scope."
     }
   ],
   "explain": "Uses the signed Microsoft ActiveDirectory module (stealthier than PowerView, it is legitimate admin tooling) to enumerate the domain:\n  Get-ADDomain             pull core domain facts\n  | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator   the name, SID, and PDC you need for later attacks\nSwap the cmdlet to map targets: Get-ADUser -Filter for Kerberoastable/AS-REP accounts, Get-ADGroupMember 'Domain Admins' -Recursive, Get-ADTrust for trusts."

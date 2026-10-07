@@ -204,7 +204,8 @@
   "variations": [
     {
       "label": "hashcat mode 13400",
-      "command": "hashcat -m 13400 keepass.hash /usr/share/wordlists/rockyou.txt"
+      "command": "hashcat -m 13400 keepass.hash /usr/share/wordlists/rockyou.txt",
+      "description": "Cracks password hashes with hashcat (mode 13400) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     }
   ],
   "steps": [

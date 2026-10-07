@@ -244,15 +244,18 @@
   "variations": [
     {
       "label": "Domain controllers",
-      "command": "Get-DomainController -Domain <domain>"
+      "command": "Get-DomainController -Domain <domain>",
+      "description": "Enumerates all domain controllers using PowerView. Returns hostnames, IPs, OS versions, and roles for each DC - critical for targeting in DCSync, Golden Ticket, and replication attacks."
     },
     {
       "label": "Domain SID",
-      "command": "Get-DomainSID"
+      "command": "Get-DomainSID",
+      "description": "Retrieves the domain SID, the base identifier used to construct all security identifiers in the domain. Required for forging Golden Tickets, Silver Tickets, and SID history attacks."
     },
     {
       "label": "Deprecated PowerView alias (OSCP PEN-200 Ch21)",
-      "command": "Get-NetDomain   # older PowerView name for Get-Domain - identical output"
+      "command": "Get-NetDomain   # older PowerView name for Get-Domain - identical output",
+      "description": "Deprecated PowerView alias (OSCP PEN-200 Ch21). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Enumerates the domain, forest, and DCs from an authenticated Windows session with PowerView:\n  Get-Domain               core domain object (add -Domain <domain> to target a trusted domain)\nFollow-ons: Get-DomainController for DCs, Get-Forest for the forest, Get-DomainSID for the SID you need to forge tickets. (Get-NetDomain is the deprecated alias.)"

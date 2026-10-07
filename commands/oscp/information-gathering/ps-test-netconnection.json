@@ -35,11 +35,13 @@
   "variations": [
     {
       "label": "Alias (shorter)",
-      "command": "tnc <ip> -Port <port>"
+      "command": "tnc <ip> -Port <port>",
+      "description": "Tests TCP connectivity to a specific host and port from PowerShell. Built-in alternative to nmap for checking if a service is reachable when specialized tools are unavailable."
     },
     {
       "label": "With verbose output",
-      "command": "Test-NetConnection -Port <port> <ip> -InformationLevel Detailed"
+      "command": "Test-NetConnection -Port <port> <ip> -InformationLevel Detailed",
+      "description": "Tests TCP connectivity to a specific host and port from PowerShell. Built-in alternative to nmap for checking if a service is reachable when specialized tools are unavailable."
     }
   ],
   "examples": [

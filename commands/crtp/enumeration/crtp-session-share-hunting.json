@@ -33,43 +33,53 @@
   "variations": [
     {
       "label": "SessionHunter against a target list",
-      "command": "Invoke-SessionHunter -NoPortScan -RawResults -Targets <hostlist> | select Hostname,UserSession,Access"
+      "command": "Invoke-SessionHunter -NoPortScan -RawResults -Targets <hostlist> | select Hostname,UserSession,Access",
+      "description": "SessionHunter against a target list - outputs Hostname, UserSession, Access."
     },
     {
       "label": "PowerHuntShares - hunt SMB shares",
-      "command": "Invoke-HuntSMBShares -NoPing -OutputDirectory <out_dir> -HostList <hostlist>"
+      "command": "Invoke-HuntSMBShares -NoPing -OutputDirectory <out_dir> -HostList <hostlist>",
+      "description": "Crawls SMB shares across the domain looking for accessible files with sensitive content. Scans for credentials in configs, scripts, and documents - outputs a structured report of findings."
     },
     {
       "label": "PowerView user-location fallback",
-      "command": "Find-DomainUserLocation -CheckAccess"
+      "command": "Find-DomainUserLocation -CheckAccess",
+      "description": "Uses PowerView to find domain user sessions and verify whether you have local admin access on those machines. Combines session hunting with access checking for actionable lateral movement targets."
     },
     {
       "label": "Check local admin on a host (multi-threaded)",
-      "command": "Invoke-CheckLocalAdminAccess"
+      "command": "Invoke-CheckLocalAdminAccess",
+      "description": "Tests whether the current user has local administrator access on target machines. Iterates through domain computers attempting to access the administrative share (ADMIN$) to verify admin rights."
     },
     {
       "label": "Find WMI local admin access",
-      "command": "Find-WMILocalAdminAccess.ps1"
+      "command": "Find-WMILocalAdminAccess.ps1",
+      "description": "Find WMI local admin access. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Enumerate a host's local Administrators group",
-      "command": "Get-NetLocalGroupMember -ComputerName <host> -GroupName Administrators"
+      "command": "Get-NetLocalGroupMember -ComputerName <host> -GroupName Administrators",
+      "description": "Enumerate a host's local Administrators group. See the command syntax for exact parameters and flags."
     },
     {
       "label": "PowerView file servers",
-      "command": "Get-DomainFileServer"
+      "command": "Get-DomainFileServer",
+      "description": "Discovers file servers in the domain by parsing user home directory and profile path attributes. Identifies file servers that likely contain sensitive data and active user sessions."
     },
     {
       "label": "PowerView DFS shares",
-      "command": "Get-DomainDFSShare"
+      "command": "Get-DomainDFSShare",
+      "description": "Enumerates DFS (Distributed File System) shares in the domain using PowerView. DFS namespaces may expose additional shares not visible through standard share enumeration."
     },
     {
       "label": "Get-NetShare (shares on a specific host)",
-      "command": "Get-NetShare -ComputerName <host>"
+      "command": "Get-NetShare -ComputerName <host>",
+      "description": "Get-NetShare (shares on a specific host). See the command syntax for exact parameters and flags."
     },
     {
       "label": "File servers (course alias of Get-DomainFileServer)",
-      "command": "Get-NetFileServer -Domain <domain>"
+      "command": "Get-NetFileServer -Domain <domain>",
+      "description": "File servers (course alias of Get-DomainFileServer). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

@@ -211,11 +211,13 @@
   "variations": [
     {
       "label": "Kerberos auth (ccache)",
-      "command": "bloodhound-python -k -no-pass -ns <dc_ip> -d <domain> -c All --zip"
+      "command": "bloodhound-python -k -no-pass -ns <dc_ip> -d <domain> -c All --zip",
+      "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
     },
     {
       "label": "Target a specific collection method",
-      "command": "bloodhound-python -u '<user>' -p '<password>' -ns <dc_ip> -d <domain> -c DCOnly"
+      "command": "bloodhound-python -u '<user>' -p '<password>' -ns <dc_ip> -d <domain> -c DCOnly",
+      "description": "Runs the Python BloodHound collector with a specific collection method (e.g., Group, Session, ACL, ObjectProps). Targeted collection reduces noise and time compared to collecting everything."
     }
   ],
   "steps": [

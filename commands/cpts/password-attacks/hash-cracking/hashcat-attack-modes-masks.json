@@ -66,15 +66,18 @@
   "variations": [
     {
       "label": "Attack modes (-a)",
-      "command": "-a 0  - Straight (dictionary)\n-a 1  - Combination (two wordlists)\n-a 3  - Brute-force / mask\n-a 6  - Hybrid wordlist + mask\n-a 7  - Hybrid mask + wordlist"
+      "command": "-a 0  - Straight (dictionary)\n-a 1  - Combination (two wordlists)\n-a 3  - Brute-force / mask\n-a 6  - Hybrid wordlist + mask\n-a 7  - Hybrid mask + wordlist",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "Built-in charsets",
-      "command": "?l  - abcdefghijklmnopqrstuvwxyz\n?u  - ABCDEFGHIJKLMNOPQRSTUVWXYZ\n?d  - 0123456789\n?h  - 0123456789abcdef\n?H  - 0123456789ABCDEF\n?s  - (space)!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\n?a  - ?l?u?d?s\n?b  - 0x00 - 0xff"
+      "command": "?l  - abcdefghijklmnopqrstuvwxyz\n?u  - ABCDEFGHIJKLMNOPQRSTUVWXYZ\n?d  - 0123456789\n?h  - 0123456789abcdef\n?H  - 0123456789ABCDEF\n?s  - (space)!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\n?a  - ?l?u?d?s\n?b  - 0x00 - 0xff",
+      "description": "Reference table of hashcat built-in character sets for mask attacks. Each placeholder (?l, ?u, ?d, ?s, ?a) represents a character class used to define password patterns."
     },
     {
       "label": "Custom charsets",
-      "command": "-1 ?l?u        # define set 1 = letters\n-2 ?d?s        # define set 2 = digits+symbols\n# then reference in the mask:\nhashcat -a 3 -m 0 <hash> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'"
+      "command": "-1 ?l?u        # define set 1 = letters\n-2 ?d?s        # define set 2 = digits+symbols\n# then reference in the mask:\nhashcat -a 3 -m 0 <hash> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'",
+      "description": "Cracks password hashes with hashcat (mode 0) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     }
   ],
   "opsec": "silent",

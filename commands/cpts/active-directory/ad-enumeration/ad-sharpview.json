@@ -196,7 +196,8 @@
   "variations": [
     {
       "label": "Any PowerView function, compiled",
-      "command": ".\\SharpView.exe Get-DomainGroupMember -Identity 'Domain Admins'"
+      "command": ".\\SharpView.exe Get-DomainGroupMember -Identity 'Domain Admins'",
+      "description": "Uses PowerView to enumerate administrative and privileged groups in the domain for attack path mapping."
     }
   ],
   "explain": "Runs PowerView functionality as a compiled binary (SharpView):\n  .\\SharpView.exe Get-DomainUser   invoke a PowerView cmdlet from the .exe\n  -Identity <user>                 the same parameters PowerView uses\nRuns without a PowerShell session, dodging PowerShell/AMSI-based detection; supports the full PowerView API (Get-DomainUser -SPN, Get-DomainGroupMember -Recurse, etc.)."

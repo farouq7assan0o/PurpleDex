@@ -172,11 +172,13 @@
   "variations": [
     {
       "label": "Pass-the-hash",
-      "command": "smbmap -u <user> -H <nt_hash> -d <domain> -H <target>"
+      "command": "smbmap -u <user> -H <nt_hash> -d <domain> -H <target>",
+      "description": "Uses smbmap with an NTLM hash instead of a password (pass-the-hash). Enumerates share access using stolen hashes without needing the plaintext password."
     },
     {
       "label": "Run a command (if admin)",
-      "command": "smbmap -u <user> -p <password> -H <target> -x 'whoami'"
+      "command": "smbmap -u <user> -p <password> -H <target> -x 'whoami'",
+      "description": "Executes an OS command on the target via SMB through smbmap. Requires admin-level access - runs commands as the authenticated user."
     }
   ],
   "explain": "Enumerates SMB shares and your access with smbmap:\n  smbmap -u <user> -p <password>   authenticate\n  -d <domain>                      the domain\n  -H <target>                      the host to enumerate\nShows READ/WRITE per share; add -r '<share>' to list a share's contents, or use null creds (-u '' -p '') to test anonymous access - faster than manual smbclient browsing."

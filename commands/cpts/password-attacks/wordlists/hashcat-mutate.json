@@ -162,7 +162,8 @@
   "variations": [
     {
       "label": "Combine multiple rule files",
-      "command": "hashcat -a 0 -m <mode> <hash> <wordlist> -r /usr/share/hashcat/rules/best64.rule -r /usr/share/hashcat/rules/toggles1.rule"
+      "command": "hashcat -a 0 -m <mode> <hash> <wordlist> -r /usr/share/hashcat/rules/best64.rule -r /usr/share/hashcat/rules/toggles1.rule",
+      "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     }
   ],
   "explain": "Uses the hashcat rule engine to PRINT (not crack) a mutated wordlist:\n  hashcat --force <wordlist>   run over the list\n  -r <rule_file>           apply these mutation rules\n  --stdout                 output the mutated candidates instead of cracking\n  | sort -u > mutated.list   dedupe into a new expanded list\nHandy to pre-generate a policy-aware list for reuse; the variation stacks multiple rule files."

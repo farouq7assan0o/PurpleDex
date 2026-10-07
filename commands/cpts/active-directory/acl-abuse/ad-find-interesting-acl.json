@@ -218,11 +218,13 @@
   "variations": [
     {
       "label": "Only ACLs involving principals you control",
-      "command": "Find-InterestingDomainAcl -ResolveGUIDs | ?{$_.IdentityReferenceName -match '<user>|<group>'}"
+      "command": "Find-InterestingDomainAcl -ResolveGUIDs | ?{$_.IdentityReferenceName -match '<user>|<group>'}",
+      "description": "Scans for exploitable ACLs filtered to principals you control. Finds objects where your current account or groups have dangerous permissions (WriteDACL, GenericAll, ForceChangePassword, etc.) - directly actionable privilege escalation paths."
     },
     {
       "label": "Export for review",
-      "command": "Find-InterestingDomainAcl -ResolveGUIDs | Export-Csv acls.csv -NoTypeInformation"
+      "command": "Find-InterestingDomainAcl -ResolveGUIDs | Export-Csv acls.csv -NoTypeInformation",
+      "description": "Exports all interesting (non-default, exploitable) domain ACLs to a CSV file for offline analysis. Useful for systematic review of the ACL attack surface when the output is too large for console review."
     }
   ],
   "steps": [

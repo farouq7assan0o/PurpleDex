@@ -168,7 +168,8 @@
   "variations": [
     {
       "label": "Single user check",
-      "command": "kerbrute userenum -d <domain> --dc <dc_ip> <username>"
+      "command": "kerbrute userenum -d <domain> --dc <dc_ip> <username>",
+      "description": "Uses Kerbrute to check if a single username exists in the domain via Kerberos pre-authentication responses. Stealthier than LDAP enumeration - only generates failed Kerberos events, not LDAP queries."
     }
   ],
   "steps": [

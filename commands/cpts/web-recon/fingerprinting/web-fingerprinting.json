@@ -76,15 +76,18 @@
   "variations": [
     {
       "label": "Header banner grab",
-      "command": "curl -I https://<domain>.com"
+      "command": "curl -I https://<domain>.com",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "Detect a WAF",
-      "command": "wafw00f <domain>.com"
+      "command": "wafw00f <domain>.com",
+      "description": "Detects Web Application Firewalls (WAFs) protecting the target site. Identifying the WAF type helps choose appropriate evasion techniques for bypassing it."
     },
     {
       "label": "Nikto fingerprint scan",
-      "command": "nikto -h <domain>.com -Tuning b"
+      "command": "nikto -h <domain>.com -Tuning b",
+      "description": "Runs Nikto with specific scan tuning options to focus on particular vulnerability categories. Reduces noise by testing only relevant check types."
     }
   ],
   "opsec": "moderate",

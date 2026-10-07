@@ -173,11 +173,13 @@
   "variations": [
     {
       "label": "PowerUpSQL domain discovery",
-      "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose"
+      "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose",
+      "description": "PowerUpSQL domain discovery. See the command syntax for exact parameters and flags."
     },
     {
       "label": "nmap MSSQL info",
-      "command": "nmap -p1433 --script ms-sql-info,ms-sql-ntlm-info <target>"
+      "command": "nmap -p1433 --script ms-sql-info,ms-sql-ntlm-info <target>",
+      "description": "Scans Microsoft SQL Server with nmap NSE scripts for instance discovery, version detection, and configuration enumeration."
     }
   ],
   "steps": [

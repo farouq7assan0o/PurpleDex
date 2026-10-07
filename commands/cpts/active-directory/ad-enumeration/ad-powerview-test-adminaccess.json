@@ -198,19 +198,23 @@
   "variations": [
     {
       "label": "Across a host list",
-      "command": "Get-DomainComputer | %{ Test-AdminAccess -ComputerName $_.dnshostname }"
+      "command": "Get-DomainComputer | %{ Test-AdminAccess -ComputerName $_.dnshostname }",
+      "description": "Uses PowerView to enumerate domain-joined computers and their properties for target identification."
     },
     {
       "label": "Get-NetLocalGroupMember - enumerate local Administrators on a remote host",
-      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName Administrators"
+      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName Administrators",
+      "description": "Get-NetLocalGroupMember - enumerate local Administrators on a remote host. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Get-NetLocalGroupMember - check Remote Desktop Users",
-      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Desktop Users\""
+      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Desktop Users\"",
+      "description": "Get-NetLocalGroupMember - check Remote Desktop Users. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Get-NetLocalGroupMember - check Remote Management Users (WinRM access)",
-      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Management Users\""
+      "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Management Users\"",
+      "description": "Get-NetLocalGroupMember - check Remote Management Users (WinRM access). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

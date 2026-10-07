@@ -55,15 +55,18 @@
   "variations": [
     {
       "label": "Windows CMD",
-      "command": "for /L %i in (1 1 254) do ping 172.16.5.%i -n 1 -w 100 | find \"Reply\""
+      "command": "for /L %i in (1 1 254) do ping 172.16.5.%i -n 1 -w 100 | find \"Reply\"",
+      "description": "Bash loop that pings a range of IP addresses for host discovery. Simple alternative to nmap -sn when specialized tools are unavailable."
     },
     {
       "label": "PowerShell",
-      "command": "1..254 | % {\"172.16.5.$($_): $(Test-Connection -count 1 -comp 172.16.5.$($_) -quiet)\"}"
+      "command": "1..254 | % {\"172.16.5.$($_): $(Test-Connection -count 1 -comp 172.16.5.$($_) -quiet)\"}",
+      "description": "PowerShell one-liner that pings all 254 addresses in a /24 subnet. Quick host discovery from a Windows foothold when nmap is not available."
     },
     {
       "label": "Meterpreter",
-      "command": "run post/multi/gather/ping_sweep RHOSTS=<cidr>"
+      "command": "run post/multi/gather/ping_sweep RHOSTS=<cidr>",
+      "description": "Runs a Metasploit post-exploitation module on an active session. Post modules automate common tasks like credential dumping, pivoting, and persistence."
     }
   ],
   "recommended": [

@@ -77,11 +77,13 @@
   "variations": [
     {
       "label": "Mounts / fstab",
-      "command": "cat /etc/fstab\ncat /etc/fstab | grep -v \"#\" | column -t\ndf -h\nlsblk\nlpstat"
+      "command": "cat /etc/fstab\ncat /etc/fstab | grep -v \"#\" | column -t\ndf -h\nlsblk\nlpstat",
+      "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
     },
     {
       "label": "Hidden files/dirs",
-      "command": "find / -type f -name \".*\" -exec ls -l {} \\; 2>/dev/null | grep <user>\nfind / -type d -name \".*\" -ls 2>/dev/null\nls -l /tmp /var/tmp /dev/shm"
+      "command": "find / -type f -name \".*\" -exec ls -l {} \\; 2>/dev/null | grep <user>\nfind / -type d -name \".*\" -ls 2>/dev/null\nls -l /tmp /var/tmp /dev/shm",
+      "description": "Searches the filesystem for files matching specific criteria. Used in enumeration to find SUID binaries, writable files, configuration files, and other privilege escalation opportunities."
     }
   ],
   "opsec": "moderate",

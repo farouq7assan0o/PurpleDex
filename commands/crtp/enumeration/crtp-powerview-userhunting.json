@@ -215,55 +215,68 @@
   "variations": [
     {
       "label": "Get-NetLoggedon (logged-on users on a host)",
-      "command": "Get-NetLoggedon -ComputerName <host>"
+      "command": "Get-NetLoggedon -ComputerName <host>",
+      "description": "Enumerates users currently logged into a remote machine via the NetWkstaUserEnum API. Shows interactive and service logon sessions - useful for finding where admins are logged in for credential theft."
     },
     {
       "label": "Get-NetSession (active sessions on a host)",
-      "command": "Get-NetSession -ComputerName <host>"
+      "command": "Get-NetSession -ComputerName <host>",
+      "description": "Enumerates active SMB sessions on a remote server via the NetSessionEnum API. Shows which users have network connections to the machine - reveals active file sharing and administrative sessions."
     },
     {
       "label": "Get-NetRDPSession (RDP sessions on a host)",
-      "command": "Get-NetRDPSession -ComputerName <host>"
+      "command": "Get-NetRDPSession -ComputerName <host>",
+      "description": "Enumerates active RDP sessions on a remote machine. Shows which users have remote desktop connections, including disconnected sessions that may still have cached credentials."
     },
     {
       "label": "Get-RegLoggedOn (logged-on via remote registry)",
-      "command": "Get-RegLoggedOn -ComputerName <host>"
+      "command": "Get-RegLoggedOn -ComputerName <host>",
+      "description": "Enumerates logged-on users via the remote registry by reading HKU subkeys. Each loaded registry hive corresponds to a logged-in user - an alternative enumeration method when session APIs are restricted."
     },
     {
       "label": "Find-DomainProcess (hunt a process domain-wide)",
-      "command": "Find-DomainProcess -ProcessName <proc>"
+      "command": "Find-DomainProcess -ProcessName <proc>",
+      "description": "Enumerates running processes on remote machines to find sessions of target users. An alternative to session enumeration - identifies machines where specific users have active processes."
     },
     {
       "label": "Find-DomainUserEvent (logon events for a user)",
-      "command": "Find-DomainUserEvent -UserIdentity <user>"
+      "command": "Find-DomainUserEvent -UserIdentity <user>",
+      "description": "Find-DomainUserEvent (logon events for a user). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Get-DomainUserEvent (4624 logon events on a host)",
-      "command": "Get-DomainUserEvent -ComputerName <host>"
+      "command": "Get-DomainUserEvent -ComputerName <host>",
+      "description": "Uses PowerView to enumerate domain user accounts with specific property filters for targeted reconnaissance."
     },
     {
       "label": "Find-DomainLocalGroupMember (local group members domain-wide)",
-      "command": "Find-DomainLocalGroupMember -GroupName Administrators"
+      "command": "Find-DomainLocalGroupMember -GroupName Administrators",
+      "description": "Find-DomainLocalGroupMember (local group members domain-wide). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Who is logged on locally (needs local admin)",
-      "command": "Get-LoggedonLocal -ComputerName <host>"
+      "command": "Get-LoggedonLocal -ComputerName <host>",
+      "description": "Enumerates locally logged-on users by reading the remote event log for logon events. Works when other session enumeration methods (NetSession, WMI) are blocked or restricted."
     },
     {
       "label": "Last user logged on to a host",
-      "command": "Get-LastLoggedOn -ComputerName <host>"
+      "command": "Get-LastLoggedOn -ComputerName <host>",
+      "description": "Last user logged on to a host. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Find-LocalAdminAccess (machines where current user is admin)",
-      "command": "Find-LocalAdminAccess"
+      "command": "Find-LocalAdminAccess",
+      "description": "Uses PowerView to find machines where the current user has local administrator access. Iterates through domain computers testing admin access - identifies lateral movement targets without needing credentials."
     },
     {
       "label": "Test-AdminAccess (test admin on a specific host)",
-      "command": "Test-AdminAccess -ComputerName <host>"
+      "command": "Test-AdminAccess -ComputerName <host>",
+      "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
     },
     {
       "label": "Get-NetLocalGroup (local groups on a machine)",
-      "command": "Get-NetLocalGroup -ComputerName <host>"
+      "command": "Get-NetLocalGroup -ComputerName <host>",
+      "description": "Get-NetLocalGroup (local groups on a machine). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Locates where privileged users are currently logged on, to plan a lateral hop that steals their session:\n  Find-DomainUserLocation   query hosts for sessions of high-value users\n  -CheckAccess             also test whether YOU are local admin on each host found\nWhere a DA is logged in AND you have admin, that box is a credential-theft target. Backing cmdlets (Get-NetSession, Get-NetLoggedon, Find-LocalAdminAccess) enumerate sessions and admin access per host."

@@ -172,11 +172,13 @@
   "variations": [
     {
       "label": "Include words containing numbers",
-      "command": "cewl <url> -d <depth> -m <min_length> --with-numbers -w wordlist.txt"
+      "command": "cewl <url> -d <depth> -m <min_length> --with-numbers -w wordlist.txt",
+      "description": "Include words containing numbers. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Harvest emails from the site",
-      "command": "cewl <url> -d <depth> -e --email_file emails.txt -w wordlist.txt"
+      "command": "cewl <url> -d <depth> -e --email_file emails.txt -w wordlist.txt",
+      "description": "Harvest emails from the site. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Builds a target-specific wordlist by crawling their website:\n  cewl <url>               spider this site\n  -d <depth>               crawl to this link depth\n  -m <min_length>          keep words at least this long\n  --lowercase              lowercase the output\n  -w wordlist.txt          save the harvested words\nGreat for org-specific candidates generic lists miss; --with-numbers keeps numeric words, -e also harvests emails."

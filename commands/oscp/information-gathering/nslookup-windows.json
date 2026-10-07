@@ -37,19 +37,23 @@
   "variations": [
     {
       "label": "TXT record",
-      "command": "nslookup -type=TXT <domain>"
+      "command": "nslookup -type=TXT <domain>",
+      "description": "Performs DNS lookups using the Windows nslookup utility. Built-in tool for quick DNS reconnaissance from any Windows host."
     },
     {
       "label": "TXT via specific DNS server",
-      "command": "nslookup -type=TXT <domain> <dns_server>"
+      "command": "nslookup -type=TXT <domain> <dns_server>",
+      "description": "TXT via specific DNS server. See the command syntax for exact parameters and flags."
     },
     {
       "label": "MX record",
-      "command": "nslookup -type=MX <domain>"
+      "command": "nslookup -type=MX <domain>",
+      "description": "Performs DNS lookups using the Windows nslookup utility. Built-in tool for quick DNS reconnaissance from any Windows host."
     },
     {
       "label": "Reverse PTR lookup",
-      "command": "nslookup <ip>"
+      "command": "nslookup <ip>",
+      "description": "Performs DNS lookups using the Windows nslookup utility. Built-in tool for quick DNS reconnaissance from any Windows host."
     }
   ],
   "examples": [

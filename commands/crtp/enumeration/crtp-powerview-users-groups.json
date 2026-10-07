@@ -274,47 +274,58 @@
   "variations": [
     {
       "label": "Get-DomainComputer full properties",
-      "command": "Get-DomainComputer -Properties * | select dnshostname,operatingsystem,lastlogontimestamp"
+      "command": "Get-DomainComputer -Properties * | select dnshostname,operatingsystem,lastlogontimestamp",
+      "description": "Uses PowerView to enumerate all domain computers with their OS version. Identifies potential targets - older systems may lack patches, and servers often hold higher-value data."
     },
     {
       "label": "Get-NetComputerSiteName (AD site for a machine)",
-      "command": "Get-NetComputerSiteName -ComputerName <host>"
+      "command": "Get-NetComputerSiteName -ComputerName <host>",
+      "description": "Identifies which Active Directory site a computer belongs to. AD sites typically map to physical locations or network segments - useful for understanding network topology and scoping attacks."
     },
     {
       "label": "Get-DomainManagedSecurityGroup (managed-by set)",
-      "command": "Get-DomainManagedSecurityGroup"
+      "command": "Get-DomainManagedSecurityGroup",
+      "description": "Finds security groups with a manager designated via the managedBy attribute who also has write access. The manager can add members to the group, creating an indirect privilege escalation path."
     },
     {
       "label": "Get-DomainForeignUser (users in foreign-domain groups)",
-      "command": "Get-DomainForeignUser"
+      "command": "Get-DomainForeignUser",
+      "description": "Identifies domain users who are members of groups in other (foreign) domains. These cross-domain memberships create attack paths for pivoting between domains via trust relationships."
     },
     {
       "label": "Get-DomainForeignGroupMember (foreign members in our groups)",
-      "command": "Get-DomainForeignGroupMember -Domain <domain>"
+      "command": "Get-DomainForeignGroupMember -Domain <domain>",
+      "description": "Finds groups that contain members from foreign domains. Reveals cross-domain trust abuse paths where compromising a user in one domain grants access in another."
     },
     {
       "label": "New-DomainUser (create user - needs delegated rights)",
-      "command": "New-DomainUser -SamAccountName <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)"
+      "command": "New-DomainUser -SamAccountName <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)",
+      "description": "New-DomainUser (create user - needs delegated rights). See the command syntax for exact parameters and flags."
     },
     {
       "label": "New-DomainGroup (create group - needs delegated rights)",
-      "command": "New-DomainGroup -SamAccountName <group>"
+      "command": "New-DomainGroup -SamAccountName <group>",
+      "description": "New-DomainGroup (create group - needs delegated rights). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Set-DomainUserPassword (reset - needs Reset-Password right)",
-      "command": "Set-DomainUserPassword -Identity <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)"
+      "command": "Set-DomainUserPassword -Identity <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)",
+      "description": "Set-DomainUserPassword (reset - needs Reset-Password right). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Convert-ADName (convert name formats: DN, NT4, canonical)",
-      "command": "Convert-ADName -Identity '<domain>\\<user>' -OutputType Canonical"
+      "command": "Convert-ADName -Identity '<domain>\\<user>' -OutputType Canonical",
+      "description": "Convert-ADName (convert name formats: DN, NT4, canonical). See the command syntax for exact parameters and flags."
     },
     {
       "label": "ConvertFrom-UACValue (decode userAccountControl flags)",
-      "command": "ConvertFrom-UACValue -Value <uac_int>"
+      "command": "ConvertFrom-UACValue -Value <uac_int>",
+      "description": "ConvertFrom-UACValue (decode userAccountControl flags). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Export-PowerViewCSV (thread-safe CSV output)",
-      "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv"
+      "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv",
+      "description": "Uses PowerView to enumerate domain user accounts with specific property filters for targeted reconnaissance."
     }
   ],
   "explain": "Enumerates users, groups, and the accounts worth attacking with PowerView:\n  Get-DomainUser -Properties samaccountname,description,memberof,admincount   pull key attributes\n  | select samaccountname,description,admincount   admincount=1 marks protected (privileged) accounts; descriptions often leak passwords\nSwap flags to hunt targets: -SPN (Kerberoastable), -PreauthNotRequired (AS-REP roastable), Get-DomainGroupMember 'Domain Admins' -Recurse."

@@ -152,9 +152,9 @@
   },
   "variations": [
     {
-      "description": "Install vnstat",
       "command": "sudo apt install vnstat",
-      "label": "Install vnstat"
+      "label": "Install vnstat",
+      "description": "Runs a command with elevated (root) privileges via sudo. Leverages sudo permissions identified from the sudo -l enumeration."
     },
     {
       "description": "Monitor live bandwidth on interface",

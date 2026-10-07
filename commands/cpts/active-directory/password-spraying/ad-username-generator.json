@@ -173,7 +173,8 @@
   "variations": [
     {
       "label": "Common formats from first/last names",
-      "command": "python3 username-anarchy -i <names_file> > usernames.txt"
+      "command": "python3 username-anarchy -i <names_file> > usernames.txt",
+      "description": "Common formats from first/last names. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

@@ -188,11 +188,13 @@
   "variations": [
     {
       "label": "Version from meta/readme",
-      "command": "curl -s http://<url>/readme.html | grep -i version"
+      "command": "curl -s http://<url>/readme.html | grep -i version",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "Enumerate via wpscan",
-      "command": "wpscan --url http://<url> --no-update"
+      "command": "wpscan --url http://<url> --no-update",
+      "description": "Scans a WordPress site for vulnerabilities, misconfigurations, and outdated components using wpscan."
     }
   ],
   "explain": "Detects WordPress and enumerates themes/plugins from the page source:\n  curl -s http://<url>/   fetch the homepage\n  | grep -E 'WordPress|themes|plugins'   pull WordPress markers and asset links\nConfirms the CMS and reveals active themes/plugins passively; a plugin's /wp-content/plugins/<name>/readme.txt usually leaks its version for CVE matching."

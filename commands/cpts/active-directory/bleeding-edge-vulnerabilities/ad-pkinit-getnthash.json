@@ -195,7 +195,8 @@
   "variations": [
     {
       "label": "From an AS-REP key",
-      "command": "python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<user>"
+      "command": "python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<user>",
+      "description": "Extracts the NT hash from a PKINIT certificate-based authentication. Converts ADCS certificate exploitation results into a usable NTLM hash for pass-the-hash attacks."
     }
   ],
   "explain": "Recovers an NT hash from a PKINIT TGT's session key (step 2 after gettgtpkinit.py):\n  getnthash.py             derive the account's NT hash from Kerberos material\n  -key <as_rep_key>        the AS-REP encryption key printed by gettgtpkinit.py\n  <domain>/<dc_host>$      the account the TGT belongs to (here the DC machine account)\nThe recovered NT hash enables pass-the-hash DCSync without needing the ccache directly."

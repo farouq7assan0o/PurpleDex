@@ -65,19 +65,23 @@
   "variations": [
     {
       "label": "General hashes",
-      "command": "0     - MD5\n100   - SHA1\n1400  - SHA2-256\n1700  - SHA2-512\n900   - MD4\n500   - MD5 Crypt / Cisco-IOS(MD5) / FreeBSD MD5\n1800  - sha512crypt (Linux $6$ shadow)\n3200  - bcrypt $2*$ (Blowfish)\n6000  - RIPEMD-160\n600   - BLAKE2b-512"
+      "command": "0     - MD5\n100   - SHA1\n1400  - SHA2-256\n1700  - SHA2-512\n900   - MD4\n500   - MD5 Crypt / Cisco-IOS(MD5) / FreeBSD MD5\n1800  - sha512crypt (Linux $6$ shadow)\n3200  - bcrypt $2*$ (Blowfish)\n6000  - RIPEMD-160\n600   - BLAKE2b-512",
+      "description": "Reference table of hashcat hash mode numbers for common hash types. Use the -m flag with the corresponding number for the hash format you are cracking."
     },
     {
       "label": "SHA-2 / SHA-3 family",
-      "command": "1300  - SHA2-224\n1400  - SHA2-256\n10800 - SHA2-384\n1700  - SHA2-512\n17300 - SHA3-224\n17400 - SHA3-256\n17500 - SHA3-384\n17600 - SHA3-512"
+      "command": "1300  - SHA2-224\n1400  - SHA2-256\n10800 - SHA2-384\n1700  - SHA2-512\n17300 - SHA3-224\n17400 - SHA3-256\n17500 - SHA3-384\n17600 - SHA3-512",
+      "description": "Reference table of hashcat mode numbers for SHA-2 and SHA-3 hash families. Maps each SHA variant to its hashcat -m mode number."
     },
     {
       "label": "Windows / AD",
-      "command": "1000  - NT (NTLM)\n3000  - LM\n5500  - NetNTLMv1\n5600  - NetNTLMv2\n2100  - DCC2 (Domain Cached Credentials 2 / MS Cache 2)\n13100 - Kerberoast (TGS-REP, etc/RC4)\n18200 - AS-REP roast (RC4)"
+      "command": "1000  - NT (NTLM)\n3000  - LM\n5500  - NetNTLMv1\n5600  - NetNTLMv2\n2100  - DCC2 (Domain Cached Credentials 2 / MS Cache 2)\n13100 - Kerberoast (TGS-REP, etc/RC4)\n18200 - AS-REP roast (RC4)",
+      "description": "Reference table of hashcat mode numbers for Windows and Active Directory hash types. Covers NTLM, NetNTLMv1/v2, DCC, and Kerberos ticket formats."
     },
     {
       "label": "Files / disks",
-      "command": "22100 - BitLocker\n13400 - KeePass\n11600 - 7-Zip\n13000 - RAR5\n17210 - PKZIP\n9400  - MS Office 2007\n9600  - MS Office 2013\n10500 - PDF 1.4-1.6"
+      "command": "22100 - BitLocker\n13400 - KeePass\n11600 - 7-Zip\n13000 - RAR5\n17210 - PKZIP\n9400  - MS Office 2007\n9600  - MS Office 2013\n10500 - PDF 1.4-1.6",
+      "description": "Reference table of hashcat mode numbers for encrypted file and disk formats. Covers BitLocker, KeePass, 7-Zip, RAR, PKZIP, Office, and PDF password recovery."
     }
   ],
   "opsec": "silent",

@@ -71,15 +71,18 @@
   "variations": [
     {
       "label": "From an IP list (-iL)",
-      "command": "sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d\" \" -f5"
+      "command": "sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d\" \" -f5",
+      "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
     },
     {
       "label": "Multiple specific IPs",
-      "command": "sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d\" \" -f5"
+      "command": "sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d\" \" -f5",
+      "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
     },
     {
       "label": "IP range shorthand",
-      "command": "sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d\" \" -f5"
+      "command": "sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d\" \" -f5",
+      "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
     }
   ],
   "lint_ignore": [

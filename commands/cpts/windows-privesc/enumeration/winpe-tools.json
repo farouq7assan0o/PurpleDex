@@ -88,15 +88,18 @@
   "variations": [
     {
       "label": "winPEAS / Seatbelt",
-      "command": ".\\winPEASx64.exe\n.\\Seatbelt.exe -group=all"
+      "command": ".\\winPEASx64.exe\n.\\Seatbelt.exe -group=all",
+      "description": "Runs winPEAS automated Windows privilege escalation checker. Scans for misconfigurations, weak permissions, stored credentials, and other privesc vectors with color-coded output."
     },
     {
       "label": "PowerUp / SharpUp",
-      "command": "powershell -ep bypass -c \"Import-Module .\\PowerUp.ps1; Invoke-AllChecks\"\n.\\SharpUp.exe audit"
+      "command": "powershell -ep bypass -c \"Import-Module .\\PowerUp.ps1; Invoke-AllChecks\"\n.\\SharpUp.exe audit",
+      "description": "Runs SharpUp for automated Windows privilege escalation checks. Identifies vulnerable services, registry autoruns, modifiable scheduled tasks, and other common privesc vectors."
     },
     {
       "label": "Others",
-      "command": "# JAWS, Watson, wesng, LaZagne, SessionGopher, Sysinternals (accesschk/pipelist/psservice)"
+      "command": "# JAWS, Watson, wesng, LaZagne, SessionGopher, Sysinternals (accesschk/pipelist/psservice)",
+      "description": "Extracts stored credentials from various applications using LaZagne. Harvests passwords from browsers, email clients, and other software that caches credentials."
     }
   ],
   "opsec": "moderate",

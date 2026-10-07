@@ -93,15 +93,18 @@
   "variations": [
     {
       "label": "Mirror everything via wget",
-      "command": "wget -m --no-passive ftp://anonymous:anonymous@<ip>"
+      "command": "wget -m --no-passive ftp://anonymous:anonymous@<ip>",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "Nmap FTP scan",
-      "command": "sudo nmap -sV -p21 -sC -A <ip>"
+      "command": "sudo nmap -sV -p21 -sC -A <ip>",
+      "description": "Runs an nmap scan with version detection, default scripts, aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
     },
     {
       "label": "Nmap with script trace",
-      "command": "sudo nmap -sV -p21 -sC -A <ip> --script-trace"
+      "command": "sudo nmap -sV -p21 -sC -A <ip> --script-trace",
+      "description": "Runs an nmap scan with version detection, default scripts, aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
     }
   ],
   "opsec": "moderate",

@@ -184,7 +184,8 @@
   "variations": [
     {
       "label": "Target a host list",
-      "command": "Snaffler.exe -s -n <hostlist> -o snaffler.log"
+      "command": "Snaffler.exe -s -n <hostlist> -o snaffler.log",
+      "description": "Runs Snaffler against a specific list of hosts instead of scanning the entire domain. Focused file share auditing that reduces noise and speeds up results."
     }
   ],
   "steps": [

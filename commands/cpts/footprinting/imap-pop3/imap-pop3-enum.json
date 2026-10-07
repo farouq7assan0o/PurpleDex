@@ -70,15 +70,18 @@
   "variations": [
     {
       "label": "curl IMAPS list folders",
-      "command": "curl -k 'imaps://<ip>' --user user:p4ssw0rd"
+      "command": "curl -k 'imaps://<ip>' --user user:p4ssw0rd",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "curl IMAPS verbose (banner)",
-      "command": "curl -k 'imaps://<ip>' --user <user>:1234 -v"
+      "command": "curl -k 'imaps://<ip>' --user <user>:1234 -v",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "OpenSSL IMAPS / POP3S",
-      "command": "openssl s_client -connect <ip>:imaps\nopenssl s_client -connect <ip>:pop3s"
+      "command": "openssl s_client -connect <ip>:imaps\nopenssl s_client -connect <ip>:pop3s",
+      "description": "OpenSSL (encrypted) reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
     }
   ],
   "opsec": "moderate",

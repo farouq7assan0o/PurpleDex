@@ -73,11 +73,13 @@
   "variations": [
     {
       "label": "rdp-sec-check",
-      "command": "git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git && cd rdp-sec-check\n./rdp-sec-check.pl <ip>"
+      "command": "git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git && cd rdp-sec-check\n./rdp-sec-check.pl <ip>",
+      "description": "Clones a git repository. Exposed .git directories on web servers or accessible repos may contain source code, credentials, and configuration secrets."
     },
     {
       "label": "Connect with xfreerdp",
-      "command": "xfreerdp /u:<user> /p:\"P455w0rd!\" /v:<ip>"
+      "command": "xfreerdp /u:<user> /p:\"P455w0rd!\" /v:<ip>",
+      "description": "Connects to a Windows host via RDP using xfreerdp from Linux. Provides a graphical remote desktop session with file sharing and clipboard support."
     }
   ],
   "opsec": "moderate",

@@ -78,19 +78,23 @@
   "variations": [
     {
       "label": "Current token",
-      "command": "whoami /priv\nwhoami /groups\nwhoami /user\necho %USERNAME%"
+      "command": "whoami /priv\nwhoami /groups\nwhoami /user\necho %USERNAME%",
+      "description": "Shows the current user's security privileges. Identifies exploitable privileges like SeImpersonatePrivilege (Potato attacks), SeBackupPrivilege (file read), or SeDebugPrivilege (process injection)."
     },
     {
       "label": "Local users/groups",
-      "command": "net user\nnet localgroup\nnet localgroup administrators\nnet accounts\nquery user"
+      "command": "net user\nnet localgroup\nnet localgroup administrators\nnet accounts\nquery user",
+      "description": "Enumerates local or domain user accounts using the net command. Built-in Windows tool that works without importing modules - useful for initial enumeration from a basic shell."
     },
     {
       "label": "PS local groups",
-      "command": "Get-LocalGroup | Select-Object Name,Description\nGet-LocalGroupMember Administrators\nGet-LocalGroupMember '<group>'"
+      "command": "Get-LocalGroup | Select-Object Name,Description\nGet-LocalGroupMember Administrators\nGet-LocalGroupMember '<group>'",
+      "description": "Lists all local security groups on the machine. Shows available groups beyond the defaults - custom groups may reveal additional privilege boundaries."
     },
     {
       "label": "Installed software (registry)",
-      "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion\nGet-ItemProperty 'HKLM:\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion"
+      "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion\nGet-ItemProperty 'HKLM:\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion",
+      "description": "Installed software (registry) - outputs DisplayName, DisplayVersion."
     }
   ],
   "opsec": "moderate",

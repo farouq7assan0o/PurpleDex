@@ -79,7 +79,8 @@
   "variations": [
     {
       "label": "With Rules",
-      "command": "hashcat -a 0 -m <mode> <hash> /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule"
+      "command": "hashcat -a 0 -m <mode> <hash> /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule",
+      "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     }
   ],
   "opsec": "silent",

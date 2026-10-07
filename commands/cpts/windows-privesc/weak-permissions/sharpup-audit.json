@@ -185,7 +185,8 @@
   "variations": [
     {
       "label": "Specific check",
-      "command": ".\\SharpUp.exe audit UnquotedServicePath"
+      "command": ".\\SharpUp.exe audit UnquotedServicePath",
+      "description": "Runs SharpUp for automated Windows privilege escalation checks. Identifies vulnerable services, registry autoruns, modifiable scheduled tasks, and other common privesc vectors."
     }
   ],
   "steps": [

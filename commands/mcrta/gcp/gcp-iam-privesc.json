@@ -49,7 +49,8 @@
   "variations": [
     {
       "label": "Automated enumeration with gcp_enum script",
-      "command": "./gcp_enum.sh"
+      "command": "./gcp_enum.sh",
+      "description": "Automated enumeration with gcp_enum script. See the command syntax for exact parameters and flags."
     }
   ],
   "notes": "GCP privesc is about specific dangerous permissions rather than a single 'admin' flag. High-value primitives: iam.serviceAccounts.getAccessToken / iam.serviceAccounts.actAs / iam.serviceAccounts.implicitDelegation (impersonate a more-privileged SA), iam.serviceAccountKeys.create (mint a key for a better SA), iam.roles.update (add permissions to a role you can edit), *.setIamPolicy (bind yourself a better role), deploymentmanager.deployments.create + cloudfunctions/compute (run as a privileged SA), cloudbuild. RhinoSecurityLabs GCP-IAM-Privilege-Escalation automates enumeration (enumerate_member_permissions.py) and detection/exploitation (check_for_privesc.py + exploit_scripts/*). Manual path: gcloud iam service-accounts get-iam-policy to find SAs you can actAs, then --impersonate-service-account or keys create.",

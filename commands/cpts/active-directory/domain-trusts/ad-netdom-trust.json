@@ -175,11 +175,13 @@
   "variations": [
     {
       "label": "Verbose (direction + type)",
-      "command": "netdom query /domain:<domain> trust /verbose"
+      "command": "netdom query /domain:<domain> trust /verbose",
+      "description": "Verbose (direction + type). See the command syntax for exact parameters and flags."
     },
     {
       "label": "List DCs / workstations too",
-      "command": "netdom query /domain:<domain> dc"
+      "command": "netdom query /domain:<domain> dc",
+      "description": "List DCs / workstations too. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

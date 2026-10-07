@@ -187,7 +187,8 @@
   "variations": [
     {
       "label": "Just the lockout/length fields",
-      "command": "ldapsearch -h <dc_ip> -x -b \"<base_dn>\" -s sub \"*\" | grep -iE 'minPwdLength|lockoutThreshold|maxPwdAge'"
+      "command": "ldapsearch -h <dc_ip> -x -b \"<base_dn>\" -s sub \"*\" | grep -iE 'minPwdLength|lockoutThreshold|maxPwdAge'",
+      "description": "Just the lockout/length fields. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Reads the password policy over raw LDAP:\n  ldapsearch -h <dc_ip>   the DC\n  -x                      simple (anonymous or basic) authentication\n  -b \"<base_dn>\"          search base (the domain DN)\n  -s sub \"*\"              subtree scope, all attributes\n  | grep -A 20 pwdHistoryLength   pull the policy attributes out\nGets lockout threshold, history, and complexity so you can plan spraying; add -D/-W for an authenticated bind."

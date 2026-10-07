@@ -191,11 +191,13 @@
   "variations": [
     {
       "label": "Privileged users",
-      "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> --privileged-users"
+      "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> --privileged-users",
+      "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
     },
     {
       "label": "Computers",
-      "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> -C"
+      "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> -C",
+      "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
     }
   ],
   "explain": "Runs common LDAP queries against a DC with windapsearch:\n  --dc-ip <dc_ip>        the DC to query\n  -u <user>@<domain> -p <password>   authenticate\n  --da                   enumerate Domain Admins group members\nA friendlier front-end to ldapsearch for frequent tasks; swap --da for -U (all users) or --PU (privileged users), and it also supports anonymous binds."

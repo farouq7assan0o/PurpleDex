@@ -183,11 +183,13 @@
   "variations": [
     {
       "label": "Enum domain users via RPC",
-      "command": "rpcclient -U \"\" -N <dc_ip> -c 'enumdomusers'"
+      "command": "rpcclient -U \"\" -N <dc_ip> -c 'enumdomusers'",
+      "description": "Enumerates all domain users through an RPC null session. If null sessions are allowed, lists every user account without any credentials - a critical misconfiguration finding."
     },
     {
       "label": "Query a user by RID",
-      "command": "rpcclient -U \"\" -N <dc_ip> -c 'queryuser 0x1f4'"
+      "command": "rpcclient -U \"\" -N <dc_ip> -c 'queryuser 0x1f4'",
+      "description": "Queries detailed information about a specific user by their RID via RPC. Returns account name, description, logon times, and flags for a targeted user lookup."
     }
   ],
   "steps": [

@@ -66,15 +66,18 @@
   "variations": [
     {
       "label": "No retries (fastest, least reliable)",
-      "command": "sudo nmap <cidr> -F --max-retries 0"
+      "command": "sudo nmap <cidr> -F --max-retries 0",
+      "description": "No retries (fastest, least reliable). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Minimum packet rate",
-      "command": "sudo nmap <cidr> -F --min-rate 300"
+      "command": "sudo nmap <cidr> -F --min-rate 300",
+      "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
     },
     {
       "label": "Insane timing template",
-      "command": "sudo nmap <cidr> -F -T 5"
+      "command": "sudo nmap <cidr> -F -T 5",
+      "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
     }
   ],
   "opsec": "moderate",

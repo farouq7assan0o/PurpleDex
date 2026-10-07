@@ -54,15 +54,18 @@
   "variations": [
     {
       "label": "Walk with 'public'",
-      "command": "snmpwalk -v 2c -c public <ip> 1.3.6.1.2.1.1.5.0"
+      "command": "snmpwalk -v 2c -c public <ip> 1.3.6.1.2.1.1.5.0",
+      "description": "Walks the SNMP tree using a community string. Enumerates device information by querying SNMP OIDs - common community strings like \"public\" and \"private\" are often left unchanged."
     },
     {
       "label": "Walk with 'private'",
-      "command": "snmpwalk -v 2c -c private <ip>"
+      "command": "snmpwalk -v 2c -c private <ip>",
+      "description": "Walks the SNMP tree using a community string. Enumerates device information by querying SNMP OIDs - common community strings like \"public\" and \"private\" are often left unchanged."
     },
     {
       "label": "Brute-force community strings",
-      "command": "onesixtyone -c dict.txt <ip>"
+      "command": "onesixtyone -c dict.txt <ip>",
+      "description": "Brute-force community strings. See the command syntax for exact parameters and flags."
     }
   ],
   "opsec": "moderate",

@@ -191,7 +191,8 @@
   "variations": [
     {
       "label": "Resolve records too",
-      "command": "adidnsdump -u <domain>\\<user> -p <password> ldap://<dc_ip> -r"
+      "command": "adidnsdump -u <domain>\\<user> -p <password> ldap://<dc_ip> -r",
+      "description": "Dumps all DNS records from the Active Directory-integrated DNS zone. Reveals internal hostnames that standard DNS queries and zone transfers cannot access."
     }
   ],
   "explain": "Dumps every AD-Integrated DNS record over LDAP:\n  adidnsdump          the collector\n  -u <domain>\\<user>   authenticate as any domain user\n  ldap://<dc_ip>      the DC's LDAP service to query\n  -r                  resolve records the tool cannot read directly by querying them by node name\nWrites records.csv mapping internal hostnames to IPs (servers, infra that plain DNS lookups hide) - a fast internal map with only a low-priv account."

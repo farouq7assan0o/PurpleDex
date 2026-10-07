@@ -195,11 +195,13 @@
   "variations": [
     {
       "label": "SQL auth",
-      "command": "mssqlclient.py <user>:<password>@<target>"
+      "command": "mssqlclient.py <user>:<password>@<target>",
+      "description": "Uses Impacket mssqlclient to connect to a Microsoft SQL Server instance for database enumeration and exploitation. Supports Windows authentication (via Kerberos or NTLM) and SQL authentication."
     },
     {
       "label": "Pass-the-ticket",
-      "command": "KRB5CCNAME=<ccache> mssqlclient.py -k <domain>/<user>@<target_fqdn>"
+      "command": "KRB5CCNAME=<ccache> mssqlclient.py -k <domain>/<user>@<target_fqdn>",
+      "description": "Uses Impacket mssqlclient to connect to a Microsoft SQL Server instance for database enumeration and exploitation. Supports Windows authentication (via Kerberos or NTLM) and SQL authentication."
     }
   ],
   "explain": "Connects to Microsoft SQL Server with impacket for command execution or pivoting:\n  mssqlclient.py           the MSSQL client\n  <domain>/<user>@<target>   the account and SQL host\n  -windows-auth            authenticate with Windows/NTLM domain creds (omit for SQL auth user:pass@host)\nOnce connected, enable_xp_cmdshell gives OS command execution, or use linked servers to pivot; -k reuses a Kerberos ticket."

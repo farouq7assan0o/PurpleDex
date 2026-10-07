@@ -69,7 +69,8 @@
   "variations": [
     {
       "label": "Directories",
-      "command": "find / -path /proc -prune -o -type d -perm -o+w 2>/dev/null"
+      "command": "find / -path /proc -prune -o -type d -perm -o+w 2>/dev/null",
+      "description": "Searches the filesystem for files matching specific criteria. Used in enumeration to find SUID binaries, writable files, configuration files, and other privilege escalation opportunities."
     }
   ],
   "opsec": "moderate",

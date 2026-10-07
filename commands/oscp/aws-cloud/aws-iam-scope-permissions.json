@@ -69,35 +69,43 @@
   "variations": [
     {
       "label": "List all IAM users",
-      "command": "aws --profile <profile> iam list-users"
+      "command": "aws --profile <profile> iam list-users",
+      "description": "Lists all IAM users in the AWS account. Enumerates the user inventory for privilege analysis and identifying over-provisioned or service accounts."
     },
     {
       "label": "List all IAM roles",
-      "command": "aws --profile <profile> iam list-roles"
+      "command": "aws --profile <profile> iam list-roles",
+      "description": "Lists all IAM roles in the AWS account. Roles often have broader permissions than users and can be assumed for privilege escalation."
     },
     {
       "label": "List all IAM policies",
-      "command": "aws --profile <profile> iam list-policies --scope Local --only-attached"
+      "command": "aws --profile <profile> iam list-policies --scope Local --only-attached",
+      "description": "Lists IAM policies in the AWS account. Shows both AWS-managed and customer-created policies - custom policies often contain overly permissive rules."
     },
     {
       "label": "Get group members",
-      "command": "aws --profile <profile> iam get-group --group-name <group_name>"
+      "command": "aws --profile <profile> iam get-group --group-name <group_name>",
+      "description": "Executes an AWS CLI command for cloud infrastructure enumeration or exploitation."
     },
     {
       "label": "Get managed policy details",
-      "command": "aws --profile <profile> iam get-policy --policy-arn <policy_arn>"
+      "command": "aws --profile <profile> iam get-policy --policy-arn <policy_arn>",
+      "description": "Get managed policy details. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Scope a role's permissions (managed + inline)",
-      "command": "aws --profile <profile> iam list-attached-role-policies --role-name <role_name>\naws --profile <profile> iam list-role-policies --role-name <role_name>\naws --profile <profile> iam get-role-policy --role-name <role_name> --policy-name <policy_name>"
+      "command": "aws --profile <profile> iam list-attached-role-policies --role-name <role_name>\naws --profile <profile> iam list-role-policies --role-name <role_name>\naws --profile <profile> iam get-role-policy --role-name <role_name> --policy-name <policy_name>",
+      "description": "Lists policies attached to a specific IAM user, group, or role. Shows what permissions the entity has been granted through policy attachments."
     },
     {
       "label": "Read inline policy on a user / group",
-      "command": "aws --profile <profile> iam get-user-policy --user-name <user> --policy-name <policy_name>\naws --profile <profile> iam get-group-policy --group-name <group> --policy-name <policy_name>"
+      "command": "aws --profile <profile> iam get-user-policy --user-name <user> --policy-name <policy_name>\naws --profile <profile> iam get-group-policy --group-name <group> --policy-name <policy_name>",
+      "description": "Retrieves the full JSON document of an inline IAM policy on a user. Shows the exact permissions granted by the inline policy."
     },
     {
       "label": "List all managed policy versions",
-      "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>"
+      "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>",
+      "description": "Executes an AWS CLI command for cloud infrastructure enumeration or exploitation."
     }
   ],
   "notes": "IAM permissions can come from: (1) inline user policy, (2) managed policy directly attached to user, (3) group membership -> group inline or managed policies, (4) resource-based policies on services (S3, Lambda, etc.), (5) permission boundaries. Permission boundaries RESTRICT the maximum effective permissions - a boundary that allows only S3 means even if a policy grants EC2 access, the user cannot use EC2. Explicit Deny always overrides Allow regardless of source. AWS-managed policies (arn:aws:iam::aws:policy/) can be read via get-policy-version even by the subject user - they are public. Customer-managed policies (arn:aws:iam::<account_id>:policy/) require iam:GetPolicyVersion which may not be granted. Workaround: use get-account-authorization-details (see aws-iam-full-dump) if broader read permissions exist.",

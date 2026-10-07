@@ -173,11 +173,13 @@
   "variations": [
     {
       "label": "Larger port set",
-      "command": "cat web_discovery.xml | ./aquatone -nmap -ports large"
+      "command": "cat web_discovery.xml | ./aquatone -nmap -ports large",
+      "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
     },
     {
       "label": "Plain host list",
-      "command": "cat hosts.txt | ./aquatone"
+      "command": "cat hosts.txt | ./aquatone",
+      "description": "Reads a sensitive system file that may contain credentials, SSH keys, or security-relevant configuration. Standard post-exploitation enumeration step."
     }
   ],
   "explain": "Screenshots web hosts from an Nmap XML for visual triage:\n  cat web_discovery.xml   the nmap XML from the discovery scan\n  | ./aquatone -nmap      parse it as nmap input and capture each host\nProduces an HTML gallery so you can eyeball many sites at once and spot login/admin/default pages; -ports large widens the port set."

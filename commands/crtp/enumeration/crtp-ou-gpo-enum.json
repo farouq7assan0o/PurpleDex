@@ -30,39 +30,48 @@
   "variations": [
     {
       "label": "List OUs",
-      "command": "Get-DomainOU | select -ExpandProperty name"
+      "command": "Get-DomainOU | select -ExpandProperty name",
+      "description": "Uses PowerView to enumerate all Organizational Units in the domain and their properties."
     },
     {
       "label": "Computers inside a specific OU",
-      "command": "(Get-DomainOU -Identity <ou_name>).distinguishedname | %{Get-DomainComputer -SearchBase $_} | select name"
+      "command": "(Get-DomainOU -Identity <ou_name>).distinguishedname | %{Get-DomainComputer -SearchBase $_} | select name",
+      "description": "Uses PowerView to enumerate domain-joined computers and their properties for target identification."
     },
     {
       "label": "GPO linked to an OU (resolve gplink)",
-      "command": "Get-DomainGPO -Identity (Get-DomainOU -Identity <ou_name>).gplink.substring(11,(Get-DomainOU -Identity <ou_name>).gplink.length-72)"
+      "command": "Get-DomainGPO -Identity (Get-DomainOU -Identity <ou_name>).gplink.substring(11,(Get-DomainOU -Identity <ou_name>).gplink.length-72)",
+      "description": "Uses PowerView to enumerate Organizational Units and their linked GPOs. Identifies which policies apply to which OUs - a GPO linked to an OU with privileged users or servers is a high-value target."
     },
     {
       "label": "GPO by friendly name",
-      "command": "Get-DomainGPO -Identity '<gpo_display_name>'"
+      "command": "Get-DomainGPO -Identity '<gpo_display_name>'",
+      "description": "Uses PowerView to enumerate Group Policy Objects and their settings for identifying misconfigurations and attack vectors."
     },
     {
       "label": "GPO-granted local admin (Restricted Groups)",
-      "command": "Get-DomainGPOLocalGroup"
+      "command": "Get-DomainGPOLocalGroup",
+      "description": "Uses PowerView to enumerate Group Policy Objects and their settings for identifying misconfigurations and attack vectors."
     },
     {
       "label": "Where a user/group is local admin via GPO",
-      "command": "Get-DomainGPOUserLocalGroupMapping -Identity <user> -Verbose"
+      "command": "Get-DomainGPOUserLocalGroupMapping -Identity <user> -Verbose",
+      "description": "Uses PowerView to enumerate Group Policy Objects and their settings for identifying misconfigurations and attack vectors."
     },
     {
       "label": "gpresult /r - applied GPOs on this host",
-      "command": "gpresult /r"
+      "command": "gpresult /r",
+      "description": "Gpresult /r - applied GPOs on this host. See the command syntax for exact parameters and flags."
     },
     {
       "label": "gpresult /z - verbose applied GPOs",
-      "command": "gpresult /z"
+      "command": "gpresult /z",
+      "description": "Gpresult /z - verbose applied GPOs. See the command syntax for exact parameters and flags."
     },
     {
       "label": "PowerView OU (course alias of Get-DomainOU)",
-      "command": "Get-NetOU -FullData | select name,distinguishedname"
+      "command": "Get-NetOU -FullData | select name,distinguishedname",
+      "description": "PowerView OU (course alias of Get-DomainOU). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

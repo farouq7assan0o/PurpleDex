@@ -55,15 +55,18 @@
   "variations": [
     {
       "label": "Scan + probe",
-      "command": "sudo nmap -sV -p 873 127.0.0.1\nnc -nv 127.0.0.1 873"
+      "command": "sudo nmap -sV -p 873 127.0.0.1\nnc -nv 127.0.0.1 873",
+      "description": "Runs an nmap scan with version detection for detailed service enumeration and target analysis."
     },
     {
       "label": "Download a share",
-      "command": "rsync -av rsync://127.0.0.1/dev"
+      "command": "rsync -av rsync://127.0.0.1/dev",
+      "description": "Connects to an rsync service to list or transfer files. Exposed rsync services (port 873) may allow reading or writing files without authentication."
     },
     {
       "label": "Over SSH",
-      "command": "rsync -av -e ssh rsync://127.0.0.1/dev\nrsync -av -e \"ssh -p2222\" rsync://127.0.0.1/dev"
+      "command": "rsync -av -e ssh rsync://127.0.0.1/dev\nrsync -av -e \"ssh -p2222\" rsync://127.0.0.1/dev",
+      "description": "Connects to an rsync service to list or transfer files. Exposed rsync services (port 873) may allow reading or writing files without authentication."
     }
   ],
   "opsec": "moderate",

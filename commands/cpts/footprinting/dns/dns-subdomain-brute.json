@@ -68,11 +68,13 @@
   "variations": [
     {
       "label": "dig loop",
-      "command": "for sub in $(cat /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt);do dig $sub.<domain> @<ip> | grep -v ';\\|SOA' | sed -r '/^\\s*$/d' | grep $sub | tee -a subdomains.txt;done"
+      "command": "for sub in $(cat /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt);do dig $sub.<domain> @<ip> | grep -v ';\\|SOA' | sed -r '/^\\s*$/d' | grep $sub | tee -a subdomains.txt;done",
+      "description": "Bash loop automating a repetitive operation across multiple targets or values. Useful for batch enumeration when purpose-built tools are unavailable."
     },
     {
       "label": "dnsenum",
-      "command": "dnsenum --dnsserver <ip> --enum -p 0 -s 0 -o subdomains.txt -f /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt <domain>"
+      "command": "dnsenum --dnsserver <ip> --enum -p 0 -s 0 -o subdomains.txt -f /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt <domain>",
+      "description": "Performs automated DNS enumeration including zone transfers, brute-forcing, and Google scraping. Discovers subdomains and DNS infrastructure in a single tool run."
     }
   ],
   "opsec": "moderate",

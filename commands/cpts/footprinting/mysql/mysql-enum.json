@@ -68,11 +68,13 @@
   "variations": [
     {
       "label": "Nmap MySQL scripts",
-      "command": "sudo nmap <ip> -sV -sC -p3306 --script mysql*"
+      "command": "sudo nmap <ip> -sV -sC -p3306 --script mysql*",
+      "description": "Scans MySQL services with nmap NSE scripts for version detection, empty password testing, and configuration enumeration."
     },
     {
       "label": "Connect (no password)",
-      "command": "mysql -u root -h <ip>"
+      "command": "mysql -u root -h <ip>",
+      "description": "Connects to a MySQL database server. Interactive client for database enumeration, data extraction, and potentially OS command execution via UDF or file write functions."
     }
   ],
   "opsec": "moderate",

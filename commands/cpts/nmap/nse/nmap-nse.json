@@ -63,19 +63,23 @@
   "variations": [
     {
       "label": "A whole category",
-      "command": "sudo nmap <target> --script <category>"
+      "command": "sudo nmap <target> --script <category>",
+      "description": "Runs an nmap scan with default scripts for detailed service enumeration and target analysis."
     },
     {
       "label": "Named scripts",
-      "command": "sudo nmap <target> --script <script1>,<script2>"
+      "command": "sudo nmap <target> --script <script1>,<script2>",
+      "description": "Runs an nmap scan with default scripts for detailed service enumeration and target analysis."
     },
     {
       "label": "Aggressive (-A)",
-      "command": "sudo nmap <ip> -p 80 -A"
+      "command": "sudo nmap <ip> -p 80 -A",
+      "description": "Runs an nmap scan with aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
     },
     {
       "label": "Vuln category",
-      "command": "sudo nmap <ip> -p 80 -sV --script vuln"
+      "command": "sudo nmap <ip> -p 80 -sV --script vuln",
+      "description": "Runs nmap vulnerability detection scripts against the target. Checks for known CVEs and common exploitable misconfigurations."
     }
   ],
   "opsec": "moderate",

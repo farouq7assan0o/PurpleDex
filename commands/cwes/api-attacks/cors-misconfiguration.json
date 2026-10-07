@@ -83,7 +83,8 @@
   "variations": [
     {
       "label": "Enumerate CORS on many endpoints (spot the reflective ones)",
-      "command": "for e in account profile orders admin; do echo \"/$e:\"; curl -s -I -H 'Origin: https://evil.com' https://<target>/api/$e | grep -i access-control-allow-origin; done"
+      "command": "for e in account profile orders admin; do echo \"/$e:\"; curl -s -I -H 'Origin: https://evil.com' https://<target>/api/$e | grep -i access-control-allow-origin; done",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     }
   ],
   "defense": {

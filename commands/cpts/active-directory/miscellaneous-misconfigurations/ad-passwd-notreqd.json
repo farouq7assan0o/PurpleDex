@@ -182,7 +182,8 @@
   "variations": [
     {
       "label": "Try blank password on those accounts",
-      "command": "crackmapexec smb <dc_ip> -u <user> -p ''"
+      "command": "crackmapexec smb <dc_ip> -u <user> -p ''",
+      "description": "Uses CrackMapExec for network authentication testing and remote operations across multiple protocols and targets."
     }
   ],
   "explain": "Finds accounts that allow an empty password with PowerView:\n  Get-DomainUser -UACFilter PASSWD_NOTREQD   users with the PASSWD_NOTREQD UAC flag\n  | Select samaccountname,useraccountcontrol   confirm the flag\nThese accounts may authenticate with a blank password - test them with 'crackmapexec smb <dc> -u <list> -p \"\"'. Often leftovers from migrations or misconfigured service accounts."

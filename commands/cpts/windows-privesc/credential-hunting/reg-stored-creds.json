@@ -67,11 +67,13 @@
   "variations": [
     {
       "label": "PuTTY sessions",
-      "command": "reg query HKCU\\SOFTWARE\\SimonTatham\\PuTTY\\Sessions"
+      "command": "reg query HKCU\\SOFTWARE\\SimonTatham\\PuTTY\\Sessions",
+      "description": "Queries Windows registry keys for stored configuration and potential credentials. Registry often contains passwords, service account details, and exploitable settings."
     },
     {
       "label": "Wi-Fi passwords",
-      "command": "netsh wlan show profile\nnetsh wlan show profile <SSID> key=clear"
+      "command": "netsh wlan show profile\nnetsh wlan show profile <SSID> key=clear",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     }
   ],
   "opsec": "loud",

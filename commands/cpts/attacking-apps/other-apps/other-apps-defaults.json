@@ -59,11 +59,13 @@
   "variations": [
     {
       "label": "Default creds",
-      "command": "Tomcat:  tomcat/tomcat, admin/admin\nSplunk:  admin/changeme\nPRTG:    prtgadmin/prtgadmin\nWebLogic: system/manager\nNagios:  nagiosadmin/PASSW0RD"
+      "command": "Tomcat:  tomcat/tomcat, admin/admin\nSplunk:  admin/changeme\nPRTG:    prtgadmin/prtgadmin\nWebLogic: system/manager\nNagios:  nagiosadmin/PASSW0RD",
+      "description": "Quick-reference list of default credentials for common enterprise applications. Always test these before brute-forcing - many installations ship with well-known default passwords that are never changed."
     },
     {
       "label": "Deploy / RCE primitive",
-      "command": "Axis2:    AAR webshell upload (or Metasploit)\nWebSphere: WAR deployment\nWebLogic: exploit/multi/http/weblogic_admin_handle_rce\nvCenter:  JuicyPotato local privesc (Windows)"
+      "command": "Axis2:    AAR webshell upload (or Metasploit)\nWebSphere: WAR deployment\nWebLogic: exploit/multi/http/weblogic_admin_handle_rce\nvCenter:  JuicyPotato local privesc (Windows)",
+      "description": "Reference for code deployment and remote code execution methods across application servers. Each platform has a specific deployment mechanism (WAR, AAR, etc.) that can be weaponized for initial access."
     }
   ],
   "opsec": "loud",

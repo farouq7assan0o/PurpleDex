@@ -180,11 +180,13 @@
   "variations": [
     {
       "label": "Password spray",
-      "command": "kerbrute passwordspray --dc <dc_ip> --domain <domain> <users_file> '<password>'"
+      "command": "kerbrute passwordspray --dc <dc_ip> --domain <domain> <users_file> '<password>'",
+      "description": "Performs password spraying via Kerberos pre-authentication using Kerbrute. Tests a single password against many accounts - generates fewer alerts than NTLM-based spraying."
     },
     {
       "label": "Brute-force one user",
-      "command": "kerbrute bruteuser --dc <dc_ip> --domain <domain> <wordlist> <username>"
+      "command": "kerbrute bruteuser --dc <dc_ip> --domain <domain> <wordlist> <username>",
+      "description": "Brute-forces passwords for a single user via Kerberos pre-authentication. Tests multiple passwords against one account using Kerbrute."
     }
   ],
   "explain": "Validates which usernames exist in AD via Kerberos pre-auth, without lockouts:\n  kerbrute userenum        enumerate valid users from KDC responses\n  --dc <dc_ip>             the Domain Controller\n  --domain <domain>        the domain\n  <names_file>             candidate usernames\nValid users give a distinct response and no failed-logon events; confirmed accounts become spray/AS-REP-roast targets. bruteuser brute-forces one user's password instead."

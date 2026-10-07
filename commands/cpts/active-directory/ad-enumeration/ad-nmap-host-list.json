@@ -184,7 +184,8 @@
   "variations": [
     {
       "label": "DC-focused ports only",
-      "command": "nmap -p 53,88,135,139,389,445,464,636,3268,3269 -sV <dc_ip>"
+      "command": "nmap -p 53,88,135,139,389,445,464,636,3268,3269 -sV <dc_ip>",
+      "description": "Runs an nmap scan with version detection for detailed service enumeration and target analysis."
     }
   ],
   "explain": "Runs a full nmap scan against a discovered host list:\n  sudo nmap -v   verbose\n  -A            OS detection, version detection, default scripts, and traceroute\n  -iL <hostfile>   read targets from the fping output file\n  -oN <outfile>    save normal-format results\nProfiles services across all live hosts so you can pick attack surface; narrow with -p and --open for a faster targeted sweep."

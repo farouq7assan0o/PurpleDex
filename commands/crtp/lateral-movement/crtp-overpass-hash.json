@@ -241,7 +241,8 @@
   "variations": [
     {
       "label": "runas /netonly (inject creds into a new logon session)",
-      "command": "runas /user:<domain>\\<user> /netonly cmd"
+      "command": "runas /user:<domain>\\<user> /netonly cmd",
+      "description": "Runas /netonly (inject creds into a new logon session). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Turns an NTLM hash into a real Kerberos TGT (overpass-the-hash) for Kerberos lateral movement:\n  asktgt                    request a TGT from the KDC\n  /user:<user>             the account to authenticate as\n  /rc4:<nt_hash>           its NTLM hash used as the Kerberos key (use /aes256 for opsec)\n  /domain:<domain>         the domain\n  /ptt                      inject the ticket into the current session\n  /opsec                    mimic a genuine client's request flags\nWith the TGT injected you access services (dir \\\\<dc>\\C$) as that user without ever knowing the plaintext."

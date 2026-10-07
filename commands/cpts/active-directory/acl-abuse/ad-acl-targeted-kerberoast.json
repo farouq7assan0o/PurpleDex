@@ -211,7 +211,8 @@
   "variations": [
     {
       "label": "Revert the SPN after roasting",
-      "command": "Set-DomainObject -Credential $Cred -Identity <target> -Clear serviceprincipalname"
+      "command": "Set-DomainObject -Credential $Cred -Identity <target> -Clear serviceprincipalname",
+      "description": "Clears the SPN from a target account after Kerberoasting. Cleanup step to remove the fake SPN you added, reducing the forensic footprint of the attack."
     }
   ],
   "steps": [

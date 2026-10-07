@@ -12,27 +12,32 @@
     {
       "command": "for ver in v0 v1 v2 v3 beta legacy internal; do echo \"=== $ver ===\"; curl -s http://<target>/api/$ver/<endpoint> -H \"Authorization: Bearer <jwt_token>\" | jq; done",
       "caption": "Probe multiple version prefixes in a loop",
-      "label": "Batch loop"
+      "label": "Batch loop",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "command": "curl -s http://<target>/api/v0/customers/deleted -H \"Authorization: Bearer <jwt_token>\" | jq",
       "caption": "Access soft-deleted records via old API version",
-      "label": "GET request"
+      "label": "GET request",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "command": "curl -s http://<target>/swagger/v1/swagger.json | jq '.paths | keys[]'",
       "caption": "Dump all API paths from Swagger spec to discover old/hidden endpoints",
-      "label": "Swagger - /swagger/v1"
+      "label": "Swagger - /swagger/v1",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "command": "curl -s http://<target>/api-docs | jq '.paths | keys[]'",
       "caption": "OpenAPI spec - alternative path for endpoint discovery",
-      "label": "Swagger - /api-docs"
+      "label": "Swagger - /api-docs",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "command": "ffuf -u http://<target>/api/FUZZ/<endpoint> -w /usr/share/seclists/Discovery/Web-Content/api/api-endpoints.txt -H \"Authorization: Bearer <jwt_token>\" -mc 200,201,301",
       "caption": "Fuzz API version and prefix with ffuf",
-      "label": "ffuf brute"
+      "label": "ffuf brute",
+      "description": "Fuzzes web directories or URL parameters using ffuf. Discovers hidden content, API endpoints, and parameters by brute-forcing URL paths."
     }
   ],
   "examples": [

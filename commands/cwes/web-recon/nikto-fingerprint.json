@@ -12,27 +12,32 @@
     {
       "command": "nikto -h <url>",
       "caption": "Full default scan (all tuning categories)",
-      "label": "nikto -h"
+      "label": "nikto -h",
+      "description": "Scans a web server for known vulnerabilities, misconfigurations, and dangerous default files using Nikto. Identifies outdated software versions and common security issues."
     },
     {
       "command": "nikto -h https://<target> -ssl",
       "caption": "HTTPS target scan",
-      "label": "nikto -h https://<target> -ssl"
+      "label": "nikto -h https://<target> -ssl",
+      "description": "Nikto -h https://<target> -ssl. See the command syntax for exact parameters and flags."
     },
     {
       "command": "nikto -h <target> -Tuning 1 -output nikto-output.txt",
       "caption": "Interesting files scan, save output",
-      "label": "nikto -h -Tuning 1"
+      "label": "nikto -h -Tuning 1",
+      "description": "Runs Nikto with specific scan tuning options to focus on particular vulnerability categories. Reduces noise by testing only relevant check types."
     },
     {
       "command": "nikto -h <target> -Tuning 2 -Format xml -output nikto.xml",
       "caption": "Misconfiguration scan, XML output",
-      "label": "nikto -h -Tuning 2"
+      "label": "nikto -h -Tuning 2",
+      "description": "Runs Nikto with specific scan tuning options to focus on particular vulnerability categories. Reduces noise by testing only relevant check types."
     },
     {
       "command": "sudo apt install -y perl && sudo apt install -y nikto",
       "caption": "Install nikto",
-      "label": "Install nikto"
+      "label": "Install nikto",
+      "description": "Scans a web server for known vulnerabilities, misconfigurations, and dangerous default files using Nikto. Identifies outdated software versions and common security issues."
     }
   ],
   "examples": [

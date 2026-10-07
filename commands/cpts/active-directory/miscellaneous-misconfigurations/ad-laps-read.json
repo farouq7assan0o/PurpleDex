@@ -192,11 +192,13 @@
   "variations": [
     {
       "label": "NetExec module",
-      "command": "nxc ldap <dc_ip> -u <user> -p <password> -M laps"
+      "command": "nxc ldap <dc_ip> -u <user> -p <password> -M laps",
+      "description": "Uses CrackMapExec with the LDAP protocol for domain enumeration. Queries Active Directory directly for users, groups, and other objects."
     },
     {
       "label": "pyLAPS",
-      "command": "python3 pyLAPS.py --action get -u <user> -p <password> -d <domain> --dc-ip <dc_ip>"
+      "command": "python3 pyLAPS.py --action get -u <user> -p <password> -d <domain> --dc-ip <dc_ip>",
+      "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
     }
   ],
   "steps": [

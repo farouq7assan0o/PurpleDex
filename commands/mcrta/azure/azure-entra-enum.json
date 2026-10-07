@@ -60,15 +60,18 @@
   "variations": [
     {
       "label": "Filter users by display name",
-      "command": "Get-MgUser -Filter \"startswith(displayName,'<prefix>')\" | ConvertTo-Json"
+      "command": "Get-MgUser -Filter \"startswith(displayName,'<prefix>')\" | ConvertTo-Json",
+      "description": "Filter users by display name. See the command syntax for exact parameters and flags."
     },
     {
       "label": "List service principals assigned to a directory role",
-      "command": "Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryRoleId <role_id> | ConvertTo-Json"
+      "command": "Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryRoleId <role_id> | ConvertTo-Json",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "App delegated (OAuth2) permissions",
-      "command": "$app = Get-MgApplication -ApplicationId <app_obj_id>\n$app.Oauth2RequirePostResponse | ConvertTo-Json"
+      "command": "$app = Get-MgApplication -ApplicationId <app_obj_id>\n$app.Oauth2RequirePostResponse | ConvertTo-Json",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     }
   ],
   "notes": "Every Entra object has a unique objectId. Objects: Users, Groups (security/dynamic/M365), Devices (AAD-joined/hybrid/registered), Applications (+ service principals + managed identities). Directory roles = Entra admin roles (Global Admin, Application Admin, User Admin...) - distinct from ARM RBAC roles. getuserrealm.srf tells you (unauthenticated) whether a domain is Managed (Entra) or Federated. Enumerate app RequiredResourceAccess / OAuth2 permissions to find over-privileged apps to abuse.",

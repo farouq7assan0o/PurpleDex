@@ -244,15 +244,18 @@
   "variations": [
     {
       "label": "winPEAS in-memory via Loader",
-      "command": "Loader.exe -Path <winpeas_exe> -args notcolor log"
+      "command": "Loader.exe -Path <winpeas_exe> -args notcolor log",
+      "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
     },
     {
       "label": "PrivEscCheck",
-      "command": ". <script_ps1>; Invoke-PrivescCheck"
+      "command": ". <script_ps1>; Invoke-PrivescCheck",
+      "description": "Cross-Site Scripting (XSS) payload that executes JavaScript in the victim's browser. Tests for reflected or stored XSS vulnerabilities in the web application."
     },
     {
       "label": "Service abuse (writable service)",
-      "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>' -Verbose"
+      "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>' -Verbose",
+      "description": "Service abuse (writable service). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Runs every PowerUp check to find Windows local privilege-escalation vectors:\n  Invoke-AllChecks          scan for unquoted service paths, weak service/file permissions, AlwaysInstallElevated, autologon creds, DLL hijacks, etc.\nDot-source PowerUp.ps1 first. Each finding maps to an abuse function - e.g. Invoke-ServiceAbuse -Name <service> -UserName <domain>\\<user> hijacks a writable service to add you to a group."

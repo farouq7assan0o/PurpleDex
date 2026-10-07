@@ -74,17 +74,20 @@
     {
       "command": "smbclient //<ip>/<share> -c 'put <local_file>'",
       "caption": "Upload file via smbclient (when SMB is available)",
-      "label": "smbclient - upload"
+      "label": "smbclient - upload",
+      "description": "Connects to an SMB share for interactive file transfer. Supports uploading payloads and downloading sensitive files from accessible shares."
     },
     {
       "command": "smbclient //<ip>/<share> -c 'get <remote_file>'",
       "caption": "Download file via smbclient",
-      "label": "smbclient - download"
+      "label": "smbclient - download",
+      "description": "Connects to an SMB share for interactive file transfer. Supports uploading payloads and downloading sensitive files from accessible shares."
     },
     {
       "command": "smbclient //<ip>/<share> -U <user>%<pass> -c 'put <file>'",
       "caption": "Authenticated smbclient upload",
-      "label": "smbclient - upload (with creds)"
+      "label": "smbclient - upload (with creds)",
+      "description": "Smbclient - upload (with creds). See the command syntax for exact parameters and flags."
     }
   ],
   "defense": {

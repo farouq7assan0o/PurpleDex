@@ -81,31 +81,37 @@
   "variations": [
     {
       "label": "Nmap SMTP scan",
-      "command": "sudo nmap <ip> -sC -sV -p25"
+      "command": "sudo nmap <ip> -sC -sV -p25",
+      "description": "Runs an nmap scan with version detection, default scripts for detailed service enumeration and target analysis."
     },
     {
       "label": "Nmap open-relay test",
-      "command": "sudo nmap <ip> -p25 --script smtp-open-relay -v"
+      "command": "sudo nmap <ip> -p25 --script smtp-open-relay -v",
+      "description": "Tests whether the SMTP server is an open relay using nmap scripts. Open relays can be abused to send spoofed emails for phishing."
     },
     {
       "command": "nc -nv <ip> 25",
       "caption": "Netcat banner grab on SMTP port 25",
-      "label": "nc connect"
+      "label": "nc connect",
+      "description": "Uses netcat for network connections, file transfers, or shell access. Versatile networking utility available on most Unix systems."
     },
     {
       "command": "VRFY <username>",
       "caption": "Manual VRFY: 250 = valid user, 550 = not found",
-      "label": "VRFY"
+      "label": "VRFY",
+      "description": "Verifies whether a username exists on the SMTP server. Used for email user enumeration - a valid response confirms the account exists."
     },
     {
       "command": "EXPN postmaster",
       "caption": "EXPN: expand mailing list / alias to real addresses",
-      "label": "EXPN"
+      "label": "EXPN",
+      "description": "Expands a mailing list or alias on the SMTP server. Reveals the actual email addresses behind a distribution list for user enumeration."
     },
     {
       "command": "RCPT TO:<username>@<domain>",
       "caption": "RCPT TO as alternative enum method when VRFY/EXPN disabled",
-      "label": "RCPT"
+      "label": "RCPT",
+      "description": "Tests if a recipient address is valid on the SMTP server. Alternative user enumeration method when VRFY and EXPN are disabled."
     }
   ],
   "opsec": "moderate",

@@ -76,27 +76,32 @@
     {
       "command": "nmap -v -sn <cidr> -oG ping-sweep.txt",
       "caption": "Ping sweep of subnet, greppable output",
-      "label": "nmap -v -sn -oG"
+      "label": "nmap -v -sn -oG",
+      "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
     },
     {
       "command": "nmap -p 80 <cidr> -oG web-sweep.txt",
       "caption": "Web host discovery sweep, greppable",
-      "label": "nmap -p 80 -oG"
+      "label": "nmap -p 80 -oG",
+      "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
     },
     {
       "command": "nmap -sT -A --top-ports=20 <cidr> -oG top-port-sweep.txt",
       "caption": "Top-20 port sweep across subnet, greppable",
-      "label": "nmap -sT -A --top-ports=20"
+      "label": "nmap -sT -A --top-ports=20",
+      "description": "Runs an nmap scan with TCP connect scan, aggressive mode (OS detection, versions, scripts, traceroute), top 20 ports for detailed service enumeration and target analysis."
     },
     {
       "command": "grep 'Up' ping-sweep.txt | cut -d ' ' -f 2",
       "caption": "Parse greppable ping sweep for live hosts",
-      "label": "Extract live hosts"
+      "label": "Extract live hosts",
+      "description": "Parses nmap ping sweep output to extract just the IP addresses of live hosts. Filters the text output to create a clean target list for further scanning."
     },
     {
       "command": "grep 'open' web-sweep.txt | cut -d ' ' -f 2",
       "caption": "Parse greppable port sweep for hosts with port open",
-      "label": "Extract open-port hosts"
+      "label": "Extract open-port hosts",
+      "description": "Parses nmap port scan output to extract IPs with open ports. Creates a filtered target list of hosts running the specific service."
     }
   ],
   "defense": {

@@ -48,23 +48,28 @@
   "variations": [
     {
       "label": "List all VMs in the subscription",
-      "command": "az vm list -o table"
+      "command": "az vm list -o table",
+      "description": "Enumerates Azure virtual machines and their configuration. Shows instance metadata, managed identities, and network settings for targeting."
     },
     {
       "label": "Get VM public IP address",
-      "command": "az vm list-ip-addresses --name <vm_name> --resource-group <rg_name> -o table"
+      "command": "az vm list-ip-addresses --name <vm_name> --resource-group <rg_name> -o table",
+      "description": "Enumerates Azure virtual machines and their configuration. Shows instance metadata, managed identities, and network settings for targeting."
     },
     {
       "label": "Role assignments in a specific subscription",
-      "command": "az role assignment list --subscription <subscription_id_or_name>"
+      "command": "az role assignment list --subscription <subscription_id_or_name>",
+      "description": "Lists Azure role assignments (RBAC). Shows which identities have what permissions on which resources - essential for identifying over-privileged accounts."
     },
     {
       "label": "All role assignments (current subscription + inherited)",
-      "command": "az role assignment list --all"
+      "command": "az role assignment list --all",
+      "description": "Lists Azure role assignments (RBAC). Shows which identities have what permissions on which resources - essential for identifying over-privileged accounts."
     },
     {
       "label": "Subscription detail by ID or name",
-      "command": "az account show -s <subscription_id_or_name>"
+      "command": "az account show -s <subscription_id_or_name>",
+      "description": "Subscription detail by ID or name. See the command syntax for exact parameters and flags."
     }
   ],
   "notes": "ARM hierarchy: Tenant -> Management Group -> Subscription -> Resource Group -> Resource; RBAC role assignments inherit top-down. Built-in roles: Owner (full + can assign roles), Contributor (full but NOT role assignment), Reader (read-only), plus custom roles. Hunt for: your principal's assignments (--assignee), custom roles with dangerous actions, and Owner / User Access Administrator to escalate by assigning yourself a role. ARM REST base: https://management.azure.com/{version}/{resource}?{query}.",

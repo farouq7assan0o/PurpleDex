@@ -163,11 +163,13 @@
   "variations": [
     {
       "label": "gMSADumper (Python)",
-      "command": "python3 gMSADumper.py -u <user> -p <password> -d <domain>"
+      "command": "python3 gMSADumper.py -u <user> -p <password> -d <domain>",
+      "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
     },
     {
       "label": "PowerView (on-host)",
-      "command": "Get-DomainObject -Identity <gmsa_account> -Properties msds-managedpassword"
+      "command": "Get-DomainObject -Identity <gmsa_account> -Properties msds-managedpassword",
+      "description": "Queries any Active Directory object by identity using PowerView. Generic object lookup that returns all properties - useful when you need the full raw AD object data."
     }
   ],
   "steps": [

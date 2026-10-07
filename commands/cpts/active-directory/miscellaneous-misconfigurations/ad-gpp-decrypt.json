@@ -178,7 +178,8 @@
   "variations": [
     {
       "label": "Find the cpassword first (Groups.xml)",
-      "command": "findstr /S /I cpassword \\\\<dc>\\SYSVOL\\<domain>\\Policies\\*.xml"
+      "command": "findstr /S /I cpassword \\\\<dc>\\SYSVOL\\<domain>\\Policies\\*.xml",
+      "description": "Find the cpassword first (Groups.xml). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

@@ -61,23 +61,28 @@
   "variations": [
     {
       "label": "Python 2",
-      "command": "python2.7 -m SimpleHTTPServer"
+      "command": "python2.7 -m SimpleHTTPServer",
+      "description": "Starts a Python 2 HTTP server for hosting files. Quick way to serve payloads and tools to the target machine."
     },
     {
       "label": "PHP",
-      "command": "php -S 0.0.0.0:8000"
+      "command": "php -S 0.0.0.0:8000",
+      "description": "Starts a PHP built-in web server for hosting files. Lightweight alternative to Python HTTP server when PHP is available."
     },
     {
       "label": "Ruby",
-      "command": "ruby -run -ehttpd . -p8000"
+      "command": "ruby -run -ehttpd . -p8000",
+      "description": "Starts a Ruby HTTP server for hosting files. One-liner file server when Ruby is installed on the attack machine."
     },
     {
       "label": "Python upload server",
-      "command": "python3 -m uploadserver"
+      "command": "python3 -m uploadserver",
+      "description": "Runs a Python-based tool or script for exploitation, enumeration, or post-exploitation activities."
     },
     {
       "label": "Python FTP server (upload-capable)",
-      "command": "sudo python3 -m pyftpdlib --port 21 --write"
+      "command": "sudo python3 -m pyftpdlib --port 21 --write",
+      "description": "Python FTP server (upload-capable). See the command syntax for exact parameters and flags."
     }
   ],
   "opsec": "quiet",

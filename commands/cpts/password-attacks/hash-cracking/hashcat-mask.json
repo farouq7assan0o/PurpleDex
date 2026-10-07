@@ -165,11 +165,13 @@
   "variations": [
     {
       "label": "Custom charsets (-1/-2)",
-      "command": "hashcat -a 3 -m <mode> <hashfile> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'"
+      "command": "hashcat -a 3 -m <mode> <hashfile> -1 ?l?u -2 ?d?s '?1?1?1?1?2?2'",
+      "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     },
     {
       "label": "Incremental length",
-      "command": "hashcat -a 3 -m <mode> <hashfile> '?a?a?a?a?a?a' --increment --increment-min 4 --increment-max 6"
+      "command": "hashcat -a 3 -m <mode> <hashfile> '?a?a?a?a?a?a' --increment --increment-min 4 --increment-max 6",
+      "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     }
   ],
   "explain": "Brute-forces against a mask that models a known password pattern:\n  hashcat -a 3             attack mode 3 = mask\n  -m <mode>                the hash algorithm\n  <hashfile>               the target hashes\n  'Autumn?d?d?d?d!'        the mask: literal 'Autumn', four digits, literal '!'\nFar faster than blind brute force when the policy or habit is known; -1/-2 define custom charsets, --increment varies the length."

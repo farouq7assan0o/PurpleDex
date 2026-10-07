@@ -57,11 +57,13 @@
   "variations": [
     {
       "label": "Connect as guest",
-      "command": "smbclient \\\\\\\\<ip>\\\\users"
+      "command": "smbclient \\\\\\\\<ip>\\\\users",
+      "description": "Connects to SMB shares for browsing and file transfer from Linux. Interactive shell for navigating share contents and transferring files."
     },
     {
       "label": "Connect with credentials",
-      "command": "smbclient -U bob \\\\\\\\<ip>\\\\users"
+      "command": "smbclient -U bob \\\\\\\\<ip>\\\\users",
+      "description": "Connects to SMB shares for browsing and file transfer from Linux. Interactive shell for navigating share contents and transferring files."
     }
   ],
   "opsec": "moderate",

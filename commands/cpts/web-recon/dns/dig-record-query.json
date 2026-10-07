@@ -69,31 +69,38 @@
   "variations": [
     {
       "label": "A / AAAA",
-      "command": "dig <domain> A\ndig <domain> AAAA"
+      "command": "dig <domain> A\ndig <domain> AAAA",
+      "description": "Queries AAAA (IPv6) records for the domain. IPv6 addresses may be accessible when IPv4 is filtered - dual-stack configurations sometimes have weaker IPv6 security."
     },
     {
       "label": "MX / NS / SOA",
-      "command": "dig <domain> MX\ndig <domain> NS\ndig <domain> SOA"
+      "command": "dig <domain> MX\ndig <domain> NS\ndig <domain> SOA",
+      "description": "Queries MX (mail exchanger) records for the domain. Identifies mail servers which may run exploitable services or provide additional attack surface."
     },
     {
       "label": "TXT / CNAME / ANY",
-      "command": "dig <domain> TXT\ndig <domain> CNAME\ndig <domain> ANY"
+      "command": "dig <domain> TXT\ndig <domain> CNAME\ndig <domain> ANY",
+      "description": "Queries TXT records for the domain. TXT records often contain SPF policies, DKIM keys, domain verification tokens, and sometimes internal configuration details."
     },
     {
       "label": "Use a specific resolver",
-      "command": "dig @<resolver> <domain>"
+      "command": "dig @<resolver> <domain>",
+      "description": "Queries a specific DNS server for domain records. Useful for querying internal DNS servers directly to resolve internal hostnames."
     },
     {
       "label": "Trace delegation",
-      "command": "dig +trace <domain>"
+      "command": "dig +trace <domain>",
+      "description": "Performs DNS queries for the target domain. DNS enumeration reveals hostnames, mail servers, and infrastructure details."
     },
     {
       "label": "Reverse lookup",
-      "command": "dig -x <ip>"
+      "command": "dig -x <ip>",
+      "description": "Performs a reverse DNS lookup (PTR record) to find the hostname associated with an IP address. Reveals internal naming conventions and identifies services."
     },
     {
       "label": "Concise output",
-      "command": "dig +short <domain>\ndig +noall +answer <domain>"
+      "command": "dig +short <domain>\ndig +noall +answer <domain>",
+      "description": "Performs DNS queries for the target domain. DNS enumeration reveals hostnames, mail servers, and infrastructure details."
     }
   ],
   "opsec": "moderate",

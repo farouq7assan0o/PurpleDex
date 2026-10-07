@@ -202,11 +202,13 @@
   "variations": [
     {
       "label": "Audit for privesc",
-      "command": "Invoke-SQLAudit -Verbose"
+      "command": "Invoke-SQLAudit -Verbose",
+      "description": "Runs automated security auditing on SQL Server instances using PowerUpSQL. Checks for dangerous configurations like xp_cmdshell, excessive permissions, and stored credentials."
     },
     {
       "label": "Crawl links + run OS command",
-      "command": "Get-SQLServerLinkCrawl -Instance <instance> -Query 'exec master..xp_cmdshell ''whoami'''"
+      "command": "Get-SQLServerLinkCrawl -Instance <instance> -Query 'exec master..xp_cmdshell ''whoami'''",
+      "description": "Crawl links + run OS command. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

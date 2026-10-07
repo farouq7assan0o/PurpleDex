@@ -175,7 +175,8 @@
   "variations": [
     {
       "label": "Check service reg key ACL",
-      "command": "Get-Acl HKLM:\\System\\CurrentControlSet\\Services\\<service> | fl"
+      "command": "Get-Acl HKLM:\\System\\CurrentControlSet\\Services\\<service> | fl",
+      "description": "Reads the access control list (ACL) of a file, directory, or registry key. Shows who has what permissions on the target object for identifying weak file/folder permissions."
     }
   ],
   "steps": [

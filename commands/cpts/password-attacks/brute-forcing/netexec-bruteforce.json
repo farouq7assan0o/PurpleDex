@@ -71,15 +71,18 @@
   "variations": [
     {
       "label": "WinRM",
-      "command": "netexec winrm <ip> -u <userlist> -p <wordlist>"
+      "command": "netexec winrm <ip> -u <userlist> -p <wordlist>",
+      "description": "Uses CrackMapExec with the WinRM protocol for remote command execution over HTTP/S (port 5985/5986). Less commonly monitored than SMB-based execution."
     },
     {
       "label": "SMB",
-      "command": "netexec smb <ip> -u <userlist> -p <wordlist>"
+      "command": "netexec smb <ip> -u <userlist> -p <wordlist>",
+      "description": "Uses CrackMapExec for network authentication testing and remote operations across multiple protocols and targets."
     },
     {
       "label": "SMB + Shares",
-      "command": "netexec smb <ip> -u <user> -p <password> --shares"
+      "command": "netexec smb <ip> -u <user> -p <password> --shares",
+      "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
     }
   ],
   "opsec": "loud",

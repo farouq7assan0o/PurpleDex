@@ -183,19 +183,23 @@
   "variations": [
     {
       "label": "Faster - increase threads",
-      "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -t 50"
+      "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -t 50",
+      "description": "Brute-forces virtual hostnames on a web server using gobuster. Discovers additional websites hosted on the same IP address."
     },
     {
       "label": "Ignore SSL/TLS cert errors (labs with self-signed certs)",
-      "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -k"
+      "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -k",
+      "description": "Ignore SSL/TLS cert errors (labs with self-signed certs). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Save output to file",
-      "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -o vhosts.txt"
+      "command": "gobuster vhost -u http://<ip> -w <wordlist> --append-domain -o vhosts.txt",
+      "description": "Brute-forces virtual hostnames on a web server using gobuster. Discovers additional websites hosted on the same IP address."
     },
     {
       "label": "Combined - threads + ignore SSL + save",
-      "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -t 50 -k -o vhosts.txt"
+      "command": "gobuster vhost -u https://<ip> -w <wordlist> --append-domain -t 50 -k -o vhosts.txt",
+      "description": "Combined - threads + ignore SSL + save. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Brute-forces the HTTP Host header to find virtual hosts served from one IP:\n  gobuster vhost   virtual-host discovery mode\n  -u http://<ip>   the target IP/base URL\n  -w <wordlist>    host names to try in the Host header\n  --append-domain  append the base domain to each word (word.domain)\nDifferent Host values can serve entirely different sites; add -k for HTTPS with invalid certs and -o to save hits."

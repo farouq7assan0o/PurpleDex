@@ -191,7 +191,8 @@
   "variations": [
     {
       "label": "Background + no shell",
-      "command": "ssh -f -N -D <socks_port> <user>@<pivot>"
+      "command": "ssh -f -N -D <socks_port> <user>@<pivot>",
+      "description": "Creates an SSH dynamic port forward (SOCKS proxy) - all traffic routed through it exits from the SSH server. Turns any SSH access into a full pivoting proxy."
     }
   ],
   "explain": "Opens a SOCKS proxy over SSH, turning the pivot into a gateway into its internal networks:\n  -D <socks_port>   dynamic application-level forward (a local SOCKS proxy)\n  <user>@<pivot>    SSH into the pivot with these creds\nPoint proxychains at 127.0.0.1:<socks_port> to route any tool through the pivot; add -N -f to background the tunnel without opening a shell."

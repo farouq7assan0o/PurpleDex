@@ -181,11 +181,13 @@
   "variations": [
     {
       "label": "All hosts in the domain",
-      "command": "Invoke-SessionGopher -AllDomain -o"
+      "command": "Invoke-SessionGopher -AllDomain -o",
+      "description": "Searches for saved session information from PuTTY, WinSCP, FileZilla, RDP, and other tools. Extracts stored credentials and connection details from remote administration tools."
     },
     {
       "label": "Thorough (search filesystem too)",
-      "command": "Invoke-SessionGopher -Thorough"
+      "command": "Invoke-SessionGopher -Thorough",
+      "description": "Thorough (search filesystem too). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Extracts saved remote-session secrets from the registry and profiles:\n  Invoke-SessionGopher     harvest stored credentials for PuTTY, WinSCP, FileZilla, SuperPuTTY, and RDP\n  -Target <hostname>       run against this host\nMany of these tools store connection passwords recoverably; -AllDomain sweeps every domain host, -Thorough also searches the filesystem for key/session files."

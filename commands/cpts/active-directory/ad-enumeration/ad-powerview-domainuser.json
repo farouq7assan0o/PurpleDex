@@ -200,11 +200,13 @@
   "variations": [
     {
       "label": "All users, key props",
-      "command": "Get-DomainUser -Properties samaccountname,description,memberof,admincount | select samaccountname,description"
+      "command": "Get-DomainUser -Properties samaccountname,description,memberof,admincount | select samaccountname,description",
+      "description": "Uses PowerView to find users flagged as admins (AdminCount=1). This attribute is set by SDProp and persists even after privilege removal - reveals current and former members of protected groups."
     },
     {
       "label": "Only privileged (admincount=1)",
-      "command": "Get-DomainUser -AdminCount | select samaccountname"
+      "command": "Get-DomainUser -AdminCount | select samaccountname",
+      "description": "Uses PowerView to find users flagged as admins (AdminCount=1). This attribute is set by SDProp and persists even after privilege removal - reveals current and former members of protected groups."
     }
   ],
   "explain": "Reads detailed user attributes with PowerView:\n  Get-DomainUser   query user objects\n  -Identity <user>   a specific account (omit for all users)\n  -Domain <domain>   target a specific domain\nReturns UAC flags, SPN, logon history, admincount, and password metadata; select the columns you need, or pipe to a description filter to hunt for creds."

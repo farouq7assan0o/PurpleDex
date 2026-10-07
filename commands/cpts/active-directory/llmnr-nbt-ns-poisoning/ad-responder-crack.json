@@ -179,7 +179,8 @@
   "variations": [
     {
       "label": "John",
-      "command": "john --format=netntlmv2 <hashfile>"
+      "command": "john --format=netntlmv2 <hashfile>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     }
   ],
   "explain": "Cracks captured NetNTLMv2 hashes offline:\n  hashcat -m 5600          mode 5600 = NetNTLMv2\n  <hashfile>               the Responder/Inveigh capture\n  /usr/share/wordlists/rockyou.txt   the wordlist\nNetNTLMv2 cannot be used for pass-the-hash, so cracking (or relaying) is the only way to leverage it; a GPU speeds this up considerably."

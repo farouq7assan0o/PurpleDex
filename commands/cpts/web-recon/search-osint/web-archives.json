@@ -160,15 +160,18 @@
   "variations": [
     {
       "label": "waybackurls",
-      "command": "waybackurls <domain> | sort -u"
+      "command": "waybackurls <domain> | sort -u",
+      "description": "Retrieves historical URLs for a domain from the Wayback Machine archive. Discovers old endpoints, forgotten pages, and removed content that may still be accessible."
     },
     {
       "label": "gau (GetAllURLs, incl. subdomains)",
-      "command": "gau --subs <domain>"
+      "command": "gau --subs <domain>",
+      "description": "Gau (GetAllURLs, incl. subdomains). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Wayback CDX API",
-      "command": "curl -s \"http://web.archive.org/cdx/search/cdx?url=*.<domain>/*&output=text&fl=original&collapse=urlkey\""
+      "command": "curl -s \"http://web.archive.org/cdx/search/cdx?url=*.<domain>/*&output=text&fl=original&collapse=urlkey\"",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     }
   ],
   "explain": "The Wayback Machine stores historical snapshots of a site - old pages, removed endpoints, and files that no longer exist live can reveal past vulnerabilities or hidden paths.\nThe Wayback Machine (web.archive.org) reveals old endpoints, removed pages, and dev artifacts that still exist server-side."

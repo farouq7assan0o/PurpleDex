@@ -51,24 +51,24 @@
       "label": "braa (fast OID)"
     },
     {
-      "description": "Windows users OID",
       "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.4.1.77.1.2.25",
-      "label": "Windows users"
+      "label": "Windows users",
+      "description": "Walks the SNMP tree using a community string. Enumerates device information by querying SNMP OIDs - common community strings like \"public\" and \"private\" are often left unchanged."
     },
     {
-      "description": "Running processes OID",
       "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.4.2.1.2",
-      "label": "Running processes"
+      "label": "Running processes",
+      "description": "Enumerates running processes via SNMP. Lists all active processes on the target without needing interactive access."
     },
     {
-      "description": "Installed software OID",
       "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.25.6.3.1.2",
-      "label": "Installed software"
+      "label": "Installed software",
+      "description": "Enumerates installed software via SNMP. Walks the host resources MIB to list all installed applications and their versions."
     },
     {
-      "description": "Open TCP ports OID",
       "command": "snmpwalk -c <community> -v1 <ip> 1.3.6.1.2.1.6.13.1.3",
-      "label": "Open TCP ports"
+      "label": "Open TCP ports",
+      "description": "Enumerates active TCP connections via SNMP. Shows listening ports and established connections - network reconnaissance without port scanning."
     }
   ],
   "examples": [

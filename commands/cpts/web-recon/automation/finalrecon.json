@@ -224,9 +224,9 @@
       "label": "SSL info"
     },
     {
-      "description": "Crawl + Wayback URLs",
       "command": "./finalrecon.py --crawl --wayback --url http://<domain>",
-      "label": "Crawl + wayback"
+      "label": "Crawl + wayback",
+      "description": "Performs comprehensive OSINT reconnaissance on a target domain. Combines multiple recon techniques including headers, whois, DNS, SSL, and crawling."
     },
     {
       "description": "Fast port scan + directory search",

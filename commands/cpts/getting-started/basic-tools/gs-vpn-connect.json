@@ -42,7 +42,8 @@
   "variations": [
     {
       "label": "Check adapter",
-      "command": "ifconfig"
+      "command": "ifconfig",
+      "description": "Shows network interface configuration including IP addresses, subnets, and additional network segments. Identifies dual-homed hosts for pivoting to other networks."
     },
     {
       "description": "Connect with a named .ovpn file (OSCP lab style)",

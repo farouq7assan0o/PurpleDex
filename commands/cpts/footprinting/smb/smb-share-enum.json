@@ -88,35 +88,43 @@
   "variations": [
     {
       "label": "Connect to a share (null session)",
-      "command": "smbclient //<ip>/notes"
+      "command": "smbclient //<ip>/notes",
+      "description": "Connect to a share (null session). See the command syntax for exact parameters and flags."
     },
     {
       "label": "List shares (authenticated)",
-      "command": "smbclient -U <user> -L //<ip>"
+      "command": "smbclient -U <user> -L //<ip>",
+      "description": "List shares (authenticated). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Connect to a share (authenticated)",
-      "command": "smbclient -U <user> //<ip>/<share>"
+      "command": "smbclient -U <user> //<ip>/<share>",
+      "description": "Connect to a share (authenticated). See the command syntax for exact parameters and flags."
     },
     {
       "label": "smbmap - share permissions",
-      "command": "smbmap -H <ip>"
+      "command": "smbmap -H <ip>",
+      "description": "Smbmap - share permissions. See the command syntax for exact parameters and flags."
     },
     {
       "label": "smbmap - authenticated",
-      "command": "smbmap -H <ip> -u <user> -p <password>"
+      "command": "smbmap -H <ip> -u <user> -p <password>",
+      "description": "Enumerates SMB shares and tests access permissions from Linux. Shows READ/WRITE permissions per share for the authenticated user."
     },
     {
       "label": "crackmapexec - shares (null)",
-      "command": "crackmapexec smb <ip> --shares -u '' -p ''"
+      "command": "crackmapexec smb <ip> --shares -u '' -p ''",
+      "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
     },
     {
       "label": "crackmapexec - shares (authenticated)",
-      "command": "crackmapexec smb <ip> --shares -u <user> -p <password>"
+      "command": "crackmapexec smb <ip> --shares -u <user> -p <password>",
+      "description": "Uses CrackMapExec to enumerate accessible SMB shares on target hosts. Lists shares and your permission level (READ/WRITE) - identifies data access and potential write targets for payload deployment."
     },
     {
       "label": "Nmap SMB scan",
-      "command": "sudo nmap <ip> -sV -sC -p139,445"
+      "command": "sudo nmap <ip> -sV -sC -p139,445",
+      "description": "Runs an nmap scan with version detection, default scripts for detailed service enumeration and target analysis."
     }
   ],
   "opsec": "loud",

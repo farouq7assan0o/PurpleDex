@@ -69,11 +69,13 @@
   "variations": [
     {
       "label": "Linux -> Windows",
-      "command": "# linux: cat id_rsa | base64 -w 0; echo ; md5sum id_rsa\n# windows: [IO.File]::WriteAllBytes(\"C:\\Users\\Public\\id_rsa\", [Convert]::FromBase64String(\"<base64>\"))\nGet-FileHash C:\\Users\\Public\\id_rsa -Algorithm md5"
+      "command": "# linux: cat id_rsa | base64 -w 0; echo ; md5sum id_rsa\n# windows: [IO.File]::WriteAllBytes(\"C:\\Users\\Public\\id_rsa\", [Convert]::FromBase64String(\"<base64>\"))\nGet-FileHash C:\\Users\\Public\\id_rsa -Algorithm md5",
+      "description": "Transfers a file between Linux and Windows by encoding it as base64 text. Encodes on the source, copies the text, decodes on the destination - works through any channel that passes text (RDP clipboard, web shell, etc.)."
     },
     {
       "label": "Windows -> Linux",
-      "command": "# windows: [Convert]::ToBase64String((Get-Content -Path \"C:\\Windows\\system32\\drivers\\etc\\hosts\" -Encoding byte))\nGet-FileHash \"C:\\...\\hosts\" -Algorithm MD5\n# linux: echo <base64> | base64 -d > hosts ; md5sum hosts"
+      "command": "# windows: [Convert]::ToBase64String((Get-Content -Path \"C:\\Windows\\system32\\drivers\\etc\\hosts\" -Encoding byte))\nGet-FileHash \"C:\\...\\hosts\" -Algorithm MD5\n# linux: echo <base64> | base64 -d > hosts ; md5sum hosts",
+      "description": "Reads the hosts file for custom hostname-to-IP mappings. Reveals internal hostnames, development servers, and network topology that DNS queries might not show."
     }
   ],
   "opsec": "quiet",

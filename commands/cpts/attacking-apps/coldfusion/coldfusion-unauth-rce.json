@@ -35,7 +35,8 @@
   "variations": [
     {
       "label": "Vulnerable FCKeditor upload endpoint (manual confirmation)",
-      "command": "http://<ip>:<port>/CFIDE/scripts/ajax/FCKeditor/editor/filemanager/connectors/cfm/upload.cfm?Command=FileUpload&Type=File&CurrentFolder="
+      "command": "http://<ip>:<port>/CFIDE/scripts/ajax/FCKeditor/editor/filemanager/connectors/cfm/upload.cfm?Command=FileUpload&Type=File&CurrentFolder=",
+      "description": "Vulnerable FCKeditor upload endpoint (manual confirmation). See the command syntax for exact parameters and flags."
     }
   ],
   "examples": [

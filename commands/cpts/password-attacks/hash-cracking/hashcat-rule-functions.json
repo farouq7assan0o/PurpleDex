@@ -70,15 +70,18 @@
   "variations": [
     {
       "label": "Common rule functions",
-      "command": ":      - Do nothing (pass through)\nl      - Lowercase all letters\nu      - Uppercase all letters\nc      - Capitalize first, lowercase rest\nsXY    - Replace all X with Y (e.g. so0)\n$X     - Append character X (e.g. $!)\n^X     - Prepend character X\nr      - Reverse the word\nd      - Duplicate the word"
+      "command": ":      - Do nothing (pass through)\nl      - Lowercase all letters\nu      - Uppercase all letters\nc      - Capitalize first, lowercase rest\nsXY    - Replace all X with Y (e.g. so0)\n$X     - Append character X (e.g. $!)\n^X     - Prepend character X\nr      - Reverse the word\nd      - Duplicate the word",
+      "description": "Reference table of hashcat rule functions for password mutation. Each function transforms candidate passwords (case changes, character insertion, rotation, etc.) to expand wordlist coverage."
     },
     {
       "label": "Example custom rule file",
-      "command": "cat custom.rule\n:\nc\nso0\nc so0\nsa@\nc sa@\n$!\n$! c\n$! so0\n$! c so0 sa@"
+      "command": "cat custom.rule\n:\nc\nso0\nc so0\nsa@\nc sa@\n$!\n$! c\n$! so0\n$! c so0 sa@",
+      "description": "Reads the contents of a file for information gathering. Target files often contain credentials, configuration details, or sensitive data."
     },
     {
       "label": "Popular bundled rules",
-      "command": "/usr/share/hashcat/rules/best64.rule\n/usr/share/hashcat/rules/rockyou-30000.rule\n/usr/share/hashcat/rules/d3ad0ne.rule\n/usr/share/hashcat/rules/dive.rule\n/usr/share/hashcat/rules/leetspeak.rule\n/usr/share/hashcat/rules/toggles1-5.rule"
+      "command": "/usr/share/hashcat/rules/best64.rule\n/usr/share/hashcat/rules/rockyou-30000.rule\n/usr/share/hashcat/rules/d3ad0ne.rule\n/usr/share/hashcat/rules/dive.rule\n/usr/share/hashcat/rules/leetspeak.rule\n/usr/share/hashcat/rules/toggles1-5.rule",
+      "description": "Cracks password hashes with hashcat using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     }
   ],
   "opsec": "silent",

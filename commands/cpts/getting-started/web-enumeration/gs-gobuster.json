@@ -67,7 +67,8 @@
   "variations": [
     {
       "label": "DNS subdomain brute force",
-      "command": "gobuster dns -d <domain>.com -w /usr/share/SecLists/Discovery/DNS/namelist.txt"
+      "command": "gobuster dns -d <domain>.com -w /usr/share/SecLists/Discovery/DNS/namelist.txt",
+      "description": "Brute-forces DNS subdomains using gobuster. Discovers subdomains not visible in public records for expanding the attack surface."
     }
   ],
   "opsec": "moderate",

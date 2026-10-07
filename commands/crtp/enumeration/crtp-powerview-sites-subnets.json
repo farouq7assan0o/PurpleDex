@@ -32,27 +32,33 @@
   "variations": [
     {
       "label": "All subnets (mapped to sites)",
-      "command": "Get-DomainSubnet | select name,site"
+      "command": "Get-DomainSubnet | select name,site",
+      "description": "All subnets (mapped to sites). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Site of a specific host",
-      "command": "Get-NetComputerSiteName -ComputerName <host>"
+      "command": "Get-NetComputerSiteName -ComputerName <host>",
+      "description": "Identifies which Active Directory site a computer belongs to. AD sites typically map to physical locations or network segments - useful for understanding network topology and scoping attacks."
     },
     {
       "label": "Global Catalog servers in the forest",
-      "command": "Get-ForestGlobalCatalog"
+      "command": "Get-ForestGlobalCatalog",
+      "description": "Global Catalog servers in the forest. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Domain controllers",
-      "command": "Get-DomainController | select Name,IPAddress,OSVersion"
+      "command": "Get-DomainController | select Name,IPAddress,OSVersion",
+      "description": "Domain controllers - outputs Name, IPAddress, OSVersion."
     },
     {
       "label": "Forest + child domains",
-      "command": "Get-ForestDomain"
+      "command": "Get-ForestDomain",
+      "description": "Lists all domains in the current AD forest using PowerView. Maps the complete forest structure for cross-domain attack planning."
     },
     {
       "label": "Resolve-IPAddress (hostname to IP)",
-      "command": "Resolve-IPAddress -ComputerName <host>"
+      "command": "Resolve-IPAddress -ComputerName <host>",
+      "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
     }
   ],
   "examples": [

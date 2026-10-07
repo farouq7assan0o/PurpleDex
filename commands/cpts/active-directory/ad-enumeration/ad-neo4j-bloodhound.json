@@ -168,7 +168,8 @@
   "variations": [
     {
       "label": "Reset neo4j password on first run",
-      "command": "# browse http://localhost:7474  (neo4j/neo4j -> set new)"
+      "command": "# browse http://localhost:7474  (neo4j/neo4j -> set new)",
+      "description": "Reset neo4j password on first run. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Starts the graph backend and BloodHound GUI:\n  sudo neo4j start   launch the Neo4j database BloodHound stores its graph in\n  bloodhound         open the analysis GUI\nNeo4j must be up first (default creds neo4j/neo4j, changed on first login at http://localhost:7474); then drag your SharpHound/bloodhound-python ZIP into the GUI and run the pre-built queries to find paths to DA."

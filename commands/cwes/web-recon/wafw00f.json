@@ -12,22 +12,26 @@
     {
       "command": "wafw00f https://<target> -a",
       "caption": "Test against all known WAF signatures (thorough)",
-      "label": "wafw00f https://<target> -a"
+      "label": "wafw00f https://<target> -a",
+      "description": "Wafw00f https://<target> -a. See the command syntax for exact parameters and flags."
     },
     {
       "command": "wafw00f https://<target> -v",
       "caption": "Verbose output - shows each probe and response",
-      "label": "wafw00f https://<target> -v"
+      "label": "wafw00f https://<target> -v",
+      "description": "Wafw00f https://<target> -v. See the command syntax for exact parameters and flags."
     },
     {
       "command": "wafw00f https://<target> -o output.json -f json",
       "caption": "Save results to JSON",
-      "label": "JSON output"
+      "label": "JSON output",
+      "description": "Detects Web Application Firewalls (WAFs) protecting the target site. Identifying the WAF type helps choose appropriate evasion techniques for bypassing it."
     },
     {
       "command": "pip3 install wafw00f",
       "caption": "Install wafw00f",
-      "label": "pip3"
+      "label": "pip3",
+      "description": "Detects Web Application Firewalls (WAFs) protecting the target site. Identifying the WAF type helps choose appropriate evasion techniques for bypassing it."
     }
   ],
   "examples": [

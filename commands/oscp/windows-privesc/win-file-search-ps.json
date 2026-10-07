@@ -12,37 +12,44 @@
     {
       "command": "Get-ChildItem -Path C:\\xampp -Include *.txt,*.ini -File -Recurse -ErrorAction SilentlyContinue",
       "caption": "Search XAMPP directory for config files with credentials",
-      "label": "Find configs in xampp"
+      "label": "Find configs in xampp",
+      "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
     },
     {
       "command": "Get-ChildItem -Path C:\\Users\\ -Include *.txt,*.pdf,*.xls,*.xlsx,*.doc,*.docx -File -Recurse -ErrorAction SilentlyContinue",
       "caption": "Search all user profiles for document files",
-      "label": "Find office docs in Users"
+      "label": "Find office docs in Users",
+      "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
     },
     {
       "command": "Get-ChildItem -Path C:\\ -Include web.config,*.config,appsettings.json,*.env -File -Recurse -ErrorAction SilentlyContinue",
       "caption": "Hunt for web app config files with DB credentials",
-      "label": "Find web.config"
+      "label": "Find web.config",
+      "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
     },
     {
       "command": "Get-ChildItem -Path C:\\ -Include id_rsa,*.pem,*.ppk -File -Recurse -ErrorAction SilentlyContinue",
       "caption": "Hunt for SSH private keys",
-      "label": "Find id_rsa"
+      "label": "Find id_rsa",
+      "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
     },
     {
       "command": "Get-ChildItem -Path C:\\inetpub -Include *.config,*.xml -File -Recurse -ErrorAction SilentlyContinue | Select-String -Pattern 'password|connectionString' -CaseSensitive:$false",
       "caption": "IIS config: find and grep for password strings",
-      "label": "Find *.config"
+      "label": "Find *.config",
+      "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
     },
     {
       "command": "Get-ChildItem -Path 'C:\\Program Files' -Include *.conf,*.cfg,*.ini -File -Recurse -ErrorAction SilentlyContinue",
       "caption": "Search program files for configuration files",
-      "label": "Find *.conf"
+      "label": "Find *.conf",
+      "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
     },
     {
       "command": "Get-ChildItem -Path C:\\ -Include unattend.xml,sysprep.xml,unattended.xml -File -Recurse -ErrorAction SilentlyContinue",
       "caption": "Hunt for unattend.xml (may contain base64-encoded admin passwords)",
-      "label": "Find unattend.xml"
+      "label": "Find unattend.xml",
+      "description": "Recursively searches for specific file types across directories. Used to locate configuration files, scripts, or documents that may contain sensitive information."
     }
   ],
   "examples": [

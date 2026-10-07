@@ -208,11 +208,13 @@
   "variations": [
     {
       "label": "Kerberos auth",
-      "command": "sudo ldapdomaindump -k -u '<domain>\\<user>' <dc_fqdn> -o loot/"
+      "command": "sudo ldapdomaindump -k -u '<domain>\\<user>' <dc_fqdn> -o loot/",
+      "description": "Runs ldapdomaindump with Kerberos authentication instead of NTLM. Useful when NTLM is disabled or you have a Kerberos ticket but not the plaintext password."
     },
     {
       "label": "Force LDAPS (636)",
-      "command": "sudo ldapdomaindump -u '<domain>\\<user>' -p '<password>' ldaps://<dc_ip> -o loot/"
+      "command": "sudo ldapdomaindump -u '<domain>\\<user>' -p '<password>' ldaps://<dc_ip> -o loot/",
+      "description": "Forces ldapdomaindump to use LDAPS (port 636) for encrypted communication. Required when the DC only accepts LDAP over TLS or to avoid network inspection."
     }
   ],
   "steps": [

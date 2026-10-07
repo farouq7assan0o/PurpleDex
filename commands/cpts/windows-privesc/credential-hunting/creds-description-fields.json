@@ -175,7 +175,8 @@
   "variations": [
     {
       "label": "Domain user descriptions (PowerView)",
-      "command": "Get-DomainUser -Properties samaccountname,description | ?{$_.description} | select samaccountname,description"
+      "command": "Get-DomainUser -Properties samaccountname,description | ?{$_.description} | select samaccountname,description",
+      "description": "Uses PowerView to enumerate domain user accounts with specific property filters for targeted reconnaissance."
     }
   ],
   "steps": [

@@ -179,7 +179,8 @@
   "variations": [
     {
       "label": "Search filenames for secrets",
-      "command": "smbmap -u <user> -p <password> -H <target> -R --depth 5 -A '(password|cred|\\.kdbx)'"
+      "command": "smbmap -u <user> -p <password> -H <target> -R --depth 5 -A '(password|cred|\\.kdbx)'",
+      "description": "Search filenames for secrets. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Recursively lists the contents of an SMB share with smbmap:\n  -u/-p -d <domain>       credentials and domain\n  -H <target>             the host\n  --no-write-check        skip testing write access (faster)\n  -r <share>              recurse into this share\nMaps every file in a department/IT share so you can spot configs, scripts, and backups; add -A '<regex>' to auto-download matches, or --download '<path>' for a single file."

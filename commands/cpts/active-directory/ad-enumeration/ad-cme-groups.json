@@ -183,7 +183,8 @@
   "variations": [
     {
       "label": "NetExec (successor)",
-      "command": "nxc smb <dc_ip> -u <user> -p <password> --groups"
+      "command": "nxc smb <dc_ip> -u <user> -p <password> --groups",
+      "description": "Uses CrackMapExec to enumerate domain groups and their members via SMB. Identifies privileged group memberships for targeting."
     }
   ],
   "explain": "Enumerates domain groups over SMB with CrackMapExec:\n  crackmapexec smb <dc_ip>   authenticate to the DC's SMB service\n  -u/-p                      valid domain credentials\n  --groups                   list all domain groups and their member counts\nQuickly surfaces high-value groups (Domain/Enterprise Admins, Backup Operators) worth targeting; nxc is the maintained rename of the same tool."

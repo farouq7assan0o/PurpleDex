@@ -198,7 +198,8 @@
   "variations": [
     {
       "label": "Enumerate users (null session)",
-      "command": "rpcclient -U \"\" -N <ip> -c enumdomusers"
+      "command": "rpcclient -U \"\" -N <ip> -c enumdomusers",
+      "description": "Enumerate users (null session). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Enumerates a host over a null RPC session with rpcclient:\n  rpcclient -U \"\" <ip>   connect anonymously\nInteractive commands then enumerate the server (srvinfo), domains (enumdomains), shares (netshareenumall), and users (enumdomusers/queryuser); a RID-cycling for-loop recovers usernames even when direct enumeration is blocked."

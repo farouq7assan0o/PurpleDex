@@ -198,11 +198,13 @@
   "variations": [
     {
       "label": "Get-System via named pipe (PowerUp)",
-      "command": "Get-System -Technique NamedPipe"
+      "command": "Get-System -Technique NamedPipe",
+      "description": "Get-System via named pipe (PowerUp). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Token duplication (PowerUp)",
-      "command": "Get-System -Technique Token"
+      "command": "Get-System -Technique Token",
+      "description": "Token duplication (PowerUp). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

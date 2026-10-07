@@ -226,11 +226,13 @@
   "variations": [
     {
       "label": "Grant yourself full control after takeown",
-      "command": "icacls '<target_file>' /grant <user>:F"
+      "command": "icacls '<target_file>' /grant <user>:F",
+      "description": "Grant yourself full control after takeown. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Recursive on a directory",
-      "command": "takeown /f '<target_dir>' /r /d y"
+      "command": "takeown /f '<target_dir>' /r /d y",
+      "description": "Takes ownership of a file or directory using the Windows takeown command. First step in gaining access to files you don't have permissions on - ownership lets you then modify the ACL."
     }
   ],
   "steps": [

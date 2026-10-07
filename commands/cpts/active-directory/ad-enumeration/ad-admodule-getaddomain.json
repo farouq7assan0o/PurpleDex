@@ -192,11 +192,13 @@
   "variations": [
     {
       "label": "Just the key fields",
-      "command": "Get-ADDomain | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator"
+      "command": "Get-ADDomain | select DNSRoot,NetBIOSName,DomainSID,PDCEmulator",
+      "description": "Retrieves domain-level metadata including the domain SID, domain controllers, functional level, and naming context. Essential baseline information for constructing tickets, SID history attacks, and understanding the domain architecture."
     },
     {
       "label": "Forest info",
-      "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs"
+      "command": "Get-ADForest | select Name,RootDomain,Domains,GlobalCatalogs",
+      "description": "Retrieves forest-level information including root domain, child domains, global catalogs, and forest functional level. Maps the forest topology to identify all domains and potential trust-based attack paths."
     }
   ],
   "explain": "Returns the domain's core identity from the ActiveDirectory module:\n  Get-ADDomain   query the current domain object\nGives the domain/NetBIOS name, domain SID, forest root, functional level, and PDC emulator; the domain SID here is what you need for an ExtraSids golden-ticket across a trust. Add -Identity <domain> to read another domain in the forest."

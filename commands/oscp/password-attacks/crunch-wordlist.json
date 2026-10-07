@@ -12,37 +12,44 @@
     {
       "command": "crunch 6 6 -t Lab%%% -o lab-wordlist.txt",
       "caption": "PEN-200 style: 'Lab' + 3 digits (Lab000-Lab999)",
-      "label": "Pattern: Lab%%%"
+      "label": "Pattern: Lab%%%",
+      "description": "Generates a custom wordlist with crunch using a pattern template. Creates passwords matching a specific format (e.g., Company@YYYY, name####) for targeted password attacks."
     },
     {
       "command": "crunch 8 8 0123456789 -o digits8.txt",
       "caption": "All 8-digit numeric passwords",
-      "label": "8-digit numeric"
+      "label": "8-digit numeric",
+      "description": "Generates a custom wordlist with crunch based on character sets and length specifications. Creates targeted password lists for brute-force attacks."
     },
     {
       "command": "crunch 6 6 abcdefghijklmnopqrstuvwxyz0123456789 -o alphanum6.txt",
       "caption": "6-char alphanumeric (lowercase + digits)",
-      "label": "6-char alphanumeric"
+      "label": "6-char alphanumeric",
+      "description": "Generates a custom wordlist with crunch based on character sets and length specifications. Creates targeted password lists for brute-force attacks."
     },
     {
       "command": "crunch 10 10 -t Company%%%^ -o company-pass.txt",
       "caption": "Pattern: 'Company' + 3 digits + 1 symbol",
-      "label": "Pattern: Company%%%^"
+      "label": "Pattern: Company%%%^",
+      "description": "Generates a custom wordlist with crunch using a pattern template. Creates passwords matching a specific format (e.g., Company@YYYY, name####) for targeted password attacks."
     },
     {
       "command": "crunch 4 8 -f /usr/share/crunch/charset.lst mixalpha-numeric -o mixed.txt",
       "caption": "Use built-in charset file for mixed alphanumeric 4-8 chars",
-      "label": "charset.lst (mixalpha-num)"
+      "label": "charset.lst (mixalpha-num)",
+      "description": "Charset.lst (mixalpha-num). See the command syntax for exact parameters and flags."
     },
     {
       "command": "crunch 6 6 -t Lab%%% | hashcat -m 0 <hash_file> --stdin",
       "caption": "Pipe directly to hashcat (no disk write)",
-      "label": "Pipe -> hashcat"
+      "label": "Pipe -> hashcat",
+      "description": "Cracks password hashes with hashcat (mode 0) using GPU acceleration. Supports wordlists, rules, masks, and hybrid attacks for maximum cracking efficiency."
     },
     {
       "command": "crunch 6 6 -t Lab%%% | hydra -l admin -P - ssh://<target>",
       "caption": "Pipe directly to hydra for online brute-force",
-      "label": "Pipe -> hydra (SSH)"
+      "label": "Pipe -> hydra (SSH)",
+      "description": "Brute-forces SSH credentials using Hydra. Tests username/password combinations against the SSH service for initial access."
     }
   ],
   "examples": [

@@ -62,15 +62,18 @@
   "variations": [
     {
       "label": "All 65535 ports",
-      "command": "sudo nmap <ip> -p-"
+      "command": "sudo nmap <ip> -p-",
+      "description": "Runs an nmap scan with all 65535 TCP ports for detailed service enumeration and target analysis."
     },
     {
       "label": "Fast (top 100)",
-      "command": "sudo nmap <ip> -F"
+      "command": "sudo nmap <ip> -F",
+      "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
     },
     {
       "label": "Specific ports / range",
-      "command": "sudo nmap <ip> -p 22,25,80,139,445\nsudo nmap <ip> -p 22-445"
+      "command": "sudo nmap <ip> -p 22,25,80,139,445\nsudo nmap <ip> -p 22-445",
+      "description": "Scans target ports and services using nmap for network reconnaissance and vulnerability discovery."
     }
   ],
   "opsec": "moderate",

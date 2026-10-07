@@ -241,19 +241,23 @@
   "variations": [
     {
       "label": "SharpHound CE (Community Edition)",
-      "command": "SharpHound.exe --collectionmethods All"
+      "command": "SharpHound.exe --collectionmethods All",
+      "description": "Runs SharpHound collector to gather Active Directory data for BloodHound analysis. Collects user sessions, group memberships, ACLs, and trust relationships - the dataset that powers attack path analysis."
     },
     {
       "label": "SharpHound Legacy",
-      "command": "SharpHound.exe --collectionmethods All"
+      "command": "SharpHound.exe --collectionmethods All",
+      "description": "Runs SharpHound collector to gather Active Directory data for BloodHound analysis. Collects user sessions, group memberships, ACLs, and trust relationships - the dataset that powers attack path analysis."
     },
     {
       "label": "SOAPHound - build cache (ADWS, stealthy)",
-      "command": "SOAPHound.exe --buildcache -c <cache_file>"
+      "command": "SOAPHound.exe --buildcache -c <cache_file>",
+      "description": "SOAPHound - build cache (ADWS, stealthy). See the command syntax for exact parameters and flags."
     },
     {
       "label": "SOAPHound - dump BloodHound data",
-      "command": "SOAPHound.exe -c <cache_file> --bhdump -o <output_dir> --nolaps"
+      "command": "SOAPHound.exe -c <cache_file> --bhdump -o <output_dir> --nolaps",
+      "description": "SOAPHound - dump BloodHound data. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Runs the SharpHound collector to gather AD relationship data for BloodHound path analysis:\n  Invoke-BloodHound       the SharpHound.ps1 collection function\n  -CollectionMethod All   collect sessions, ACLs, group membership, trusts, delegation, etc.\n  -OutputDirectory C:\\Temp\\   where to drop the zip\n  -OutputPrefix 'crtp'    prefix for the output files\nImport the resulting zip into BloodHound to see shortest paths to Domain Admin, unconstrained hosts, and ACL abuse edges."

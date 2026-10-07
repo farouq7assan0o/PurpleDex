@@ -37,11 +37,13 @@
   "variations": [
     {
       "label": "List all hosts visible on local network",
-      "command": "net view"
+      "command": "net view",
+      "description": "Discovers other computers and shares on the network. Lists domain machines and their shared resources - basic network reconnaissance from a Windows host."
     },
     {
       "label": "List hosts in a specific domain/workgroup",
-      "command": "net view /domain:<domain>"
+      "command": "net view /domain:<domain>",
+      "description": "Discovers other computers and shares on the network. Lists domain machines and their shared resources - basic network reconnaissance from a Windows host."
     }
   ],
   "examples": [

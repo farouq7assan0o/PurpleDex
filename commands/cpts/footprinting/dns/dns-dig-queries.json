@@ -101,23 +101,28 @@
   "variations": [
     {
       "label": "SOA record",
-      "command": "dig soa www.<domain>.com"
+      "command": "dig soa www.<domain>.com",
+      "description": "Queries the SOA (Start of Authority) record for the domain. Shows the primary name server, admin email, and zone serial number - useful for DNS infrastructure mapping."
     },
     {
       "label": "NS records",
-      "command": "dig ns <domain> @<ip>"
+      "command": "dig ns <domain> @<ip>",
+      "description": "Queries NS (name server) records for the domain. Identifies authoritative DNS servers to target for zone transfers or DNS-based attacks."
     },
     {
       "label": "Version (CHAOS TXT)",
-      "command": "dig CH TXT version.bind <ip>"
+      "command": "dig CH TXT version.bind <ip>",
+      "description": "Queries TXT records for the domain. TXT records often contain SPF policies, DKIM keys, domain verification tokens, and sometimes internal configuration details."
     },
     {
       "label": "ANY records",
-      "command": "dig any <domain> @<ip>"
+      "command": "dig any <domain> @<ip>",
+      "description": "Queries a specific DNS server for domain records. Useful for querying internal DNS servers directly to resolve internal hostnames."
     },
     {
       "label": "AXFR internal zone",
-      "command": "dig axfr internal.<domain> @<ip>"
+      "command": "dig axfr internal.<domain> @<ip>",
+      "description": "Attempts a DNS zone transfer (AXFR) from the target name server. If allowed, dumps all DNS records for the domain - a critical misconfiguration that reveals the complete internal hostname inventory."
     }
   ],
   "opsec": "moderate",

@@ -196,11 +196,13 @@
   "variations": [
     {
       "label": "Null session",
-      "command": "lookupsid.py <domain>/@<dc_ip> -no-pass"
+      "command": "lookupsid.py <domain>/@<dc_ip> -no-pass",
+      "description": "Uses Impacket lookupsid to enumerate domain users and groups by brute-forcing SID values. Works through null sessions or with credentials - effective when other enumeration methods are blocked."
     },
     {
       "label": "Brute RID range",
-      "command": "lookupsid.py <domain>/<user>:<password>@<dc_ip> 10000"
+      "command": "lookupsid.py <domain>/<user>:<password>@<dc_ip> 10000",
+      "description": "Uses Impacket lookupsid to enumerate domain users and groups by brute-forcing SID values. Works through null sessions or with credentials - effective when other enumeration methods are blocked."
     }
   ],
   "steps": [

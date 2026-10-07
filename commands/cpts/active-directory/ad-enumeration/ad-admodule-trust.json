@@ -192,7 +192,8 @@
   "variations": [
     {
       "label": "External/forest trusts only",
-      "command": "Get-ADTrust -Filter '(intraForest -ne $True) -and (ForestTransitive -ne $True)'"
+      "command": "Get-ADTrust -Filter '(intraForest -ne $True) -and (ForestTransitive -ne $True)'",
+      "description": "Enumerates Active Directory trust relationships showing direction, type, and trust attributes. Cross-domain and cross-forest trusts create attack paths - a bidirectional trust means you can potentially pivot between domains."
     }
   ],
   "explain": "Lists this domain's trust relationships:\n  Get-ADTrust -Filter *   return every configured trust\nShows each trust's direction (Inbound/Outbound/Bidirectional), type (Forest/External/Realm), and whether SID filtering is on - the first thing to check before attempting a cross-domain/forest attack. Add -Server <domain> to read another domain's trusts."

@@ -197,15 +197,18 @@
   "variations": [
     {
       "label": "Find unquoted paths (WMIC)",
-      "command": "wmic service get name,pathname,startmode | findstr /i /v \"C:\\Windows\\\\\" | findstr /i /v '\\\"'"
+      "command": "wmic service get name,pathname,startmode | findstr /i /v \"C:\\Windows\\\\\" | findstr /i /v '\\\"'",
+      "description": "Find unquoted paths (WMIC). See the command syntax for exact parameters and flags."
     },
     {
       "label": "PowerUp",
-      "command": "Get-ServiceUnquoted -Verbose"
+      "command": "Get-ServiceUnquoted -Verbose",
+      "description": "Lists Windows services and their status. Identifies interesting services, unquoted service paths, weak service permissions, and services running as high-privilege accounts."
     },
     {
       "label": "PowerUp alias (OSCP PEN-200 Ch16)",
-      "command": "Get-UnquotedService   # renamed alias of Get-ServiceUnquoted in newer PowerUp"
+      "command": "Get-UnquotedService   # renamed alias of Get-ServiceUnquoted in newer PowerUp",
+      "description": "Lists Windows services and their status. Identifies interesting services, unquoted service paths, weak service permissions, and services running as high-privilege accounts."
     }
   ],
   "steps": [

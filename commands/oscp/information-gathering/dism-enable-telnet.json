@@ -35,11 +35,13 @@
   "variations": [
     {
       "label": "Check if TelnetClient is already installed",
-      "command": "dism /online /Get-Features | findstr /i telnet"
+      "command": "dism /online /Get-Features | findstr /i telnet",
+      "description": "Check if TelnetClient is already installed. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Enable via PowerShell (alternative)",
-      "command": "Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient"
+      "command": "Enable-WindowsOptionalFeature -Online -FeatureName TelnetClient",
+      "description": "Enable via PowerShell (alternative). See the command syntax for exact parameters and flags."
     }
   ],
   "examples": [

@@ -93,15 +93,18 @@
   "variations": [
     {
       "label": "onesixtyone - brute community strings",
-      "command": "onesixtyone -c /opt/useful/seclists/Discovery/SNMP/snmp.txt <ip>"
+      "command": "onesixtyone -c /opt/useful/seclists/Discovery/SNMP/snmp.txt <ip>",
+      "description": "Onesixtyone - brute community strings. See the command syntax for exact parameters and flags."
     },
     {
       "label": "braa - OID brute force",
-      "command": "braa public@<ip>:.1.3.6.*"
+      "command": "braa public@<ip>:.1.3.6.*",
+      "description": "Performs mass SNMP queries using braa. Faster than snmpwalk for querying multiple OIDs or multiple hosts simultaneously."
     },
     {
       "label": "nmap - discover SNMP hosts on subnet, greppable output (OSCP Ch6 canonical first step)",
-      "command": "sudo nmap -sU --open -p 161 <cidr> -oG open-snmp.txt\n# Then feed discovered IPs to onesixtyone + snmpwalk\ngrep 'Up' open-snmp.txt | cut -d' ' -f2 > snmp-targets.txt"
+      "command": "sudo nmap -sU --open -p 161 <cidr> -oG open-snmp.txt\n# Then feed discovered IPs to onesixtyone + snmpwalk\ngrep 'Up' open-snmp.txt | cut -d' ' -f2 > snmp-targets.txt",
+      "description": "Performs a host discovery sweep (ping scan) without port scanning. Quickly identifies live hosts on the network for further enumeration."
     },
     {
       "description": "SNMPv1 walk with timeout (for slow/unreliable targets)",

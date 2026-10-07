@@ -181,7 +181,8 @@
   "variations": [
     {
       "label": "NetExec local-auth PtH sweep",
-      "command": "nxc smb <cidr> --local-auth -u administrator -H <nt_hash>"
+      "command": "nxc smb <cidr> --local-auth -u administrator -H <nt_hash>",
+      "description": "Authenticates using local (SAM) credentials instead of domain credentials. Tests whether a local admin password or hash works on target machines."
     }
   ],
   "steps": [

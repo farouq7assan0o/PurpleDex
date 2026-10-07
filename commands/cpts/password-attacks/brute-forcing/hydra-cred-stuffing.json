@@ -174,11 +174,13 @@
   "variations": [
     {
       "label": "HTTP POST form",
-      "command": "hydra -L users.txt -P pass.txt <ip> http-post-form \"/login:user=^USER^&pass=^PASS^:F=incorrect\""
+      "command": "hydra -L users.txt -P pass.txt <ip> http-post-form \"/login:user=^USER^&pass=^PASS^:F=incorrect\"",
+      "description": "Brute-forces web application login forms using Hydra. Tests username/password combinations against HTTP-based authentication."
     },
     {
       "label": "Single service, user:pass list",
-      "command": "hydra -C <userpass_list> <service>://<ip>"
+      "command": "hydra -C <userpass_list> <service>://<ip>",
+      "description": "Single service, user:pass list. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Replays known user:password pairs against a service (credential stuffing):\n  hydra                    the online cracker\n  -C <userpass_list>       a combined file of user:pass pairs - test each pair as-is, not every combination\n  ssh://<ip>               the service and target\nUse to replay credentials leaked or found elsewhere; the variation shows the http-post-form syntax for web login forms."

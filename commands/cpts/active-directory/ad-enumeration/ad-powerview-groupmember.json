@@ -195,7 +195,8 @@
   "variations": [
     {
       "label": "Domain Admins recursively",
-      "command": "Get-DomainGroupMember -Identity 'Domain Admins' -Recurse | select MemberName"
+      "command": "Get-DomainGroupMember -Identity 'Domain Admins' -Recurse | select MemberName",
+      "description": "Uses PowerView to enumerate administrative and privileged groups in the domain for attack path mapping."
     }
   ],
   "explain": "Expands group membership, including nested groups, with PowerView:\n  Get-DomainGroupMember -Identity \"<group>\"   list the group's members\n  -Recurse                                    follow nested group membership to the real effective members\nReveals who actually holds privileged rights (Domain Admins membership is often nested several levels deep) - the true target list for compromise."

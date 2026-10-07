@@ -224,23 +224,28 @@
   "variations": [
     {
       "label": "Kerberoastable users (has SPN)",
-      "command": "Get-ADUser -LDAPFilter '(&(objectClass=user)(servicePrincipalName=*))' -Properties servicePrincipalName | select samaccountname"
+      "command": "Get-ADUser -LDAPFilter '(&(objectClass=user)(servicePrincipalName=*))' -Properties servicePrincipalName | select samaccountname",
+      "description": "Finds all AD user accounts with a Service Principal Name (SPN) set - these accounts are vulnerable to Kerberoasting, where their service ticket can be requested and cracked offline to recover the password."
     },
     {
       "label": "Protected Users group members",
-      "command": "Get-ADGroupMember -Identity 'Protected Users'"
+      "command": "Get-ADGroupMember -Identity 'Protected Users'",
+      "description": "Queries Active Directory group objects to enumerate group memberships and identify privilege relationships."
     },
     {
       "label": "Disabled accounts (LDAP bitwise)",
-      "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.803:=2)' | select samaccountname"
+      "command": "Get-ADUser -LDAPFilter '(userAccountControl:1.2.840.113556.1.4.803:=2)' | select samaccountname",
+      "description": "Queries Active Directory user objects with specific filters to identify accounts of interest for further enumeration or attack."
     },
     {
       "label": "OU-scoped user search",
-      "command": "Get-ADUser -SearchBase 'OU=Servers,DC=<domain>' -Filter * | select samaccountname"
+      "command": "Get-ADUser -SearchBase 'OU=Servers,DC=<domain>' -Filter * | select samaccountname",
+      "description": "Searches for user accounts within a specific Organizational Unit (OU). Scoping enumeration to an OU helps focus on a particular department or admin boundary rather than enumerating the entire domain."
     },
     {
       "label": "PowerView equivalents",
-      "command": "Get-DomainUser -PreauthNotRequired; Get-DomainComputer -Unconstrained; Get-DomainUser -AdminCount"
+      "command": "Get-DomainUser -PreauthNotRequired; Get-DomainComputer -Unconstrained; Get-DomainUser -AdminCount",
+      "description": "Uses PowerView to find accounts with Kerberos pre-auth disabled. These are AS-REP Roastable - you can request and crack their authentication data without needing any credentials."
     }
   ],
   "explain": "A set of LDAP / AD-module filter queries that pinpoint attack targets without noisy full dumps. The lead example finds AS-REP roastable accounts:\n  Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true}   accounts with pre-auth disabled\n  -Properties DoesNotRequirePreAuth   include that attribute in the output\nOther queries in the set cover Kerberoastable (servicePrincipalName=*), disabled accounts (userAccountControl bitwise), adminCount=1, Protected Users, and OU-scoped searches - each returns just the principals worth attacking."

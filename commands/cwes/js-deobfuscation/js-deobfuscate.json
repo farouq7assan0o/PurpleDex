@@ -100,11 +100,13 @@
   "variations": [
     {
       "label": "Beautify with prettier",
-      "command": "prettier --parser babel main.js > main.pretty.js"
+      "command": "prettier --parser babel main.js > main.pretty.js",
+      "description": "Runs prettier for code formatting. Standardizes JSON or script formatting for consistency."
     },
     {
       "label": "Find all script sources on a page",
-      "command": "curl -s http://<target>/ | grep -oE 'src=\"[^\"]+\\.js\"' | cut -d'\"' -f2"
+      "command": "curl -s http://<target>/ | grep -oE 'src=\"[^\"]+\\.js\"' | cut -d'\"' -f2",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     }
   ],
   "defense": {

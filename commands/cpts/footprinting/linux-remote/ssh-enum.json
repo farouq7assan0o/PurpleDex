@@ -70,15 +70,18 @@
   "variations": [
     {
       "label": "ssh-audit",
-      "command": "git clone https://github.com/jtesta/ssh-audit.git && cd ssh-audit\n./ssh-audit.py <ip>"
+      "command": "git clone https://github.com/jtesta/ssh-audit.git && cd ssh-audit\n./ssh-audit.py <ip>",
+      "description": "Clones a git repository. Exposed .git directories on web servers or accessible repos may contain source code, credentials, and configuration secrets."
     },
     {
       "label": "Enumerate auth methods (verbose)",
-      "command": "ssh -v <user>@<ip>"
+      "command": "ssh -v <user>@<ip>",
+      "description": "Connects to a remote host via SSH. Provides encrypted shell access and can create tunnels for pivoting."
     },
     {
       "label": "Force password auth",
-      "command": "ssh -v <user>@<ip> -o PreferredAuthentications=password"
+      "command": "ssh -v <user>@<ip> -o PreferredAuthentications=password",
+      "description": "Connects to a remote host via SSH. Provides encrypted shell access and can create tunnels for pivoting."
     }
   ],
   "opsec": "moderate",

@@ -191,11 +191,13 @@
   "variations": [
     {
       "label": "Analyze-only (no poisoning)",
-      "command": "sudo responder -I <interface> -A"
+      "command": "sudo responder -I <interface> -A",
+      "description": "Analyze-only (no poisoning). See the command syntax for exact parameters and flags."
     },
     {
       "label": "With WPAD + verbose",
-      "command": "sudo responder -I <interface> -wv"
+      "command": "sudo responder -I <interface> -wv",
+      "description": "Executes a command with root privileges through sudo. Requires sudo permissions for the specific command."
     }
   ],
   "steps": [

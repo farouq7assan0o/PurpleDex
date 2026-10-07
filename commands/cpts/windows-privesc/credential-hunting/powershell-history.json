@@ -200,7 +200,8 @@
   "variations": [
     {
       "label": "All users' history",
-      "command": "Get-ChildItem C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\PowerShell\\PSReadline\\ConsoleHost_history.txt | gc"
+      "command": "Get-ChildItem C:\\Users\\*\\AppData\\Roaming\\Microsoft\\Windows\\PowerShell\\PSReadline\\ConsoleHost_history.txt | gc",
+      "description": "Lists files in user profile directories. User home folders contain browser data, SSH keys, credential files, and application configs with stored passwords."
     }
   ],
   "explain": "Reads the PSReadLine history file, which often holds passwords typed on the command line:\n  gc (Get-PSReadLineOption).HistorySavePath   print your own console history\nThe variation reads every user's ConsoleHost_history.txt under C:\\Users\\*\\...\\PSReadline\\ - credentials passed as arguments to scripts/cmdlets frequently sit there in cleartext."

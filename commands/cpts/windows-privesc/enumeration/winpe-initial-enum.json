@@ -87,27 +87,33 @@
   "variations": [
     {
       "label": "System / patches",
-      "command": "systeminfo\nwmic qfe\nGet-HotFix | ft -AutoSize\nset"
+      "command": "systeminfo\nwmic qfe\nGet-HotFix | ft -AutoSize\nset",
+      "description": "Displays detailed system information including OS version, architecture, domain, hotfixes, and network configuration. Used to identify the OS build for kernel exploit selection."
     },
     {
       "label": "Processes / services",
-      "command": "tasklist /svc\nsc query\nwmic product get name\nGet-WmiObject -Class Win32_Product | select Name,Version"
+      "command": "tasklist /svc\nsc query\nwmic product get name\nGet-WmiObject -Class Win32_Product | select Name,Version",
+      "description": "Lists running processes and their PIDs. Identifies security products (AV/EDR), running services, and applications for targeting or evasion planning."
     },
     {
       "label": "Network",
-      "command": "netstat -ano\nipconfig /all\narp -a\nroute print"
+      "command": "netstat -ano\nipconfig /all\narp -a\nroute print",
+      "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
     },
     {
       "label": "CimInstance services",
-      "command": "Get-CimInstance -ClassName win32_service | Select Name,State,PathName | Where-Object {$_.State -like 'Running'}\nGet-CimInstance win32_service | Where-Object {$_.StartName -notmatch 'LocalSystem|LocalService|NetworkService'} | Select Name,StartName,PathName"
+      "command": "Get-CimInstance -ClassName win32_service | Select Name,State,PathName | Where-Object {$_.State -like 'Running'}\nGet-CimInstance win32_service | Where-Object {$_.StartName -notmatch 'LocalSystem|LocalService|NetworkService'} | Select Name,StartName,PathName",
+      "description": "CimInstance services - outputs Name, State, PathName, with targeted filtering."
     },
     {
       "label": "CimInstance patches",
-      "command": "Get-CimInstance -Class win32_quickfixengineering | Where-Object { $_.Description -eq 'Security Update' } | Select HotFixID,InstalledOn | Sort InstalledOn"
+      "command": "Get-CimInstance -Class win32_quickfixengineering | Where-Object { $_.Description -eq 'Security Update' } | Select HotFixID,InstalledOn | Sort InstalledOn",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "PS history",
-      "command": "Get-History\nGet-Content \"$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt\""
+      "command": "Get-History\nGet-Content \"$env:APPDATA\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt\"",
+      "description": "Reads the PowerShell command history of the current or another user. Previous commands often contain plaintext passwords, credentials in command-line arguments, and connection strings."
     }
   ],
   "opsec": "moderate",

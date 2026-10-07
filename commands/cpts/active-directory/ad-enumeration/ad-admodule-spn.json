@@ -189,7 +189,8 @@
   "variations": [
     {
       "label": "Show the SPN values",
-      "command": "Get-ADUser -Filter {ServicePrincipalName -ne \"$null\"} -Properties ServicePrincipalName | select name,ServicePrincipalName"
+      "command": "Get-ADUser -Filter {ServicePrincipalName -ne \"$null\"} -Properties ServicePrincipalName | select name,ServicePrincipalName",
+      "description": "Finds all AD user accounts with a Service Principal Name (SPN) set - these accounts are vulnerable to Kerberoasting, where their service ticket can be requested and cracked offline to recover the password."
     }
   ],
   "steps": [

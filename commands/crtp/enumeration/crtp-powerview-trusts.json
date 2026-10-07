@@ -198,19 +198,23 @@
   "variations": [
     {
       "label": "Forest object",
-      "command": "Get-Forest -Forest <forest>"
+      "command": "Get-Forest -Forest <forest>",
+      "description": "Retrieves forest-level metadata including the root domain, forest functional level, and trust information using PowerView. Overview of the forest architecture."
     },
     {
       "label": "Forest global catalogs",
-      "command": "Get-ForestGlobalCatalog -Forest <forest>"
+      "command": "Get-ForestGlobalCatalog -Forest <forest>",
+      "description": "Lists Global Catalog servers in the forest using PowerView. GC servers hold a partial replica of all domains and can be queried for cross-domain user/group information."
     },
     {
       "label": "Forest trusts (external/forest)",
-      "command": "Get-ForestTrust -Forest <forest>"
+      "command": "Get-ForestTrust -Forest <forest>",
+      "description": "Forest trusts (external/forest). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Get-DomainTrustMapping (recursive full trust map)",
-      "command": "Get-DomainTrustMapping"
+      "command": "Get-DomainTrustMapping",
+      "description": "Uses PowerView to enumerate domain trust relationships. Trust direction and type determine whether you can pivot across domain boundaries and which attacks (SID history, TGT forging) apply."
     }
   ],
   "explain": "Enumerates trust relationships to find lateral paths across domain/forest boundaries:\n  Get-DomainTrust          list this domain's trusts\n  | select SourceName,TargetName,TrustDirection,TrustType   the endpoints, direction, and kind of each trust\nAdd Get-ForestTrust for forest trusts and Get-DomainTrustMapping to recursively map the whole trust graph - the direction and type tell you which trusts can be abused (e.g. SID History via a parent-child trust)."

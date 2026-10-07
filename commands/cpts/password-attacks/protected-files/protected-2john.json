@@ -89,19 +89,23 @@
   "variations": [
     {
       "label": "SSH Key",
-      "command": "ssh2john.py <keyfile> > ssh.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt ssh.hash\njohn ssh.hash --show"
+      "command": "ssh2john.py <keyfile> > ssh.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt ssh.hash\njohn ssh.hash --show",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "Office Doc",
-      "command": "office2john.py <file> > office.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt office.hash\njohn office.hash --show"
+      "command": "office2john.py <file> > office.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt office.hash\njohn office.hash --show",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "PDF",
-      "command": "pdf2john.py <file> > pdf.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt pdf.hash\njohn pdf.hash --show"
+      "command": "pdf2john.py <file> > pdf.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt pdf.hash\njohn pdf.hash --show",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "ZIP Archive",
-      "command": "zip2john <file> > zip.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt zip.hash\njohn zip.hash --show"
+      "command": "zip2john <file> > zip.hash\njohn --wordlist=/usr/share/wordlists/rockyou.txt zip.hash\njohn zip.hash --show",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     }
   ],
   "opsec": "silent",

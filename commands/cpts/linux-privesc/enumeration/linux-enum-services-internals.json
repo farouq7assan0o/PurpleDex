@@ -87,15 +87,18 @@
   "variations": [
     {
       "label": "Processes / proc",
-      "command": "ps aux | grep root\nfind /proc -name cmdline -exec cat {} \\; 2>/dev/null | tr \" \" \"\\n\"\nfind / -type f \\( -name *_hist -o -name *_history \\) -exec ls -l {} \\; 2>/dev/null"
+      "command": "ps aux | grep root\nfind /proc -name cmdline -exec cat {} \\; 2>/dev/null | tr \" \" \"\\n\"\nfind / -type f \\( -name *_hist -o -name *_history \\) -exec ls -l {} \\; 2>/dev/null",
+      "description": "Lists all running processes with their user context. Identifies services running as root, reveals running applications, and may expose command-line credentials."
     },
     {
       "label": "Packages / binaries",
-      "command": "apt list --installed | tr \"/\" \" \" | cut -d\" \" -f1,3 | sed 's/[0-9]://g' | tee -a installed_pkgs.list\nsudo -V\nls -l /bin /usr/bin/ /usr/sbin/"
+      "command": "apt list --installed | tr \"/\" \" \" | cut -d\" \" -f1,3 | sed 's/[0-9]://g' | tee -a installed_pkgs.list\nsudo -V\nls -l /bin /usr/bin/ /usr/sbin/",
+      "description": "Installs or manages packages on Debian/Ubuntu. If apt can be run via sudo, it can be exploited for privilege escalation through its changelog or pre/post hooks."
     },
     {
       "label": "Configs / scripts",
-      "command": "find / -type f \\( -name *.conf -o -name *.config \\) -exec ls -l {} \\; 2>/dev/null\nfind / -type f -name \"*.sh\" 2>/dev/null | grep -v \"src\\|snap\\|share\"\nstrace ping -c1 <ip>"
+      "command": "find / -type f \\( -name *.conf -o -name *.config \\) -exec ls -l {} \\; 2>/dev/null\nfind / -type f -name \"*.sh\" 2>/dev/null | grep -v \"src\\|snap\\|share\"\nstrace ping -c1 <ip>",
+      "description": "Searches the filesystem for configuration files that may contain credentials. Common hiding places for passwords, database connection strings, and API keys."
     }
   ],
   "opsec": "moderate",

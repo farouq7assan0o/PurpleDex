@@ -84,15 +84,18 @@
   "variations": [
     {
       "label": "SSH",
-      "command": "hydra -L <userlist> -P <wordlist> ssh://<ip>"
+      "command": "hydra -L <userlist> -P <wordlist> ssh://<ip>",
+      "description": "Brute-forces SSH credentials using Hydra. Tests username/password combinations against the SSH service for initial access."
     },
     {
       "label": "RDP",
-      "command": "hydra -L <userlist> -P <wordlist> rdp://<ip> -t 4"
+      "command": "hydra -L <userlist> -P <wordlist> rdp://<ip> -t 4",
+      "description": "Brute-forces RDP credentials using Hydra. Tests login combinations against the Remote Desktop service."
     },
     {
       "label": "SMB",
-      "command": "hydra -L <userlist> -P <wordlist> smb://<ip>"
+      "command": "hydra -L <userlist> -P <wordlist> smb://<ip>",
+      "description": "Brute-forces SMB credentials using Hydra. Tests login combinations against the Windows file sharing service."
     }
   ],
   "opsec": "loud",

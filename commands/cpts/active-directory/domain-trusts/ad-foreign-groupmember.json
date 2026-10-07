@@ -187,11 +187,13 @@
   "variations": [
     {
       "label": "Foreign users (our principals in their groups)",
-      "command": "Get-DomainForeignUser -Domain <foreign_domain>"
+      "command": "Get-DomainForeignUser -Domain <foreign_domain>",
+      "description": "Identifies domain users who are members of groups in other (foreign) domains. These cross-domain memberships create attack paths for pivoting between domains via trust relationships."
     },
     {
       "label": "Map all trusts first",
-      "command": "Get-DomainTrustMapping"
+      "command": "Get-DomainTrustMapping",
+      "description": "Uses PowerView to enumerate domain trust relationships. Trust direction and type determine whether you can pivot across domain boundaries and which attacks (SID history, TGT forging) apply."
     }
   ],
   "steps": [

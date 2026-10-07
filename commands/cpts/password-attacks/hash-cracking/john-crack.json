@@ -74,31 +74,38 @@
   "variations": [
     {
       "label": "Single Mode",
-      "command": "john --single <hash_file>"
+      "command": "john --single <hash_file>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "Specify Format",
-      "command": "john --wordlist=/usr/share/wordlists/rockyou.txt --format=<format> <hash_file>"
+      "command": "john --wordlist=/usr/share/wordlists/rockyou.txt --format=<format> <hash_file>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "Show Cracked",
-      "command": "john --show <hash_file>"
+      "command": "john --show <hash_file>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "SSH key passphrase rules",
-      "command": "john --wordlist=<wordlist> --rules=sshRules <hash_file>"
+      "command": "john --wordlist=<wordlist> --rules=sshRules <hash_file>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "Incremental mode (brute all chars)",
-      "command": "john --incremental <hash_file>"
+      "command": "john --incremental <hash_file>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "Multiple formats auto-detect list",
-      "command": "john --list=formats | grep -i <type>"
+      "command": "john --list=formats | grep -i <type>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "Restore interrupted session",
-      "command": "john --restore"
+      "command": "john --restore",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     }
   ],
   "opsec": "silent",

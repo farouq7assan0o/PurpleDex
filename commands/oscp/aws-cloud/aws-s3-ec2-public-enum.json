@@ -61,11 +61,13 @@
   "variations": [
     {
       "label": "List all EC2 instances in the account",
-      "command": "aws --profile <profile> ec2 describe-instances"
+      "command": "aws --profile <profile> ec2 describe-instances",
+      "description": "Lists EC2 instances with their metadata. Shows instance IDs, IPs, security groups, IAM roles, and tags - essential for mapping the compute infrastructure."
     },
     {
       "label": "EC2 instances with public IPs only",
-      "command": "aws --profile <profile> ec2 describe-instances --query \"Reservations[].Instances[?PublicIpAddress].{Id:InstanceId,IP:PublicIpAddress,State:State.Name}\" --output table"
+      "command": "aws --profile <profile> ec2 describe-instances --query \"Reservations[].Instances[?PublicIpAddress].{Id:InstanceId,IP:PublicIpAddress,State:State.Name}\" --output table",
+      "description": "Lists EC2 instances with their metadata. Shows instance IDs, IPs, security groups, IAM roles, and tags - essential for mapping the compute infrastructure."
     }
   ],
   "notes": "S3 bucket ACLs: 'public' means s3:ListBucket is granted to AllUsers or AuthenticatedUsers. A 403 on aws s3 ls means the bucket exists but you lack permission (still confirms the bucket name). A NoSuchBucket error means it truly doesn't exist. EC2 AMIs: --executable-users all returns AMIs that are publicly available (Public=true). --executable-users self returns AMIs the current account owns and can launch. EBS snapshots with --executable-users all list publicly shared snapshots - attackers can create a volume from them and mount in their own account. describe-images with no filter returns thousands of results; always filter by name/description/keyword. Public AMIs may contain hard-coded credentials, SSH keys, or other sensitive data embedded in the image.",

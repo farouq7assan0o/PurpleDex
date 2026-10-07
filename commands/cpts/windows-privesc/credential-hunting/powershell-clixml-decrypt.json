@@ -179,7 +179,8 @@
   "variations": [
     {
       "label": "One-liner",
-      "command": "(Import-Clixml '<cred_xml>').GetNetworkCredential().Password"
+      "command": "(Import-Clixml '<cred_xml>').GetNetworkCredential().Password",
+      "description": "Reads PowerShell credentials stored in an encrypted XML file. If the DPAPI key is available (same user context), the password is decrypted automatically."
     }
   ],
   "steps": [

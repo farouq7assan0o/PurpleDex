@@ -68,19 +68,23 @@
   "variations": [
     {
       "label": "With periodic progress",
-      "command": "sudo nmap <ip> -p- -sV --stats-every=5s"
+      "command": "sudo nmap <ip> -p- -sV --stats-every=5s",
+      "description": "Runs an nmap scan with version detection, TCP connect scan, all 65535 TCP ports, periodic progress reporting for detailed service enumeration and target analysis."
     },
     {
       "label": "Verbose (report opens as found)",
-      "command": "sudo nmap <ip> -p- -sV -v"
+      "command": "sudo nmap <ip> -p- -sV -v",
+      "description": "Runs an nmap scan with version detection, all 65535 TCP ports, verbose output (reports open ports as found) for detailed service enumeration and target analysis."
     },
     {
       "label": "With packet trace",
-      "command": "sudo nmap <ip> -p- -sV -Pn -n --disable-arp-ping --packet-trace"
+      "command": "sudo nmap <ip> -p- -sV -Pn -n --disable-arp-ping --packet-trace",
+      "description": "Runs an nmap scan with version detection, all 65535 TCP ports, aggressive mode (OS detection, versions, scripts, traceroute), packet trace/reason diagnostics for detailed service enumeration and target analysis."
     },
     {
       "label": "OS detection with aggressive guess (OSCP Ch6 canonical)",
-      "command": "sudo nmap -O <ip> --osscan-guess\n# -O = enable OS detection (requires root)\n# --osscan-guess = lower the confidence threshold; still reports best guess even when match is ambiguous\n# Follow with -sT -A for service+script details on the same host"
+      "command": "sudo nmap -O <ip> --osscan-guess\n# -O = enable OS detection (requires root)\n# --osscan-guess = lower the confidence threshold; still reports best guess even when match is ambiguous\n# Follow with -sT -A for service+script details on the same host",
+      "description": "Runs an nmap scan with TCP connect scan, aggressive mode (OS detection, versions, scripts, traceroute), OS detection, aggressive OS fingerprint guessing for detailed service enumeration and target analysis."
     }
   ],
   "opsec": "moderate",

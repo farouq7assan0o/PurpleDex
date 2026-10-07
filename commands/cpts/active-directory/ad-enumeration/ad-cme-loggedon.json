@@ -168,15 +168,18 @@
   "variations": [
     {
       "label": "NetExec",
-      "command": "nxc smb <target> -u <user> -p <password> --loggedon-users"
+      "command": "nxc smb <target> -u <user> -p <password> --loggedon-users",
+      "description": "Uses CrackMapExec for password spraying - testing a single password against multiple user accounts. Respects lockout policies by using one password per spray round."
     },
     {
       "label": "qwinsta - native session enum (from a foothold)",
-      "command": "qwinsta /server:<target>"
+      "command": "qwinsta /server:<target>",
+      "description": "Uses the native Windows qwinsta command to enumerate terminal/RDP sessions on a remote server. Built-in tool that works without importing external modules - shows active, disconnected, and listening sessions."
     },
     {
       "label": "query user / quser - who is logged on",
-      "command": "query user /server:<target>"
+      "command": "query user /server:<target>",
+      "description": "Uses the native Windows query user command to show who is logged into a remote machine. Built-in alternative to PowerView session enumeration - shows username, session type, idle time, and logon time."
     }
   ],
   "explain": "Finds who is currently logged on to a host via SMB:\n  crackmapexec smb <target>   connect to the target's SMB service\n  -u/-p                       valid domain credentials\n  --loggedon-users            call NetWkstaUserEnum to list active sessions\nReveals where privileged users have live sessions so you can target that host for lateral movement or credential theft; sweep a /23 and grep for 'admin' or 'Pwn3d'."

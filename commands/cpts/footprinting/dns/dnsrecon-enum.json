@@ -44,19 +44,23 @@
   "variations": [
     {
       "label": "Subdomain brute force with wordlist",
-      "command": "dnsrecon -d <domain> -D <wordlist> -t brt"
+      "command": "dnsrecon -d <domain> -D <wordlist> -t brt",
+      "description": "Subdomain brute force with wordlist. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Zone transfer only",
-      "command": "dnsrecon -d <domain> -t axfr"
+      "command": "dnsrecon -d <domain> -t axfr",
+      "description": "Attempts zone transfers against all name servers for the domain using dnsrecon. Automated approach that tries AXFR against every NS record."
     },
     {
       "label": "Reverse PTR sweep on a CIDR",
-      "command": "dnsrecon -r <cidr> -t rvl"
+      "command": "dnsrecon -r <cidr> -t rvl",
+      "description": "Reverse PTR sweep on a CIDR. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Save output to XML",
-      "command": "dnsrecon -d <domain> -t std -x /tmp/dns-<domain>.xml"
+      "command": "dnsrecon -d <domain> -t std -x /tmp/dns-<domain>.xml",
+      "description": "Performs comprehensive DNS enumeration including zone transfers, brute-forcing, and record queries. Automates multiple DNS reconnaissance techniques."
     }
   ],
   "notes": "Run `-t std` first - if AXFR succeeds you get every record in one shot. Follow with `-t brt` against the NS servers found. Wildcard DNS (*.domain resolves to a single IP) can produce false positives in brute force; dnsrecon flags this automatically. Check MX, TXT/SPF, and NS records manually for third-party services and internal naming patterns. Also covered in: OSCP PEN-200 Chapter 6 (Information Gathering).",

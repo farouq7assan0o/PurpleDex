@@ -191,7 +191,8 @@
   "variations": [
     {
       "label": "Pass-the-hash check",
-      "command": "set SMBPass <nt_hash>; set SMBUser administrator; run"
+      "command": "set SMBPass <nt_hash>; set SMBUser administrator; run",
+      "description": "Configures a Metasploit SMB module for pass-the-hash authentication. Tests whether a stolen NTLM hash grants access to target machines without the plaintext password."
     }
   ],
   "steps": [

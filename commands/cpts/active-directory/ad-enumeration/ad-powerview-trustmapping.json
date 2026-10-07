@@ -188,7 +188,8 @@
   "variations": [
     {
       "label": "External trusts only",
-      "command": "Get-DomainTrust | ?{$_.TrustAttributes -notmatch 'WITHIN_FOREST'}"
+      "command": "Get-DomainTrust | ?{$_.TrustAttributes -notmatch 'WITHIN_FOREST'}",
+      "description": "Uses PowerView to enumerate domain trust relationships. Trust direction and type determine whether you can pivot across domain boundaries and which attacks (SID history, TGT forging) apply."
     }
   ],
   "explain": "Maps every trust reachable in the environment with PowerView:\n  Get-DomainTrustMapping   recursively walk trusts from the current domain outward\nUnlike Get-ADTrust (current domain only) this reveals the full forest/inter-forest trust graph - filter for Bidirectional trusts to find the widest attack paths between domains."

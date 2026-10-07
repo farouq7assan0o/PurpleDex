@@ -207,7 +207,8 @@
   "variations": [
     {
       "label": "PowerUp",
-      "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>'"
+      "command": "Invoke-ServiceAbuse -Name '<service>' -UserName '<domain>\\<user>'",
+      "description": "Exploits a vulnerable Windows service using PowerUp. Replaces the service binary or modifies its configuration to execute a payload as SYSTEM when the service restarts."
     }
   ],
   "steps": [

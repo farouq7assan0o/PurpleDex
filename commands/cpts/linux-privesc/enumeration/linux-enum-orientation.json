@@ -117,15 +117,18 @@
   "variations": [
     {
       "label": "Identity",
-      "command": "whoami\nid\nhostname\nsudo -l"
+      "command": "whoami\nid\nhostname\nsudo -l",
+      "description": "Lists the commands the current user can run via sudo. Sudo misconfigurations (NOPASSWD entries, wildcard paths, or GTFOBins-eligible commands) are a primary privilege escalation vector on Linux."
     },
     {
       "label": "OS / kernel",
-      "command": "cat /etc/os-release\nuname -a\ncat /proc/version\nlscpu\ncat /etc/shells"
+      "command": "cat /etc/os-release\nuname -a\ncat /proc/version\nlscpu\ncat /etc/shells",
+      "description": "Displays kernel version and OS details. Identifies the exact kernel version for matching against known local privilege escalation exploits (DirtyPipe, DirtyCow, etc.)."
     },
     {
       "label": "PATH / env",
-      "command": "echo $PATH\nenv"
+      "command": "echo $PATH\nenv",
+      "description": "Writes text to a file or stdout for various post-exploitation purposes (persistence, payload deployment, or file manipulation)."
     }
   ],
   "opsec": "moderate",

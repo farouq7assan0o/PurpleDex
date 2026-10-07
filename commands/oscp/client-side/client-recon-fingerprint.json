@@ -33,7 +33,8 @@
   "variations": [
     {
       "label": "Passive: read metadata from a document the target sent you",
-      "command": "exiftool -a -u <document>"
+      "command": "exiftool -a -u <document>",
+      "description": "Passive: read metadata from a document the target sent you. See the command syntax for exact parameters and flags."
     }
   ],
   "examples": [

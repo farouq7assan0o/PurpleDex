@@ -66,11 +66,13 @@
   "variations": [
     {
       "label": "Scanner options available via interactive TUI",
-      "command": "# 1-aclcheck  2-antivirus  3-computerversion  4-foreignusers\n# 5-laps_bitlocker  6-localadmin  7-nullsession  8-nullsession-trust\n# 9-oxidbindings  a-remote  b-share  c-smb  d-smb3querynetwork\n# e-spooler  f-startup  g-zerologon"
+      "command": "# 1-aclcheck  2-antivirus  3-computerversion  4-foreignusers\n# 5-laps_bitlocker  6-localadmin  7-nullsession  8-nullsession-trust\n# 9-oxidbindings  a-remote  b-share  c-smb  d-smb3querynetwork\n# e-spooler  f-startup  g-zerologon",
+      "description": "Scanner options available via interactive TUI. See the command syntax for exact parameters and flags."
     },
     {
       "label": "Export users or computers",
-      "command": "PingCastle.exe --export"
+      "command": "PingCastle.exe --export",
+      "description": "Runs PingCastle for automated Active Directory security assessment. Generates a health score and identifies misconfigurations, dangerous trust relationships, and vulnerable settings."
     }
   ],
   "notes": "PingCastle produces an HTML report with risk scores across four categories: Stale Objects, Privileged Accounts, Trust Relationships, and Anomalies. Each category gets a 0-100 score (lower is better). The scanner modes provide targeted checks useful during both attack and reporting phases. The localadmin scanner enumerates which accounts have local admin on machines. The spooler scanner identifies hosts with Print Spooler enabled (PrintNightmare/Printer Bug targets). The zerologon scanner tests for CVE-2020-1472 susceptibility. Requires only a domain-joined host and any domain user credential. Reports can be aggregated across multiple domains with --conso for enterprise-wide assessments.",

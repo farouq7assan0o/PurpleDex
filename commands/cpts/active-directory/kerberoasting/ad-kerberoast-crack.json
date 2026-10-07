@@ -192,15 +192,18 @@
   "variations": [
     {
       "label": "John the Ripper",
-      "command": "john --format=krb5tgs --wordlist=<wordlist> <hashfile>"
+      "command": "john --format=krb5tgs --wordlist=<wordlist> <hashfile>",
+      "description": "Cracks password hashes with John the Ripper. Supports auto-detection of hash types, wordlist attacks, and custom rules. CPU-based but versatile with broad format support."
     },
     {
       "label": "hashcat with rules",
-      "command": "hashcat -m 13100 <hashfile> <wordlist> -r /usr/share/hashcat/rules/best64.rule"
+      "command": "hashcat -m 13100 <hashfile> <wordlist> -r /usr/share/hashcat/rules/best64.rule",
+      "description": "Cracks Kerberoasted TGS-REP hashes (hashcat mode 13100). Takes the service ticket hash output from Kerberoasting tools and brute-forces the service account password."
     },
     {
       "label": "Show cracked",
-      "command": "hashcat -m 13100 <hashfile> --show"
+      "command": "hashcat -m 13100 <hashfile> --show",
+      "description": "Cracks Kerberoasted TGS-REP hashes (hashcat mode 13100). Takes the service ticket hash output from Kerberoasting tools and brute-forces the service account password."
     }
   ],
   "explain": "Cracks Kerberoast TGS-REP hashes offline:\n  hashcat -m 13100         mode 13100 = RC4-encrypted TGS (etype 23, fast)\n  <hashfile>               the roasted hashes\n  /usr/share/wordlists/rockyou.txt   the wordlist\nUse -m 19700 for AES256 tickets (etype 18, much slower). Recovers the service account's plaintext with no lockout or network traffic; add -r best64.rule to expand coverage."

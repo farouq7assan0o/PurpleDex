@@ -73,12 +73,14 @@
     {
       "command": "curl -s -X PATCH http://<target>/api/v1/<endpoint> -H \"Authorization: Bearer <jwt_token>\" -H \"Content-Type: application/json\" -d '{\"id\": \"<object_id>\", \"isExemptedFromMarketplaceFee\": 1}' | jq",
       "caption": "API BOPLA: PATCH with privileged field not exposed in UI (Broken Object Property Level Auth)",
-      "label": "PATCH request"
+      "label": "PATCH request",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "command": "curl -s -X GET http://<target>/api/v1/<endpoint>/current-user -H \"Authorization: Bearer <jwt_token>\" | jq 'keys'",
       "caption": "Enumerate all response fields to discover mass-assignable properties",
-      "label": "GET request"
+      "label": "GET request",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     }
   ],
   "defense": {

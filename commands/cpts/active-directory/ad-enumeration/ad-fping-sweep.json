@@ -181,7 +181,8 @@
   "variations": [
     {
       "label": "Just alive hosts",
-      "command": "fping -asgq <cidr> 2>/dev/null"
+      "command": "fping -asgq <cidr> 2>/dev/null",
+      "description": "Sends ICMP pings to a range of hosts and reports which are alive. Faster than nmap -sn for quick host discovery on a subnet."
     }
   ],
   "steps": [

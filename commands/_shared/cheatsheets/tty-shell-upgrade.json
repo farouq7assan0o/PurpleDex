@@ -1,0 +1,72 @@
+{
+  "platform": "linux",
+  "requires": [
+    "network-access"
+  ],
+  "protocols": [
+    "tcp"
+  ],
+  "tools": [
+    "python",
+    "stty",
+    "script"
+  ],
+  "tags": [
+    "shell-stabilization",
+    "tty",
+    "post-foothold",
+    "cheatsheet"
+  ],
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Shared - Cross-Module Reference",
+  "examples": [
+    "stty raw -echo; fg",
+    "export TERM=xterm"
+  ],
+  "notes": "Full sequence: 1) python3 -c 'import pty;pty.spawn(\"/bin/bash\")'  2) Ctrl+Z to background  3) stty raw -echo; fg  4) press Enter, then export TERM=xterm. Get your local size with stty size and mirror it with stty rows/columns for correct wrapping in less/vim.",
+  "references": [
+    {
+      "title": "HTB Academy - Shells & Payloads",
+      "url": "https://academy.hackthebox.com/module/details/115"
+    },
+    {
+      "title": "OffSec PEN-200 (OSCP)",
+      "url": "https://www.offsec.com/courses/pen-200/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "code-download-oneliners",
+      "note": "Fetch files using an installed scripting interpreter (check with: which python3 python perl ruby php) when wget/curl are unavailable."
+    }
+  ],
+  "id": "tty-shell-upgrade",
+  "name": "Upgrade Dumb Shell to Full TTY",
+  "type": "cheatsheet",
+  "command": "python3 -c 'import pty;pty.spawn(\"/bin/bash\")'",
+  "description": "Turn a non-interactive reverse shell into a fully interactive TTY so you get tab-completion, arrow keys, job control (Ctrl+C/Ctrl+Z) and can run interactive tools like su, ssh and vim. Run the spawn, background with Ctrl+Z, fix the local terminal, then foreground.",
+  "category": "Exploitation",
+  "subcategory": "Interactive Shells",
+  "variations": [
+    {
+      "label": "script",
+      "command": "/usr/bin/script -qc /bin/bash /dev/null",
+      "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "stty (full steps)",
+      "command": "python3 -c 'import pty;pty.spawn(\"/bin/bash\")'\n# Ctrl+Z\nstty raw -echo; fg\n# then in the shell:\nexport TERM=xterm; stty rows 38 columns 116",
+      "description": "Python reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    }
+  ],
+  "opsec": "loud",
+  "exam": "exam-ok",
+  "mitre": [
+    "T1059.004"
+  ],
+  "explain": "Turn a non-interactive reverse shell into a fully interactive TTY so you get tab-completion, arrow keys, job control (Ctrl+C/Ctrl+Z) and can run interactive tools like su, ssh and vim.\nRun the spawn, background with Ctrl+Z, fix the local terminal, then foreground.\nFull sequence: 1) python3 -c 'import pty;pty.spawn(\"/bin/bash\")'  2) Ctrl+Z to background  3) stty raw -echo; fg  4) press Enter, then export TERM=xterm."
+}

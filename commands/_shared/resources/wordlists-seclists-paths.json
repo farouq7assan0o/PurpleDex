@@ -1,0 +1,84 @@
+{
+  "platform": "linux",
+  "requires": [],
+  "protocols": [],
+  "tools": [
+    "seclists",
+    "gobuster",
+    "ffuf",
+    "hydra",
+    "hashcat"
+  ],
+  "tags": [
+    "wordlists",
+    "seclists",
+    "resource",
+    "reference"
+  ],
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Shared - Cross-Module Reference",
+  "examples": [
+    "gzip -d /usr/share/wordlists/rockyou.txt.gz   # first-time unzip on Kali",
+    "sudo apt install seclists"
+  ],
+  "notes": "rockyou.txt ships gzip-compressed on Kali - gunzip it once. directory-list-2.3-medium is the default web-content list for gobuster/ffuf/feroxbuster. For AD user brute/spray, xato-net usernames + a policy-filtered password list beats rockyou. Generate target-specific lists with cewl (site words) or username-anarchy (name permutations).",
+  "references": [
+    {
+      "title": "SecLists (danielmiessler)",
+      "url": "https://github.com/danielmiessler/SecLists"
+    },
+    {
+      "title": "OffSec PEN-200 (OSCP)",
+      "url": "https://www.offsec.com/courses/pen-200/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cewl-wordlist",
+      "note": "Scrape target site words into a custom list."
+    },
+    {
+      "id": "hashcat-mutate",
+      "note": "Uses Hashcat rule engine with --stdout to print (rather than crack) every rule-mutated variant of a wordlist, producing a new expanded list."
+    }
+  ],
+  "id": "wordlists-seclists-paths",
+  "name": "Wordlists - Go-To Paths (SecLists + Kali)",
+  "type": "resource",
+  "command": "/usr/share/wordlists/rockyou.txt",
+  "description": "The wordlists you actually reach for in CPTS, by task, with their on-disk paths on Kali/Parrot after installing seclists. Saves guessing paths during content discovery, brute forcing and cracking. apt install seclists puts these under /usr/share/seclists.",
+  "category": "Password Attacks",
+  "subcategory": "Wordlists",
+  "variations": [
+    {
+      "label": "Passwords",
+      "command": "/usr/share/wordlists/rockyou.txt\n/usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt\n/usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt\n/usr/share/seclists/Passwords/darkweb2017-top10000.txt\n/usr/share/seclists/Passwords/Default-Credentials/default-passwords.txt",
+      "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
+    },
+    {
+      "label": "Web content / dirs",
+      "command": "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt\n/usr/share/seclists/Discovery/Web-Content/common.txt\n/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt\n/usr/share/wordlists/dirb/common.txt\n/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt",
+      "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
+    },
+    {
+      "label": "Subdomains / DNS",
+      "command": "/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt\n/usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt\n/usr/share/seclists/Discovery/DNS/bitquark-subdomains-top100000.txt\n/usr/share/seclists/Discovery/DNS/namelist.txt",
+      "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
+    },
+    {
+      "label": "Usernames / files",
+      "command": "/usr/share/seclists/Usernames/top-usernames-shortlist.txt\n/usr/share/seclists/Usernames/xato-net-10-million-usernames.txt\n/usr/share/seclists/Discovery/Web-Content/raft-large-files.txt\n/usr/share/seclists/Discovery/Web-Content/LFI/LFI-Jhaddix.txt",
+      "description": "References a standard wordlist used in brute-force attacks. Common wordlists include rockyou.txt (passwords), directory-list (web paths), and subdomain lists for DNS enumeration."
+    }
+  ],
+  "opsec": "silent",
+  "exam": "exam-ok",
+  "mitre": [
+    "T1110"
+  ],
+  "explain": "The wordlists you actually reach for in CPTS, by task, with their on-disk paths on Kali/Parrot after installing seclists.\nSaves guessing paths during content discovery, brute forcing and cracking.\nrockyou.txt ships gzip-compressed on Kali - gunzip it once."
+}

@@ -6,5 +6,6 @@ jsmoke.js
 
 # scratch / working generators (module processors, one-off migration scripts)
 _*
+!commands/_shared/
 *.log
 Thumbs.db

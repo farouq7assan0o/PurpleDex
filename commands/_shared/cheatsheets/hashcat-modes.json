@@ -1,0 +1,82 @@
+{
+  "platform": "linux",
+  "requires": [
+    "network-access"
+  ],
+  "protocols": [],
+  "tools": [
+    "hashcat"
+  ],
+  "tags": [
+    "hashcat",
+    "password-cracking",
+    "cheatsheet",
+    "reference"
+  ],
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Shared - Cross-Module Reference",
+  "examples": [
+    "hashcat -m 13100 tgs.txt rockyou.txt -O   # kerberoast",
+    "hashcat -m 1000 nt.txt rockyou.txt -r /usr/share/hashcat/rules/best64.rule"
+  ],
+  "notes": "Add -O for optimized kernels (faster, limited password length), -a 3 for mask/brute mode, -r <rules> for mutation. When unsure of the type: hashid -m <hash> prints candidate hashcat modes. NetNTLMv2 from Responder is 5600; the crackable AD roast outputs are 13100 (Kerberoast) and 18200 (AS-REP).",
+  "references": [
+    {
+      "title": "Hashcat - Example Hashes",
+      "url": "https://hashcat.net/wiki/doku.php?id=example_hashes"
+    },
+    {
+      "title": "OffSec PEN-200 (OSCP)",
+      "url": "https://www.offsec.com/courses/pen-200/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "hashcat-dictionary",
+      "note": "Runs a straight dictionary attack (-a 0): each wordlist entry is hashed and compared to the target."
+    },
+    {
+      "id": "hashcat-mask",
+      "note": "Brute forces against a mask (-a 3) that models a known password pattern using charsets: ?u upper, ?l lower, ?d digit, ?s symbol, ?a all."
+    }
+  ],
+  "id": "hashcat-modes",
+  "name": "Hashcat - Common Mode Numbers",
+  "type": "cheatsheet",
+  "command": "hashcat -m <mode> hashes.txt /usr/share/wordlists/rockyou.txt",
+  "description": "Reference of the -m mode numbers for hash types you meet most in CPTS labs, so you don't have to grep --help mid-engagement. Identify the hash first (hashid / hash-identifier / name-that-hash), then plug the mode into hashcat.",
+  "category": "Password Attacks",
+  "subcategory": "Hash Cracking",
+  "variations": [
+    {
+      "label": "Windows / AD",
+      "command": "1000  NTLM (NT hash)\n3000  LM\n5500  NetNTLMv1\n5600  NetNTLMv2 (Responder)\n13100 Kerberoast (TGS-REP, etype 23)\n18200 AS-REP Roast (etype 23)\n12800 MS-Cache / DCC1\n2100  DCC2 (mscash2)",
+      "description": "Reference table of hashcat mode numbers for Windows and Active Directory hash types. Covers NTLM, NetNTLMv1/v2, DCC, and Kerberos ticket formats."
+    },
+    {
+      "label": "Unix / linux",
+      "command": "1800  sha512crypt ($6$)  /etc/shadow\n500   md5crypt ($1$)\n7400  sha256crypt ($5$)\n3200  bcrypt ($2*$)\n1500  descrypt\n122   macOS 10.4-10.6",
+      "description": "Reference table of hashcat mode numbers for Unix/Linux password hash formats. Covers sha512crypt, md5crypt, sha256crypt, bcrypt, and other crypt() variants found in /etc/shadow."
+    },
+    {
+      "label": "Web / app",
+      "command": "0    MD5\n100  SHA1\n1400 SHA-256\n1700 SHA-512\n3200 bcrypt\n10000 Django PBKDF2-SHA256\n160  HMAC-SHA1",
+      "description": "Reference table of hashcat hash mode numbers for common hash types. Use the -m flag with the corresponding number for the hash format you are cracking."
+    },
+    {
+      "label": "Files / archives",
+      "command": "13400 KeePass\n11600 7-Zip\n13000 RAR5\n17200 PKZIP\n9600  MS Office 2013\n10500 PDF 1.4-1.6\n22921 RSA/DSA/EC/OpenSSH private key",
+      "description": "Reference table of hashcat mode numbers for encrypted file and disk formats. Covers BitLocker, KeePass, 7-Zip, RAR, PKZIP, Office, and PDF password recovery."
+    }
+  ],
+  "opsec": "silent",
+  "exam": "exam-ok",
+  "mitre": [
+    "T1110.002"
+  ],
+  "explain": "A quick reference of the hashcat -m mode numbers seen most in CPTS labs:\n  hashcat -m <mode>        the algorithm to crack as\n  hashes.txt /usr/share/wordlists/rockyou.txt   the hashes and wordlist\nIdentify the hash first (hashid / name-that-hash), then plug in the mode: 1000 NTLM, 13100 Kerberoast, 18200 AS-REP, 1800 sha512crypt, 3200 bcrypt, 13400 KeePass, etc. Saves grepping --help mid-engagement."
+}

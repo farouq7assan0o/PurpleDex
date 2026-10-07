@@ -1,5 +1,5 @@
 {
-  "name": "command-reference",
+  "name": "purpledex",
   "version": "1.0.0",
   "description": "950+ offensive security commands with detection engineering, MITRE ATT&CK coverage, and SOC triage - fully offline",
   "scripts": {

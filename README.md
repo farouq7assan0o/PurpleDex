@@ -1,191 +1,171 @@
-# Command Reference — Pentest Command Builder & Attack-Path Map
+<p align="center">
+  <img src="logo.svg" alt="Purpledex" width="80">
+</p>
 
-A fast, **fully offline** command reference for offensive-security certifications — **CPTS, OSCP,
-CWES, CDSA, and CRTP**. 900+ curated command cards with a live command builder, an interactive
-attack-path map, a study/flashcard mode, and coverage dashboards. No install, no internet, no
-accounts, no telemetry — it's a single folder of HTML/JS you open in any browser.
+<h1 align="center">Purpledex</h1>
+<p align="center"><strong>Offensive Security Commands + Detection Engineering in One Place</strong></p>
 
-🌐 **Live site:** _coming soon_ — until then, open `index.html` locally.
+<p align="center">
+  <a href="https://purpledex.dev"><strong>purpledex.dev</strong></a>
+</p>
+
+<p align="center">
+  950 command cards &nbsp;|&nbsp; 1,452 variations &nbsp;|&nbsp; 3,693 detections &nbsp;|&nbsp; 207 MITRE ATT&CK techniques &nbsp;|&nbsp; 428 tools<br>
+  Fully offline &nbsp;|&nbsp; No install &nbsp;|&nbsp; No accounts &nbsp;|&nbsp; No telemetry
+</p>
 
 ---
 
-## What it is
+## What is Purpledex?
 
-Every card is a real, exam-relevant command with its **placeholders turned into fields** — set your
-target once (IP, user, domain, LHOST…) and every command fills in with your values, ready to copy.
-Cards carry OpSec/noise levels, MITRE ATT&CK tags, defense/detection notes, and **attack-chain links**
-so you can see what leads to a technique and where it goes next.
+Purpledex is a purple-team command library built for people who do penetration testing, detection engineering, or both. Every card is a real command - the kind you actually run during an engagement or write a detection for - with its placeholders turned into fillable fields. Set your target IP, domain, and credentials once, and every command fills in ready to copy.
+
+Each card also carries the blue-team side: MITRE ATT&CK mapping, SIEM detection queries (Splunk SPL, Elastic KQL, Sentinel KQL, Sigma rules), expected log artifacts, and purple-team validation steps. If you can attack it, you should be able to detect it - both sides live on the same card.
+
+It covers **CPTS, OSCP, CWES, CDSA, CRTP, and MCRTA** - built from the actual course material, not scraped from random cheat sheets.
+
+![Command builder with target bar, category tree, and card details](screenshots/command-builder.jpg)
+
+## Who is this for?
+
+- **Pentesters** preparing for OSCP, CPTS, or CRTP who want a fast command builder instead of digging through notes
+- **Detection engineers** who need SIEM queries mapped to real attack techniques, not theoretical coverage
+- **SOC analysts** who want to understand what an attack looks like from both sides
+- **Students** studying for offensive or defensive certifications who need structured study material with flashcards and spaced repetition
+- **Purple teamers** who run attack simulations and need the detection validation steps in the same place as the commands
 
 ## Features
 
-- **Command Builder** — pick a card, fill parameters once, copy a ready-to-run command. Multi-step
-  chains fill too, with *Copy all* and *Copy as script* (bash/PowerShell).
-- **Attack-Path Map** — an interactive graph of the recommended chains around any command
-  (prerequisites → this → next/escalation), with a "path to Domain Admin"–style finder.
-- **Study mode** — flashcards + quizzes for exam prep, with a **Weak-areas** set (spaced repetition)
-  that resurfaces what you keep missing.
-- **Coverage dashboards** — MITRE ATT&CK, per-certification, per-tool, and source-coverage %.
-- **Search & filters** — relevance-ranked, typo-tolerant, `field:value` filters (`tool:hydra`,
-  `opsec:loud`, `mitre:T1003`…), a 3-level category tree, favorites, collections, and personal notes.
-- **Exam Mode** — a separate battle-station page: methodology playbook, host tracker, findings log,
-  and one-click Markdown report export.
-- **Export & print** — Markdown cheatsheets, runnable scripts, and a clean print stylesheet (Ctrl+P).
-- **Offline & private** — self-contained, works on an exam/lab VPN; everything you personalize is
-  saved locally in your browser.
+### Command Builder
+Pick a card, fill parameters once, copy a ready-to-run command. Multi-step attack chains fill together, with **Copy all** and **Copy as script** (bash or PowerShell). 1,452 command variations across 950 cards, each with an OpSec noise rating, MITRE ATT&CK tags, and linked attack chains.
 
-## How to use
+### Detection Engineering
+794 cards carry defense content across four SIEM platforms. 3,693 structured detections with fidelity ratings (behavioral, signature, telemetry), data source requirements, false positive notes, and confidence levels. Export complete detection packs per platform - ready to import into your Splunk, Elastic, or Sentinel environment.
 
-Download or clone the repo and open **`index.html`** in any modern browser — no install, no server,
-works offline. (Or visit the hosted site once it's live.) Then:
+![Defend tab showing detection queries, structured detections, and SIEM content](screenshots/defend-tab.jpg)
 
-### 1. Set your target once — the TARGET bar
+### Attack-Path Map
+Interactive graph showing prerequisites, the current technique, and where it leads next. Color-coded by relationship type (prereq, next, escalation, alternative, cleanup). Trace the shortest chain from any command to a goal like Domain Admin. Export paths as Markdown cheatsheets.
 
-The bar under the top navigation holds your **engagement variables**: IP, user, password, domain,
-DC, LHOST/LPORT, and more. Fill them once and **every command auto-fills** with your values. It's
-**alias-aware** — a command written with `<target>` or `<host>` still fills from your single **IP**
-field. Click **Show all variables** for the full set.
-Use the **≡ menu** to save the current values as a named **engagement** and switch between targets
-(e.g. one per box), or export/import them to move a setup between machines.
+![Attack-path map showing technique relationships and escalation paths](screenshots/attack-path-map.jpg)
 
-### 2. Find a command
+### MITRE ATT&CK Coverage
+207 techniques mapped across all cards. Visual heatmap dashboard sorted by coverage density, exportable ATT&CK Navigator layers, and per-technique drill-down. Six coverage tabs: MITRE ATT&CK, By Certification, Source Coverage, Tools, Detection, and Triage.
 
-- **Search** (`Ctrl+K`) — relevance-ranked, match-highlighted, typo-tolerant. Narrow with
-  `field:value`: `tool:hydra`, `opsec:loud`, `platform:windows`, `cat:enumeration`,
-  `sub:kerberoasting`, `type:payload`, `mitre:T1003`, `tag:pivoting`, `access:credentials` —
-  combine freely (`tool:crackmapexec opsec:loud spray`). The **?** by the box lists these.
-- **Category tree** (left) — Category → Group → Subcategory, with counts on every node.
-- **Filters, Favorites ★, Recently used, Collections** — in the sidebar / top toggles.
+![Coverage dashboard with MITRE ATT&CK technique heatmap](screenshots/coverage-mitre.jpg)
 
-### 3. Build & copy
+### Purple-Team Validation
+Cards include expected log events, success criteria, test commands, and response playbook steps - everything you need to validate that a detection actually fires when the attack runs.
 
-Click a card and the **builder** (right panel) shows the command filled with your target values.
+### Study Mode
+Flashcards and quizzes for exam prep. Spaced repetition tracks what you keep missing and resurfaces it across sessions. Scope by certification, category, or favorites.
 
-- Fill any command-specific fields; **Unfilled** flags anything you still need to set; **Copy** grabs it.
-- **Variations** are alternate ways to run it (tabs across the top of the builder).
-- **Attack Chain** shows ordered steps with **Copy all** and **Script** (copy the whole sequence as a
-  runnable bash/PowerShell script, target filled in).
-- **Examples** are concrete captioned samples; **References** link the tool's docs + the course module.
-- The **OpSec badge** (silent → loud) tells you how noisy it is; **MITRE** chips link to ATT&CK.
+### Exam Mode
+A separate battle-station page with a methodology playbook, host tracker, findings log, and one-click Markdown report export. Push commands directly into findings from any card.
 
-### 4. See the attack path — Map
+### Search & Filters
+Relevance-ranked, typo-tolerant search with field filters: `tool:hydra`, `opsec:loud`, `platform:windows`, `mitre:T1003`, `cat:enumeration`, `tag:pivoting` - combine freely. Three-level category tree, favorites, collections, and personal notes.
 
-The top-bar **Map** opens an interactive graph around the selected command: **what leads here**
-(left) → **this** → **next / escalation** (right), colored by relationship. Click a node to
-re-center, zoom with **− / ⤢ / +**, or use **Path to:** to trace the shortest chain from here to a
-goal (e.g. Golden Ticket). **Export path** saves the whole path as a Markdown cheatsheet.
+### Fully Offline
+A single folder of HTML, CSS, and JS. No server, no database, no API calls. Works on an exam VPN with no internet. Installs as a PWA. Everything you personalize stays in your browser's local storage.
 
-### 5. Study for your exam — Study
+## Quick Start
 
-The top-bar **Study** gives **flashcards** (see the name + description, recall the command, reveal &
-self-grade *Got it / Again*) and a **quiz** ("what's next after X?", "which command does X?"). Scope
-to **All / Favorites / a cert**. Cards you miss are remembered as **Weak areas** and resurfaced
-across sessions (spaced repetition) — so you drill exactly what you keep getting wrong.
+**Option 1 - Use the live site:**
+Visit **[purpledex.dev](https://purpledex.dev)** - works immediately, installs as a PWA for offline use.
 
-### 6. Track coverage — Coverage
+**Option 2 - Run locally:**
+```
+git clone https://github.com/farouq7assan0o/PurpleDex.git
+```
+Open `index.html` in any browser. That's it - no install, no server, no build step.
 
-The top-bar **Coverage** has four tabs: **MITRE ATT&CK** technique counts, **By Certification**
-(cards + defense/chain %), **Source coverage** (per-module tool-coverage %), and **Tools**. Click any
-cell to filter the library to it.
+## How to Use
 
-### 7. Export & print
+### 1. Set Your Target
+The target bar holds your engagement variables: IP, user, password, domain, DC, LHOST/LPORT, and more. Fill them once and every command auto-fills. Save named engagements to switch between targets (e.g. one per box in the exam).
 
-**Export** (top bar) turns the current filtered view into a **Markdown cheatsheet**. The **Script**
-button (Attack Chain) copies steps as a runnable script. **`Ctrl+P`** prints a clean black-on-white
-sheet (chrome stripped, reference URLs spelled out) for paper study.
+### 2. Find a Command
+Search with `Ctrl+K`, browse the category tree, or filter by certification, tool, MITRE technique, or OpSec level. The `?` button by the search box lists all filter syntax.
 
-### 8. Exam Mode
+### 3. Build & Copy
+Click a card to see the filled command. Switch between variations, copy individual commands or entire attack chains as runnable scripts. The OpSec badge shows noise level; MITRE chips link to ATT&CK.
 
-The **Exam Mode** button opens a separate battle-station page: engagement variables, a methodology
-playbook, host tracker, findings log, and one-click **Markdown report** export. Push a command into
-its findings log with the **Findings** button in any card.
+### 4. See the Attack Path
+The **Map** button shows an interactive graph of what leads to this technique and where it goes next. Use **Path to** to trace chains to specific goals.
 
-### 9. Make it yours & back up
+### 5. Check Detections
+The **Defend** tab on each card shows SIEM queries, expected artifacts, detection logic, and validation steps. Export detection packs for Splunk, Elastic, Sentinel, or Sigma.
 
-**Favorites ★**, **Collections** (your own named sets), and per-card **Notes ✎** all save locally in
-your browser. From the **≡ menu → Back up ALL my data** you can export favorites, notes, engagements,
-collections, and study progress to one JSON file, and **Restore** it later. Nothing ever leaves your
-machine — clearing browser data wipes it, so back up.
+### 6. Study
+The **Study** button gives flashcards and quizzes scoped by certification. Weak areas are tracked across sessions with spaced repetition.
 
----
+### 7. Coverage Dashboard
+The **Coverage** button shows MITRE ATT&CK technique coverage, per-certification breakdowns, tool coverage, and detection coverage percentages.
 
-## Add your own commands
+## Coverage
 
-The library is plain **JSON cards** (one file per command) plus a few Node scripts, built to be
-extended. Two ways:
+| Certification | Cards | Source |
+|---|---|---|
+| OSCP (PEN-200) | 732 | OffSec PEN-200 course material |
+| CPTS (HTB) | 723 | Hack The Box CPTS path modules |
+| CWES (HTB) | 221 | Hack The Box CWES path modules |
+| CRTP (Altered Security) | 128 | Altered Security CRTP labs + courseware |
+| CDSA (HTB) | 76 | Hack The Box CDSA path modules |
+| MCRTA (CWL) | 28 | CyberWarFare Labs MCRTA cloud modules |
 
-### Option A — Do it yourself with an AI coding agent
+## Want More Commands?
 
-1. Open the project in an agent (Claude Code, Cursor, Copilot Chat, …).
-2. Paste the ready prompt from **[`ADD-COMMANDS-PROMPT.md`](ADD-COMMANDS-PROMPT.md)** and drop your
-   commands / notes at the bottom of it. (For a whole course module, use
-   **[`NEW-SESSION-PROMPT.md`](NEW-SESSION-PROMPT.md)** instead — it has the full module protocol.)
-3. The agent writes cards under `commands/**` following the schema.
-4. Verify:
-   ```
-   npm run check      # build + schema validation + render sweep + coverage → "ALL GATES PASS"
-   ```
-5. Commit, and (if you're hosting it) redeploy.
+Purpledex is actively maintained and I'm adding commands regularly. If there's something missing or a certification you'd like covered:
 
-**A card is just JSON** — target values become `<placeholders>` that auto-fill in the builder:
+- **Missing a command?** Open a [GitHub issue](https://github.com/farouq7assan0o/PurpleDex/issues) with the command, what it does, and which cert/module it's from.
+- **Have course notes for a cert not covered yet?** Send me the material (Markdown, PDF, or plain text) and I'll turn it into proper cards with detections and attack chains. The more command-rich the notes, the better.
+- **Want to add commands yourself?** See the section below.
+- **Found a wrong command or bad detection?** Open an issue - accuracy matters more than coverage.
+
+Reach me on [LinkedIn](https://www.linkedin.com/in/FarouqHassan02) or open a GitHub issue.
+
+## Add Your Own Commands
+
+The library is plain JSON cards (one file per command) under `commands/`. Two ways to extend it:
+
+### With an AI coding agent
+1. Open the project in Claude Code, Cursor, or similar.
+2. Paste the prompt from **[`ADD-COMMANDS-PROMPT.md`](ADD-COMMANDS-PROMPT.md)** with your commands at the bottom. For a whole course module, use **[`NEW-SESSION-PROMPT.md`](NEW-SESSION-PROMPT.md)**.
+3. Verify: `npm run check` (build + schema validation + coverage).
+4. Commit and redeploy.
+
+### Manually
+A card is just JSON with placeholders that auto-fill in the builder:
 
 ```json
 {
   "id": "smb-share-enum",
   "name": "SMB - List Shares (null session)",
   "command": "smbclient -N -L //<ip>",
-  "description": "List SMB shares over a null session — no credentials required.",
+  "description": "List SMB shares over a null session.",
   "platform": "linux",
   "type": "command",
   "category": "Enumeration",
   "subcategory": "SMB",
   "certifications": ["CPTS"],
-  "source": "CPTS Module 04: Footprinting",
   "opsec": "quiet",
   "tools": ["smbclient"],
-  "tags": ["smb", "enumeration"],
-  "mitre": ["T1135"],
-  "references": [ { "title": "smbclient man page", "url": "https://www.samba.org/samba/docs/current/man-html/smbclient.1.html" } ],
-  "recommended": [ { "id": "smb-mount", "rel": "next", "note": "mount a readable share" } ]
+  "mitre": ["T1135"]
 }
 ```
 
-Rules the agent follows (and you should too): use **lowercase canonical placeholders** from
-`js/vars.js` (`<ip>`, `<user>`, `<domain>`, `<lhost>`…) so they auto-fill; keep literal values in
-`examples`, not `command`; never duplicate an `id`; and if a command isn't card-worthy on its own,
-add it as a **variation / example / note** on the closest existing card rather than dropping it.
-Full contract: **[`SCHEMA.md`](SCHEMA.md)**; workflow + QA: **[`AUTHORING.md`](AUTHORING.md)**.
+Use lowercase placeholders from `js/vars.js` (`<ip>`, `<user>`, `<domain>`, `<lhost>`...) so they auto-fill. Full schema: **[`SCHEMA.md`](SCHEMA.md)** | Authoring guide: **[`AUTHORING.md`](AUTHORING.md)**.
 
-### Option B — Have me deploy it for you
+## Tech Stack
 
-Prefer to hand it off? Send me (see **Contact**):
-
-- **The source material** — your command notes / cheat-sheet / course export for the cert or module
-  (Markdown, PDF, or plain text; the more command-rich, the better).
-- **Which certification / course and modules** it's for.
-- **Any conventions** you want (placeholder names, OpSec levels, house style) — optional.
-
-I'll turn it into proper cards, run the QA gates, and deploy. Turnaround depends on volume.
+Static site, no framework. `index.html` + vanilla JS + CSS. JSON source files build into a single `js/commands.js` bundle via `node build-commands.js`. Hosted on Vercel. Service worker for offline caching.
 
 ## Contact
 
-Bug reports, new-command requests, cert suggestions, and "deploy it for me" enquiries:
-
-- **LinkedIn:** https://www.linkedin.com/in/FarouqHassan02
-- **Email:** 12farouq12@gmail.com
+- **LinkedIn:** [FarouqHassan02](https://www.linkedin.com/in/FarouqHassan02)
 - **GitHub issues:** open one on this repo
 
----
+## License
 
-## Hosting & custom domain
-
-It's a **static site** (one folder, no backend), so hosting is free and simple:
-
-- **GitHub Pages** — enable Pages on the repo (Settings → Pages → deploy from `main`); it serves at
-  `https://farouq7assan0o.github.io/command-reference/`.
-- **Custom domain** — buy any domain, add a `CNAME` file with your domain to the repo, and point the
-  domain's DNS (a `CNAME` record) at the Pages address. Works with any registrar/host (Cloudflare
-  Pages, Netlify, and Vercel work the same way and give free HTTPS).
-
-## License & disclaimer
-
-MIT. For **authorized** security testing and education only — you are responsible for how you use it.
+MIT. For **authorized** security testing and education only - you are responsible for how you use it.

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="120" height="120">
+  <defs>
+    <clipPath id="s"><path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z"/></clipPath>
+  </defs>
+  <g clip-path="url(#s)"><rect width="512" height="512" fill="#ff7b72"/><polygon points="512,0 512,512 0,512" fill="#29b6f6"/></g>
+  <path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z" fill="none" stroke="#bc8cff" stroke-width="14"/>
+</svg>

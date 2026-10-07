@@ -24,7 +24,7 @@ Each card also carries the blue-team side: MITRE ATT&CK mapping, SIEM detection 
 
 It covers **CPTS, OSCP, CWES, CDSA, CRTP, and MCRTA** - built from the actual course material, not scraped from random cheat sheets.
 
-![Command builder with target bar, category tree, and card details](screenshots/command-builder.jpg)
+![Command builder with target bar, category tree, and card details](screenshots/command-builder.png)
 
 ## Who is this for?
 
@@ -42,17 +42,17 @@ Pick a card, fill parameters once, copy a ready-to-run command. Multi-step attac
 ### Detection Engineering
 794 cards carry defense content across four SIEM platforms. 3,693 structured detections with fidelity ratings (behavioral, signature, telemetry), data source requirements, false positive notes, and confidence levels. Export complete detection packs per platform - ready to import into your Splunk, Elastic, or Sentinel environment.
 
-![Defend tab showing detection queries, structured detections, and SIEM content](screenshots/defend-tab.jpg)
+![Defend tab showing detection queries, structured detections, and SIEM content](screenshots/defend-tab.png)
 
 ### Attack-Path Map
 Interactive graph showing prerequisites, the current technique, and where it leads next. Color-coded by relationship type (prereq, next, escalation, alternative, cleanup). Trace the shortest chain from any command to a goal like Domain Admin. Export paths as Markdown cheatsheets.
 
-![Attack-path map showing technique relationships and escalation paths](screenshots/attack-path-map.jpg)
+![Attack-path map showing technique relationships and escalation paths](screenshots/attack-path-map.png)
 
 ### MITRE ATT&CK Coverage
 207 techniques mapped across all cards. Visual heatmap dashboard sorted by coverage density, exportable ATT&CK Navigator layers, and per-technique drill-down. Six coverage tabs: MITRE ATT&CK, By Certification, Source Coverage, Tools, Detection, and Triage.
 
-![Coverage dashboard with MITRE ATT&CK technique heatmap](screenshots/coverage-mitre.jpg)
+![Coverage dashboard with MITRE ATT&CK technique heatmap](screenshots/coverage-mitre.png)
 
 ### Purple-Team Validation
 Cards include expected log events, success criteria, test commands, and response playbook steps - everything you need to validate that a detection actually fires when the attack runs.

@@ -27,6 +27,9 @@ class CommandManager {
 
         this.authTab = 0;                  // 0 = Default, 1..n = variations index+1
         this.paramValues = this.loadContext();
+        this.varHistory = this.loadVarHistory();       // { engKey: { varKey: [val1, ...] } }
+        this.varTags = this.loadVarTags();             // { engKey: { varKey: { value: "tag" } } }
+        this.customLists = this.loadCustomLists();     // [{ key, label }]
         this.engagements = this.loadEngagements();     // { name: {var: value, ...} }
         this.activeEng = this.loadActiveEng();
         this.userNotes = this.loadUserNotes();         // { cardId: "your note" }
@@ -35,7 +38,7 @@ class CommandManager {
         this.builderTab = 'attack';        // 'attack' | 'understand' | 'defend'
         this.pinnedTab = null;             // when set, every card opens on this tab (per-viewer, localStorage)
         try { this.pinnedTab = localStorage.getItem('cr_pinnedTab') || null; } catch (e) {}
-        this._searchHits = {};             // { cardId: ['step 2', 'variation 3', ...] } — where the search matched
+        this._searchHits = {};             // { cardId: ['step 2', 'variation 3', ...] } - where the search matched
 
         this.init();
     }
@@ -124,6 +127,116 @@ class CommandManager {
         try { localStorage.setItem('cr_context', JSON.stringify(this.paramValues)); } catch (e) {}
     }
 
+    /* ---------- variable lists (per-engagement, per-key) ---------- */
+    _engKey() { return this.activeEng || '__default__'; }
+
+    loadVarHistory() {
+        try {
+            const raw = JSON.parse(localStorage.getItem('purpledex-var-history') || '{}');
+            // migrate old flat format { varKey: [...] } to per-engagement { engKey: { varKey: [...] } }
+            const keys = Object.keys(raw);
+            if (keys.length && keys.some(k => Array.isArray(raw[k]))) {
+                const migrated = { '__default__': raw };
+                localStorage.setItem('purpledex-var-history', JSON.stringify(migrated));
+                return migrated;
+            }
+            return raw;
+        } catch (e) { return {}; }
+    }
+    saveVarHistory() { try { localStorage.setItem('purpledex-var-history', JSON.stringify(this.varHistory)); } catch (e) {} }
+
+    _lists() { const ek = this._engKey(); if (!this.varHistory[ek]) this.varHistory[ek] = {}; return this.varHistory[ek]; }
+
+    addToVarHistory(key, value) {
+        if (!value || !value.trim()) return;
+        value = value.trim();
+        const lists = this._lists();
+        if (!lists[key]) lists[key] = [];
+        const arr = lists[key];
+        const idx = arr.indexOf(value);
+        if (idx !== -1) arr.splice(idx, 1);
+        arr.unshift(value);
+        if (arr.length > 50) arr.length = 50;
+        this.saveVarHistory();
+    }
+
+    removeFromVarHistory(key, value) {
+        const lists = this._lists();
+        if (!lists[key]) return;
+        lists[key] = lists[key].filter(v => v !== value);
+        if (!lists[key].length) delete lists[key];
+        this.saveVarHistory();
+    }
+
+    getListValues(key) {
+        const lists = this._lists();
+        return lists[key] || [];
+    }
+
+    getDropdownValues(key) {
+        const items = [];
+        const seen = new Set();
+        const current = (this.paramValues[key] || '').trim();
+        if (current) seen.add(current);
+        const hist = this.getListValues(key);
+        hist.forEach(v => {
+            if (!seen.has(v)) { items.push({ value: v, source: 'list' }); seen.add(v); }
+        });
+        const engNames = Object.keys(this.engagements).sort();
+        engNames.forEach(name => {
+            if (name === this.activeEng) return;
+            const v = (this.engagements[name][key] || '').trim();
+            if (v && !seen.has(v)) { items.push({ value: v, source: name }); seen.add(v); }
+        });
+        return items;
+    }
+
+    loadVarTags() {
+        try {
+            const raw = JSON.parse(localStorage.getItem('purpledex-var-tags') || '{}');
+            // migrate old flat { varKey: { val: tag } } to per-engagement { engKey: { varKey: { val: tag } } }
+            const keys = Object.keys(raw);
+            if (keys.length && keys.some(k => typeof raw[k] === 'object' && !Array.isArray(raw[k]) && Object.values(raw[k]).some(v => typeof v === 'string'))) {
+                const migrated = { '__default__': raw };
+                localStorage.setItem('purpledex-var-tags', JSON.stringify(migrated));
+                return migrated;
+            }
+            return raw;
+        } catch (e) { return {}; }
+    }
+    saveVarTags() { try { localStorage.setItem('purpledex-var-tags', JSON.stringify(this.varTags)); } catch (e) {} }
+    loadCustomLists() { try { return JSON.parse(localStorage.getItem('purpledex-custom-lists') || '[]'); } catch (e) { return []; } }
+    saveCustomLists() { try { localStorage.setItem('purpledex-custom-lists', JSON.stringify(this.customLists)); } catch (e) {} }
+
+    _tags() { const ek = this._engKey(); if (!this.varTags[ek]) this.varTags[ek] = {}; return this.varTags[ek]; }
+
+    setVarTag(key, value, tag) {
+        const tags = this._tags();
+        if (!tag) { if (tags[key]) { delete tags[key][value]; } }
+        else { if (!tags[key]) tags[key] = {}; tags[key][value] = tag; }
+        this.saveVarTags();
+    }
+
+    getVarTag(key, value) {
+        const tags = this._tags();
+        return (tags[key] && tags[key][value]) || '';
+    }
+
+    getListManagerTabs() {
+        const reg = (typeof VAR_REGISTRY !== 'undefined') ? VAR_REGISTRY : [];
+        const seen = new Set();
+        const tabs = [];
+        reg.forEach(v => {
+            if (seen.has(v.key)) return;
+            seen.add(v.key);
+            tabs.push({ key: v.key, label: v.label });
+        });
+        this.customLists.forEach(c => {
+            if (!seen.has(c.key)) { tabs.push(c); seen.add(c.key); }
+        });
+        return tabs;
+    }
+
     /* ---------- named engagements (saved target-variable sets) ---------- */
     loadEngagements() { try { return JSON.parse(localStorage.getItem('cr_engagements') || '{}'); } catch (e) { return {}; } }
     saveEngagements() { try { localStorage.setItem('cr_engagements', JSON.stringify(this.engagements)); } catch (e) {} }
@@ -134,7 +247,7 @@ class CommandManager {
         const sel = document.getElementById('engSelect');
         if (!sel) return;
         const names = Object.keys(this.engagements).sort((a, b) => a.localeCompare(b));
-        sel.innerHTML = '<option value="">— context —</option>' +
+        sel.innerHTML = '<option value="">- context -</option>' +
             names.map(n => '<option value="' + this.esc(n) + '"' + (n === this.activeEng ? ' selected' : '') + '>' + this.esc(n) + '</option>').join('');
     }
 
@@ -142,12 +255,20 @@ class CommandManager {
         if (name && this.engagements[name]) {
             this.paramValues = Object.assign({}, this.engagements[name]);
         } else {
-            this.paramValues = {};                     // "— context —" clears to a blank working set
+            this.paramValues = {};
         }
         this.setActiveEng(name);
         this.saveContext();
         this.buildContextBar();
         if (this.selectedCommand) this.renderBuilder();
+        const panel = document.getElementById('listMgrPanel');
+        if (panel && panel.classList.contains('open')) {
+            const label = document.getElementById('lmEngLabel');
+            if (label) label.textContent = this.activeEng ? '- ' + this.activeEng : '- (default)';
+            this.renderListManagerTabs();
+            this.renderListManagerBody();
+            this.wireListManagerBody();
+        }
     }
 
     saveEngagement(name) {
@@ -321,22 +442,434 @@ class CommandManager {
         el.innerHTML = shown.map(v => {
             const val = this.paramValues[v.key] || '';
             const filled = val ? ' filled' : '';
-            return '<div class="tc-field' + filled + '" data-group="' + this.esc(v.group) + '">' +
+            return '<div class="tc-field' + filled + '" data-group="' + this.esc(v.group) + '" data-varkey="' + this.esc(v.key) + '">' +
                 '<label title="' + this.esc(v.group + ' · ' + v.label) + '">' + this.esc(v.label) + '</label>' +
-                '<input type="text" data-param="' + this.esc(v.key) + '" placeholder="—" value="' + this.esc(val) + '"></div>';
+                '<div class="tc-input-wrap">' +
+                '<input type="text" data-param="' + this.esc(v.key) + '" placeholder="--" value="' + this.esc(val) + '" autocomplete="off">' +
+                '<span class="tc-drop-arrow" data-param="' + this.esc(v.key) + '">&#9660;</span>' +
+                '</div>' +
+                '<div class="tc-dropdown" data-dropdown="' + this.esc(v.key) + '"></div>' +
+                '</div>';
         }).join('');
 
-        // count of extra (non-core, present) vars for the toggle label
         const extra = reg.filter(v => present.has(v.key) && !v.core).length;
         const btn = document.getElementById('tcToggle');
         if (btn) btn.textContent = this.showAllVars ? 'Show core only' : ('Show all variables (' + extra + ' more)');
 
-        // wire the newly rendered inputs
+        // wire inputs + dropdowns
         el.querySelectorAll('[data-param]').forEach(input => {
+            if (input.tagName !== 'INPUT') return;
             input.addEventListener('input', e => {
                 this.paramValues[e.target.dataset.param] = e.target.value;
                 this.saveContext();
                 if (this.selectedCommand) this.renderBuilder();
+            });
+            input.addEventListener('blur', e => {
+                const key = e.target.dataset.param;
+                this.addToVarHistory(key, e.target.value);
+                this._ddCloseTimer = setTimeout(() => this.closeAllDropdowns(), 200);
+            });
+            input.addEventListener('focus', e => {
+                if (this._ddCloseTimer) { clearTimeout(this._ddCloseTimer); this._ddCloseTimer = null; }
+                this.openDropdown(e.target.dataset.param);
+            });
+            input.addEventListener('keydown', e => {
+                const dd = el.querySelector('.tc-dropdown[data-dropdown="' + e.target.dataset.param + '"]');
+                if (!dd || !dd.classList.contains('open')) return;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.navigateDropdown(e.target.dataset.param, e.key === 'ArrowDown' ? 1 : -1);
+                } else if (e.key === 'Enter') {
+                    const active = dd.querySelector('.tc-dd-item.active');
+                    if (active) { e.preventDefault(); active.click(); }
+                } else if (e.key === 'Escape') {
+                    this.closeAllDropdowns();
+                }
+            });
+        });
+        el.querySelectorAll('.tc-drop-arrow').forEach(arrow => {
+            arrow.addEventListener('mousedown', e => {
+                e.preventDefault();
+                if (this._ddCloseTimer) { clearTimeout(this._ddCloseTimer); this._ddCloseTimer = null; }
+                const key = arrow.dataset.param;
+                const dd = el.querySelector('.tc-dropdown[data-dropdown="' + key + '"]');
+                if (dd && dd.classList.contains('open')) {
+                    this.closeAllDropdowns();
+                } else {
+                    this.openDropdown(key);
+                    el.querySelector('input[data-param="' + key + '"]').focus();
+                }
+            });
+        });
+    }
+
+    openDropdown(key) {
+        this.closeAllDropdowns();
+        const el = document.getElementById('tcFields');
+        if (!el) return;
+        const dd = el.querySelector('.tc-dropdown[data-dropdown="' + key + '"]');
+        if (!dd) return;
+        const items = this.getDropdownValues(key);
+        if (!items.length) {
+            dd.innerHTML = '<div class="tc-dd-empty">No saved values yet</div>';
+        } else {
+            let html = '';
+            const recent = items.filter(i => i.source === 'recent');
+            const fromEng = items.filter(i => i.source !== 'recent');
+            if (recent.length) {
+                html += '<div class="tc-dd-section">Recent</div>';
+                recent.forEach(item => {
+                    const tag = this.getVarTag(key, item.value);
+                    html += '<div class="tc-dd-item" data-val="' + this.esc(item.value) + '">' +
+                        '<span>' + this.esc(item.value) + (tag ? ' <span class="tc-dd-source">' + this.esc(tag) + '</span>' : '') + '</span>' +
+                        '<span class="tc-dd-remove" data-rmkey="' + this.esc(key) + '" data-rmval="' + this.esc(item.value) + '" title="Remove">&times;</span>' +
+                        '</div>';
+                });
+            }
+            if (fromEng.length) {
+                if (recent.length) html += '<div class="tc-dd-sep"></div>';
+                html += '<div class="tc-dd-section">From engagements</div>';
+                fromEng.forEach(item => {
+                    html += '<div class="tc-dd-item" data-val="' + this.esc(item.value) + '">' +
+                        '<span>' + this.esc(item.value) + '</span>' +
+                        '<span class="tc-dd-source">' + this.esc(item.source) + '</span>' +
+                        '</div>';
+                });
+            }
+            dd.innerHTML = html;
+        }
+        dd.classList.add('open');
+        dd.querySelectorAll('.tc-dd-item').forEach(item => {
+            item.addEventListener('mousedown', e => {
+                e.preventDefault();
+                if (this._ddCloseTimer) { clearTimeout(this._ddCloseTimer); this._ddCloseTimer = null; }
+                const rmBtn = e.target.closest('.tc-dd-remove');
+                if (rmBtn) {
+                    this.removeFromVarHistory(rmBtn.dataset.rmkey, rmBtn.dataset.rmval);
+                    this.openDropdown(key);
+                    return;
+                }
+                const val = item.dataset.val;
+                this.paramValues[key] = val;
+                this.addToVarHistory(key, val);
+                this.saveContext();
+                const input = el.querySelector('input[data-param="' + key + '"]');
+                if (input) input.value = val;
+                const field = input && input.closest('.tc-field');
+                if (field) { field.classList.toggle('filled', !!val); }
+                this.syncContextInputs();
+                if (this.selectedCommand) this.renderBuilder();
+                this.closeAllDropdowns();
+            });
+        });
+    }
+
+    closeAllDropdowns() {
+        document.querySelectorAll('.tc-dropdown.open').forEach(dd => dd.classList.remove('open'));
+    }
+
+    _showBparamDropdown(input) {
+        this._updateBparamDropdown(input, true);
+    }
+    _hideBparamDropdown(input) {
+        const dd = input.parentElement.querySelector('.bparam-dd');
+        if (dd) dd.remove();
+    }
+    _updateBparamDropdown(input, forceShow) {
+        const key = input.dataset.bparam;
+        const items = this.getDropdownValues(key);
+        const val = (input.value || '').toLowerCase();
+        const filtered = val ? items.filter(i => i.value.toLowerCase().includes(val)) : items;
+        let dd = input.parentElement.querySelector('.bparam-dd');
+        if (!filtered.length) { if (dd) dd.remove(); return; }
+        if (!dd) {
+            dd = document.createElement('div');
+            dd.className = 'bparam-dd';
+            input.parentElement.style.position = 'relative';
+            input.parentElement.appendChild(dd);
+        }
+        dd.innerHTML = filtered.slice(0, 8).map(i =>
+            '<div class="bparam-dd-item" data-val="' + this.esc(i.value) + '">' +
+            this.esc(i.value) +
+            (i.source && i.source !== 'recent' ? ' <span class="tc-dd-source">' + this.esc(i.source) + '</span>' : '') +
+            '</div>'
+        ).join('');
+        dd.querySelectorAll('.bparam-dd-item').forEach(item => {
+            item.addEventListener('mousedown', e => {
+                e.preventDefault();
+                input.value = item.dataset.val;
+                this.paramValues[key] = item.dataset.val;
+                this.saveContext();
+                this.syncContextInputs();
+                this.updateGenerated();
+                dd.remove();
+            });
+        });
+    }
+
+    navigateDropdown(key, dir) {
+        const dd = document.querySelector('.tc-dropdown[data-dropdown="' + key + '"]');
+        if (!dd) return;
+        const items = [...dd.querySelectorAll('.tc-dd-item')];
+        if (!items.length) return;
+        const cur = items.findIndex(i => i.classList.contains('active'));
+        items.forEach(i => i.classList.remove('active'));
+        let next = cur + dir;
+        if (next < 0) next = items.length - 1;
+        if (next >= items.length) next = 0;
+        items[next].classList.add('active');
+        items[next].scrollIntoView({ block: 'nearest' });
+    }
+
+    /* ---------- List Manager ---------- */
+    openListManager(initialTab) {
+        const panel = document.getElementById('listMgrPanel');
+        if (!panel) return;
+        if (panel.classList.contains('open') && !initialTab) { this.closeListManager(); return; }
+        this._lmTab = initialTab || this.getListManagerTabs()[0].key;
+        panel.classList.add('open');
+        const label = document.getElementById('lmEngLabel');
+        if (label) label.textContent = this.activeEng ? '- ' + this.activeEng : '- (default)';
+        this.renderListManagerTabs();
+        this.renderListManagerBody();
+        this.wireListManager();
+    }
+
+    closeListManager() {
+        const panel = document.getElementById('listMgrPanel');
+        if (panel) panel.classList.remove('open');
+        if (this._lmEscHandler) { document.removeEventListener('keydown', this._lmEscHandler); this._lmEscHandler = null; }
+        const wrap = document.querySelector('.lm-bulk-wrap');
+        if (wrap) wrap.classList.remove('open');
+    }
+
+    renderListManagerTabs() {
+        const tabsEl = document.getElementById('listMgrTabs');
+        if (!tabsEl) return;
+        const tabs = this.getListManagerTabs();
+        tabsEl.innerHTML = tabs.map(t => {
+            const count = this.getListValues(t.key).length;
+            const active = t.key === this._lmTab ? ' active' : '';
+            return '<button class="lm-tab' + active + '" data-lmtab="' + this.esc(t.key) + '">' +
+                this.esc(t.label) + (count ? ' <span style="opacity:0.5">(' + count + ')</span>' : '') + '</button>';
+        }).join('') +
+        '<button class="lm-tab-add" id="lmAddList">+ Add List</button>';
+    }
+
+    renderListManagerBody() {
+        const body = document.getElementById('listMgrBody');
+        if (!body) return;
+        const key = this._lmTab;
+        const items = this.getListValues(key);
+        const countEl = document.getElementById('lmCount');
+        if (countEl) countEl.textContent = items.length + ' item' + (items.length !== 1 ? 's' : '');
+        if (!items.length) {
+            body.innerHTML = '<div class="lm-empty">No values yet. Click "+ Add Item" or "Bulk Add" to get started.</div>';
+            return;
+        }
+        body.innerHTML = items.map((val, i) => {
+            const tag = this.getVarTag(key, val);
+            return '<div class="lm-item" data-idx="' + i + '">' +
+                '<input class="lm-val" type="text" value="' + this.esc(val) + '" data-orig="' + this.esc(val) + '" placeholder="Value...">' +
+                '<input class="lm-tag" type="text" value="' + this.esc(tag) + '" placeholder="Tag/Note...">' +
+                '<button class="lm-del" type="button" title="Remove">&times;</button>' +
+                '</div>';
+        }).join('');
+    }
+
+    wireListManager() {
+        const panel = document.getElementById('listMgrPanel');
+        if (!panel) return;
+        const close = document.getElementById('listMgrClose');
+        if (close) close.onclick = () => this.closeListManager();
+        this._lmEscHandler = e => { if (e.key === 'Escape' && panel.classList.contains('open')) this.closeListManager(); };
+        document.addEventListener('keydown', this._lmEscHandler);
+
+        // tab clicks
+        const tabsEl = document.getElementById('listMgrTabs');
+        tabsEl.onclick = e => {
+            const tab = e.target.closest('[data-lmtab]');
+            if (tab) {
+                this._lmTab = tab.dataset.lmtab;
+                this.renderListManagerTabs();
+                this.renderListManagerBody();
+                this.wireListManagerBody();
+                return;
+            }
+            if (e.target.id === 'lmAddList') {
+                const name = (prompt('List name (e.g. Tickets, SIDs, API Keys):') || '').trim();
+                if (!name) return;
+                const key = name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                if (this.customLists.some(l => l.key === key)) { this.toast('List already exists'); return; }
+                this.customLists.push({ key: key, label: name });
+                this.saveCustomLists();
+                this._lmTab = key;
+                this.renderListManagerTabs();
+                this.renderListManagerBody();
+                this.wireListManagerBody();
+            }
+        };
+
+        // toolbar buttons
+        document.getElementById('lmAddItem').onclick = () => {
+            const key = this._lmTab;
+            const lists = this._lists();
+            if (!lists[key]) lists[key] = [];
+            lists[key].push('');
+            this.saveVarHistory();
+            this.renderListManagerBody();
+            this.wireListManagerBody();
+            const body = document.getElementById('listMgrBody');
+            const lastInput = body.querySelector('.lm-item:last-child .lm-val');
+            if (lastInput) lastInput.focus();
+        };
+
+        document.getElementById('lmBulkAdd').onclick = () => {
+            const body = document.getElementById('listMgrBody');
+            let wrap = body.parentElement.querySelector('.lm-bulk-wrap');
+            if (!wrap) {
+                wrap = document.createElement('div');
+                wrap.className = 'lm-bulk-wrap';
+                wrap.innerHTML = '<textarea placeholder="Paste values, one per line..."></textarea>' +
+                    '<div class="lm-bulk-btns"><button class="lm-bulk-go">Add All</button><button class="lm-bulk-cancel">Cancel</button></div>';
+                body.parentElement.insertBefore(wrap, body);
+            }
+            wrap.classList.toggle('open');
+            if (wrap.classList.contains('open')) {
+                wrap.querySelector('textarea').focus();
+                wrap.querySelector('.lm-bulk-go').onclick = () => {
+                    const lines = wrap.querySelector('textarea').value.split('\n').map(l => l.trim()).filter(Boolean);
+                    if (!lines.length) return;
+                    const key = this._lmTab;
+                    lines.forEach(v => this.addToVarHistory(key, v));
+                    wrap.querySelector('textarea').value = '';
+                    wrap.classList.remove('open');
+                    this.renderListManagerTabs();
+                    this.renderListManagerBody();
+                    this.wireListManagerBody();
+                    this.toast(lines.length + ' values added');
+                };
+                wrap.querySelector('.lm-bulk-cancel').onclick = () => { wrap.classList.remove('open'); };
+            }
+        };
+
+        document.getElementById('lmExport').onclick = () => {
+            const key = this._lmTab;
+            const items = this.getListValues(key);
+            if (!items.length) { this.toast('Nothing to export'); return; }
+            const data = items.map(v => {
+                const tag = this.getVarTag(key, v);
+                return tag ? v + '\t' + tag : v;
+            }).join('\n');
+            const blob = new Blob([data], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = key + '-list.txt';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        };
+
+        document.getElementById('lmImport').onclick = () => {
+            document.getElementById('lmFileImport').click();
+        };
+        document.getElementById('lmFileImport').onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const lines = reader.result.split('\n').map(l => l.trim()).filter(Boolean);
+                const key = this._lmTab;
+                lines.forEach(line => {
+                    const parts = line.split('\t');
+                    const val = parts[0].trim();
+                    const tag = (parts[1] || '').trim();
+                    if (val) {
+                        this.addToVarHistory(key, val);
+                        if (tag) this.setVarTag(key, val, tag);
+                    }
+                });
+                this.renderListManagerTabs();
+                this.renderListManagerBody();
+                this.wireListManagerBody();
+                this.toast(lines.length + ' values imported');
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        };
+
+        document.getElementById('lmClear').onclick = () => {
+            const key = this._lmTab;
+            const items = this.getListValues(key);
+            if (!items.length) return;
+            if (!confirm('Clear all ' + items.length + ' values from this list?')) return;
+            const lists = this._lists();
+            delete lists[key];
+            this.saveVarHistory();
+            const tags = this._tags();
+            if (tags[key]) { delete tags[key]; this.saveVarTags(); }
+            this.renderListManagerTabs();
+            this.renderListManagerBody();
+            this.wireListManagerBody();
+        };
+
+        this.wireListManagerBody();
+    }
+
+    wireListManagerBody() {
+        const body = document.getElementById('listMgrBody');
+        if (!body) return;
+        const key = this._lmTab;
+        body.querySelectorAll('.lm-item').forEach(item => {
+            const valInput = item.querySelector('.lm-val');
+            const tagInput = item.querySelector('.lm-tag');
+            const delBtn = item.querySelector('.lm-del');
+
+            valInput.addEventListener('change', () => {
+                const orig = valInput.dataset.orig;
+                const newVal = valInput.value.trim();
+                if (!newVal) return;
+                const lists = this._lists();
+                const tags = this._tags();
+                if (orig && orig !== newVal) {
+                    const arr = lists[key] || [];
+                    const idx = arr.indexOf(orig);
+                    if (idx !== -1) arr[idx] = newVal;
+                    if (tags[key] && tags[key][orig]) {
+                        tags[key][newVal] = tags[key][orig];
+                        delete tags[key][orig];
+                        this.saveVarTags();
+                    }
+                    this.saveVarHistory();
+                    valInput.dataset.orig = newVal;
+                } else if (!orig && newVal) {
+                    this.addToVarHistory(key, newVal);
+                    valInput.dataset.orig = newVal;
+                }
+                this.renderListManagerTabs();
+            });
+
+            tagInput.addEventListener('change', () => {
+                const val = valInput.dataset.orig || valInput.value.trim();
+                if (val) this.setVarTag(key, val, tagInput.value.trim());
+            });
+
+            delBtn.addEventListener('click', () => {
+                const idx = parseInt(item.dataset.idx, 10);
+                const lists = this._lists();
+                const arr = lists[key];
+                if (arr && idx >= 0 && idx < arr.length) {
+                    const removed = arr[idx];
+                    arr.splice(idx, 1);
+                    if (!arr.length) delete lists[key];
+                    this.saveVarHistory();
+                    if (removed) {
+                        const tags = this._tags();
+                        if (tags[key]) { delete tags[key][removed]; this.saveVarTags(); }
+                    }
+                }
+                this.renderListManagerTabs();
+                this.renderListManagerBody();
+                this.wireListManagerBody();
             });
         });
     }
@@ -1049,7 +1582,7 @@ class CommandManager {
                 '<div class="def-text">' + this.esc(text) + '</div></div>';
         };
 
-        // Code block section — renders monospaced with diff colouring
+        // Code block section - renders monospaced with diff colouring
         const defCode = (title, cssClass, blockClass, code) => {
             if (!code) return '';
             return '<div class="def-section"><div class="def-section-title ' + cssClass + '">' + title + '</div>' +
@@ -1058,8 +1591,8 @@ class CommandManager {
 
         // Understand tab: prerequisites → why it works → misconfiguration → impact
         const understandTitle = isBlueCard
-            ? '🎯 Attack Technique — What the Adversary Did'
-            : '💡 Why This Works — Root Cause';
+            ? '🎯 Attack Technique - What the Adversary Did'
+            : '💡 Why This Works - Root Cause';
         const understandEmpty = isBlueCard
             ? 'Attack technique context not yet documented for this card.'
             : 'Root-cause analysis not yet documented for this technique.';
@@ -1080,11 +1613,11 @@ class CommandManager {
         const hasUnderstand = def.why_it_works || def.prerequisites || def.impact || def.misconfiguration || (Array.isArray(def.interview) && def.interview.length);
         const understandHtml =
             (hasUnderstand
-                ? defSection('🔑 Prerequisites — What Must Be True First', 'dt-prereq', def.prerequisites) +
+                ? defSection('🔑 Prerequisites - What Must Be True First', 'dt-prereq', def.prerequisites) +
                   defSection(understandTitle, 'dt-why', def.why_it_works) +
                   defSection('⚠️ The Misconfiguration / Vulnerable Pattern', 'dt-misconfig', def.misconfiguration) +
                   defCode('🔎 Spot It in Code Review (grep / red flags)', 'dt-misconfig', 'coderev', def.code_review) +
-                  defSection('🎯 Impact — What Success Grants', 'dt-impact', def.impact) +
+                  defSection('🎯 Impact - What Success Grants', 'dt-impact', def.impact) +
                   renderInterview(def.interview)
                 : '<div class="def-empty">' + understandEmpty + '</div>') +
             myNotesHtml;
@@ -1141,7 +1674,7 @@ class CommandManager {
                 : '<div class="def-empty">' + defendEmpty + '</div>') +
             myNotesHtml;
 
-        // Notes tab — renders cmd.notes, parsing === SECTION === headers into styled headings
+        // Notes tab - renders cmd.notes, parsing === SECTION === headers into styled headings
         const rawNotes = (cmd.notes || '').trim();
         const notesTabHtml = rawNotes
             ? '<div class="notes-tab-content">' +
@@ -1248,7 +1781,10 @@ class CommandManager {
                 this.saveContext();
                 this.syncContextInputs();
                 this.updateGenerated();
+                this._updateBparamDropdown(input);
             });
+            input.addEventListener('focus', () => this._showBparamDropdown(input));
+            input.addEventListener('blur', () => setTimeout(() => this._hideBparamDropdown(input), 150));
         });
         // wire recommended + attack-path chain chips
         body.querySelectorAll('.rec-item, .chain-chip').forEach(item => {
@@ -1365,9 +1901,12 @@ class CommandManager {
     // Push paramValues back onto whatever context-bar inputs are currently visible.
     // (Non-visible vars still live in paramValues, so nothing is lost.)
     syncContextInputs() {
-        document.querySelectorAll('#targetContext [data-param]').forEach(input => {
+        document.querySelectorAll('#targetContext input[data-param]').forEach(input => {
             const p = input.dataset.param;
-            input.value = this.paramValues[p] || '';
+            const val = this.paramValues[p] || '';
+            input.value = val;
+            const field = input.closest('.tc-field');
+            if (field) field.classList.toggle('filled', !!val);
         });
     }
 
@@ -1387,7 +1926,7 @@ class CommandManager {
         const sub = s => this.substitute(String(s || ''));
         const title = document.getElementById('viewTitle').textContent || 'Purpledex';
         const out = [];
-        out.push('# ' + title + ' — Purpledex');
+        out.push('# ' + title + ' - Purpledex');
         out.push('', `_${cards.length} commands · exported ${new Date().toISOString().slice(0, 10)}_`, '');
         // group by category -> subcategory
         const groups = {};
@@ -1426,6 +1965,9 @@ class CommandManager {
 
     /* ---------- events ---------- */
     bindEvents() {
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.tc-field')) this.closeAllDropdowns();
+        });
         // Delegated click handling for the command list - bound ONCE, so windowed/appended
         // cards work without per-card listeners.
         const listEl = document.getElementById('commandList');
@@ -1483,6 +2025,8 @@ class CommandManager {
                 } else if (act === 'delete') {
                     if (this.activeEng && confirm('Delete engagement "' + this.activeEng + '"?')) this.deleteEngagement(this.activeEng);
                     else if (!this.activeEng) this.toast('No engagement selected');
+                } else if (act === 'lists') {
+                    this.openListManager();
                 } else if (act === 'export') {
                     this.exportEngagements();
                 } else if (act === 'import') {
@@ -1498,6 +2042,13 @@ class CommandManager {
         if (engImport) engImport.addEventListener('change', e => { if (e.target.files[0]) this.importEngagements(e.target.files[0]); e.target.value = ''; });
         const dataImport = document.getElementById('dataImport');
         if (dataImport) dataImport.addEventListener('change', e => { if (e.target.files[0]) this.importAllData(e.target.files[0]); e.target.value = ''; });
+        const engSaveBtn = document.getElementById('engSaveBtn');
+        if (engSaveBtn) engSaveBtn.addEventListener('click', () => {
+            const name = this.activeEng || (prompt('Name this engagement:') || '').trim();
+            if (name) this.saveEngagement(name);
+        });
+        const engListsBtn = document.getElementById('engListsBtn');
+        if (engListsBtn) engListsBtn.addEventListener('click', () => this.openListManager());
 
         // guide overlay
         const guideBtn = document.getElementById('guideBtn');
@@ -1518,11 +2069,24 @@ class CommandManager {
         this.bindStudy();
         this.bindCoverage();
 
-        // top-bar Filters popover (overlays, doesn't push layout)
+        // sidebar Filters popover (moved to body so sidebar overflow doesn't clip it)
         const filterBtn = document.getElementById('filterBtn');
         const filterPop = document.getElementById('filterPop');
         if (filterBtn && filterPop) {
-            filterBtn.addEventListener('click', e => { e.stopPropagation(); filterPop.hidden = !filterPop.hidden; });
+            document.body.appendChild(filterPop);
+            filterBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                filterPop.hidden = !filterPop.hidden;
+                if (!filterPop.hidden) {
+                    const r = filterBtn.getBoundingClientRect();
+                    const popW = 280;
+                    let left = r.left;
+                    if (left + popW > window.innerWidth) left = window.innerWidth - popW - 8;
+                    if (left < 4) left = 4;
+                    filterPop.style.top = (r.bottom + 4) + 'px';
+                    filterPop.style.left = left + 'px';
+                }
+            });
             filterPop.addEventListener('click', e => e.stopPropagation());
             document.addEventListener('click', e => { if (!filterPop.contains(e.target) && !filterBtn.contains(e.target)) filterPop.hidden = true; });
         }
@@ -1673,7 +2237,7 @@ class CommandManager {
             const GOALS = ['crtp-golden-ticket', 'crtp-dcsync', 'golden-ticket', 'dcsync', 'crtp-domain-admin', 'ntds-dump', 'secretsdump', 'crtp-krbtgt', 'crtp-silver-ticket'];
             const seen = new Set(), found = [];
             GOALS.forEach(g => { if (this.byId[g] && !seen.has(g)) { seen.add(g); found.push(this.byId[g]); } });
-            qg.innerHTML = found.slice(0, 4).map(c => '<button class="graph-quick-goal" data-goal="' + this.esc(c.id) + '">→ ' + this.esc(c.name.split(/[\(—-]/)[0].trim().slice(0, 20)) + '</button>').join('');
+            qg.innerHTML = found.slice(0, 4).map(c => '<button class="graph-quick-goal" data-goal="' + this.esc(c.id) + '">→ ' + this.esc(c.name.split(/[\(-]/)[0].trim().slice(0, 20)) + '</button>').join('');
             qg.dataset.filled = '1';
         }
         overlay.hidden = false;
@@ -1871,7 +2435,7 @@ class CommandManager {
         }
         const chain = path.map((id, i) =>
             (i ? '<span class="gpr-arrow">→</span>' : '') +
-            '<span class="gpr-node" data-gid="' + this.esc(id) + '">' + this.esc(this.byId[id].name.split(/[\(—]/)[0].trim().slice(0, 30)) + '</span>'
+            '<span class="gpr-node" data-gid="' + this.esc(id) + '">' + this.esc(this.byId[id].name.split(/[\(-]/)[0].trim().slice(0, 30)) + '</span>'
         ).join(' ');
         pr.innerHTML = '<b>' + (path.length - 1) + '-step path:</b><div class="gpr-chain">' + chain + '</div>';
     }
@@ -1959,7 +2523,7 @@ class CommandManager {
         const total = this.study.pool.length;
         const bar = document.getElementById('studyBar'); if (bar) bar.style.width = total ? Math.round(this.study.idx / total * 100) + '%' : '0%';
         const scoreEl = document.getElementById('studyScore');
-        if (!total) { body.innerHTML = '<p class="study-empty">No commands in this scope — pick another above.</p>'; if (scoreEl) scoreEl.textContent = ''; return; }
+        if (!total) { body.innerHTML = '<p class="study-empty">No commands in this scope - pick another above.</p>'; if (scoreEl) scoreEl.textContent = ''; return; }
         if (this.study.idx >= total) return this.renderStudyDone();
         if (scoreEl) scoreEl.textContent = (this.study.mode === 'flash' ? 'Recalled ' : 'Correct ') + this.study.got + ' / ' + this.study.seen + '   ·   ' + (this.study.idx + 1) + ' of ' + total;
         if (this.study.mode === 'flash') this.renderFlashcard(); else this.renderQuiz();
@@ -2019,7 +2583,7 @@ class CommandManager {
             else if (k === i) el.classList.add('wrong');
         });
         const fb = document.getElementById('quizFeedback');
-        if (fb) fb.innerHTML = (q.options[i].ok ? '<span style="color:#3fb950">Correct.</span>' : '<span style="color:#e5484d">Not quite — the right answer is highlighted.</span>') +
+        if (fb) fb.innerHTML = (q.options[i].ok ? '<span style="color:#3fb950">Correct.</span>' : '<span style="color:#e5484d">Not quite - the right answer is highlighted.</span>') +
             ' <button class="study-btn primary" data-act="next" style="margin-left:10px;padding:6px 16px">Next →</button>';
         const sc = document.getElementById('studyScore'); if (sc) sc.textContent = 'Correct ' + this.study.got + ' / ' + this.study.seen + '   ·   ' + (this.study.idx + 1) + ' of ' + this.study.pool.length;
     }
@@ -2563,7 +3127,7 @@ class CommandManager {
         if (!data) { body.innerHTML = '<p class="cov-note">No coverage snapshot found. Run <code>node coverage-report.js</code> to generate <code>js/coverage-data.js</code>.</p>'; return; }
         const col = p => p >= 95 ? '#3fb950' : (p >= 80 ? '#d29922' : '#e5484d');
         const rows = data.modules.filter(m => m.total > 0);
-        body.innerHTML = '<p class="cov-note"><b>' + this.esc(data.cert) + ' source tool-coverage: ' + data.overallPct + '%</b> — of the distinct tools each module\'s course notes use, how many appear in at least one card. Snapshot ' + this.esc(data.generated) + ' (regenerate with <code>node coverage-report.js</code>). Modules with 0 tools (pure theory) omitted.</p>' +
+        body.innerHTML = '<p class="cov-note"><b>' + this.esc(data.cert) + ' source tool-coverage: ' + data.overallPct + '%</b> - of the distinct tools each module\'s course notes use, how many appear in at least one card. Snapshot ' + this.esc(data.generated) + ' (regenerate with <code>node coverage-report.js</code>). Modules with 0 tools (pure theory) omitted.</p>' +
             rows.map(m => {
                 const tip = m.uncarded.length ? ' title="not carded: ' + this.esc(m.uncarded.join(', ')) + '"' : '';
                 return '<div class="cov-bar-row"' + tip + '><div class="cov-bar-label">' + this.esc(m.mod + ' ' + m.name) + '</div>' +
@@ -2584,7 +3148,7 @@ class CommandManager {
         this.commands.forEach(c => (c.certifications && c.certifications.length ? c.certifications : ['(none)']).forEach(cert => { (byCert[cert] = byCert[cert] || { total: 0, def: 0, chain: 0 }); byCert[cert].total++; if (c.defense && Object.keys(c.defense).length) byCert[cert].def++; if ((c.recommended || []).length) byCert[cert].chain++; }));
         const rows = Object.entries(byCert).sort((a, b) => b[1].total - a[1].total);
         const max = Math.max(1, ...rows.map(r => r[1].total));
-        body.innerHTML = '<p class="cov-note">Cards per certification — bar = card count; below each, how many carry defense content and chain links.</p>' +
+        body.innerHTML = '<p class="cov-note">Cards per certification - bar = card count; below each, how many carry defense content and chain links.</p>' +
             rows.map(([cert, v]) => '<div class="cov-bar-row"><div class="cov-bar-label">' + this.esc(cert) + '</div><div class="cov-bar-track"><div class="cov-bar-fill" style="width:' + Math.round(v.total / max * 100) + '%"></div></div><div class="cov-bar-val">' + v.total + '</div></div>' +
                 '<div class="cov-bar-row"><div class="cov-bar-label" style="font-size:.7rem;color:var(--muted)">defense ' + Math.round(v.def / v.total * 100) + '%  ·  chains ' + Math.round(v.chain / v.total * 100) + '%</div><div class="cov-bar-track" style="background:none;border:none"></div><div class="cov-bar-val"></div></div>').join('');
     }
@@ -2667,7 +3231,8 @@ class CommandManager {
             const target = getTarget();
             if (!target) return;
             startPos = axis === 'x' ? e.clientX : e.clientY;
-            startSize = target.getBoundingClientRect().width;
+            const rect = target.getBoundingClientRect();
+            startSize = axis === 'x' ? rect.width : rect.height;
             handle.classList.add('active');
             document.body.classList.add('resizing');
             document.addEventListener('mousemove', onMove);
@@ -2676,7 +3241,7 @@ class CommandManager {
         function onMove(e) {
             const raw = (axis === 'x' ? e.clientX : e.clientY) - startPos;
             const delta = reverse ? -raw : raw;
-            const newSize = Math.max(140, startSize + delta);
+            const newSize = Math.max(60, startSize + delta);
             applySize(getTarget(), newSize);
         }
         function onUp() {
@@ -2685,12 +3250,18 @@ class CommandManager {
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
             const target = getTarget();
-            if (target) localStorage.setItem(storageKey, target.getBoundingClientRect().width);
+            if (target) {
+                const rect = target.getBoundingClientRect();
+                localStorage.setItem(storageKey, axis === 'x' ? rect.width : rect.height);
+            }
         }
         handle.addEventListener('mousedown', onDown);
         handle.addEventListener('dblclick', () => {
             const target = getTarget();
-            if (target) { target.style.width = ''; localStorage.removeItem(storageKey); }
+            if (target) {
+                if (axis === 'x') target.style.width = ''; else target.style.maxHeight = '';
+                localStorage.removeItem(storageKey);
+            }
         });
     }
 
@@ -2706,6 +3277,7 @@ class CommandManager {
                 if (!ws || getComputedStyle(ws).flexDirection !== 'row') return;
                 el.style.width = Math.min(w, window.innerWidth * 0.65) + 'px';
             }, true);
+
     });
 })();
 

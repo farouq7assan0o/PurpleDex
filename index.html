@@ -50,6 +50,58 @@
                 </div>
             </div>
 
+            <div class="sidebar-filters">
+                <div class="filter-wrap">
+                    <button id="filterBtn" class="sidebar-filter-btn" title="Filter the list"><i class="fas fa-sliders-h"></i> Filters <span id="filterCount" class="filter-badge" hidden></span> <i class="fas fa-caret-down caret"></i></button>
+                    <div id="filterPop" class="filter-pop" hidden>
+                        <div class="filter-pop-head"><span>Filters</span><button id="resetFilters" class="fp-reset" type="button"><i class="fas fa-rotate-left"></i> Reset</button></div>
+                        <div class="filter-group">
+                            <label for="collectionFilter">Collection</label>
+                            <select id="collectionFilter"><option value="">All collections</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="certFilter">Certification</label>
+                            <select id="certFilter"><option value="all">All</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="typeFilter">Type</label>
+                            <select id="typeFilter"><option value="all">All Types</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="platformFilter">Platform</label>
+                            <select id="platformFilter">
+                                <option value="all">All Platforms</option>
+                                <option value="linux">Linux</option>
+                                <option value="windows">Windows</option>
+                                <option value="multi">Cross-platform</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="opsecFilter">OpSec / Noise</label>
+                            <select id="opsecFilter">
+                                <option value="all">Any Noise Level</option>
+                                <option value="silent">Silent</option>
+                                <option value="quiet">Quiet</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="loud">Loud</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="requiresFilter">What You Have</label>
+                            <select id="requiresFilter"><option value="all">Any Access Level</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="protocolFilter">Protocol</label>
+                            <select id="protocolFilter"><option value="all">All Protocols</option></select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="toolFilter">Tool</label>
+                            <select id="toolFilter"><option value="all">All Tools</option></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="category-tree">
                 <div class="tree-head">
                     <label class="tree-label">Categories</label>
@@ -65,85 +117,39 @@
                 <button id="menuToggle" class="menu-toggle" type="button" aria-label="Menu"><i class="fas fa-bars"></i></button>
                 <h2 id="viewTitle">All Commands</h2>
 
-                <div class="view-toggles">
-                    <button id="favToggle" class="view-btn" title="Show only favorited commands"><i class="far fa-star"></i> <span>Favorites</span></button>
-                    <button id="recentToggle" class="view-btn" title="Commands you opened recently"><i class="fas fa-clock-rotate-left"></i> <span>Recent</span></button>
-                    <div class="filter-wrap">
-                        <button id="filterBtn" class="view-btn" title="Filter the list"><i class="fas fa-sliders-h"></i> <span>Filters</span> <span id="filterCount" class="filter-badge" hidden></span> <i class="fas fa-caret-down caret"></i></button>
-                        <div id="filterPop" class="filter-pop" hidden>
-                            <div class="filter-pop-head"><span>Filters</span><button id="resetFilters" class="fp-reset" type="button"><i class="fas fa-rotate-left"></i> Reset</button></div>
-                            <div class="filter-group">
-                                <label for="collectionFilter">Collection</label>
-                                <select id="collectionFilter"><option value="">All collections</option></select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="certFilter">Certification</label>
-                                <select id="certFilter"><option value="all">All</option></select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="typeFilter">Type</label>
-                                <select id="typeFilter"><option value="all">All Types</option></select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="platformFilter">Platform</label>
-                                <select id="platformFilter">
-                                    <option value="all">All Platforms</option>
-                                    <option value="linux">Linux</option>
-                                    <option value="windows">Windows</option>
-                                    <option value="multi">Cross-platform</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="opsecFilter">OpSec / Noise</label>
-                                <select id="opsecFilter">
-                                    <option value="all">Any Noise Level</option>
-                                    <option value="silent">Silent</option>
-                                    <option value="quiet">Quiet</option>
-                                    <option value="moderate">Moderate</option>
-                                    <option value="loud">Loud</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="requiresFilter">What You Have</label>
-                                <select id="requiresFilter"><option value="all">Any Access Level</option></select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="protocolFilter">Protocol</label>
-                                <select id="protocolFilter"><option value="all">All Protocols</option></select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="toolFilter">Tool</label>
-                                <select id="toolFilter"><option value="all">All Tools</option></select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <button id="favToggle" class="view-btn" title="Favorites"><i class="far fa-star"></i></button>
+                <button id="recentToggle" class="view-btn" title="Recent"><i class="fas fa-clock-rotate-left"></i></button>
 
                 <div id="modeToggle" class="mode-toggle" title="Show Red Team only, Blue Team only, or both">
                     <button class="mode-btn" data-mode="red"><span class="mode-pip red"></span> Red</button>
                     <button class="mode-btn" data-mode="both">All</button>
                     <button class="mode-btn" data-mode="blue"><span class="mode-pip blue"></span> Blue</button>
                 </div>
-                <button id="exportBtn" class="ghost-btn" title="Export the current filtered list to a Markdown cheatsheet"><i class="fas fa-file-arrow-down"></i> Export</button>
-                <button id="studyBtn" class="ghost-btn" title="Study mode — flashcards & quizzes for exam prep"><i class="fas fa-graduation-cap"></i> Study</button>
-                <button id="graphBtn" class="ghost-btn" title="Attack-path map — see what leads to and from a command"><i class="fas fa-project-diagram"></i> Map</button>
-                <button id="coverageBtn" class="ghost-btn" title="Coverage — MITRE ATT&CK, per-cert & tool coverage"><i class="fas fa-table-cells"></i> Coverage</button>
-                <a id="examModeLink" href="exam.html"><i class="fas fa-crosshairs"></i> Exam Mode</a>
-                <button id="guideBtn" class="ghost-btn" title="Guide - what this is & how to use it"><i class="fas fa-circle-question"></i> Guide</button>
-                <a id="githubLink" class="ghost-btn" href="https://github.com/farouq7assan0o/command-reference/" target="_blank" rel="noopener" title="View source on GitHub"><i class="fab fa-github"></i> GitHub</a>
-                <button id="clearContext" class="ghost-btn"><i class="fas fa-eraser"></i> Clear context</button>
+
+                <button id="exportBtn" class="ghost-btn" title="Export"><i class="fas fa-file-arrow-down"></i></button>
+                <button id="studyBtn" class="ghost-btn" title="Study"><i class="fas fa-graduation-cap"></i></button>
+                <button id="graphBtn" class="ghost-btn" title="Map"><i class="fas fa-project-diagram"></i> Map</button>
+                <button id="coverageBtn" class="ghost-btn" title="Coverage"><i class="fas fa-table-cells"></i> Coverage</button>
+                <a id="examModeLink" href="exam.html"><i class="fas fa-crosshairs"></i> Exam</a>
+                <a id="githubLink" class="ghost-btn" href="https://github.com/farouq7assan0o/command-reference/" target="_blank" rel="noopener" title="GitHub"><i class="fab fa-github"></i> GitHub</a>
+                <button id="guideBtn" class="ghost-btn" title="Guide"><i class="fas fa-circle-question"></i></button>
+                <button id="clearContext" class="ghost-btn" title="Clear context"><i class="fas fa-eraser"></i></button>
             </div>
 
             <div id="targetContext">
                 <span class="tc-title">TARGET</span>
                 <div class="eng-ctrl">
-                    <select id="engSelect" title="Saved engagements"><option value="">— context —</option></select>
+                    <select id="engSelect" title="Saved engagements"><option value="">- context -</option></select>
+                    <button id="engSaveBtn" class="eng-quick-btn" type="button" title="Save current values to this engagement">Save</button>
+                    <button id="engListsBtn" class="eng-quick-btn" type="button" title="Open List Manager">Lists</button>
                     <button id="engMenuBtn" class="eng-menu-btn" type="button" title="Engagements">&#9776;</button>
                     <div id="engMenu" class="eng-menu" hidden>
                         <button data-eng="save">Save</button>
                         <button data-eng="saveas">Save as new…</button>
                         <button data-eng="rename">Rename…</button>
                         <button data-eng="delete">Delete</button>
+                        <div class="eng-menu-sep"></div>
+                        <button data-eng="lists">Manage Lists…</button>
                         <div class="eng-menu-sep"></div>
                         <button data-eng="export">Export engagements…</button>
                         <button data-eng="import">Import engagements…</button>
@@ -156,6 +162,26 @@
                 </div>
                 <div class="tc-fields" id="tcFields"></div>
                 <button id="tcToggle" class="tc-toggle" type="button">Show all variables</button>
+            </div>
+
+            <div class="listmgr-panel" id="listMgrPanel">
+                <div class="listmgr-header">
+                    <h2>LIST MANAGER <span id="lmEngLabel" class="lm-eng-label"></span></h2>
+                    <button id="listMgrClose" class="listmgr-close" type="button">&times;</button>
+                </div>
+                <div class="listmgr-tabs" id="listMgrTabs"></div>
+                <div class="listmgr-toolbar">
+                    <button id="lmBulkAdd" type="button">Bulk Add</button>
+                    <button id="lmImport" type="button">Import</button>
+                    <button id="lmExport" type="button">Export</button>
+                    <button id="lmClear" class="lm-danger" type="button">Clear</button>
+                    <span id="lmCount" class="lm-count"></span>
+                </div>
+                <div class="listmgr-body" id="listMgrBody"></div>
+                <div class="listmgr-footer">
+                    <button id="lmAddItem" type="button">+ Add Item</button>
+                </div>
+                <input type="file" id="lmFileImport" accept=".txt,.csv,.json" hidden>
             </div>
 
             <div id="activeChips" class="active-chips" hidden></div>
@@ -175,9 +201,9 @@
                         <div class="builder-empty onboard">
                             <p class="ob-lead">Build a ready-to-run command in three steps:</p>
                             <ol class="ob-steps">
-                                <li><b>Set your target once</b> — fill IP, user, LHOST… in the <span class="ob-hl">TARGET</span> bar up top. It fills every command (and every alias like <code>&lt;target&gt;</code>, <code>&lt;rhost&gt;</code>).</li>
-                                <li><b>Find a command</b> — search (Ctrl+K) or pick a Category on the left.</li>
-                                <li><b>Copy</b> — it appears here filled in, with anything still missing flagged.</li>
+                                <li><b>Set your target once</b> - fill IP, user, LHOST... in the <span class="ob-hl">TARGET</span> bar up top. It fills every command (and every alias like <code>&lt;target&gt;</code>, <code>&lt;rhost&gt;</code>).</li>
+                                <li><b>Find a command</b> - search (Ctrl+K) or pick a Category on the left.</li>
+                                <li><b>Copy</b> - it appears here filled in, with anything still missing flagged.</li>
                             </ol>
                         </div>
                     </div>

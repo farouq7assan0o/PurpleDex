@@ -106,6 +106,16 @@
       "label": "List all managed policy versions",
       "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>",
       "description": "Executes an AWS CLI command for cloud infrastructure enumeration or exploitation."
+    },
+    {
+      "label": "Get role trust policy (AssumeRolePolicyDocument)",
+      "command": "aws --profile <profile> iam get-role --role-name <role_name>",
+      "description": "Inspects a role's trust policy to see who can assume it - other accounts, users, services (lambda, ec2). Key for identifying cross-account trust and lateral movement paths."
+    },
+    {
+      "label": "Find roles that trust a specific principal (jq filter)",
+      "command": "aws --profile <profile> iam list-roles | jq '.Roles[] | select(.AssumeRolePolicyDocument | tostring | contains(\"<role_or_principal>\")) | .RoleName'",
+      "description": "Searches all role trust policies for a specific principal name. Identifies which roles a compromised identity can assume - maps the lateral movement graph across roles and accounts."
     }
   ],
   "notes": "IAM permissions can come from: (1) inline user policy, (2) managed policy directly attached to user, (3) group membership -> group inline or managed policies, (4) resource-based policies on services (S3, Lambda, etc.), (5) permission boundaries. Permission boundaries RESTRICT the maximum effective permissions - a boundary that allows only S3 means even if a policy grants EC2 access, the user cannot use EC2. Explicit Deny always overrides Allow regardless of source. AWS-managed policies (arn:aws:iam::aws:policy/) can be read via get-policy-version even by the subject user - they are public. Customer-managed policies (arn:aws:iam::<account_id>:policy/) require iam:GetPolicyVersion which may not be granted. Workaround: use get-account-authorization-details (see aws-iam-full-dump) if broader read permissions exist.",

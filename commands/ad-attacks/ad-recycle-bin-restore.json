@@ -1,0 +1,104 @@
+{
+  "id": "ad-recycle-bin-restore",
+  "name": "AD Recycle Bin - Restore Deleted Objects",
+  "command": "Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects -Properties cn,objectSid,isDeleted,lastKnownParent",
+  "description": "When the AD Recycle Bin feature is enabled and you have sufficient privileges, you can enumerate and restore deleted AD objects (users, groups, computers). A deleted privileged account (like a cert_admin) can be restored to regain its original group memberships and permissions - an attacker who controls an account with Restore-ADObject rights can bring back a deleted admin.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Persistence",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB TombWatcher engagement",
+  "tags": [
+    "recycle-bin",
+    "ad-persistence",
+    "restore-adobject",
+    "deleted-objects",
+    "privilege-escalation"
+  ],
+  "mitre": [
+    "T1098"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nAD Recycle Bin keeps deleted objects in a recoverable state (default 180 days).\nIf a privileged account was deleted (e.g. cert_admin), restoring it recovers\nthe account WITH its original SID, group memberships, and ACLs.\n\n=== ENUMERATE DELETED OBJECTS ===\n  Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects -Properties cn,objectSid,isDeleted\n\n=== FIND A SPECIFIC DELETED USER ===\n  Get-ADObject -Filter 'isDeleted -eq $true -and name -like \"cert_admin*\"' -IncludeDeletedObjects -Properties objectGUID,objectSid,lastKnownParent\n\n=== RESTORE THE OBJECT ===\n  Restore-ADObject -Identity '<objectGUID>'\n  # e.g. Restore-ADObject -Identity '938182c3-bf0b-410a-9aaa-45c8e1a02ebf'\n\n=== RESET PASSWORD (account is restored but password is unknown) ===\n  Set-ADAccountPassword -Identity 'cert_admin' -Reset -NewPassword (ConvertTo-SecureString 'NewPassword123!' -AsPlainText -Force)\n  # or from Linux:\n  bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> set password cert_admin 'NewPassword123'\n\n=== CHECK IF RECYCLE BIN IS ENABLED ===\n  Get-ADOptionalFeature 'Recycle Bin Feature' | Select EnabledScopes\n  # Empty EnabledScopes = NOT enabled\n\n=== NOTES ===\n- Multiple deleted objects with the same name get unique GUIDs - pick the right one\n- lastKnownParent shows the OU the object was in before deletion\n- Restored objects keep their original SID and group memberships",
+  "examples": [
+    {
+      "label": "List all deleted objects",
+      "command": "Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects -Properties cn,objectSid,isDeleted | Where-Object { $_.isDeleted -eq $true }"
+    },
+    {
+      "label": "Find specific deleted user by name",
+      "command": "Get-ADObject -Filter 'isDeleted -eq $true -and name -like \"cert_admin*\"' -IncludeDeletedObjects -Properties objectGUID,objectSid,lastKnownParent"
+    },
+    {
+      "label": "Restore a deleted object by GUID",
+      "command": "Restore-ADObject -Identity '938182c3-bf0b-410a-9aaa-45c8e1a02ebf'"
+    },
+    {
+      "label": "Reset the restored account's password",
+      "command": "Set-ADAccountPassword -Identity 'cert_admin' -Reset -NewPassword (ConvertTo-SecureString 'NewPassword123!' -AsPlainText -Force)"
+    }
+  ],
+  "references": [
+    {
+      "title": "Microsoft - AD Recycle Bin",
+      "url": "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/adac/introduction-to-active-directory-administrative-center-enhancements--level-100-#ad-recycle-bin"
+    },
+    {
+      "title": "HackTricks - AD Recycle Bin",
+      "url": "https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/privileged-groups-and-token-privileges.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-impacket-dacledit",
+      "note": "After restoring the account, you may need dacledit to grant it enrollment rights on ADCS templates.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-esc15-ekuwu",
+      "note": "A restored cert_admin can enroll in vulnerable certificate templates.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AD Recycle Bin preserves deleted objects with all attributes for a tombstone lifetime (default 180 days). Any principal with the right to restore deleted objects can bring back privileged accounts, inheriting their original SID and group memberships.",
+    "prerequisites": "AD Recycle Bin must be enabled; the attacker needs delegated rights to Restore-ADObject (or Domain Admin).",
+    "impact": "Recovery of deleted privileged accounts with their original permissions, bypassing the deletion as a security control.",
+    "detection": "[MITRE T1098] Event 4662 with Restore access on isDeleted objects; Event 5136 for attribute changes on restored objects.",
+    "artifacts": "4662 restore events; newly active accounts that were previously in the Deleted Objects container.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where AccessMask=\"0x100\" AND ObjectType contains \"Deleted\"\n| table _time, SubjectUserName, ObjectName",
+    "elastic_kql": "event.code:\"4662\" AND winlog.event_data.ObjectType:*deleted*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| where ObjectType contains \"Deleted\" or ObjectName contains \"DEL:\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName",
+    "sigma_rules": "win_security_ad_object_restored",
+    "prevention": "Restrict Restore-ADObject delegation; monitor for objects leaving the Deleted Objects container; alert on password resets immediately following object restoration.",
+    "sources": [
+      "HTB TombWatcher",
+      "https://attack.mitre.org/techniques/T1098/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD Recycle Bin object restoration",
+        "logic": "SecurityEvent\n| where EventID in (4662, 5136)\n| where ObjectName contains \"DEL:\" or ObjectName contains \"Deleted Objects\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName, EventID\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4662",
+          "5136"
+        ],
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate disaster recovery restoring accidentally deleted accounts",
+        "tuning": "Alert specifically on restoration of accounts with adminCount=1 or membership in privileged groups"
+      }
+    ]
+  }
+}

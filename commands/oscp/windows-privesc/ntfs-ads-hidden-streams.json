@@ -1,0 +1,92 @@
+{
+  "id": "ntfs-ads-hidden-streams",
+  "name": "NTFS Alternate Data Streams (ADS) - Hidden File Content",
+  "command": "dir /r",
+  "description": "NTFS Alternate Data Streams (ADS) allow storing additional data streams alongside a file's default $DATA stream. Attackers and CTF authors hide flags, credentials, or payloads in ADS. A normal 'dir' or 'type' won't show them - you need 'dir /r' to list streams and 'more <' or PowerShell to read them.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Post-Exploitation",
+  "subcategory": "Data Discovery",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "HTB Jeeves engagement",
+  "tags": [
+    "ntfs",
+    "ads",
+    "alternate-data-streams",
+    "hidden-files",
+    "windows-forensics",
+    "data-hiding"
+  ],
+  "mitre": [
+    "T1564.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== DISCOVERY ===\n  dir /r                          # List ALL streams (ADS show as filename:streamname:$DATA)\n  dir /r C:\\Users\\*\\Desktop\\      # Check user desktops\n\n=== READING ADS ===\n  more < hm.txt:root.txt          # Read the 'root.txt' stream hidden inside hm.txt\n  more < hm.txt:root.txt:$DATA    # Explicit $DATA stream reference\n  # 'type' does NOT work with ADS - use 'more <'\n\n=== POWERSHELL ===\n  Get-Item -Path hm.txt -Stream *                     # List all streams\n  Get-Content -Path hm.txt -Stream root.txt           # Read a specific stream\n  Get-ChildItem -Recurse | ForEach-Object { Get-Item $_.FullName -Stream * } 2>$null  # Recursive scan\n\n=== CREATING ADS (for testing/understanding) ===\n  echo 'hidden content' > normal.txt:secret.txt       # Write to ADS\n  notepad normal.txt:secret.txt                       # Open ADS in notepad\n\n=== EXTRACTING FILES FROM ADS ===\n  # ADS can hide executables, not just text:\n  expand filename.txt:hidden.exe hidden.exe            # Extract hidden exe\n  # Or with PowerShell:\n  Get-Content filename.txt -Stream hidden.exe -Encoding Byte | Set-Content hidden.exe -Encoding Byte\n\n=== WHERE TO LOOK ===\n- User desktops (flag hiding in CTFs)\n- Temp directories\n- Application data\n- Downloaded files (Zone.Identifier stream marks downloads)",
+  "examples": [
+    {
+      "label": "List all alternate data streams",
+      "command": "dir /r C:\\Users\\Administrator\\Desktop\\"
+    },
+    {
+      "label": "Read hidden stream from a file",
+      "command": "more < hm.txt:root.txt"
+    },
+    {
+      "label": "PowerShell - list all streams on a file",
+      "command": "Get-Item -Path hm.txt -Stream *"
+    },
+    {
+      "label": "PowerShell - read a specific ADS",
+      "command": "Get-Content -Path hm.txt -Stream root.txt"
+    }
+  ],
+  "references": [
+    {
+      "title": "Microsoft - NTFS Alternate Data Streams",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/e2d05f50-e8c4-4e12-b357-169cdca67c78"
+    },
+    {
+      "title": "MITRE T1564.004 - Hide Artifacts: NTFS File Attributes",
+      "url": "https://attack.mitre.org/techniques/T1564/004/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "NTFS supports multiple named data streams per file. The default stream ($DATA) is what normal tools show. Additional streams are invisible to dir, type, and most file managers, making them effective for hiding data.",
+    "prerequisites": "NTFS filesystem; access to the file containing the ADS.",
+    "impact": "Discovery of hidden credentials, flags, or payloads that standard enumeration misses.",
+    "detection": "[MITRE T1564.004] Sysmon Event 15 (FileCreateStreamHash) logs ADS creation; dir /r or streams.exe in command history.",
+    "artifacts": "Sysmon Event 15 for stream creation; PowerShell script block logs showing Get-Item -Stream; command history with 'dir /r'.",
+    "splunk_spl": "index=sysmon EventCode=15\n| where NOT match(TargetFilename, \"Zone\\.Identifier\")\n| table _time, Image, TargetFilename, Hash",
+    "elastic_kql": "event.code:\"15\" AND NOT file.name:*Zone.Identifier*",
+    "sentinel_kql": "SysmonEvent\n| where EventID == 15\n| where TargetFilename !contains \"Zone.Identifier\"\n| project TimeGenerated, Image, TargetFilename, Hashes",
+    "sigma_rules": "sysmon_ads_creation",
+    "prevention": "Monitor Sysmon Event 15 for ADS creation (exclude Zone.Identifier); use streams.exe (Sysinternals) for periodic ADS audits; restrict write access to sensitive directories.",
+    "sources": [
+      "HTB Jeeves",
+      "https://attack.mitre.org/techniques/T1564/004/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "NTFS Alternate Data Stream creation (non-ZoneIdentifier)",
+        "logic": "SysmonEvent\n| where EventID == 15\n| where TargetFilename !contains \"Zone.Identifier\"\n| project TimeGenerated, Image, TargetFilename, Hashes\n| sort by TimeGenerated desc",
+        "data_source": "sysmon",
+        "log_ids": [
+          "15"
+        ],
+        "attack": [
+          "T1564.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Some applications legitimately use ADS for metadata storage",
+        "tuning": "Exclude known legitimate ADS users; focus on ADS in user-writable directories"
+      }
+    ]
+  }
+}

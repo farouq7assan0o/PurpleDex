@@ -1,0 +1,69 @@
+{
+  "id": "gpg2john-pgp-crack",
+  "name": "gpg2john - Crack PGP/GPG Private Key Passphrase",
+  "command": "gpg2john <private_key_file> > gpg.hash && john --wordlist=/usr/share/wordlists/rockyou.txt gpg.hash --format=gpg",
+  "description": "Extract the passphrase hash from a PGP/GPG private key file and crack it offline with john. Useful when you find .keys, .gpg, or .asc private key files on a target - the passphrase protects the private key, and cracking it gives you the ability to decrypt PGP-encrypted data (emails, password stores like passpie, encrypted files).",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Credential Cracking",
+  "subcategory": "PGP Keys",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "HTB MetaTwo engagement",
+  "tags": [
+    "gpg2john",
+    "pgp",
+    "gpg",
+    "cracking",
+    "private-key",
+    "passphrase",
+    "john"
+  ],
+  "mitre": [
+    "T1552.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nPGP/GPG private keys are encrypted with a passphrase. gpg2john extracts\nthe passphrase-derived hash so it can be cracked offline with john.\n\n=== EXTRACT HASH ===\n  gpg2john <private_key_file> > gpg.hash\n  # The key file can be .keys, .gpg, .asc, or raw PGP private key block\n  # If the file has BOTH public and private keys, gpg2john handles it\n\n=== CRACK WITH JOHN ===\n  john --wordlist=/usr/share/wordlists/rockyou.txt gpg.hash --format=gpg\n\n=== CRACK WITH HASHCAT ===\n  # Not directly supported - use john for GPG hashes\n\n=== THEN USE THE KEY ===\n  # Import the key into your GPG keyring\n  gpg --import <private_key_file>\n  # Decrypt a file/message\n  gpg --decrypt <encrypted_file>\n  # For passpie: export the password store\n  passpie export ~/passwords.db  # enter the cracked passphrase\n\n=== WHERE TO FIND PGP KEYS ===\n  ~/.gnupg/\n  ~/.passpie/.keys\n  /home/*/.gpg\n  /opt/*/keys/\n  Application config directories",
+  "examples": [
+    {
+      "label": "Extract hash and crack GPG passphrase",
+      "command": "gpg2john keys > gpg.hash && john --wordlist=/usr/share/wordlists/rockyou.txt gpg.hash --format=gpg"
+    },
+    {
+      "label": "Just extract the hash for review",
+      "command": "gpg2john ~/.passpie/.keys > keys.hash && cat keys.hash"
+    }
+  ],
+  "references": [
+    {
+      "title": "john the ripper - gpg2john",
+      "url": "https://github.com/openwall/john"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "passpie-credential-theft",
+      "note": "Cracked GPG passphrase unlocks passpie password stores.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "PGP private keys are symmetrically encrypted with a passphrase-derived key. gpg2john extracts the encrypted key material into a format john can brute-force. Weak passphrases crack quickly.",
+    "prerequisites": "Access to a PGP/GPG private key file on the target system.",
+    "impact": "Decryption of all data encrypted to that PGP key - emails, password stores, encrypted files.",
+    "detection": "[MITRE T1552.004] File access to .gnupg directories or .keys files (auditd rules); no network indicator since cracking is offline.",
+    "artifacts": "Access to .gnupg/ or .keys files in filesystem audit logs; cracked passphrase used to decrypt data.",
+    "splunk_spl": "index=linux sourcetype=linux:audit key=\"access\" name=\"*.keys\" OR name=\"*.gpg\" OR name=\"secring*\"\n| table _time, user, name, success",
+    "elastic_kql": "file.path:(*\\.gnupg* OR *\\.keys OR *secring*) AND event.action:\"opened-for-read\"",
+    "sentinel_kql": "Syslog\n| where SyslogMessage contains \".gnupg\" or SyslogMessage contains \".keys\" or SyslogMessage contains \"secring\"\n| project TimeGenerated, Computer, SyslogMessage",
+    "prevention": "Use strong passphrases on PGP keys; restrict file permissions on private keys (600); use hardware tokens (YubiKey) for PGP keys; monitor access to .gnupg directories.",
+    "sources": [
+      "HTB MetaTwo",
+      "https://attack.mitre.org/techniques/T1552/004/"
+    ]
+  }
+}

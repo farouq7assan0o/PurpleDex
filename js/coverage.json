@@ -280,6 +280,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-recycle-bin-restore",
+          "name": "AD Recycle Bin object restoration",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "crtp-adminsdholder",
           "name": "AdminSDHolder Abuse (SDProp Persistence) - Sentinel",
           "platform": "sentinel",
@@ -761,6 +768,20 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "ad-impacket-dacledit",
+          "name": "DACL modification on AD object",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-impacket-owneredit",
+          "name": "AD object ownership takeover",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
         },
         {
           "card_id": "cdsa-m06-object-acls",
@@ -4417,6 +4438,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-esc15-ekuwu",
+          "name": "ESC15 - application policy injection in cert request",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-pkinit-getnthash",
           "name": "getnthash.py - Get NT Hash from PKINIT TGT - Sentinel",
           "platform": "sentinel",
@@ -4562,6 +4590,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "powershell"
+        },
+        {
+          "card_id": "ad-passthecert",
+          "name": "Schannel certificate authentication to LDAP",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
         },
         {
           "card_id": "ad-petitpotam",
@@ -5029,6 +5064,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-timeroasting",
+          "name": "Timeroasting - rapid NTP enumeration",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
           "card_id": "crtp-unconstrained-delegation",
           "name": "Unconstrained Delegation Abuse (Printer Bug + Rubeus) - Sentinel",
           "platform": "sentinel",
@@ -5082,6 +5124,7 @@
         "sysmon",
         "linux-audit",
         "edr",
+        "network-flow",
         "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
@@ -36318,6 +36361,24 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1564.004": {
+      "detections": [
+        {
+          "card_id": "ntfs-ads-hidden-streams",
+          "name": "NTFS Alternate Data Stream creation (non-ZoneIdentifier)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "sysmon"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1078.002": {
       "detections": [
         {
@@ -39074,6 +39135,7 @@
       "T1069.002",
       "T1046",
       "T1482",
+      "T1564.004",
       "T1078.002",
       "T1566.001",
       "T1204.002",
@@ -39259,6 +39321,7 @@
       "T1082",
       "T1087.001",
       "T1518",
+      "T1558",
       "T1190",
       "T1589.003",
       "T1210"
@@ -39506,6 +39569,6 @@
       "T1110.003"
     ]
   },
-  "cards_with_detections": 779,
-  "total_detections": 3693
+  "cards_with_detections": 786,
+  "total_detections": 3700
 }

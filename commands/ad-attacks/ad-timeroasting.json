@@ -1,0 +1,91 @@
+{
+  "id": "ad-timeroasting",
+  "name": "Timeroasting (Unauthenticated NTP Hash Extraction)",
+  "command": "sudo python3 /tmp/timeroast/timeroast.py <dc_ip> -o timeroast_hashes.txt",
+  "description": "Timeroasting abuses MS-SNTP (Microsoft's authenticated NTP extension) to extract crackable hashes for every computer account in the domain, without any credentials. Computer accounts normally have random 120-char passwords (uncrackable), but appliances, IoT devices, or accounts joined with weak passwords can be cracked. The last unauthenticated stone to turn.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Active Directory",
+  "subcategory": "Credential Harvesting",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "HTU engagement playbook; SecuraBV/Timeroast",
+  "tags": [
+    "timeroasting",
+    "ntp",
+    "ms-sntp",
+    "unauthenticated",
+    "computer-accounts",
+    "offline-cracking"
+  ],
+  "mitre": [
+    "T1558"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nMS-SNTP signs NTP responses with the computer account's password hash.\nTimeroast sends NTP requests for each RID, and the DC responds with a\nsigned value that can be cracked offline. No credentials needed.\n\n=== INSTALL ===\n  git clone https://github.com/SecuraBV/Timeroast /tmp/timeroast\n\n=== RUN ===\n  sudo python3 /tmp/timeroast/timeroast.py <dc_ip> -o timeroast_hashes.txt\n\n=== CRACK ===\n  hashcat -m 31300 timeroast_hashes.txt /usr/share/wordlists/rockyou.txt --username\n  # --username tells hashcat the 'RID:' prefix is a username, not part of the hash\n  # Without --username you get 'token length exception'\n\n=== WHEN IT MATTERS ===\nMachine passwords are normally random 120-char strings - uncrackable.\nBut if a device was domain-joined with a weak password (appliances,\nIoT, old servers, manually set machine passwords), timeroasting cracks it.\nIt is the LAST unauthenticated check after kerbrute + AS-REP roast.\n\n=== REQUIRES ===\n- Root/sudo (raw NTP socket)\n- Port 123/UDP open to the DC\n- MS-SNTP enabled (default on Windows DCs)",
+  "examples": [
+    {
+      "label": "Extract NTP hashes from domain controller",
+      "command": "sudo python3 /tmp/timeroast/timeroast.py 192.168.20.2 -o timeroast_hashes.txt"
+    },
+    {
+      "label": "Crack timeroast hashes with hashcat",
+      "command": "hashcat -m 31300 timeroast_hashes.txt /usr/share/wordlists/rockyou.txt --username"
+    },
+    {
+      "label": "Clone the timeroast tool",
+      "command": "git clone https://github.com/SecuraBV/Timeroast /tmp/timeroast"
+    }
+  ],
+  "references": [
+    {
+      "title": "SecuraBV Timeroast",
+      "url": "https://github.com/SecuraBV/Timeroast"
+    },
+    {
+      "title": "Secura Blog - Timeroasting",
+      "url": "https://www.secura.com/blog/timeroasting-trustworthy-by-design"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-kerbrute-userenum",
+      "note": "Kerbrute finds valid users; timeroasting targets computer accounts. Together they cover the full unauthenticated enumeration surface.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "MS-SNTP uses the computer account's NT hash to sign NTP responses. The signed value is extractable from the NTP reply and crackable offline with hashcat mode 31300.",
+    "prerequisites": "Network access to the DC on UDP 123; no credentials required.",
+    "impact": "Recovery of computer account passwords if they are weak (appliances, manually joined devices).",
+    "detection": "[MITRE T1558] Large volume of NTP requests from a single source with varying RIDs; no native Windows event for this.",
+    "artifacts": "Network capture showing rapid NTP queries to the DC; cracked computer account hashes.",
+    "splunk_spl": "index=network sourcetype=sntp dest_port=123 dest=<dc_ip>\n| stats count by src_ip\n| where count > 100\n| sort -count",
+    "elastic_kql": "destination.port:123 AND destination.ip:<dc_ip>",
+    "sentinel_kql": "CommonSecurityLog\n| where DestinationPort == 123 and DestinationIP == '<dc_ip>'\n| summarize RequestCount=count() by SourceIP\n| where RequestCount > 100",
+    "sigma_rules": "net_ntp_timeroasting_rapid_requests",
+    "prevention": "Disable MS-SNTP if not needed (requires registry change); use strong random machine passwords (default behavior); monitor NTP traffic for anomalous volumes.",
+    "sources": [
+      "HTU engagement playbook",
+      "https://attack.mitre.org/techniques/T1558/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "Timeroasting - rapid NTP enumeration",
+        "logic": "title: Rapid NTP Authentication Requests (Timeroasting)\nstatus: experimental\nlogsource:\n  category: network\n  product: any\ndetection:\n  selection:\n    dst_port: 123\n  condition: selection | count() by src_ip > 100\nlevel: medium",
+        "data_source": "network-flow",
+        "attack": [
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "NTP clients with multiple time sources; network time synchronization tools",
+        "tuning": "Threshold on request count per source IP per minute; exclude known NTP clients"
+      }
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "id": "privesc-privesccheck",
+  "name": "PrivescCheck - PowerShell Windows Privilege Escalation Auditor",
+  "command": "powershell -ep bypass -c \". .\\PrivescCheck.ps1; Invoke-PrivescCheck -Extended -Report PrivescCheck_%COMPUTERNAME% -Format TXT,HTML\"",
+  "description": "PrivescCheck is a comprehensive PowerShell script that checks for all common Windows privilege escalation vectors: service misconfigurations, unquoted paths, DLL hijacking, scheduled tasks, registry autoruns, credential files, and more. Modern replacement for PowerUp with better detection coverage.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "itm4n/PrivescCheck",
+  "tags": [
+    "privesccheck",
+    "powershell",
+    "privesc",
+    "windows-privesc",
+    "audit",
+    "enumeration"
+  ],
+  "mitre": [
+    "T1082"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC USAGE ===\n  powershell -ep bypass\n  . .\\PrivescCheck.ps1\n  Invoke-PrivescCheck\n\n=== EXTENDED CHECK + REPORT ===\n  Invoke-PrivescCheck -Extended -Report PrivescCheck_RESULTS -Format TXT,HTML\n\n=== WHAT IT CHECKS ===\n  # Services:\n  - Unquoted service paths\n  - Modifiable service binaries\n  - Modifiable service parameters\n  - World-writable service directories\n  # Registry:\n  - AlwaysInstallElevated\n  - AutoLogon credentials\n  - Autoruns with weak permissions\n  # Filesystem:\n  - DLL hijacking opportunities\n  - Writable PATH directories\n  - Writable program directories\n  # Scheduled Tasks:\n  - Modifiable task binaries\n  - Modifiable task directories\n  # Credentials:\n  - Cached credentials\n  - SAM backup files\n  - Unattend.xml files\n  - Web.config files\n  # Network:\n  - Open ports and services\n  - WiFi passwords\n\n=== COMPARISON ===\n  PrivescCheck:  Most comprehensive, actively maintained\n  PowerUp:       Classic but less maintained\n  WinPEAS:       C# binary, very thorough, noisier\n  Seatbelt:      GhostPack, more post-exploitation focused\n  SharpUp:       C# port of PowerUp",
+  "examples": [
+    {
+      "label": "Run all checks with report",
+      "command": "powershell -ep bypass -c \". .\\PrivescCheck.ps1; Invoke-PrivescCheck -Extended -Report PrivescCheck -Format TXT,HTML\""
+    },
+    {
+      "label": "Basic check",
+      "command": "powershell -ep bypass -c \". .\\PrivescCheck.ps1; Invoke-PrivescCheck\""
+    }
+  ],
+  "references": [
+    {
+      "title": "PrivescCheck",
+      "url": "https://github.com/itm4n/PrivescCheck"
+    },
+    {
+      "title": "MITRE T1082",
+      "url": "https://attack.mitre.org/techniques/T1082/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "winpe-tools",
+      "note": "WinPEAS for C# binary alternative with similar coverage.",
+      "rel": "alternative"
+    },
+    {
+      "id": "gs-privesc-enum",
+      "note": "LinPEAS for Linux privilege escalation enumeration.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "PrivescCheck systematically audits Windows configuration for privilege escalation vectors by checking file permissions, registry keys, service configurations, and credential storage.",
+    "prerequisites": "PowerShell execution on target; script uploaded or loaded in memory.",
+    "impact": "Identifies all local privilege escalation paths; guides attacker to SYSTEM.",
+    "detection": "[MITRE T1082] PowerShell script execution with enumeration patterns; accessing sensitive registry keys and service configurations.",
+    "artifacts": "PowerShell script block logging; access to service registry keys; WMI queries for services.",
+    "splunk_spl": "index=windows sourcetype=WinEventLog:Microsoft-Windows-PowerShell/Operational EventCode=4104 ScriptBlockText=\"*PrivescCheck*\"\n| table _time, ComputerName, ScriptBlockText",
+    "elastic_kql": "powershell.file.script_block_text:*PrivescCheck* OR powershell.file.script_block_text:*Invoke-PrivescCheck*",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where AdditionalFields has \"PrivescCheck\"\n| project Timestamp, DeviceName, AccountName, AdditionalFields",
+    "sigma_rules": "win_powershell_privesccheck_execution",
+    "prevention": "Enable PowerShell Constrained Language Mode; script block logging; AMSI; restrict PowerShell execution policy.",
+    "sources": [
+      "itm4n/PrivescCheck",
+      "https://attack.mitre.org/techniques/T1082/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "PrivescCheck or privilege escalation enumeration script",
+        "logic": "DeviceProcessEvents\n| where FileName == \"powershell.exe\"\n| where ProcessCommandLine has_any (\"PrivescCheck\", \"Invoke-PrivescCheck\", \"PowerUp\", \"Invoke-AllChecks\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1082"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Security audit teams running authorized assessments",
+        "tuning": "Also detect by behavior: rapid enumeration of services, registry keys, and scheduled tasks"
+      }
+    ]
+  }
+}

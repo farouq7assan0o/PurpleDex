@@ -2829,6 +2829,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-custom-forest-trust",
+          "name": "Cross-forest Kerberos authentication",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "crtp-forest-trust-abuse",
           "name": "Forest Trust Abuse (Inter-Realm TGT Forgery) - Sentinel",
           "platform": "sentinel",
@@ -4529,6 +4536,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-adcs-esc2-any-purpose",
+          "name": "ESC2 - Enrollment in Any Purpose or SubCA template",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-adcs-esc4-template-acl",
           "name": "ESC4 - Certificate template ACL modification",
           "platform": "sentinel",
@@ -4552,6 +4566,20 @@
         {
           "card_id": "ad-adcs-esc9-no-security-extension",
           "name": "ESC9 - UPN change followed by certificate request",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-certifried",
+          "name": "Certifried - Machine account DNS spoofing",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-certipy-shadow-auto",
+          "name": "Shadow Credentials - KeyCredentialLink modification",
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
@@ -6138,17 +6166,26 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "powershell"
+        },
+        {
+          "card_id": "ad-impacket-dcomexec",
+          "name": "DCOM lateral movement - DcomLaunch child process",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
         "splunk",
         "sigma",
-        "elastic"
+        "elastic",
+        "sentinel"
       ],
       "data_sources": [
         "sysmon",
         "windows-security",
-        "powershell"
+        "powershell",
+        "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
     },
@@ -8465,6 +8502,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "recon-redis-exploit",
+          "name": "Redis exploitation - CONFIG SET to sensitive directory",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-syslog"
+        },
+        {
           "card_id": "rfi",
           "name": "RFI - Remote File Inclusion Web Shell - Sentinel",
           "platform": "sentinel",
@@ -9153,6 +9197,7 @@
         "network-flow",
         "linux-audit",
         "ndr",
+        "linux-syslog",
         "iis"
       ],
       "best_fidelity": "behavioral"
@@ -12098,6 +12143,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "recon-redis-exploit",
+          "name": "Redis exploitation - CONFIG SET to sensitive directory",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-syslog"
+        },
+        {
           "card_id": "rfi",
           "name": "RFI - Remote File Inclusion Web Shell - Sentinel",
           "platform": "sentinel",
@@ -14312,6 +14364,7 @@
         "edr",
         "linux-audit",
         "ndr",
+        "linux-syslog",
         "network-flow"
       ],
       "best_fidelity": "behavioral"
@@ -14716,6 +14769,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "recon-masscan",
+          "name": "Mass port scanning activity",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "firewall"
         },
         {
           "card_id": "medusa-services-chain",
@@ -15994,8 +16054,8 @@
         "proxy",
         "linux-audit",
         "edr",
-        "sysmon",
-        "firewall"
+        "firewall",
+        "sysmon"
       ],
       "best_fidelity": "behavioral"
     },
@@ -17672,6 +17732,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "linux-baron-samedit",
+          "name": "Baron Samedit (CVE-2021-3156) exploitation attempt",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-syslog"
+        },
+        {
           "card_id": "auth-bypass-param-mod",
           "name": "Broken Auth - Bypass via Parameter Modification - Sentinel",
           "platform": "sentinel",
@@ -17768,6 +17835,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "linux-gameoverlay",
+          "name": "GameOverlay OverlayFS privilege escalation",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
         },
         {
           "card_id": "graphql-mutations",
@@ -18360,6 +18434,7 @@
       "data_sources": [
         "powershell",
         "windows-security",
+        "linux-syslog",
         "iis",
         "proxy",
         "defender-endpoint",
@@ -18658,6 +18733,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "privesc-sam-dump",
+          "name": "SAM/SYSTEM registry hive export",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
         },
         {
           "card_id": "reg-save-hives",
@@ -23193,6 +23275,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "exploit-deserialization",
+          "name": "Serialized payload in web request",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "iis"
+        },
+        {
           "card_id": "jenkins-groovy-revshell",
           "name": "Jenkins - Groovy Reverse Shell - Sentinel",
           "platform": "sentinel",
@@ -26337,6 +26426,903 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1003.006": {
+      "detections": [
+        {
+          "card_id": "ad-certifried",
+          "name": "Certifried - Machine account DNS spoofing",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
+          "name": "Coercing + Unconstrained Delegation - TGT Capture Attack - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
+          "name": "Coercing + Unconstrained Delegation - TGT Capture Attack (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
+          "name": "Coercing + Unconstrained Delegation - TGT Capture Attack (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
+          "name": "win_rpc_printerbug_coercion",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
+          "name": "proc_creation_win_hktl_rubeus",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
+          "name": "Coercing  Unconstrained Delegation - TGT Capture Attack - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-dcsync",
+          "name": "DCSync (SafetyKatz / impacket-secretsdump) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-dcsync",
+          "name": "DCSync (SafetyKatz / impacket-secretsdump) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-dcsync",
+          "name": "win_security_dcsync_replication_rights",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-dcsync",
+          "name": "DCSync (SafetyKatz  impacket-secretsdump) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-dcsync",
+          "name": "DCSync - non-DC replication request",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-dcsync",
+          "name": "DCSync - non-DC replication request",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-dcsync",
+          "name": "DCSync replication rights abuse (Sigma)",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-dcsync",
+          "name": "DCSync Attack - Attack Detection  Defense - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-pkinit-getnthash",
+          "name": "getnthash.py - Get NT Hash from PKINIT TGT - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-pkinit-getnthash",
+          "name": "getnthash.py - Get NT Hash from PKINIT TGT (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-pkinit-getnthash",
+          "name": "getnthash.py - Get NT Hash from PKINIT TGT (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-pkinit-getnthash",
+          "name": "win_security_pkinit_authentication_certificate",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-pkinit-getnthash",
+          "name": "getnthashpy - Get NT Hash from PKINIT TGT - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptc-dcsync",
+          "name": "Impacket - DCSync with Kerberos Ticket - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptc-dcsync",
+          "name": "Impacket - DCSync with Kerberos Ticket (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptc-dcsync",
+          "name": "Impacket - DCSync with Kerberos Ticket (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptc-dcsync",
+          "name": "win_security_dcsync_replication_rights",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptc-dcsync",
+          "name": "Impacket - DCSync with Kerberos Ticket - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-mimikatz-dcsync",
+          "name": "Mimikatz - DCSync (Windows) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-mimikatz-dcsync",
+          "name": "Mimikatz - DCSync (Windows) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-mimikatz-dcsync",
+          "name": "Mimikatz - DCSync (Windows) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-mimikatz-dcsync",
+          "name": "win_security_dcsync_replication_rights",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-mimikatz-dcsync",
+          "name": "proc_creation_win_hktl_mimikatz_command_line",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-mimikatz-dcsync",
+          "name": "Mimikatz - DCSync (Windows) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "win_security_adcs_esc8_ntlm_relay",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "net_ntlmrelayx_adcs",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ad-domainobjectacl",
+          "name": "PowerView - Add DCSync Rights via WriteDACL - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-domainobjectacl",
+          "name": "PowerView - Add DCSync Rights via WriteDACL (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-domainobjectacl",
+          "name": "PowerView - Add DCSync Rights via WriteDACL (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-domainobjectacl",
+          "name": "win_security_dacl_modification",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-domainobjectacl",
+          "name": "win_security_dcsync_replication_rights",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-domainobjectacl",
+          "name": "PowerView - Add DCSync Rights via WriteDACL - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "win_security_dc_machine_account_logon_anomaly",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "net_printerbug_coercion",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "Print Spooler Bug  NTLM Relay (DCSync via PrinterBug) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-dcsync",
+          "name": "secretsdump.py - DCSync (Linux) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-dcsync",
+          "name": "secretsdump.py - DCSync (Linux) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-dcsync",
+          "name": "secretsdump.py - DCSync (Linux) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-dcsync",
+          "name": "win_security_dcsync_replication_rights",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-dcsync",
+          "name": "secretsdumppy - DCSync (Linux) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-kerberos",
+          "name": "secretsdump.py - DCSync via Kerberos TGT - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-kerberos",
+          "name": "secretsdump.py - DCSync via Kerberos TGT (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-kerberos",
+          "name": "secretsdump.py - DCSync via Kerberos TGT (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-kerberos",
+          "name": "win_security_dcsync_replication_rights",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-kerberos",
+          "name": "win_security_ad_replication_non_machine_account",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-secretsdump-kerberos",
+          "name": "secretsdumppy - DCSync via Kerberos TGT - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-writedacl-linux",
+          "name": "WriteDACL to DCSync (bloodyAD, Linux) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-writedacl-linux",
+          "name": "WriteDACL to DCSync (bloodyAD, Linux) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-writedacl-linux",
+          "name": "WriteDACL to DCSync (bloodyAD, Linux) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-writedacl-linux",
+          "name": "win_security_dcsync_replication_rights",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-writedacl-linux",
+          "name": "win_security_domain_dacl_modification",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-writedacl-linux",
+          "name": "WriteDACL to DCSync (bloodyAD Linux) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "windows-security",
+        "sysmon",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1557.001": {
+      "detections": [
+        {
+          "card_id": "ad-certipy-shadow-auto",
+          "name": "Shadow Credentials - KeyCredentialLink modification",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-coercer-multi",
+          "name": "Multi-protocol NTLM coercion attempt",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-dfscoerce",
+          "name": "DFSCoerce - Anomalous machine account NTLM authentication",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-crack",
+          "name": "Hashcat - Crack NetNTLMv2 Hash - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "ad-responder-crack",
+          "name": "Hashcat - Crack NetNTLMv2 Hash - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-crack",
+          "name": "proc_creation_hashcat_offline_cracking",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-responder-crack",
+          "name": "Hashcat - Crack NetNTLMv2 Hash - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "smb-ntlm-relay",
+          "name": "Impacket - NTLM Relay (ntlmrelayx) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "smb-ntlm-relay",
+          "name": "Impacket - NTLM Relay (ntlmrelayx) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "smb-ntlm-relay",
+          "name": "win_security_ntlm_relay_multi_target",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "smb-ntlm-relay",
+          "name": "Impacket - NTLM Relay (ntlmrelayx) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-inveigh-cs",
+          "name": "Inveigh (C#) - Run Executable - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "ad-inveigh-cs",
+          "name": "Inveigh (C#) - Run Executable (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-inveigh-cs",
+          "name": "Inveigh (C#) - Run Executable (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-inveigh-cs",
+          "name": "net_llmnr_nbns_poisoning",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-inveigh-cs",
+          "name": "Inveigh (C) - Run Executable - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ad-inveigh-ps",
+          "name": "Inveigh (PowerShell) - LLMNR/NBNS Poisoning - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "ad-inveigh-ps",
+          "name": "Inveigh (PowerShell) - LLMNR/NBNS Poisoning - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "ad-inveigh-ps",
+          "name": "posh_ps_invoke_inveigh",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-inveigh-ps",
+          "name": "Inveigh (PowerShell) - LLMNRNBNS Poisoning - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "crtp-llmnr-poisoning",
+          "name": "LLMNR/NBT-NS Poisoning (Responder) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-llmnr-poisoning",
+          "name": "LLMNR/NBT-NS Poisoning (Responder) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-llmnr-poisoning",
+          "name": "LLMNR/NBT-NS Poisoning (Responder) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-llmnr-poisoning",
+          "name": "net_llmnr_nbns_poisoning_responder",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-llmnr-poisoning",
+          "name": "win_security_ntlm_relay_logon",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-llmnr-poisoning",
+          "name": "LLMNRNBT-NS Poisoning (Responder) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-mitm6-ipv6-takeover",
+          "name": "mitm6 DHCPv6 spoofing detection",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
+          "card_id": "ad-petitpotam",
+          "name": "PetitPotam + NTLM Relay → ADCS Certificate - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-petitpotam",
+          "name": "PetitPotam + NTLM Relay → ADCS Certificate (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-petitpotam",
+          "name": "PetitPotam + NTLM Relay → ADCS Certificate (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-petitpotam",
+          "name": "win_security_petitpotam_coercion",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-petitpotam",
+          "name": "sysmon_named_pipe_efs",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-petitpotam",
+          "name": "PetitPotam  NTLM Relay  ADCS Certificate - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "win_security_adcs_esc8_ntlm_relay",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "net_ntlmrelayx_adcs",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-pki-esc8",
+          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "win_security_dc_machine_account_logon_anomaly",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "net_printerbug_coercion",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
+          "name": "Print Spooler Bug  NTLM Relay (DCSync via PrinterBug) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-poison",
+          "name": "Responder - Active Poisoning - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-poison",
+          "name": "Responder - Active Poisoning (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-poison",
+          "name": "Responder - Active Poisoning (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-poison",
+          "name": "net_llmnr_nbns_poisoning_responder",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-poison",
+          "name": "Responder - Active Poisoning - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "ad-responder-analyze",
+          "name": "Responder - Passive Analysis Mode - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-analyze",
+          "name": "Responder - Passive Analysis Mode - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-analyze",
+          "name": "net_llmnr_nbns_broadcast_baseline",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-responder-analyze",
+          "name": "Responder - Passive Analysis Mode - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "responder-poison",
+          "name": "Responder - Poison and Capture NetNTLM Hashes - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "responder-poison",
+          "name": "Responder - Poison and Capture NetNTLM Hashes (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "responder-poison",
+          "name": "Responder - Poison and Capture NetNTLM Hashes (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "responder-poison",
+          "name": "net_llmnr_nbns_poisoning_responder",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "responder-poison",
+          "name": "Responder - Poison and Capture NetNTLM Hashes - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "windows-security",
+        "sysmon",
+        "defender-endpoint",
+        "edr",
+        "powershell",
+        "network-flow",
+        "ndr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1134.005": {
       "detections": [
         {
@@ -26378,6 +27364,13 @@
           "card_id": "crtp-child-to-parent",
           "name": "Child-to-Parent Domain Escalation (krbtgt SID-History OR Trust Key) - Elastic KQL",
           "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-custom-forest-trust",
+          "name": "Cross-forest Kerberos authentication",
+          "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
         },
@@ -26968,6 +27961,208 @@
         "sysmon",
         "edr",
         "defender-endpoint"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1572": {
+      "detections": [
+        {
+          "card_id": "recon-chisel-http-tunnel",
+          "name": "HTTP tunneling - long-lived connection pattern",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "dnscat2",
+          "name": "Dnscat2 - DNS Tunneling - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnscat2",
+          "name": "Dnscat2 - DNS Tunneling - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnscat2",
+          "name": "net_dns_tunneling_dnscat2 (long encoded labels",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnscat2",
+          "name": "Dnscat2 - DNS Tunneling - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "plink-dynamic",
+          "name": "Plink - Dynamic Port Forward (Windows) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "plink-dynamic",
+          "name": "Plink - Dynamic Port Forward (Windows) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "plink-dynamic",
+          "name": "Plink - Dynamic Port Forward (Windows) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "plink-dynamic",
+          "name": "proc_creation_win_plink_tunnel",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "plink-dynamic",
+          "name": "Plink - Dynamic Port Forward (Windows) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ptunnel-ng",
+          "name": "Ptunnel-ng - ICMP Tunneling - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptunnel-ng",
+          "name": "Ptunnel-ng - ICMP Tunneling - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
+          "card_id": "ptunnel-ng",
+          "name": "net_icmp_tunneling_ptunnel",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptunnel-ng",
+          "name": "Ptunnel-ng - ICMP Tunneling - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ssh-dynamic-socks",
+          "name": "SSH - Dynamic Port Forwarding (SOCKS) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "ssh-dynamic-socks",
+          "name": "SSH - Dynamic Port Forwarding (SOCKS) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "ssh-dynamic-socks",
+          "name": "proc_creation_lnx_ssh_dynamic_socks",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ssh-dynamic-socks",
+          "name": "SSH - Dynamic Port Forwarding (SOCKS) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ssh-local-forward",
+          "name": "SSH - Local Port Forwarding - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "ssh-local-forward",
+          "name": "SSH - Local Port Forwarding - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "ssh-local-forward",
+          "name": "proc_creation_lnx_ssh_local_forward",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ssh-local-forward",
+          "name": "SSH - Local Port Forwarding - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ssh-remote-forward",
+          "name": "SSH - Remote/Reverse Port Forwarding - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "ssh-remote-forward",
+          "name": "SSH - Remote/Reverse Port Forwarding - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "ssh-remote-forward",
+          "name": "proc_creation_lnx_ssh_remote_forward",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ssh-remote-forward",
+          "name": "SSH - RemoteReverse Port Forwarding - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "defender-endpoint",
+        "dns",
+        "sysmon",
+        "edr",
+        "windows-security",
+        "network-flow",
+        "linux-audit"
       ],
       "best_fidelity": "behavioral"
     },
@@ -27585,889 +28780,6 @@
         "windows-security",
         "proxy",
         "ndr"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1557.001": {
-      "detections": [
-        {
-          "card_id": "ad-coercer-multi",
-          "name": "Multi-protocol NTLM coercion attempt",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-dfscoerce",
-          "name": "DFSCoerce - Anomalous machine account NTLM authentication",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-crack",
-          "name": "Hashcat - Crack NetNTLMv2 Hash - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "ad-responder-crack",
-          "name": "Hashcat - Crack NetNTLMv2 Hash - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-crack",
-          "name": "proc_creation_hashcat_offline_cracking",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-responder-crack",
-          "name": "Hashcat - Crack NetNTLMv2 Hash - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "smb-ntlm-relay",
-          "name": "Impacket - NTLM Relay (ntlmrelayx) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "smb-ntlm-relay",
-          "name": "Impacket - NTLM Relay (ntlmrelayx) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "smb-ntlm-relay",
-          "name": "win_security_ntlm_relay_multi_target",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "smb-ntlm-relay",
-          "name": "Impacket - NTLM Relay (ntlmrelayx) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-inveigh-cs",
-          "name": "Inveigh (C#) - Run Executable - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "ad-inveigh-cs",
-          "name": "Inveigh (C#) - Run Executable (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-inveigh-cs",
-          "name": "Inveigh (C#) - Run Executable (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-inveigh-cs",
-          "name": "net_llmnr_nbns_poisoning",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-inveigh-cs",
-          "name": "Inveigh (C) - Run Executable - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ad-inveigh-ps",
-          "name": "Inveigh (PowerShell) - LLMNR/NBNS Poisoning - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "ad-inveigh-ps",
-          "name": "Inveigh (PowerShell) - LLMNR/NBNS Poisoning - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "ad-inveigh-ps",
-          "name": "posh_ps_invoke_inveigh",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-inveigh-ps",
-          "name": "Inveigh (PowerShell) - LLMNRNBNS Poisoning - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "crtp-llmnr-poisoning",
-          "name": "LLMNR/NBT-NS Poisoning (Responder) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-llmnr-poisoning",
-          "name": "LLMNR/NBT-NS Poisoning (Responder) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-llmnr-poisoning",
-          "name": "LLMNR/NBT-NS Poisoning (Responder) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-llmnr-poisoning",
-          "name": "net_llmnr_nbns_poisoning_responder",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-llmnr-poisoning",
-          "name": "win_security_ntlm_relay_logon",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-llmnr-poisoning",
-          "name": "LLMNRNBT-NS Poisoning (Responder) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-mitm6-ipv6-takeover",
-          "name": "mitm6 DHCPv6 spoofing detection",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "network-flow"
-        },
-        {
-          "card_id": "ad-petitpotam",
-          "name": "PetitPotam + NTLM Relay → ADCS Certificate - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-petitpotam",
-          "name": "PetitPotam + NTLM Relay → ADCS Certificate (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-petitpotam",
-          "name": "PetitPotam + NTLM Relay → ADCS Certificate (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-petitpotam",
-          "name": "win_security_petitpotam_coercion",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-petitpotam",
-          "name": "sysmon_named_pipe_efs",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-petitpotam",
-          "name": "PetitPotam  NTLM Relay  ADCS Certificate - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "win_security_adcs_esc8_ntlm_relay",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "net_ntlmrelayx_adcs",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "win_security_dc_machine_account_logon_anomaly",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "net_printerbug_coercion",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "Print Spooler Bug  NTLM Relay (DCSync via PrinterBug) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-poison",
-          "name": "Responder - Active Poisoning - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-poison",
-          "name": "Responder - Active Poisoning (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-poison",
-          "name": "Responder - Active Poisoning (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-poison",
-          "name": "net_llmnr_nbns_poisoning_responder",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-poison",
-          "name": "Responder - Active Poisoning - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "ad-responder-analyze",
-          "name": "Responder - Passive Analysis Mode - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-analyze",
-          "name": "Responder - Passive Analysis Mode - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-analyze",
-          "name": "net_llmnr_nbns_broadcast_baseline",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-responder-analyze",
-          "name": "Responder - Passive Analysis Mode - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "responder-poison",
-          "name": "Responder - Poison and Capture NetNTLM Hashes - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "responder-poison",
-          "name": "Responder - Poison and Capture NetNTLM Hashes (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "responder-poison",
-          "name": "Responder - Poison and Capture NetNTLM Hashes (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "responder-poison",
-          "name": "net_llmnr_nbns_poisoning_responder",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "responder-poison",
-          "name": "Responder - Poison and Capture NetNTLM Hashes - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "sysmon",
-        "windows-security",
-        "defender-endpoint",
-        "edr",
-        "powershell",
-        "network-flow",
-        "ndr"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1003.006": {
-      "detections": [
-        {
-          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
-          "name": "Coercing + Unconstrained Delegation - TGT Capture Attack - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
-          "name": "Coercing + Unconstrained Delegation - TGT Capture Attack (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
-          "name": "Coercing + Unconstrained Delegation - TGT Capture Attack (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
-          "name": "win_rpc_printerbug_coercion",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
-          "name": "proc_creation_win_hktl_rubeus",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cdsa-m06-coercing-unconstrained-delegation",
-          "name": "Coercing  Unconstrained Delegation - TGT Capture Attack - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-dcsync",
-          "name": "DCSync (SafetyKatz / impacket-secretsdump) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-dcsync",
-          "name": "DCSync (SafetyKatz / impacket-secretsdump) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-dcsync",
-          "name": "win_security_dcsync_replication_rights",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-dcsync",
-          "name": "DCSync (SafetyKatz  impacket-secretsdump) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-dcsync",
-          "name": "DCSync - non-DC replication request",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-dcsync",
-          "name": "DCSync - non-DC replication request",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-dcsync",
-          "name": "DCSync replication rights abuse (Sigma)",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-dcsync",
-          "name": "DCSync Attack - Attack Detection  Defense - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-pkinit-getnthash",
-          "name": "getnthash.py - Get NT Hash from PKINIT TGT - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-pkinit-getnthash",
-          "name": "getnthash.py - Get NT Hash from PKINIT TGT (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-pkinit-getnthash",
-          "name": "getnthash.py - Get NT Hash from PKINIT TGT (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-pkinit-getnthash",
-          "name": "win_security_pkinit_authentication_certificate",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-pkinit-getnthash",
-          "name": "getnthashpy - Get NT Hash from PKINIT TGT - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptc-dcsync",
-          "name": "Impacket - DCSync with Kerberos Ticket - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptc-dcsync",
-          "name": "Impacket - DCSync with Kerberos Ticket (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptc-dcsync",
-          "name": "Impacket - DCSync with Kerberos Ticket (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptc-dcsync",
-          "name": "win_security_dcsync_replication_rights",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptc-dcsync",
-          "name": "Impacket - DCSync with Kerberos Ticket - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-mimikatz-dcsync",
-          "name": "Mimikatz - DCSync (Windows) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-mimikatz-dcsync",
-          "name": "Mimikatz - DCSync (Windows) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-mimikatz-dcsync",
-          "name": "Mimikatz - DCSync (Windows) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-mimikatz-dcsync",
-          "name": "win_security_dcsync_replication_rights",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-mimikatz-dcsync",
-          "name": "proc_creation_win_hktl_mimikatz_command_line",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-mimikatz-dcsync",
-          "name": "Mimikatz - DCSync (Windows) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "win_security_adcs_esc8_ntlm_relay",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "net_ntlmrelayx_adcs",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-pki-esc8",
-          "name": "PKI ESC8 - NTLM Relay to ADCS HTTP Enrollment - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ad-domainobjectacl",
-          "name": "PowerView - Add DCSync Rights via WriteDACL - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-domainobjectacl",
-          "name": "PowerView - Add DCSync Rights via WriteDACL (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-domainobjectacl",
-          "name": "PowerView - Add DCSync Rights via WriteDACL (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-domainobjectacl",
-          "name": "win_security_dacl_modification",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-domainobjectacl",
-          "name": "win_security_dcsync_replication_rights",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-domainobjectacl",
-          "name": "PowerView - Add DCSync Rights via WriteDACL - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "win_security_dc_machine_account_logon_anomaly",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "net_printerbug_coercion",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-print-spooler-ntlm-relay",
-          "name": "Print Spooler Bug  NTLM Relay (DCSync via PrinterBug) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-dcsync",
-          "name": "secretsdump.py - DCSync (Linux) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-dcsync",
-          "name": "secretsdump.py - DCSync (Linux) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-dcsync",
-          "name": "secretsdump.py - DCSync (Linux) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-dcsync",
-          "name": "win_security_dcsync_replication_rights",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-dcsync",
-          "name": "secretsdumppy - DCSync (Linux) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-kerberos",
-          "name": "secretsdump.py - DCSync via Kerberos TGT - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-kerberos",
-          "name": "secretsdump.py - DCSync via Kerberos TGT (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-kerberos",
-          "name": "secretsdump.py - DCSync via Kerberos TGT (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-kerberos",
-          "name": "win_security_dcsync_replication_rights",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-kerberos",
-          "name": "win_security_ad_replication_non_machine_account",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-secretsdump-kerberos",
-          "name": "secretsdumppy - DCSync via Kerberos TGT - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-writedacl-linux",
-          "name": "WriteDACL to DCSync (bloodyAD, Linux) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-writedacl-linux",
-          "name": "WriteDACL to DCSync (bloodyAD, Linux) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-writedacl-linux",
-          "name": "WriteDACL to DCSync (bloodyAD, Linux) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-writedacl-linux",
-          "name": "win_security_dcsync_replication_rights",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-writedacl-linux",
-          "name": "win_security_domain_dacl_modification",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-writedacl-linux",
-          "name": "WriteDACL to DCSync (bloodyAD Linux) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "windows-security",
-        "sysmon",
-        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -32047,201 +32359,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1572": {
-      "detections": [
-        {
-          "card_id": "dnscat2",
-          "name": "Dnscat2 - DNS Tunneling - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnscat2",
-          "name": "Dnscat2 - DNS Tunneling - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnscat2",
-          "name": "net_dns_tunneling_dnscat2 (long encoded labels",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnscat2",
-          "name": "Dnscat2 - DNS Tunneling - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "plink-dynamic",
-          "name": "Plink - Dynamic Port Forward (Windows) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "plink-dynamic",
-          "name": "Plink - Dynamic Port Forward (Windows) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "plink-dynamic",
-          "name": "Plink - Dynamic Port Forward (Windows) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "plink-dynamic",
-          "name": "proc_creation_win_plink_tunnel",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "plink-dynamic",
-          "name": "Plink - Dynamic Port Forward (Windows) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ptunnel-ng",
-          "name": "Ptunnel-ng - ICMP Tunneling - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptunnel-ng",
-          "name": "Ptunnel-ng - ICMP Tunneling - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "network-flow"
-        },
-        {
-          "card_id": "ptunnel-ng",
-          "name": "net_icmp_tunneling_ptunnel",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptunnel-ng",
-          "name": "Ptunnel-ng - ICMP Tunneling - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ssh-dynamic-socks",
-          "name": "SSH - Dynamic Port Forwarding (SOCKS) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "ssh-dynamic-socks",
-          "name": "SSH - Dynamic Port Forwarding (SOCKS) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "ssh-dynamic-socks",
-          "name": "proc_creation_lnx_ssh_dynamic_socks",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ssh-dynamic-socks",
-          "name": "SSH - Dynamic Port Forwarding (SOCKS) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ssh-local-forward",
-          "name": "SSH - Local Port Forwarding - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "ssh-local-forward",
-          "name": "SSH - Local Port Forwarding - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "ssh-local-forward",
-          "name": "proc_creation_lnx_ssh_local_forward",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ssh-local-forward",
-          "name": "SSH - Local Port Forwarding - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ssh-remote-forward",
-          "name": "SSH - Remote/Reverse Port Forwarding - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "ssh-remote-forward",
-          "name": "SSH - Remote/Reverse Port Forwarding - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "ssh-remote-forward",
-          "name": "proc_creation_lnx_ssh_remote_forward",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ssh-remote-forward",
-          "name": "SSH - RemoteReverse Port Forwarding - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "dns",
-        "defender-endpoint",
-        "sysmon",
-        "edr",
-        "windows-security",
-        "network-flow",
-        "linux-audit"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1590": {
       "detections": [
         {
@@ -33228,6 +33345,282 @@
       ],
       "data_sources": [
         "windows-security",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1134.001": {
+      "detections": [
+        {
+          "card_id": "privesc-godpotato",
+          "name": "Potato privilege escalation tool execution",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "cdsa-m06-constrained-delegation",
+          "name": "Kerberos Constrained Delegation Abuse (S4U) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-constrained-delegation",
+          "name": "Kerberos Constrained Delegation Abuse (S4U) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-constrained-delegation",
+          "name": "win_security_kerberos_constrained_delegation",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-constrained-delegation",
+          "name": "Kerberos Constrained Delegation Abuse (S4U) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "meterpreter-steal-token",
+          "name": "Meterpreter - Steal Token - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "meterpreter-steal-token",
+          "name": "Meterpreter - Steal Token (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "meterpreter-steal-token",
+          "name": "Meterpreter - Steal Token (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "meterpreter-steal-token",
+          "name": "win_meterpreter_steal_token",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "meterpreter-steal-token",
+          "name": "Meterpreter - Steal Token - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mimikatz-lsadump",
+          "name": "Mimikatz LSA Dump (SAM / LSA Secrets) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "mimikatz-lsadump",
+          "name": "Mimikatz LSA Dump (SAM / LSA Secrets) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-lsadump",
+          "name": "Mimikatz LSA Dump (SAM / LSA Secrets) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-lsadump",
+          "name": "sysmon_lsass_access_credential_dumping",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-lsadump",
+          "name": "proc_creation_win_hktl_mimikatz_command_line",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-lsadump",
+          "name": "Mimikatz LSA Dump (SAM  LSA Secrets) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ad-impacket-rbcd",
+          "name": "Resource-Based Constrained Delegation (RBCD, Linux) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-impacket-rbcd",
+          "name": "Resource-Based Constrained Delegation (RBCD, Linux) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-impacket-rbcd",
+          "name": "Resource-Based Constrained Delegation (RBCD, Linux) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-impacket-rbcd",
+          "name": "win_security_rbcd_delegation_write",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-impacket-rbcd",
+          "name": "win_security_computer_account_created_by_user",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-impacket-rbcd",
+          "name": "Resource-Based Constrained Delegation (RBCD Linux) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-runas-netonly",
+          "name": "runas /netonly - Inject AD Creds on Windows - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-runas-netonly",
+          "name": "runas /netonly - Inject AD Creds on Windows (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-runas-netonly",
+          "name": "runas /netonly - Inject AD Creds on Windows (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-runas-netonly",
+          "name": "proc_creation_win_runas_netonly",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-runas-netonly",
+          "name": "runas netonly - Inject AD Creds on Windows - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "seimpersonate-juicypotato",
+          "name": "SeImpersonate - JuicyPotato to SYSTEM - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "seimpersonate-juicypotato",
+          "name": "SeImpersonate - JuicyPotato to SYSTEM (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "seimpersonate-juicypotato",
+          "name": "SeImpersonate - JuicyPotato to SYSTEM (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "seimpersonate-juicypotato",
+          "name": "proc_creation_win_hktl_juicypotato",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "seimpersonate-juicypotato",
+          "name": "SeImpersonate - JuicyPotato to SYSTEM - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "seimpersonate-printspoofer",
+          "name": "SeImpersonate - PrintSpoofer to SYSTEM - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "seimpersonate-printspoofer",
+          "name": "SeImpersonate - PrintSpoofer to SYSTEM (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "seimpersonate-printspoofer",
+          "name": "SeImpersonate - PrintSpoofer to SYSTEM (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "seimpersonate-printspoofer",
+          "name": "proc_creation_win_hktl_printspoofer",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "seimpersonate-printspoofer",
+          "name": "SeImpersonate - PrintSpoofer to SYSTEM - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "defender-endpoint",
+        "windows-security",
+        "sysmon",
         "edr"
       ],
       "best_fidelity": "behavioral"
@@ -34600,275 +34993,6 @@
         "windows-security",
         "sysmon",
         "proxy"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1134.001": {
-      "detections": [
-        {
-          "card_id": "cdsa-m06-constrained-delegation",
-          "name": "Kerberos Constrained Delegation Abuse (S4U) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-constrained-delegation",
-          "name": "Kerberos Constrained Delegation Abuse (S4U) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-constrained-delegation",
-          "name": "win_security_kerberos_constrained_delegation",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-constrained-delegation",
-          "name": "Kerberos Constrained Delegation Abuse (S4U) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "meterpreter-steal-token",
-          "name": "Meterpreter - Steal Token - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "meterpreter-steal-token",
-          "name": "Meterpreter - Steal Token (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "meterpreter-steal-token",
-          "name": "Meterpreter - Steal Token (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "meterpreter-steal-token",
-          "name": "win_meterpreter_steal_token",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "meterpreter-steal-token",
-          "name": "Meterpreter - Steal Token - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mimikatz-lsadump",
-          "name": "Mimikatz LSA Dump (SAM / LSA Secrets) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "mimikatz-lsadump",
-          "name": "Mimikatz LSA Dump (SAM / LSA Secrets) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-lsadump",
-          "name": "Mimikatz LSA Dump (SAM / LSA Secrets) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-lsadump",
-          "name": "sysmon_lsass_access_credential_dumping",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-lsadump",
-          "name": "proc_creation_win_hktl_mimikatz_command_line",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-lsadump",
-          "name": "Mimikatz LSA Dump (SAM  LSA Secrets) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ad-impacket-rbcd",
-          "name": "Resource-Based Constrained Delegation (RBCD, Linux) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-impacket-rbcd",
-          "name": "Resource-Based Constrained Delegation (RBCD, Linux) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-impacket-rbcd",
-          "name": "Resource-Based Constrained Delegation (RBCD, Linux) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-impacket-rbcd",
-          "name": "win_security_rbcd_delegation_write",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-impacket-rbcd",
-          "name": "win_security_computer_account_created_by_user",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-impacket-rbcd",
-          "name": "Resource-Based Constrained Delegation (RBCD Linux) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-runas-netonly",
-          "name": "runas /netonly - Inject AD Creds on Windows - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-runas-netonly",
-          "name": "runas /netonly - Inject AD Creds on Windows (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-runas-netonly",
-          "name": "runas /netonly - Inject AD Creds on Windows (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-runas-netonly",
-          "name": "proc_creation_win_runas_netonly",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-runas-netonly",
-          "name": "runas netonly - Inject AD Creds on Windows - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "seimpersonate-juicypotato",
-          "name": "SeImpersonate - JuicyPotato to SYSTEM - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "seimpersonate-juicypotato",
-          "name": "SeImpersonate - JuicyPotato to SYSTEM (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "seimpersonate-juicypotato",
-          "name": "SeImpersonate - JuicyPotato to SYSTEM (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "seimpersonate-juicypotato",
-          "name": "proc_creation_win_hktl_juicypotato",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "seimpersonate-juicypotato",
-          "name": "SeImpersonate - JuicyPotato to SYSTEM - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "seimpersonate-printspoofer",
-          "name": "SeImpersonate - PrintSpoofer to SYSTEM - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "seimpersonate-printspoofer",
-          "name": "SeImpersonate - PrintSpoofer to SYSTEM (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "seimpersonate-printspoofer",
-          "name": "SeImpersonate - PrintSpoofer to SYSTEM (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "seimpersonate-printspoofer",
-          "name": "proc_creation_win_hktl_printspoofer",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "seimpersonate-printspoofer",
-          "name": "SeImpersonate - PrintSpoofer to SYSTEM - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "windows-security",
-        "sysmon",
-        "defender-endpoint",
-        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -36977,6 +37101,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "powershell"
+        },
+        {
+          "card_id": "ad-pre2k-computers",
+          "name": "Pre-2000 computer account authentication",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
         }
       ],
       "platforms": [
@@ -39375,12 +39506,13 @@
       "T1620",
       "T1548.001",
       "T1596.003",
+      "T1003.006",
+      "T1557.001",
       "T1134.005",
       "T1558.001",
       "T1090.001",
       "T1592.002",
       "T1598.002",
-      "T1003.006",
       "T1083",
       "T1595",
       "T1505.003",
@@ -39396,7 +39528,6 @@
       "T1027.004",
       "T1207",
       "T1078.001",
-      "T1557.001",
       "T1005",
       "T1555",
       "T1590",
@@ -39564,6 +39695,7 @@
       "T1059",
       "T1069.002",
       "T1110.002",
+      "T1572",
       "T1090.001",
       "T1140",
       "T1190",
@@ -39576,6 +39708,7 @@
       "T1110.001",
       "T1068",
       "T1187",
+      "T1021.003",
       "T1078.001",
       "T1574.001",
       "T1557.002",
@@ -39592,6 +39725,7 @@
       "T1078",
       "T1018",
       "T1090",
+      "T1134.001",
       "T1484.001",
       "T1558.003",
       "T1557.001",
@@ -39607,7 +39741,6 @@
       "T1210",
       "T1555.004",
       "T1003.004",
-      "T1134.001",
       "T1053.005",
       "T1505.003",
       "T1036",
@@ -39619,7 +39752,6 @@
       "T1003.001",
       "T1110.003",
       "T1539",
-      "T1572",
       "T1033",
       "T1563.002",
       "T1558.004",
@@ -40166,16 +40298,21 @@
       "T1087.004",
       "T1069.003"
     ],
+    "linux-syslog": [
+      "T1068",
+      "T1190",
+      "T1505.003"
+    ],
     "entra-id": [
       "T1110.003"
     ],
-    "linux-auth": [
-      "T1110.001"
-    ],
     "firewall": [
       "T1046"
+    ],
+    "linux-auth": [
+      "T1110.001"
     ]
   },
-  "cards_with_detections": 838,
-  "total_detections": 3752
+  "cards_with_detections": 852,
+  "total_detections": 3766
 }

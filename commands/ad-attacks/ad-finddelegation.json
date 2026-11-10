@@ -1,0 +1,106 @@
+{
+  "id": "ad-finddelegation",
+  "name": "findDelegation.py - Enumerate AD Delegation Settings",
+  "command": "findDelegation.py <domain>/<user>:<pass> -dc-ip <dc_ip>",
+  "description": "Impacket findDelegation enumerates all delegation settings in Active Directory: unconstrained, constrained, and resource-based constrained delegation. Shows which accounts can impersonate others and to which services. Critical first step before any delegation-based attack (S4U2Self/Proxy, RBCD, printer bug).",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Impacket; HTB machines; CRTP delegation module",
+  "tags": [
+    "finddelegation",
+    "impacket",
+    "delegation",
+    "unconstrained",
+    "constrained",
+    "rbcd",
+    "enumeration"
+  ],
+  "mitre": [
+    "T1087.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC USAGE ===\n  findDelegation.py <domain>/<user>:<pass> -dc-ip <dc_ip>\n  # Shows: AccountName, AccountType, DelegationType, DelegationRightsTo\n\n=== OUTPUT COLUMNS ===\n  # AccountName: The account with delegation\n  # AccountType: User or Computer\n  # DelegationType: Unconstrained, Constrained, Resource-Based Constrained\n  # DelegationRightsTo: Target service(s)\n\n=== WHAT TO LOOK FOR ===\n  # UNCONSTRAINED DELEGATION:\n  #   Computer accounts trusted for delegation to ANY service\n  #   Attack: Coerce auth (PrinterBug/PetitPotam) -> capture TGT\n  # CONSTRAINED DELEGATION:\n  #   Accounts delegated to SPECIFIC services (e.g. CIFS/SQL01)\n  #   Attack: S4U2Self + S4U2Proxy -> impersonate admin to target\n  # RESOURCE-BASED CONSTRAINED (RBCD):\n  #   Target allows specific accounts to delegate TO it\n  #   Attack: Control source account -> impersonate to target\n\n=== ALTERNATIVE TOOLS ===\n  # PowerView:\n  Get-DomainComputer -Unconstrained\n  Get-DomainUser -TrustedToAuth\n  Get-DomainComputer -TrustedToAuth\n  # BloodHound: Check delegation edges\n  # CrackMapExec:\n  crackmapexec ldap <dc_ip> -u <user> -p <pass> --trusted-for-delegation",
+  "examples": [
+    {
+      "label": "Enumerate all delegation",
+      "command": "findDelegation.py corp.local/jdoe:Password123 -dc-ip 192.168.1.10"
+    },
+    {
+      "label": "With Kerberos auth",
+      "command": "findDelegation.py corp.local/jdoe -k -no-pass -dc-ip 192.168.1.10"
+    },
+    {
+      "label": "Alternative CrackMapExec",
+      "command": "crackmapexec ldap 192.168.1.10 -u jdoe -p Password123 --trusted-for-delegation"
+    }
+  ],
+  "references": [
+    {
+      "title": "Impacket",
+      "url": "https://github.com/fortra/impacket"
+    },
+    {
+      "title": "MITRE T1087.002",
+      "url": "https://attack.mitre.org/techniques/T1087/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-impacket-rbcd",
+      "note": "RBCD attack after finding resource-based delegation targets.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-s4u2self-abuse",
+      "note": "S4U2Self/Proxy attack after finding constrained delegation.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-krbrelayx",
+      "note": "Exploit unconstrained delegation via Kerberos relay.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Delegation settings are stored in AD attributes (userAccountControl, msDS-AllowedToDelegateTo, msDS-AllowedToActOnBehalfOfOtherIdentity) readable by any authenticated user.",
+    "prerequisites": "Any domain user credentials; LDAP access to DC.",
+    "impact": "Identifies all delegation attack paths in the domain.",
+    "detection": "[MITRE T1087.002] LDAP queries for delegation attributes; bulk AD enumeration.",
+    "artifacts": "LDAP queries for userAccountControl with delegation flags; msDS-AllowedToDelegateTo lookups.",
+    "splunk_spl": "index=windows EventCode=1644 (SearchFilter=\"*userAccountControl*\" OR SearchFilter=\"*msDS-AllowedToDelegateTo*\")\n| table _time, SubjectUserName, SearchFilter",
+    "elastic_kql": "event.code:\"1644\" AND winlog.event_data.SearchFilter:(*AllowedToDelegate* OR *TrustedForDelegation*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 1644\n| where SearchFilter has_any (\"AllowedToDelegateTo\", \"TrustedForDelegation\", \"AllowedToActOnBehalf\")\n| project TimeGenerated, SubjectUserName, SearchFilter",
+    "sigma_rules": "win_ldap_delegation_enumeration",
+    "prevention": "Minimize delegation configurations; use Protected Users group; monitor delegation attribute queries; audit delegation settings regularly.",
+    "sources": [
+      "Impacket",
+      "https://attack.mitre.org/techniques/T1087/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD delegation enumeration via LDAP",
+        "logic": "SecurityEvent\n| where EventID == 1644\n| where SearchFilter has_any (\"msDS-AllowedToDelegateTo\", \"TrustedForDelegation\", \"AllowedToActOnBehalf\")\n| project TimeGenerated, SubjectUserName, ClientIP=IpAddress, SearchFilter",
+        "data_source": "windows-security",
+        "log_ids": [
+          "1644"
+        ],
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "BloodHound/SharpHound enumeration; legitimate AD administration tools",
+        "tuning": "Alert on non-admin accounts querying delegation attributes"
+      }
+    ]
+  }
+}

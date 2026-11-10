@@ -2073,6 +2073,13 @@
           "data_source": "ndr"
         },
         {
+          "card_id": "ad-finddelegation",
+          "name": "AD delegation enumeration via LDAP",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "kerbrute-userenum",
           "name": "Kerbrute - Enumerate AD Usernames - Sentinel",
           "platform": "sentinel",
@@ -4559,6 +4566,13 @@
         {
           "card_id": "ad-adcs-esc4-template-acl",
           "name": "ESC4 - Certificate template ACL modification",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-adcs-esc4-template-modify",
+          "name": "ESC4 - Certificate template modification",
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
@@ -14435,6 +14449,13 @@
           "data_source": "ndr"
         },
         {
+          "card_id": "recon-autorecon",
+          "name": "Automated multi-tool reconnaissance",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "firewall"
+        },
+        {
           "card_id": "ad-printerbug-enum",
           "name": "Check Print Spooler Status on Domain Hosts - Sentinel",
           "platform": "sentinel",
@@ -16077,12 +16098,12 @@
         "network-flow",
         "windows-security",
         "ndr",
+        "firewall",
         "powershell",
         "iis",
         "proxy",
         "linux-audit",
         "edr",
-        "firewall",
         "sysmon"
       ],
       "best_fidelity": "behavioral"
@@ -24241,6 +24262,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "post-pwncat",
+          "name": "Shell upgrade to interactive PTY",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
           "card_id": "sqlmap-os-shell",
           "name": "SQLMap - OS Shell - Sentinel",
           "platform": "sentinel",
@@ -24514,7 +24542,8 @@
         "windows-security",
         "proxy",
         "iis",
-        "powershell"
+        "powershell",
+        "linux-audit"
       ],
       "best_fidelity": "behavioral"
     },
@@ -30618,6 +30647,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "post-lsassy",
+          "name": "Remote LSASS dump via lsassy/comsvcs",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
         },
         {
           "card_id": "meterpreter-kiwi",
@@ -39843,6 +39879,7 @@
       "T1059.003",
       "T1082",
       "T1048.003",
+      "T1003.001",
       "T1003",
       "T1210",
       "T1555.004",
@@ -39855,7 +39892,6 @@
       "T1595.002",
       "T1482",
       "T1595.001",
-      "T1003.001",
       "T1110.003",
       "T1539",
       "T1033",
@@ -40364,6 +40400,7 @@
       "T1027",
       "T1090.001",
       "T1057",
+      "T1059",
       "T1003.001",
       "T1574",
       "T1059.004",
@@ -40374,6 +40411,9 @@
       "T1021.004",
       "T1572",
       "T1078.003"
+    ],
+    "firewall": [
+      "T1046"
     ],
     "cloud-trail": [
       "T1087.004",
@@ -40413,13 +40453,10 @@
     "entra-id": [
       "T1110.003"
     ],
-    "firewall": [
-      "T1046"
-    ],
     "linux-auth": [
       "T1110.001"
     ]
   },
-  "cards_with_detections": 865,
-  "total_detections": 3779
+  "cards_with_detections": 870,
+  "total_detections": 3784
 }

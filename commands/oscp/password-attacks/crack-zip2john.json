@@ -1,0 +1,105 @@
+{
+  "id": "crack-zip2john",
+  "name": "zip2john / rar2john / pdf2john - Protected Archive Hash Extraction",
+  "command": "zip2john protected.zip > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt",
+  "description": "Extract password hashes from protected ZIP, RAR, PDF, and other file formats using John the Ripper's *2john utilities. The extracted hash can be cracked with john or hashcat. Essential for CTFs and engagements where password-protected archives contain credentials, keys, or sensitive data.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Password Attacks",
+  "subcategory": "Cracking Protected Files",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "CPTS password attacks module; John the Ripper",
+  "tags": [
+    "zip2john",
+    "rar2john",
+    "pdf2john",
+    "john",
+    "hash-extraction",
+    "archive-cracking",
+    "password-cracking"
+  ],
+  "mitre": [
+    "T1110.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ZIP FILES ===\n  zip2john protected.zip > zip_hash.txt\n  john zip_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n  # or hashcat:\n  zip2john protected.zip | cut -d: -f2 > hash.txt\n  hashcat -m 13600 hash.txt rockyou.txt  # PKZIP (varies by encryption)\n\n=== RAR FILES ===\n  rar2john protected.rar > rar_hash.txt\n  john rar_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n  # hashcat modes: -m 12500 (RAR3-hp), -m 13000 (RAR5)\n\n=== PDF FILES ===\n  pdf2john protected.pdf > pdf_hash.txt\n  john pdf_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n  # hashcat: -m 10400 (PDF 1.1-1.3), -m 10500 (PDF 1.4-1.6), -m 10600 (PDF 1.7)\n\n=== 7Z FILES ===\n  7z2john protected.7z > 7z_hash.txt\n  john 7z_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n\n=== OTHER FORMATS ===\n  ssh2john id_rsa > ssh_hash.txt          # SSH private keys\n  keepass2john Database.kdbx > kp_hash.txt  # KeePass databases\n  office2john document.docx > doc_hash.txt  # Office documents\n  bitlocker2john -i image > bl_hash.txt    # BitLocker volumes\n  ethereum2john keystore > eth_hash.txt    # Ethereum wallets\n\n=== SHOW CRACKED ===\n  john --show hash.txt\n\n=== WHERE TO FIND PROTECTED FILES ===\n- Backup archives on file shares\n- Developer workstations (.zip, .7z)\n- KeePass databases in user profiles\n- Encrypted SSH keys\n- Password-protected Office docs",
+  "examples": [
+    {
+      "label": "Crack password-protected ZIP",
+      "command": "zip2john protected.zip > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+    },
+    {
+      "label": "Crack RAR archive",
+      "command": "rar2john backup.rar > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+    },
+    {
+      "label": "Crack PDF password",
+      "command": "pdf2john report.pdf > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+    },
+    {
+      "label": "Crack KeePass database",
+      "command": "keepass2john Database.kdbx > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+    }
+  ],
+  "references": [
+    {
+      "title": "John the Ripper",
+      "url": "https://github.com/openwall/john"
+    },
+    {
+      "title": "Hashcat Wiki - Hash Types",
+      "url": "https://hashcat.net/wiki/doku.php?id=example_hashes"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gpg2john-pgp-crack",
+      "note": "gpg2john handles PGP/GPG keys specifically.",
+      "rel": "alternative"
+    },
+    {
+      "id": "keepass2john-crack",
+      "note": "keepass2john for KeePass database cracking.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Password-protected archives use reversible encryption that can be brute-forced offline. The *2john tools extract the hash/encrypted header needed for offline cracking.",
+    "prerequisites": "Access to the protected file; john or hashcat installed.",
+    "impact": "Access to encrypted archives containing credentials, keys, or sensitive data.",
+    "detection": "[MITRE T1110.002] File access to encrypted archives; *2john tool execution; john/hashcat processes.",
+    "artifacts": "Access to protected archive files; hash extraction tool execution in process logs.",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\"*john*\" OR Image=\"*hashcat*\" OR CommandLine=\"*2john*\")\n| table _time, User, Image, CommandLine",
+    "elastic_kql": "process.name:(*john* OR *hashcat*) OR process.command_line:*2john*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4688 and (NewProcessName contains \"john\" or CommandLine contains \"2john\" or NewProcessName contains \"hashcat\")\n| project TimeGenerated, Account, NewProcessName, CommandLine",
+    "sigma_rules": "proc_creation_lnx_hash_cracking_tools",
+    "prevention": "Use strong passwords (20+ chars) on archives; use AES-256 encryption; consider certificate-based encryption; monitor access to sensitive archives.",
+    "sources": [
+      "https://github.com/openwall/john",
+      "https://attack.mitre.org/techniques/T1110/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "Hash extraction or cracking tool execution",
+        "logic": "title: Password Hash Extraction or Cracking Tool\nstatus: stable\nlogsource:\n  category: process_creation\n  product: linux\ndetection:\n  selection:\n    Image|endswith:\n      - '/john'\n      - '/hashcat'\n    CommandLine|contains:\n      - '2john'\n      - 'zip2john'\n      - 'rar2john'\n  condition: selection\nlevel: medium",
+        "data_source": "sysmon",
+        "log_ids": [
+          "1"
+        ],
+        "attack": [
+          "T1110.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Security team password auditing",
+        "tuning": "Whitelist security team user accounts"
+      }
+    ]
+  }
+}

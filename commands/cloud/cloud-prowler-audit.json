@@ -1,0 +1,94 @@
+{
+  "id": "cloud-prowler-audit",
+  "name": "Prowler - Cloud Security Assessment (AWS/Azure/GCP)",
+  "command": "prowler aws --severity critical high",
+  "description": "Prowler is an open-source cloud security assessment tool covering AWS, Azure, and GCP. It checks for hundreds of security misconfigurations, compliance issues (CIS, NIST, PCI-DSS, HIPAA), and best practice violations. Used defensively for cloud posture assessment and offensively to find privilege escalation and data exposure.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "Cloud Auditing",
+  "certifications": [
+    "CPTS",
+    "CDSA"
+  ],
+  "primary_cert": "CDSA",
+  "source": "prowler-cloud/prowler; CDSA cloud module",
+  "tags": [
+    "prowler",
+    "cloud-audit",
+    "aws",
+    "azure",
+    "gcp",
+    "cis-benchmark",
+    "compliance",
+    "misconfiguration"
+  ],
+  "mitre": [
+    "T1580"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  pip3 install prowler\n  # Or: brew install prowler\n\n=== AWS SCAN ===\n  prowler aws                              # Full AWS audit\n  prowler aws --severity critical high     # Critical/high only\n  prowler aws --service s3 iam ec2         # Specific services\n  prowler aws --compliance cis_2.0_aws     # CIS benchmark\n\n=== AZURE SCAN ===\n  prowler azure                            # Full Azure audit\n  prowler azure --service defender entra   # Specific services\n\n=== GCP SCAN ===\n  prowler gcp\n\n=== OUTPUT FORMATS ===\n  prowler aws -o json         # JSON output\n  prowler aws -o csv          # CSV for spreadsheets\n  prowler aws -o html         # HTML report\n  prowler aws --output-directory /reports\n\n=== KEY FINDINGS TO LOOK FOR ===\n- S3 buckets with public access\n- IAM users with inline admin policies\n- Security groups allowing 0.0.0.0/0\n- Unencrypted EBS/RDS/S3\n- MFA not enforced\n- CloudTrail disabled\n- Root account access keys\n- Cross-account trust misconfigurations",
+  "examples": [
+    {
+      "label": "Run critical/high AWS audit",
+      "command": "prowler aws --severity critical high"
+    },
+    {
+      "label": "CIS benchmark compliance check",
+      "command": "prowler aws --compliance cis_2.0_aws -o html"
+    },
+    {
+      "label": "Audit specific AWS services",
+      "command": "prowler aws --service s3 iam ec2 lambda"
+    }
+  ],
+  "references": [
+    {
+      "title": "Prowler - GitHub",
+      "url": "https://github.com/prowler-cloud/prowler"
+    },
+    {
+      "title": "CIS AWS Foundations Benchmark",
+      "url": "https://www.cisecurity.org/benchmark/amazon_web_services"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "enumerate-iam finds what creds can do; Prowler finds what is misconfigured.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Prowler uses cloud provider APIs to systematically check hundreds of security configurations against CIS benchmarks and best practices, identifying misconfigurations that could lead to compromise.",
+    "prerequisites": "Cloud credentials with read access (SecurityAudit policy for AWS, Reader for Azure).",
+    "impact": "Identifies misconfigurations that could lead to data exposure, privilege escalation, or compliance failures.",
+    "detection": "[MITRE T1580] High volume of describe/list API calls across many services from a single identity.",
+    "artifacts": "CloudTrail/Activity Log showing systematic read-only enumeration across services.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail eventName=\"Describe*\" OR eventName=\"List*\" OR eventName=\"Get*\"\n| stats dc(eventName) as unique_apis by userIdentity.arn\n| where unique_apis > 50",
+    "elastic_kql": "cloud.provider:\"aws\" AND event.action:(Describe* OR List* OR Get*)",
+    "sentinel_kql": "AWSCloudTrail\n| where EventName startswith \"Describe\" or EventName startswith \"List\" or EventName startswith \"Get\"\n| summarize UniqueAPIs=dcount(EventName) by UserIdentityArn, bin(TimeGenerated, 30m)\n| where UniqueAPIs > 50",
+    "sigma_rules": "aws_cloud_security_enumeration",
+    "prevention": "Restrict security audit permissions; use SCPs to limit enumeration; monitor for unusual read-only API patterns.",
+    "sources": [
+      "CDSA cloud module",
+      "https://attack.mitre.org/techniques/T1580/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Cloud security enumeration sweep",
+        "logic": "AWSCloudTrail\n| where EventName startswith \"Describe\" or EventName startswith \"List\"\n| summarize UniqueAPIs=dcount(EventName), Services=dcount(EventSource) by UserIdentityArn, bin(TimeGenerated, 15m)\n| where Services > 10 and UniqueAPIs > 100",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Cloud security posture management tools; legitimate audit activities",
+        "tuning": "Whitelist known CSPM tool identities; focus on unusual identities"
+      }
+    ]
+  }
+}

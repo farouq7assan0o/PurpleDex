@@ -1,0 +1,95 @@
+{
+  "id": "privesc-wesng",
+  "name": "WES-NG - Windows Exploit Suggester Next Generation",
+  "command": "python3 wes.py systeminfo.txt -e --color",
+  "description": "Windows Exploit Suggester - Next Generation (WES-NG) compares a targets systeminfo output against the Microsoft vulnerability database to find missing patches and suggest exploits. Unlike the original WES, it works entirely offline after downloading the database and supports modern Windows versions.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "bitsadmin/wesng; OSCP Windows privesc methodology",
+  "tags": [
+    "wes-ng",
+    "wesng",
+    "exploit-suggester",
+    "windows-privesc",
+    "missing-patches",
+    "kernel-exploit"
+  ],
+  "mitre": [
+    "T1068"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  git clone https://github.com/bitsadmin/wesng\n  cd wesng\n  python3 wes.py --update   # Download latest vuln database\n\n=== ON TARGET (gather info) ===\n  systeminfo > systeminfo.txt\n  # Transfer systeminfo.txt to attacker\n\n=== ON ATTACKER (find exploits) ===\n  python3 wes.py systeminfo.txt -e --color\n  # -e = show only exploits (not just vulns)\n  # --color = colored output\n\n=== FILTER BY IMPACT ===\n  python3 wes.py systeminfo.txt -e -i \"Elevation of Privilege\"\n  python3 wes.py systeminfo.txt -e -i \"Remote Code Execution\"\n\n=== COMPARE TO INSTALLED KBS ===\n  # On target, also grab:\n  wmic qfe list full > hotfixes.txt\n  # Combine for more accuracy:\n  python3 wes.py systeminfo.txt --hotfixes hotfixes.txt -e\n\n=== COMMON HITS ===\n- PrintSpoofer / PrintNightmare (CVE-2021-1675)\n- JuicyPotato / SweetPotato (SeImpersonatePrivilege)\n- EternalBlue (MS17-010)\n- HiveNightmare / SeriousSam (CVE-2021-36934)",
+  "examples": [
+    {
+      "label": "Find exploits from systeminfo",
+      "command": "python3 wes.py systeminfo.txt -e --color"
+    },
+    {
+      "label": "Filter for privilege escalation only",
+      "command": "python3 wes.py systeminfo.txt -e -i \"Elevation of Privilege\""
+    },
+    {
+      "label": "Include hotfix data for accuracy",
+      "command": "python3 wes.py systeminfo.txt --hotfixes hotfixes.txt -e --color"
+    }
+  ],
+  "references": [
+    {
+      "title": "WES-NG - GitHub",
+      "url": "https://github.com/bitsadmin/wesng"
+    },
+    {
+      "title": "MITRE T1068 - Exploitation for Privilege Escalation",
+      "url": "https://attack.mitre.org/techniques/T1068/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "privesc-runascs",
+      "note": "RunasCs for impersonation after finding creds; WES-NG for kernel exploits.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "WES-NG cross-references the exact OS build and installed hotfixes against Microsofts vulnerability database to identify known exploitable CVEs that have not been patched.",
+    "prerequisites": "Access to run systeminfo on the target Windows machine.",
+    "impact": "Identifies kernel exploits and privilege escalation paths for unpatched vulnerabilities.",
+    "detection": "[MITRE T1068] Post-exploitation enumeration (systeminfo execution); known exploit binary execution.",
+    "artifacts": "Command history showing systeminfo; process creation of known exploit binaries.",
+    "splunk_spl": "index=sysmon EventCode=1 (CommandLine=\"*systeminfo*\" OR CommandLine=\"*wmic qfe*\")\n| table _time, User, CommandLine, ParentCommandLine",
+    "elastic_kql": "process.command_line:(*systeminfo* OR *wmic*qfe*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4688\n| where CommandLine has \"systeminfo\" or CommandLine has \"wmic qfe\"\n| project TimeGenerated, Account, CommandLine, ParentProcessName",
+    "sigma_rules": "proc_creation_win_systeminfo_execution",
+    "prevention": "Patch management; regular Windows Update; WSUS/SCCM for enterprise patching; remove SeImpersonatePrivilege from service accounts.",
+    "sources": [
+      "OSCP methodology",
+      "https://attack.mitre.org/techniques/T1068/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Systeminfo enumeration for exploit suggestion",
+        "logic": "SecurityEvent\n| where EventID == 4688\n| where CommandLine has \"systeminfo\" and Account !has \"SYSTEM\"\n| project TimeGenerated, Account, CommandLine, ParentProcessName, NewProcessName",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4688"
+        ],
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "telemetry",
+        "confidence": "low",
+        "false_positives": "System administrators running systeminfo for diagnostics",
+        "tuning": "Correlate with other privesc indicators; filter known admin accounts"
+      }
+    ]
+  }
+}

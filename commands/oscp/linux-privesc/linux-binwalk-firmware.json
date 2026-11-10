@@ -1,0 +1,70 @@
+{
+  "id": "linux-binwalk-firmware",
+  "name": "Binwalk - Firmware & Binary Analysis",
+  "command": "binwalk -e <firmware_file>",
+  "description": "Binwalk analyzes and extracts embedded files from binary blobs, firmware images, and file systems. It identifies compressed archives, file systems (SquashFS, JFFS2, CramFS), certificates, keys, and embedded executables. Essential for CTF challenges and IoT/embedded device analysis to find hidden credentials and files.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Post-Exploitation",
+  "subcategory": "Data Discovery",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "ReFirmLabs/binwalk; CTF methodology",
+  "tags": [
+    "binwalk",
+    "firmware",
+    "binary-analysis",
+    "extraction",
+    "iot",
+    "embedded",
+    "ctf"
+  ],
+  "mitre": [
+    "T1005"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  apt install binwalk\n  # Or: pip install binwalk\n\n=== SCAN (identify contents) ===\n  binwalk firmware.bin\n  # Shows offset, file type, description\n\n=== EXTRACT ===\n  binwalk -e firmware.bin              # Extract recognized files\n  binwalk --dd=\".*\" firmware.bin       # Extract everything\n  # Extracted to: _firmware.bin.extracted/\n\n=== ENTROPY ANALYSIS ===\n  binwalk -E firmware.bin\n  # High entropy = compressed/encrypted; low = plaintext\n\n=== RECURSIVE EXTRACTION ===\n  binwalk -Me firmware.bin\n  # -M = matryoshka (recursive), -e = extract\n\n=== COMMON FINDINGS ===\n- SquashFS filesystems (mount or unsquashfs)\n- SSH keys / certificates\n- Hardcoded credentials in /etc/shadow\n- Configuration files with API keys\n- Web server files (CGI scripts, HTML)\n\n=== CTF USAGE ===\n  binwalk -e challenge.bin\n  strings _challenge.bin.extracted/* | grep -i flag\n  # Check for steganography in images:\n  binwalk image.png",
+  "examples": [
+    {
+      "label": "Scan firmware for embedded files",
+      "command": "binwalk firmware.bin"
+    },
+    {
+      "label": "Extract all embedded files",
+      "command": "binwalk -e firmware.bin"
+    },
+    {
+      "label": "Recursive extraction with entropy",
+      "command": "binwalk -Me firmware.bin && binwalk -E firmware.bin"
+    }
+  ],
+  "references": [
+    {
+      "title": "Binwalk - GitHub",
+      "url": "https://github.com/ReFirmLabs/binwalk"
+    },
+    {
+      "title": "MITRE T1005 - Data from Local System",
+      "url": "https://attack.mitre.org/techniques/T1005/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Binwalk uses magic byte signatures and entropy analysis to identify and extract embedded files from binary blobs. Firmware images often contain unencrypted file systems with hardcoded credentials.",
+    "prerequisites": "Access to the firmware binary or file to analyze.",
+    "impact": "Extraction of credentials, keys, and sensitive configuration from embedded devices and binary files.",
+    "detection": "[MITRE T1005] Binwalk execution is offline analysis - no target-side detection unless extracting from a live system.",
+    "artifacts": "Process creation of binwalk; file extraction to disk; access to firmware files.",
+    "splunk_spl": "index=linux sourcetype=syslog process_name=\"binwalk\"\n| table _time, host, user, process",
+    "elastic_kql": "process.name:\"binwalk\"",
+    "sentinel_kql": "Syslog\n| where ProcessName == \"binwalk\"\n| project TimeGenerated, HostName, ProcessName, SyslogMessage",
+    "sigma_rules": "linux_binwalk_firmware_extraction",
+    "prevention": "Encrypt firmware images; use secure boot; do not embed credentials in firmware; implement certificate pinning.",
+    "sources": [
+      "CTF methodology",
+      "https://attack.mitre.org/techniques/T1005/"
+    ]
+  }
+}

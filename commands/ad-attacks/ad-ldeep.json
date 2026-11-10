@@ -1,0 +1,93 @@
+{
+  "id": "ad-ldeep",
+  "name": "ldeep - LDAP Enumeration from Linux",
+  "command": "ldeep ldap -u <user> -p <pass> -d <domain> -s ldap://<dc_ip> all ldeep_output/",
+  "description": "ldeep is a Python tool for in-depth LDAP enumeration from Linux. It extracts users, groups, computers, GPOs, trusts, delegations, ADCS templates, LAPS passwords, gMSA passwords, and more. Unlike ldapsearch, ldeep structures output and knows what to look for in an AD context. Complementary to BloodHound for manual deep-dive enumeration.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "franc-music-studio/ldeep; CPTS AD enumeration",
+  "tags": [
+    "ldeep",
+    "ldap",
+    "ad-enumeration",
+    "linux",
+    "delegation",
+    "gpo",
+    "trusts"
+  ],
+  "mitre": [
+    "T1087.002",
+    "T1069.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  pip3 install ldeep\n\n=== DUMP EVERYTHING ===\n  ldeep ldap -u <user> -p <pass> -d <domain> -s ldap://<dc_ip> all ldeep_output/\n  # Creates structured files: users.json, computers.json, groups.json, etc.\n\n=== SPECIFIC QUERIES ===\n  ldeep ldap -u <user> -p <pass> -d <domain> -s ldap://<dc_ip> users        # All users\n  ldeep ldap ... delegations    # Unconstrained/constrained delegation\n  ldeep ldap ... trusts         # Domain trusts\n  ldeep ldap ... gmsa           # gMSA passwords (if readable)\n  ldeep ldap ... pso            # Password policies (fine-grained)\n  ldeep ldap ... silo           # Auth silos/policies\n  ldeep ldap ... shadow_creds   # Shadow credentials config\n  ldeep ldap ... pkis           # ADCS templates and CAs\n  ldeep ldap ... sccm           # SCCM configuration\n\n=== KERBEROS AUTH ===\n  export KRB5CCNAME=ticket.ccache\n  ldeep ldap -k -d <domain> -s ldap://<dc_ip> users\n\n=== OUTPUT FORMATS ===\n  ldeep ldap ... users -o json  # JSON output\n  ldeep ldap ... users -o csv   # CSV for spreadsheets",
+  "examples": [
+    {
+      "label": "Dump all AD data",
+      "command": "ldeep ldap -u jdoe -p Password123 -d corp.local -s ldap://192.168.1.10 all ldeep_output/"
+    },
+    {
+      "label": "Find delegation paths",
+      "command": "ldeep ldap -u jdoe -p Password123 -d corp.local -s ldap://192.168.1.10 delegations"
+    },
+    {
+      "label": "Enumerate ADCS templates",
+      "command": "ldeep ldap -u jdoe -p Password123 -d corp.local -s ldap://192.168.1.10 pkis"
+    }
+  ],
+  "references": [
+    {
+      "title": "ldeep - GitHub",
+      "url": "https://github.com/franc-music-studio/ldeep"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-adpeas",
+      "note": "adPEAS is Windows PowerShell; ldeep is Linux Python. Both enumerate AD.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "ldeep performs authenticated LDAP queries to enumerate AD objects. Standard domain user credentials provide read access to most AD attributes by default.",
+    "prerequisites": "Valid domain credentials; network access to LDAP (TCP 389/636).",
+    "impact": "Complete AD enumeration revealing users, groups, trusts, delegation, ADCS, and other escalation paths.",
+    "detection": "[MITRE T1087.002] High-volume LDAP queries; enumeration of sensitive attributes (ms-Mcs-AdmPwd, msDS-GroupMSAMembership).",
+    "artifacts": "LDAP query logs (Event 1644 if enabled); network traffic to DC port 389/636.",
+    "splunk_spl": "index=windows EventCode=1644\n| stats count by SearchFilter, ClientIP\n| where count > 50\n| sort -count",
+    "elastic_kql": "event.code:\"1644\" AND winlog.event_data.SearchFilter:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 1644\n| summarize QueryCount=count() by ClientIP=extract(@\"Client: (\\S+)\", 1, EventData)\n| where QueryCount > 50",
+    "sigma_rules": "win_ldap_enumeration_high_volume",
+    "prevention": "Enable LDAP query logging (Event 1644); restrict access to sensitive attributes; implement LDAP signing and channel binding.",
+    "sources": [
+      "CPTS methodology",
+      "https://attack.mitre.org/techniques/T1087/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "High-volume LDAP enumeration",
+        "logic": "SecurityEvent\n| where EventID == 1644\n| summarize QueryCount=count(), DistinctFilters=dcount(EventData) by ClientIP=extract(@\"Client: (\\S+)\", 1, EventData), bin(TimeGenerated, 5m)\n| where QueryCount > 100 or DistinctFilters > 20",
+        "data_source": "windows-security",
+        "log_ids": [
+          "1644"
+        ],
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "SCCM, SCOM, or other management tools querying AD; BloodHound collection",
+        "tuning": "Baseline normal LDAP query volumes; whitelist known management tool IPs"
+      }
+    ]
+  }
+}

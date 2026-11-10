@@ -1,0 +1,86 @@
+{
+  "id": "ad-havoc-c2",
+  "name": "Havoc C2 - Modern Command & Control Framework",
+  "command": "./havoc server --profile profiles/default.yaotl",
+  "description": "Havoc is a modern, open-source C2 framework designed as a Cobalt Strike alternative. It features a Demon agent with sleep obfuscation (Ekko/Foliage), indirect syscalls, SMB/HTTP/HTTPS listeners, BOF (Beacon Object File) compatibility, and a Qt-based teamserver GUI. Used in advanced engagements where Cobalt Strike is unavailable.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Post-Exploitation",
+  "subcategory": "Command & Control",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "HavocFramework/Havoc; modern C2 methodology",
+  "tags": [
+    "havoc",
+    "c2",
+    "command-and-control",
+    "demon",
+    "cobalt-strike-alternative",
+    "bof"
+  ],
+  "mitre": [
+    "T1071.001",
+    "T1573.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  git clone https://github.com/HavocFramework/Havoc\n  cd Havoc\n  make ts-build    # Build teamserver\n  make client-build # Build client GUI\n\n=== START TEAMSERVER ===\n  ./havoc server --profile profiles/default.yaotl\n  # Profile defines listeners, operators, demon config\n\n=== CONNECT CLIENT ===\n  ./havoc client\n  # Connect to teamserver IP:40056\n\n=== GENERATE DEMON PAYLOAD ===\n  # In GUI: Payloads > Generate\n  # Options: Windows EXE/DLL/Shellcode, Sleep technique (Ekko/Foliage)\n  # Indirect syscalls: Yes (bypasses EDR hooks)\n\n=== KEY FEATURES ===\n- Demon agent: sleep obfuscation, indirect syscalls, stack spoofing\n- BOF support: run Cobalt Strike BOFs directly\n- SMB pivoting: lateral movement through named pipes\n- COFF loader: execute compiled C code in-memory\n- Token manipulation: steal/impersonate tokens\n- Inline assembly: execute shellcode in Demon process\n\n=== MODULES (post-exploitation) ===\n  dotnet inline-execute Rubeus.exe kerberoast\n  bof inline-execute nanodump.x64.o\n  shellcode inject x64 <pid> /path/to/shellcode.bin\n  token steal <pid>",
+  "examples": [
+    {
+      "label": "Start Havoc teamserver",
+      "command": "./havoc server --profile profiles/default.yaotl"
+    },
+    {
+      "label": "Demon - execute .NET in memory",
+      "command": "dotnet inline-execute Rubeus.exe kerberoast"
+    },
+    {
+      "label": "Demon - BOF execution",
+      "command": "bof inline-execute nanodump.x64.o"
+    }
+  ],
+  "references": [
+    {
+      "title": "Havoc Framework - GitHub",
+      "url": "https://github.com/HavocFramework/Havoc"
+    },
+    {
+      "title": "MITRE T1071.001 - Web Protocols C2",
+      "url": "https://attack.mitre.org/techniques/T1071/001/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Havoc uses indirect syscalls to bypass EDR userland hooks, sleep obfuscation (Ekko/Foliage) to avoid memory scanning, and encrypted C2 channels. The Demon agent is fully in-memory with no on-disk artifacts.",
+    "prerequisites": "Havoc teamserver running; initial code execution on target for payload delivery.",
+    "impact": "Full remote control of compromised systems; lateral movement; credential theft; data exfiltration.",
+    "detection": "[MITRE T1071.001] HTTP/HTTPS beaconing patterns; indirect syscall indicators; sleep obfuscation memory artifacts.",
+    "artifacts": "Network beaconing to C2 server; named pipe creation for SMB pivoting; in-memory .NET assembly loading.",
+    "splunk_spl": "index=sysmon (EventCode=3 AND NOT dest_port IN (80,443,53))\n| stats count by Image, dest_ip, dest_port\n| where count > 10\n| sort -count",
+    "elastic_kql": "event.code:\"3\" AND NOT destination.port:(80 OR 443 OR 53)",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort !in (80, 443, 53)\n| summarize ConnectionCount=count() by InitiatingProcessFileName, RemoteIP, RemotePort, bin(Timestamp, 1h)\n| where ConnectionCount > 10",
+    "sigma_rules": "net_connection_beacon_pattern",
+    "prevention": "EDR with kernel-level telemetry; network monitoring for beaconing; block unknown outbound connections; application allowlisting.",
+    "sources": [
+      "HavocFramework",
+      "https://attack.mitre.org/techniques/T1071/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "C2 beaconing pattern detection",
+        "logic": "DeviceNetworkEvents\n| where ActionType == \"ConnectionSuccess\"\n| summarize Connections=count(), AvgInterval=avg(Timestamp - prev(Timestamp)) by InitiatingProcessFileName, RemoteIP, bin(Timestamp, 1h)\n| where Connections > 20\n| project InitiatingProcessFileName, RemoteIP, Connections",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1071.001",
+          "T1573.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Auto-update services; health check endpoints; legitimate polling applications",
+        "tuning": "Analyze jitter patterns; compare against known-good beaconing (Windows Update, AV updates)"
+      }
+    ]
+  }
+}

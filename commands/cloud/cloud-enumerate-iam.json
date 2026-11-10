@@ -1,0 +1,86 @@
+{
+  "id": "cloud-enumerate-iam",
+  "name": "enumerate-iam - AWS IAM Permission Enumeration",
+  "command": "python3 enumerate-iam.py --access-key <aws_key> --secret-key <aws_secret> --session-token <token>",
+  "description": "enumerate-iam brute-forces AWS IAM permissions by attempting every API call and recording which ones succeed. Given a set of AWS credentials, it determines what the identity can actually do across all AWS services. Essential for assessing compromised AWS credentials and finding privilege escalation paths.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Cloud Security",
+  "subcategory": "AWS Enumeration",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "andresriancho/enumerate-iam; cloud pentest methodology",
+  "tags": [
+    "enumerate-iam",
+    "aws",
+    "iam",
+    "cloud-enum",
+    "permission-enumeration",
+    "privilege-escalation"
+  ],
+  "mitre": [
+    "T1087.004",
+    "T1580"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  git clone https://github.com/andresriancho/enumerate-iam\n  cd enumerate-iam\n  pip3 install -r requirements.txt\n\n=== RUN ===\n  python3 enumerate-iam.py --access-key AKIA... --secret-key wJa...\n  # With session token (for temporary credentials):\n  python3 enumerate-iam.py --access-key AKIA... --secret-key wJa... --session-token FwoG...\n\n=== WHAT IT DOES ===\n- Calls sts:GetCallerIdentity first (always works)\n- Then brute forces ~4000+ API calls across all services\n- Records which calls return data vs AccessDenied\n- Output shows allowed actions\n\n=== ALTERNATIVE: Pacu ===\n  # Pacu is a full AWS exploitation framework:\n  pacu\n  > set_keys\n  > run iam__enum_permissions\n  > run iam__privesc_scan\n\n=== COMMON ESCALATION PATHS ===\n- iam:CreatePolicyVersion (change own permissions)\n- iam:AttachUserPolicy (attach admin policy)\n- iam:PassRole + lambda:CreateFunction (exec as role)\n- sts:AssumeRole to cross-account roles\n- ssm:SendCommand to EC2 instances",
+  "examples": [
+    {
+      "label": "Enumerate IAM permissions",
+      "command": "python3 enumerate-iam.py --access-key AKIAIOSFODNN7EXAMPLE --secret-key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    },
+    {
+      "label": "With session token (temporary creds)",
+      "command": "python3 enumerate-iam.py --access-key AKIAIOSFODNN7EXAMPLE --secret-key wJalrXUtnFEMI --session-token FwoGZXIvYXdzE..."
+    },
+    {
+      "label": "Check caller identity first",
+      "command": "aws sts get-caller-identity"
+    }
+  ],
+  "references": [
+    {
+      "title": "enumerate-iam - GitHub",
+      "url": "https://github.com/andresriancho/enumerate-iam"
+    },
+    {
+      "title": "MITRE T1087.004 - Cloud Account Discovery",
+      "url": "https://attack.mitre.org/techniques/T1087/004/"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AWS IAM permissions are not visible through a single API call. The tool brute-forces all service endpoints to discover what actions the credential is authorized to perform. AccessDenied errors are expected and do not trigger lockouts.",
+    "prerequisites": "Valid AWS access key, secret key, and optionally session token.",
+    "impact": "Complete visibility into compromised credentials capabilities; identifies privilege escalation paths.",
+    "detection": "[MITRE T1087.004] Massive spike in API calls across many services; most returning AccessDenied; CloudTrail AccessDenied anomaly.",
+    "artifacts": "CloudTrail logs showing thousands of API calls with AccessDenied errors from a single identity.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail errorCode=\"AccessDenied\"\n| stats dc(eventName) as unique_apis, count by userIdentity.arn\n| where unique_apis > 100\n| sort -unique_apis",
+    "elastic_kql": "cloud.provider:\"aws\" AND event.outcome:\"failure\" AND aws.cloudtrail.error_code:\"AccessDenied\"",
+    "sentinel_kql": "AWSCloudTrail\n| where ErrorCode == \"AccessDenied\"\n| summarize UniqueAPIs=dcount(EventName), TotalCalls=count() by UserIdentityArn\n| where UniqueAPIs > 100",
+    "sigma_rules": "aws_iam_brute_force_permissions",
+    "prevention": "Enable CloudTrail anomaly detection; alert on high AccessDenied rates; use AWS GuardDuty; implement least privilege; rotate compromised credentials immediately.",
+    "sources": [
+      "Cloud pentest methodology",
+      "https://attack.mitre.org/techniques/T1087/004/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AWS IAM permission enumeration brute force",
+        "logic": "AWSCloudTrail\n| where ErrorCode == \"AccessDenied\"\n| summarize UniqueAPIs=dcount(EventName), TotalCalls=count(), Services=dcount(EventSource) by UserIdentityArn, bin(TimeGenerated, 15m)\n| where UniqueAPIs > 50 and Services > 10",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1087.004",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Poorly configured automation with overly broad API calls",
+        "tuning": "Adjust threshold based on environment; correlate with known automation identities"
+      }
+    ]
+  }
+}

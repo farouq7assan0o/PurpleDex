@@ -1,0 +1,92 @@
+{
+  "id": "linux-pspy",
+  "name": "pspy - Unprivileged Linux Process Monitoring",
+  "command": "./pspy64",
+  "description": "pspy monitors Linux processes in real-time without root. Uses inotify on /proc to detect new processes, including cron jobs and other users processes. Essential for discovering scheduled tasks, running services, and credential exposure in process arguments. The go-to tool for finding privesc via cron jobs.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Post-Exploitation",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "DominicBreuker/pspy",
+  "tags": [
+    "pspy",
+    "process-monitor",
+    "cron",
+    "linux-enum",
+    "privesc",
+    "scheduled-tasks"
+  ],
+  "mitre": [
+    "T1057"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== DOWNLOAD ===\n  # Pre-compiled binaries:\n  # 64-bit: pspy64\n  # 32-bit: pspy32\n  # Small versions: pspy64s, pspy32s\n\n=== BASIC USAGE ===\n  chmod +x pspy64\n  ./pspy64\n  # Monitors all processes in real-time\n  # Watch for cron jobs, backup scripts, etc.\n\n=== WHAT TO LOOK FOR ===\n  # Cron jobs running as root:\n  # CMD: UID=0  | /bin/bash /opt/backup.sh\n  # Scripts with credentials:\n  # CMD: UID=0  | mysql -u root -pSecretPass\n  # Writable scripts called by root:\n  # CMD: UID=0  | /tmp/cleanup.sh\n  # Services restarting:\n  # CMD: UID=0  | systemctl restart apache2\n\n=== COLOR OUTPUT ===\n  ./pspy64 -pf -i 1000\n  # -pf = print commands AND file system events\n  # -i 1000 = scan every 1 second\n\n=== COMMON PRIVESC PATHS ===\n  1. Root cron job executes writable script -> modify script\n  2. Root cron job uses writable directory -> path hijack\n  3. Credentials visible in process arguments\n  4. Root cron job with wildcard injection opportunity\n  5. Root process loading libraries from writable path",
+  "examples": [
+    {
+      "label": "Monitor all processes",
+      "command": "./pspy64"
+    },
+    {
+      "label": "Monitor with filesystem events",
+      "command": "./pspy64 -pf -i 1000"
+    },
+    {
+      "label": "Small version for constrained environments",
+      "command": "./pspy32s"
+    }
+  ],
+  "references": [
+    {
+      "title": "pspy",
+      "url": "https://github.com/DominicBreuker/pspy"
+    },
+    {
+      "title": "MITRE T1057",
+      "url": "https://attack.mitre.org/techniques/T1057/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gs-privesc-enum",
+      "note": "LinPEAS for comprehensive privesc enumeration; pspy for process monitoring.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "pspy uses Linux procfs and inotify to monitor process creation. Since /proc is readable by all users and inotify watches are unprivileged, no root access is needed to observe all processes.",
+    "prerequisites": "User access on Linux system; pspy binary uploaded.",
+    "impact": "Reveals cron jobs, credentials in process arguments, and running services without root.",
+    "detection": "[MITRE T1057] inotify watches on /proc; pspy binary execution; high-frequency /proc scanning.",
+    "artifacts": "pspy binary on disk; inotify watch creation; /proc directory access patterns.",
+    "splunk_spl": "index=linux sourcetype=syslog process_name=\"pspy*\"\n| table _time, host, user, process",
+    "elastic_kql": "process.name:pspy*",
+    "sentinel_kql": "Syslog\n| where ProcessName has \"pspy\"\n| project TimeGenerated, HostName, ProcessName, SyslogMessage",
+    "sigma_rules": "linux_pspy_process_monitoring",
+    "prevention": "Monitor for pspy binary names; hidepid mount option on /proc; limit inotify watches; restrict binary uploads.",
+    "sources": [
+      "pspy documentation",
+      "https://attack.mitre.org/techniques/T1057/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "pspy process monitoring tool execution",
+        "logic": "title: pspy Process Monitoring Tool\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection:\n    Image|endswith:\n      - /pspy64\n      - /pspy32\n      - /pspy64s\n      - /pspy32s\n  condition: selection\nlevel: high",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1057"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Renamed pspy binary will evade filename detection",
+        "tuning": "Also detect by behavior: high-frequency inotify watches on /proc"
+      }
+    ]
+  }
+}

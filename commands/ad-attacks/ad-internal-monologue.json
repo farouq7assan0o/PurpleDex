@@ -1,0 +1,97 @@
+{
+  "id": "ad-internal-monologue",
+  "name": "Internal Monologue - NTLM Hash Extraction Without Touching LSASS",
+  "command": "InternalMonologue.exe -Downgrade True -Restore True -Impersonate True -Verbose True",
+  "description": "Internal Monologue extracts NTLM hashes by triggering local NTLM challenges against logged-in users via the SSPI API, without reading LSASS memory. It forces a NetNTLMv1 downgrade (if possible) to get crackable hashes, or captures NetNTLMv2 hashes. This bypasses credential guard and most EDR detections that monitor LSASS access.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Credential Access",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "eladshamir/Internal-Monologue; CRTP credential access",
+  "tags": [
+    "internal-monologue",
+    "ntlm-hash",
+    "lsass-bypass",
+    "credential-guard-bypass",
+    "sspi",
+    "netntlm"
+  ],
+  "mitre": [
+    "T1003",
+    "T1187"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nInstead of reading LSASS memory (which EDR detects), Internal\nMonologue uses the SSPI API to initiate a local NTLM authentication\nchallenge. The response contains the users hash.\n\n=== RUN ===\n  InternalMonologue.exe -Downgrade True -Restore True -Impersonate True -Verbose True\n  # -Downgrade: Force NTLMv1 (easier to crack)\n  # -Restore: Restore NTLMv1 setting after\n  # -Impersonate: Get hashes for all logged-in users\n\n=== OUTPUT ===\n  # NetNTLMv1 (if downgrade successful):\n  user::domain:challenge:response:response\n  # Crack with hashcat -m 5500\n\n  # NetNTLMv2 (if downgrade blocked):\n  user::domain:challenge:response:response\n  # Crack with hashcat -m 5600\n\n=== WHY ITS STEALTHY ===\n- Does NOT open LSASS process\n- Does NOT inject into LSASS\n- Does NOT touch SAM/SECURITY hives\n- Uses legitimate SSPI API calls\n- Most EDRs dont flag it\n\n=== REQUIREMENTS ===\n- Local admin (for impersonation and NTLMv1 downgrade)\n- Users must be currently logged in\n- Works even with Credential Guard enabled\n\n=== ALTERNATIVE: Inveigh ===\nInveigh can also capture NetNTLMv2 hashes via LLMNR/mDNS poisoning.",
+  "examples": [
+    {
+      "label": "Extract hashes for all logged-in users",
+      "command": "InternalMonologue.exe -Downgrade True -Restore True -Impersonate True -Verbose True"
+    },
+    {
+      "label": "Without NTLMv1 downgrade",
+      "command": "InternalMonologue.exe -Downgrade False -Impersonate True"
+    },
+    {
+      "label": "Crack NetNTLMv1 hash",
+      "command": "hashcat -m 5500 hashes.txt /usr/share/wordlists/rockyou.txt"
+    }
+  ],
+  "references": [
+    {
+      "title": "Internal Monologue - GitHub",
+      "url": "https://github.com/eladshamir/Internal-Monologue"
+    },
+    {
+      "title": "MITRE T1003 - OS Credential Dumping",
+      "url": "https://attack.mitre.org/techniques/T1003/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-inveigh-ps",
+      "note": "Inveigh captures hashes via network poisoning; Internal Monologue via local SSPI.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The Windows SSPI API allows local processes to initiate NTLM authentication challenges. By impersonating logged-in users and triggering local challenges, their NTLM hashes can be extracted without accessing LSASS memory.",
+    "prerequisites": "Local admin on the target machine; users must be logged in.",
+    "impact": "NTLM hash extraction for all logged-in users; enables offline cracking or pass-the-hash.",
+    "detection": "[MITRE T1003] NTLMv1 downgrade (LmCompatibilityLevel change); unusual SSPI authentication events; registry modifications.",
+    "artifacts": "Registry change to LmCompatibilityLevel; NTLM authentication events; token impersonation.",
+    "splunk_spl": "index=sysmon EventCode=13 TargetObject=\"*\\Control\\Lsa\\LmCompatibilityLevel\"\n| table _time, Image, TargetObject, Details",
+    "elastic_kql": "event.code:\"13\" AND registry.path:*LmCompatibilityLevel*",
+    "sentinel_kql": "SysmonEvent\n| where EventID == 13\n| where RegistryKey has \"LmCompatibilityLevel\"\n| project TimeGenerated, Image, RegistryKey, RegistryValue",
+    "sigma_rules": "sysmon_registry_ntlmv1_downgrade",
+    "prevention": "Enforce NTLMv2-only via GPO (LmCompatibilityLevel=5); disable NTLM entirely where possible; monitor for LmCompatibilityLevel changes; use Credential Guard.",
+    "sources": [
+      "CRTP credential access",
+      "https://attack.mitre.org/techniques/T1003/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "NTLMv1 downgrade for Internal Monologue",
+        "logic": "SysmonEvent\n| where EventID == 13\n| where RegistryKey has \"LmCompatibilityLevel\"\n| where RegistryValue in (\"0\", \"1\", \"2\")\n| project TimeGenerated, Computer, Image, RegistryKey, RegistryValue",
+        "data_source": "sysmon",
+        "log_ids": [
+          "13"
+        ],
+        "attack": [
+          "T1003",
+          "T1187"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legacy application compatibility changes; Group Policy updates",
+        "tuning": "Alert on any LmCompatibilityLevel change below 3; correlate with token impersonation events"
+      }
+    ]
+  }
+}

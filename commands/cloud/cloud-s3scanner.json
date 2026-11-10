@@ -1,0 +1,97 @@
+{
+  "id": "cloud-s3scanner",
+  "name": "s3scanner - S3 Bucket Permission Auditor",
+  "command": "s3scanner scan --buckets-file buckets.txt",
+  "description": "s3scanner discovers and audits S3 bucket permissions. It checks for public read, public write, and authenticated read/write on bucket and object ACLs. Finds exposed data, backup files, credentials, and source code in misconfigured buckets. Works against AWS S3, DigitalOcean Spaces, and any S3-compatible service.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "AWS Enumeration",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "sa7mon/s3scanner; cloud pentest methodology",
+  "tags": [
+    "s3scanner",
+    "aws",
+    "s3",
+    "bucket",
+    "cloud-enum",
+    "data-exposure",
+    "misconfiguration"
+  ],
+  "mitre": [
+    "T1530"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  pip3 install s3scanner\n  # Or: go install github.com/sa7mon/S3Scanner@latest\n\n=== SCAN BUCKET LIST ===\n  s3scanner scan --buckets-file buckets.txt\n  # Checks existence, permissions, and lists objects\n\n=== GENERATE BUCKET NAMES ===\n  # Common patterns:\n  echo \"company-backup\" >> buckets.txt\n  echo \"company-dev\" >> buckets.txt\n  echo \"company-staging\" >> buckets.txt\n  echo \"company-assets\" >> buckets.txt\n  echo \"company-uploads\" >> buckets.txt\n\n=== DUMP BUCKET CONTENTS ===\n  s3scanner dump --bucket <bucket_name> --output-dir loot/\n\n=== AWS CLI ALTERNATIVE ===\n  # List bucket (no auth needed if public)\n  aws s3 ls s3://<bucket_name> --no-sign-request\n  # Download everything\n  aws s3 sync s3://<bucket_name> ./loot/ --no-sign-request\n  # Check bucket policy\n  aws s3api get-bucket-policy --bucket <bucket_name> --no-sign-request\n\n=== WHAT TO LOOK FOR ===\n- .env files, .git directories\n- Database backups (.sql, .bak)\n- Credentials and API keys\n- Source code archives\n- Customer PII / sensitive data\n- CloudFormation/Terraform state files",
+  "examples": [
+    {
+      "label": "Scan bucket list for permissions",
+      "command": "s3scanner scan --buckets-file buckets.txt"
+    },
+    {
+      "label": "Dump public bucket contents",
+      "command": "s3scanner dump --bucket company-backup --output-dir loot/"
+    },
+    {
+      "label": "AWS CLI - list public bucket",
+      "command": "aws s3 ls s3://company-backup --no-sign-request --recursive"
+    }
+  ],
+  "references": [
+    {
+      "title": "s3scanner - GitHub",
+      "url": "https://github.com/sa7mon/S3Scanner"
+    },
+    {
+      "title": "MITRE T1530 - Data from Cloud Storage",
+      "url": "https://attack.mitre.org/techniques/T1530/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "enumerate-iam finds permissions; s3scanner finds exposed buckets.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-prowler-audit",
+      "note": "Prowler checks S3 bucket configuration among many other things.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "S3 buckets can have ACLs that allow public or authenticated access. Many organizations accidentally expose buckets through overly permissive policies, bucket ACLs, or object-level ACLs.",
+    "prerequisites": "Target bucket names (guessed, enumerated, or found in source code/DNS).",
+    "impact": "Data exposure of sensitive files, credentials, backups, and customer data.",
+    "detection": "[MITRE T1530] S3 access logs showing anonymous or unusual access patterns; large data transfer from buckets.",
+    "artifacts": "S3 access logs; CloudTrail S3 data events; large outbound data transfer.",
+    "splunk_spl": "index=aws sourcetype=aws:s3:accesslogs requester=\"-\"\n| stats count by bucket_name, operation, remote_ip\n| where count > 10",
+    "elastic_kql": "cloud.provider:\"aws\" AND event.dataset:\"aws.s3access\" AND user.name:\"-\"",
+    "sentinel_kql": "AWSCloudTrail\n| where EventSource == \"s3.amazonaws.com\"\n| where UserIdentityType == \"AWSAccount\" or UserIdentityType == \"Unknown\"\n| summarize count() by BucketName, EventName, SourceIpAddress",
+    "sigma_rules": "aws_s3_bucket_enumeration",
+    "prevention": "Enable S3 Block Public Access at the account level; use bucket policies with explicit denies; enable S3 access logging; use AWS Config rules for public bucket detection.",
+    "sources": [
+      "Cloud pentest methodology",
+      "https://attack.mitre.org/techniques/T1530/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "S3 bucket enumeration - anonymous access",
+        "logic": "AWSCloudTrail\n| where EventSource == \"s3.amazonaws.com\"\n| where EventName in (\"ListBuckets\", \"ListObjects\", \"GetObject\", \"GetBucketAcl\")\n| where UserIdentityType == \"Unknown\" or UserIdentityAccountId == \"ANONYMOUS\"\n| summarize Operations=dcount(EventName), Objects=count() by SourceIpAddress, BucketName=tostring(parse_json(RequestParameters).bucketName)",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1530"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Public website assets hosted on S3; CDN origin pulls",
+        "tuning": "Whitelist known CDN IPs; focus on non-public buckets"
+      }
+    ]
+  }
+}

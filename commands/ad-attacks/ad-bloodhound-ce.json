@@ -1,0 +1,100 @@
+{
+  "id": "ad-bloodhound-ce",
+  "name": "BloodHound Community Edition (CE) - Modern AD Attack Path Mapping",
+  "command": "curl -L https://ghst.ly/getbhce | docker compose -f - up",
+  "description": "BloodHound Community Edition (CE) is the modern rewrite of BloodHound with a PostgreSQL backend (replacing Neo4j), REST API, improved UI, and built-in attack path analysis. It identifies AD/AzureAD privilege escalation paths, ACL abuse chains, and Tier-0 asset exposure. SharpHound or BloodHound.py collectors feed data into it.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "SpecterOps/BloodHound; CPTS AD methodology",
+  "tags": [
+    "bloodhound",
+    "bloodhound-ce",
+    "attack-paths",
+    "ad-enumeration",
+    "acl-abuse",
+    "specterops",
+    "sharphound"
+  ],
+  "mitre": [
+    "T1087.002",
+    "T1069.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL BLOODHOUND CE ===\n  curl -L https://ghst.ly/getbhce | docker compose -f - up\n  # Access at http://localhost:8080\n  # Default creds shown in console output on first run\n\n=== COLLECT DATA ===\n  # SharpHound (Windows):\n  SharpHound.exe -c All --zipfilename bh_data.zip\n  # Or PowerShell:\n  Invoke-BloodHound -CollectionMethod All -ZipFileName bh_data.zip\n\n  # BloodHound.py (Linux):\n  bloodhound-python -u <user> -p <pass> -d <domain> -dc <dc_ip> -c All\n\n=== UPLOAD DATA ===\n  # Upload ZIP via the CE web UI or API\n\n=== KEY QUERIES ===\n  # Built-in attack paths:\n  - Shortest path to Domain Admin\n  - Kerberoastable users with admin paths\n  - Unconstrained delegation systems\n  - ADCS attack paths\n  - Azure/EntraID privilege escalation\n\n=== API USAGE ===\n  # BloodHound CE exposes a REST API:\n  curl http://localhost:8080/api/v2/available-domains -H \"Authorization: Bearer <token>\"\n\n=== LEGACY vs CE ===\n  Legacy: Neo4j + Electron app, Cypher queries\n  CE: PostgreSQL + Web UI, REST API, built-in analysis\n  Both use the same SharpHound/bloodhound-python collectors",
+  "examples": [
+    {
+      "label": "Start BloodHound CE with Docker",
+      "command": "curl -L https://ghst.ly/getbhce | docker compose -f - up"
+    },
+    {
+      "label": "Collect AD data with SharpHound",
+      "command": "SharpHound.exe -c All --zipfilename bh_data.zip"
+    },
+    {
+      "label": "Collect from Linux with bloodhound-python",
+      "command": "bloodhound-python -u jdoe -p Password123 -d corp.local -dc 192.168.1.10 -c All"
+    }
+  ],
+  "references": [
+    {
+      "title": "BloodHound CE - GitHub",
+      "url": "https://github.com/SpecterOps/BloodHound"
+    },
+    {
+      "title": "BloodHound Documentation",
+      "url": "https://support.bloodhoundenterprise.io/hc/en-us"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-bloodhound-python",
+      "note": "bloodhound-python is the Linux collector for BloodHound CE.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-neo4j-bloodhound",
+      "note": "Legacy BloodHound with Neo4j for custom Cypher queries.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "BloodHound maps Active Directory relationships (group memberships, ACLs, sessions, delegations) into a graph database and finds attack paths that are invisible to manual enumeration. It reveals multi-hop privilege escalation chains.",
+    "prerequisites": "Domain user credentials for data collection; Docker for BloodHound CE server.",
+    "impact": "Reveals all privilege escalation paths in the domain; identifies Tier-0 exposure and ACL abuse chains.",
+    "detection": "[MITRE T1087.002] SharpHound collection generates high-volume LDAP queries; unusual SamAccountName and groupMembership enumeration.",
+    "artifacts": "LDAP query logs showing full AD enumeration; SharpHound ZIP files; network connections to all domain controllers.",
+    "splunk_spl": "index=windows EventCode=4104 ScriptBlockText=\"*SharpHound*\" OR ScriptBlockText=\"*Invoke-BloodHound*\"\n| table _time, ComputerName, UserName, ScriptBlockText",
+    "elastic_kql": "event.code:\"4104\" AND powershell.file.script_block_text:(*SharpHound* OR *BloodHound*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4104\n| where CommandLine has \"SharpHound\" or CommandLine has \"BloodHound\"\n| project TimeGenerated, Computer, Account, CommandLine",
+    "sigma_rules": "posh_ps_sharphound_bloodhound_collection",
+    "prevention": "Detect and block SharpHound execution via AMSI/EDR; monitor for mass LDAP enumeration; restrict unnecessary LDAP read access; use honeypot accounts that trigger on enumeration.",
+    "sources": [
+      "SpecterOps",
+      "https://attack.mitre.org/techniques/T1087/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SharpHound/BloodHound collection activity",
+        "logic": "union\n(SecurityEvent | where EventID == 4104 | where CommandLine has_any (\"SharpHound\", \"Invoke-BloodHound\")),\n(DeviceProcessEvents | where FileName =~ \"SharpHound.exe\" or ProcessCommandLine has \"SharpHound\")\n| project TimeGenerated, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Authorized red team or security assessment activities",
+        "tuning": "Alert on any detection; whitelist only during authorized engagements"
+      }
+    ]
+  }
+}

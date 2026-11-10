@@ -1,0 +1,95 @@
+{
+  "id": "ad-dcshadow",
+  "name": "DCShadow - Rogue Domain Controller Persistence",
+  "command": "mimikatz# lsadump::dcshadow /object:TargetUser /attribute:primaryGroupID /value:512",
+  "description": "DCShadow registers a rogue domain controller in AD and pushes malicious replication changes (like adding a user to Domain Admins) through normal DC-to-DC replication. Changes made via DCShadow bypass most SIEM detections because they appear as legitimate replication events. Requires DA-level access - this is a persistence technique, not initial access.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Domain Persistence",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP persistence module; Delpy/mimikatz",
+  "tags": [
+    "dcshadow",
+    "rogue-dc",
+    "persistence",
+    "replication",
+    "mimikatz",
+    "stealthy"
+  ],
+  "mitre": [
+    "T1207"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nDCShadow temporarily registers the attacker machine as a DC in AD.\nIt then pushes changes via normal DRS replication protocol.\nAfter the change replicates, the rogue DC is deregistered.\n\n=== REQUIRES ===\n- Domain Admin or Enterprise Admin privileges\n- Two mimikatz instances running simultaneously\n\n=== STEP 1: SET UP CHANGES (Terminal 1 - SYSTEM) ===\n  mimikatz# lsadump::dcshadow /object:TargetUser /attribute:primaryGroupID /value:512\n  # 512 = Domain Admins\n\n=== STEP 2: PUSH REPLICATION (Terminal 2 - DA) ===\n  mimikatz# lsadump::dcshadow /push\n  # This triggers replication from the rogue DC\n\n=== WHAT YOU CAN CHANGE ===\n- Add user to Domain Admins (primaryGroupID=512)\n- Modify SIDHistory for cross-domain persistence\n- Set SPN for Kerberoasting targets\n- Modify ACLs for persistent access\n- Push any LDAP attribute change\n\n=== WHY ITS STEALTHY ===\nChanges come through DRS replication, which is:\n- Expected traffic between DCs\n- Not logged by standard security events\n- Appears as normal AD replication\nOnly the temporary SPN registration is detectable.",
+  "examples": [
+    {
+      "label": "Add user to Domain Admins via DCShadow",
+      "command": "mimikatz# lsadump::dcshadow /object:TargetUser /attribute:primaryGroupID /value:512"
+    },
+    {
+      "label": "Push the replication changes",
+      "command": "mimikatz# lsadump::dcshadow /push"
+    },
+    {
+      "label": "Set SIDHistory for cross-domain persistence",
+      "command": "mimikatz# lsadump::dcshadow /object:TargetUser /attribute:SIDHistory /value:S-1-5-21-...-519"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE T1207 - Rogue Domain Controller",
+      "url": "https://attack.mitre.org/techniques/T1207/"
+    },
+    {
+      "title": "DCShadow - Luc Delvaux & Benjamin Delpy",
+      "url": "https://www.dcshadow.com/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "crtp-adminsdholder",
+      "note": "AdminSDHolder is another stealthy persistence technique.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AD replication (DRS) is a trusted mechanism between DCs. By temporarily registering as a DC, changes are pushed through the same channel legitimate DCs use, bypassing most change-detection systems that monitor LDAP modifications.",
+    "prerequisites": "Domain Admin privileges; ability to run two mimikatz processes simultaneously.",
+    "impact": "Stealthy persistent access; any AD attribute can be modified without generating standard change events.",
+    "detection": "[MITRE T1207] New DC SPN registration (temporary); replication from non-DC IP addresses; Event 4742 showing computer account SPN changes.",
+    "artifacts": "Temporary SPN registration (GC/ and E3514235-...) on a non-DC computer; Directory Service replication metadata from unknown source.",
+    "splunk_spl": "index=windows EventCode=4742\n| where ServicePrincipalNames=\"*GC/*\" OR ServicePrincipalNames=\"*E3514235-*\"\n| where NOT match(TargetUserName, \"DC\\d+\\$\")\n| table _time, TargetUserName, ServicePrincipalNames, SubjectUserName",
+    "elastic_kql": "event.code:\"4742\" AND winlog.event_data.ServicePrincipalNames:(*GC* OR *E3514235*)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4742\n| where ServicePrincipalNames has \"GC/\" or ServicePrincipalNames has \"E3514235-\"\n| where TargetUserName !startswith \"DC\"\n| project TimeGenerated, TargetUserName, ServicePrincipalNames, SubjectUserName",
+    "sigma_rules": "win_security_dcshadow_spn_registration",
+    "prevention": "Monitor for DC SPN registration on non-DC computers; use AD replication metadata monitoring; restrict Domain Admin usage; implement Privileged Access Workstations.",
+    "sources": [
+      "CRTP persistence module",
+      "https://attack.mitre.org/techniques/T1207/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "DCShadow - Rogue DC SPN registration",
+        "logic": "SecurityEvent\n| where EventID == 4742\n| where ServicePrincipalNames has \"GC/\" or ServicePrincipalNames has \"E3514235-4B06-11D1-AB04-00C04FC2DCD2\"\n| join kind=anti (\n    SecurityEvent | where EventID == 4742 | where TargetUserName in (\"DC01$\", \"DC02$\")\n) on TargetUserName\n| project TimeGenerated, TargetUserName, ServicePrincipalNames, SubjectUserName",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4742"
+        ],
+        "attack": [
+          "T1207"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate DC promotion; DVDC (domain controller VMs being promoted)",
+        "tuning": "Whitelist known DC computer accounts; alert on any non-DC getting replication SPNs"
+      }
+    ]
+  }
+}

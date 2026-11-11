@@ -1,0 +1,105 @@
+{
+  "id": "wifi-bettercap",
+  "name": "bettercap - MitM / Network Attack Framework",
+  "command": "bettercap -iface <interface>",
+  "description": "bettercap is a modular framework for network and wireless attacks: ARP/DNS spoofing and MitM, transparent HTTP/HTTPS proxying and credential sniffing, a caplet/scripting engine, BLE and Wi-Fi modules (recon, deauth, PMKID association), and a web UI. The Swiss-army knife for on-path LAN and RF attacks.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Wireless Security",
+  "subcategory": "Man-in-the-Middle",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "bettercap/bettercap",
+  "tags": [
+    "bettercap",
+    "mitm",
+    "arp-spoofing",
+    "wireless",
+    "sniffing",
+    "dns-spoof",
+    "wifi"
+  ],
+  "mitre": [
+    "T1557.002",
+    "T1040",
+    "T1557"
+  ],
+  "exam": "lab-only",
+  "notes": "=== START ===\n  bettercap -iface <interface>           # interactive session\n  bettercap -iface <interface> -caplet <file>   # run a caplet script\n\n=== LAN MITM (inside the session) ===\n  net.probe on                           # discover hosts\n  net.show\n  set arp.spoof.targets <ip>\n  arp.spoof on\n  net.sniff on                           # capture creds/traffic\n  set dns.spoof.domains example.com ; dns.spoof on\n\n=== HTTPS / CREDS ===\n  # use the https proxy + sniffer modules / caplets (e.g. http-ui, hstshijack)\n  set http.proxy.sslstrip true ; http.proxy on\n\n=== WIFI ===\n  wifi.recon on\n  wifi.show\n  wifi.deauth <bssid>\n  wifi.assoc <bssid>                     # grab PMKID\n\n=== WEB UI ===\n  bettercap -caplet http-ui              # http://127.0.0.1\n\n=== ALTERNATIVES ===\n  responder (LLMNR/NBT-NS)\n  ettercap (classic MitM)\n  mitm6 (IPv6 DNS takeover)\n  aircrack-ng suite (wifi-only)",
+  "examples": [
+    {
+      "label": "Interactive session on an interface",
+      "command": "bettercap -iface <interface>"
+    },
+    {
+      "label": "ARP spoof a target (in session)",
+      "command": "set arp.spoof.targets <ip>; arp.spoof on"
+    },
+    {
+      "label": "Wi-Fi recon + deauth (in session)",
+      "command": "wifi.recon on; wifi.deauth <bssid>"
+    }
+  ],
+  "references": [
+    {
+      "title": "bettercap",
+      "url": "https://www.bettercap.org/"
+    },
+    {
+      "title": "bettercap GitHub",
+      "url": "https://github.com/bettercap/bettercap"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "wifi-aircrack-ng",
+      "note": "aircrack-ng suite for dedicated WPA capture/crack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "wifi-hcxdumptool",
+      "note": "hcxdumptool for focused PMKID capture.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "mitm6 for IPv6-based MitM in AD networks.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Layer-2 protocols (ARP, LLMNR, unauthenticated DHCP/DNS) trust local broadcasts, so an on-path attacker can poison them to reroute traffic. Combined with SSLstrip/HSTS tricks and Wi-Fi deauth/association, bettercap intercepts credentials and manipulates sessions.",
+    "prerequisites": "Access to the local network segment (wired or wireless) or RF range for the Wi-Fi modules.",
+    "impact": "Interception and modification of victim traffic, credential theft, DNS redirection, and Wi-Fi handshake capture.",
+    "detection": "[MITRE T1557] ARP anomalies (one MAC claiming many IPs, gratuitous ARP storms); duplicate-IP/gateway MAC changes; sudden deauth frames; DHCP/DNS spoofing alerts; IDS ARP-spoof signatures.",
+    "artifacts": "Switch/IDS ARP-inspection logs, gateway MAC change events, deauth-frame spikes, unexpected DNS answers, SSLstrip downgrade attempts.",
+    "splunk_spl": "index=network sourcetype=arp OR tag=arp\n| stats dc(src_mac) as macs by src_ip\n| where macs > 1",
+    "elastic_kql": "event.category:network and (arp.opcode:2 or message:\"duplicate IP address\")",
+    "sentinel_kql": "CommonSecurityLog\n| where DeviceEventClassID has \"arp\" or Activity has \"ARP\"\n| summarize Macs=dcount(SourceMACAddress) by SourceIP, bin(TimeGenerated, 5m)\n| where Macs > 1",
+    "sigma_rules": "network_arp_spoof_mitm_bettercap",
+    "prevention": "Dynamic ARP Inspection + DHCP snooping on switches; disable LLMNR/NBT-NS; 802.1X port security; HSTS preload and no plaintext HTTP; encrypted DNS; PMF (802.11w) and WIPS for Wi-Fi; network segmentation and monitoring.",
+    "sources": [
+      "bettercap/bettercap",
+      "https://www.bettercap.org/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ARP spoofing / one IP with multiple MACs (bettercap MitM)",
+        "logic": "CommonSecurityLog\n| where Activity has \"ARP\" or DeviceEventClassID has \"arp\"\n| summarize Macs=dcount(SourceMACAddress) by SourceIP, bin(TimeGenerated, 5m)\n| where Macs > 1",
+        "data_source": "network-flow",
+        "attack": [
+          "T1557.002",
+          "T1557"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate failover/VRRP, NIC teaming",
+        "tuning": "Allowlist known virtual-IP/gateway MAC pairs"
+      }
+    ]
+  }
+}

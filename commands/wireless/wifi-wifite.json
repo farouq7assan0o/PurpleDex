@@ -1,0 +1,77 @@
+{
+  "id": "wifi-wifite",
+  "name": "wifite2 - Automated Wireless Auditing",
+  "command": "wifite",
+  "description": "wifite2 automates the full wireless attack workflow: puts the card in monitor mode, scans for APs, and runs the best attack per target - WPA handshake capture + crack, PMKID, WPS (Pixie-Dust and PIN brute), and WEP. It orchestrates aircrack-ng/hcxdumptool/reaver/bully/hashcat so you point it at targets and collect cracked keys.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Wireless Security",
+  "subcategory": "Automated Wireless",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "kimocoder/wifite2",
+  "tags": [
+    "wifite",
+    "wireless",
+    "wifi",
+    "wpa2",
+    "wps",
+    "pmkid",
+    "automation"
+  ],
+  "mitre": [
+    "T1040",
+    "T1110.002"
+  ],
+  "exam": "lab-only",
+  "notes": "=== RUN ===\n  wifite                         # auto monitor mode + scan; Ctrl-C to pick targets\n\n=== SCOPE / FILTER ===\n  wifite -i <interface>\n  wifite --essid '<ssid>'\n  wifite -b <target>             # target a BSSID\n  wifite --kill                  # kill interfering processes\n\n=== ATTACK SELECTION ===\n  wifite --wpa                   # only WPA handshake attacks\n  wifite --pmkid                 # clientless PMKID only\n  wifite --wps                   # WPS (pixie-dust + pin)\n  wifite --dict <wordlist>       # wordlist for cracking\n\n=== OUTPUT ===\n  # handshakes saved to ./hs/ ; cracked keys printed + stored in cracked.json\n\n=== ALTERNATIVES ===\n  aircrack-ng suite (manual)\n  hcxdumptool + hashcat (PMKID)\n  bettercap (wifi module)",
+  "examples": [
+    {
+      "label": "Auto audit all in range",
+      "command": "wifite"
+    },
+    {
+      "label": "PMKID-only attack",
+      "command": "wifite --pmkid"
+    },
+    {
+      "label": "Target one BSSID with a wordlist",
+      "command": "wifite -b <target> --dict <wordlist>"
+    }
+  ],
+  "references": [
+    {
+      "title": "wifite2",
+      "url": "https://github.com/kimocoder/wifite2"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "wifi-aircrack-ng",
+      "note": "aircrack-ng suite for the manual equivalent.",
+      "rel": "alternative"
+    },
+    {
+      "id": "wifi-hcxdumptool",
+      "note": "hcxdumptool for dedicated PMKID capture.",
+      "rel": "alternative"
+    },
+    {
+      "id": "hashcat-dictionary",
+      "note": "Crack captured handshakes/PMKID on GPU.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "wifite chains known wireless weaknesses (offline-crackable PSK handshakes, insecure WPS PIN/Pixie-Dust, WEP) into an automated pipeline, so any network with a weak passphrase or WPS enabled is quickly compromised.",
+    "prerequisites": "A monitor-mode-capable adapter within range of the target networks.",
+    "impact": "Automated recovery of Wi-Fi keys across many nearby networks with minimal operator effort.",
+    "detection": "[MITRE T1040] WIDS alerts for deauth floods, WPS PIN brute-force attempts, and rogue/monitor adapters; repeated association failures and handshake captures.",
+    "artifacts": "Wireless controller logs (WPS lockouts, deauth storms), reassociation spikes, WIDS rogue-device alerts.",
+    "prevention": "Disable WPS entirely; use WPA3-SAE or long random WPA2 passphrases; enable 802.11w PMF; prefer WPA2/WPA3-Enterprise; deploy WIPS; retire WEP/WPA-TKIP.",
+    "sources": [
+      "kimocoder/wifite2"
+    ]
+  }
+}

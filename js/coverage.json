@@ -7444,6 +7444,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "wifi-bettercap",
+          "name": "ARP spoofing / one IP with multiple MACs (bettercap MitM)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
           "card_id": "dnsadmins-wpad",
           "name": "DnsAdmins - WPAD Record Injection - Sentinel",
           "platform": "sentinel",
@@ -7522,6 +7529,7 @@
       ],
       "data_sources": [
         "windows-security",
+        "network-flow",
         "powershell",
         "dns",
         "iis",
@@ -23377,6 +23385,58 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1557.002": {
+      "detections": [
+        {
+          "card_id": "wifi-bettercap",
+          "name": "ARP spoofing / one IP with multiple MACs (bettercap MitM)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
+          "card_id": "ettercap-dns-spoof",
+          "name": "DNS - Cache Poisoning with Ettercap - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "ettercap-dns-spoof",
+          "name": "DNS - Cache Poisoning with Ettercap - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "ettercap-dns-spoof",
+          "name": "net_arp_dns_spoofing_ettercap",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "dns"
+        },
+        {
+          "card_id": "ettercap-dns-spoof",
+          "name": "DNS - Cache Poisoning with Ettercap - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "ndr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "network-flow",
+        "defender-endpoint",
+        "dns",
+        "ndr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1059": {
       "detections": [
         {
@@ -32656,50 +32716,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1557.002": {
-      "detections": [
-        {
-          "card_id": "ettercap-dns-spoof",
-          "name": "DNS - Cache Poisoning with Ettercap - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "ettercap-dns-spoof",
-          "name": "DNS - Cache Poisoning with Ettercap - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "ettercap-dns-spoof",
-          "name": "net_arp_dns_spoofing_ettercap",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "dns"
-        },
-        {
-          "card_id": "ettercap-dns-spoof",
-          "name": "DNS - Cache Poisoning with Ettercap - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "ndr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "defender-endpoint",
-        "dns",
-        "ndr"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1574": {
       "detections": [
         {
@@ -40645,6 +40661,8 @@
     "network-flow": [
       "T1018",
       "T1046",
+      "T1557.002",
+      "T1557",
       "T1059",
       "T1087.002",
       "T1069.002",
@@ -40947,6 +40965,6 @@
       "T1190"
     ]
   },
-  "cards_with_detections": 904,
-  "total_detections": 3819
+  "cards_with_detections": 905,
+  "total_detections": 3820
 }

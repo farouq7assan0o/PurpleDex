@@ -1,0 +1,82 @@
+{
+  "id": "wifi-hcxdumptool",
+  "name": "hcxdumptool - PMKID / Clientless WPA Capture",
+  "command": "hcxdumptool -i <interface> -o <file> --enable_status=1",
+  "description": "hcxdumptool captures WPA/WPA2 material - especially the PMKID from a single association frame, which needs no connected client and no deauth - straight into a pcapng. hcxpcapngtool then converts it to hashcat's 22000 format for GPU cracking. The modern, efficient path to WPA key recovery.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Wireless Security",
+  "subcategory": "WPA Cracking",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "ZerBea/hcxdumptool",
+  "tags": [
+    "hcxdumptool",
+    "wireless",
+    "wifi",
+    "pmkid",
+    "wpa2",
+    "hashcat",
+    "clientless"
+  ],
+  "mitre": [
+    "T1040",
+    "T1110.002"
+  ],
+  "exam": "lab-only",
+  "notes": "=== CAPTURE (newer syntax; card auto monitor) ===\n  hcxdumptool -i <interface> -o <file> --enable_status=1\n  # older builds: hcxdumptool -i wlan0mon -o dump.pcapng --enable_status=3\n\n=== TARGET A SPECIFIC BSSID ===\n  # create a filter list of BSSIDs and pass --bpf / --filterlist_ap=<file> --filtermode=2\n\n=== CONVERT FOR HASHCAT ===\n  hcxpcapngtool -o hash.22000 <file>\n  # (PMKID + EAPOL extracted into mode 22000 lines)\n\n=== CRACK ===\n  hashcat -m 22000 hash.22000 <wordlist>\n\n=== NOTE ===\n  # --enable_status attacks can deauth/associate aggressively; some options are\n  # intrusive - use only against networks you are authorized to test.\n\n=== ALTERNATIVES ===\n  aircrack-ng + airodump (handshake capture)\n  wifite --pmkid (automated)\n  bettercap wifi.recon + wifi.assoc",
+  "examples": [
+    {
+      "label": "Capture to pcapng",
+      "command": "hcxdumptool -i <interface> -o <file> --enable_status=1"
+    },
+    {
+      "label": "Convert for hashcat",
+      "command": "hcxpcapngtool -o hash.22000 <file>"
+    },
+    {
+      "label": "Crack mode 22000",
+      "command": "hashcat -m 22000 hash.22000 <wordlist>"
+    }
+  ],
+  "references": [
+    {
+      "title": "hcxdumptool",
+      "url": "https://github.com/ZerBea/hcxdumptool"
+    },
+    {
+      "title": "hcxtools",
+      "url": "https://github.com/ZerBea/hcxtools"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "wifi-aircrack-ng",
+      "note": "aircrack-ng for the handshake-based alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "wifi-wifite",
+      "note": "wifite automates PMKID capture and cracking.",
+      "rel": "alternative"
+    },
+    {
+      "id": "hashcat-dictionary",
+      "note": "Crack the 22000 hash on GPU.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The PMKID is sent by many APs in the first EAPOL message during association and is derived from the PSK, so it can be captured without any client and cracked offline - removing the need to deauth and wait for a handshake.",
+    "prerequisites": "A monitor/injection-capable adapter in range of a PMKID-exposing AP.",
+    "impact": "Clientless, low-noise capture of crackable WPA material leading to passphrase recovery.",
+    "detection": "[MITRE T1040] WIDS detection of unsolicited association requests and monitor-mode adapters; APs seeing association attempts from unknown MACs; aggressive attack modes still produce deauth/assoc anomalies.",
+    "artifacts": "Wireless controller logs of anomalous association requests, unknown-MAC activity, WIDS alerts.",
+    "prevention": "WPA3-SAE (no crackable PMKID); disable PMKID/roaming caching where not needed; long random PSKs or WPA2-Enterprise; 802.11w PMF; WIPS monitoring.",
+    "sources": [
+      "ZerBea/hcxdumptool",
+      "ZerBea/hcxtools"
+    ]
+  }
+}

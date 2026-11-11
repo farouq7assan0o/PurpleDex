@@ -6694,6 +6694,88 @@ const COMMAND_DATA = {
       ]
     },
     {
+      "id": "wifi-aircrack-ng",
+      "name": "Aircrack-ng - WPA/WPA2 Handshake Cracking",
+      "command": "aircrack-ng -w <wordlist> -b <target> <file>",
+      "description": "The Aircrack-ng suite captures and cracks Wi-Fi. airmon-ng enables monitor mode, airodump-ng scans and captures the WPA/WPA2 4-way handshake (or PMKID), aireplay-ng deauthenticates clients to force a handshake, and aircrack-ng runs a dictionary attack against the captured handshake to recover the passphrase.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Wireless Security",
+      "subcategory": "WPA Cracking",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "aircrack-ng/aircrack-ng",
+      "tags": [
+        "aircrack-ng",
+        "wireless",
+        "wifi",
+        "wpa2",
+        "handshake",
+        "deauth",
+        "cracking"
+      ],
+      "mitre": [
+        "T1040",
+        "T1110.002"
+      ],
+      "exam": "lab-only",
+      "notes": "=== MONITOR MODE ===\n  airmon-ng check kill\n  airmon-ng start <interface>        # -> <interface>mon (e.g. wlan0mon)\n\n=== SCAN ===\n  airodump-ng <interface>mon         # list APs: BSSID, CH, ESSID, clients\n\n=== TARGETED CAPTURE (lock to channel + write pcap) ===\n  airodump-ng -c <ch> --bssid <target> -w cap <interface>mon\n  # wait for 'WPA handshake: <BSSID>' in the top-right\n\n=== FORCE A HANDSHAKE (deauth a client) ===\n  aireplay-ng -0 5 -a <target> -c <client_mac> <interface>mon\n\n=== CRACK ===\n  aircrack-ng -w <wordlist> -b <target> cap-01.cap\n  # or convert + GPU crack with hashcat (mode 22000)\n\n=== PMKID (clientless) ===\n  hcxdumptool / hcxpcapngtool -> hashcat -m 22000\n\n=== ALTERNATIVES ===\n  wifite       # automates the whole flow\n  hashcat -m 22000   # GPU cracking of the handshake/PMKID\n  hcxdumptool  # PMKID capture",
+      "examples": [
+        {
+          "label": "Start monitor mode",
+          "command": "airmon-ng start <interface>"
+        },
+        {
+          "label": "Capture handshake on a target",
+          "command": "airodump-ng -c <port> --bssid <target> -w cap <interface>mon"
+        },
+        {
+          "label": "Crack the handshake",
+          "command": "aircrack-ng -w <wordlist> -b <target> cap-01.cap"
+        }
+      ],
+      "references": [
+        {
+          "title": "Aircrack-ng",
+          "url": "https://www.aircrack-ng.org/"
+        },
+        {
+          "title": "Aircrack-ng GitHub",
+          "url": "https://github.com/aircrack-ng/aircrack-ng"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "wifi-wifite",
+          "note": "wifite automates capture + crack end to end.",
+          "rel": "alternative"
+        },
+        {
+          "id": "wifi-hcxdumptool",
+          "note": "hcxdumptool for clientless PMKID capture.",
+          "rel": "next"
+        },
+        {
+          "id": "hashcat-dictionary",
+          "note": "Crack the converted handshake on GPU (mode 22000).",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "WPA2-PSK authentication derives keys from the passphrase; the 4-way handshake (or a PMKID) lets an attacker brute-force that passphrase offline. Deauthentication frames (unprotected in WPA2) force clients to reconnect and expose the handshake.",
+        "prerequisites": "A wireless adapter supporting monitor mode and injection, within RF range of the target network.",
+        "impact": "Recovery of the Wi-Fi passphrase, granting full network access and the ability to decrypt captured traffic.",
+        "detection": "[MITRE T1040] WIDS/WIPS alerts on deauthentication floods and monitor-mode/rogue adapters; spikes of 802.11 deauth/disassoc frames; clients repeatedly reassociating.",
+        "artifacts": "Wireless controller/WIDS logs (deauth flood, unknown MACs), repeated client disconnect/reconnect events, management-frame anomalies.",
+        "prevention": "Use WPA3-SAE (resists offline cracking) or long random WPA2 passphrases (20+ chars); enable 802.11w Protected Management Frames to block deauth; WPA2-Enterprise (EAP) instead of PSK; deploy WIPS to detect deauth/rogue APs; segment and monitor wireless.",
+        "sources": [
+          "aircrack-ng/aircrack-ng",
+          "https://www.aircrack-ng.org/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -16022,6 +16104,111 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Generates heavily obfuscated but functionally identical bash payloads to defeat command filters and WAFs.:\n  -c <command>  command to execute / config\nInstall: git clone https://github.com/Bashfuscator/Bashfuscator; pip3 install setuptools==65; python3 setup.py install --user."
+    },
+    {
+      "id": "wifi-bettercap",
+      "name": "bettercap - MitM / Network Attack Framework",
+      "command": "bettercap -iface <interface>",
+      "description": "bettercap is a modular framework for network and wireless attacks: ARP/DNS spoofing and MitM, transparent HTTP/HTTPS proxying and credential sniffing, a caplet/scripting engine, BLE and Wi-Fi modules (recon, deauth, PMKID association), and a web UI. The Swiss-army knife for on-path LAN and RF attacks.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Wireless Security",
+      "subcategory": "Man-in-the-Middle",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "bettercap/bettercap",
+      "tags": [
+        "bettercap",
+        "mitm",
+        "arp-spoofing",
+        "wireless",
+        "sniffing",
+        "dns-spoof",
+        "wifi"
+      ],
+      "mitre": [
+        "T1557.002",
+        "T1040",
+        "T1557"
+      ],
+      "exam": "lab-only",
+      "notes": "=== START ===\n  bettercap -iface <interface>           # interactive session\n  bettercap -iface <interface> -caplet <file>   # run a caplet script\n\n=== LAN MITM (inside the session) ===\n  net.probe on                           # discover hosts\n  net.show\n  set arp.spoof.targets <ip>\n  arp.spoof on\n  net.sniff on                           # capture creds/traffic\n  set dns.spoof.domains example.com ; dns.spoof on\n\n=== HTTPS / CREDS ===\n  # use the https proxy + sniffer modules / caplets (e.g. http-ui, hstshijack)\n  set http.proxy.sslstrip true ; http.proxy on\n\n=== WIFI ===\n  wifi.recon on\n  wifi.show\n  wifi.deauth <bssid>\n  wifi.assoc <bssid>                     # grab PMKID\n\n=== WEB UI ===\n  bettercap -caplet http-ui              # http://127.0.0.1\n\n=== ALTERNATIVES ===\n  responder (LLMNR/NBT-NS)\n  ettercap (classic MitM)\n  mitm6 (IPv6 DNS takeover)\n  aircrack-ng suite (wifi-only)",
+      "examples": [
+        {
+          "label": "Interactive session on an interface",
+          "command": "bettercap -iface <interface>"
+        },
+        {
+          "label": "ARP spoof a target (in session)",
+          "command": "set arp.spoof.targets <ip>; arp.spoof on"
+        },
+        {
+          "label": "Wi-Fi recon + deauth (in session)",
+          "command": "wifi.recon on; wifi.deauth <bssid>"
+        }
+      ],
+      "references": [
+        {
+          "title": "bettercap",
+          "url": "https://www.bettercap.org/"
+        },
+        {
+          "title": "bettercap GitHub",
+          "url": "https://github.com/bettercap/bettercap"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "wifi-aircrack-ng",
+          "note": "aircrack-ng suite for dedicated WPA capture/crack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "wifi-hcxdumptool",
+          "note": "hcxdumptool for focused PMKID capture.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "mitm6 for IPv6-based MitM in AD networks.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Layer-2 protocols (ARP, LLMNR, unauthenticated DHCP/DNS) trust local broadcasts, so an on-path attacker can poison them to reroute traffic. Combined with SSLstrip/HSTS tricks and Wi-Fi deauth/association, bettercap intercepts credentials and manipulates sessions.",
+        "prerequisites": "Access to the local network segment (wired or wireless) or RF range for the Wi-Fi modules.",
+        "impact": "Interception and modification of victim traffic, credential theft, DNS redirection, and Wi-Fi handshake capture.",
+        "detection": "[MITRE T1557] ARP anomalies (one MAC claiming many IPs, gratuitous ARP storms); duplicate-IP/gateway MAC changes; sudden deauth frames; DHCP/DNS spoofing alerts; IDS ARP-spoof signatures.",
+        "artifacts": "Switch/IDS ARP-inspection logs, gateway MAC change events, deauth-frame spikes, unexpected DNS answers, SSLstrip downgrade attempts.",
+        "splunk_spl": "index=network sourcetype=arp OR tag=arp\n| stats dc(src_mac) as macs by src_ip\n| where macs > 1",
+        "elastic_kql": "event.category:network and (arp.opcode:2 or message:\"duplicate IP address\")",
+        "sentinel_kql": "CommonSecurityLog\n| where DeviceEventClassID has \"arp\" or Activity has \"ARP\"\n| summarize Macs=dcount(SourceMACAddress) by SourceIP, bin(TimeGenerated, 5m)\n| where Macs > 1",
+        "sigma_rules": "network_arp_spoof_mitm_bettercap",
+        "prevention": "Dynamic ARP Inspection + DHCP snooping on switches; disable LLMNR/NBT-NS; 802.1X port security; HSTS preload and no plaintext HTTP; encrypted DNS; PMF (802.11w) and WIPS for Wi-Fi; network segmentation and monitoring.",
+        "sources": [
+          "bettercap/bettercap",
+          "https://www.bettercap.org/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ARP spoofing / one IP with multiple MACs (bettercap MitM)",
+            "logic": "CommonSecurityLog\n| where Activity has \"ARP\" or DeviceEventClassID has \"arp\"\n| summarize Macs=dcount(SourceMACAddress) by SourceIP, bin(TimeGenerated, 5m)\n| where Macs > 1",
+            "data_source": "network-flow",
+            "attack": [
+              "T1557.002",
+              "T1557"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate failover/VRRP, NIC teaming",
+            "tuning": "Allowlist known virtual-IP/gateway MAC pairs"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -61467,6 +61654,88 @@ const COMMAND_DATA = {
         "sources": [
           "Yamato-Security",
           "https://attack.mitre.org/"
+        ]
+      }
+    },
+    {
+      "id": "wifi-hcxdumptool",
+      "name": "hcxdumptool - PMKID / Clientless WPA Capture",
+      "command": "hcxdumptool -i <interface> -o <file> --enable_status=1",
+      "description": "hcxdumptool captures WPA/WPA2 material - especially the PMKID from a single association frame, which needs no connected client and no deauth - straight into a pcapng. hcxpcapngtool then converts it to hashcat's 22000 format for GPU cracking. The modern, efficient path to WPA key recovery.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Wireless Security",
+      "subcategory": "WPA Cracking",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "ZerBea/hcxdumptool",
+      "tags": [
+        "hcxdumptool",
+        "wireless",
+        "wifi",
+        "pmkid",
+        "wpa2",
+        "hashcat",
+        "clientless"
+      ],
+      "mitre": [
+        "T1040",
+        "T1110.002"
+      ],
+      "exam": "lab-only",
+      "notes": "=== CAPTURE (newer syntax; card auto monitor) ===\n  hcxdumptool -i <interface> -o <file> --enable_status=1\n  # older builds: hcxdumptool -i wlan0mon -o dump.pcapng --enable_status=3\n\n=== TARGET A SPECIFIC BSSID ===\n  # create a filter list of BSSIDs and pass --bpf / --filterlist_ap=<file> --filtermode=2\n\n=== CONVERT FOR HASHCAT ===\n  hcxpcapngtool -o hash.22000 <file>\n  # (PMKID + EAPOL extracted into mode 22000 lines)\n\n=== CRACK ===\n  hashcat -m 22000 hash.22000 <wordlist>\n\n=== NOTE ===\n  # --enable_status attacks can deauth/associate aggressively; some options are\n  # intrusive - use only against networks you are authorized to test.\n\n=== ALTERNATIVES ===\n  aircrack-ng + airodump (handshake capture)\n  wifite --pmkid (automated)\n  bettercap wifi.recon + wifi.assoc",
+      "examples": [
+        {
+          "label": "Capture to pcapng",
+          "command": "hcxdumptool -i <interface> -o <file> --enable_status=1"
+        },
+        {
+          "label": "Convert for hashcat",
+          "command": "hcxpcapngtool -o hash.22000 <file>"
+        },
+        {
+          "label": "Crack mode 22000",
+          "command": "hashcat -m 22000 hash.22000 <wordlist>"
+        }
+      ],
+      "references": [
+        {
+          "title": "hcxdumptool",
+          "url": "https://github.com/ZerBea/hcxdumptool"
+        },
+        {
+          "title": "hcxtools",
+          "url": "https://github.com/ZerBea/hcxtools"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "wifi-aircrack-ng",
+          "note": "aircrack-ng for the handshake-based alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "wifi-wifite",
+          "note": "wifite automates PMKID capture and cracking.",
+          "rel": "alternative"
+        },
+        {
+          "id": "hashcat-dictionary",
+          "note": "Crack the 22000 hash on GPU.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The PMKID is sent by many APs in the first EAPOL message during association and is derived from the PSK, so it can be captured without any client and cracked offline - removing the need to deauth and wait for a handshake.",
+        "prerequisites": "A monitor/injection-capable adapter in range of a PMKID-exposing AP.",
+        "impact": "Clientless, low-noise capture of crackable WPA material leading to passphrase recovery.",
+        "detection": "[MITRE T1040] WIDS detection of unsolicited association requests and monitor-mode adapters; APs seeing association attempts from unknown MACs; aggressive attack modes still produce deauth/assoc anomalies.",
+        "artifacts": "Wireless controller logs of anomalous association requests, unknown-MAC activity, WIDS alerts.",
+        "prevention": "WPA3-SAE (no crackable PMKID); disable PMKID/roaming caching where not needed; long random PSKs or WPA2-Enterprise; 802.11w PMF; WIPS monitoring.",
+        "sources": [
+          "ZerBea/hcxdumptool",
+          "ZerBea/hcxtools"
         ]
       }
     },
@@ -181476,6 +181745,83 @@ const COMMAND_DATA = {
       "explain": "Queries WHOIS registration data for a domain:\n  whois <domain>   look up the domain's registry record\nReturns registrar, registrant, name servers, and creation/expiry dates - a passive first look that can leak org names, emails, and infrastructure; add -h <server> to query a specific WHOIS server."
     },
     {
+      "id": "wifi-wifite",
+      "name": "wifite2 - Automated Wireless Auditing",
+      "command": "wifite",
+      "description": "wifite2 automates the full wireless attack workflow: puts the card in monitor mode, scans for APs, and runs the best attack per target - WPA handshake capture + crack, PMKID, WPS (Pixie-Dust and PIN brute), and WEP. It orchestrates aircrack-ng/hcxdumptool/reaver/bully/hashcat so you point it at targets and collect cracked keys.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Wireless Security",
+      "subcategory": "Automated Wireless",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "kimocoder/wifite2",
+      "tags": [
+        "wifite",
+        "wireless",
+        "wifi",
+        "wpa2",
+        "wps",
+        "pmkid",
+        "automation"
+      ],
+      "mitre": [
+        "T1040",
+        "T1110.002"
+      ],
+      "exam": "lab-only",
+      "notes": "=== RUN ===\n  wifite                         # auto monitor mode + scan; Ctrl-C to pick targets\n\n=== SCOPE / FILTER ===\n  wifite -i <interface>\n  wifite --essid '<ssid>'\n  wifite -b <target>             # target a BSSID\n  wifite --kill                  # kill interfering processes\n\n=== ATTACK SELECTION ===\n  wifite --wpa                   # only WPA handshake attacks\n  wifite --pmkid                 # clientless PMKID only\n  wifite --wps                   # WPS (pixie-dust + pin)\n  wifite --dict <wordlist>       # wordlist for cracking\n\n=== OUTPUT ===\n  # handshakes saved to ./hs/ ; cracked keys printed + stored in cracked.json\n\n=== ALTERNATIVES ===\n  aircrack-ng suite (manual)\n  hcxdumptool + hashcat (PMKID)\n  bettercap (wifi module)",
+      "examples": [
+        {
+          "label": "Auto audit all in range",
+          "command": "wifite"
+        },
+        {
+          "label": "PMKID-only attack",
+          "command": "wifite --pmkid"
+        },
+        {
+          "label": "Target one BSSID with a wordlist",
+          "command": "wifite -b <target> --dict <wordlist>"
+        }
+      ],
+      "references": [
+        {
+          "title": "wifite2",
+          "url": "https://github.com/kimocoder/wifite2"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "wifi-aircrack-ng",
+          "note": "aircrack-ng suite for the manual equivalent.",
+          "rel": "alternative"
+        },
+        {
+          "id": "wifi-hcxdumptool",
+          "note": "hcxdumptool for dedicated PMKID capture.",
+          "rel": "alternative"
+        },
+        {
+          "id": "hashcat-dictionary",
+          "note": "Crack captured handshakes/PMKID on GPU.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "wifite chains known wireless weaknesses (offline-crackable PSK handshakes, insecure WPS PIN/Pixie-Dust, WEP) into an automated pipeline, so any network with a weak passphrase or WPS enabled is quickly compromised.",
+        "prerequisites": "A monitor-mode-capable adapter within range of the target networks.",
+        "impact": "Automated recovery of Wi-Fi keys across many nearby networks with minimal operator effort.",
+        "detection": "[MITRE T1040] WIDS alerts for deauth floods, WPS PIN brute-force attempts, and rogue/monitor adapters; repeated association failures and handshake captures.",
+        "artifacts": "Wireless controller logs (WPS lockouts, deauth storms), reassociation spikes, WIDS rogue-device alerts.",
+        "prevention": "Disable WPS entirely; use WPA3-SAE or long random WPA2 passphrases; enable 802.11w PMF; prefer WPA2/WPA3-Enterprise; deploy WIPS; retire WEP/WPA-TKIP.",
+        "sources": [
+          "kimocoder/wifite2"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -195099,8 +195445,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1115,
-  "buildDate": "2026-11-11T12:34:48.240Z",
+  "totalCommands": 1119,
+  "buildDate": "2026-11-11T12:36:50.223Z",
   "certifications": [
     "CDSA",
     "CPTS",

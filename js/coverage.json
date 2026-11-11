@@ -7486,6 +7486,13 @@
           "data_source": "dns"
         },
         {
+          "card_id": "phish-evilginx",
+          "name": "Session cookie reuse from new IP after sign-in (AiTM phishing)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
           "card_id": "ad-krbrelayup",
           "name": "KrbRelayUp - RBCD delegation modification",
           "platform": "sentinel",
@@ -7532,6 +7539,7 @@
         "network-flow",
         "powershell",
         "dns",
+        "entra-id",
         "iis",
         "proxy",
         "edr"
@@ -24962,6 +24970,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "phish-evilginx",
+          "name": "Session cookie reuse from new IP after sign-in (AiTM phishing)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
           "card_id": "web-jwt-attacks",
           "name": "JWT Algorithm None Bypass Attempt",
           "platform": "sigma",
@@ -25042,6 +25057,7 @@
         "iis",
         "windows-security",
         "proxy",
+        "entra-id",
         "defender-endpoint",
         "sysmon",
         "edr"
@@ -34477,6 +34493,76 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1566.002": {
+      "detections": [
+        {
+          "card_id": "phish-gophish",
+          "name": "GoPhish tracking/credential-harvest indicators",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "o365"
+        },
+        {
+          "card_id": "hta-mshta-attack",
+          "name": "HTA - mshta.exe Execution - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "hta-mshta-attack",
+          "name": "HTA - mshta.exe Execution - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "hta-mshta-attack",
+          "name": "proc_creation_win_mshta_remote_payload",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "hta-mshta-attack",
+          "name": "HTA - mshtaexe Execution - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "o365",
+        "defender-endpoint",
+        "sysmon",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1598.003": {
+      "detections": [
+        {
+          "card_id": "phish-gophish",
+          "name": "GoPhish tracking/credential-harvest indicators",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "o365"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "o365"
+      ],
+      "best_fidelity": "signature"
+    },
     "T1136.001": {
       "detections": [
         {
@@ -35080,6 +35166,13 @@
           "data_source": "defender-endpoint"
         },
         {
+          "card_id": "c2-mythic",
+          "name": "Periodic C2 beaconing to a single external host (Mythic)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "proxy"
+        },
+        {
           "card_id": "ad-sliver-c2",
           "name": "C2 beacon pattern - regular interval callbacks",
           "platform": "sentinel",
@@ -35088,10 +35181,12 @@
         }
       ],
       "platforms": [
-        "sentinel"
+        "sentinel",
+        "splunk"
       ],
       "data_sources": [
-        "defender-endpoint"
+        "defender-endpoint",
+        "proxy"
       ],
       "best_fidelity": "behavioral"
     },
@@ -35117,50 +35212,6 @@
       ],
       "data_sources": [
         "defender-endpoint"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1566.002": {
-      "detections": [
-        {
-          "card_id": "hta-mshta-attack",
-          "name": "HTA - mshta.exe Execution - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "hta-mshta-attack",
-          "name": "HTA - mshta.exe Execution - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "hta-mshta-attack",
-          "name": "proc_creation_win_mshta_remote_payload",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "hta-mshta-attack",
-          "name": "HTA - mshtaexe Execution - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "defender-endpoint",
-        "sysmon",
-        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -40063,6 +40114,8 @@
       "T1552",
       "T1606.002",
       "T1110.003",
+      "T1539",
+      "T1557",
       "T1552.004",
       "T1556.006",
       "T1550.001"
@@ -40752,6 +40805,7 @@
       "T1213",
       "T1105",
       "T1059.003",
+      "T1071.001",
       "T1552.001",
       "T1594",
       "T1562.001",
@@ -40951,6 +41005,8 @@
       "T1505.003"
     ],
     "o365": [
+      "T1566.002",
+      "T1598.003",
       "T1098.003",
       "T1114"
     ],
@@ -40965,6 +41021,6 @@
       "T1190"
     ]
   },
-  "cards_with_detections": 905,
-  "total_detections": 3820
+  "cards_with_detections": 908,
+  "total_detections": 3823
 }

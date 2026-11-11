@@ -1,0 +1,75 @@
+{
+  "id": "mentalist-wordlist",
+  "name": "Mentalist - Rule-Based Wordlist Generator",
+  "command": "mentalist",
+  "description": "Mentalist is a GUI tool for building targeted password wordlists from a base list using chained nodes: case changes, substitutions (leetspeak), prepend/append of years/numbers/symbols, and more. It visualizes the transformation pipeline and can export either the full wordlist or equivalent hashcat/John rules for on-the-fly mangling.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Password Attacks",
+  "subcategory": "Wordlists",
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "sc0tfree/mentalist",
+  "tags": [
+    "mentalist",
+    "wordlist",
+    "password-attacks",
+    "rules",
+    "hashcat",
+    "mangling"
+  ],
+  "mitre": [
+    "T1110.001",
+    "T1587.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== RUN ===\n  mentalist          # launches the GUI (Python 3 + tkinter)\n\n=== BUILD A CHAIN (nodes, top to bottom) ===\n  1. Base Words      - import names/company terms/CeWL output/cupp seeds\n  2. Case            - lowercase, UPPER, Capitalize, tOGGLE\n  3. Substitution    - leet (a->@, s->$, e->3), custom maps\n  4. Append/Prepend  - years (2023-2025), numbers 0-999, symbols (!, @, #)\n\n=== EXPORT ===\n  File > Save Wordlist      # the full expanded list\n  File > Save Rules         # hashcat (.rule) / John rules to apply at crack time\n  # rules are far smaller than a giant list -> feed to hashcat -r\n\n=== TYPICAL USE ===\n  # seed with CeWL of the target site + employee names, then mangle ->\n  # targeted list for spraying or offline cracking\n\n=== ALTERNATIVES ===\n  hashcat -r rules/best64.rule   # apply rules directly\n  CeWL (scrape site words) ; cupp (profile a person) ; crunch (charset lists)",
+  "examples": [
+    {
+      "label": "Launch the GUI",
+      "command": "mentalist"
+    },
+    {
+      "label": "Then crack with exported rules",
+      "command": "hashcat -m 1000 hashes.txt base.txt -r mentalist.rule"
+    }
+  ],
+  "references": [
+    {
+      "title": "Mentalist",
+      "url": "https://github.com/sc0tfree/mentalist"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cewl-wordlist",
+      "note": "CeWL to scrape seed words from the target site.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cupp-profile",
+      "note": "cupp to profile an individual for seed terms.",
+      "rel": "alternative"
+    },
+    {
+      "id": "hashcat-rule-functions",
+      "note": "Apply the exported rules in hashcat.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Users build passwords from predictable bases (names, company, seasons, years) plus simple mutations. Mentalist encodes exactly those human patterns, so a small targeted list/ruleset covers a large share of real passwords.",
+    "prerequisites": "Seed words relevant to the target (OSINT, site scrape, employee names); the hashes or a login surface to attack.",
+    "impact": "High-yield targeted wordlists/rules that crack weak passwords faster than generic lists and improve spraying success.",
+    "detection": "[MITRE T1110.001] Offline cracking is not visible to the defender; online use shows as authentication failures. Detect spraying/brute-force (many failures across accounts, lockouts) rather than the list generation.",
+    "artifacts": "None for offline list building; online attempts produce auth-failure (4625/IdP) patterns.",
+    "prevention": "Enforce long passphrases and block common/base-word+mutation passwords (banned-password lists, Azure AD Password Protection); MFA; account lockout/throttling; detect spraying; discourage predictable patterns in policy.",
+    "sources": [
+      "sc0tfree/mentalist"
+    ]
+  }
+}

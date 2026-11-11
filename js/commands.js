@@ -39245,6 +39245,79 @@ const COMMAND_DATA = {
       "explain": "Runs full automated DNS enumeration in one command:\n  dnsenum --dnsserver <nameserver>   query this NS\n  --enum -p 0 -s 0                   preset without whois page/scrape steps\n  -o <outfile> -f <wordlist>         save output; brute-force subdomains from the wordlist\n  <domain>                           target\nDiscovers NS/MX/SOA records, attempts AXFR against every nameserver, and brute-forces subdomains together - a one-shot DNS map."
     },
     {
+      "id": "re-dnspy",
+      "name": "dnSpy - .NET Decompiler and Debugger",
+      "command": "dnSpy.exe <file>",
+      "description": "dnSpy is a Windows .NET assembly editor, decompiler, and debugger. It decompiles managed EXE/DLLs to readable C#/VB, lets you set breakpoints and step through IL at runtime, and edit+save assemblies (patch license/auth checks, bypass protections). Essential for reversing .NET malware, thick clients, and CTF binaries.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Reverse Engineering",
+      "subcategory": ".NET Analysis",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "dnSpyEx/dnSpy",
+      "tags": [
+        "dnspy",
+        "dotnet",
+        "decompiler",
+        "debugger",
+        "reverse-engineering",
+        "thick-client"
+      ],
+      "mitre": [
+        "T1587.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== OPEN ===\n  dnSpy.exe <file>                 # or drag the .exe/.dll into the GUI\n  # (use dnSpyEx, the maintained fork; 32- and 64-bit builds)\n\n=== READ ===\n  - Assembly Explorer: namespaces -> types -> methods (decompiled to C#)\n  - Right-click > Analyze: callers/callees, string usage\n  - Edit > Search (Ctrl-Shift-K): \"password\", \"connectionString\", \"key\", \"http\"\n\n=== DEBUG ===\n  Debug > Start (F5) or Attach to Process; set breakpoints; inspect locals/IL\n\n=== PATCH ===\n  - Right-click a method > Edit Method (C#) or Edit IL Instructions\n  - change a bool check / return value ; File > Save Module\n  # e.g. force IsLicensed()/CheckAuth() to return true\n\n=== ALTERNATIVES ===\n  ILSpy / dotPeek     # decompile (read-only)\n  de4dot              # deobfuscate protected .NET\n  Ghidra              # native + some managed\n  x64dbg              # native debugging",
+      "examples": [
+        {
+          "label": "Open an assembly",
+          "command": "dnSpy.exe <file>"
+        },
+        {
+          "label": "Deobfuscate first (protected binary)",
+          "command": "de4dot <file>"
+        }
+      ],
+      "references": [
+        {
+          "title": "dnSpyEx",
+          "url": "https://github.com/dnSpyEx/dnSpy"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "thickclient-analysis",
+          "note": ".NET thick-client analysis workflow.",
+          "rel": "next"
+        },
+        {
+          "id": "re-ghidra",
+          "note": "Ghidra for native (non-managed) binaries.",
+          "rel": "alternative"
+        },
+        {
+          "id": "exploit-deserialization",
+          "note": ".NET deserialization gadgets often found while reversing.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": ".NET assemblies ship as IL with rich metadata, so decompilers reconstruct near-source C#. Without obfuscation, logic, secrets, and security checks are fully readable and editable, and the IL can be patched and re-saved.",
+        "prerequisites": "A copy of the managed assembly (EXE/DLL).",
+        "impact": "Recovery of connection strings/keys/logic, and the ability to patch out license/auth/integrity checks in the client.",
+        "detection": "Not detectable (offline analysis of a distributed assembly); tampered assemblies can be caught by strong-name/signature verification at load time.",
+        "artifacts": "None in the backend; strong-name or Authenticode verification failures if integrity checks exist.",
+        "prevention": "Obfuscate (ConfuserEx/commercial) and anti-tamper managed code; strong-name sign and verify assemblies; keep secrets server-side, not in the client; enforce auth/license on the server; native AOT for sensitive logic.",
+        "sources": [
+          "dnSpyEx/dnSpy"
+        ]
+      }
+    },
+    {
       "id": "linux-docker-escape",
       "name": "Docker Container Escape - Privileged & Socket Abuse",
       "command": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
@@ -47867,6 +47940,104 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Opens an interactive PowerShell shell over WinRM with credentials:\n  evil-winrm -i <target>   the target host (WinRM 5985/HTTP, 5986/HTTPS)\n  -u <user> -p <password>  domain or local credentials\nThe account must be in Remote Management Users/Administrators. -H <nt_hash> authenticates by hash (pass-the-hash); -s and -e set local script/binary directories for in-memory loading."
+    },
+    {
+      "id": "phish-evilginx",
+      "name": "Evilginx - MFA-Bypass Phishing Proxy",
+      "command": "evilginx2 -p <file>",
+      "description": "Evilginx is a man-in-the-middle reverse-proxy phishing framework that sits between the victim and the real login site. Because it relays the genuine pages, it captures not just the password but the authenticated session cookie, defeating most MFA. 'Phishlets' define per-site proxy rules and 'lures' generate the phishing URLs.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Social Engineering",
+      "subcategory": "Phishing",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "kgretzky/evilginx2",
+      "tags": [
+        "evilginx",
+        "phishing",
+        "mfa-bypass",
+        "session-hijacking",
+        "reverse-proxy",
+        "social-engineering"
+      ],
+      "mitre": [
+        "T1557",
+        "T1539",
+        "T1598.003"
+      ],
+      "exam": "lab-only",
+      "notes": "=== PREREQ ===\n  # a domain you control + DNS A records pointing to the server;\n  # 443 open; Evilginx auto-provisions LetsEncrypt certs\n\n=== START ===\n  evilginx2 -p ./phishlets            # -p = phishlets dir\n\n=== CONFIGURE (in the console) ===\n  config domain <domain>\n  config ipv4 <ip>\n  phishlets hostname o365 <login.yourdomain>\n  phishlets enable o365\n\n=== CREATE A LURE ===\n  lures create o365\n  lures get-url <id>                  # the link to send the victim\n\n=== HARVEST ===\n  sessions                           # list captured sessions\n  sessions <id>                      # show creds + captured cookies (tokens)\n  # import the cookie into a browser -> authenticated as the victim, MFA already satisfied\n\n=== ALTERNATIVES ===\n  Modlishka / Muraena      # similar reverse-proxy phishing\n  GoPhish                  # credential-harvest (no live MFA relay)\n  TokenTactics             # reuse the stolen session for M365 pivoting",
+      "examples": [
+        {
+          "label": "Start with a phishlets directory",
+          "command": "evilginx2 -p ./phishlets"
+        },
+        {
+          "label": "Generate a lure URL (console)",
+          "command": "lures create o365; lures get-url <id>"
+        },
+        {
+          "label": "Dump a captured session",
+          "command": "sessions <id>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Evilginx2",
+          "url": "https://github.com/kgretzky/evilginx2"
+        },
+        {
+          "title": "MITRE T1539 - Steal Web Session Cookie",
+          "url": "https://attack.mitre.org/techniques/T1539/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "phish-gophish",
+          "note": "GoPhish to manage the campaign/email delivery.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-tokentactics",
+          "note": "Reuse the stolen M365 session to mint more tokens.",
+          "rel": "next"
+        },
+        {
+          "id": "cloud-aadinternals",
+          "note": "Pivot the hijacked session into broader Entra attacks.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "By proxying the real site, Evilginx relays legitimate authentication (including the MFA challenge) and captures the resulting session cookie. Possession of that cookie grants access without re-authenticating, so traditional MFA does not stop it.",
+        "prerequisites": "A look-alike domain, a server with valid TLS, and a victim who clicks the lure and authenticates.",
+        "impact": "Full account takeover via stolen session cookies, bypassing password+MFA; a foothold for cloud/identity pivoting.",
+        "detection": "[MITRE T1539/T1557] Sign-ins where the session originates from an unexpected IP/ASN immediately after a legitimate-looking auth; token use from a different geolocation/device than the login; proxy-added artifacts; newly registered look-alike domains; Conditional Access device/location anomalies.",
+        "artifacts": "Entra/IdP sign-in logs showing cookie reuse from a new IP/device, impossible travel, missing device compliance, referrer/UA mismatches, lookalike-domain DNS/cert transparency hits.",
+        "prevention": "Phishing-resistant MFA (FIDO2/WebAuthn, which binds to the real origin and defeats proxying); Conditional Access requiring compliant/managed devices and token binding; continuous access evaluation; user training + lookalike-domain monitoring; block newly registered domains at the proxy.",
+        "sources": [
+          "kgretzky/evilginx2",
+          "https://attack.mitre.org/techniques/T1539/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Session cookie reuse from new IP after sign-in (AiTM phishing)",
+            "logic": "SigninLogs\n| where ResultType == 0\n| extend Loc = tostring(LocationDetails.countryOrRegion)\n| summarize Locs=dcount(Loc), IPs=dcount(IPAddress) by UserPrincipalName, bin(TimeGenerated, 1h)\n| where IPs > 1 and Locs > 1",
+            "data_source": "entra-id",
+            "attack": [
+              "T1539",
+              "T1557"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "VPNs, travelling users, mobile+desktop",
+            "tuning": "Require device-compliance context; prioritize unmanaged-device sign-ins"
+          }
+        ]
+      }
     },
     {
       "id": "exploitation-prioritization",
@@ -56764,6 +56935,103 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Forges a Golden Ticket - a TGT signed with the domain's krbtgt key - for persistent, arbitrary-user domain access:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>           the krbtgt NTLM hash (use /aes256 to be stealthier)\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /user:Administrator      the identity to impersonate\n  /ptt                      inject the ticket into this session\nSince it is signed with krbtgt, the KDC honors it for any service; access the DC (dir \\\\<dc>\\C$). /ldap /printcmd auto-fills real PAC values for opsec."
+    },
+    {
+      "id": "phish-gophish",
+      "name": "GoPhish - Phishing Campaign Framework",
+      "command": "./gophish",
+      "description": "GoPhish is an open-source phishing framework for running and measuring campaigns. A web admin UI and REST API manage sending profiles (SMTP), email templates, landing pages (credential capture), target groups, and real-time results (sent/opened/clicked/submitted). Used for authorized security-awareness testing and red-team initial access.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Social Engineering",
+      "subcategory": "Phishing",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "gophish/gophish",
+      "tags": [
+        "gophish",
+        "phishing",
+        "campaign",
+        "social-engineering",
+        "credential-harvest",
+        "awareness"
+      ],
+      "mitre": [
+        "T1566.002",
+        "T1598.003"
+      ],
+      "exam": "lab-only",
+      "notes": "=== RUN ===\n  ./gophish                         # admin UI on https://127.0.0.1:3333 (creds printed on first run)\n  # edit config.json: admin_server (3333) and phish_server (80/443) listen addrs\n\n=== BUILD A CAMPAIGN (UI/API) ===\n  1. Sending Profile  - SMTP server/relay + from address\n  2. Email Template   - HTML with {{.FirstName}}, {{.URL}}, {{.Tracker}}\n  3. Landing Page     - clone a login page; enable 'Capture Submitted Data' + 'Capture Passwords'\n  4. Users & Groups   - import CSV of targets\n  5. Campaign         - tie it together, set the phish URL, launch\n\n=== RESULTS ===\n  # dashboard + timeline: Email Sent / Opened / Link Clicked / Submitted Data\n\n=== API ===\n  curl -H 'Authorization: Bearer <api_key>' https://127.0.0.1:3333/api/campaigns/\n\n=== NOTE ===\n  # GoPhish harvests credentials on a cloned page; it does NOT proxy live MFA.\n  # For session/MFA capture use a reverse-proxy tool (Evilginx).\n\n=== ALTERNATIVES ===\n  Evilginx (MFA-bypass, session capture)\n  King Phisher, SET (Social-Engineer Toolkit)",
+      "examples": [
+        {
+          "label": "Launch GoPhish",
+          "command": "./gophish"
+        },
+        {
+          "label": "List campaigns via API",
+          "command": "curl -H 'Authorization: Bearer <api_key>' https://127.0.0.1:3333/api/campaigns/"
+        }
+      ],
+      "references": [
+        {
+          "title": "GoPhish",
+          "url": "https://getgophish.com/"
+        },
+        {
+          "title": "GoPhish GitHub",
+          "url": "https://github.com/gophish/gophish"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "phish-evilginx",
+          "note": "Evilginx when you need to defeat MFA via session capture.",
+          "rel": "alternative"
+        },
+        {
+          "id": "office-macro-payload",
+          "note": "Pair with a macro payload for code-execution lures.",
+          "rel": "next"
+        },
+        {
+          "id": "hta-mshta-attack",
+          "note": "HTA/mshta as an alternative malicious-attachment payload.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "GoPhish automates believable email delivery and credential-capture landing pages. Users who trust the message submit credentials to the cloned page, which records them - exploiting human trust rather than a software flaw.",
+        "prerequisites": "An SMTP sending path, a phishing domain/landing page, and a target list.",
+        "impact": "Harvested credentials and measurable click/submit rates; initial access when captured creds are reused.",
+        "detection": "[MITRE T1566.002] Mail-gateway detection of spoofed/lookalike senders and credential-harvest URLs; GoPhish default headers/tracking pixel patterns (X-Gophish-Contact, /track?... and ?rid= parameters); DNS/CT logs for lookalike domains; users reporting phishing.",
+        "artifacts": "Email headers with GoPhish signatures, landing-page POSTs of credentials, tracking-pixel GETs, lookalike-domain registrations, proxy logs to the phish server.",
+        "splunk_spl": "index=proxy (uri=*?rid=* OR uri=*/track*) OR (http_user_agent=*gophish*)\n| stats count by src_ip, dest_host",
+        "elastic_kql": "url.query:*rid=* or http.request.header.x-gophish-contact:*",
+        "sentinel_kql": "EmailEvents\n| where SenderFromDomain in (dynamic_to_array(\"lookalike-domains\")) or UrlCount > 0\n| join kind=inner (EmailUrlInfo) on NetworkMessageId\n| where Url has \"rid=\" or Url has \"/track\"",
+        "sigma_rules": "phishing_gophish_tracking_indicators",
+        "prevention": "Enforce SPF/DKIM/DMARC (reject); mail-gateway URL rewriting + sandboxing; phishing-resistant MFA so harvested passwords alone are useless; user reporting button and awareness training; block newly registered/lookalike domains; disable legacy auth.",
+        "sources": [
+          "gophish/gophish",
+          "https://getgophish.com/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "GoPhish tracking/credential-harvest indicators",
+            "logic": "EmailUrlInfo\n| where Url has \"rid=\" or Url has \"/track\"\n| join kind=inner EmailEvents on NetworkMessageId\n| project TimeGenerated, SenderFromAddress, RecipientEmailAddress, Url",
+            "data_source": "o365",
+            "attack": [
+              "T1566.002",
+              "T1598.003"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Marketing tools using rid/track parameters",
+            "tuning": "Allowlist sanctioned marketing domains; correlate with lookalike-sender detection"
+          }
+        ]
+      }
     },
     {
       "id": "recon-gowitness",
@@ -87982,6 +88250,81 @@ const COMMAND_DATA = {
       ]
     },
     {
+      "id": "mentalist-wordlist",
+      "name": "Mentalist - Rule-Based Wordlist Generator",
+      "command": "mentalist",
+      "description": "Mentalist is a GUI tool for building targeted password wordlists from a base list using chained nodes: case changes, substitutions (leetspeak), prepend/append of years/numbers/symbols, and more. It visualizes the transformation pipeline and can export either the full wordlist or equivalent hashcat/John rules for on-the-fly mangling.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Password Attacks",
+      "subcategory": "Wordlists",
+      "certifications": [
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "sc0tfree/mentalist",
+      "tags": [
+        "mentalist",
+        "wordlist",
+        "password-attacks",
+        "rules",
+        "hashcat",
+        "mangling"
+      ],
+      "mitre": [
+        "T1110.001",
+        "T1587.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== RUN ===\n  mentalist          # launches the GUI (Python 3 + tkinter)\n\n=== BUILD A CHAIN (nodes, top to bottom) ===\n  1. Base Words      - import names/company terms/CeWL output/cupp seeds\n  2. Case            - lowercase, UPPER, Capitalize, tOGGLE\n  3. Substitution    - leet (a->@, s->$, e->3), custom maps\n  4. Append/Prepend  - years (2023-2025), numbers 0-999, symbols (!, @, #)\n\n=== EXPORT ===\n  File > Save Wordlist      # the full expanded list\n  File > Save Rules         # hashcat (.rule) / John rules to apply at crack time\n  # rules are far smaller than a giant list -> feed to hashcat -r\n\n=== TYPICAL USE ===\n  # seed with CeWL of the target site + employee names, then mangle ->\n  # targeted list for spraying or offline cracking\n\n=== ALTERNATIVES ===\n  hashcat -r rules/best64.rule   # apply rules directly\n  CeWL (scrape site words) ; cupp (profile a person) ; crunch (charset lists)",
+      "examples": [
+        {
+          "label": "Launch the GUI",
+          "command": "mentalist"
+        },
+        {
+          "label": "Then crack with exported rules",
+          "command": "hashcat -m 1000 hashes.txt base.txt -r mentalist.rule"
+        }
+      ],
+      "references": [
+        {
+          "title": "Mentalist",
+          "url": "https://github.com/sc0tfree/mentalist"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cewl-wordlist",
+          "note": "CeWL to scrape seed words from the target site.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cupp-profile",
+          "note": "cupp to profile an individual for seed terms.",
+          "rel": "alternative"
+        },
+        {
+          "id": "hashcat-rule-functions",
+          "note": "Apply the exported rules in hashcat.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Users build passwords from predictable bases (names, company, seasons, years) plus simple mutations. Mentalist encodes exactly those human patterns, so a small targeted list/ruleset covers a large share of real passwords.",
+        "prerequisites": "Seed words relevant to the target (OSINT, site scrape, employee names); the hashes or a login surface to attack.",
+        "impact": "High-yield targeted wordlists/rules that crack weak passwords faster than generic lists and improve spraying success.",
+        "detection": "[MITRE T1110.001] Offline cracking is not visible to the defender; online use shows as authentication failures. Detect spraying/brute-force (many failures across accounts, lockouts) rather than the list generation.",
+        "artifacts": "None for offline list building; online attempts produce auth-failure (4625/IdP) patterns.",
+        "prevention": "Enforce long passphrases and block common/base-word+mutation passwords (banned-password lists, Azure AD Password Protection); MFA; account lockout/throttling; detect spraying; discourage predictable patterns in policy.",
+        "sources": [
+          "sc0tfree/mentalist"
+        ]
+      }
+    },
+    {
       "id": "msf-virustotal",
       "name": "Metasploit - Analyze Payload with VirusTotal",
       "command": "msf > virustotal <api_key> <file>",
@@ -103226,6 +103569,108 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Logs into MySQL and enumerates its databases:\n  mysql   the client\n  -u root   username\n  -pP4SSw0rd   password (no space after -p)\n  -h <ip>      the server\nOnce connected, 'show databases;', 'use <db>;', 'show tables;', and 'select version();' map the data and version; scan first with nmap --script mysql* to fingerprint and try empty/default creds."
+    },
+    {
+      "id": "c2-mythic",
+      "name": "Mythic - Multiplayer C2 Framework",
+      "command": "sudo ./mythic-cli start",
+      "description": "Mythic is a modular, Dockerized command-and-control framework with a web UI for multiplayer red-team operations. Its cross-platform agents (Apollo for Windows/.NET, Poseidon for Linux/macOS, etc.) and pluggable C2 profiles (HTTP, SMB, DNS) provide post-exploitation tasking, file transfer, lateral movement, and operator collaboration with full logging.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Command & Control",
+      "subcategory": "C2 Frameworks",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "its-a-feature/Mythic",
+      "tags": [
+        "mythic",
+        "c2",
+        "command-and-control",
+        "post-exploitation",
+        "red-team",
+        "apollo",
+        "poseidon"
+      ],
+      "mitre": [
+        "T1071.001",
+        "T1105",
+        "T1059"
+      ],
+      "exam": "lab-only",
+      "notes": "=== INSTALL / START ===\n  git clone https://github.com/its-a-feature/Mythic ; cd Mythic\n  sudo ./mythic-cli start                 # brings up Docker stack; UI on https://<ip>:7443\n\n=== ADD AGENTS + C2 PROFILES ===\n  sudo ./mythic-cli install github https://github.com/MythicAgents/Apollo\n  sudo ./mythic-cli install github https://github.com/MythicC2Profiles/http\n\n=== OPERATE (web UI) ===\n  1. Create a Payload (agent + C2 profile + options) and build it\n  2. Host/deliver the payload; agent calls back as a 'callback'\n  3. Task callbacks: shell, download/upload, inject, make_token, jump (lateral)\n  4. Multiplayer: operators share callbacks; all tasking is logged\n\n=== ADMIN ===\n  sudo ./mythic-cli status\n  sudo ./mythic-cli config get MYTHIC_ADMIN_PASSWORD\n\n=== ALTERNATIVES ===\n  Sliver          # single-binary, cross-platform C2\n  Havoc           # modern C2 (demon agent)\n  Cobalt Strike   # commercial\n  dnscat2         # DNS-only tunneling C2",
+      "examples": [
+        {
+          "label": "Start the Mythic stack",
+          "command": "sudo ./mythic-cli start"
+        },
+        {
+          "label": "Install the Apollo agent",
+          "command": "sudo ./mythic-cli install github https://github.com/MythicAgents/Apollo"
+        },
+        {
+          "label": "Get the admin password",
+          "command": "sudo ./mythic-cli config get MYTHIC_ADMIN_PASSWORD"
+        }
+      ],
+      "references": [
+        {
+          "title": "Mythic",
+          "url": "https://github.com/its-a-feature/Mythic"
+        },
+        {
+          "title": "Mythic docs",
+          "url": "https://docs.mythic-c2.net/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-sliver-c2",
+          "note": "Sliver is a single-binary C2 alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Havoc is a comparable modern C2.",
+          "rel": "alternative"
+        },
+        {
+          "id": "dnscat2",
+          "note": "dnscat2 for DNS-only C2 in restrictive egress.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Mythic agents beacon over common protocols (HTTP(S)/DNS/SMB) with configurable jitter and malleable profiles, so C2 traffic blends with normal web/DNS activity and post-exploitation runs as sanctioned-looking process behavior.",
+        "prerequisites": "Code execution on a target to run the agent, and outbound connectivity to the Mythic server.",
+        "impact": "Persistent remote control, data theft, credential access, and lateral movement coordinated across an operator team.",
+        "detection": "[MITRE T1071.001] Beaconing to a consistent external host at regular intervals (even with jitter); JA3/JARM and TLS-cert anomalies; agent-specific artifacts (Apollo .NET loads, named-pipe SMB C2); unusual parent-child process trees and in-memory injection.",
+        "artifacts": "Proxy/DNS logs with periodic callbacks to a single host, EDR injection/named-pipe events, TLS fingerprint mismatches, new scheduled tasks/services for persistence.",
+        "splunk_spl": "index=proxy\n| stats count avg(bytes) as avg_bytes by src_ip, dest_host, bin(_time,1h)\n| eventstats stdev(count) as beacon_var by src_ip, dest_host\n| where count > 20 AND beacon_var < 2",
+        "elastic_kql": "network.protocol:(http or dns) and destination.domain:* and event.category:network",
+        "sentinel_kql": "DeviceNetworkEvents\n| summarize Count=count(), Intervals=make_list(TimeGenerated) by DeviceName, RemoteUrl, bin(TimeGenerated, 1h)\n| where Count > 20",
+        "sigma_rules": "c2_mythic_beaconing_behavior",
+        "prevention": "Egress filtering and TLS inspection with JA3/JARM blocking; EDR with in-memory and injection detection; DNS monitoring and sinkholing; application allowlisting (WDAC); network segmentation; hunt for periodic beaconing and malleable-profile indicators.",
+        "sources": [
+          "its-a-feature/Mythic",
+          "https://docs.mythic-c2.net/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Periodic C2 beaconing to a single external host (Mythic)",
+            "logic": "index=proxy\n| bin _time span=1h\n| stats count avg(bytes) as avg_bytes by _time, src_ip, dest_host\n| eventstats stdev(count) as beacon_var by src_ip, dest_host\n| where count > 20 AND beacon_var < 2",
+            "data_source": "proxy",
+            "attack": [
+              "T1071.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Software update/telemetry checkins, SaaS polling",
+            "tuning": "Allowlist known SaaS/update endpoints; combine with TLS-fingerprint anomalies"
+          }
+        ]
+      }
     },
     {
       "id": "recon-naabu",
@@ -195445,8 +195890,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1119,
-  "buildDate": "2026-11-11T12:36:50.223Z",
+  "totalCommands": 1124,
+  "buildDate": "2026-11-11T12:39:32.980Z",
   "certifications": [
     "CDSA",
     "CPTS",

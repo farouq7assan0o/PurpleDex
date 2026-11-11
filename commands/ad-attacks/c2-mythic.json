@@ -1,0 +1,102 @@
+{
+  "id": "c2-mythic",
+  "name": "Mythic - Multiplayer C2 Framework",
+  "command": "sudo ./mythic-cli start",
+  "description": "Mythic is a modular, Dockerized command-and-control framework with a web UI for multiplayer red-team operations. Its cross-platform agents (Apollo for Windows/.NET, Poseidon for Linux/macOS, etc.) and pluggable C2 profiles (HTTP, SMB, DNS) provide post-exploitation tasking, file transfer, lateral movement, and operator collaboration with full logging.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Command & Control",
+  "subcategory": "C2 Frameworks",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "its-a-feature/Mythic",
+  "tags": [
+    "mythic",
+    "c2",
+    "command-and-control",
+    "post-exploitation",
+    "red-team",
+    "apollo",
+    "poseidon"
+  ],
+  "mitre": [
+    "T1071.001",
+    "T1105",
+    "T1059"
+  ],
+  "exam": "lab-only",
+  "notes": "=== INSTALL / START ===\n  git clone https://github.com/its-a-feature/Mythic ; cd Mythic\n  sudo ./mythic-cli start                 # brings up Docker stack; UI on https://<ip>:7443\n\n=== ADD AGENTS + C2 PROFILES ===\n  sudo ./mythic-cli install github https://github.com/MythicAgents/Apollo\n  sudo ./mythic-cli install github https://github.com/MythicC2Profiles/http\n\n=== OPERATE (web UI) ===\n  1. Create a Payload (agent + C2 profile + options) and build it\n  2. Host/deliver the payload; agent calls back as a 'callback'\n  3. Task callbacks: shell, download/upload, inject, make_token, jump (lateral)\n  4. Multiplayer: operators share callbacks; all tasking is logged\n\n=== ADMIN ===\n  sudo ./mythic-cli status\n  sudo ./mythic-cli config get MYTHIC_ADMIN_PASSWORD\n\n=== ALTERNATIVES ===\n  Sliver          # single-binary, cross-platform C2\n  Havoc           # modern C2 (demon agent)\n  Cobalt Strike   # commercial\n  dnscat2         # DNS-only tunneling C2",
+  "examples": [
+    {
+      "label": "Start the Mythic stack",
+      "command": "sudo ./mythic-cli start"
+    },
+    {
+      "label": "Install the Apollo agent",
+      "command": "sudo ./mythic-cli install github https://github.com/MythicAgents/Apollo"
+    },
+    {
+      "label": "Get the admin password",
+      "command": "sudo ./mythic-cli config get MYTHIC_ADMIN_PASSWORD"
+    }
+  ],
+  "references": [
+    {
+      "title": "Mythic",
+      "url": "https://github.com/its-a-feature/Mythic"
+    },
+    {
+      "title": "Mythic docs",
+      "url": "https://docs.mythic-c2.net/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-sliver-c2",
+      "note": "Sliver is a single-binary C2 alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-havoc-c2",
+      "note": "Havoc is a comparable modern C2.",
+      "rel": "alternative"
+    },
+    {
+      "id": "dnscat2",
+      "note": "dnscat2 for DNS-only C2 in restrictive egress.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Mythic agents beacon over common protocols (HTTP(S)/DNS/SMB) with configurable jitter and malleable profiles, so C2 traffic blends with normal web/DNS activity and post-exploitation runs as sanctioned-looking process behavior.",
+    "prerequisites": "Code execution on a target to run the agent, and outbound connectivity to the Mythic server.",
+    "impact": "Persistent remote control, data theft, credential access, and lateral movement coordinated across an operator team.",
+    "detection": "[MITRE T1071.001] Beaconing to a consistent external host at regular intervals (even with jitter); JA3/JARM and TLS-cert anomalies; agent-specific artifacts (Apollo .NET loads, named-pipe SMB C2); unusual parent-child process trees and in-memory injection.",
+    "artifacts": "Proxy/DNS logs with periodic callbacks to a single host, EDR injection/named-pipe events, TLS fingerprint mismatches, new scheduled tasks/services for persistence.",
+    "splunk_spl": "index=proxy\n| stats count avg(bytes) as avg_bytes by src_ip, dest_host, bin(_time,1h)\n| eventstats stdev(count) as beacon_var by src_ip, dest_host\n| where count > 20 AND beacon_var < 2",
+    "elastic_kql": "network.protocol:(http or dns) and destination.domain:* and event.category:network",
+    "sentinel_kql": "DeviceNetworkEvents\n| summarize Count=count(), Intervals=make_list(TimeGenerated) by DeviceName, RemoteUrl, bin(TimeGenerated, 1h)\n| where Count > 20",
+    "sigma_rules": "c2_mythic_beaconing_behavior",
+    "prevention": "Egress filtering and TLS inspection with JA3/JARM blocking; EDR with in-memory and injection detection; DNS monitoring and sinkholing; application allowlisting (WDAC); network segmentation; hunt for periodic beaconing and malleable-profile indicators.",
+    "sources": [
+      "its-a-feature/Mythic",
+      "https://docs.mythic-c2.net/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Periodic C2 beaconing to a single external host (Mythic)",
+        "logic": "index=proxy\n| bin _time span=1h\n| stats count avg(bytes) as avg_bytes by _time, src_ip, dest_host\n| eventstats stdev(count) as beacon_var by src_ip, dest_host\n| where count > 20 AND beacon_var < 2",
+        "data_source": "proxy",
+        "attack": [
+          "T1071.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Software update/telemetry checkins, SaaS polling",
+        "tuning": "Allowlist known SaaS/update endpoints; combine with TLS-fingerprint anomalies"
+      }
+    ]
+  }
+}

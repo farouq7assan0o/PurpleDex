@@ -1,0 +1,73 @@
+{
+  "id": "re-dnspy",
+  "name": "dnSpy - .NET Decompiler and Debugger",
+  "command": "dnSpy.exe <file>",
+  "description": "dnSpy is a Windows .NET assembly editor, decompiler, and debugger. It decompiles managed EXE/DLLs to readable C#/VB, lets you set breakpoints and step through IL at runtime, and edit+save assemblies (patch license/auth checks, bypass protections). Essential for reversing .NET malware, thick clients, and CTF binaries.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Reverse Engineering",
+  "subcategory": ".NET Analysis",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "dnSpyEx/dnSpy",
+  "tags": [
+    "dnspy",
+    "dotnet",
+    "decompiler",
+    "debugger",
+    "reverse-engineering",
+    "thick-client"
+  ],
+  "mitre": [
+    "T1587.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== OPEN ===\n  dnSpy.exe <file>                 # or drag the .exe/.dll into the GUI\n  # (use dnSpyEx, the maintained fork; 32- and 64-bit builds)\n\n=== READ ===\n  - Assembly Explorer: namespaces -> types -> methods (decompiled to C#)\n  - Right-click > Analyze: callers/callees, string usage\n  - Edit > Search (Ctrl-Shift-K): \"password\", \"connectionString\", \"key\", \"http\"\n\n=== DEBUG ===\n  Debug > Start (F5) or Attach to Process; set breakpoints; inspect locals/IL\n\n=== PATCH ===\n  - Right-click a method > Edit Method (C#) or Edit IL Instructions\n  - change a bool check / return value ; File > Save Module\n  # e.g. force IsLicensed()/CheckAuth() to return true\n\n=== ALTERNATIVES ===\n  ILSpy / dotPeek     # decompile (read-only)\n  de4dot              # deobfuscate protected .NET\n  Ghidra              # native + some managed\n  x64dbg              # native debugging",
+  "examples": [
+    {
+      "label": "Open an assembly",
+      "command": "dnSpy.exe <file>"
+    },
+    {
+      "label": "Deobfuscate first (protected binary)",
+      "command": "de4dot <file>"
+    }
+  ],
+  "references": [
+    {
+      "title": "dnSpyEx",
+      "url": "https://github.com/dnSpyEx/dnSpy"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "thickclient-analysis",
+      "note": ".NET thick-client analysis workflow.",
+      "rel": "next"
+    },
+    {
+      "id": "re-ghidra",
+      "note": "Ghidra for native (non-managed) binaries.",
+      "rel": "alternative"
+    },
+    {
+      "id": "exploit-deserialization",
+      "note": ".NET deserialization gadgets often found while reversing.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": ".NET assemblies ship as IL with rich metadata, so decompilers reconstruct near-source C#. Without obfuscation, logic, secrets, and security checks are fully readable and editable, and the IL can be patched and re-saved.",
+    "prerequisites": "A copy of the managed assembly (EXE/DLL).",
+    "impact": "Recovery of connection strings/keys/logic, and the ability to patch out license/auth/integrity checks in the client.",
+    "detection": "Not detectable (offline analysis of a distributed assembly); tampered assemblies can be caught by strong-name/signature verification at load time.",
+    "artifacts": "None in the backend; strong-name or Authenticode verification failures if integrity checks exist.",
+    "prevention": "Obfuscate (ConfuserEx/commercial) and anti-tamper managed code; strong-name sign and verify assemblies; keep secrets server-side, not in the client; enforce auth/license on the server; native AOT for sensitive logic.",
+    "sources": [
+      "dnSpyEx/dnSpy"
+    ]
+  }
+}

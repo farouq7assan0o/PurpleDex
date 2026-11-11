@@ -1,0 +1,97 @@
+{
+  "id": "phish-gophish",
+  "name": "GoPhish - Phishing Campaign Framework",
+  "command": "./gophish",
+  "description": "GoPhish is an open-source phishing framework for running and measuring campaigns. A web admin UI and REST API manage sending profiles (SMTP), email templates, landing pages (credential capture), target groups, and real-time results (sent/opened/clicked/submitted). Used for authorized security-awareness testing and red-team initial access.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Social Engineering",
+  "subcategory": "Phishing",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "gophish/gophish",
+  "tags": [
+    "gophish",
+    "phishing",
+    "campaign",
+    "social-engineering",
+    "credential-harvest",
+    "awareness"
+  ],
+  "mitre": [
+    "T1566.002",
+    "T1598.003"
+  ],
+  "exam": "lab-only",
+  "notes": "=== RUN ===\n  ./gophish                         # admin UI on https://127.0.0.1:3333 (creds printed on first run)\n  # edit config.json: admin_server (3333) and phish_server (80/443) listen addrs\n\n=== BUILD A CAMPAIGN (UI/API) ===\n  1. Sending Profile  - SMTP server/relay + from address\n  2. Email Template   - HTML with {{.FirstName}}, {{.URL}}, {{.Tracker}}\n  3. Landing Page     - clone a login page; enable 'Capture Submitted Data' + 'Capture Passwords'\n  4. Users & Groups   - import CSV of targets\n  5. Campaign         - tie it together, set the phish URL, launch\n\n=== RESULTS ===\n  # dashboard + timeline: Email Sent / Opened / Link Clicked / Submitted Data\n\n=== API ===\n  curl -H 'Authorization: Bearer <api_key>' https://127.0.0.1:3333/api/campaigns/\n\n=== NOTE ===\n  # GoPhish harvests credentials on a cloned page; it does NOT proxy live MFA.\n  # For session/MFA capture use a reverse-proxy tool (Evilginx).\n\n=== ALTERNATIVES ===\n  Evilginx (MFA-bypass, session capture)\n  King Phisher, SET (Social-Engineer Toolkit)",
+  "examples": [
+    {
+      "label": "Launch GoPhish",
+      "command": "./gophish"
+    },
+    {
+      "label": "List campaigns via API",
+      "command": "curl -H 'Authorization: Bearer <api_key>' https://127.0.0.1:3333/api/campaigns/"
+    }
+  ],
+  "references": [
+    {
+      "title": "GoPhish",
+      "url": "https://getgophish.com/"
+    },
+    {
+      "title": "GoPhish GitHub",
+      "url": "https://github.com/gophish/gophish"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "phish-evilginx",
+      "note": "Evilginx when you need to defeat MFA via session capture.",
+      "rel": "alternative"
+    },
+    {
+      "id": "office-macro-payload",
+      "note": "Pair with a macro payload for code-execution lures.",
+      "rel": "next"
+    },
+    {
+      "id": "hta-mshta-attack",
+      "note": "HTA/mshta as an alternative malicious-attachment payload.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "GoPhish automates believable email delivery and credential-capture landing pages. Users who trust the message submit credentials to the cloned page, which records them - exploiting human trust rather than a software flaw.",
+    "prerequisites": "An SMTP sending path, a phishing domain/landing page, and a target list.",
+    "impact": "Harvested credentials and measurable click/submit rates; initial access when captured creds are reused.",
+    "detection": "[MITRE T1566.002] Mail-gateway detection of spoofed/lookalike senders and credential-harvest URLs; GoPhish default headers/tracking pixel patterns (X-Gophish-Contact, /track?... and ?rid= parameters); DNS/CT logs for lookalike domains; users reporting phishing.",
+    "artifacts": "Email headers with GoPhish signatures, landing-page POSTs of credentials, tracking-pixel GETs, lookalike-domain registrations, proxy logs to the phish server.",
+    "splunk_spl": "index=proxy (uri=*?rid=* OR uri=*/track*) OR (http_user_agent=*gophish*)\n| stats count by src_ip, dest_host",
+    "elastic_kql": "url.query:*rid=* or http.request.header.x-gophish-contact:*",
+    "sentinel_kql": "EmailEvents\n| where SenderFromDomain in (dynamic_to_array(\"lookalike-domains\")) or UrlCount > 0\n| join kind=inner (EmailUrlInfo) on NetworkMessageId\n| where Url has \"rid=\" or Url has \"/track\"",
+    "sigma_rules": "phishing_gophish_tracking_indicators",
+    "prevention": "Enforce SPF/DKIM/DMARC (reject); mail-gateway URL rewriting + sandboxing; phishing-resistant MFA so harvested passwords alone are useless; user reporting button and awareness training; block newly registered/lookalike domains; disable legacy auth.",
+    "sources": [
+      "gophish/gophish",
+      "https://getgophish.com/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GoPhish tracking/credential-harvest indicators",
+        "logic": "EmailUrlInfo\n| where Url has \"rid=\" or Url has \"/track\"\n| join kind=inner EmailEvents on NetworkMessageId\n| project TimeGenerated, SenderFromAddress, RecipientEmailAddress, Url",
+        "data_source": "o365",
+        "attack": [
+          "T1566.002",
+          "T1598.003"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "false_positives": "Marketing tools using rid/track parameters",
+        "tuning": "Allowlist sanctioned marketing domains; correlate with lookalike-sender detection"
+      }
+    ]
+  }
+}

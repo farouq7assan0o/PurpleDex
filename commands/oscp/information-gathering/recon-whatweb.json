@@ -1,0 +1,87 @@
+{
+  "id": "recon-whatweb",
+  "name": "WhatWeb - Web Technology Fingerprinting",
+  "command": "whatweb <url>",
+  "description": "WhatWeb identifies web technologies: CMS (WordPress, Joomla, Drupal), frameworks, JavaScript libraries, web servers, analytics, and versions. Uses 1800+ plugins to fingerprint a target from headers, cookies, HTML, and behavior. First step to map a web app to known exploits and the right attack tooling.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Information Gathering",
+  "subcategory": "Web Recon",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "urbanadventurer/WhatWeb",
+  "tags": [
+    "whatweb",
+    "fingerprinting",
+    "cms",
+    "web-recon",
+    "technology-detection"
+  ],
+  "mitre": [
+    "T1595.002",
+    "T1592.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC SCAN ===\n  whatweb <url>\n  whatweb http://<ip>\n\n=== AGGRESSION LEVELS ===\n  whatweb -a 1 <url>   # stealthy (one request)\n  whatweb -a 3 <url>   # aggressive (more plugins, more requests)\n  whatweb -a 4 <url>   # heavy (all plugins)\n\n=== SCAN MANY TARGETS ===\n  whatweb -i live_hosts.txt\n  whatweb <cidr>       # e.g. 10.10.10.0/24\n\n=== VERBOSE + LOG ===\n  whatweb -v <url>\n  whatweb <url> --log-brief=whatweb.txt\n  whatweb <url> --log-json=whatweb.json\n\n=== TYPICAL USE ===\n  # Identify CMS -> pick targeted tool:\n  #   WordPress -> wpscan\n  #   Joomla    -> joomscan\n  #   Drupal    -> droopescan / drupalgeddon\n\n=== ALTERNATIVES ===\n  wappalyzer (browser/CLI)\n  nuclei -t technologies\n  nmap --script http-* ",
+  "examples": [
+    {
+      "label": "Fingerprint a site",
+      "command": "whatweb http://10.10.10.10"
+    },
+    {
+      "label": "Aggressive scan",
+      "command": "whatweb -a 3 -v http://target.local"
+    },
+    {
+      "label": "Scan a host list to JSON",
+      "command": "whatweb -i live_hosts.txt --log-json=whatweb.json"
+    }
+  ],
+  "references": [
+    {
+      "title": "WhatWeb",
+      "url": "https://github.com/urbanadventurer/WhatWeb"
+    },
+    {
+      "title": "MITRE T1595.002",
+      "url": "https://attack.mitre.org/techniques/T1595/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "recon-httprobe",
+      "note": "Probe live hosts before fingerprinting them.",
+      "rel": "prereq"
+    },
+    {
+      "id": "nuclei-vuln-scan",
+      "note": "After identifying tech, scan for matching CVEs.",
+      "rel": "next"
+    },
+    {
+      "id": "wafw00f",
+      "note": "Identify the WAF in front of the app.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Fingerprinting infers technologies from normal HTTP responses (headers, cookies, body markers). At low aggression it is a handful of ordinary requests, hard to distinguish from a real browser.",
+    "prerequisites": "A reachable web URL.",
+    "impact": "Maps the app to known-vulnerable components and the right exploit tooling.",
+    "detection": "[MITRE T1595.002] Default WhatWeb User-Agent; requests to fingerprinting paths (/wp-login.php, /administrator, favicon hashes); higher aggression causes bursts of plugin probe requests.",
+    "artifacts": "Web logs with WhatWeb UA; sequential requests to CMS-specific paths.",
+    "splunk_spl": "index=web http_user_agent=\"*WhatWeb*\"\n| stats count by src_ip, uri_path",
+    "elastic_kql": "user_agent.original:*WhatWeb*",
+    "sentinel_kql": "_Im_WebSession\n| where HttpUserAgentOriginal has \"WhatWeb\"\n| project TimeGenerated, SrcIpAddr, Url, HttpUserAgentOriginal",
+    "sigma_rules": "web_recon_whatweb_useragent",
+    "prevention": "Suppress version banners (Server/X-Powered-By headers); generic error pages; WAF to flag scanner UAs; keep components patched so fingerprinting yields no easy wins.",
+    "sources": [
+      "WhatWeb docs",
+      "https://attack.mitre.org/techniques/T1595/002/"
+    ]
+  }
+}

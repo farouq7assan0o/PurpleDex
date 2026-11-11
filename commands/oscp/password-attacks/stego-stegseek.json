@@ -1,0 +1,81 @@
+{
+  "id": "stego-stegseek",
+  "name": "stegseek - Fast steghide Passphrase Cracker",
+  "command": "stegseek <file> <wordlist>",
+  "description": "stegseek brute-forces steghide passphrases extremely fast (millions of candidates/sec, ~1000x faster than stegcracker) and auto-extracts the hidden payload on success. It can also detect and recover data without a wordlist in some cases. The go-to tool when a steghide-protected file needs its passphrase broken.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Password Attacks",
+  "subcategory": "Steganography",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "RickdeJager/stegseek",
+  "tags": [
+    "stegseek",
+    "steganography",
+    "steghide",
+    "passphrase-cracking",
+    "ctf"
+  ],
+  "mitre": [
+    "T1027.003",
+    "T1110.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CRACK + AUTO-EXTRACT ===\n  stegseek image.jpg /usr/share/wordlists/rockyou.txt\n  # On success writes image.jpg.out with the hidden payload\n\n=== SPECIFY OUTPUT FILE ===\n  stegseek image.jpg rockyou.txt secret.txt\n\n=== SEED/NO-WORDLIST CRACK (empty passphrase payloads) ===\n  stegseek --seed image.jpg\n\n=== JUST CHECK FOR A PAYLOAD ===\n  stegseek --info image.jpg\n\n=== WHEN TO USE ===\n  # After steghide info suggests a payload but the passphrase is unknown\n  # Much faster than stegcracker (deprecated) or manual steghide loops\n\n=== FULL IMAGE TRIAGE ===\n  exiftool image.jpg\n  strings -n 8 image.jpg\n  binwalk -e image.jpg\n  steghide info image.jpg\n  stegseek image.jpg rockyou.txt",
+  "examples": [
+    {
+      "label": "Crack and auto-extract",
+      "command": "stegseek image.jpg /usr/share/wordlists/rockyou.txt"
+    },
+    {
+      "label": "Specify output file",
+      "command": "stegseek image.jpg rockyou.txt loot.txt"
+    },
+    {
+      "label": "Check for payload",
+      "command": "stegseek --info image.jpg"
+    }
+  ],
+  "references": [
+    {
+      "title": "stegseek",
+      "url": "https://github.com/RickdeJager/stegseek"
+    },
+    {
+      "title": "MITRE T1027.003 - Steganography",
+      "url": "https://attack.mitre.org/techniques/T1027/003/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "stego-steghide",
+      "note": "steghide embeds/extracts the data stegseek unlocks.",
+      "rel": "prereq"
+    },
+    {
+      "id": "hashcat-dictionary",
+      "note": "General hash/passphrase cracking workflow.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "steghide passphrase verification is fast to test offline, and stegseek exploits that to try huge wordlists quickly. Weak/common passphrases fall instantly.",
+    "prerequisites": "The steghide carrier file; a wordlist.",
+    "impact": "Recovery of hidden payloads protected by weak passphrases.",
+    "detection": "Offline attacker-side activity - not detectable on the target.",
+    "artifacts": "stegseek on the attacker host; .out payload files.",
+    "splunk_spl": "N/A - offline attacker-side cracking",
+    "elastic_kql": "N/A - offline attacker-side cracking",
+    "sentinel_kql": "N/A - offline attacker-side cracking",
+    "sigma_rules": "N/A",
+    "prevention": "Use strong, unique passphrases for any steganographic payloads; DLP/steganalysis to catch the carrier before it matters; this is mainly a CTF/offline concern.",
+    "sources": [
+      "stegseek",
+      "https://attack.mitre.org/techniques/T1027/003/"
+    ]
+  }
+}

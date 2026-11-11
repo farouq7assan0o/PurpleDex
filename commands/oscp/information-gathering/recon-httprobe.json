@@ -1,0 +1,92 @@
+{
+  "id": "recon-httprobe",
+  "name": "httprobe / httpx - Probe for Live HTTP(S) Services",
+  "command": "cat <file> | httprobe",
+  "description": "httprobe (and the more featureful httpx) take a list of hosts/subdomains and probe which answer on HTTP and HTTPS, returning live URLs. Essential glue between subdomain enumeration and content discovery - it filters thousands of candidate hosts down to the ones actually serving web apps worth scanning.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Information Gathering",
+  "subcategory": "Web Recon",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "tomnomnom/httprobe; projectdiscovery/httpx",
+  "tags": [
+    "httprobe",
+    "httpx",
+    "http-probe",
+    "live-hosts",
+    "recon",
+    "subdomains"
+  ],
+  "mitre": [
+    "T1595.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== HTTPROBE (simple) ===\n  cat subdomains.txt | httprobe\n  # Probe non-standard ports too:\n  cat subdomains.txt | httprobe -p http:8080 -p https:8443\n\n=== HTTPX (recommended, richer) ===\n  httpx -l subdomains.txt -o live.txt\n  # With status, title, tech, length:\n  httpx -l subdomains.txt -sc -title -td -cl\n  # Only 200s:\n  httpx -l subdomains.txt -mc 200\n  # Follow redirects + probe common ports:\n  httpx -l subdomains.txt -fr -ports 80,443,8080,8443,8000\n\n=== TYPICAL PIPELINE ===\n  subfinder -d <domain> -silent | httpx -silent | nuclei\n  # subdomains -> live web -> vuln scan\n\n=== FEED INTO CONTENT DISCOVERY ===\n  httpx -l subs.txt -silent | while read u; do feroxbuster -u \"$u\"; done\n\n=== ALTERNATIVES ===\n  httprobe  # minimal, fast\n  httpx     # status/title/tech/screenshots\n  fping/nmap -p80,443  # host-level, less HTTP-aware",
+  "examples": [
+    {
+      "label": "Probe live web hosts (httprobe)",
+      "command": "cat subdomains.txt | httprobe"
+    },
+    {
+      "label": "httpx with status/title/tech",
+      "command": "httpx -l subdomains.txt -sc -title -td -cl"
+    },
+    {
+      "label": "Full recon pipeline",
+      "command": "subfinder -d example.com -silent | httpx -silent | nuclei"
+    }
+  ],
+  "references": [
+    {
+      "title": "httprobe",
+      "url": "https://github.com/tomnomnom/httprobe"
+    },
+    {
+      "title": "httpx",
+      "url": "https://github.com/projectdiscovery/httpx"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "subfinder-enum",
+      "note": "Feed subfinder output into httprobe/httpx.",
+      "rel": "prereq"
+    },
+    {
+      "id": "recon-amass-subdomains",
+      "note": "Amass is another upstream subdomain source.",
+      "rel": "prereq"
+    },
+    {
+      "id": "nuclei-vuln-scan",
+      "note": "Pipe live URLs into nuclei for vuln scanning.",
+      "rel": "next"
+    },
+    {
+      "id": "feroxbuster-recursive",
+      "note": "Run content discovery on each live host.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Probing sends ordinary HTTP(S) requests to candidate hosts. It is reconnaissance that blends with normal web traffic, especially at low rates.",
+    "prerequisites": "A list of candidate hosts/subdomains; network egress to targets.",
+    "impact": "Reveals the live web attack surface, focusing later attacks.",
+    "detection": "[MITRE T1595.002] Many root requests (\"GET /\") across many vhosts/subdomains from one source in a short window; requests to hosts with no prior traffic; default tool User-Agents.",
+    "artifacts": "Web/CDN/WAF logs showing fan-out probing; spikes of HEAD/GET / to many hostnames.",
+    "splunk_spl": "index=web uri_path=\"/\" \n| stats dc(host) as hosts count by src_ip\n| where hosts > 50",
+    "elastic_kql": "url.path:\"/\" and source.ip:*",
+    "sentinel_kql": "let probes = _Im_WebSession\n| where UrlOriginal endswith \"/\"\n| summarize Hosts=dcount(DstDvcHostname) by SrcIpAddr, bin(TimeGenerated, 10m);\nprobes | where Hosts > 50",
+    "sigma_rules": "web_mass_http_probing",
+    "prevention": "WAF rate limiting; block known scanner User-Agents; reduce exposed subdomains; monitor for fan-out probing; use allowlists on sensitive vhosts.",
+    "sources": [
+      "ProjectDiscovery docs",
+      "https://attack.mitre.org/techniques/T1595/002/"
+    ]
+  }
+}

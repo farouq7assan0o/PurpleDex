@@ -1,0 +1,98 @@
+{
+  "id": "ad-sprayhound",
+  "name": "Sprayhound - Password Spray with BloodHound Marking",
+  "command": "sprayhound -U <userlist> -d <domain> -dc <dc_ip> -p <password>",
+  "description": "Sprayhound performs domain password spraying while respecting the account lockout policy (auto-fetches badPwdCount before each attempt to avoid locking users). On a successful spray it can mark owned users as owned directly in a BloodHound neo4j database, immediately updating attack paths. Combines safe spraying with graph enrichment.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Password Attacks",
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Hackndo/sprayhound",
+  "tags": [
+    "sprayhound",
+    "password-spray",
+    "bloodhound",
+    "lockout",
+    "badpwdcount",
+    "neo4j"
+  ],
+  "mitre": [
+    "T1110.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== SAFE SPRAY (lockout-aware) ===\n  sprayhound -U users.txt -d <domain> -dc <dc_ip> -p Spring2024!\n  # Reads badPwdCount per user, skips anyone near the lockout threshold\n\n=== SPRAY + MARK OWNED IN BLOODHOUND ===\n  sprayhound -U users.txt -d <domain> -dc <dc_ip> -p Spring2024! \\\n    -nh <neo4j_host> -nu neo4j -np bloodhound\n  # Owned users are flagged owned=true in the graph\n\n=== LOW-AND-SLOW SINGLE PASSWORD ===\n  sprayhound -U users.txt -d <domain> -dc <dc_ip> -p Welcome1\n\n=== GET LOCKOUT THRESHOLD FIRST ===\n  crackmapexec smb <dc_ip> -u <user> -p <password> --pass-pol\n  # Keep attempts below (threshold - 1); sprayhound enforces this automatically\n\n=== ALTERNATIVES ===\n  kerbrute passwordspray  # Kerberos pre-auth, no lockout count check\n  crackmapexec smb --no-bruteforce  # manual spray\n  DomainPasswordSpray.ps1  # on-host Windows spray",
+  "examples": [
+    {
+      "label": "Lockout-aware spray",
+      "command": "sprayhound -U users.txt -d corp.local -dc 10.10.10.5 -p Spring2024!"
+    },
+    {
+      "label": "Spray and mark owned in BloodHound",
+      "command": "sprayhound -U users.txt -d corp.local -dc 10.10.10.5 -p Spring2024! -nh 127.0.0.1 -nu neo4j -np bloodhound"
+    }
+  ],
+  "references": [
+    {
+      "title": "sprayhound",
+      "url": "https://github.com/Hackndo/sprayhound"
+    },
+    {
+      "title": "MITRE T1110.003 - Password Spraying",
+      "url": "https://attack.mitre.org/techniques/T1110/003/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-kerbrute-spray",
+      "note": "Kerbrute sprays via Kerberos pre-auth (no SMB lockout visibility).",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "BloodHound consumes the owned markings to recompute paths.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-cme-spray",
+      "note": "CrackMapExec is the manual spray alternative.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "A single common password tried against many accounts stays under per-account lockout thresholds. Sprayhound reads badPwdCount via LDAP to avoid locking accounts, making the spray stealthier.",
+    "prerequisites": "Valid low-priv domain account (to read badPwdCount); network access to the DC; a user list.",
+    "impact": "Account compromise without triggering lockouts; immediate BloodHound path enrichment.",
+    "detection": "[MITRE T1110.003] Many 4625 failed logons across distinct accounts from one source in a short window; LDAP reads of badPwdCount across many users; 4771 Kerberos pre-auth failures.",
+    "artifacts": "Spike in 4625/4768/4771 events with the same source IP and varying TargetUserName; LDAP queries enumerating badPwdCount.",
+    "splunk_spl": "index=windows EventCode=4625\n| bin _time span=10m\n| stats dc(TargetUserName) as users count by _time, IpAddress\n| where users > 10",
+    "elastic_kql": "event.code:4625 and winlog.event_data.IpAddress:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4625\n| summarize Accounts=dcount(TargetUserName), Attempts=count() by IpAddress, bin(TimeGenerated, 10m)\n| where Accounts > 10",
+    "sigma_rules": "win_security_password_spraying",
+    "prevention": "Enforce account lockout policy; require MFA; deploy smart lockout (Entra); monitor badPwdCount reads; ban common/seasonal passwords.",
+    "sources": [
+      "Hackndo",
+      "https://attack.mitre.org/techniques/T1110/003/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Password spraying - many accounts from single source",
+        "logic": "index=windows EventCode=4625\n| bin _time span=10m\n| stats dc(TargetUserName) as unique_users values(TargetUserName) as users by _time, IpAddress\n| where unique_users > 10",
+        "data_source": "windows-security",
+        "attack": [
+          "T1110.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Vulnerability scanners, misconfigured service accounts, login portals",
+        "tuning": "Baseline normal 4625 volume per source; exclude known scanners"
+      }
+    ]
+  }
+}

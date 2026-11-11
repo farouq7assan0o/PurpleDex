@@ -1,0 +1,81 @@
+{
+  "id": "stego-steghide",
+  "name": "steghide - Hide/Extract Data in Images and Audio",
+  "command": "steghide extract -sf <file>",
+  "description": "steghide embeds and extracts hidden data in JPEG, BMP, WAV, and AU files, optionally passphrase-protected. Common in CTF and occasionally in real loot (exfil via images). Extraction requires the passphrase, which is often blank, a known word, or crackable with stegseek.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Password Attacks",
+  "subcategory": "Steganography",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "steghide project",
+  "tags": [
+    "steghide",
+    "steganography",
+    "jpeg",
+    "wav",
+    "hidden-data",
+    "ctf"
+  ],
+  "mitre": [
+    "T1027.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== EXTRACT (try blank passphrase first) ===\n  steghide extract -sf image.jpg\n  # When prompted for passphrase, press Enter (blank) first\n\n=== EXTRACT WITH KNOWN PASSPHRASE ===\n  steghide extract -sf image.jpg -p \"<password>\"\n\n=== CHECK IF DATA IS PRESENT / INFO ===\n  steghide info image.jpg\n\n=== EMBED DATA ===\n  steghide embed -cf cover.jpg -ef secret.txt -p \"<password>\"\n\n=== CRACK THE PASSPHRASE (fast) ===\n  stegseek image.jpg /usr/share/wordlists/rockyou.txt\n  # stegseek is ~1000x faster than stegcracker\n\n=== SUPPORTED CARRIERS ===\n  JPEG, BMP, WAV, AU  (NOT PNG/GIF - use zsteg/other for those)\n\n=== TRIAGE WORKFLOW FOR AN IMAGE ===\n  file image.jpg               # confirm type\n  exiftool image.jpg           # metadata/comments\n  strings image.jpg | less     # embedded text\n  binwalk image.jpg            # appended archives\n  steghide info image.jpg      # steghide payload\n  stegseek image.jpg rockyou.txt  # crack passphrase\n  zsteg image.png              # for PNG/BMP LSB",
+  "examples": [
+    {
+      "label": "Extract (blank passphrase)",
+      "command": "steghide extract -sf image.jpg"
+    },
+    {
+      "label": "Extract with passphrase",
+      "command": "steghide extract -sf image.jpg -p \"s3cret\""
+    },
+    {
+      "label": "Crack passphrase with stegseek",
+      "command": "stegseek image.jpg /usr/share/wordlists/rockyou.txt"
+    }
+  ],
+  "references": [
+    {
+      "title": "steghide",
+      "url": "https://steghide.sourceforge.net/"
+    },
+    {
+      "title": "MITRE T1027.003 - Steganography",
+      "url": "https://attack.mitre.org/techniques/T1027/003/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "stego-stegseek",
+      "note": "Crack the steghide passphrase at high speed.",
+      "rel": "next"
+    },
+    {
+      "id": "crack-fcrackzip",
+      "note": "Hidden archives also show up in challenges.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Steganography hides data inside carrier files that look benign. Detection is hard without the original cover file or statistical steganalysis; it is primarily an offline/CTF technique.",
+    "prerequisites": "Possession of the carrier file; passphrase (or crack it).",
+    "impact": "Concealed data extraction / covert exfiltration channel.",
+    "detection": "[MITRE T1027.003] Hard to detect in transit. Statistical steganalysis (chi-square, stegdetect) on images; anomalous file size vs. content; outbound images to unusual destinations.",
+    "artifacts": "Carrier files with abnormal entropy/size; steghide present on a host; unusual image exfil.",
+    "splunk_spl": "N/A - primarily offline; monitor large/anomalous image egress at the proxy",
+    "elastic_kql": "file.extension:(jpg OR jpeg OR wav) and file.size > 5000000",
+    "sentinel_kql": "DeviceFileEvents\n| where FileName endswith \".jpg\" or FileName endswith \".wav\"\n| where FileSize > 5000000\n| project Timestamp, DeviceName, FileName, FileSize",
+    "sigma_rules": "steganography_tool_execution",
+    "prevention": "DLP with steganalysis; block/monitor steganography tools on endpoints; inspect anomalous media egress; strip metadata and re-encode media at trust boundaries.",
+    "sources": [
+      "steghide docs",
+      "https://attack.mitre.org/techniques/T1027/003/"
+    ]
+  }
+}

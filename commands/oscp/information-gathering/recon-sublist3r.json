@@ -1,0 +1,87 @@
+{
+  "id": "recon-sublist3r",
+  "name": "Sublist3r - Passive Subdomain Enumeration",
+  "command": "sublist3r -d <domain>",
+  "description": "Sublist3r enumerates subdomains using OSINT sources (search engines, VirusTotal, DNSdumpster, Netcraft, ThreatCrowd, etc.) and optional brute force. Fast first-pass subdomain discovery that requires no direct contact with the target during the passive phase, feeding into live-host probing and content discovery.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Information Gathering",
+  "subcategory": "Web Recon",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "aboul3la/Sublist3r",
+  "tags": [
+    "sublist3r",
+    "subdomains",
+    "osint",
+    "passive-recon",
+    "dns"
+  ],
+  "mitre": [
+    "T1590.002",
+    "T1595.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC (passive OSINT) ===\n  sublist3r -d <domain>\n  # Save results:\n  sublist3r -d <domain> -o subdomains.txt\n\n=== WITH BRUTE FORCE (subbrute) ===\n  sublist3r -d <domain> -b\n\n=== LIMIT TO SPECIFIC ENGINES ===\n  sublist3r -d <domain> -e google,bing,virustotal\n\n=== SCAN FOUND SUBDOMAINS FOR OPEN PORTS ===\n  sublist3r -d <domain> -p 80,443\n\n=== TYPICAL PIPELINE ===\n  sublist3r -d <domain> -o subs.txt\n  cat subs.txt | httpx -silent | nuclei\n\n=== ALTERNATIVES / COMPLEMENTS ===\n  subfinder  # faster, more sources, actively maintained\n  amass enum # most thorough, active+passive\n  assetfinder\n  # Run several and merge/sort -u for best coverage",
+  "examples": [
+    {
+      "label": "Passive subdomain enum",
+      "command": "sublist3r -d example.com -o subdomains.txt"
+    },
+    {
+      "label": "With brute force",
+      "command": "sublist3r -d example.com -b"
+    },
+    {
+      "label": "Specific engines only",
+      "command": "sublist3r -d example.com -e google,bing,virustotal"
+    }
+  ],
+  "references": [
+    {
+      "title": "Sublist3r",
+      "url": "https://github.com/aboul3la/Sublist3r"
+    },
+    {
+      "title": "MITRE T1590.002 - DNS",
+      "url": "https://attack.mitre.org/techniques/T1590/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "subfinder-enum",
+      "note": "subfinder is faster with more sources.",
+      "rel": "alternative"
+    },
+    {
+      "id": "recon-amass-subdomains",
+      "note": "Amass for the most thorough active+passive enum.",
+      "rel": "alternative"
+    },
+    {
+      "id": "recon-httprobe",
+      "note": "Probe which discovered subdomains are live.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Passive enumeration queries third-party OSINT sources (CT logs, search engines, passive DNS), so the target sees little or no direct traffic. Brute-force mode does query the target resolver.",
+    "prerequisites": "Target domain name; internet access.",
+    "impact": "Maps the external DNS attack surface, revealing forgotten/dev/staging hosts.",
+    "detection": "[MITRE T1590.002] Passive phase is largely undetectable by the target. Brute-force mode causes many NXDOMAIN lookups against authoritative DNS from one resolver.",
+    "artifacts": "Authoritative DNS logs showing bursts of random subdomain queries (brute mode only); CT-log monitoring reveals attacker interest only indirectly.",
+    "splunk_spl": "index=dns record_type=A\n| stats count as queries dc(query) as unique by src_ip\n| where unique > 500",
+    "elastic_kql": "dns.question.type:A and dns.response_code:NXDOMAIN",
+    "sentinel_kql": "DnsEvents\n| where Name endswith \"example.com\"\n| summarize Unique=dcount(Name) by ClientIP, bin(TimeGenerated, 10m)\n| where Unique > 500",
+    "sigma_rules": "dns_subdomain_bruteforce",
+    "prevention": "Minimize public DNS records; monitor certificate transparency logs for your domains; decommission stale hosts; use wildcard DNS cautiously; split-horizon DNS for internal names.",
+    "sources": [
+      "Sublist3r",
+      "https://attack.mitre.org/techniques/T1590/002/"
+    ]
+  }
+}

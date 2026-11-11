@@ -1,0 +1,88 @@
+{
+  "id": "ad-plumhound",
+  "name": "PlumHound - BloodHound Reporting and Pathfinding",
+  "command": "python3 PlumHound.py -s \"<neo4j_host>\" -u neo4j -p <password> -x tasks/default.tasks",
+  "description": "PlumHound runs curated Cypher queries against a BloodHound neo4j database and produces blue/purple-team HTML reports: shortest paths to Domain Admins, Kerberoastable users, unconstrained delegation, stale accounts, and dozens more. Turns BloodHound graph data into actionable, reportable findings without manual Cypher.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CPTS",
+    "CRTP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "PlumHound/PlumHound",
+  "tags": [
+    "plumhound",
+    "bloodhound",
+    "reporting",
+    "cypher",
+    "neo4j",
+    "blue-team",
+    "purple-team"
+  ],
+  "mitre": [
+    "T1069.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== PREREQUISITE ===\n  # BloodHound data already ingested into neo4j (via SharpHound/bloodhound-python)\n\n=== RUN DEFAULT TASK LIST (full report set) ===\n  python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound -x tasks/default.tasks\n  # HTML reports land in reports/\n\n=== EASY MODE (one path report) ===\n  python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound --easy\n\n=== SINGLE CYPHER QUERY ===\n  python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound \\\n    -c \"MATCH (u:User {hasspn:true}) RETURN u.name\" --title Kerberoastable\n\n=== USEFUL BUILT-IN TASKS ===\n  - Shortest paths to Domain Admins\n  - Users with DCSync rights\n  - Unconstrained/constrained delegation\n  - Kerberoastable + AS-REP roastable accounts\n  - Computers where Domain Users can RDP/admin\n  - Stale/never-logged-on accounts\n\n=== ALTERNATIVES ===\n  GoodHound  # similar reporting, scores paths by \"busiest\"\n  BloodHound raw Cypher  # manual queries in the UI",
+  "examples": [
+    {
+      "label": "Full default report set",
+      "command": "python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound -x tasks/default.tasks"
+    },
+    {
+      "label": "Easy mode path report",
+      "command": "python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound --easy"
+    },
+    {
+      "label": "Custom Cypher to HTML",
+      "command": "python3 PlumHound.py -s \"bolt://127.0.0.1:7687\" -u neo4j -p bloodhound -c \"MATCH (u:User {hasspn:true}) RETURN u.name\" --title Kerberoastable"
+    }
+  ],
+  "references": [
+    {
+      "title": "PlumHound",
+      "url": "https://github.com/PlumHound/PlumHound"
+    },
+    {
+      "title": "MITRE T1069.002",
+      "url": "https://attack.mitre.org/techniques/T1069/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "PlumHound reads the neo4j DB that BloodHound populates.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-sharphound",
+      "note": "SharpHound collects the data PlumHound reports on.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-bloodhound-cypher",
+      "note": "Hand-write Cypher for queries PlumHound tasks do not cover.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "PlumHound only queries a neo4j database already built from AD collection data. It performs no new domain activity - the detectable activity is the upstream SharpHound/bloodhound-python collection.",
+    "prerequisites": "Populated BloodHound neo4j database.",
+    "impact": "Rapid identification of all privilege-escalation paths and misconfigurations in the domain.",
+    "detection": "[MITRE T1069.002] No direct AD detection (offline graph queries). Detect the upstream collection: heavy LDAP/SAMR enumeration, SharpHound signatures.",
+    "artifacts": "neo4j query logs on the attacker/analyst host; upstream collection artifacts on the DC.",
+    "splunk_spl": "index=windows EventCode=4662 ObjectType=\"*\" \n| stats count by SubjectUserName, ObjectName\n| where count > 100",
+    "elastic_kql": "event.code:4662 and winlog.event_data.AccessMask:*",
+    "sentinel_kql": "IdentityQueryEvents\n| summarize Queries=count() by AccountName, bin(Timestamp, 5m)\n| where Queries > 200",
+    "sigma_rules": "win_security_bloodhound_collection",
+    "prevention": "Reduce ACL attack surface (tier model, LAPS, remove dangerous ACEs); the report output is a remediation to-do list - action it. Detect SharpHound collection upstream.",
+    "sources": [
+      "PlumHound docs",
+      "https://attack.mitre.org/techniques/T1069/002/"
+    ]
+  }
+}

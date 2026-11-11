@@ -4613,6 +4613,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-certsync",
+          "name": "Mass PKINIT authentication (certsync / cert forgery)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-forgecert",
           "name": "Golden Certificate - PKINIT auth without matching issuance",
           "platform": "sentinel",
@@ -26521,6 +26528,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-certsync",
+          "name": "Mass PKINIT authentication (certsync / cert forgery)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "cdsa-m06-coercing-unconstrained-delegation",
           "name": "Coercing + Unconstrained Delegation - TGT Capture Attack - Sentinel",
           "platform": "sentinel",
@@ -30213,6 +30227,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-sprayhound",
+          "name": "Password spraying - many accounts from single source",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-username-generator",
           "name": "Username Generator - Build AD Wordlist from Names - Sentinel",
           "platform": "sentinel",
@@ -30733,6 +30754,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "ad-nanodump",
+          "name": "LSASS access via snapshot/fork (nanodump-style)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "netexec-remote-dump",
           "name": "NetExec - Remote SAM and LSA Dump - Sentinel",
           "platform": "sentinel",
@@ -30980,6 +31008,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "ad-donpapi",
+          "name": "Mass DPAPI masterkey/browser credential access",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
         },
         {
           "card_id": "firefox-decrypt",
@@ -32652,6 +32687,114 @@
         "elastic"
       ],
       "data_sources": [
+        "windows-security",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1555.004": {
+      "detections": [
+        {
+          "card_id": "ad-donpapi",
+          "name": "Mass DPAPI masterkey/browser credential access",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "mimikatz-credman",
+          "name": "Mimikatz - Dump Credential Manager - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "mimikatz-credman",
+          "name": "Mimikatz - Dump Credential Manager (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-credman",
+          "name": "Mimikatz - Dump Credential Manager (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-credman",
+          "name": "proc_creation_win_hktl_mimikatz_command_line",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mimikatz-credman",
+          "name": "win_credential_manager_access",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mimikatz-credman",
+          "name": "Mimikatz - Dump Credential Manager - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "cmdkey-list",
+          "name": "Windows - Enumerate and Reuse Stored Credentials - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "cmdkey-list",
+          "name": "Windows - Enumerate and Reuse Stored Credentials (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cmdkey-list",
+          "name": "Windows - Enumerate and Reuse Stored Credentials (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cmdkey-list",
+          "name": "proc_creation_win_cmdkey_recon",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cmdkey-list",
+          "name": "proc_creation_win_runas_savecred",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cmdkey-list",
+          "name": "Windows - Enumerate and Reuse Stored Credentials - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "defender-endpoint",
+        "sysmon",
         "windows-security",
         "edr"
       ],
@@ -36527,107 +36670,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1555.004": {
-      "detections": [
-        {
-          "card_id": "mimikatz-credman",
-          "name": "Mimikatz - Dump Credential Manager - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "mimikatz-credman",
-          "name": "Mimikatz - Dump Credential Manager (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-credman",
-          "name": "Mimikatz - Dump Credential Manager (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-credman",
-          "name": "proc_creation_win_hktl_mimikatz_command_line",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mimikatz-credman",
-          "name": "win_credential_manager_access",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mimikatz-credman",
-          "name": "Mimikatz - Dump Credential Manager - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "cmdkey-list",
-          "name": "Windows - Enumerate and Reuse Stored Credentials - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "cmdkey-list",
-          "name": "Windows - Enumerate and Reuse Stored Credentials (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cmdkey-list",
-          "name": "Windows - Enumerate and Reuse Stored Credentials (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cmdkey-list",
-          "name": "proc_creation_win_cmdkey_recon",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cmdkey-list",
-          "name": "proc_creation_win_runas_savecred",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cmdkey-list",
-          "name": "Windows - Enumerate and Reuse Stored Credentials - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "defender-endpoint",
-        "sysmon",
-        "windows-security",
-        "edr"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1552.004": {
       "detections": [
         {
@@ -39870,6 +39912,7 @@
       "T1574.001",
       "T1557.002",
       "T1574",
+      "T1555.004",
       "T1098",
       "T1534",
       "T1087.003",
@@ -39898,7 +39941,6 @@
       "T1003.001",
       "T1003",
       "T1210",
-      "T1555.004",
       "T1003.004",
       "T1053.005",
       "T1505.003",
@@ -40473,6 +40515,6 @@
       "T1110.001"
     ]
   },
-  "cards_with_detections": 872,
-  "total_detections": 3786
+  "cards_with_detections": 876,
+  "total_detections": 3790
 }

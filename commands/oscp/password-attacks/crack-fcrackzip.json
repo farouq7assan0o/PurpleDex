@@ -1,0 +1,86 @@
+{
+  "id": "crack-fcrackzip",
+  "name": "fcrackzip - ZIP Archive Password Cracking",
+  "command": "fcrackzip -u -D -p <wordlist> <file>",
+  "description": "fcrackzip cracks password-protected ZIP archives via dictionary or brute-force attack directly (no hash extraction needed). Fast for quick ZIP cracks in CTF and loot scenarios. For stronger/other formats, extract a hash with zip2john and crack with hashcat/john instead.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Password Attacks",
+  "subcategory": "Archive Cracking",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Kali fcrackzip package",
+  "tags": [
+    "fcrackzip",
+    "zip",
+    "archive",
+    "password-cracking",
+    "brute-force",
+    "dictionary"
+  ],
+  "mitre": [
+    "T1110.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== DICTIONARY ATTACK ===\n  fcrackzip -u -D -p <wordlist> secret.zip\n  #  -u  unzip to verify (removes false positives)\n  #  -D  dictionary mode\n  #  -p  wordlist file\n  fcrackzip -u -D -p /usr/share/wordlists/rockyou.txt secret.zip\n\n=== BRUTE FORCE ===\n  fcrackzip -u -b -c a1 -l 1-6 secret.zip\n  #  -b        brute force\n  #  -c a1     charset: lowercase + digits\n  #  -l 1-6    length range\n  #  -c aA1!   add upper + symbols\n\n=== VERBOSE / SHOW PROGRESS ===\n  fcrackzip -v -u -D -p rockyou.txt secret.zip\n\n=== PREFERRED FOR MODERN/AES ZIPS -> use john/hashcat ===\n  zip2john secret.zip > zip.hash\n  john --wordlist=rockyou.txt zip.hash\n  # or: hashcat -m 13600 zip.hash rockyou.txt   (WinZip AES)\n  # or: hashcat -m 17210/17220/17225 for PKZIP variants\n\n=== OTHER ARCHIVE FORMATS ===\n  rar2john file.rar | hashcat -m 13000\n  7z2john file.7z   | hashcat -m 11600",
+  "examples": [
+    {
+      "label": "Dictionary crack with verify",
+      "command": "fcrackzip -u -D -p /usr/share/wordlists/rockyou.txt secret.zip"
+    },
+    {
+      "label": "Brute force 1-6 chars",
+      "command": "fcrackzip -u -b -c a1 -l 1-6 secret.zip"
+    },
+    {
+      "label": "Hash route for AES ZIP",
+      "command": "zip2john secret.zip > zip.hash && hashcat -m 13600 zip.hash rockyou.txt"
+    }
+  ],
+  "references": [
+    {
+      "title": "fcrackzip man page",
+      "url": "https://manpages.debian.org/fcrackzip"
+    },
+    {
+      "title": "MITRE T1110.002 - Password Cracking",
+      "url": "https://attack.mitre.org/techniques/T1110/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "crack-zip2john",
+      "note": "Extract a ZIP hash to crack with john/hashcat (handles AES ZIPs).",
+      "rel": "alternative"
+    },
+    {
+      "id": "hashcat-dictionary",
+      "note": "Crack the extracted archive hash with hashcat.",
+      "rel": "next"
+    },
+    {
+      "id": "stego-steghide",
+      "note": "Hidden data is often in images, not just archives.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "ZIP encryption (especially legacy ZipCrypto) is weak and offline-crackable. Weak passwords fall quickly to dictionary/brute force since the attacker controls the file.",
+    "prerequisites": "Possession of the encrypted archive; a wordlist or compute for brute force.",
+    "impact": "Recovery of archive contents (often credentials, keys, documents).",
+    "detection": "Offline attacker-side activity - not detectable on the target.",
+    "artifacts": "fcrackzip/zip2john on the attacker host only.",
+    "splunk_spl": "N/A - offline attacker-side cracking",
+    "elastic_kql": "N/A - offline attacker-side cracking",
+    "sentinel_kql": "N/A - offline attacker-side cracking",
+    "sigma_rules": "N/A",
+    "prevention": "Use strong, long passphrases; use AES-256 ZIP or GPG/7z-AES instead of legacy ZipCrypto; do not ship secrets in weakly encrypted archives.",
+    "sources": [
+      "Kali docs",
+      "https://attack.mitre.org/techniques/T1110/002/"
+    ]
+  }
+}

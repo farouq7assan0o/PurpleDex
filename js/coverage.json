@@ -443,6 +443,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "ad-pygpoabuse",
+          "name": "GPO edit followed by fleet-wide scheduled task (pyGPOAbuse/SharpGPOAbuse)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-sharpgpoabuse",
           "name": "SharpGPOAbuse - GPO modification by non-admin",
           "platform": "sentinel",
@@ -15150,6 +15157,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "k8s-kube-hunter",
+          "name": "Kubernetes control-plane port sweep (kube-hunter)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
           "card_id": "recon-masscan",
           "name": "Mass port scanning activity",
           "platform": "sigma",
@@ -20907,6 +20921,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "ndr"
+        },
+        {
+          "card_id": "k8s-peirates",
+          "name": "Privileged or hostPath pod creation (Peirates breakout)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "custom"
         }
       ],
       "platforms": [
@@ -20920,7 +20941,8 @@
         "windows-security",
         "ndr",
         "linux-audit",
-        "network-flow"
+        "network-flow",
+        "custom"
       ],
       "best_fidelity": "behavioral"
     },
@@ -29465,6 +29487,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "k8s-kube-hunter",
+          "name": "Kubernetes control-plane port sweep (kube-hunter)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
           "card_id": "finalrecon",
           "name": "Recon Automation - FinalRecon - Sentinel",
           "platform": "sentinel",
@@ -29511,6 +29540,7 @@
         "windows-security",
         "proxy",
         "ndr",
+        "network-flow",
         "dns"
       ],
       "best_fidelity": "behavioral"
@@ -36357,6 +36387,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "k8s-peirates",
+          "name": "Privileged or hostPath pod creation (Peirates breakout)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "custom"
         }
       ],
       "platforms": [
@@ -36368,7 +36405,8 @@
       "data_sources": [
         "linux-audit",
         "windows-security",
-        "edr"
+        "edr",
+        "custom"
       ],
       "best_fidelity": "behavioral"
     },
@@ -37313,6 +37351,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "ad-pygpoabuse",
+          "name": "GPO edit followed by fleet-wide scheduled task (pyGPOAbuse/SharpGPOAbuse)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
         },
         {
           "card_id": "ad-sharpgpoabuse",
@@ -40094,12 +40139,12 @@
       "T1082",
       "T1548.003",
       "T1572",
+      "T1053.005",
       "T1574",
       "T1563.002",
       "T1134.002",
       "T1543.003",
       "T1574.006",
-      "T1053.005",
       "T1558.002",
       "T1556.001",
       "T1087.001",
@@ -40554,6 +40599,7 @@
       "T1135",
       "T1201",
       "T1090",
+      "T1595",
       "T1613",
       "T1557.001",
       "T1187",
@@ -40833,10 +40879,14 @@
     "linux-auth": [
       "T1110.001"
     ],
+    "custom": [
+      "T1610",
+      "T1613"
+    ],
     "nginx": [
       "T1190"
     ]
   },
-  "cards_with_detections": 895,
-  "total_detections": 3810
+  "cards_with_detections": 898,
+  "total_detections": 3813
 }

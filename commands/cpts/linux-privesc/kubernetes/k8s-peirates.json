@@ -1,0 +1,104 @@
+{
+  "id": "k8s-peirates",
+  "name": "Peirates - Kubernetes Penetration / Escalation",
+  "command": "peirates",
+  "description": "Peirates is an interactive Kubernetes attack tool run from inside a compromised pod. It automates stealing service-account tokens, listing and switching between tokens, enumerating secrets, launching privileged/hostPath pods to break out to the node, abusing cloud metadata, and pivoting to full cluster or node compromise.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Container Security",
+  "subcategory": "Kubernetes",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "inguardians/peirates",
+  "tags": [
+    "peirates",
+    "kubernetes",
+    "k8s",
+    "container-escape",
+    "service-account",
+    "privilege-escalation"
+  ],
+  "mitre": [
+    "T1552.001",
+    "T1610",
+    "T1613"
+  ],
+  "exam": "lab-only",
+  "notes": "=== RUN (inside a pod) ===\n  peirates        # interactive menu\n\n=== TYPICAL FLOW (menu options) ===\n  [2]  List and steal service-account tokens from /var/run/secrets and other pods\n  [1]  List pods/secrets using the current token (kubectl-style)\n  [20] Get secrets\n  [establish]  Switch active service-account token\n  [privileged pod] Launch a hostPath/privileged pod -> write to node filesystem\n  [node]  chroot /host via the mounted hostPath -> node root\n  [metadata] Hit cloud metadata (AWS/GCP/Azure) for node credentials\n\n=== GOAL ===\n  # token -> list secrets -> find a SA with pod-create -> privileged pod ->\n  # break out to the node -> harvest all kubelet creds -> cluster-admin\n\n=== MANUAL EQUIVALENTS ===\n  cat /var/run/secrets/kubernetes.io/serviceaccount/token\n  kubectl --token=$TOKEN auth can-i --list\n  kubectl run ... --overrides privileged+hostPath\n\n=== ALTERNATIVES ===\n  kubectl           # once a token/kubeconfig is in hand\n  kubeletctl        # abuse kubelet API directly\n  kube-hunter       # pre-attack surface mapping",
+  "examples": [
+    {
+      "label": "Launch interactive menu",
+      "command": "peirates"
+    },
+    {
+      "label": "Read the pod SA token (manual)",
+      "command": "cat /var/run/secrets/kubernetes.io/serviceaccount/token"
+    },
+    {
+      "label": "Check token permissions (manual)",
+      "command": "kubectl --token=$TOKEN auth can-i --list"
+    }
+  ],
+  "references": [
+    {
+      "title": "Peirates",
+      "url": "https://github.com/inguardians/peirates"
+    },
+    {
+      "title": "MITRE T1610 - Deploy Container",
+      "url": "https://attack.mitre.org/techniques/T1610/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "k8s-privileged-pod",
+      "note": "Privileged-pod technique Peirates automates for node breakout.",
+      "rel": "next"
+    },
+    {
+      "id": "k8s-rce-token",
+      "note": "Service-account token abuse underpins Peirates escalation.",
+      "rel": "prereq"
+    },
+    {
+      "id": "k8s-kube-hunter",
+      "note": "kube-hunter to map the surface before attacking.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Pods auto-mount a service-account token; if that SA has excessive RBAC (create pods, read secrets), an attacker in the pod can create a privileged/hostPath pod and chroot to the node, escaping the container boundary.",
+    "prerequisites": "Code execution in a pod with a mounted service-account token that has meaningful RBAC (pod-create, secret-read) or a node that trusts cloud metadata.",
+    "impact": "Container-to-node breakout, theft of all node kubelet credentials, and cluster-admin / full cluster compromise.",
+    "detection": "[MITRE T1610/T1613] API server audit logs showing pod creation with privileged:true or hostPath volumes; a service account suddenly listing secrets or creating pods; exec into newly created pods; kubelet credential access.",
+    "artifacts": "API server audit log (create pods with securityContext.privileged, hostPath mounts), unusual serviceaccount verbs, new pod on a node with host mounts, metadata endpoint hits from pods.",
+    "splunk_spl": "index=k8s sourcetype=kube:apiserver:audit (verb=create objectRef.resource=pods)\n| spath requestObject.spec.volumes{}.hostPath.path output=hostpath\n| search (requestObject.spec.containers{}.securityContext.privileged=true OR hostpath=*)\n| stats count by user.username, objectRef.namespace",
+    "elastic_kql": "kubernetes.audit.verb:create and kubernetes.audit.objectRef.resource:pods and kubernetes.audit.requestObject.spec.volumes.hostPath.path:*",
+    "sentinel_kql": "AzureDiagnostics\n| where Category == \"kube-audit\"\n| where log_s has \"\\\"privileged\\\":true\" or log_s has \"hostPath\"\n| project TimeGenerated, log_s",
+    "sigma_rules": "k8s_peirates_privileged_hostpath_pod_create",
+    "prevention": "Minimal RBAC for pod service accounts (automountServiceAccountToken:false where unused); Pod Security Admission 'restricted' to block privileged/hostPath; admission controllers (OPA/Kyverno); block pod access to cloud metadata; audit pod-create.",
+    "sources": [
+      "inguardians/peirates",
+      "https://attack.mitre.org/techniques/T1610/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Privileged or hostPath pod creation (Peirates breakout)",
+        "logic": "index=k8s sourcetype=kube:apiserver:audit verb=create objectRef.resource=pods\n| spath requestObject.spec.volumes{}.hostPath.path output=hostpath\n| search (requestObject.spec.containers{}.securityContext.privileged=true OR hostpath=*)\n| stats count by user.username, objectRef.namespace, sourceIPs{}",
+        "data_source": "custom",
+        "attack": [
+          "T1610",
+          "T1613"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "CNI/storage operators, legitimate privileged DaemonSets",
+        "tuning": "Allowlist system namespaces and known operator SAs"
+      }
+    ]
+  }
+}

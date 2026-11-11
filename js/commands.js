@@ -75866,6 +75866,109 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "k8s-kube-hunter",
+      "name": "kube-hunter - Kubernetes Vulnerability Scanner",
+      "command": "kube-hunter --remote <ip>",
+      "description": "kube-hunter probes a Kubernetes cluster for security weaknesses: exposed API server, insecure kubelet (read-only 10255 and authed 10250), etcd, dashboard, and known CVEs. It maps the attack surface from an external, internal-network, or in-pod vantage point and reports hunters/vulnerabilities with severity.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Container Security",
+      "subcategory": "Kubernetes",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "aquasecurity/kube-hunter",
+      "tags": [
+        "kube-hunter",
+        "kubernetes",
+        "k8s",
+        "kubelet",
+        "scanner",
+        "container"
+      ],
+      "mitre": [
+        "T1595",
+        "T1046"
+      ],
+      "exam": "restricted",
+      "notes": "=== INSTALL / RUN ===\n  pip install kube-hunter       # or docker run --rm aquasec/kube-hunter\n\n=== REMOTE SCAN (external) ===\n  kube-hunter --remote <ip>\n  kube-hunter --cidr <cidr>          # sweep a range\n\n=== INTERNAL NETWORK SCAN ===\n  kube-hunter --interface           # scan all local interfaces/subnets\n\n=== IN-POD (active, from a compromised pod) ===\n  kube-hunter --pod                 # uses the pod service account + looks at kubelet/API\n  kube-hunter --pod --active        # include exploit-level checks (intrusive)\n\n=== KEY FINDINGS TO CHASE ===\n  - Kubelet 10250 (authed) / 10255 (read-only) exposed -> list pods, exec\n  - API server anonymous access / insecure port 8080\n  - etcd 2379 open -> dump all secrets\n  - Dashboard without auth\n\n=== ALTERNATIVES ===\n  peirates          # interactive k8s attack/escalation\n  kubeletctl        # kubelet API abuse\n  kubectl           # if a kubeconfig/token is found\n  nmap -p 6443,10250,10255,2379,8080",
+      "examples": [
+        {
+          "label": "Remote scan of an API endpoint",
+          "command": "kube-hunter --remote <ip>"
+        },
+        {
+          "label": "Scan from inside a pod",
+          "command": "kube-hunter --pod"
+        },
+        {
+          "label": "Active in-pod checks",
+          "command": "kube-hunter --pod --active"
+        }
+      ],
+      "references": [
+        {
+          "title": "kube-hunter",
+          "url": "https://github.com/aquasecurity/kube-hunter"
+        },
+        {
+          "title": "MITRE T1046 - Network Service Discovery",
+          "url": "https://attack.mitre.org/techniques/T1046/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "k8s-enum",
+          "note": "Manual kube enumeration once the surface is mapped.",
+          "rel": "next"
+        },
+        {
+          "id": "k8s-peirates",
+          "note": "Peirates to actively escalate findings.",
+          "rel": "next"
+        },
+        {
+          "id": "ref-k8s-ports",
+          "note": "Reference of Kubernetes ports to interpret results.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Kubernetes components historically expose network services (kubelet, etcd, API insecure port, dashboard) that may lack authentication when misconfigured. kube-hunter enumerates these and matches known CVE patterns.",
+        "prerequisites": "Network reachability to cluster components, or execution inside a pod with a mounted service-account token.",
+        "impact": "Full inventory of exploitable cluster weaknesses (unauth kubelet exec, open etcd secrets, anonymous API) leading to cluster takeover.",
+        "detection": "[MITRE T1046] Bursts of connections to 10250/10255/2379/6443/8080 from one source; kubelet access logs showing /pods and /run or /exec from unusual clients; API server audit logs with anonymous or scanning user agents.",
+        "artifacts": "API server audit logs (user=system:anonymous, userAgent scanning), kubelet request logs, network flow to control-plane ports, NetworkPolicy drops.",
+        "splunk_spl": "index=k8s (dest_port=10250 OR dest_port=10255 OR dest_port=2379 OR dest_port=8080)\n| stats count dc(dest_port) as ports by src_ip\n| where ports > 2",
+        "elastic_kql": "destination.port:(10250 or 10255 or 2379 or 8080) and network.direction:inbound",
+        "sentinel_kql": "let cp_ports = dynamic([10250,10255,2379,8080,6443]);\nVMConnection\n| where DestinationPort in (cp_ports)\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIp, bin(TimeGenerated, 5m)\n| where Ports > 2",
+        "sigma_rules": "k8s_kubehunter_controlplane_portscan",
+        "prevention": "Authn/authz on kubelet (disable read-only 10255, require TLS auth on 10250); disable insecure API port; firewall etcd to control plane only; NetworkPolicies restricting pod-to-control-plane; RBAC least privilege; audit logging enabled.",
+        "sources": [
+          "aquasecurity/kube-hunter",
+          "https://attack.mitre.org/techniques/T1046/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Kubernetes control-plane port sweep (kube-hunter)",
+            "logic": "let cp_ports = dynamic([10250,10255,2379,8080,6443]);\nVMConnection\n| where DestinationPort in (cp_ports)\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIp, bin(TimeGenerated, 5m)\n| where Ports > 2",
+            "data_source": "network-flow",
+            "attack": [
+              "T1046",
+              "T1595"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Monitoring/health-check systems",
+            "tuning": "Allowlist cluster monitoring sources; alert on external/pod-origin sweeps"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -114082,6 +114185,110 @@ const COMMAND_DATA = {
       "explain": "Extracts credentials from a packet capture:\n  ./Pcredz                 the parser\n  -f <pcap_file>           read this capture file (use -i <interface> for live capture)\n  -t                       parse credentials from the file\n  -v                       verbose output\nPulls HTTP basic/NTLM, FTP, SMTP/POP/IMAP logins, SNMP strings, and NTLMv1/v2 and Kerberos hashes - hunt cleartext protocols first, and crack any captured NetNTLM offline."
     },
     {
+      "id": "k8s-peirates",
+      "name": "Peirates - Kubernetes Penetration / Escalation",
+      "command": "peirates",
+      "description": "Peirates is an interactive Kubernetes attack tool run from inside a compromised pod. It automates stealing service-account tokens, listing and switching between tokens, enumerating secrets, launching privileged/hostPath pods to break out to the node, abusing cloud metadata, and pivoting to full cluster or node compromise.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Container Security",
+      "subcategory": "Kubernetes",
+      "certifications": [
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "inguardians/peirates",
+      "tags": [
+        "peirates",
+        "kubernetes",
+        "k8s",
+        "container-escape",
+        "service-account",
+        "privilege-escalation"
+      ],
+      "mitre": [
+        "T1552.001",
+        "T1610",
+        "T1613"
+      ],
+      "exam": "lab-only",
+      "notes": "=== RUN (inside a pod) ===\n  peirates        # interactive menu\n\n=== TYPICAL FLOW (menu options) ===\n  [2]  List and steal service-account tokens from /var/run/secrets and other pods\n  [1]  List pods/secrets using the current token (kubectl-style)\n  [20] Get secrets\n  [establish]  Switch active service-account token\n  [privileged pod] Launch a hostPath/privileged pod -> write to node filesystem\n  [node]  chroot /host via the mounted hostPath -> node root\n  [metadata] Hit cloud metadata (AWS/GCP/Azure) for node credentials\n\n=== GOAL ===\n  # token -> list secrets -> find a SA with pod-create -> privileged pod ->\n  # break out to the node -> harvest all kubelet creds -> cluster-admin\n\n=== MANUAL EQUIVALENTS ===\n  cat /var/run/secrets/kubernetes.io/serviceaccount/token\n  kubectl --token=$TOKEN auth can-i --list\n  kubectl run ... --overrides privileged+hostPath\n\n=== ALTERNATIVES ===\n  kubectl           # once a token/kubeconfig is in hand\n  kubeletctl        # abuse kubelet API directly\n  kube-hunter       # pre-attack surface mapping",
+      "examples": [
+        {
+          "label": "Launch interactive menu",
+          "command": "peirates"
+        },
+        {
+          "label": "Read the pod SA token (manual)",
+          "command": "cat /var/run/secrets/kubernetes.io/serviceaccount/token"
+        },
+        {
+          "label": "Check token permissions (manual)",
+          "command": "kubectl --token=$TOKEN auth can-i --list"
+        }
+      ],
+      "references": [
+        {
+          "title": "Peirates",
+          "url": "https://github.com/inguardians/peirates"
+        },
+        {
+          "title": "MITRE T1610 - Deploy Container",
+          "url": "https://attack.mitre.org/techniques/T1610/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "k8s-privileged-pod",
+          "note": "Privileged-pod technique Peirates automates for node breakout.",
+          "rel": "next"
+        },
+        {
+          "id": "k8s-rce-token",
+          "note": "Service-account token abuse underpins Peirates escalation.",
+          "rel": "prereq"
+        },
+        {
+          "id": "k8s-kube-hunter",
+          "note": "kube-hunter to map the surface before attacking.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Pods auto-mount a service-account token; if that SA has excessive RBAC (create pods, read secrets), an attacker in the pod can create a privileged/hostPath pod and chroot to the node, escaping the container boundary.",
+        "prerequisites": "Code execution in a pod with a mounted service-account token that has meaningful RBAC (pod-create, secret-read) or a node that trusts cloud metadata.",
+        "impact": "Container-to-node breakout, theft of all node kubelet credentials, and cluster-admin / full cluster compromise.",
+        "detection": "[MITRE T1610/T1613] API server audit logs showing pod creation with privileged:true or hostPath volumes; a service account suddenly listing secrets or creating pods; exec into newly created pods; kubelet credential access.",
+        "artifacts": "API server audit log (create pods with securityContext.privileged, hostPath mounts), unusual serviceaccount verbs, new pod on a node with host mounts, metadata endpoint hits from pods.",
+        "splunk_spl": "index=k8s sourcetype=kube:apiserver:audit (verb=create objectRef.resource=pods)\n| spath requestObject.spec.volumes{}.hostPath.path output=hostpath\n| search (requestObject.spec.containers{}.securityContext.privileged=true OR hostpath=*)\n| stats count by user.username, objectRef.namespace",
+        "elastic_kql": "kubernetes.audit.verb:create and kubernetes.audit.objectRef.resource:pods and kubernetes.audit.requestObject.spec.volumes.hostPath.path:*",
+        "sentinel_kql": "AzureDiagnostics\n| where Category == \"kube-audit\"\n| where log_s has \"\\\"privileged\\\":true\" or log_s has \"hostPath\"\n| project TimeGenerated, log_s",
+        "sigma_rules": "k8s_peirates_privileged_hostpath_pod_create",
+        "prevention": "Minimal RBAC for pod service accounts (automountServiceAccountToken:false where unused); Pod Security Admission 'restricted' to block privileged/hostPath; admission controllers (OPA/Kyverno); block pod access to cloud metadata; audit pod-create.",
+        "sources": [
+          "inguardians/peirates",
+          "https://attack.mitre.org/techniques/T1610/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Privileged or hostPath pod creation (Peirates breakout)",
+            "logic": "index=k8s sourcetype=kube:apiserver:audit verb=create objectRef.resource=pods\n| spath requestObject.spec.volumes{}.hostPath.path output=hostpath\n| search (requestObject.spec.containers{}.securityContext.privileged=true OR hostpath=*)\n| stats count by user.username, objectRef.namespace, sourceIPs{}",
+            "data_source": "custom",
+            "attack": [
+              "T1610",
+              "T1613"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "CNI/storage operators, legitimate privileged DaemonSets",
+            "tuning": "Allowlist system namespaces and known operator SAs"
+          }
+        ]
+      }
+    },
+    {
       "id": "pentest-lifecycle",
       "name": "Penetration Testing Process - Stages",
       "command": "# 8-stage engagement lifecycle (Pre-Engagement -> Post-Engagement)",
@@ -129113,6 +129320,111 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Developers using script or Python pty for legitimate purposes",
             "tuning": "Correlate with inbound network connections from unusual sources"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ad-pygpoabuse",
+      "name": "pyGPOAbuse - Linux-side GPO Abuse",
+      "command": "pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid> -command '<cmd>'",
+      "description": "pyGPOAbuse is the Linux/Python counterpart of SharpGPOAbuse. When you control (have write rights over) a Group Policy Object, it injects an immediate scheduled task into the GPO so that every machine or user the GPO applies to runs your command at the next refresh, enabling mass code execution or privilege escalation across the domain.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "GPO Abuse",
+      "certifications": [
+        "CPTS",
+        "CRTP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Hackndo/pyGPOAbuse",
+      "tags": [
+        "pygpoabuse",
+        "gpo",
+        "active-directory",
+        "scheduled-task",
+        "privilege-escalation",
+        "lateral-movement"
+      ],
+      "mitre": [
+        "T1484.001",
+        "T1053.005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PREREQ: write rights on a GPO ===\n  # find them with BloodHound (GenericWrite/WriteDACL on GPO) or:\n  #   pyGPOAbuse needs the GPO GUID (from ldap/BloodHound/Get-GPO)\n\n=== ADD IMMEDIATE SCHEDULED TASK (default: add user to local admins) ===\n  pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid>\n  # default payload adds the running user to the local Administrators group on targets\n\n=== CUSTOM COMMAND ===\n  pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid> \\\n     -command 'net user hacker P@ss123! /add && net localgroup administrators hacker /add' \\\n     -taskname \"UpdateTask\" -description \"Update\" -f\n\n=== COMPUTER vs USER scope ===\n  # add -user  to target the user portion of the GPO instead of computer\n\n=== HASH / KERBEROS AUTH ===\n  pygpoabuse.py <domain>/<user> -hashes :<nt_hash> -gpo-id <guid>\n  pygpoabuse.py <domain>/<user> -k -gpo-id <guid>\n\n=== THEN ===\n  # wait for gpupdate (90 min default) or force on a target; task runs as SYSTEM (computer) \n\n=== ALTERNATIVES ===\n  SharpGPOAbuse     # Windows/.NET equivalent\n  pyGPOAbuse is preferred from a Linux foothold / impacket workflow",
+      "examples": [
+        {
+          "label": "Default local-admin task on a GPO",
+          "command": "pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid>"
+        },
+        {
+          "label": "Custom command with NT hash",
+          "command": "pygpoabuse.py <domain>/<user> -hashes :<nt_hash> -gpo-id <guid> -command 'whoami'"
+        }
+      ],
+      "references": [
+        {
+          "title": "pyGPOAbuse",
+          "url": "https://github.com/Hackndo/pyGPOAbuse"
+        },
+        {
+          "title": "MITRE T1484.001 - Group Policy Modification",
+          "url": "https://attack.mitre.org/techniques/T1484/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-sharpgpoabuse",
+          "note": "SharpGPOAbuse is the Windows equivalent.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-gpo-enum",
+          "note": "Enumerate GPO write rights before abusing.",
+          "rel": "prereq"
+        },
+        {
+          "id": "crtp-gpo-abuse",
+          "note": "CRTP GPO-abuse technique context.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "After fleet-wide local-admin, use a remote-exec tool to operate.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "A principal with write access (GenericWrite/WriteDACL/WriteProperty) to a GPO can edit its files in SYSVOL. Adding an immediate scheduled task makes every in-scope computer/user execute arbitrary code at policy refresh, running as SYSTEM for computer-scoped GPOs.",
+        "prerequisites": "Write rights over a linked GPO (or over the GPC/GPT), and credentials/hash for the principal holding them.",
+        "impact": "Mass arbitrary code execution and local-admin creation across all machines/users in the GPO scope - often domain-wide escalation.",
+        "detection": "[MITRE T1484.001/T1053.005] SYSVOL changes to GPO files (ScheduledTasks.xml / Registry.xml) correlated with Directory Service changes (event 5136 on gPCMachineExtensionNames / versionNumber); new scheduled task events (4698) appearing fleet-wide after a GPO edit.",
+        "artifacts": "DC Security log 5136/5137 on GPO objects, SYSVOL file writes to \\Policies\\{GUID}\\Machine\\Preferences\\ScheduledTasks, endpoint event 4698 (scheduled task created) across many hosts, gPCMachineExtensionNames update.",
+        "splunk_spl": "index=wineventlog (EventCode=5136 ObjectClass=groupPolicyContainer) OR EventCode=4698\n| transaction host maxspan=2h\n| search EventCode=5136 EventCode=4698\n| stats dc(host) as affected_hosts values(TaskName) by Account_Name",
+        "elastic_kql": "event.code:4698 or (event.code:5136 and winlog.event_data.ObjectClass:groupPolicyContainer)",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4698 or (EventID == 5136 and AttributeLDAPDisplayName has \"gPCMachineExtensionNames\")\n| summarize Hosts=dcount(Computer), Tasks=make_set(TaskName) by SubjectUserName, bin(TimeGenerated, 2h)\n| where Hosts > 2",
+        "sigma_rules": "ad_gpo_scheduled_task_injection",
+        "prevention": "Audit and tighten GPO ACLs (remove non-admin write); monitor SYSVOL GPO file changes; enable AD object auditing (5136); alert on new fleet-wide scheduled tasks; use tiered admin model so GPO edit rights are highly restricted.",
+        "sources": [
+          "Hackndo/pyGPOAbuse",
+          "https://attack.mitre.org/techniques/T1484/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "GPO edit followed by fleet-wide scheduled task (pyGPOAbuse/SharpGPOAbuse)",
+            "logic": "SecurityEvent\n| where EventID == 4698\n| summarize Hosts=dcount(Computer), Tasks=make_set(TaskName) by SubjectUserName, bin(TimeGenerated, 2h)\n| where Hosts > 2",
+            "data_source": "windows-security",
+            "attack": [
+              "T1484.001",
+              "T1053.005"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate GPO-deployed scheduled tasks during maintenance",
+            "tuning": "Baseline normal GPO-deployed tasks; correlate with authorized GPO change tickets"
           }
         ]
       }
@@ -193336,8 +193648,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1095,
-  "buildDate": "2026-11-11T12:23:16.109Z",
+  "totalCommands": 1098,
+  "buildDate": "2026-11-11T12:25:52.678Z",
   "certifications": [
     "CDSA",
     "CPTS",

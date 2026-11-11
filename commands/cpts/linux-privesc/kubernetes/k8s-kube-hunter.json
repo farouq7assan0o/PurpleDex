@@ -1,0 +1,103 @@
+{
+  "id": "k8s-kube-hunter",
+  "name": "kube-hunter - Kubernetes Vulnerability Scanner",
+  "command": "kube-hunter --remote <ip>",
+  "description": "kube-hunter probes a Kubernetes cluster for security weaknesses: exposed API server, insecure kubelet (read-only 10255 and authed 10250), etcd, dashboard, and known CVEs. It maps the attack surface from an external, internal-network, or in-pod vantage point and reports hunters/vulnerabilities with severity.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Container Security",
+  "subcategory": "Kubernetes",
+  "certifications": [
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "aquasecurity/kube-hunter",
+  "tags": [
+    "kube-hunter",
+    "kubernetes",
+    "k8s",
+    "kubelet",
+    "scanner",
+    "container"
+  ],
+  "mitre": [
+    "T1595",
+    "T1046"
+  ],
+  "exam": "restricted",
+  "notes": "=== INSTALL / RUN ===\n  pip install kube-hunter       # or docker run --rm aquasec/kube-hunter\n\n=== REMOTE SCAN (external) ===\n  kube-hunter --remote <ip>\n  kube-hunter --cidr <cidr>          # sweep a range\n\n=== INTERNAL NETWORK SCAN ===\n  kube-hunter --interface           # scan all local interfaces/subnets\n\n=== IN-POD (active, from a compromised pod) ===\n  kube-hunter --pod                 # uses the pod service account + looks at kubelet/API\n  kube-hunter --pod --active        # include exploit-level checks (intrusive)\n\n=== KEY FINDINGS TO CHASE ===\n  - Kubelet 10250 (authed) / 10255 (read-only) exposed -> list pods, exec\n  - API server anonymous access / insecure port 8080\n  - etcd 2379 open -> dump all secrets\n  - Dashboard without auth\n\n=== ALTERNATIVES ===\n  peirates          # interactive k8s attack/escalation\n  kubeletctl        # kubelet API abuse\n  kubectl           # if a kubeconfig/token is found\n  nmap -p 6443,10250,10255,2379,8080",
+  "examples": [
+    {
+      "label": "Remote scan of an API endpoint",
+      "command": "kube-hunter --remote <ip>"
+    },
+    {
+      "label": "Scan from inside a pod",
+      "command": "kube-hunter --pod"
+    },
+    {
+      "label": "Active in-pod checks",
+      "command": "kube-hunter --pod --active"
+    }
+  ],
+  "references": [
+    {
+      "title": "kube-hunter",
+      "url": "https://github.com/aquasecurity/kube-hunter"
+    },
+    {
+      "title": "MITRE T1046 - Network Service Discovery",
+      "url": "https://attack.mitre.org/techniques/T1046/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "k8s-enum",
+      "note": "Manual kube enumeration once the surface is mapped.",
+      "rel": "next"
+    },
+    {
+      "id": "k8s-peirates",
+      "note": "Peirates to actively escalate findings.",
+      "rel": "next"
+    },
+    {
+      "id": "ref-k8s-ports",
+      "note": "Reference of Kubernetes ports to interpret results.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Kubernetes components historically expose network services (kubelet, etcd, API insecure port, dashboard) that may lack authentication when misconfigured. kube-hunter enumerates these and matches known CVE patterns.",
+    "prerequisites": "Network reachability to cluster components, or execution inside a pod with a mounted service-account token.",
+    "impact": "Full inventory of exploitable cluster weaknesses (unauth kubelet exec, open etcd secrets, anonymous API) leading to cluster takeover.",
+    "detection": "[MITRE T1046] Bursts of connections to 10250/10255/2379/6443/8080 from one source; kubelet access logs showing /pods and /run or /exec from unusual clients; API server audit logs with anonymous or scanning user agents.",
+    "artifacts": "API server audit logs (user=system:anonymous, userAgent scanning), kubelet request logs, network flow to control-plane ports, NetworkPolicy drops.",
+    "splunk_spl": "index=k8s (dest_port=10250 OR dest_port=10255 OR dest_port=2379 OR dest_port=8080)\n| stats count dc(dest_port) as ports by src_ip\n| where ports > 2",
+    "elastic_kql": "destination.port:(10250 or 10255 or 2379 or 8080) and network.direction:inbound",
+    "sentinel_kql": "let cp_ports = dynamic([10250,10255,2379,8080,6443]);\nVMConnection\n| where DestinationPort in (cp_ports)\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIp, bin(TimeGenerated, 5m)\n| where Ports > 2",
+    "sigma_rules": "k8s_kubehunter_controlplane_portscan",
+    "prevention": "Authn/authz on kubelet (disable read-only 10255, require TLS auth on 10250); disable insecure API port; firewall etcd to control plane only; NetworkPolicies restricting pod-to-control-plane; RBAC least privilege; audit logging enabled.",
+    "sources": [
+      "aquasecurity/kube-hunter",
+      "https://attack.mitre.org/techniques/T1046/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Kubernetes control-plane port sweep (kube-hunter)",
+        "logic": "let cp_ports = dynamic([10250,10255,2379,8080,6443]);\nVMConnection\n| where DestinationPort in (cp_ports)\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIp, bin(TimeGenerated, 5m)\n| where Ports > 2",
+        "data_source": "network-flow",
+        "attack": [
+          "T1046",
+          "T1595"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Monitoring/health-check systems",
+        "tuning": "Allowlist cluster monitoring sources; alert on external/pod-origin sweeps"
+      }
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "id": "cloud-mfasweep",
+  "name": "MFASweep - Find M365 Logins Without MFA",
+  "command": "Import-Module MFASweep.ps1; Invoke-MFASweep -Username <user> -Password <password>",
+  "description": "MFASweep logs a single set of M365 credentials into many Microsoft services (Graph, Azure portal, Exchange Web Services, ActiveSync, SharePoint, ADFS, etc.) to find any entry point where MFA is not enforced. Gaps in MFA coverage (common with legacy protocols) give an attacker a password-only foothold.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "dafthack/MFASweep",
+  "tags": [
+    "mfasweep",
+    "azure",
+    "m365",
+    "mfa",
+    "conditional-access",
+    "legacy-auth"
+  ],
+  "mitre": [
+    "T1078.004",
+    "T1556.006"
+  ],
+  "exam": "restricted",
+  "notes": "=== LOAD ===\n  . .\\MFASweep.ps1\n\n=== RUN ===\n  Invoke-MFASweep -Username <user>@<domain> -Password <password>\n  # tests: Microsoft Graph API, Azure Service Management API, Microsoft 365\n  #        web portal, EWS, ActiveSync, Azure portal, and (optionally) ADFS\n\n=== WITH ADFS CHECK ===\n  Invoke-MFASweep -Username <user>@<domain> -Password <password> -IncludeADFS\n\n=== INTERPRETATION ===\n  # 'MFA appears to be ENABLED' vs 'single factor' per endpoint.\n  # A single-factor endpoint (often EWS/ActiveSync/legacy) = password-only access.\n\n=== WARNING ===\n  # Each test is a real login attempt -> account lockout risk + many sign-in log entries.\n  # Use ONE account, known-good password; do not spray.\n\n=== ALTERNATIVES ===\n  o365spray        # user-enum + spray with MFA observations\n  AADInternals     # per-endpoint token tests\n  Conditional Access review (defensive)",
+  "examples": [
+    {
+      "label": "Sweep all default endpoints",
+      "command": "Invoke-MFASweep -Username <user>@<domain> -Password <password>"
+    },
+    {
+      "label": "Include ADFS endpoint",
+      "command": "Invoke-MFASweep -Username <user>@<domain> -Password <password> -IncludeADFS"
+    }
+  ],
+  "references": [
+    {
+      "title": "MFASweep",
+      "url": "https://github.com/dafthack/MFASweep"
+    },
+    {
+      "title": "MITRE T1556.006 - Modify Authentication Process: MFA",
+      "url": "https://attack.mitre.org/techniques/T1556/006/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "o365spray",
+      "note": "o365spray to obtain the valid credential first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cloud-tokentactics",
+      "note": "TokenTactics to pivot once a single-factor endpoint is found.",
+      "rel": "next"
+    },
+    {
+      "id": "cloud-aadinternals",
+      "note": "AADInternals for broader post-auth attacks.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "MFA in M365 is enforced per-application via Conditional Access, not globally. Legacy authentication protocols (EWS, ActiveSync, older SMTP/IMAP) and some first-party apps may be exempt, so one password can bypass MFA through an unprotected channel.",
+    "prerequisites": "A single valid username and password (no MFA token).",
+    "impact": "Discovery of a password-only access path into M365, defeating the organization's MFA investment for that channel.",
+    "detection": "[MITRE T1078.004] Entra sign-in logs showing the SAME user authenticating to many distinct applications/clientApps within seconds from one IP; legacy-auth sign-ins (clientAppUsed in Exchange ActiveSync, IMAP, POP, Other clients).",
+    "artifacts": "Entra sign-in logs (clientAppUsed, appDisplayName), legacy-auth sign-in category, rapid multi-app sign-in burst from one IP.",
+    "splunk_spl": "index=azure sourcetype=azure:aad:signin\n| stats dc(appDisplayName) as apps values(clientAppUsed) as clients by userPrincipalName, ipAddress, bin(_time,5m)\n| where apps > 4",
+    "elastic_kql": "azure.signinlogs.properties.client_app_used:(\"Exchange ActiveSync\" or \"IMAP4\" or \"POP3\" or \"Other clients\")",
+    "sentinel_kql": "SigninLogs\n| summarize Apps=dcount(AppDisplayName), Clients=make_set(ClientAppUsed) by UserPrincipalName, IPAddress, bin(TimeGenerated, 5m)\n| where Apps > 4",
+    "sigma_rules": "azure_mfasweep_multi_app_signin_burst",
+    "prevention": "Block legacy authentication tenant-wide (Conditional Access / Security Defaults); require MFA for ALL apps and clients; enable sign-in risk policies; disable unused protocols (EWS, ActiveSync, IMAP/POP) per mailbox.",
+    "sources": [
+      "dafthack/MFASweep",
+      "https://attack.mitre.org/techniques/T1556/006/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "One user authenticating to many M365 apps in minutes (MFASweep)",
+        "logic": "SigninLogs\n| summarize Apps=dcount(AppDisplayName), Clients=make_set(ClientAppUsed), Results=make_set(ResultType) by UserPrincipalName, IPAddress, bin(TimeGenerated, 5m)\n| where Apps > 4",
+        "data_source": "entra-id",
+        "attack": [
+          "T1078.004",
+          "T1556.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Automated health probes; onboarding scripts",
+        "tuning": "Exclude service accounts; emphasize legacy clientAppUsed values"
+      }
+    ]
+  }
+}

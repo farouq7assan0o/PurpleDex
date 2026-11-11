@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1200px; height: 628px;
+  background: #0d1117;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #c9d1d9;
+  overflow: hidden;
+  position: relative;
+}
+
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 48px 60px 40px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+.top h1 {
+  font-size: 56px;
+  font-weight: 700;
+  color: #bc8cff;
+  letter-spacing: -1px;
+}
+
+.tagline {
+  font-size: 24px;
+  color: #8b949e;
+  margin-bottom: 40px;
+  line-height: 1.3;
+}
+.tagline em {
+  color: #c9d1d9;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.cards {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+.card {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.card .icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.card h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #c9d1d9;
+  margin-bottom: 8px;
+}
+.card .num {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.card .sub {
+  font-size: 13px;
+  color: #8b949e;
+  line-height: 1.4;
+}
+.card:nth-child(1) .num { color: #ff7b72; }
+.card:nth-child(2) .num { color: #29b6f6; }
+.card:nth-child(3) .num { color: #bc8cff; }
+.card:nth-child(4) .num { color: #3fb950; }
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 28px;
+}
+.certs {
+  display: flex;
+  gap: 10px;
+}
+.cert {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 13px;
+  color: #c9d1d9;
+  font-weight: 600;
+}
+
+.url {
+  font-size: 20px;
+  color: #58a6ff;
+  font-weight: 500;
+}
+
+.gradient-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff7b72, #bc8cff, #29b6f6);
+}
+</style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="content">
+    <div class="top">
+      <svg viewBox="0 0 512 512" width="54" height="54">
+        <defs><clipPath id="s"><path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z"/></clipPath></defs>
+        <g clip-path="url(#s)"><rect width="512" height="512" fill="#ff7b72"/><polygon points="512,0 512,512 0,512" fill="#29b6f6"/></g>
+        <path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z" fill="none" stroke="#bc8cff" stroke-width="14"/>
+      </svg>
+      <h1>Purpledex</h1>
+    </div>
+    <div class="tagline">The <em>purple-team command library</em> - attack commands and<br>detection queries on the same card. Fully offline.</div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="icon">&#9876;</div>
+        <h3>Attack Commands</h3>
+        <div class="num">950</div>
+        <div class="sub">Cards with 1,452 variations, OpSec ratings, and attack-chain links</div>
+      </div>
+      <div class="card">
+        <div class="icon">&#128737;</div>
+        <h3>SIEM Detections</h3>
+        <div class="num">3,693</div>
+        <div class="sub">Splunk SPL, Elastic KQL, Sentinel KQL, and Sigma rules</div>
+      </div>
+      <div class="card">
+        <div class="icon">&#127919;</div>
+        <h3>MITRE ATT&CK</h3>
+        <div class="num">207</div>
+        <div class="sub">Techniques mapped with visual coverage heatmaps</div>
+      </div>
+      <div class="card">
+        <div class="icon">&#128736;</div>
+        <h3>Tools Covered</h3>
+        <div class="num">428</div>
+        <div class="sub">From Nmap to BloodHound to Mimikatz to CrackMapExec</div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="certs">
+        <span class="cert">OSCP</span>
+        <span class="cert">CPTS</span>
+        <span class="cert">CWES</span>
+        <span class="cert">CRTP</span>
+        <span class="cert">CDSA</span>
+        <span class="cert">MCRTA</span>
+      </div>
+      <span class="url">purpledex.dev</span>
+    </div>
+  </div>
+  <div class="gradient-bar"></div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+{
+  "id": "cloud-microburst",
+  "name": "MicroBurst - Azure Recon and Attack (PowerShell)",
+  "command": "Import-Module MicroBurst.psm1; Invoke-EnumerateAzureBlobs -Base <keyword>",
+  "description": "MicroBurst is a PowerShell toolkit for Azure assessment and attack: anonymous blob/storage enumeration, subdomain/service discovery, dumping credentials from Automation Accounts / Key Vaults / App Services, RunCommand on VMs, and token/credential harvesting. Covers both unauthenticated recon and authenticated post-exploitation across Azure services.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "NetSPI/MicroBurst",
+  "tags": [
+    "microburst",
+    "azure",
+    "storage",
+    "key-vault",
+    "automation-account",
+    "runcommand",
+    "recon"
+  ],
+  "mitre": [
+    "T1526",
+    "T1552.005",
+    "T1580"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== LOAD ===\n  Import-Module .\\MicroBurst.psm1\n\n=== UNAUTHENTICATED RECON ===\n  Invoke-EnumerateAzureBlobs -Base <keyword>        # guess public storage blobs\n  Invoke-EnumerateAzureSubDomains -Base <keyword>   # *.azurewebsites.net etc.\n\n=== AUTHENTICATED (Connect-AzAccount first) ===\n  Get-AzPasswords                 # dump creds: Key Vault, Automation, App Service, ACR\n  Get-AzDomainInfo                # tenant/subscription inventory -> files\n  Invoke-AzVMBulkCMD   -Command \"whoami\"            # RunCommand on all VMs you can\n  Get-AzStorageKeys\n\n=== REST / TOKEN HELPERS ===\n  Get-AzureADToken / REST modules under Az/ and REST/\n\n=== OUTPUT ===\n  # Get-AzDomainInfo writes CSV/JSON inventory; Get-AzPasswords prints a creds table\n\n=== ALTERNATIVES ===\n  AADInternals   # Entra/M365 identity attacks\n  ScoutSuite     # config audit\n  roadrecon      # offline Entra graph\n  PowerZure      # (archived) similar Az attack set",
+  "examples": [
+    {
+      "label": "Enumerate public blobs by keyword",
+      "command": "Invoke-EnumerateAzureBlobs -Base contoso"
+    },
+    {
+      "label": "Dump Azure credentials",
+      "command": "Get-AzPasswords"
+    },
+    {
+      "label": "RunCommand on all reachable VMs",
+      "command": "Invoke-AzVMBulkCMD -Command whoami"
+    }
+  ],
+  "references": [
+    {
+      "title": "MicroBurst",
+      "url": "https://github.com/NetSPI/MicroBurst"
+    },
+    {
+      "title": "MITRE T1552.005 - Cloud Instance Metadata/Secrets",
+      "url": "https://attack.mitre.org/techniques/T1552/005/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-aadinternals",
+      "note": "AADInternals for the identity-plane attacks.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-scoutsuite",
+      "note": "ScoutSuite for a full config audit view.",
+      "rel": "alternative"
+    },
+    {
+      "id": "azure-managed-identity-token",
+      "note": "Managed-identity token abuse pairs with VM RunCommand.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "MicroBurst mixes anonymous storage/subdomain probing (public endpoints) with authenticated Az API calls. Credential extraction (Get-AzPasswords) and VM RunCommand use legitimate management operations granted to Contributor-level identities, so the risk is over-privileged roles rather than an exploit.",
+    "prerequisites": "Unauthenticated recon: nothing but a keyword. Credential dumping / RunCommand: an authenticated principal with Contributor or specific resource rights.",
+    "impact": "Discovery of public storage, extraction of secrets from Key Vaults/Automation/App Services, and arbitrary command execution on Azure VMs.",
+    "detection": "[MITRE T1552.005/T1580] Azure Activity logs for Key Vault secret reads, Automation credential access, Microsoft.Compute/virtualMachines/runCommand/action, and listKeys on storage; bursts of anonymous 404/200 against *.blob.core.windows.net.",
+    "artifacts": "Azure Activity log (runCommand, listKeys, Vault Get Secret), Key Vault diagnostic logs (SecretGet), storage analytics logs, Automation job logs.",
+    "splunk_spl": "index=azure sourcetype=azure:activity (operationName.value=\"Microsoft.Compute/virtualMachines/runCommand/action\" OR operationName.value=\"Microsoft.KeyVault/vaults/secrets/read\" OR operationName.value=\"*listKeys/action\")\n| stats count by caller, operationName.value, resourceId",
+    "elastic_kql": "azure.activitylogs.operation_name:(*runCommand* or *listKeys* or *secrets/read*)",
+    "sentinel_kql": "AzureActivity\n| where OperationNameValue has \"runCommand\" or OperationNameValue has \"listKeys\" or OperationNameValue has \"secrets/read\"\n| summarize Count=count() by Caller, OperationNameValue, bin(TimeGenerated, 10m)\n| where Count > 1",
+    "sigma_rules": "azure_microburst_cred_dump_runcommand",
+    "prevention": "Least-privilege (avoid broad Contributor); private endpoints and no anonymous blob access; Key Vault RBAC + firewall + purge protection; restrict and log runCommand; Defender for Cloud alerts on secret access and VM command execution.",
+    "sources": [
+      "NetSPI/MicroBurst",
+      "https://attack.mitre.org/techniques/T1552/005/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Azure credential dump + VM RunCommand (MicroBurst)",
+        "logic": "AzureActivity\n| where OperationNameValue has \"runCommand\" or OperationNameValue has \"listKeys\" or OperationNameValue has \"secrets\"\n| summarize Ops=make_set(OperationNameValue), Count=count() by Caller, bin(TimeGenerated, 15m)\n| where Count > 2",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1552.005",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Automation runbooks, deployment pipelines",
+        "tuning": "Allowlist deployment principals; alert on interactive users doing this"
+      }
+    ]
+  }
+}

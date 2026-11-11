@@ -1,0 +1,82 @@
+{
+  "id": "mobile-frida",
+  "name": "Frida - Dynamic Instrumentation Toolkit",
+  "command": "frida -U -f <target> -l <file>",
+  "description": "Frida injects a JavaScript engine into a running process (Android/iOS/desktop) to hook and rewrite functions at runtime. In mobile testing it bypasses root/jailbreak and SSL-pinning checks, dumps decrypted traffic and crypto keys, traces method calls, and manipulates app logic live - without repackaging the app.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Mobile Security",
+  "subcategory": "Dynamic Analysis",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "frida/frida",
+  "tags": [
+    "frida",
+    "mobile",
+    "android",
+    "ios",
+    "instrumentation",
+    "ssl-pinning",
+    "hooking"
+  ],
+  "mitre": [
+    "T1635",
+    "T1055"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== SETUP ===\n  pip install frida-tools\n  # push + run frida-server on a rooted device/emulator (matching arch/version):\n  adb push frida-server /data/local/tmp/ ; adb shell \"/data/local/tmp/frida-server &\"\n\n=== ENUMERATE ===\n  frida-ps -U            # processes on USB device\n  frida-ps -Uai          # installed apps + identifiers\n\n=== ATTACH / SPAWN ===\n  frida -U -f <target> -l <file>      # spawn app with a script (-f = package id)\n  frida -U <target>                   # attach to running app\n\n=== COMMON SCRIPTS ===\n  frida -U --codeshare pcipolloni/universal-android-ssl-pinning-bypass-with-frida -f <target>\n  frida-trace -U -f <target> -j '*!*crypt*'      # trace crypto methods\n\n=== HOOK EXAMPLE (ssl pinning / root) ===\n  Java.perform(function(){\n    var X = Java.use('javax.net.ssl.X509TrustManager');\n    // override checkServerTrusted to no-op ...\n  });\n\n=== ALTERNATIVES ===\n  objection      # Frida-powered, no-code runtime toolkit\n  apktool patch  # static pinning/root bypass\n  xposed/LSPosed # framework-level hooking",
+  "examples": [
+    {
+      "label": "List installed apps",
+      "command": "frida-ps -Uai"
+    },
+    {
+      "label": "Spawn app with a hook script",
+      "command": "frida -U -f <target> -l <file>"
+    },
+    {
+      "label": "Universal SSL-pinning bypass",
+      "command": "frida -U --codeshare pcipolloni/universal-android-ssl-pinning-bypass-with-frida -f <target>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Frida",
+      "url": "https://frida.re/"
+    },
+    {
+      "title": "Frida GitHub",
+      "url": "https://github.com/frida/frida"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "mobile-objection",
+      "note": "objection wraps Frida for common bypasses without scripting.",
+      "rel": "next"
+    },
+    {
+      "id": "mobile-apktool",
+      "note": "apktool for a static pinning/root bypass alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "mobile-jadx",
+      "note": "jadx to find the methods to hook.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Frida rewrites function behavior in the running process, so purely client-side checks (root/jailbreak detection, SSL pinning, license gates) can be neutralized at runtime even if the binary is obfuscated.",
+    "prerequisites": "A rooted/jailbroken device or emulator (or a repackaged app with a Frida gadget) and the target app installed.",
+    "impact": "Bypass of client-side security controls, interception of decrypted traffic/keys, and live manipulation of app logic.",
+    "detection": "On-device RASP can detect Frida (frida-server ports 27042/27043, injected threads, known library names, ptrace); backend can see anomalies (pinning-bypassed clients on unexpected networks, emulator fingerprints) if attestation is used.",
+    "artifacts": "Frida artifacts on-device (gum-js-loop thread, /data/local/tmp/frida-server, TCP 27042), integrity-attestation failures server-side.",
+    "prevention": "Runtime application self-protection (RASP) with Frida/debugger/emulator detection; Play Integrity / DeviceCheck/App Attest with server-side enforcement; defense-in-depth so no single client check is decisive; TLS pinning plus server-side auth; obfuscation to slow hook discovery.",
+    "sources": [
+      "frida/frida",
+      "https://frida.re/"
+    ]
+  }
+}

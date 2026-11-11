@@ -1,0 +1,76 @@
+{
+  "id": "mobile-apktool",
+  "name": "apktool - Decompile / Rebuild Android APKs",
+  "command": "apktool d <file>",
+  "description": "apktool decodes an Android APK into near-original form: smali (disassembled Dalvik bytecode), resources, AndroidManifest.xml, and assets - then rebuilds and re-signs it. Core to static analysis and to patching apps (disable root/SSL-pinning checks, inject Frida gadget, change permissions) before reinstalling.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Mobile Security",
+  "subcategory": "Android Static Analysis",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "iBotPeaches/Apktool",
+  "tags": [
+    "apktool",
+    "android",
+    "apk",
+    "smali",
+    "mobile",
+    "reverse-engineering"
+  ],
+  "mitre": [
+    "T1587.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== DECODE ===\n  apktool d <file>                 # -> ./<appname>/ (smali, res, manifest)\n  apktool d <file> -o out -f       # custom dir, force overwrite\n  apktool d <file> -r              # don't decode resources (faster)\n\n=== INSPECT ===\n  cat out/AndroidManifest.xml      # permissions, exported components, debuggable\n  grep -rn 'http://' out/smali     # cleartext endpoints, secrets\n  ls out/smali*/                   # disassembled classes\n\n=== PATCH + REBUILD ===\n  # edit smali (e.g. force isRooted() to return 0, bypass pinning)\n  apktool b out -o patched.apk\n\n=== RE-SIGN (required to install) ===\n  keytool -genkey -v -keystore k.ks -alias a -keyalg RSA -validity 10000\n  apksigner sign --ks k.ks patched.apk\n  adb install -r patched.apk\n\n=== ALTERNATIVES ===\n  jadx           # read Java (not smali) - easier to understand\n  MobSF          # automated static+dynamic\n  frida          # runtime bypass without repackaging",
+  "examples": [
+    {
+      "label": "Decode an APK",
+      "command": "apktool d <file>"
+    },
+    {
+      "label": "Rebuild after smali edits",
+      "command": "apktool b out -o patched.apk"
+    }
+  ],
+  "references": [
+    {
+      "title": "Apktool",
+      "url": "https://apktool.org/"
+    },
+    {
+      "title": "Apktool GitHub",
+      "url": "https://github.com/iBotPeaches/Apktool"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "mobile-jadx",
+      "note": "jadx to read decompiled Java alongside smali.",
+      "rel": "next"
+    },
+    {
+      "id": "mobile-frida",
+      "note": "Frida to bypass checks at runtime instead of repackaging.",
+      "rel": "alternative"
+    },
+    {
+      "id": "mobile-mobsf",
+      "note": "MobSF for automated static triage of the APK.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "APKs are distributable archives of Dalvik bytecode and resources; apktool reverses the packaging deterministically. Without obfuscation or integrity checks, an attacker reads the app's logic/secrets and repackages it with security checks removed.",
+    "prerequisites": "A copy of the target APK (public on stores or pulled via adb).",
+    "impact": "Exposure of endpoints/keys, and the ability to redistribute a tampered app with root/pinning/license checks disabled.",
+    "detection": "Not detectable on the server side from static work alone; a repackaged app can be caught at runtime by integrity/signature checks reporting home.",
+    "artifacts": "None in the backend from static analysis; tampered-app telemetry appears only if the app performs attestation.",
+    "prevention": "Code obfuscation (R8/ProGuard, DexGuard); do not embed secrets in the APK; app signing + Play Integrity / SafetyNet attestation; tamper/root detection with server-side enforcement; certificate pinning; keep trust decisions server-side.",
+    "sources": [
+      "iBotPeaches/Apktool",
+      "https://apktool.org/"
+    ]
+  }
+}

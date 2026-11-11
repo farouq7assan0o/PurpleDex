@@ -1,0 +1,77 @@
+{
+  "id": "mobile-mobsf",
+  "name": "MobSF - Mobile Security Framework",
+  "command": "docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf",
+  "description": "MobSF (Mobile Security Framework) is an automated pen-testing platform for Android/iOS/Windows apps. Upload an APK/IPA for static analysis (manifest, permissions, secrets, insecure APIs, certificate issues) and optional dynamic analysis via an instrumented device, plus a REST API for CI. A fast first-pass triage of a mobile app's security posture.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Mobile Security",
+  "subcategory": "Automated Analysis",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "MobSF/Mobile-Security-Framework-MobSF",
+  "tags": [
+    "mobsf",
+    "mobile",
+    "android",
+    "ios",
+    "sast",
+    "automated",
+    "apk"
+  ],
+  "mitre": [
+    "T1595"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== RUN (Docker - easiest) ===\n  docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf\n  # browse http://localhost:8000 ; upload APK/IPA\n\n=== LOCAL INSTALL ===\n  git clone https://github.com/MobSF/Mobile-Security-Framework-MobSF\n  ./setup.sh ; ./run.sh\n\n=== STATIC ANALYSIS OUTPUT ===\n  - Manifest: exported components, debuggable, backup, permissions\n  - Hardcoded secrets / API keys / URLs\n  - Insecure crypto, cleartext traffic, weak TLS, pinning status\n  - CVSS-style security score + PDF report\n\n=== DYNAMIC ANALYSIS ===\n  # connect a rooted AVD / corellium; runs the app, captures traffic + runtime API misuse\n\n=== REST API (CI) ===\n  curl -F 'file=@app.apk' http://localhost:8000/api/v1/upload -H 'Authorization:<api_key>'\n  # then /api/v1/scan and /api/v1/report_json\n\n=== ALTERNATIVES ===\n  jadx + apktool (manual static)\n  frida/objection (manual dynamic)\n  QARK, AndroBugs",
+  "examples": [
+    {
+      "label": "Start MobSF via Docker",
+      "command": "docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf"
+    },
+    {
+      "label": "Upload an app via API",
+      "command": "curl -F 'file=@app.apk' http://localhost:8000/api/v1/upload -H 'Authorization:<api_key>'"
+    }
+  ],
+  "references": [
+    {
+      "title": "MobSF",
+      "url": "https://github.com/MobSF/Mobile-Security-Framework-MobSF"
+    },
+    {
+      "title": "MobSF docs",
+      "url": "https://mobsf.github.io/docs/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "mobile-jadx",
+      "note": "jadx to dig into code MobSF flags.",
+      "rel": "next"
+    },
+    {
+      "id": "mobile-frida",
+      "note": "Frida/objection to verify issues dynamically.",
+      "rel": "next"
+    },
+    {
+      "id": "mobile-apktool",
+      "note": "apktool for manual manifest/smali inspection.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "MobSF automates the same static/dynamic analysis an attacker does manually, systematically surfacing manifest misconfigurations, embedded secrets, and insecure API usage in a distributed app.",
+    "prerequisites": "A copy of the app (APK/IPA); a rooted device/emulator for dynamic analysis.",
+    "impact": "Rapid, comprehensive inventory of a mobile app's weaknesses (secrets, exported components, weak crypto, pinning gaps).",
+    "detection": "Not applicable to the backend from static analysis; dynamic runs look like normal app usage.",
+    "artifacts": "None server-side from static analysis.",
+    "prevention": "Shift-left: run MobSF (or equivalent SAST) in CI and fix findings before release; remove secrets, mark components non-exported, disable debuggable/backup, enforce TLS+pinning, and keep security logic server-side; attestation to detect tampered clients.",
+    "sources": [
+      "MobSF/Mobile-Security-Framework-MobSF",
+      "https://mobsf.github.io/docs/"
+    ]
+  }
+}

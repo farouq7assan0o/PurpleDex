@@ -8549,6 +8549,82 @@ const COMMAND_DATA = {
       "explain": "Probes retired API versions that skipped current security controls:\n  curl -s http://<target>/api/v0/<endpoint>   hit an old version path\n  -H \"Authorization: Bearer <jwt_token>\"     with your token\n  | jq                                       parse the response\nOld versions (v0, beta, legacy) often miss auth checks or expose deleted records (OWASP API9); loop 'for ver in v0 v1 v2 beta legacy internal' to find which endpoints still answer."
     },
     {
+      "id": "mobile-apktool",
+      "name": "apktool - Decompile / Rebuild Android APKs",
+      "command": "apktool d <file>",
+      "description": "apktool decodes an Android APK into near-original form: smali (disassembled Dalvik bytecode), resources, AndroidManifest.xml, and assets - then rebuilds and re-signs it. Core to static analysis and to patching apps (disable root/SSL-pinning checks, inject Frida gadget, change permissions) before reinstalling.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Mobile Security",
+      "subcategory": "Android Static Analysis",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "iBotPeaches/Apktool",
+      "tags": [
+        "apktool",
+        "android",
+        "apk",
+        "smali",
+        "mobile",
+        "reverse-engineering"
+      ],
+      "mitre": [
+        "T1587.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DECODE ===\n  apktool d <file>                 # -> ./<appname>/ (smali, res, manifest)\n  apktool d <file> -o out -f       # custom dir, force overwrite\n  apktool d <file> -r              # don't decode resources (faster)\n\n=== INSPECT ===\n  cat out/AndroidManifest.xml      # permissions, exported components, debuggable\n  grep -rn 'http://' out/smali     # cleartext endpoints, secrets\n  ls out/smali*/                   # disassembled classes\n\n=== PATCH + REBUILD ===\n  # edit smali (e.g. force isRooted() to return 0, bypass pinning)\n  apktool b out -o patched.apk\n\n=== RE-SIGN (required to install) ===\n  keytool -genkey -v -keystore k.ks -alias a -keyalg RSA -validity 10000\n  apksigner sign --ks k.ks patched.apk\n  adb install -r patched.apk\n\n=== ALTERNATIVES ===\n  jadx           # read Java (not smali) - easier to understand\n  MobSF          # automated static+dynamic\n  frida          # runtime bypass without repackaging",
+      "examples": [
+        {
+          "label": "Decode an APK",
+          "command": "apktool d <file>"
+        },
+        {
+          "label": "Rebuild after smali edits",
+          "command": "apktool b out -o patched.apk"
+        }
+      ],
+      "references": [
+        {
+          "title": "Apktool",
+          "url": "https://apktool.org/"
+        },
+        {
+          "title": "Apktool GitHub",
+          "url": "https://github.com/iBotPeaches/Apktool"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "mobile-jadx",
+          "note": "jadx to read decompiled Java alongside smali.",
+          "rel": "next"
+        },
+        {
+          "id": "mobile-frida",
+          "note": "Frida to bypass checks at runtime instead of repackaging.",
+          "rel": "alternative"
+        },
+        {
+          "id": "mobile-mobsf",
+          "note": "MobSF for automated static triage of the APK.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "APKs are distributable archives of Dalvik bytecode and resources; apktool reverses the packaging deterministically. Without obfuscation or integrity checks, an attacker reads the app's logic/secrets and repackages it with security checks removed.",
+        "prerequisites": "A copy of the target APK (public on stores or pulled via adb).",
+        "impact": "Exposure of endpoints/keys, and the ability to redistribute a tampered app with root/pinning/license checks disabled.",
+        "detection": "Not detectable on the server side from static work alone; a repackaged app can be caught at runtime by integrity/signature checks reporting home.",
+        "artifacts": "None in the backend from static analysis; tampered-app telemetry appears only if the app performs attestation.",
+        "prevention": "Code obfuscation (R8/ProGuard, DexGuard); do not embed secrets in the APK; app signing + Play Integrity / SafetyNet attestation; tamper/root detection with server-side enforcement; certificate pinning; keep trust decisions server-side.",
+        "sources": [
+          "iBotPeaches/Apktool",
+          "https://apktool.org/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -40646,6 +40722,82 @@ const COMMAND_DATA = {
       "explain": "Gets code execution on DotNetNuke with SuperUser/admin creds via the built-in SQL console:\n  sp_configure 'show advanced options','1'; RECONFIGURE;   unlock advanced settings\n  sp_configure 'xp_cmdshell','1'; RECONFIGURE;              enable the OS-command stored proc\n  xp_cmdshell 'whoami'                                     run commands as the SQL/IIS service account\nDNN's Settings > SQL console runs arbitrary T-SQL, so enabling xp_cmdshell yields RCE; from there upload nc/PrintSpoofer to escalate (creds are often pillaged from an exposed web.config)."
     },
     {
+      "id": "mobile-drozer",
+      "name": "drozer - Android Attack / IPC Assessment",
+      "command": "drozer console connect",
+      "description": "drozer is an Android security assessment framework that interacts with an app's exported IPC surface. Through an on-device agent it enumerates attack surface, invokes exported activities/services/broadcast receivers, queries content providers (SQL injection, path traversal), and tests for component-hijack and privilege issues - the go-to for Android IPC/component testing.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Mobile Security",
+      "subcategory": "Android Dynamic Analysis",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "WithSecureLabs/drozer",
+      "tags": [
+        "drozer",
+        "android",
+        "ipc",
+        "content-provider",
+        "exported-components",
+        "mobile"
+      ],
+      "mitre": [
+        "T1635",
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== SETUP ===\n  pip install drozer ; install drozer-agent.apk on the device\n  adb forward tcp:31415 tcp:31415\n  # open the agent, enable the embedded server, then:\n  drozer console connect\n\n=== ENUMERATE ATTACK SURFACE ===\n  run app.package.list -f <keyword>\n  run app.package.attacksurface <package>      # exported activities/providers/services/receivers\n  run app.package.manifest <package>\n\n=== ACTIVITIES / BROADCASTS ===\n  run app.activity.info -a <package>\n  run app.activity.start --component <package> <activity>   # launch exported activity\n  run app.broadcast.send --component <package> <receiver>\n\n=== CONTENT PROVIDERS (big wins) ===\n  run app.provider.info -a <package>\n  run app.provider.finduri <package>\n  run scanner.provider.injection -a <package>     # SQLi\n  run scanner.provider.traversal -a <package>     # path traversal\n  run app.provider.query content://<authority>/...\n\n=== ALTERNATIVES ===\n  adb am/pm + manual intents\n  frida/objection (runtime hooking)\n  MobSF (automated)",
+      "examples": [
+        {
+          "label": "Connect the console",
+          "command": "drozer console connect"
+        },
+        {
+          "label": "Map an app's attack surface",
+          "command": "run app.package.attacksurface <package>"
+        },
+        {
+          "label": "Test content providers for SQLi",
+          "command": "run scanner.provider.injection -a <package>"
+        }
+      ],
+      "references": [
+        {
+          "title": "drozer",
+          "url": "https://github.com/WithSecureLabs/drozer"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "mobile-jadx",
+          "note": "jadx to read the exported components drozer finds.",
+          "rel": "prereq"
+        },
+        {
+          "id": "mobile-frida",
+          "note": "Frida to hook logic reached via IPC.",
+          "rel": "next"
+        },
+        {
+          "id": "mobile-mobsf",
+          "note": "MobSF for automated component/manifest review.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Android apps expose IPC components (activities, services, receivers, content providers). If these are exported without permission checks or input validation, another app (or drozer) can invoke them, query providers, or inject SQL/paths to read data or trigger actions.",
+        "prerequisites": "A test device with the target app and the drozer agent installed.",
+        "impact": "Data leakage from content providers (SQLi/traversal), unauthorized invocation of internal functionality, and component-hijack leading to privilege or data compromise.",
+        "detection": "On-device only; the backend sees nothing unless the abused component calls server APIs abnormally. RASP can flag unexpected IPC callers.",
+        "artifacts": "None server-side; on-device, unusual intents to exported components and provider queries from foreign packages.",
+        "prevention": "Set android:exported=false for components not meant to be public; enforce signature/custom permissions on exported IPC; validate and parameterize content-provider queries; avoid storing sensitive data in providers; use grantUriPermission narrowly; minimize exported surface in the manifest.",
+        "sources": [
+          "WithSecureLabs/drozer"
+        ]
+      }
+    },
+    {
       "type": "script",
       "platform": "linux",
       "requires": [
@@ -51620,6 +51772,88 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Fast ICMP sweep to find live hosts on a subnet:\n  fping   parallel pinger\n  -a      show only alive hosts\n  -s      print summary stats\n  -g      generate the target list from the CIDR\n  -q      quiet (suppress per-host errors)\nGives a clean live-host list (tee it to a file) to feed straight into an nmap -iL service scan."
+    },
+    {
+      "id": "mobile-frida",
+      "name": "Frida - Dynamic Instrumentation Toolkit",
+      "command": "frida -U -f <target> -l <file>",
+      "description": "Frida injects a JavaScript engine into a running process (Android/iOS/desktop) to hook and rewrite functions at runtime. In mobile testing it bypasses root/jailbreak and SSL-pinning checks, dumps decrypted traffic and crypto keys, traces method calls, and manipulates app logic live - without repackaging the app.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Mobile Security",
+      "subcategory": "Dynamic Analysis",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "frida/frida",
+      "tags": [
+        "frida",
+        "mobile",
+        "android",
+        "ios",
+        "instrumentation",
+        "ssl-pinning",
+        "hooking"
+      ],
+      "mitre": [
+        "T1635",
+        "T1055"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== SETUP ===\n  pip install frida-tools\n  # push + run frida-server on a rooted device/emulator (matching arch/version):\n  adb push frida-server /data/local/tmp/ ; adb shell \"/data/local/tmp/frida-server &\"\n\n=== ENUMERATE ===\n  frida-ps -U            # processes on USB device\n  frida-ps -Uai          # installed apps + identifiers\n\n=== ATTACH / SPAWN ===\n  frida -U -f <target> -l <file>      # spawn app with a script (-f = package id)\n  frida -U <target>                   # attach to running app\n\n=== COMMON SCRIPTS ===\n  frida -U --codeshare pcipolloni/universal-android-ssl-pinning-bypass-with-frida -f <target>\n  frida-trace -U -f <target> -j '*!*crypt*'      # trace crypto methods\n\n=== HOOK EXAMPLE (ssl pinning / root) ===\n  Java.perform(function(){\n    var X = Java.use('javax.net.ssl.X509TrustManager');\n    // override checkServerTrusted to no-op ...\n  });\n\n=== ALTERNATIVES ===\n  objection      # Frida-powered, no-code runtime toolkit\n  apktool patch  # static pinning/root bypass\n  xposed/LSPosed # framework-level hooking",
+      "examples": [
+        {
+          "label": "List installed apps",
+          "command": "frida-ps -Uai"
+        },
+        {
+          "label": "Spawn app with a hook script",
+          "command": "frida -U -f <target> -l <file>"
+        },
+        {
+          "label": "Universal SSL-pinning bypass",
+          "command": "frida -U --codeshare pcipolloni/universal-android-ssl-pinning-bypass-with-frida -f <target>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Frida",
+          "url": "https://frida.re/"
+        },
+        {
+          "title": "Frida GitHub",
+          "url": "https://github.com/frida/frida"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "mobile-objection",
+          "note": "objection wraps Frida for common bypasses without scripting.",
+          "rel": "next"
+        },
+        {
+          "id": "mobile-apktool",
+          "note": "apktool for a static pinning/root bypass alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "mobile-jadx",
+          "note": "jadx to find the methods to hook.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Frida rewrites function behavior in the running process, so purely client-side checks (root/jailbreak detection, SSL pinning, license gates) can be neutralized at runtime even if the binary is obfuscated.",
+        "prerequisites": "A rooted/jailbroken device or emulator (or a repackaged app with a Frida gadget) and the target app installed.",
+        "impact": "Bypass of client-side security controls, interception of decrypted traffic/keys, and live manipulation of app logic.",
+        "detection": "On-device RASP can detect Frida (frida-server ports 27042/27043, injected threads, known library names, ptrace); backend can see anomalies (pinning-bypassed clients on unexpected networks, emulator fingerprints) if attestation is used.",
+        "artifacts": "Frida artifacts on-device (gum-js-loop thread, /data/local/tmp/frida-server, TCP 27042), integrity-attestation failures server-side.",
+        "prevention": "Runtime application self-protection (RASP) with Frida/debugger/emulator detection; Play Integrity / DeviceCheck/App Attest with server-side enforcement; defense-in-depth so no single client check is decisive; TLS pinning plus server-side auth; obfuscation to slow hook discovery.",
+        "sources": [
+          "frida/frida",
+          "https://frida.re/"
+        ]
+      }
     },
     {
       "id": "frp-reverse-proxy",
@@ -71135,6 +71369,77 @@ const COMMAND_DATA = {
         "detection": "Monitor for unauthorized iptables rule modifications (audit iptables commands via auditd). Legitimate use by admins is expected; alert on rule changes from unexpected users or processes."
       },
       "explain": "Measures exactly how many packets an nmap scan sends and receives:\n  iptables -I INPUT 1 -s <ip> -j ACCEPT   count inbound packets from the target (rule at position 1)\n  (plus an OUTPUT rule for outbound)\n  iptables -Z                              zero the counters before the scan\nRun the scan, then read the counter columns - lets you compare the noise/footprint of different scan types (-sS vs -sT, timing templates) precisely."
+    },
+    {
+      "id": "mobile-jadx",
+      "name": "jadx - Dex to Java Decompiler",
+      "command": "jadx <file>",
+      "description": "jadx decompiles Android Dalvik bytecode (APK/DEX/AAR) back to readable Java source with a GUI (jadx-gui) for navigation, search, and xrefs. The fastest way to understand an app's logic, find hardcoded secrets/URLs, locate auth and crypto, and map exported components.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Mobile Security",
+      "subcategory": "Android Static Analysis",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "skylot/jadx",
+      "tags": [
+        "jadx",
+        "android",
+        "decompiler",
+        "dex",
+        "mobile",
+        "reverse-engineering"
+      ],
+      "mitre": [
+        "T1587.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CLI ===\n  jadx <file>                      # decompile APK/DEX -> ./<name>/sources + resources\n  jadx -d out <file>               # output dir\n  jadx-gui <file>                  # interactive GUI (search, xrefs, deobf)\n\n=== HUNT IN jadx-gui ===\n  - Full-text search (Navigation > Text search): \"password\", \"http\", \"secret\", \"token\", \"AES\"\n  - Resources > AndroidManifest.xml: exported activities/services/receivers, deep links\n  - Resources > res/values/strings.xml: API keys, URLs\n  - Right-click > Find Usage for sinks (openConnection, getSharedPreferences)\n\n=== DEOBFUSCATE ===\n  jadx --deobf <file>              # rename obfuscated identifiers consistently\n\n=== ALTERNATIVES ===\n  apktool        # smali + resources (for patching)\n  bytecode-viewer / Ghidra\n  MobSF          # automated pipeline bundling jadx",
+      "examples": [
+        {
+          "label": "Decompile to Java",
+          "command": "jadx -d out <file>"
+        },
+        {
+          "label": "Open in the GUI",
+          "command": "jadx-gui <file>"
+        }
+      ],
+      "references": [
+        {
+          "title": "jadx",
+          "url": "https://github.com/skylot/jadx"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "mobile-apktool",
+          "note": "apktool when you need smali to patch and rebuild.",
+          "rel": "alternative"
+        },
+        {
+          "id": "mobile-mobsf",
+          "note": "MobSF automates jadx-style static analysis.",
+          "rel": "alternative"
+        },
+        {
+          "id": "mobile-frida",
+          "note": "Confirm findings dynamically with Frida hooks.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Dalvik bytecode retains type and method structure, so decompilers reconstruct readable Java. Any logic or secret shipped in the app is recoverable without running it.",
+        "prerequisites": "A copy of the APK/DEX.",
+        "impact": "Full understanding of client logic, discovery of hardcoded secrets/endpoints, and identification of weak client-side security controls.",
+        "detection": "Not detectable (offline decompilation of a distributed app).",
+        "artifacts": "None in the backend.",
+        "prevention": "Obfuscation (R8/ProGuard/DexGuard); remove secrets from the client; server-side enforcement of all security logic; string encryption and native code for sensitive routines; integrity attestation.",
+        "sources": [
+          "skylot/jadx"
+        ]
+      }
     },
     {
       "id": "js-deobfuscate",
@@ -98393,6 +98698,83 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "mobile-mobsf",
+      "name": "MobSF - Mobile Security Framework",
+      "command": "docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf",
+      "description": "MobSF (Mobile Security Framework) is an automated pen-testing platform for Android/iOS/Windows apps. Upload an APK/IPA for static analysis (manifest, permissions, secrets, insecure APIs, certificate issues) and optional dynamic analysis via an instrumented device, plus a REST API for CI. A fast first-pass triage of a mobile app's security posture.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Mobile Security",
+      "subcategory": "Automated Analysis",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "MobSF/Mobile-Security-Framework-MobSF",
+      "tags": [
+        "mobsf",
+        "mobile",
+        "android",
+        "ios",
+        "sast",
+        "automated",
+        "apk"
+      ],
+      "mitre": [
+        "T1595"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== RUN (Docker - easiest) ===\n  docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf\n  # browse http://localhost:8000 ; upload APK/IPA\n\n=== LOCAL INSTALL ===\n  git clone https://github.com/MobSF/Mobile-Security-Framework-MobSF\n  ./setup.sh ; ./run.sh\n\n=== STATIC ANALYSIS OUTPUT ===\n  - Manifest: exported components, debuggable, backup, permissions\n  - Hardcoded secrets / API keys / URLs\n  - Insecure crypto, cleartext traffic, weak TLS, pinning status\n  - CVSS-style security score + PDF report\n\n=== DYNAMIC ANALYSIS ===\n  # connect a rooted AVD / corellium; runs the app, captures traffic + runtime API misuse\n\n=== REST API (CI) ===\n  curl -F 'file=@app.apk' http://localhost:8000/api/v1/upload -H 'Authorization:<api_key>'\n  # then /api/v1/scan and /api/v1/report_json\n\n=== ALTERNATIVES ===\n  jadx + apktool (manual static)\n  frida/objection (manual dynamic)\n  QARK, AndroBugs",
+      "examples": [
+        {
+          "label": "Start MobSF via Docker",
+          "command": "docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf"
+        },
+        {
+          "label": "Upload an app via API",
+          "command": "curl -F 'file=@app.apk' http://localhost:8000/api/v1/upload -H 'Authorization:<api_key>'"
+        }
+      ],
+      "references": [
+        {
+          "title": "MobSF",
+          "url": "https://github.com/MobSF/Mobile-Security-Framework-MobSF"
+        },
+        {
+          "title": "MobSF docs",
+          "url": "https://mobsf.github.io/docs/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "mobile-jadx",
+          "note": "jadx to dig into code MobSF flags.",
+          "rel": "next"
+        },
+        {
+          "id": "mobile-frida",
+          "note": "Frida/objection to verify issues dynamically.",
+          "rel": "next"
+        },
+        {
+          "id": "mobile-apktool",
+          "note": "apktool for manual manifest/smali inspection.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "MobSF automates the same static/dynamic analysis an attacker does manually, systematically surfacing manifest misconfigurations, embedded secrets, and insecure API usage in a distributed app.",
+        "prerequisites": "A copy of the app (APK/IPA); a rooted device/emulator for dynamic analysis.",
+        "impact": "Rapid, comprehensive inventory of a mobile app's weaknesses (secrets, exported components, weak crypto, pinning gaps).",
+        "detection": "Not applicable to the backend from static analysis; dynamic runs look like normal app usage.",
+        "artifacts": "None server-side from static analysis.",
+        "prevention": "Shift-left: run MobSF (or equivalent SAST) in CI and fix findings before release; remove secrets, mark components non-exported, disable debuggable/backup, enforce TLS+pinning, and keep security logic server-side; attestation to detect tampered clients.",
+        "sources": [
+          "MobSF/Mobile-Security-Framework-MobSF",
+          "https://mobsf.github.io/docs/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -110947,6 +111329,83 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Collects AD ACL data with SharpHound so BloodHound can find abusable object rights:\n  SharpHound.exe            the collector\n  -c All                   collect all methods (ACLs, sessions, group membership, etc.)\n  --zipfilename bh_output   name the output zip\nImport into BloodHound to spot GenericAll/GenericWrite/WriteDACL/WriteOwner over privileged objects; each maps to an abuse (reset password, add to group, grant DCSync). Detect the abuse via Events 4738/4724."
+    },
+    {
+      "id": "mobile-objection",
+      "name": "objection - Runtime Mobile Exploration (Frida)",
+      "command": "objection -g <target> explore",
+      "description": "objection is a Frida-powered, no-code runtime toolkit for Android and iOS. From an interactive REPL it bypasses SSL pinning and root/jailbreak detection, dumps keychain/keystore and memory, lists classes/methods, patches activities, and explores the filesystem - all without writing Frida scripts or repackaging.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Mobile Security",
+      "subcategory": "Dynamic Analysis",
+      "certifications": [],
+      "primary_cert": "",
+      "source": "sensepost/objection",
+      "tags": [
+        "objection",
+        "frida",
+        "mobile",
+        "android",
+        "ios",
+        "ssl-pinning",
+        "runtime"
+      ],
+      "mitre": [
+        "T1635",
+        "T1555"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL (needs frida-server running) ===\n  pip install objection\n\n=== START A SESSION ===\n  objection -g <target> explore          # -g = package id / bundle id\n\n=== INSIDE THE REPL ===\n  android sslpinning disable             # kill cert pinning\n  android root disable                   # bypass root detection\n  ios sslpinning disable\n  ios jailbreak disable\n  android keystore list\n  ios keychain dump\n  memory search '<pattern>' --string\n  android hooking list classes\n  android hooking search methods <keyword>\n  android hooking watch class_method <method> --dump-args --dump-return\n  env                                    # app directories\n  file download <remote> <local>\n\n=== PATCH AN APK WITH THE GADGET (no root) ===\n  objection patchapk -s <file>           # injects frida-gadget, re-signs\n\n=== ALTERNATIVES ===\n  frida (raw scripts)     # more control\n  MobSF dynamic analyzer\n  apktool static patching",
+      "examples": [
+        {
+          "label": "Explore an app",
+          "command": "objection -g <target> explore"
+        },
+        {
+          "label": "Disable SSL pinning (in REPL)",
+          "command": "android sslpinning disable"
+        },
+        {
+          "label": "Patch an APK with the Frida gadget",
+          "command": "objection patchapk -s <file>"
+        }
+      ],
+      "references": [
+        {
+          "title": "objection",
+          "url": "https://github.com/sensepost/objection"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "mobile-frida",
+          "note": "objection is built on Frida; drop to raw scripts for control.",
+          "rel": "prereq"
+        },
+        {
+          "id": "mobile-apktool",
+          "note": "apktool for manual static bypasses.",
+          "rel": "alternative"
+        },
+        {
+          "id": "mobile-mobsf",
+          "note": "MobSF for a broader automated assessment.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "objection drives Frida to override client-side security methods at runtime, so pinning, root/jailbreak detection, and keystore protections implemented only on the client are defeated with prebuilt commands.",
+        "prerequisites": "A rooted/jailbroken device (or an app patched with the Frida gadget) and the app installed.",
+        "impact": "Traffic interception, secret/keychain extraction, and manipulation of client-side controls without any scripting.",
+        "detection": "Same as Frida: on-device RASP detects frida-gadget/server and hooking; server-side attestation flags tampered or hooked clients.",
+        "artifacts": "frida-gadget library in a repackaged app, on-device Frida indicators, attestation failures.",
+        "prevention": "RASP with hook/Frida detection; Play Integrity/App Attest enforced server-side; never rely solely on client checks; encrypt and server-gate sensitive data; detect re-signed/debuggable builds.",
+        "sources": [
+          "sensepost/objection"
+        ]
+      }
     },
     {
       "id": "office-macro-payload",
@@ -194640,8 +195099,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1109,
-  "buildDate": "2026-11-11T12:32:20.648Z",
+  "totalCommands": 1115,
+  "buildDate": "2026-11-11T12:34:48.240Z",
   "certifications": [
     "CDSA",
     "CPTS",

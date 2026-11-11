@@ -1,0 +1,71 @@
+{
+  "id": "mobile-jadx",
+  "name": "jadx - Dex to Java Decompiler",
+  "command": "jadx <file>",
+  "description": "jadx decompiles Android Dalvik bytecode (APK/DEX/AAR) back to readable Java source with a GUI (jadx-gui) for navigation, search, and xrefs. The fastest way to understand an app's logic, find hardcoded secrets/URLs, locate auth and crypto, and map exported components.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Mobile Security",
+  "subcategory": "Android Static Analysis",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "skylot/jadx",
+  "tags": [
+    "jadx",
+    "android",
+    "decompiler",
+    "dex",
+    "mobile",
+    "reverse-engineering"
+  ],
+  "mitre": [
+    "T1587.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CLI ===\n  jadx <file>                      # decompile APK/DEX -> ./<name>/sources + resources\n  jadx -d out <file>               # output dir\n  jadx-gui <file>                  # interactive GUI (search, xrefs, deobf)\n\n=== HUNT IN jadx-gui ===\n  - Full-text search (Navigation > Text search): \"password\", \"http\", \"secret\", \"token\", \"AES\"\n  - Resources > AndroidManifest.xml: exported activities/services/receivers, deep links\n  - Resources > res/values/strings.xml: API keys, URLs\n  - Right-click > Find Usage for sinks (openConnection, getSharedPreferences)\n\n=== DEOBFUSCATE ===\n  jadx --deobf <file>              # rename obfuscated identifiers consistently\n\n=== ALTERNATIVES ===\n  apktool        # smali + resources (for patching)\n  bytecode-viewer / Ghidra\n  MobSF          # automated pipeline bundling jadx",
+  "examples": [
+    {
+      "label": "Decompile to Java",
+      "command": "jadx -d out <file>"
+    },
+    {
+      "label": "Open in the GUI",
+      "command": "jadx-gui <file>"
+    }
+  ],
+  "references": [
+    {
+      "title": "jadx",
+      "url": "https://github.com/skylot/jadx"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "mobile-apktool",
+      "note": "apktool when you need smali to patch and rebuild.",
+      "rel": "alternative"
+    },
+    {
+      "id": "mobile-mobsf",
+      "note": "MobSF automates jadx-style static analysis.",
+      "rel": "alternative"
+    },
+    {
+      "id": "mobile-frida",
+      "note": "Confirm findings dynamically with Frida hooks.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Dalvik bytecode retains type and method structure, so decompilers reconstruct readable Java. Any logic or secret shipped in the app is recoverable without running it.",
+    "prerequisites": "A copy of the APK/DEX.",
+    "impact": "Full understanding of client logic, discovery of hardcoded secrets/endpoints, and identification of weak client-side security controls.",
+    "detection": "Not detectable (offline decompilation of a distributed app).",
+    "artifacts": "None in the backend.",
+    "prevention": "Obfuscation (R8/ProGuard/DexGuard); remove secrets from the client; server-side enforcement of all security logic; string encryption and native code for sensitive routines; integrity attestation.",
+    "sources": [
+      "skylot/jadx"
+    ]
+  }
+}

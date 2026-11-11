@@ -1,0 +1,77 @@
+{
+  "id": "mobile-objection",
+  "name": "objection - Runtime Mobile Exploration (Frida)",
+  "command": "objection -g <target> explore",
+  "description": "objection is a Frida-powered, no-code runtime toolkit for Android and iOS. From an interactive REPL it bypasses SSL pinning and root/jailbreak detection, dumps keychain/keystore and memory, lists classes/methods, patches activities, and explores the filesystem - all without writing Frida scripts or repackaging.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Mobile Security",
+  "subcategory": "Dynamic Analysis",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "sensepost/objection",
+  "tags": [
+    "objection",
+    "frida",
+    "mobile",
+    "android",
+    "ios",
+    "ssl-pinning",
+    "runtime"
+  ],
+  "mitre": [
+    "T1635",
+    "T1555"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL (needs frida-server running) ===\n  pip install objection\n\n=== START A SESSION ===\n  objection -g <target> explore          # -g = package id / bundle id\n\n=== INSIDE THE REPL ===\n  android sslpinning disable             # kill cert pinning\n  android root disable                   # bypass root detection\n  ios sslpinning disable\n  ios jailbreak disable\n  android keystore list\n  ios keychain dump\n  memory search '<pattern>' --string\n  android hooking list classes\n  android hooking search methods <keyword>\n  android hooking watch class_method <method> --dump-args --dump-return\n  env                                    # app directories\n  file download <remote> <local>\n\n=== PATCH AN APK WITH THE GADGET (no root) ===\n  objection patchapk -s <file>           # injects frida-gadget, re-signs\n\n=== ALTERNATIVES ===\n  frida (raw scripts)     # more control\n  MobSF dynamic analyzer\n  apktool static patching",
+  "examples": [
+    {
+      "label": "Explore an app",
+      "command": "objection -g <target> explore"
+    },
+    {
+      "label": "Disable SSL pinning (in REPL)",
+      "command": "android sslpinning disable"
+    },
+    {
+      "label": "Patch an APK with the Frida gadget",
+      "command": "objection patchapk -s <file>"
+    }
+  ],
+  "references": [
+    {
+      "title": "objection",
+      "url": "https://github.com/sensepost/objection"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "mobile-frida",
+      "note": "objection is built on Frida; drop to raw scripts for control.",
+      "rel": "prereq"
+    },
+    {
+      "id": "mobile-apktool",
+      "note": "apktool for manual static bypasses.",
+      "rel": "alternative"
+    },
+    {
+      "id": "mobile-mobsf",
+      "note": "MobSF for a broader automated assessment.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "objection drives Frida to override client-side security methods at runtime, so pinning, root/jailbreak detection, and keystore protections implemented only on the client are defeated with prebuilt commands.",
+    "prerequisites": "A rooted/jailbroken device (or an app patched with the Frida gadget) and the app installed.",
+    "impact": "Traffic interception, secret/keychain extraction, and manipulation of client-side controls without any scripting.",
+    "detection": "Same as Frida: on-device RASP detects frida-gadget/server and hooking; server-side attestation flags tampered or hooked clients.",
+    "artifacts": "frida-gadget library in a repackaged app, on-device Frida indicators, attestation failures.",
+    "prevention": "RASP with hook/Frida detection; Play Integrity/App Attest enforced server-side; never rely solely on client checks; encrypt and server-gate sensitive data; detect re-signed/debuggable builds.",
+    "sources": [
+      "sensepost/objection"
+    ]
+  }
+}

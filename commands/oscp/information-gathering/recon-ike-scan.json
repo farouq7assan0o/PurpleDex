@@ -1,0 +1,84 @@
+{
+  "id": "recon-ike-scan",
+  "name": "ike-scan - IPsec VPN Discovery & PSK Capture",
+  "command": "ike-scan -M <target>",
+  "description": "ike-scan discovers and fingerprints IPsec VPN gateways (IKE/ISAKMP on UDP 500) and can capture the aggressive-mode PSK hash for offline cracking. It identifies the VPN vendor from handshake behavior and detects aggressive mode, a classic misconfiguration that leaks a crackable pre-shared key. A core step when a UDP 500 service is found.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Information Gathering",
+  "subcategory": "Service Enumeration",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "royhills/ike-scan",
+  "tags": [
+    "ike-scan",
+    "ipsec",
+    "vpn",
+    "isakmp",
+    "udp-500",
+    "aggressive-mode",
+    "psk"
+  ],
+  "mitre": [
+    "T1046",
+    "T1110.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== DISCOVER / FINGERPRINT (main mode) ===\n  ike-scan -M <target>\n  ike-scan -M <target> --showbackoff   # vendor fingerprint via backoff pattern\n\n=== DETECT AGGRESSIVE MODE (the win) ===\n  ike-scan -M -A <target>\n  # If it responds, aggressive mode is enabled -> PSK hash is exposed\n\n=== CAPTURE THE PSK HASH FOR CRACKING ===\n  ike-scan -M -A --pskcrack=psk.txt <target>\n  ike-scan -M -A --id=<group_id> --pskcrack=psk.txt <target>\n\n=== CRACK THE PSK OFFLINE ===\n  psk-crack -d /usr/share/wordlists/rockyou.txt psk.txt\n  psk-crack -b 5 psk.txt           # brute force length 5\n  # or convert and use hashcat -m 5300 (IKE-PSK MD5) / 5400 (SHA1)\n\n=== ENUMERATE VALID GROUP NAMES (ID) ===\n  for id in $(cat groups.txt); do ike-scan -M -A --id=$id <target>; done\n\n=== CHECK THE PORT FIRST ===\n  nmap -sU -p500 <target>\n\n=== AFTER CRACKING PSK ===\n  # Use the PSK + a known username to connect (xauth) and pivot into the VPN\n\n=== ALTERNATIVES ===\n  nmap --script ike-version\n  strongSwan / openswan client to connect once PSK is known",
+  "examples": [
+    {
+      "label": "Fingerprint VPN gateway",
+      "command": "ike-scan -M --showbackoff 10.10.10.10"
+    },
+    {
+      "label": "Detect aggressive mode + grab PSK",
+      "command": "ike-scan -M -A --pskcrack=psk.txt 10.10.10.10"
+    },
+    {
+      "label": "Crack captured PSK",
+      "command": "psk-crack -d /usr/share/wordlists/rockyou.txt psk.txt"
+    }
+  ],
+  "references": [
+    {
+      "title": "ike-scan",
+      "url": "https://github.com/royhills/ike-scan"
+    },
+    {
+      "title": "MITRE T1046 - Network Service Discovery",
+      "url": "https://attack.mitre.org/techniques/T1046/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gs-nmap-service-scan",
+      "note": "Find UDP 500 / the VPN service first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "gs-vpn-connect",
+      "note": "Connect to the VPN once the PSK is cracked.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "IKE aggressive mode sends a hash of the pre-shared key in the initial exchange before authentication completes, letting any client capture it for offline cracking. ike-scan also fingerprints vendors from timing/backoff behavior.",
+    "prerequisites": "Reachable IKE/ISAKMP service (UDP 500); aggressive mode enabled for PSK capture.",
+    "impact": "Recovery of the VPN pre-shared key, enabling VPN access and internal network pivoting.",
+    "detection": "[MITRE T1046/T1110.002] IKE main+aggressive mode probes from one source; many ISAKMP requests with varying group IDs; UDP 500 scanning.",
+    "artifacts": "VPN gateway logs of aggressive-mode negotiations from unexpected IPs; IKE probe bursts.",
+    "splunk_spl": "index=network dest_port=500 transport=udp\n| stats count by src_ip, dest_ip\n| where count > 10",
+    "elastic_kql": "destination.port:500 and network.transport:udp",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 500 and Protocol == \"Udp\"\n| summarize count() by RemoteIP, DeviceName, bin(Timestamp, 10m)\n| where count_ > 10",
+    "sigma_rules": "net_ike_aggressive_mode_scan",
+    "prevention": "Disable IKE aggressive mode (use main mode); use certificate auth instead of PSK; strong/long PSKs if unavoidable; restrict VPN endpoints by source; monitor ISAKMP negotiation anomalies; prefer IKEv2.",
+    "sources": [
+      "royhills/ike-scan",
+      "https://attack.mitre.org/techniques/T1046/"
+    ]
+  }
+}

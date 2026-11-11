@@ -12319,6 +12319,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "web-spring4shell",
+          "name": "Spring4Shell classLoader binding exploitation",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "nginx"
+        },
+        {
           "card_id": "sqli-auth-bypass",
           "name": "SQLi - Authentication Bypass - Sentinel",
           "platform": "sentinel",
@@ -14471,6 +14478,7 @@
         "linux-audit",
         "ndr",
         "linux-syslog",
+        "nginx",
         "network-flow"
       ],
       "best_fidelity": "behavioral"
@@ -34153,6 +34161,127 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1606.002": {
+      "detections": [
+        {
+          "card_id": "cloud-golden-saml",
+          "name": "Federated logon without matching AD FS sign-in (Golden SAML)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "entra-id"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1552.004": {
+      "detections": [
+        {
+          "card_id": "cloud-golden-saml",
+          "name": "Federated logon without matching AD FS sign-in (Golden SAML)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
+          "card_id": "crtp-mimikatz-cert-export",
+          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "crtp-mimikatz-cert-export",
+          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-mimikatz-cert-export",
+          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-mimikatz-cert-export",
+          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (3) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "crtp-mimikatz-cert-export",
+          "name": "proc_creation_win_hktl_mimikatz_command_line",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-mimikatz-cert-export",
+          "name": "win_capi2_private_key_export",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-mimikatz-cert-export",
+          "name": "Mimikatz Certificate Theft (cryptocapi  cryptocng) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "gs-ssh-key-abuse",
+          "name": "Privilege Escalation - SSH Key Abuse - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-ssh-key-abuse",
+          "name": "Privilege Escalation - SSH Key Abuse - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-ssh-key-abuse",
+          "name": "lnx_auditd_ssh_private_key_access",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gs-ssh-key-abuse",
+          "name": "Privilege Escalation - SSH Key Abuse - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "entra-id",
+        "powershell",
+        "windows-security",
+        "sysmon",
+        "linux-audit",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1136.001": {
       "detections": [
         {
@@ -36811,101 +36940,6 @@
         "sysmon",
         "edr",
         "powershell"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1552.004": {
-      "detections": [
-        {
-          "card_id": "crtp-mimikatz-cert-export",
-          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "crtp-mimikatz-cert-export",
-          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-mimikatz-cert-export",
-          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-mimikatz-cert-export",
-          "name": "Mimikatz Certificate Theft (crypto::capi / crypto::cng) (3) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "crtp-mimikatz-cert-export",
-          "name": "proc_creation_win_hktl_mimikatz_command_line",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-mimikatz-cert-export",
-          "name": "win_capi2_private_key_export",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-mimikatz-cert-export",
-          "name": "Mimikatz Certificate Theft (cryptocapi  cryptocng) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "gs-ssh-key-abuse",
-          "name": "Privilege Escalation - SSH Key Abuse - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-ssh-key-abuse",
-          "name": "Privilege Escalation - SSH Key Abuse - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-ssh-key-abuse",
-          "name": "lnx_auditd_ssh_private_key_access",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gs-ssh-key-abuse",
-          "name": "Privilege Escalation - SSH Key Abuse - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "powershell",
-        "windows-security",
-        "sysmon",
-        "linux-audit",
-        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -40657,12 +40691,17 @@
       "T1505.003"
     ],
     "entra-id": [
-      "T1110.003"
+      "T1110.003",
+      "T1606.002",
+      "T1552.004"
     ],
     "linux-auth": [
       "T1110.001"
+    ],
+    "nginx": [
+      "T1190"
     ]
   },
-  "cards_with_detections": 887,
-  "total_detections": 3801
+  "cards_with_detections": 889,
+  "total_detections": 3803
 }

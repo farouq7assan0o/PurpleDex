@@ -1,0 +1,84 @@
+{
+  "id": "recon-trufflehog",
+  "name": "TruffleHog / Gitleaks - Secret Scanning in Repos & Files",
+  "command": "trufflehog git https://github.com/<org>/<repo>",
+  "description": "TruffleHog and Gitleaks scan git history, filesystems, S3 buckets, and CI logs for leaked secrets: API keys, cloud credentials, private keys, tokens, and passwords. TruffleHog additionally verifies found credentials against live services. Essential recon against exposed .git directories, public repos, and dumped source for instant credential access.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Information Gathering",
+  "subcategory": "Credential Discovery",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "trufflesecurity/trufflehog; gitleaks/gitleaks",
+  "tags": [
+    "trufflehog",
+    "gitleaks",
+    "secrets",
+    "credentials",
+    "git",
+    "api-keys",
+    "recon"
+  ],
+  "mitre": [
+    "T1552.001",
+    "T1552.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== TRUFFLEHOG - SCAN A REMOTE REPO ===\n  trufflehog git https://github.com/<org>/<repo>\n  trufflehog git https://github.com/<org>/<repo> --only-verified   # live-verified creds only\n\n=== TRUFFLEHOG - LOCAL / FILESYSTEM / DUMPED .git ===\n  trufflehog git file://./repo\n  trufflehog filesystem /path/to/source\n  trufflehog filesystem /var/www --only-verified\n\n=== TRUFFLEHOG - CLOUD & CI ===\n  trufflehog s3 --bucket=<bucket>\n  trufflehog github --org=<org> --only-verified\n\n=== GITLEAKS - SCAN GIT HISTORY ===\n  gitleaks detect --source . -v\n  gitleaks detect --source . --report-path leaks.json\n  gitleaks detect --source . --log-opts=\"--all\"   # full history\n\n=== TYPICAL WORKFLOW ===\n  # 1. Find exposed .git (git-dumper) or clone target repo\n  # 2. Scan ALL history (secrets are often in old/deleted commits)\n  # 3. Verify + use any live cloud keys / API tokens immediately\n\n=== HIGH-VALUE FINDS ===\n  AWS AKIA keys, GCP service-account JSON, Azure client secrets,\n  private SSH keys, DB connection strings, Slack/GitHub tokens, JWTs\n\n=== ALTERNATIVES ===\n  git-secrets, detect-secrets, semgrep secrets rules\n  manual: git log -p | grep -iE \"password|secret|api[_-]?key|token\"",
+  "examples": [
+    {
+      "label": "Scan remote repo (verified only)",
+      "command": "trufflehog git https://github.com/acme/app --only-verified"
+    },
+    {
+      "label": "Scan dumped source filesystem",
+      "command": "trufflehog filesystem /var/www --only-verified"
+    },
+    {
+      "label": "Gitleaks full history scan",
+      "command": "gitleaks detect --source . --log-opts=\"--all\" -v"
+    }
+  ],
+  "references": [
+    {
+      "title": "TruffleHog",
+      "url": "https://github.com/trufflesecurity/trufflehog"
+    },
+    {
+      "title": "Gitleaks",
+      "url": "https://github.com/gitleaks/gitleaks"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "git-dumper-exposed-git",
+      "note": "Dump an exposed .git dir, then scan it for secrets.",
+      "rel": "prereq"
+    },
+    {
+      "id": "aws-s3-git-secrets",
+      "note": "Hunt secrets in exposed S3/git artifacts.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Secrets committed to version control persist in history even after deletion. These scanners pattern-match (and optionally verify) known credential formats across all commits and files.",
+    "prerequisites": "Access to a repo, git history, filesystem, or bucket to scan.",
+    "impact": "Immediate recovery of live cloud/API credentials enabling direct access or escalation.",
+    "detection": "[MITRE T1552.001] Largely offline against attacker-held copies. Server-side: verification attempts of found creds (sudden API calls testing keys); cloning/scraping of repos.",
+    "artifacts": "trufflehog/gitleaks on the attacker host; credential-verification hits in service logs if --only-verified is used.",
+    "splunk_spl": "index=cloudtrail eventName=GetCallerIdentity\n| stats count by sourceIPAddress, userIdentity.accessKeyId\n| where count > 5",
+    "elastic_kql": "event.action:\"GetCallerIdentity\" and source.ip:*",
+    "sentinel_kql": "AWSCloudTrail\n| where EventName == \"GetCallerIdentity\"\n| summarize count() by SourceIpAddress, bin(TimeGenerated, 5m)\n| where count_ > 5",
+    "sigma_rules": "cloud_leaked_credential_verification",
+    "prevention": "Pre-commit secret scanning (gitleaks hook); rotate any committed secret and purge history; use short-lived credentials + secret managers; never commit keys; scan repos continuously; enable GitHub secret scanning/push protection.",
+    "sources": [
+      "trufflesecurity",
+      "https://attack.mitre.org/techniques/T1552/001/"
+    ]
+  }
+}

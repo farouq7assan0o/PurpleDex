@@ -1,0 +1,88 @@
+{
+  "id": "cdsa-m12-hayabusa",
+  "name": "Hayabusa - Sigma-Based Windows Event Log Threat Hunting",
+  "command": "hayabusa csv-timeline -d <evtx_dir> -o timeline.csv",
+  "description": "Hayabusa is a fast Windows event log (EVTX) threat-hunting and forensics timeline generator. It applies a large built-in Sigma ruleset to .evtx files to flag attacker techniques - credential dumping, lateral movement, persistence, defense evasion - producing a prioritized, colorized timeline. A core blue-team tool for rapid triage of collected Windows logs.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Blue Team",
+  "subcategory": "Log Analysis",
+  "certifications": [
+    "CDSA"
+  ],
+  "primary_cert": "CDSA",
+  "source": "Yamato-Security/hayabusa",
+  "tags": [
+    "hayabusa",
+    "evtx",
+    "sigma",
+    "threat-hunting",
+    "timeline",
+    "dfir",
+    "blue-team"
+  ],
+  "mitre": [
+    "T1059",
+    "T1003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== GENERATE A DETECTION TIMELINE ===\n  hayabusa.exe csv-timeline -d C:\\evtx_logs -o timeline.csv\n  # Single file:\n  hayabusa.exe csv-timeline -f Security.evtx -o out.csv\n\n=== LIVE ANALYSIS (local machine logs) ===\n  hayabusa.exe csv-timeline -l -o live.csv\n\n=== SUMMARY DASHBOARD ===\n  hayabusa.exe metrics -d C:\\evtx_logs       # event-ID frequency\n  hayabusa.exe logon-summary -d C:\\evtx_logs # logon stats (brute/spray)\n  hayabusa.exe pivot-keywords-list -d C:\\evtx_logs  # pivot indicators\n\n=== TUNE SEVERITY / RULES ===\n  hayabusa.exe csv-timeline -d logs -m high,critical   # only high+crit\n  hayabusa.exe update-rules                             # refresh Sigma rules\n\n=== JSON / OTHER OUTPUT ===\n  hayabusa.exe json-timeline -d logs -o timeline.json\n\n=== WORKFLOW (DFIR triage) ===\n  # 1. Collect .evtx (KAPE / velociraptor / manual)\n  # 2. hayabusa csv-timeline -> open in Timeline Explorer\n  # 3. Filter critical/high, pivot on accounts + hosts + times\n  # 4. Correlate with Sigma/YARA findings\n\n=== ALTERNATIVES ===\n  Chainsaw      # similar Sigma-over-EVTX hunting\n  EvtxECmd      # EVTX to CSV (no detection logic)\n  Sigma + SIEM  # rules applied in Splunk/Elastic/Sentinel",
+  "examples": [
+    {
+      "label": "Build detection timeline from EVTX dir",
+      "command": "hayabusa.exe csv-timeline -d C:\\evtx_logs -o timeline.csv"
+    },
+    {
+      "label": "High/critical only",
+      "command": "hayabusa.exe csv-timeline -d C:\\evtx_logs -m high,critical -o crit.csv"
+    },
+    {
+      "label": "Logon summary (spray/brute triage)",
+      "command": "hayabusa.exe logon-summary -d C:\\evtx_logs"
+    }
+  ],
+  "references": [
+    {
+      "title": "Hayabusa",
+      "url": "https://github.com/Yamato-Security/hayabusa"
+    },
+    {
+      "title": "MITRE ATT&CK",
+      "url": "https://attack.mitre.org/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cdsa-m12-sigma-rules",
+      "note": "Hayabusa applies Sigma rules to EVTX.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cdsa-m12-sigma-conversion",
+      "note": "Convert Sigma to other SIEM backends.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m13-disk-forensics",
+      "note": "Pair with disk forensics in DFIR triage.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Hayabusa is itself a defensive tool. It parses EVTX and matches Sigma detection logic to surface attacker behavior that is recorded in Windows event logs but easy to miss by hand.",
+    "prerequisites": "Collected .evtx files or live access to a Windows host; Hayabusa binary + rules.",
+    "impact": "Rapid identification of attacker activity (credential theft, lateral movement, persistence) during incident response.",
+    "detection": "This IS a detection tool - use it to detect. Ensure logging is configured so events exist to hunt: enable command-line auditing, PowerShell script-block logging, Sysmon.",
+    "artifacts": "N/A (defensive). Output timelines feed further investigation.",
+    "splunk_spl": "N/A - Hayabusa is an offline EVTX analysis tool; port its Sigma hits into Splunk for continuous detection",
+    "elastic_kql": "N/A - defensive analysis tool",
+    "sentinel_kql": "N/A - defensive analysis tool",
+    "sigma_rules": "Uses the upstream Sigma ruleset (hayabusa-rules) against EVTX",
+    "prevention": "Maximize log fidelity (Sysmon, command-line + script-block auditing, sufficient log retention); centralize EVTX collection; run Hayabusa/Chainsaw as part of IR runbooks and periodic threat hunts.",
+    "sources": [
+      "Yamato-Security",
+      "https://attack.mitre.org/"
+    ]
+  }
+}

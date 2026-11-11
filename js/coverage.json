@@ -3643,6 +3643,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "seatbelt-enum",
+          "name": "Seatbelt host enumeration",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "winpe-protections-enum",
           "name": "WinPE - Enumerate Defender and AppLocker - Sentinel",
           "platform": "sentinel",
@@ -3680,7 +3687,8 @@
       "data_sources": [
         "powershell",
         "windows-security",
-        "edr"
+        "edr",
+        "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
     },
@@ -5153,6 +5161,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "ad-ms14-068-goldenpac",
+          "name": "Unexpected privileged logon following Kerberos ticket (MS14-068)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
         },
         {
           "card_id": "ad-nopac-exploit",
@@ -18117,6 +18132,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-ms14-068-goldenpac",
+          "name": "Unexpected privileged logon following Kerberos ticket (MS14-068)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ms16-032",
           "name": "MS16-032 - Secondary Logon EoP - Sentinel",
           "platform": "sentinel",
@@ -29011,6 +29033,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "linux-linpeas",
+          "name": "Mass local enumeration (LinPEAS-style)",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
           "card_id": "crtp-powerview-file-hunting",
           "name": "PowerView Interesting File & Share ACL Hunting - Sentinel",
           "platform": "sentinel",
@@ -29137,6 +29166,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "winpeas-enum",
+          "name": "WinPEAS / privesc enumeration execution",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "xslt-injection",
           "name": "XSLT Injection - Fingerprint + File Read + RCE - Sentinel",
           "platform": "sentinel",
@@ -29178,7 +29214,8 @@
         "linux-audit",
         "edr",
         "powershell",
-        "sysmon"
+        "sysmon",
+        "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
     },
@@ -35519,6 +35556,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "linux-linpeas",
+          "name": "Mass local enumeration (LinPEAS-style)",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
           "card_id": "privesc-privesccheck",
           "name": "PrivescCheck or privilege escalation enumeration script",
           "platform": "sentinel",
@@ -35594,6 +35638,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "powershell"
+        },
+        {
+          "card_id": "seatbelt-enum",
+          "name": "Seatbelt host enumeration",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
         },
         {
           "card_id": "snmpwalk-windows-oids",
@@ -35706,6 +35757,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "winpeas-enum",
+          "name": "WinPEAS / privesc enumeration execution",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
@@ -39957,6 +40015,7 @@
       "T1558.004",
       "T1558.001",
       "T1550.003",
+      "T1518.001",
       "T1543.003",
       "T1055",
       "T1055.001",
@@ -39979,7 +40038,8 @@
       "T1574.011",
       "T1566.001",
       "T1204.002",
-      "T1057"
+      "T1057",
+      "T1083"
     ],
     "sysmon": [
       "T1087.002",
@@ -40436,6 +40496,7 @@
       "T1610",
       "T1613",
       "T1528",
+      "T1082",
       "T1003.008",
       "T1087.002",
       "T1003",
@@ -40451,7 +40512,6 @@
       "T1018",
       "T1505.003",
       "T1574.007",
-      "T1082",
       "T1552.004",
       "T1548.003",
       "T1006",
@@ -40515,6 +40575,6 @@
       "T1110.001"
     ]
   },
-  "cards_with_detections": 876,
-  "total_detections": 3790
+  "cards_with_detections": 880,
+  "total_detections": 3794
 }

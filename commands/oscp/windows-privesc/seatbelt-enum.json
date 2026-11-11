@@ -1,0 +1,104 @@
+{
+  "id": "seatbelt-enum",
+  "name": "Seatbelt - Windows Host Situational Awareness",
+  "command": "Seatbelt.exe -group=all",
+  "description": "Seatbelt is a C# tool that gathers Windows \"safety checks\" for situational awareness from both offensive and defensive perspectives: tokens, UAC, LAPS, LSA settings, credential files, browser data, RDP sessions, PowerShell history, WEF/Sysmon config, AV/EDR presence, and more. Complements WinPEAS with cleaner, grouped, EDR-aware host triage.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Post-Exploitation",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "GhostPack/Seatbelt",
+  "tags": [
+    "seatbelt",
+    "ghostpack",
+    "enumeration",
+    "situational-awareness",
+    "windows",
+    "triage"
+  ],
+  "mitre": [
+    "T1082",
+    "T1518.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== RUN ALL CHECKS ===\n  Seatbelt.exe -group=all\n  Seatbelt.exe -group=all -full       # no truncation\n  Seatbelt.exe -group=all -outputfile=\"C:\\Windows\\Temp\\sb.txt\"\n\n=== CHECK GROUPS ===\n  Seatbelt.exe -group=user      # user context, creds, history\n  Seatbelt.exe -group=system    # system config, patches, services\n  Seatbelt.exe -group=remote    # remote/network (run before pivoting)\n  Seatbelt.exe -group=slack     # Slack/Teams creds\n  Seatbelt.exe -group=chromium  # browser data\n\n=== SPECIFIC CHECKS ===\n  Seatbelt.exe TokenPrivileges UAC LAPS LSASettings\n  Seatbelt.exe WindowsCredentialFiles CloudCredentials\n  Seatbelt.exe PowerShellHistory PuttySessions\n  Seatbelt.exe DotNet AMSIProviders Sysmon WindowsDefender   # evasion recon\n\n=== DEFENSIVE / BLUE USE ===\n  # Quickly audit a host for exposed creds + logging gaps\n  Seatbelt.exe -group=all -full\n\n=== ALTERNATIVES ===\n  WinPEAS      # broader privesc focus\n  PrivescCheck # PowerShell\n  SharpUp      # service misconfig exploitation",
+  "examples": [
+    {
+      "label": "All checks, full output to file",
+      "command": "Seatbelt.exe -group=all -full -outputfile=\"C:\\Windows\\Temp\\sb.txt\""
+    },
+    {
+      "label": "Evasion recon (AMSI/Sysmon/Defender)",
+      "command": "Seatbelt.exe DotNet AMSIProviders Sysmon WindowsDefender"
+    },
+    {
+      "label": "Hunt stored credentials",
+      "command": "Seatbelt.exe WindowsCredentialFiles CloudCredentials PuttySessions"
+    }
+  ],
+  "references": [
+    {
+      "title": "Seatbelt",
+      "url": "https://github.com/GhostPack/Seatbelt"
+    },
+    {
+      "title": "MITRE T1518.001 - Security Software Discovery",
+      "url": "https://attack.mitre.org/techniques/T1518/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "winpeas-enum",
+      "note": "WinPEAS for broader privesc vector coverage.",
+      "rel": "alternative"
+    },
+    {
+      "id": "privesc-privesccheck",
+      "note": "PrivescCheck is a stealthier PowerShell option.",
+      "rel": "alternative"
+    },
+    {
+      "id": "sharpup-audit",
+      "note": "Exploit service misconfigs after triage.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Seatbelt reads local configuration and credential-store locations via standard APIs. As a GhostPack C# tool it is often flagged by EDR, but unobfuscated reads of config/cred files succeed where not blocked.",
+    "prerequisites": "Shell on the target; .NET runtime; Seatbelt binary (or in-memory via C2).",
+    "impact": "Reveals stored credentials, privilege/UAC posture, and (critically) the host logging/EDR configuration enabling further evasion.",
+    "detection": "[MITRE T1082/T1518.001] Seatbelt binary/assembly signatures; reads of PowerShell history, PuTTY/WinSCP registry, browser cred stores; queries of Sysmon/Defender/AMSI configuration.",
+    "artifacts": "Seatbelt.exe or in-memory .NET assembly load (4104/CLR ETW); access to ConsoleHost_history.txt, cred vaults, AV config keys.",
+    "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*Seatbelt*\" OR CommandLine=\"*-group=all*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+    "elastic_kql": "process.name:*Seatbelt* or process.command_line:*-group=all*",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"Seatbelt\" or ProcessCommandLine has \"-group=all\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_seatbelt_situational_awareness",
+    "prevention": "Credential Guard; remove stored plaintext creds (PuTTY/WinSCP/cloud CLI); enable AMSI + script block logging (so in-memory loads are caught); EDR signatures for GhostPack; restrict .NET where feasible.",
+    "sources": [
+      "GhostPack",
+      "https://attack.mitre.org/techniques/T1518/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Seatbelt host enumeration",
+        "logic": "union DeviceProcessEvents, DeviceEvents\n| where FileName has \"Seatbelt\" or ProcessCommandLine has_any (\"-group=all\",\"AMSIProviders\",\"LSASettings\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1082",
+          "T1518.001"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Authorized security assessments",
+        "tuning": "Also detect in-memory execution via Script Block / CLR ETW when run through C2"
+      }
+    ]
+  }
+}

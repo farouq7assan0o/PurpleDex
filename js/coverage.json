@@ -294,6 +294,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-adcs-esc5-ca-object-acl",
+          "name": "Modification of PKI/NTAuth objects (ADCS ESC5)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "crtp-adminsdholder",
           "name": "AdminSDHolder Abuse (SDProp Persistence) - Sentinel",
           "platform": "sentinel",
@@ -4588,6 +4595,13 @@
         {
           "card_id": "ad-adcs-esc4-template-modify",
           "name": "ESC4 - Certificate template modification",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-adcs-esc5-ca-object-acl",
+          "name": "Modification of PKI/NTAuth objects (ADCS ESC5)",
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "windows-security"
@@ -12109,6 +12123,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "web-log4shell",
+          "name": "Log4Shell JNDI exploitation attempt",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "iis"
+        },
+        {
           "card_id": "msf-linux-webapp",
           "name": "Metasploit - Linux Web App Exploits - Sentinel",
           "platform": "sentinel",
@@ -19564,6 +19585,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "donut-shellcode",
+          "name": "In-memory reflective loading / injection (donut-style)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "evade-user-agent",
           "name": "Evasion - Custom User-Agent Download - Sentinel",
           "platform": "sentinel",
@@ -19969,6 +19997,13 @@
           "data_source": "cloud-trail"
         },
         {
+          "card_id": "cloud-azurehound",
+          "name": "Bulk Entra/Graph enumeration (AzureHound)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "azure-entra-enum",
           "name": "Entra ID (Azure AD) Enumeration via Microsoft Graph - Sentinel",
           "platform": "sentinel",
@@ -20041,6 +20076,7 @@
       "data_sources": [
         "cloud-trail",
         "windows-security",
+        "defender-endpoint",
         "azure-activity",
         "edr"
       ],
@@ -20215,6 +20251,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "ndr"
+        },
+        {
+          "card_id": "cloud-cloudfox",
+          "name": "AWS cross-service enumeration burst (CloudFox/Pacu)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
         },
         {
           "card_id": "cloud-enumerate-iam",
@@ -20703,6 +20746,13 @@
           "data_source": "cloud-trail"
         },
         {
+          "card_id": "cloud-azurehound",
+          "name": "Bulk Entra/Graph enumeration (AzureHound)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "azure-entra-enum",
           "name": "Entra ID (Azure AD) Enumeration via Microsoft Graph - Sentinel",
           "platform": "sentinel",
@@ -20768,6 +20818,7 @@
       "data_sources": [
         "cloud-trail",
         "windows-security",
+        "defender-endpoint",
         "azure-activity",
         "edr"
       ],
@@ -21827,6 +21878,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "azure-activity"
+        },
+        {
+          "card_id": "cloud-cloudfox",
+          "name": "AWS cross-service enumeration burst (CloudFox/Pacu)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
         },
         {
           "card_id": "azure-entra-enum",
@@ -26270,6 +26328,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "donut-shellcode",
+          "name": "In-memory reflective loading / injection (donut-style)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "crtp-loader",
           "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) - Sentinel",
           "platform": "sentinel",
@@ -26392,8 +26457,8 @@
         "windows-security",
         "sysmon",
         "edr",
-        "powershell",
-        "defender-endpoint"
+        "defender-endpoint",
+        "powershell"
       ],
       "best_fidelity": "behavioral"
     },
@@ -39967,6 +40032,8 @@
       "T1003.002",
       "T1195.001",
       "T1059.006",
+      "T1087.004",
+      "T1069.003",
       "T1003.003",
       "T1105",
       "T1027",
@@ -39992,6 +40059,7 @@
       "T1557.002",
       "T1574",
       "T1555.004",
+      "T1620",
       "T1098",
       "T1534",
       "T1087.003",
@@ -40041,7 +40109,6 @@
       "T1055",
       "T1055.001",
       "T1134.004",
-      "T1620",
       "T1021.002",
       "T1087",
       "T1087.001",
@@ -40596,6 +40663,6 @@
       "T1110.001"
     ]
   },
-  "cards_with_detections": 882,
-  "total_detections": 3796
+  "cards_with_detections": 887,
+  "total_detections": 3801
 }

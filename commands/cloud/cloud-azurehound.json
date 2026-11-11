@@ -1,0 +1,105 @@
+{
+  "id": "cloud-azurehound",
+  "name": "AzureHound - BloodHound Collection for Azure/Entra ID",
+  "command": "azurehound -u <user> -p <password> list --tenant <domain> -o output.json",
+  "description": "AzureHound collects Azure AD / Entra ID and Azure Resource Manager relationships (users, groups, roles, service principals, app registrations, subscriptions, VMs) into BloodHound-ingestible JSON. It reveals attack paths in the cloud: who can reset whose password, who owns which app, which identity can escalate to Global Admin or across subscriptions.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "Azure Enumeration",
+  "certifications": [
+    "MCRTA",
+    "CRTP"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "SpecterOps/AzureHound",
+  "tags": [
+    "azurehound",
+    "bloodhound",
+    "azure",
+    "entra",
+    "azure-ad",
+    "enumeration",
+    "attack-paths"
+  ],
+  "mitre": [
+    "T1087.004",
+    "T1069.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== AUTH + COLLECT (username/password) ===\n  azurehound -u <user> -p <password> list --tenant <domain> -o output.json\n\n=== WITH A REFRESH TOKEN / JWT ===\n  azurehound -r \"<refresh_token>\" list --tenant <domain> -o output.json\n  azurehound -j \"<jwt>\" list --tenant <domain> -o output.json\n\n=== SERVICE PRINCIPAL AUTH ===\n  azurehound -a <app_id> -s \"<client_secret>\" --tenant <domain> list -o output.json\n\n=== COLLECT SPECIFIC DATA ===\n  azurehound list users --tenant <domain>\n  azurehound list groups --tenant <domain>\n  azurehound list roles --tenant <domain>\n  azurehound list service-principals --tenant <domain>\n\n=== INGEST ===\n  # Upload output.json into BloodHound CE (Azure data model)\n  # Key queries: paths to Global Admin, app owners, SP creds abuse\n\n=== GETTING A TOKEN (az cli) ===\n  az login\n  az account get-access-token --resource-type ms-graph\n\n=== ALTERNATIVES ===\n  ROADrecon       # offline Azure AD dump + GUI\n  Stormspotter    # ARM + AAD graph\n  BloodHound CE   # consumes AzureHound output",
+  "examples": [
+    {
+      "label": "Collect with creds",
+      "command": "azurehound -u user@corp.com -p \"Passw0rd!\" list --tenant corp.onmicrosoft.com -o output.json"
+    },
+    {
+      "label": "Collect with refresh token",
+      "command": "azurehound -r \"0.ARoA...\" list --tenant corp.onmicrosoft.com -o output.json"
+    },
+    {
+      "label": "Users only",
+      "command": "azurehound list users --tenant corp.onmicrosoft.com"
+    }
+  ],
+  "references": [
+    {
+      "title": "AzureHound",
+      "url": "https://github.com/SpecterOps/AzureHound"
+    },
+    {
+      "title": "MITRE T1087.004 - Cloud Account Discovery",
+      "url": "https://attack.mitre.org/techniques/T1087/004/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-roadrecon",
+      "note": "ROADrecon is the offline Azure AD dump alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "Ingest AzureHound output into BloodHound.",
+      "rel": "next"
+    },
+    {
+      "id": "azure-entra-enum",
+      "note": "Targeted Entra enumeration without the full graph.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AzureHound uses legitimate Microsoft Graph and ARM read APIs available to any authenticated principal. Directory read access is broad by default, so one identity can map most tenant relationships.",
+    "prerequisites": "Any valid Entra identity (user, refresh token, or service principal); Graph/ARM read access.",
+    "impact": "Complete cloud attack-path map: privilege escalation to Global Admin, cross-subscription paths, app/SP abuse.",
+    "detection": "[MITRE T1087.004/T1069.003] Bulk Microsoft Graph enumeration (directoryObjects, servicePrincipals, roleAssignments) from one principal; AzureHound User-Agent; sign-in followed by high-volume Graph reads.",
+    "artifacts": "Entra sign-in + AuditLogs/MicrosoftGraphActivityLogs showing enumeration bursts; non-interactive token use.",
+    "splunk_spl": "index=azure sourcetype=azure:graph\n| stats dc(request_uri) as endpoints count by user\n| where count > 500",
+    "elastic_kql": "azure.graphactivitylogs.properties.user_agent:*azurehound*",
+    "sentinel_kql": "MicrosoftGraphActivityLogs\n| summarize Requests=count(), Endpoints=dcount(RequestUri) by UserId, bin(TimeGenerated, 10m)\n| where Requests > 500",
+    "sigma_rules": "azure_bulk_graph_enumeration",
+    "prevention": "Least-privilege directory roles; restrict directory read via admin consent policies; Conditional Access + MFA; monitor Graph activity logs for bulk enumeration; limit guest visibility.",
+    "sources": [
+      "SpecterOps",
+      "https://attack.mitre.org/techniques/T1087/004/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Bulk Entra/Graph enumeration (AzureHound)",
+        "logic": "MicrosoftGraphActivityLogs\n| where RequestUri has_any (\"/servicePrincipals\",\"/directoryRoles\",\"/roleManagement\",\"/groups\")\n| summarize Endpoints=dcount(RequestUri), Requests=count() by UserId, bin(TimeGenerated, 10m)\n| where Requests > 300",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1087.004",
+          "T1069.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "CSPM/IGA tools that enumerate the directory",
+        "tuning": "Allowlist known governance service principals"
+      }
+    ]
+  }
+}

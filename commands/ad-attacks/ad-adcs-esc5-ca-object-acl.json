@@ -1,0 +1,110 @@
+{
+  "id": "ad-adcs-esc5-ca-object-acl",
+  "name": "ADCS ESC5 - Vulnerable PKI Object Access Control",
+  "command": "certipy find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable",
+  "description": "ESC5 abuses weak ACLs on PKI objects outside the CA itself - the CA computer object, the CA server, or AD container objects under CN=Public Key Services (certificate templates container, NTAuthCertificates, Enrollment Services). Control over any of these lets an attacker add rogue templates, publish a malicious CA cert to NTAuth, or compromise the CA host, leading to domain-wide authentication forgery.",
+  "platform": "windows",
+  "type": "attack-chain",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "ADCS",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "SpecterOps \"Certified Pre-Owned\" (ESC5)",
+  "tags": [
+    "adcs",
+    "esc5",
+    "pki",
+    "acl",
+    "ntauth",
+    "certificate",
+    "privilege-escalation"
+  ],
+  "mitre": [
+    "T1649",
+    "T1098"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== FIND VULNERABLE PKI OBJECTS ===\n  certipy find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout\n  # ESC5 is contextual: review ACLs on CA computer object + PKI containers\n\n=== KEY OBJECTS (CN=Public Key Services,CN=Services,CN=Configuration) ===\n  - Certificate Templates container  (add/modify templates -> ESC1-style)\n  - Enrollment Services              (register a rogue Enrollment Service)\n  - NTAuthCertificates               (publish a rogue CA cert -> forge any logon)\n  - The CA computer object / CA host  (SYSTEM on CA = full control)\n\n=== CHECK ACLs ON PKI CONTAINERS (PowerView) ===\n  Get-DomainObjectAcl -SearchBase \"CN=Public Key Services,CN=Services,CN=Configuration,DC=<dc>,DC=<tld>\" -ResolveGUIDs |\n    ? { $_.ActiveDirectoryRights -match \"WriteDacl|WriteOwner|GenericAll|GenericWrite\" }\n\n=== EXPLOIT PATHS ===\n  # If you control the CA computer object -> RBCD/takeover -> SYSTEM on CA\n  #   then dump CA key and forge certs (see certsync / ESC1)\n  # If you can write NTAuthCertificates -> publish attacker CA, forge any user cert\n  # If you can add templates -> create an ESC1 (ENROLLEE_SUPPLIES_SUBJECT + client auth)\n\n=== PUBLISH A ROGUE CA TO NTAUTH (illustrative) ===\n  certutil -dspublish -f rogue_ca.crt NTAuthCA\n\n=== ALTERNATIVES / RELATED ===\n  ESC4  # write access to a template object (subset)\n  ESC7  # CA role (ManageCA/ManageCertificates) abuse\n  ESC6  # EDITF_ATTRIBUTESUBJECTALTNAME2 on CA",
+  "examples": [
+    {
+      "label": "Find vulnerable PKI objects",
+      "command": "certipy find -u jdoe@corp.local -p Passw0rd! -dc-ip 10.10.10.5 -vulnerable -stdout"
+    },
+    {
+      "label": "Audit PKI container ACLs",
+      "command": "Get-DomainObjectAcl -SearchBase \"CN=Public Key Services,CN=Services,CN=Configuration,DC=corp,DC=local\" -ResolveGUIDs | ? { $_.ActiveDirectoryRights -match \"WriteDacl|GenericAll\" }"
+    },
+    {
+      "label": "Publish rogue CA to NTAuth",
+      "command": "certutil -dspublish -f rogue_ca.crt NTAuthCA"
+    }
+  ],
+  "references": [
+    {
+      "title": "Certified Pre-Owned (ESC5)",
+      "url": "https://posts.specterops.io/certified-pre-owned-d95910965cd2"
+    },
+    {
+      "title": "MITRE T1649 - Steal or Forge Authentication Certificates",
+      "url": "https://attack.mitre.org/techniques/T1649/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-adcs-esc7-ca-officer",
+      "note": "ESC7 abuses CA role permissions (related ADCS escalation).",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc6-editf-flag",
+      "note": "ESC6 abuses the CA SAN flag.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-certipy-toolkit",
+      "note": "Certipy enumerates and exploits ADCS ESC paths.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-adcs-esc4-template-acl",
+      "note": "ESC4 abuses writable template ACLs (related PKI ACL weakness).",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The security of ADCS depends on ACLs across many objects, not just templates. Misconfigured permissions on the CA host, CA computer object, or PKI containers (especially NTAuthCertificates) let an attacker introduce trust that forges authentication for any principal.",
+    "prerequisites": "Write/control rights (WriteDacl/WriteOwner/GenericAll) over a CA object, the CA host, or a PKI container.",
+    "impact": "Domain-wide authentication forgery - effectively domain compromise - via rogue templates or a trusted rogue CA.",
+    "detection": "[MITRE T1649/T1098] Changes to NTAuthCertificates or objects under CN=Public Key Services (5136 directory-object modifications); new certificate templates; certutil -dspublish; takeover activity on the CA host.",
+    "artifacts": "5136 modifications to PKI container objects; new/edited templates; unexpected entries in NTAuth store; CA host compromise indicators.",
+    "splunk_spl": "index=windows EventCode=5136 ObjectDN=\"*Public Key Services*\"\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, OperationType",
+    "elastic_kql": "event.code:5136 and winlog.event_data.ObjectDN:*Public\\ Key\\ Services*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and ObjectDN has \"Public Key Services\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, OperationType",
+    "sigma_rules": "win_adcs_pki_object_modification",
+    "prevention": "Lock down ACLs on the CA host, CA computer object, and all CN=Public Key Services containers (especially NTAuthCertificates); treat ADCS as Tier-0; audit 5136 on PKI objects; enable strong certificate mapping (KB5014754).",
+    "sources": [
+      "SpecterOps Certified Pre-Owned",
+      "https://attack.mitre.org/techniques/T1649/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Modification of PKI/NTAuth objects (ADCS ESC5)",
+        "logic": "SecurityEvent\n| where EventID == 5136 and ObjectDN has \"Public Key Services\"\n| where AttributeLDAPDisplayName in (\"cACertificate\",\"certificateTemplates\",\"nTSecurityDescriptor\",\"flags\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, OperationType",
+        "data_source": "windows-security",
+        "attack": [
+          "T1649",
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate PKI administration/CA maintenance",
+        "tuning": "Alert on changes by non-PKI-admin principals; baseline normal CA admin accounts"
+      }
+    ]
+  }
+}

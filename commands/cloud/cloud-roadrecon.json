@@ -1,0 +1,88 @@
+{
+  "id": "cloud-roadrecon",
+  "name": "ROADrecon - Offline Azure AD / Entra ID Enumeration",
+  "command": "roadrecon gather",
+  "description": "ROADrecon (part of ROADtools) authenticates to Entra ID and dumps the entire directory into a local SQLite database, then serves an offline GUI and BI/analysis of users, groups, roles, applications, service principals, devices, and OAuth2 permission grants. Enables deep offline Azure AD recon and privilege-path analysis after a single collection.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "Azure Enumeration",
+  "certifications": [
+    "MCRTA",
+    "CRTP"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "dirkjanm/ROADtools",
+  "tags": [
+    "roadrecon",
+    "roadtools",
+    "azure",
+    "entra",
+    "azure-ad",
+    "enumeration",
+    "offline"
+  ],
+  "mitre": [
+    "T1087.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== AUTHENTICATE ===\n  roadrecon auth -u <user> -p <password>\n  # Device code flow:\n  roadrecon auth --device-code\n  # With a refresh token:\n  roadrecon auth --refresh-token \"<refresh_token>\"\n  # As a service principal:\n  roadrecon auth -c <app_id> --as-app -p \"<client_secret>\" -t <domain>\n\n=== GATHER THE DIRECTORY (-> roadrecon.db SQLite) ===\n  roadrecon gather\n  roadrecon gather --mfa        # include MFA/auth method data\n\n=== OFFLINE GUI ===\n  roadrecon gui\n  # Browse users/groups/roles/apps/SPs/devices/OAuth grants at http://127.0.0.1:5000\n\n=== PLUGINS / ANALYSIS ===\n  roadrecon plugin policies      # dump Conditional Access policies\n  roadrecon plugin road2timeline  # activity timeline\n\n=== WHAT TO LOOK FOR ===\n  - Users/SPs with directory/privileged roles\n  - App registrations with secrets + high permissions\n  - OAuth2PermissionGrants (illicit consent)\n  - Dynamic group rules (self-add escalation)\n\n=== ALTERNATIVES ===\n  AzureHound     # BloodHound graph format\n  Stormspotter   # ARM + AAD\n  az cli / Graph # targeted queries",
+  "examples": [
+    {
+      "label": "Auth + gather directory",
+      "command": "roadrecon auth -u user@corp.com -p \"Passw0rd!\" && roadrecon gather"
+    },
+    {
+      "label": "Device-code auth",
+      "command": "roadrecon auth --device-code"
+    },
+    {
+      "label": "Launch offline GUI",
+      "command": "roadrecon gui"
+    }
+  ],
+  "references": [
+    {
+      "title": "ROADtools",
+      "url": "https://github.com/dirkjanm/ROADtools"
+    },
+    {
+      "title": "MITRE T1087.004",
+      "url": "https://attack.mitre.org/techniques/T1087/004/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-azurehound",
+      "note": "AzureHound produces BloodHound-graph output instead of SQLite.",
+      "rel": "alternative"
+    },
+    {
+      "id": "azure-entra-enum",
+      "note": "Targeted Entra enumeration for specific objects.",
+      "rel": "alternative"
+    },
+    {
+      "id": "azure-app-credential-abuse",
+      "note": "Abuse app/SP secrets ROADrecon surfaces.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "ROADrecon calls the internal Azure AD Graph/Microsoft Graph with a normal user or SP token. Default directory read permissions let any principal enumerate most of the tenant into an offline copy.",
+    "prerequisites": "Any valid Entra credential or token; network to login.microsoftonline.com and Graph.",
+    "impact": "Full offline copy of the tenant directory enabling privilege-path and misconfiguration analysis.",
+    "detection": "[MITRE T1087.004] Bulk Graph/AAD Graph reads from one principal; ROADrecon/ROADtools client identifiers; device-code auth from unusual locations.",
+    "artifacts": "Entra sign-in logs with ROADtools client; high-volume directory reads; a roadrecon.db on the attacker host.",
+    "splunk_spl": "index=azure sourcetype=azure:signin OR sourcetype=azure:graph\n| stats count by user, appDisplayName\n| where count > 500",
+    "elastic_kql": "azure.signinlogs.properties.app_display_name:*ROADtools* or azure.graphactivitylogs.properties.user_agent:*road*",
+    "sentinel_kql": "SigninLogs\n| where AppDisplayName has \"ROADtools\" or UserAgent has \"roadrecon\"\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName",
+    "sigma_rules": "azure_roadrecon_enumeration",
+    "prevention": "Least-privilege roles; restrict directory read and guest access; Conditional Access to block legacy/unknown clients and risky sign-ins; monitor bulk Graph reads; disable device-code flow where unused.",
+    "sources": [
+      "dirkjanm/ROADtools",
+      "https://attack.mitre.org/techniques/T1087/004/"
+    ]
+  }
+}

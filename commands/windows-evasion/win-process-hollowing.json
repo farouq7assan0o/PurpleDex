@@ -1,0 +1,99 @@
+{
+  "id": "win-process-hollowing",
+  "name": "Process Hollowing (RunPE)",
+  "command": "CreateProcess suspended -> unmap image -> write payload -> SetThreadContext -> ResumeThread",
+  "description": "Process hollowing (RunPE) launches a legitimate signed process in a suspended state, unmaps its original image from memory, writes a malicious PE into the hollowed address space, repoints the entry point via the thread context, and resumes it. The payload then runs under the identity and image name of the trusted host process, defeating image-name-based allowlisting and blending into normal process listings.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Defense Evasion",
+  "subcategory": "Process Injection",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1055.012; public RunPE research",
+  "tags": ["process-hollowing", "runpe", "process-injection", "evasion", "defense-evasion"],
+  "mitre": ["T1055.012", "T1055"],
+  "exam": "exam-ok",
+  "notes": "=== CLASSIC RUNPE SEQUENCE (Win32 API) ===\n  1. CreateProcess(target, CREATE_SUSPENDED)        # e.g. a signed svchost/notepad\n  2. NtUnmapViewOfSection / NtQueryInformationProcess to find and unmap the base image\n  3. VirtualAllocEx at the preferred image base, WriteProcessMemory the PE headers + sections\n  4. GetThreadContext -> set the entry point (Rcx/Eax) -> SetThreadContext\n  5. ResumeThread                                   # payload runs as the host process\n\n=== WHY IT EVADES ===\n  - Process name, path, and signature on disk are the legitimate host binary.\n  - Static scanning of the on-disk image sees nothing malicious.\n\n=== TELLS LEFT BEHIND (for defenders / your own OPSEC) ===\n  - A private, executable region where a mapped image should be (image/private mismatch).\n  - PEB image base not matching the on-disk file.\n  - A child process with no command-line arguments spawned by an odd parent.\n\n=== VARIANTS ===\n  Process doppelganging (TxF), transacted hollowing, module stomping, and ghosting are\n  stealthier evolutions of the same idea.\n\n=== ALTERNATIVES ===\n  Classic DLL/shellcode injection (noisier), reflective loading, PPID spoofing to fix the parent.",
+  "examples": [
+    {
+      "label": "Baseline legitimate child-process behaviour before testing (defender view)",
+      "command": "Get-CimInstance Win32_Process | Select ProcessId,ParentProcessId,Name,CommandLine"
+    },
+    {
+      "label": "Spot a hollowed process: image base vs on-disk mismatch (Sysinternals)",
+      "command": "C:\\Sysinternals\\vmmap.exe -p <pid>"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1055.012 - Process Hollowing",
+      "url": "https://attack.mitre.org/techniques/T1055/012/"
+    },
+    {
+      "title": "Elastic - Ten Process Injection Techniques",
+      "url": "https://www.elastic.co/blog/ten-process-injection-techniques-technical-survey-common-and-trending-process"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "process-injection-runner",
+      "note": "Standard shellcode injection as a simpler alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "win-parent-pid-spoofing",
+      "note": "Spoof the parent of the hollowed process to fix the parent-child tell.",
+      "rel": "next"
+    },
+    {
+      "id": "donut-shellcode",
+      "note": "Donut converts a PE/assembly into position-independent shellcode to inject.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Windows lets a parent create a suspended child and modify its memory and thread context before the first instruction runs. Unmapping the original image and writing a new PE leaves the kernel's process object (name, path, token) pointing at the legitimate binary while the running code is attacker-controlled, so identity-based controls are fooled.",
+    "prerequisites": "Code execution and the right to create a process and call WriteProcessMemory/SetThreadContext on it (same user, no admin required for a self-spawned child).",
+    "impact": "T1055.012 Process Hollowing. Malicious code executes with the image name, path, and often the signature of a trusted process, defeating image-name allowlisting and complicating triage.",
+    "detection": "Behavioural: a process created suspended that then has memory written and its thread context set before resume; a running image whose in-memory base does not match its on-disk file; executable PRIVATE memory where a mapped image is expected; a signed binary spawned with no command line by an unusual parent. EDR with memory-scanning and image-load correlation catches the mismatch.",
+    "artifacts": "Sysmon EID 1 (process create, often blank CommandLine); Sysmon EID 8 (CreateRemoteThread) or EID 10 (ProcessAccess with PROCESS_VM_WRITE/SET_CONTEXT); EDR memory-region integrity alerts; image/private memory mismatch reported by memory forensics (vmmap, Volatility malfind).",
+    "splunk_spl": "index=sysmon EventCode=10 GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\",\"0x0A\",\"0x1438\")\n| where SourceImage!=TargetImage\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+    "elastic_kql": "event.code:\"10\" and winlog.event_data.GrantedAccess:(\"0x1F0FFF\" or \"0x1FFFFF\") and not winlog.event_data.SourceImage:winlog.event_data.TargetImage",
+    "sentinel_kql": "DeviceProcessEvents\n| where ProcessCreationFlags has \"CREATE_SUSPENDED\" or isempty(ProcessCommandLine)\n| join kind=inner (DeviceEvents | where ActionType in (\"WriteToProcessMemory\",\"SetThreadContext\")) on DeviceName\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName, ActionType",
+    "sigma_rules": "proc_access_win_process_hollowing_vmwrite_setcontext",
+    "prevention": "Deploy EDR with runtime memory integrity / in-memory scanning; enable Microsoft ASR rules and Exploit Protection (code integrity guard, arbitrary code guard) on sensitive processes; use WDAC so even correctly-named processes must load only signed code; alert on signed binaries spawned suspended with empty command lines from unexpected parents.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1055/012/",
+      "https://www.elastic.co/blog/ten-process-injection-techniques-technical-survey-common-and-trending-process"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Cross-process VM write with set-context access rights",
+        "logic": "index=sysmon EventCode=10 GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\",\"0x1438\") SourceImage!=TargetImage\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+        "data_source": "sysmon",
+        "attack": ["T1055.012"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Debuggers and some installers legitimately write to other processes",
+        "tuning": "Allowlist debuggers/AV; weight unsigned SourceImage higher"
+      },
+      {
+        "platform": "sentinel",
+        "name": "Signed binary spawned suspended with empty command line",
+        "logic": "DeviceProcessEvents\n| where isempty(ProcessCommandLine)\n| where FileName in~ (\"svchost.exe\",\"notepad.exe\",\"explorer.exe\",\"rundll32.exe\")\n| where InitiatingProcessFileName !in~ (\"services.exe\",\"explorer.exe\")\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName",
+        "data_source": "defender-endpoint",
+        "attack": ["T1055.012", "T1055"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Some service hosts start with minimal command lines",
+        "tuning": "Baseline legitimate parents of each host binary"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "edr"],
+      "better_with": ["defender-endpoint"]
+    }
+  }
+}

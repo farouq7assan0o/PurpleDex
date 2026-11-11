@@ -1,0 +1,99 @@
+{
+  "id": "win-etw-patching",
+  "name": "ETW Patching - Blind Event Tracing for Windows",
+  "command": "ntdll!EtwEventWrite in-process patch to return to caller",
+  "description": "Event Tracing for Windows (ETW) carries most host telemetry (AMSI, .NET CLR, PowerShell, Threat-Intelligence) that EDR consumes. Patching ntdll!EtwEventWrite in the current process so it returns immediately, or zeroing the managed EventProvider enabled field, blinds that in-process telemetry so loaders and offensive PowerShell run without generating events. Affects only the current process.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Defense Evasion",
+  "subcategory": "Defense Evasion",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1562.006 (Indicator Blocking); public ETW-tampering research",
+  "tags": ["etw", "evasion", "impair-defenses", "in-memory", "ntdll", "edr-evasion"],
+  "mitre": ["T1562.006", "T1562.001"],
+  "exam": "exam-ok",
+  "notes": "=== WHY ETW MATTERS ===\n  ETW is the transport. AMSI, Microsoft-Windows-DotNETRuntime, PowerShell script-block logging (4104)\n  and Microsoft-Windows-Threat-Intelligence (used by EDR) all flow over ETW providers. Breaking the\n  write path in your own process means those events never leave it.\n\n=== COMMON PATCH POINTS (in-process, current process only) ===\n  ntdll!EtwEventWrite        # classic single-function neutering\n  ntdll!EtwEventWriteFull    # secondary path some providers use\n  Managed: System.Diagnostics.Eventing.EventProvider enabled flag set to disabled via reflection\n\n=== SCOPE + LIMITS ===\n  - Only the current process is affected; a fresh process is logged again.\n  - Patching ntdll triggers an RWX/RX change on a loaded system module - a strong EDR signal in itself.\n  - Kernel-mode ETW-TI consumers (PPL EDR) are NOT silenced by a user-mode ntdll patch.\n\n=== TYPICAL CHAIN ===\n  1. Patch ETW in the loader process.\n  2. Patch/neuter AMSI in the same process.\n  3. Load the in-memory tool (execute-assembly / reflective DLL).\n\n=== ALTERNATIVES ===\n  AMSI bypass (script scanning), provider-level disable via logman/wevtutil (loud, needs admin),\n  moving work to a sacrificial process.",
+  "examples": [
+    {
+      "label": "Confirm ETW/AMSI telemetry is live before testing a bypass (defender view)",
+      "command": "logman query -ets"
+    },
+    {
+      "label": "List the .NET runtime ETW provider a loader would blind",
+      "command": "logman query providers | findstr /i DotNETRuntime"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1562.006 - Impair Defenses: Indicator Blocking",
+      "url": "https://attack.mitre.org/techniques/T1562/006/"
+    },
+    {
+      "title": "Microsoft - About Event Tracing",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/etw/about-event-tracing"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "amsi-bypass",
+      "note": "Pair ETW patching with an AMSI bypass in the same process.",
+      "rel": "alternative"
+    },
+    {
+      "id": "win-clr-execute-assembly",
+      "note": "In-memory .NET loading is the payload ETW patching protects.",
+      "rel": "next"
+    },
+    {
+      "id": "av-evasion-methods",
+      "note": "Where ETW blinding fits in the detection picture.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "ETW providers write events through a small set of ntdll stubs. Because the provider state and the write stub live in the attacker-controlled process, user-mode code can overwrite the stub or flip the enabled flag so events are dropped before they reach any consumer. The telemetry simply stops without any error surfaced to the SIEM.",
+    "prerequisites": "Code execution in the process whose telemetry is being blinded. No admin required for a user-mode in-process patch. Kernel ETW-TI consumed by a PPL EDR is not affected by a user-mode patch.",
+    "impact": "T1562.006 Indicator Blocking. Suppresses AMSI, .NET, PowerShell, and TI events for the current process, letting in-memory offensive tooling run without generating the events detections rely on.",
+    "detection": "The suppression itself is near-silent, so detect the surrounding behaviour: a sudden stop in expected ETW/4104 volume from a process that is still running; RWX or RX protection changes on ntdll in a non-system process (Sysmon EID 10 targeting ntdll); image loads of amsi.dll/clr.dll followed by telemetry silence. EDR sensors using kernel ETW-TI still observe the activity the user-mode patch hid.",
+    "artifacts": "Sysmon EID 10 (ProcessAccess) with GrantedAccess including write to a process holding ntdll; Sysmon EID 7 (ImageLoad) of clr.dll/amsi.dll; a gap in Microsoft-Windows-PowerShell/4104 for an interactive session; EDR memory-integrity alerts on modified ntdll pages.",
+    "splunk_spl": "index=sysmon EventCode=10 TargetImage=\"*ntdll.dll*\" GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\")\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+    "elastic_kql": "event.code:\"10\" and winlog.event_data.TargetImage:*ntdll.dll* and winlog.event_data.GrantedAccess:(\"0x1F0FFF\" or \"0x1FFFFF\")",
+    "sentinel_kql": "DeviceEvents\n| where ActionType in (\"ReadProcessMemory\",\"WriteToLsassProcessMemory\",\"NtProtectVirtualMemory\")\n| where InitiatingProcessFileName !in (\"MsMpEng.exe\",\"services.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, ActionType, AdditionalFields",
+    "sigma_rules": "proc_access_ntdll_etw_patch_rwx",
+    "prevention": "Prefer EDR that consumes kernel ETW-TI (unaffected by user-mode ntdll patches); run security sensors as Protected Process Light; enforce Attack Surface Reduction and WDAC to limit unsigned loaders; alert on protection changes to ntdll; baseline expected 4104/.NET event volume per host so silence is itself an alert.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1562/006/",
+      "https://learn.microsoft.com/en-us/windows/win32/etw/about-event-tracing"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Memory protection change on ntdll in a non-system process",
+        "logic": "index=sysmon EventCode=10 TargetImage=\"*ntdll.dll*\" GrantedAccess IN (\"0x1F0FFF\",\"0x1FFFFF\")\n| stats count by SourceImage, TargetImage, GrantedAccess, Computer",
+        "data_source": "sysmon",
+        "attack": ["T1562.006"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Debuggers, profilers, and some AV engines access ntdll with broad rights",
+        "tuning": "Allowlist known debuggers/EDR agents; alert on unsigned or newly-seen SourceImage"
+      },
+      {
+        "platform": "sentinel",
+        "name": "PowerShell/.NET telemetry silence after image load",
+        "logic": "DeviceImageLoadEvents\n| where FileName in~ (\"amsi.dll\",\"clr.dll\")\n| join kind=leftanti (DeviceEvents | where ActionType == \"PowerShellCommand\") on DeviceName\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName",
+        "data_source": "defender-endpoint",
+        "attack": ["T1562.006", "T1562.001"],
+        "fidelity": "telemetry",
+        "confidence": "low",
+        "false_positives": "Short-lived .NET processes that legitimately emit no script events",
+        "tuning": "Correlate with a per-host 4104 baseline; raise only on interactive sessions"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "defender-endpoint"],
+      "better_with": ["edr", "etw"]
+    }
+  }
+}

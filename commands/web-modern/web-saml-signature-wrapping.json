@@ -1,0 +1,108 @@
+{
+  "id": "web-saml-signature-wrapping",
+  "name": "SAML Signature Wrapping (XSW) and Signature Exclusion",
+  "command": "POST /saml/acs HTTP/1.1\\nContent-Type: application/x-www-form-urlencoded\\n\\nSAMLResponse=<token>",
+  "description": "Forges or alters a signed SAML assertion so the service provider authenticates the attacker as another user. Covers the eight XML Signature Wrapping (XSW) variants, signature-exclusion attacks (the SP validates a signature that is no longer present or no longer covers the assertion), XML comment injection in NameID to canonicalize into another user, and driving all of it with the SAML Raider Burp extension.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Web",
+  "subcategory": "Authentication",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "PortSwigger Web Security Academy - SAML / CSPN",
+  "tags": [
+    "saml",
+    "xsw",
+    "signature-wrapping",
+    "signature-exclusion",
+    "sso",
+    "saml-raider"
+  ],
+  "mitre": [
+    "T1190",
+    "T1550",
+    "T1606.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  A SAML Response is XML signed by the IdP. The SP must (a) verify the signature and (b) ensure the signed element is the SAME element it consumes. XSW splits those: the signature validates against a legitimate assertion while the SP processes an attacker-injected one.\n\n=== XSW VARIANTS (8 total, XSW1-XSW8) ===\n  - Clone the signed Assertion, change the copy's NameID/attributes, position it so the SP reads the evil copy but the validator checks the original.\n  - Move the Signature's Reference URI to point at the original while the evil assertion sits where the SP looks it up.\n  - Vary by element (Response vs Assertion signature) and placement (Extensions, wrapper nodes).\n\n=== SIGNATURE EXCLUSION ===\n  Strip the <ds:Signature> element entirely. If the SP falls back to 'no signature = accept', you can submit an unsigned, fully attacker-authored assertion. Test by deleting the Signature node and forging the assertion.\n\n=== XML COMMENT INJECTION (NameID) ===\n  <NameID>admin<!---->@evil.com</NameID> - some XML text-extraction libraries return only 'admin' after a comment, so the signature (over the full string) stays valid while the SP maps to a different identity. CVE-class bug in several SAML libraries.\n\n=== SAML RAIDER (Burp) ===\n  - Intercept the SAMLResponse (base64, often also inflated for Redirect binding).\n  - 'SAML Raider' tab: edit the assertion, run 'XSW' presets (XSW1-8), remove signatures, re-sign with a self-signed cert to test cert validation.\n  - 'Send certificate to SAML Raider Certs' to test if the SP trusts attacker certs.\n\n=== DECODE / RE-ENCODE MANUALLY ===\n  echo '<token>' | base64 -d | python3 -c 'import sys,zlib;sys.stdout.buffer.write(zlib.decompress(sys.stdin.buffer.read(),-15))'",
+  "examples": [
+    {
+      "label": "Decode a POST-binding SAMLResponse",
+      "command": "echo '<token>' | base64 -d | xmllint --format -"
+    },
+    {
+      "label": "Signature-exclusion test (strip the Signature node, resubmit)",
+      "command": "SAMLResponse=<token>   # same assertion with <ds:Signature> deleted"
+    },
+    {
+      "label": "XML comment injection in NameID",
+      "command": "<saml:NameID>admin<!---->@internal.local</saml:NameID>"
+    }
+  ],
+  "references": [
+    {
+      "title": "PortSwigger - SAML (Burp docs / research)",
+      "url": "https://portswigger.net/burp/documentation/desktop/testing-workflow/working-with-saml"
+    },
+    {
+      "title": "CSPN / SAML Raider (GitHub)",
+      "url": "https://github.com/CompassSecurity/SAMLRaider"
+    },
+    {
+      "title": "On Breaking SAML - Somorovsky et al. (XSW paper)",
+      "url": "https://www.usenix.org/system/files/conference/usenixsecurity12/sec12-final91.pdf"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-golden-saml",
+      "note": "Golden SAML forges assertions with a stolen IdP signing key - the cert-trust end of the same class.",
+      "rel": "alternative"
+    },
+    {
+      "id": "web-jwt-attacks",
+      "note": "Token-signing-bypass mindset carries over to JWT alg/none and key confusion.",
+      "rel": "alternative"
+    },
+    {
+      "id": "upload-svg-xxe",
+      "note": "SAML is XML - XXE in the SAMLResponse parser is an adjacent attack.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The SP validates an XML signature but then consumes a different element than the one that was signed (wrapping), accepts an assertion with no signature (exclusion), or uses an XML library whose text extraction diverges from the canonicalized signed bytes (comment injection). Each decouples 'what was signed' from 'what is trusted'.",
+    "prerequisites": "A SAML SP that accepts an IdP-issued SAMLResponse, and at least one legitimately signed assertion to clone or wrap. For exclusion, an SP that does not strictly require a valid signature.",
+    "impact": "Authentication as an arbitrary user (including administrators) at the SP - full SSO account takeover and privilege escalation without any valid credential.",
+    "detection": "[MITRE T1606.002] SAML assertions that fail schema/signature strictness, responses containing multiple Assertion elements, assertions with comments inside NameID, signatures whose Reference URI does not match the processed assertion, and self-signed or unexpected signing certificates in the ACS logs.",
+    "artifacts": "SP (relying party) access logs for the /saml/acs (Assertion Consumer Service) endpoint, SAML processing/error logs, the raw SAMLResponse, and IdP sign-in logs that show no corresponding issuance.",
+    "splunk_spl": "index=web uri_path=\"/saml/acs\"\n| rex field=form_data \"SAMLResponse=(?<saml>[^&]+)\"\n| eval decoded=urldecode(saml)\n| where like(decoded, \"%<!--%\") OR mvcount(split(decoded,\"<saml:Assertion\"))>2\n| stats count by clientip",
+    "elastic_kql": "url.path:\"/saml/acs\" and (http.request.body.content:*Assertion*Assertion* or http.request.body.content:*NameID*--*)",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem =~ \"/saml/acs\"\n| extend body = tostring(csUriQuery)\n| where body contains \"%3C%21--\" or body contains \"Assertion\"\n| summarize count() by cIP, csUriStem",
+    "sigma_rules": "web_saml_xsw_signature_wrapping",
+    "prevention": "Use a hardened SAML library that validates the signature over the exact element consumed (schema-hardening, reject multiple assertions, reject comments in NameID). Require signed assertions AND signed responses; pin the IdP signing certificate; reject self-signed/unknown certs; enforce audience, recipient, NotOnOrAfter, and InResponseTo.",
+    "sources": [
+      "https://github.com/CompassSecurity/SAMLRaider",
+      "https://portswigger.net/burp/documentation/desktop/testing-workflow/working-with-saml"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "SAML ACS response with multiple assertions or comment-injected NameID",
+        "logic": "index=web uri_path=\"/saml/acs\"\n| rex field=form_data \"SAMLResponse=(?<saml>[^&]+)\"\n| eval decoded=urldecode(saml)\n| eval assertion_count=mvcount(split(decoded,\"<saml:Assertion\"))\n| where assertion_count>2 OR like(decoded,\"%NameID%<!--%\")\n| table _time clientip assertion_count",
+        "data_source": "iis",
+        "attack": [
+          "T1606.002",
+          "T1550"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate multi-assertion responses are rare but exist in some federations; validate against the IdP's normal response shape.",
+        "tuning": "Baseline the normal assertion count and NameID format per IdP; alert on structural deviations only."
+      }
+    ]
+  }
+}

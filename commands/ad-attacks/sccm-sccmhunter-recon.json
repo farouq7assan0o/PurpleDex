@@ -1,0 +1,106 @@
+{
+  "id": "sccm-sccmhunter-recon",
+  "name": "sccmhunter - SCCM/MECM Site Reconnaissance",
+  "command": "sccmhunter.py find -u <user> -p <password> -d <domain> -dc-ip <dc_ip>",
+  "description": "sccmhunter locates Microsoft Configuration Manager (SCCM/MECM) infrastructure - Management Points (MP), site servers, SMS Providers, and Distribution Points - by querying LDAP for the System Management container and SCCM service-connection-point objects, then probing HTTP(S) MP endpoints. The 'find' module enumerates servers and the 'smsprovider' / 'mp' modules profile roles, which seeds every downstream SCCM attack (NAA extraction, DP looting, site takeover).",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "SCCM Attacks",
+  "certifications": [
+    "CRTP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "garrettfoster13/sccmhunter",
+  "tags": [
+    "sccm",
+    "mecm",
+    "sccmhunter",
+    "recon",
+    "management-point",
+    "distribution-point",
+    "sms-provider"
+  ],
+  "mitre": [
+    "T1046",
+    "T1087.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  git clone https://github.com/garrettfoster13/sccmhunter\n  cd sccmhunter; pip3 install -r requirements.txt\n\n=== FIND SCCM INFRASTRUCTURE (LDAP) ===\n  # Any authenticated domain user can read the System Management container:\n  sccmhunter.py find -u <user> -p <password> -d <domain> -dc-ip <dc_ip>\n  # Results land in a local sqlite db (~/.sccmhunter.db) and are shown on screen:\n  #   - Management Points (MP), SMS Providers, site servers, site code\n\n=== PROFILE / ENUMERATE ROLES (HTTP) ===\n  sccmhunter.py smsprovider -u <user> -p <password> -d <domain> -dc-ip <dc_ip>\n  sccmhunter.py mp -u <user> -p <password> -d <domain> -dc-ip <dc_ip>\n  # 'show' prints what has been collected:\n  sccmhunter.py show -all\n\n=== WHY IT MATTERS ===\n  - The site code + MP + SMS Provider are prerequisites for NAA policy requests,\n    DP looting, PXE abuse, and NTLM-relay site takeover.\n  - SCCM objects (mSSMSManagementPoint, mSSMSSite) are world-readable in LDAP.\n\n=== ALTERNATIVES ===\n  SharpSCCM.exe local site-info     # local host perspective\n  PowerSCCM / sccmwtf              # older tooling\n  ldapsearch -b \"CN=System Management,CN=System,<base_dn>\"   # manual",
+  "examples": [
+    {
+      "label": "Find all SCCM servers via LDAP",
+      "command": "sccmhunter.py find -u <user> -p <password> -d <domain> -dc-ip <dc_ip>"
+    },
+    {
+      "label": "Profile the SMS Provider",
+      "command": "sccmhunter.py smsprovider -u <user> -p <password> -d <domain> -dc-ip <dc_ip>"
+    },
+    {
+      "label": "Dump everything collected",
+      "command": "sccmhunter.py show -all"
+    }
+  ],
+  "references": [
+    {
+      "title": "sccmhunter",
+      "url": "https://github.com/garrettfoster13/sccmhunter"
+    },
+    {
+      "title": "Misconfiguration Manager - RECON",
+      "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "sccm-naa-credential-extract",
+      "note": "Request NAA creds from the MP found here.",
+      "rel": "next"
+    },
+    {
+      "id": "sccm-cmloot-dp-looting",
+      "note": "Loot the Distribution Points identified here.",
+      "rel": "next"
+    },
+    {
+      "id": "sccm-site-takeover-relay",
+      "note": "Relay to the SMS Provider / site server mapped here.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "SCCM publishes its roles (Management Point, SMS Provider, site servers) as objects in the LDAP System Management container and via the service connection point, all of which any authenticated domain user can read. MP HTTP endpoints also respond to unauthenticated or low-privilege probes, so discovery needs no special rights.",
+    "prerequisites": "A valid low-privilege domain account (for LDAP). Network reach to the DC and to the MP/SMS Provider HTTP(S) endpoints.",
+    "impact": "Full map of the SCCM hierarchy (site code, MPs, SMS Providers, DPs), which is the prerequisite for NAA credential theft, DP looting, PXE abuse, and site takeover.",
+    "detection": "[MITRE T1046] Bursts of LDAP queries from one account for mSSMSManagementPoint / mSSMSSite / sccm objects; unusual HTTP requests to MP CCM_POST / SMS_MP endpoints from non-client hosts.",
+    "artifacts": "Directory Service (4662) access to the System Management container; IIS logs on the MP showing /ccm_system / /SMS_MP requests from unexpected sources; sccmhunter sqlite db on the attacker host.",
+    "splunk_spl": "index=windows sourcetype=\"WinEventLog:Security\" EventCode=4662 Object_Name=\"*System Management*\"\n| stats count dc(Object_Name) by Account_Name, src_ip\n| where count > 20",
+    "elastic_kql": "event.code:\"4662\" and winlog.event_data.ObjectName:*System*Management*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4662\n| where ObjectName has \"System Management\"\n| summarize Count=count() by SubjectUserName, Computer, bin(TimeGenerated, 1h)\n| where Count > 20",
+    "sigma_rules": "win_sccm_system_management_ldap_recon",
+    "prevention": "Treat the SCCM site code and server inventory as sensitive; segment MP/SMS Provider networks; monitor directory reads of the System Management container; apply least privilege and require HTTPS + Enhanced HTTP on MPs so anonymous probing is limited.",
+    "sources": [
+      "garrettfoster13/sccmhunter",
+      "https://github.com/subat0mik/Misconfiguration-Manager"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "LDAP reconnaissance of SCCM System Management container",
+        "logic": "SecurityEvent\n| where EventID == 4662\n| where ObjectName has \"System Management\"\n| summarize Count=count(), Objs=dcount(ObjectName) by SubjectUserName, Computer, bin(TimeGenerated, 1h)\n| where Count > 20",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4662"
+        ],
+        "attack": [
+          "T1087.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "SCCM admin consoles and management tooling enumerate these objects legitimately.",
+        "tuning": "Allowlist SCCM server and admin-console hosts; alert on reads from ordinary workstation accounts."
+      }
+    ]
+  }
+}

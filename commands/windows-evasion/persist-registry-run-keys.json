@@ -1,0 +1,103 @@
+{
+  "id": "persist-registry-run-keys",
+  "name": "Registry Run Keys and Winlogon Autostart Persistence",
+  "command": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v <name> /d <payload> /f",
+  "description": "Autostart persistence via the registry: Run/RunOnce keys execute a command at user logon (HKCU, no admin) or at any user logon (HKLM, admin), and the Winlogon Userinit/Shell values run a payload during the logon sequence under the user's session. These are the most common and simplest Windows persistence mechanisms and the first place defenders and Autoruns look.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Persistence",
+  "subcategory": "Persistence",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1547.001; Microsoft Run-key documentation",
+  "tags": ["persistence", "run-keys", "winlogon", "userinit", "registry", "autostart"],
+  "mitre": ["T1547.001"],
+  "exam": "exam-ok",
+  "notes": "=== RUN / RUNONCE KEYS ===\n  HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run           # current user, each logon (no admin)\n  HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run           # all users, each logon (admin)\n  ...\\CurrentVersion\\RunOnce                                   # runs once then deletes itself\n  ...\\Policies\\Explorer\\Run                                    # policy-based Run\n\n  reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v Updater /d \"powershell -w hidden -enc <b64>\" /f\n\n=== WINLOGON (logon sequence) ===\n  HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\n    Userinit  = C:\\Windows\\system32\\userinit.exe,   <appended payload>\n    Shell     = explorer.exe,   <appended payload>\n  # APPEND to the existing value (comma-separated) - do not replace it or you break logon.\n\n=== OTHER AUTOSTART VALUES ===\n  ...\\Winlogon\\Notify (legacy), Image File Execution Options (see accessibility backdoor card).\n\n=== ENUMERATE (hunt / verify) ===\n  reg query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\n  autorunsc.exe -a * -c       # Sysinternals, CSV of all autostarts\n\n=== ALTERNATIVES ===\n  Scheduled tasks, services, WMI subscription, COM hijack - all stealthier than Run keys.",
+  "examples": [
+    {
+      "label": "Add an HKCU Run key (no admin)",
+      "command": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v <name> /d <payload> /f"
+    },
+    {
+      "label": "Append a payload to Winlogon Userinit (admin) - keep the original value",
+      "command": "reg add \"HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\" /v Userinit /d \"C:\\Windows\\system32\\userinit.exe,<payload>\" /f"
+    },
+    {
+      "label": "Hunt all autostart entries with Sysinternals Autoruns",
+      "command": "autorunsc.exe -a * -c -nobanner"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1547.001 - Registry Run Keys / Startup Folder",
+      "url": "https://attack.mitre.org/techniques/T1547/001/"
+    },
+    {
+      "title": "Microsoft - Run and RunOnce Registry Keys",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "startup-autoruns",
+      "note": "Autoruns enumerates every autostart location including these keys.",
+      "rel": "next"
+    },
+    {
+      "id": "persist-service-creation",
+      "note": "Service creation is a SYSTEM-level persistence alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "persist-com-hijacking",
+      "note": "COM hijack is a quieter, HKCU-only persistence option.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Run/RunOnce keys and the Winlogon Userinit/Shell values are legitimate autostart mechanisms Windows executes automatically at logon. HKCU variants require no admin, and the values accept arbitrary command lines, so an attacker simply adds (or appends to) a value to gain execution every logon.",
+    "prerequisites": "Write access to the key: HKCU Run/RunOnce need only the user; HKLM Run and Winlogon values need local admin.",
+    "impact": "T1547.001 Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder. Reliable persistence that re-runs the payload at each logon in the user (or, via Winlogon, logon-sequence) context.",
+    "detection": "Monitor registry sets (Sysmon EID 13) to the Run/RunOnce keys and to Winlogon Userinit/Shell; any modification of Userinit/Shell away from the default is high-fidelity. Alert on Run values pointing at powershell, encoded commands, scripting hosts, or binaries in user-writable paths. Autoruns and EDR autostart inventories surface new entries.",
+    "artifacts": "Sysmon EID 13 (RegistryValueSet) on the Run/RunOnce/Winlogon keys; Security 4657 (registry value modified) with auditing enabled; the referenced binary/script on disk; Autoruns CSV showing the new entry.",
+    "splunk_spl": "index=sysmon EventCode=13 (TargetObject=\"*\\\\CurrentVersion\\\\Run*\" OR TargetObject=\"*\\\\Winlogon\\\\Userinit\" OR TargetObject=\"*\\\\Winlogon\\\\Shell\")\n| table _time, Computer, Image, TargetObject, Details",
+    "elastic_kql": "event.code:\"13\" and registry.path:(*\\\\CurrentVersion\\\\Run* or *\\\\Winlogon\\\\Userinit or *\\\\Winlogon\\\\Shell)",
+    "sentinel_kql": "DeviceRegistryEvents\n| where RegistryKey has_any (\"\\\\CurrentVersion\\\\Run\",\"\\\\CurrentVersion\\\\RunOnce\",\"\\\\Winlogon\")\n| where RegistryValueName in~ (\"Userinit\",\"Shell\") or RegistryValueData has_any (\"powershell\",\"-enc\",\"\\\\AppData\\\\\",\"\\\\Temp\\\\\",\".vbs\",\".js\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryKey, RegistryValueName, RegistryValueData",
+    "sigma_rules": "registry_set_persistence_run_key_winlogon",
+    "prevention": "Enable registry auditing (4657) and Sysmon registry eventing on the autostart keys; baseline legitimate Run entries and alert on new ones, and alert on ANY change to Winlogon Userinit/Shell; restrict local admin to limit HKLM/Winlogon writes; run Autoruns reviews and use ASR/WDAC to block unsigned payloads the keys would launch.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1547/001/",
+      "https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Winlogon Userinit/Shell modified away from default",
+        "logic": "DeviceRegistryEvents\n| where RegistryKey has \"\\\\Winlogon\" and RegistryValueName in~ (\"Userinit\",\"Shell\")\n| where RegistryValueData !in~ (\"C:\\\\Windows\\\\system32\\\\userinit.exe,\",\"explorer.exe\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryValueName, RegistryValueData",
+        "data_source": "defender-endpoint",
+        "attack": ["T1547.001"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Rare; a few legitimate shell replacements (kiosk builds)",
+        "tuning": "Allowlist approved kiosk/shell configurations"
+      },
+      {
+        "platform": "splunk",
+        "name": "Run key set to a script or user-path binary",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\CurrentVersion\\\\Run*\" (Details=\"*powershell*\" OR Details=\"*-enc*\" OR Details=\"*\\\\AppData\\\\*\" OR Details=\"*\\\\Temp\\\\*\" OR Details=\"*.vbs\" OR Details=\"*.js\")\n| table _time, Computer, Image, TargetObject, Details",
+        "data_source": "sysmon",
+        "attack": ["T1547.001"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Some legitimate apps add Run entries pointing at AppData",
+        "tuning": "Allowlist known software updaters by name and signature"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "windows-security"],
+      "better_with": ["edr", "defender-endpoint"]
+    }
+  }
+}

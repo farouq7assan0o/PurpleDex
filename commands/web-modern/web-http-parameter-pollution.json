@@ -1,0 +1,103 @@
+{
+  "id": "web-http-parameter-pollution",
+  "name": "HTTP Parameter Pollution (HPP)",
+  "command": "GET /search?role=user&role=admin HTTP/1.1\\nHost: <target>",
+  "description": "Supplies the same parameter multiple times so different components (WAF, front-end, back-end, framework) disagree on which value wins. Used to bypass WAF/input validation (the filter inspects one occurrence, the app uses another), tamper with server-side logic (role/price/id), and smuggle values past allow-lists. Covers per-backend precedence (first vs last vs concatenated) for query-string and body parameters.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Web",
+  "subcategory": "Input Validation",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "OWASP - Testing for HTTP Parameter Pollution",
+  "tags": [
+    "hpp",
+    "parameter-pollution",
+    "waf-bypass",
+    "input-validation"
+  ],
+  "mitre": [
+    "T1190"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  HTTP does not define how duplicate parameters are handled, so each layer picks its own: some take the FIRST, some the LAST, some CONCATENATE, some build an array. A WAF that inspects the first value and an app that uses the last can be split.\n\n=== PER-BACKEND PRECEDENCE (common) ===\n  - PHP / Apache:            LAST occurrence wins (foo=a&foo=b -> b)\n  - ASP.NET / IIS:           CONCATENATED with comma (foo=a&foo=b -> \"a,b\")\n  - JSP / Tomcat:            FIRST occurrence wins (foo=a&foo=b -> a)\n  - Node/Express:            builds an ARRAY (foo=[a,b])\n  - Python Flask/Django:     FIRST (request.args.get) by default\n  (Always confirm empirically - versions/parsers vary.)\n\n=== CLASSIC USES ===\n  - WAF bypass: split a blocked payload across two occurrences of the same param, or put the malicious value where the WAF does not look.\n  - Auth/logic tamper: ?role=user&role=admin so the back-end that takes last gets admin.\n  - OTP/price/id confusion in multi-tier apps.\n  - Combine with SQLi: id=1&id=2 UNION SELECT... where the sink concatenates.\n\n=== TESTS ===\n  - Send the param twice with distinct values; observe which the response reflects/uses.\n  - Try query-string vs body (POST) separately - precedence can differ.\n  - Encode one occurrence (%72ole) to dodge the filter while the app normalizes.\n\n=== TOOLING ===\n  - Burp Repeater (manual duplication), Param Miner for discovery, hackvertor for encoding.",
+  "examples": [
+    {
+      "label": "Role tamper via duplicate param (last wins)",
+      "command": "curl -s 'https://<target>/api/update?role=user&role=admin'"
+    },
+    {
+      "label": "WAF bypass splitting a payload across duplicates",
+      "command": "curl -s 'https://<target>/search?q=<script&q=>alert(1)</script>'"
+    },
+    {
+      "label": "POST body pollution",
+      "command": "curl -s https://<target>/login -d 'user=guest&user=admin'"
+    }
+  ],
+  "references": [
+    {
+      "title": "OWASP - Testing for HTTP Parameter Pollution",
+      "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/04-Testing_for_HTTP_Parameter_Pollution"
+    },
+    {
+      "title": "OWASP - HTTP Parameter Pollution (attack)",
+      "url": "https://owasp.org/www-community/attacks/HTTP_Parameter_Pollution_(HPP)"
+    },
+    {
+      "title": "PortSwigger - HTTP Parameter Pollution (API testing)",
+      "url": "https://portswigger.net/web-security/api-testing/server-side-parameter-pollution"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "web-request-smuggling",
+      "note": "Another layer-disagreement class (front-end vs back-end parsing).",
+      "rel": "alternative"
+    },
+    {
+      "id": "sqli-detect",
+      "note": "HPP can carry an SQLi payload past a WAF into a concatenating sink.",
+      "rel": "next"
+    },
+    {
+      "id": "auth-bypass-param-mod",
+      "note": "Parameter manipulation for auth bypass overlaps directly.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "HTTP has no standard for duplicate parameters, so the WAF, framework, and application may each resolve them differently. An attacker exploits that disagreement to put the payload where the filter will not see it but the app will use it.",
+    "prerequisites": "An endpoint reachable through layers that parse duplicate parameters inconsistently (e.g. a WAF that reads the first value, an app that reads the last).",
+    "impact": "WAF/validation bypass, authorization and business-logic tampering (role/price/id), and amplification of injection attacks (SQLi/XSS) that would otherwise be blocked.",
+    "detection": "[MITRE T1190] Requests containing the same parameter name more than once in the query string or body, especially on auth/role/price endpoints or where one occurrence contains suspicious characters.",
+    "artifacts": "Web/reverse-proxy access logs capturing the full query string and body, WAF event logs (which value triggered/did not), and application logs of the resolved parameter value.",
+    "splunk_spl": "index=web\n| rex max_match=0 field=uri_query \"(?<param>[a-zA-Z0-9_]+)=\"\n| eval dupes=mvfilter(mvcount(mvdedup(param))<mvcount(param))\n| where mvcount(param)!=mvcount(mvdedup(param))\n| stats count by clientip, uri_path, uri_query",
+    "elastic_kql": "url.query:/.*([a-zA-Z0-9_]+)=.*\\1=.*/ and url.path:(\"/login\" or \"/api/update\")",
+    "sentinel_kql": "W3CIISLog\n| extend params = extract_all(@\"[?&]([a-zA-Z0-9_]+)=\", csUriQuery)\n| extend total = array_length(params), uniq = array_length(set_difference(params, dynamic([])))\n| where total > uniq\n| summarize count() by cIP, csUriStem, csUriQuery",
+    "sigma_rules": "web_http_parameter_pollution_duplicate_param",
+    "prevention": "Normalize duplicate parameters consistently at the edge (reject or collapse to a single defined occurrence). Use a framework API that returns a single value and reject arrays/duplicates for security-sensitive fields. Keep WAF and application parsing aligned, validate against strict allow-lists, and prefer typed/structured input (JSON) with schema validation.",
+    "sources": [
+      "https://owasp.org/www-community/attacks/HTTP_Parameter_Pollution_(HPP)",
+      "https://portswigger.net/web-security/api-testing/server-side-parameter-pollution"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Duplicate parameter name on a sensitive endpoint",
+        "logic": "index=web sourcetype=apache (uri_path=\"/login\" OR uri_path=\"/api/update\" OR uri_path=\"/checkout\")\n| rex max_match=0 field=uri_query \"(?<param>[a-zA-Z0-9_]+)=\"\n| where mvcount(param)!=mvcount(mvdedup(param))\n| stats count by clientip, uri_path, uri_query",
+        "data_source": "apache",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "false_positives": "Legitimate multi-value fields (checkbox groups, filters) that intentionally repeat a parameter.",
+        "tuning": "Scope to endpoints that should take single-valued security-relevant parameters; allow-list known multi-value fields."
+      }
+    ]
+  }
+}

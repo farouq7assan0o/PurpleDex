@@ -1,0 +1,99 @@
+{
+  "id": "win-parent-pid-spoofing",
+  "name": "Parent PID Spoofing with BlockDLLs",
+  "command": "CreateProcess with PROC_THREAD_ATTRIBUTE_PARENT_PROCESS set to a chosen PID",
+  "description": "Parent PID (PPID) spoofing uses UpdateProcThreadAttribute with PROC_THREAD_ATTRIBUTE_PARENT_PROCESS to make a new process appear to be a child of an attacker-chosen parent (for example explorer.exe), defeating parent-child heuristics that flag, say, Word spawning PowerShell. It is usually paired with the BlockDLLs attribute (PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES) to stop non-Microsoft (EDR hook) DLLs loading into the child.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Defense Evasion",
+  "subcategory": "Process Injection",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1134.004; public PPID-spoofing and BlockDLLs research",
+  "tags": ["ppid-spoofing", "block-dlls", "evasion", "access-token", "parent-process", "defense-evasion"],
+  "mitre": ["T1134.004", "T1134"],
+  "exam": "exam-ok",
+  "notes": "=== MECHANISM (Win32) ===\n  InitializeProcThreadAttributeList\n  UpdateProcThreadAttribute(..., PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, &hParent, ...)\n  # child's PPID in the kernel points at hParent; the child also inherits that parent's token.\n  CreateProcess(..., EXTENDED_STARTUPINFO_PRESENT, &si.StartupInfo, &pi)\n\n=== BLOCKDLLS (pair with it) ===\n  UpdateProcThreadAttribute(..., PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY,\n     PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON ...)\n  # prevents non-Microsoft-signed DLLs (many EDR user-mode hooks) from loading into the child.\n\n=== WHY IT EVADES ===\n  - Breaks \"Office spawned a shell\" and similar parent-child detections.\n  - Child inherits the spoofed parent's security token (handle must have PROCESS_CREATE_PROCESS).\n  - BlockDLLs strips the EDR's in-process visibility.\n\n=== TELLS ===\n  - PPID points at a parent that did not actually call CreateProcess (ETW process-start parent vs\n    kernel callback parent mismatch).\n  - Built into Cobalt Strike (ppid / blockdlls), available in many loaders.\n\n=== ALTERNATIVES ===\n  Process hollowing (identity via image), direct token theft, scheduled-task spawning.",
+  "examples": [
+    {
+      "label": "Enumerate parent-child relationships to baseline (defender view)",
+      "command": "Get-CimInstance Win32_Process | Select ProcessId,ParentProcessId,Name"
+    },
+    {
+      "label": "Cobalt-style operator syntax (reference)",
+      "command": "ppid 1234; blockdlls start; spawnto x64 %windir%\\sysnative\\dllhost.exe"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1134.004 - Parent PID Spoofing",
+      "url": "https://attack.mitre.org/techniques/T1134/004/"
+    },
+    {
+      "title": "Microsoft - UpdateProcThreadAttribute",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "win-process-hollowing",
+      "note": "Hollowing fakes the image; PPID spoofing fakes the parent - often combined.",
+      "rel": "alternative"
+    },
+    {
+      "id": "process-injection-runner",
+      "note": "PPID spoofing commonly precedes injecting into the spoofed child.",
+      "rel": "prereq"
+    },
+    {
+      "id": "av-evasion-methods",
+      "note": "Where parent-child spoofing fits in evasion.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The ProcessParameters parent handle supplied through PROC_THREAD_ATTRIBUTE_PARENT_PROCESS sets the PPID recorded in the process object, and the child inherits that parent's token. Detections that trust the recorded PPID (e.g. flagging Office spawning a shell) are blinded, and BlockDLLs removes the EDR's user-mode hooks from the new process.",
+    "prerequisites": "Code execution and a handle to the chosen parent with PROCESS_CREATE_PROCESS rights. Spoofing a higher-integrity parent still requires rights to that process (often admin/SYSTEM).",
+    "impact": "T1134.004 Access Token Manipulation: Parent PID Spoofing. Breaks parent-child detection logic, can inherit a more trusted token, and (with BlockDLLs) strips EDR user-mode visibility from the child.",
+    "detection": "Correlate the kernel process-creation callback parent (authoritative, via EDR/ETW Microsoft-Windows-Kernel-Process) against the recorded PPID; a mismatch is high-fidelity. Also alert on the BlockDLLs mitigation policy being set on a non-Microsoft-launched process, and on blocked non-Microsoft DLL load events (code-integrity 3033).",
+    "artifacts": "ETW Microsoft-Windows-Kernel-Process process-start vs Sysmon EID 1 ParentImage mismatch; CodeIntegrity 3033 (image did not meet signing requirement for the BlockDLLs process); Sysmon EID 1 showing a child of explorer.exe that explorer never created.",
+    "splunk_spl": "index=sysmon EventCode=1\n| eval kernel_parent=ParentProcessGuid\n| join type=left ProcessGuid [search index=etw sourcetype=\"Kernel-Process\" | fields ProcessGuid, RealParentImage]\n| where isnotnull(RealParentImage) AND RealParentImage!=ParentImage\n| table _time, Computer, Image, ParentImage, RealParentImage",
+    "elastic_kql": "event.code:\"1\" and process.parent.name:explorer.exe and not process.parent.executable:\"C\\:\\\\Windows\\\\explorer.exe\"",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"explorer.exe\"\n| where InitiatingProcessParentFileName !in~ (\"userinit.exe\",\"winlogon.exe\")\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName, InitiatingProcessParentFileName",
+    "sigma_rules": "proc_creation_win_ppid_spoofing_parent_mismatch",
+    "prevention": "Rely on EDR that reports the authoritative kernel parent rather than the recorded PPID; enable Protected Process Light for EDR so BlockDLLs cannot strip a kernel sensor; apply ASR and WDAC so the spoofed child still cannot load unsigned code; restrict handle rights to sensitive parents (explorer, lsass) via least privilege.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1134/004/",
+      "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Recorded parent does not match kernel launcher",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"explorer.exe\",\"svchost.exe\")\n| where InitiatingProcessParentFileName !in~ (\"userinit.exe\",\"winlogon.exe\",\"services.exe\")\n| project Timestamp, DeviceName, FileName, InitiatingProcessFileName, InitiatingProcessParentFileName",
+        "data_source": "defender-endpoint",
+        "attack": ["T1134.004"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Shell restarts and some login flows",
+        "tuning": "Baseline legitimate explorer/svchost parents per environment"
+      },
+      {
+        "platform": "splunk",
+        "name": "BlockDLLs - non-Microsoft image load blocked (CodeIntegrity 3033)",
+        "logic": "index=wineventlog source=\"*CodeIntegrity*\" EventCode=3033\n| table _time, Computer, ProcessName, FileNameBuffer",
+        "data_source": "windows-system",
+        "attack": ["T1134.004", "T1134"],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Rare; some legitimate software sets binary signature policy",
+        "tuning": "Allowlist known hardened applications that enable BlockDLLs themselves"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "edr"],
+      "better_with": ["defender-endpoint", "etw"]
+    }
+  }
+}

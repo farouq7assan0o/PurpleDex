@@ -1,0 +1,105 @@
+{
+  "id": "web-race-single-packet",
+  "name": "Single-Packet Attack (HTTP/2 Race Conditions)",
+  "command": "# Turbo Intruder: engine=Engine.BURP2, requests sent with gate='race1'",
+  "description": "Exploits race conditions by eliminating network jitter so many requests reach the server within the same ~1ms window. Uses the HTTP/2 single-packet attack (up to ~20-30 requests in one TCP packet) or HTTP/1.1 last-byte synchronization to overrun limit/coupon/balance/one-time-use logic (limit-overrun and multi-endpoint race variants). Driven with Burp's Turbo Intruder and the Repeater 'send group in parallel' feature.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Web",
+  "subcategory": "Business Logic",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "PortSwigger Web Security Academy - Race conditions",
+  "tags": [
+    "race-condition",
+    "single-packet",
+    "http2",
+    "turbo-intruder",
+    "business-logic",
+    "limit-overrun"
+  ],
+  "mitre": [
+    "T1190"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  Many checks (is this coupon used? is balance >= amount?) read state, then write it, without a lock. If N requests pass the read before any write lands (TOCTOU), all N succeed. The attack removes jitter so the requests hit the critical window simultaneously.\n\n=== SINGLE-PACKET ATTACK (HTTP/2) ===\n  - Send up to ~20-30 requests whose last frame is withheld, then release all final frames in ONE TCP packet. Server processes them with near-zero timing spread.\n  - Immune to network jitter (unlike the old 'last-byte sync' over many connections).\n\n=== LAST-BYTE SYNC (HTTP/1.1 fallback) ===\n  - Open N connections, send all but the final byte of each request, then send the last bytes together.\n\n=== BURP REPEATER (quick test) ===\n  - Add the request to a Repeater tab group.\n  - Group dropdown > 'Send group in parallel (single-packet attack)'.\n  - Good for 2-50 identical requests (coupon redeem, gift-card apply, vote).\n\n=== TURBO INTRUDER (programmatic) ===\n  def queueRequests(target, wordlists):\n      engine = RequestEngine(endpoint=target.endpoint, concurrentConnections=1, engine=Engine.BURP2)\n      for i in range(20):\n          engine.queue(target.req, gate='race1')\n      engine.openGate('race1')\n  def handleResponse(req, interesting):\n      table.add(req)\n\n=== TARGETS ===\n  - Redeem a single-use coupon/gift card many times.\n  - Withdraw/transfer more than the balance (limit overrun).\n  - Bypass rate limits / anti-brute-force counters.\n  - Multi-endpoint races (e.g. apply-then-confirm).",
+  "examples": [
+    {
+      "label": "Repeater: send a tab group in parallel",
+      "command": "Burp Repeater > group tab > 'Send group in parallel (single-packet attack)'"
+    },
+    {
+      "label": "Turbo Intruder single-packet template skeleton",
+      "command": "engine = RequestEngine(endpoint=target.endpoint, concurrentConnections=1, engine=Engine.BURP2)"
+    },
+    {
+      "label": "Open the gate to release all withheld final frames",
+      "command": "engine.openGate('race1')"
+    }
+  ],
+  "references": [
+    {
+      "title": "PortSwigger - Race conditions",
+      "url": "https://portswigger.net/web-security/race-conditions"
+    },
+    {
+      "title": "Smashing the state machine (James Kettle)",
+      "url": "https://portswigger.net/research/smashing-the-state-machine"
+    },
+    {
+      "title": "Turbo Intruder",
+      "url": "https://github.com/PortSwigger/turbo-intruder"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "burp-repeater",
+      "note": "Repeater's 'send group in parallel' is the quickest single-packet test.",
+      "rel": "prereq"
+    },
+    {
+      "id": "burp-intruder",
+      "note": "Intruder for the non-race brute-forcing this often accompanies.",
+      "rel": "alternative"
+    },
+    {
+      "id": "web-request-smuggling",
+      "note": "Another HTTP/2-level desync class driven from the same tooling.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "State-changing operations read a value (coupon unused, balance sufficient) and write the new value without holding a lock across the check. The single-packet attack collapses the timing spread so many requests pass the read phase before any write commits (a TOCTOU window).",
+    "prerequisites": "An endpoint whose outcome depends on shared mutable state with no atomic guard (uniqueness constraint, row lock, or idempotency key). HTTP/2 support helps but HTTP/1.1 last-byte sync also works.",
+    "impact": "Limit/coupon/gift-card/balance overrun, bypass of one-time-use and rate-limit controls, duplicate order or withdrawal, and other business-logic integrity loss.",
+    "detection": "[MITRE T1190] Bursts of near-identical requests to the same state-changing endpoint from one client within a few milliseconds, repeated 2xx on an action that should succeed at most once, and HTTP/2 flows releasing many stream END_STREAM frames together.",
+    "artifacts": "Reverse-proxy/app access logs with millisecond timestamps showing clustered identical POSTs, application logs showing the same coupon/transaction id applied multiple times, and WAF rate counters.",
+    "splunk_spl": "index=web uri_path=\"/redeem\" method=POST\n| bin _time span=1s\n| stats count by _time, clientip, uri_path\n| where count>3",
+    "elastic_kql": "url.path:\"/redeem\" and http.request.method:\"POST\"",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem == \"/redeem\" and csMethod == \"POST\"\n| summarize reqs=count() by cIP, bin(TimeGenerated, 1s)\n| where reqs > 3",
+    "sigma_rules": "web_single_packet_race_burst",
+    "prevention": "Make state changes atomic: database uniqueness constraints, SELECT ... FOR UPDATE / row locks, or idempotency keys per operation. Serialize per-resource critical sections. Do not rely on an initial read-check; enforce the invariant at commit time. Treat rate limits as best-effort, not security.",
+    "sources": [
+      "https://portswigger.net/web-security/race-conditions",
+      "https://portswigger.net/research/smashing-the-state-machine"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Burst of identical state-changing POSTs within 1 second",
+        "logic": "index=web method=POST (uri_path=\"/redeem\" OR uri_path=\"/transfer\" OR uri_path=\"/apply-coupon\")\n| bin _time span=1s\n| stats count as reqs by _time, clientip, uri_path\n| where reqs>3",
+        "data_source": "iis",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate client retries, double-click submits, and mobile apps that batch requests.",
+        "tuning": "Scope to endpoints that must be idempotent/one-time; correlate with repeated use of the same coupon/transaction id in app logs."
+      }
+    ]
+  }
+}

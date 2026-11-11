@@ -1,0 +1,108 @@
+{
+  "id": "web-oauth-state-pkce",
+  "name": "OAuth state / PKCE Weaknesses (Login CSRF, Code Interception)",
+  "command": "GET /authorize?client_id=<client_id>&redirect_uri=<url>&response_type=code&scope=openid",
+  "description": "Exploits a missing or unvalidated state parameter (OAuth login CSRF - forcing a victim to log in as the attacker), PKCE downgrade or code_challenge stripping (so an intercepted authorization code can be redeemed without the verifier), and implicit-flow access-token leakage via the Referer header or browser history.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Web",
+  "subcategory": "Authentication",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "PortSwigger Web Security Academy - OAuth",
+  "tags": [
+    "oauth",
+    "oidc",
+    "pkce",
+    "csrf",
+    "state",
+    "code-interception"
+  ],
+  "mitre": [
+    "T1190",
+    "T1528",
+    "T1539"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== MISSING / UNVALIDATED state (login CSRF) ===\n  The state parameter binds the /authorize request to the user's session (CSRF token). If absent or unchecked:\n  1. Attacker starts a login, captures their own ?code=... at the callback (does NOT complete it).\n  2. Attacker tricks the victim into visiting /callback?code=<attacker_code>.\n  3. Victim's RP session is now logged in AS THE ATTACKER - victim's data (cards, uploads) flows to the attacker account.\n  Test: remove state entirely, or replay a request with a different user's state - does login still succeed?\n\n=== PKCE DOWNGRADE / code_challenge STRIPPING ===\n  PKCE binds the code to a code_verifier. Weaknesses:\n  - Server accepts token exchange WITHOUT code_verifier when code_challenge was sent (downgrade).\n  - code_challenge_method=plain accepted (verifier == challenge, no SHA-256 protection).\n  - Server ignores a mismatched verifier.\n  Test: send authorize with code_challenge, then redeem at /token with NO code_verifier, or a wrong one.\n\n=== IMPLICIT-FLOW TOKEN LEAK ===\n  response_type=token puts the access_token in the URL fragment. Leaks via:\n  - Referer header to third-party resources loaded by the callback page.\n  - Browser history / proxy logs if copied to the query string.\n  - An open redirect that carries the fragment onward.\n\n=== TOOLING ===\n  - Burp Repeater: strip state / verifier, replay the /token POST.\n  - Burp 'Request Smuggler' not needed; use Repeater + a CSRF PoC (Burp > Generate CSRF PoC).\n  - Observe code_challenge_method and whether /token enforces it.",
+  "examples": [
+    {
+      "label": "Login-CSRF PoC forcing victim into attacker session",
+      "command": "<img src=\"https://app.example.com/oauth/callback?code=ATTACKER_CODE\">"
+    },
+    {
+      "label": "Redeem a code at /token with NO code_verifier (PKCE downgrade)",
+      "command": "curl -s https://sso.example.com/token -d grant_type=authorization_code -d code=<token> -d client_id=webapp -d redirect_uri=https://app.example.com/cb"
+    },
+    {
+      "label": "Force the weaker plain PKCE method",
+      "command": "https://sso.example.com/authorize?client_id=webapp&response_type=code&scope=openid&redirect_uri=https://app.example.com/cb&code_challenge=abc&code_challenge_method=plain"
+    }
+  ],
+  "references": [
+    {
+      "title": "PortSwigger - OAuth 2.0 authentication vulnerabilities",
+      "url": "https://portswigger.net/web-security/oauth"
+    },
+    {
+      "title": "RFC 7636 - PKCE",
+      "url": "https://datatracker.ietf.org/doc/html/rfc7636"
+    },
+    {
+      "title": "RFC 9700 - OAuth 2.0 Security Best Current Practice",
+      "url": "https://datatracker.ietf.org/doc/html/rfc9700"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "web-oauth-redirect-uri-abuse",
+      "note": "Redirect_uri abuse is the usual code-interception primitive this chains with.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cors-misconfiguration",
+      "note": "CORS flaws can exfil tokens that OAuth clients store client-side.",
+      "rel": "alternative"
+    },
+    {
+      "id": "web-jwt-attacks",
+      "note": "Attack the id_token/access_token JWT once leaked.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "When state is absent or unverified the authorization callback is not bound to the initiating session, enabling login CSRF. When PKCE is advertised but not enforced at /token, an intercepted code can be redeemed without the verifier. Implicit-flow tokens in the URL fragment leak through the browser.",
+    "prerequisites": "A known authorization endpoint and client_id. For login CSRF, the ability to deliver a crafted callback URL to the victim. For PKCE downgrade, a client that initiates PKCE but a server that does not strictly enforce it.",
+    "impact": "Login CSRF yields victim data captured into an attacker-controlled account; PKCE downgrade enables full code interception and account takeover; implicit-flow leaks expose bearer access tokens.",
+    "detection": "[MITRE T1190] /authorize requests with no state parameter, repeated use of the same state across sessions/IPs, and /token exchanges that omit code_verifier despite a prior code_challenge. Access tokens appearing in Referer or query strings in logs.",
+    "artifacts": "IdP and reverse-proxy logs for /authorize (state, code_challenge, code_challenge_method) and /token (presence/absence of code_verifier), plus Referer headers carrying fragments.",
+    "splunk_spl": "index=web (uri_path=\"/authorize\" OR uri_path=\"/token\")\n| rex field=uri_query \"(?<has_state>state=)\"\n| rex field=form_data \"(?<has_verifier>code_verifier=)\"\n| where uri_path=\"/authorize\" AND isnull(has_state)",
+    "elastic_kql": "url.path:\"/authorize\" and not url.query:*state=* or (url.path:\"/token\" and not http.request.body.content:*code_verifier*)",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem in (\"/authorize\",\"/token\")\n| extend hasState = csUriQuery has \"state=\"\n| where csUriStem == \"/authorize\" and hasState == false\n| summarize count() by cIP, csUriStem",
+    "sigma_rules": "web_oauth_missing_state_or_pkce",
+    "prevention": "Require a cryptographically random, single-use, session-bound state and reject callbacks without it. Enforce PKCE (S256 only; reject plain and reject exchanges missing a valid code_verifier). Use the authorization-code flow, never implicit. Set Referrer-Policy: no-referrer on callback pages.",
+    "sources": [
+      "https://portswigger.net/web-security/oauth",
+      "https://datatracker.ietf.org/doc/html/rfc7636"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "OAuth /authorize missing state parameter",
+        "logic": "index=web sourcetype=nginx uri_path=\"/authorize\" method=GET\n| where NOT match(uri_query, \"(^|&)state=\")\n| stats count by clientip, useragent, uri_query",
+        "data_source": "nginx",
+        "attack": [
+          "T1190",
+          "T1539"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Non-interactive service clients or health checks hitting /authorize.",
+        "tuning": "Scope to interactive user-agents and require a prior session cookie; baseline legitimate flows that always include state."
+      }
+    ]
+  }
+}

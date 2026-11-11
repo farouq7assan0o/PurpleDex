@@ -1,0 +1,104 @@
+{
+  "id": "aws-sts-assumerole-chain",
+  "name": "AWS STS AssumeRole Chaining - Pivot Across Roles/Accounts",
+  "command": "aws sts assume-role --role-arn <role_arn> --role-session-name <profile>",
+  "description": "Use sts:AssumeRole to hop from one IAM role to another, chaining across roles and even AWS accounts to reach higher privilege. Over-broad trust policies, wildcard principals, and missing or guessable sts:ExternalId conditions create confused-deputy and cross-account escalation paths. Role chaining also lets an attacker launder their identity and shorten the audit trail.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Cloud Security",
+  "subcategory": "AWS Attacks",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "hackingthe.cloud",
+  "tags": [
+    "aws",
+    "sts",
+    "assume-role",
+    "role-chaining",
+    "cross-account",
+    "confused-deputy",
+    "external-id"
+  ],
+  "mitre": [
+    "T1078.004",
+    "T1098"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHAT ENABLES IT ===\n  A role's trust policy (AssumeRolePolicyDocument) lists who may assume it.\n  Over-broad principals ( \"AWS\": \"*\" , a whole account root, or a role you\n  already control) let you assume higher-priv roles, possibly cross-account.\n\n=== FIND ASSUMABLE ROLES ===\n  aws iam list-roles --query 'Roles[].{Name:RoleName,Trust:AssumeRolePolicyDocument}'\n  # or enumerate with Pacu / pmapper to graph who-can-assume-what\n\n=== ASSUME A ROLE ===\n  aws sts assume-role --role-arn arn:aws:iam::<acct>:role/<priv_role> \\\n    --role-session-name pivot\n  # export the returned AccessKeyId/SecretAccessKey/SessionToken, then:\n  aws sts get-caller-identity\n\n=== CROSS-ACCOUNT WITH EXTERNAL ID (confused deputy) ===\n  aws sts assume-role --role-arn arn:aws:iam::<other_acct>:role/<role> \\\n    --role-session-name pivot --external-id <external_id>\n  # if the ExternalId is weak/guessable/leaked, the control fails\n\n=== CHAINING (role -> role -> role) ===\n  # assume role A, configure it as a profile, then assume role B from it:\n  aws configure set profile.a.aws_access_key_id ...\n  aws sts assume-role --profile a --role-arn arn:...:role/B --role-session-name b\n  # note: chained sessions are capped at 1 hour\n\n=== USE A NAMED PROFILE (role_arn + source_profile) ===\n  ~/.aws/config:\n    [profile pivot]\n    role_arn = arn:aws:iam::<acct>:role/<priv_role>\n    source_profile = default\n\n=== NEXT ===\n  After landing in the target role, enumerate and look for the next hop.",
+  "examples": [
+    {
+      "label": "Assume a role and check identity",
+      "command": "aws sts assume-role --role-arn arn:aws:iam::<acct>:role/<priv_role> --role-session-name pivot"
+    },
+    {
+      "label": "Cross-account assume with external id",
+      "command": "aws sts assume-role --role-arn arn:aws:iam::<acct>:role/<role> --role-session-name pivot --external-id <external_id>"
+    },
+    {
+      "label": "List roles and their trust policies",
+      "command": "aws iam list-roles --query 'Roles[].{Name:RoleName,Trust:AssumeRolePolicyDocument}'"
+    }
+  ],
+  "references": [
+    {
+      "title": "hackingthe.cloud - IAM privilege escalation / role chaining",
+      "url": "https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/"
+    },
+    {
+      "title": "AWS docs - sts:AssumeRole",
+      "url": "https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "aws-pacu-enum",
+      "note": "Graph who-can-assume-what before chaining.",
+      "rel": "prereq"
+    },
+    {
+      "id": "cloud-enumerate-iam",
+      "note": "Enumerate role trust policies for weak principals.",
+      "rel": "prereq"
+    },
+    {
+      "id": "aws-lambda-privesc",
+      "note": "Alternative IAM privesc once you hold a role.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AssumeRole is governed entirely by the target role's trust policy. When that policy names an over-broad principal (account root, wildcard, or a role the attacker controls) or relies on a weak/guessable ExternalId, an attacker can legitimately assume a more privileged role, including across accounts.",
+    "prerequisites": "Control of a principal that is trusted by the target role (directly or via a chain), plus sts:AssumeRole; for cross-account confused-deputy, knowledge of (or absence of) the required ExternalId.",
+    "impact": "Privilege escalation and cross-account/cross-boundary movement; attacker obtains the target role's permissions and can continue chaining toward administrative access while obscuring their original identity.",
+    "detection": "[MITRE T1078.004] CloudTrail AssumeRole events where the assuming identity is itself an assumed-role session (chaining), cross-account AssumeRole from unexpected source accounts/IPs, or a burst of AssumeRole calls walking multiple roles.",
+    "artifacts": "CloudTrail AssumeRole events with userIdentity.type=AssumedRole as the caller, requestParameters.roleArn, requestParameters.externalId, and resources showing the target role; sts:GetCallerIdentity probes.",
+    "splunk_spl": "index=aws sourcetype=aws:cloudtrail eventName=AssumeRole\n| stats count values(requestParameters.roleArn) as roles dc(requestParameters.roleArn) as nroles by userIdentity.arn, sourceIPAddress\n| where nroles>2",
+    "elastic_kql": "event.provider:\"sts.amazonaws.com\" and aws.cloudtrail.event_name:\"AssumeRole\" and aws.cloudtrail.user_identity.type:\"AssumedRole\"",
+    "sentinel_kql": "AWSCloudTrail\n| where EventName == \"AssumeRole\"\n| where UserIdentityType == \"AssumedRole\"\n| summarize Roles=dcount(tostring(parse_json(RequestParameters).roleArn)), Calls=count() by UserIdentityArn, SourceIpAddress\n| where Roles > 2",
+    "sigma_rules": "aws_sts_assumerole_chaining",
+    "prevention": "Scope every role trust policy to specific principals (no account-root or wildcard); require a strong unique sts:ExternalId for third-party cross-account roles; add aws:SourceArn/aws:SourceAccount conditions; use permission boundaries and SCPs to cap reachable privilege; alert on role chaining and unexpected cross-account AssumeRole.",
+    "sources": [
+      "https://hackingthe.cloud/aws/exploitation/iam_privilege_escalation/",
+      "https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "STS role chaining / cross-account AssumeRole",
+        "logic": "index=aws sourcetype=aws:cloudtrail eventName=AssumeRole userIdentity.type=AssumedRole\n| stats dc(requestParameters.roleArn) as roles values(requestParameters.roleArn) as chain by userIdentity.arn, sourceIPAddress\n| where roles>2",
+        "data_source": "cloud-trail",
+        "attack": [
+          "T1078.004",
+          "T1098"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate automation that chains roles (CI/CD, cross-account tooling)",
+        "tuning": "Baseline normal role-assumption graphs per principal; alert on new cross-account targets or chains deeper than expected"
+      }
+    ]
+  }
+}

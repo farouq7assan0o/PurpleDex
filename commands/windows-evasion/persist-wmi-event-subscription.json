@@ -1,0 +1,103 @@
+{
+  "id": "persist-wmi-event-subscription",
+  "name": "WMI Event Subscription Persistence",
+  "command": "Register __EventFilter + CommandLineEventConsumer + __FilterToConsumerBinding",
+  "description": "Permanent WMI event subscription persistence registers an __EventFilter (a WQL trigger, e.g. a time interval or process start), a CommandLineEventConsumer or ActiveScriptEventConsumer (the payload), and a __FilterToConsumerBinding that links them. The payload is executed by WmiPrvSE.exe (SYSTEM) whenever the filter fires, with no file on disk and no Run key - a fileless, stealthy autostart. Registered via PowerShell or mofcomp.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Persistence",
+  "subcategory": "Persistence",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1546.003; Microsoft WMI documentation; public WMI-persistence research",
+  "tags": ["wmi", "persistence", "event-subscription", "fileless", "system", "mofcomp"],
+  "mitre": ["T1546.003", "T1047"],
+  "exam": "exam-ok",
+  "notes": "=== THREE OBJECTS (root/subscription namespace) ===\n  __EventFilter               # WHEN: a WQL query that fires the subscription\n  CommandLineEventConsumer    # WHAT: command line to run (also ActiveScriptEventConsumer for VBScript/JScript)\n  __FilterToConsumerBinding   # LINK: ties the filter to the consumer\n\n=== POWERSHELL REGISTRATION (admin) ===\n  $Filter = Set-WmiInstance -Namespace root\\subscription -Class __EventFilter -Arguments @{\n    Name='Updater'; EventNamespace='root\\cimv2'; QueryLanguage='WQL';\n    Query=\"SELECT * FROM __InstanceModificationEvent WITHIN 60 WHERE TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'\" }\n  $Consumer = Set-WmiInstance -Namespace root\\subscription -Class CommandLineEventConsumer -Arguments @{\n    Name='Updater'; CommandLineTemplate='powershell -enc <b64>' }\n  Set-WmiInstance -Namespace root\\subscription -Class __FilterToConsumerBinding -Arguments @{ Filter=$Filter; Consumer=$Consumer }\n\n=== MOFCOMP ALTERNATIVE ===\n  mofcomp evil.mof          # compile a .mof defining the same three objects into the repository\n\n=== TRIGGERS COMMONLY USED ===\n  - time/interval (__IntervalTimerInstruction or WITHIN clause)\n  - logon / process start (Win32_LogonSession, __InstanceCreationEvent on Win32_Process)\n\n=== ALTERNATIVES ===\n  Run/RunOnce keys, scheduled tasks, services - all more visible than a WMI subscription.",
+  "examples": [
+    {
+      "label": "Enumerate existing subscriptions (hunt / cleanup)",
+      "command": "Get-WmiObject -Namespace root\\subscription -Class __FilterToConsumerBinding"
+    },
+    {
+      "label": "List consumers to spot a malicious one",
+      "command": "Get-WmiObject -Namespace root\\subscription -Class CommandLineEventConsumer"
+    },
+    {
+      "label": "Remove a malicious binding/filter/consumer",
+      "command": "Get-WmiObject -Namespace root\\subscription -Class __EventFilter -Filter \"Name='Updater'\" | Remove-WmiObject"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1546.003 - WMI Event Subscription",
+      "url": "https://attack.mitre.org/techniques/T1546/003/"
+    },
+    {
+      "title": "Microsoft - Receiving a WMI Event",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/wmisdk/receiving-a-wmi-event"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "scheduled-tasks-enum",
+      "note": "Scheduled tasks are a more visible persistence alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "persist-com-hijacking",
+      "note": "COM hijacking is another fileless, registry-driven persistence option.",
+      "rel": "alternative"
+    },
+    {
+      "id": "startup-autoruns",
+      "note": "Autoruns enumerates WMI subscriptions and other autostart locations.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "WMI permanent event subscriptions are a legitimate management feature. The three objects live in the CIM repository (not the filesystem or Run keys), and the payload is launched by the trusted WmiPrvSE.exe as SYSTEM, so the technique is fileless and bypasses autostart checks that only look at the usual locations.",
+    "prerequisites": "Local administrator (to write to root\\subscription). The payload command can reference an encoded script, so no separate file is strictly required.",
+    "impact": "T1546.003 Event Triggered Execution: WMI Event Subscription. Persistent, fileless SYSTEM-level code execution that survives reboots and is invisible to Run-key/startup-folder inspection.",
+    "detection": "Monitor the WMI-Activity operational log (Microsoft-Windows-WMI-Activity/Operational EID 5861) for permanent consumer creation, and Sysmon EID 19/20/21 (WmiFilter / WmiConsumer / WmiBinding registration). Alert on CommandLineEventConsumer/ActiveScriptEventConsumer referencing powershell, encoded commands, or scripting engines, and on WmiPrvSE.exe spawning shells.",
+    "artifacts": "Sysmon EID 19 (__EventFilter), EID 20 (consumer), EID 21 (binding); Microsoft-Windows-WMI-Activity/Operational 5861; WmiPrvSE.exe child processes in Security 4688; the compiled objects in the OBJECTS.DATA repository.",
+    "splunk_spl": "index=sysmon (EventCode=19 OR EventCode=20 OR EventCode=21)\n| table _time, Computer, EventCode, Operation, User, Name, Query, Destination, Consumer\n| search Consumer=\"*powershell*\" OR Destination=\"*powershell*\" OR Query=\"*__InstanceCreationEvent*\"",
+    "elastic_kql": "event.code:(\"19\" or \"20\" or \"21\") and (winlog.event_data.Destination:*powershell* or winlog.event_data.Consumer:*CommandLineEventConsumer*)",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"WmiBindingRegistration\" or ActionType == \"WmiConsumerRegistration\"\n| where AdditionalFields has_any (\"powershell\",\"-enc\",\"scrcons\",\"ActiveScript\")\n| project Timestamp, DeviceName, InitiatingProcessAccountName, ActionType, AdditionalFields",
+    "sigma_rules": "sysmon_wmi_persistence_commandline_consumer",
+    "prevention": "Baseline and alert on any new permanent WMI consumer (they are rare in most environments); restrict local admin so attackers cannot write to root\\subscription; enable Sysmon WMI eventing (config schema 4.1+) and the WMI-Activity operational log; periodically audit root\\subscription with Autoruns/Get-WmiObject and remove unknown bindings.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1546/003/",
+      "https://learn.microsoft.com/en-us/windows/win32/wmisdk/receiving-a-wmi-event"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Permanent WMI consumer/binding registration with a script payload",
+        "logic": "index=sysmon (EventCode=20 OR EventCode=21) (Destination=\"*powershell*\" OR Destination=\"*-enc*\" OR Consumer=\"*ActiveScript*\")\n| table _time, Computer, EventCode, User, Name, Destination, Consumer",
+        "data_source": "sysmon",
+        "attack": ["T1546.003"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "A few monitoring/management products register permanent consumers",
+        "tuning": "Allowlist known management agents by consumer name"
+      },
+      {
+        "platform": "sentinel",
+        "name": "WmiPrvSE spawning a command interpreter",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"WmiPrvSE.exe\"\n| where FileName in~ (\"powershell.exe\",\"cmd.exe\",\"wscript.exe\",\"cscript.exe\",\"mshta.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": ["T1546.003", "T1047"],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate WMI-driven management scripts",
+        "tuning": "Baseline normal WmiPrvSE children per host role"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "windows-system"],
+      "better_with": ["edr", "defender-endpoint"]
+    }
+  }
+}

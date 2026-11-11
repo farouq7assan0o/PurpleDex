@@ -1,0 +1,82 @@
+{
+  "id": "crack-name-that-hash",
+  "name": "Name-That-Hash - Modern Hash Type Identifier",
+  "command": "nth -t \"<hash>\"",
+  "description": "Name-That-Hash identifies hash types and provides the corresponding hashcat mode and John format. More accurate and actively maintained than hashid. Supports all common hash types including NTLM, Kerberoast, AS-REP, bcrypt, and application-specific hashes. Essential before cracking unknown hashes.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Password Attacks",
+  "subcategory": "Hash Identification",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "HashPals/Name-That-Hash",
+  "tags": [
+    "name-that-hash",
+    "nth",
+    "hash-identification",
+    "hashcat",
+    "john",
+    "hash-type"
+  ],
+  "mitre": [
+    "T1110"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  pip install name-that-hash\n  # Or: pip3 install name-that-hash\n\n=== IDENTIFY SINGLE HASH ===\n  nth -t \"5f4dcc3b5aa765d61d8327deb882cf99\"\n  # Output: MD5 (hashcat: 0, john: raw-md5)\n\n  nth -t \"$krb5tgs$23$*user$domain$...\"\n  # Output: Kerberos 5 TGS-REP (hashcat: 13100)\n\n  nth -t \"aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0\"\n  # Output: NTLM (hashcat: 1000)\n\n=== IDENTIFY FROM FILE ===\n  nth -f hashes.txt\n  # Identifies each hash in the file\n\n=== COMMON HASH TYPES ===\n  MD5:         32 hex chars          hashcat -m 0\n  SHA1:        40 hex chars          hashcat -m 100\n  SHA256:      64 hex chars          hashcat -m 1400\n  NTLM:        32 hex chars          hashcat -m 1000\n  NTLMv2:      includes ::           hashcat -m 5600\n  Kerberoast:  $krb5tgs$23$          hashcat -m 13100\n  AS-REP:      $krb5asrep$23$        hashcat -m 18200\n  bcrypt:      $2a$ or $2b$          hashcat -m 3200\n  DCC2:        $DCC2$                hashcat -m 2100\n  NetNTLMv1:   includes :::          hashcat -m 5500\n\n=== VS hashid ===\n  nth: More accurate, shows hashcat mode AND john format\n  hashid: Older, sometimes misidentifies, no hashcat modes",
+  "examples": [
+    {
+      "label": "Identify single hash",
+      "command": "nth -t \"5f4dcc3b5aa765d61d8327deb882cf99\""
+    },
+    {
+      "label": "Identify from file",
+      "command": "nth -f hashes.txt"
+    },
+    {
+      "label": "Identify Kerberoast hash",
+      "command": "nth -t \"$krb5tgs$23$*svc_sql$corp.local$...\""
+    }
+  ],
+  "references": [
+    {
+      "title": "Name-That-Hash",
+      "url": "https://github.com/HashPals/Name-That-Hash"
+    },
+    {
+      "title": "Hashcat modes reference",
+      "url": "https://hashcat.net/wiki/doku.php?id=example_hashes"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "hashid-identify",
+      "note": "hashid is the older alternative; nth is more accurate.",
+      "rel": "alternative"
+    },
+    {
+      "id": "hashcat-dictionary",
+      "note": "After identifying the hash type, crack with hashcat.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Hash identification is a passive, offline operation. It analyzes the format and structure of hash strings to determine the algorithm used.",
+    "prerequisites": "Hash string to identify; name-that-hash installed.",
+    "impact": "Identifies hash algorithms enabling targeted cracking attacks.",
+    "detection": "Offline tool - no target-side detection.",
+    "artifacts": "name-that-hash in process list on attacker machine only.",
+    "splunk_spl": "N/A - offline attacker-side tool",
+    "elastic_kql": "N/A - offline attacker-side tool",
+    "sentinel_kql": "N/A - offline attacker-side tool",
+    "sigma_rules": "N/A",
+    "prevention": "Use strong hashing algorithms (bcrypt, scrypt, Argon2); salt all hashes; enforce strong passwords.",
+    "sources": [
+      "HashPals",
+      "https://attack.mitre.org/techniques/T1110/"
+    ]
+  }
+}

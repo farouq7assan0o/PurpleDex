@@ -1,0 +1,104 @@
+{
+  "id": "ad-invoke-aclscanner",
+  "name": "Invoke-ACLScanner - Find Dangerous AD ACL Entries",
+  "command": "Invoke-ACLScanner -ResolveGUIDs | Export-Csv acl_scan.csv",
+  "description": "Invoke-ACLScanner from PowerView finds dangerous ACL entries in Active Directory: GenericAll, GenericWrite, WriteDACL, WriteOwner, and other exploitable permissions over users, groups, computers, and GPOs. Reveals attack paths that BloodHound maps visually but this tool finds via direct LDAP queries.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "PowerSploit/PowerView; CRTP ACL abuse module",
+  "tags": [
+    "invoke-aclscanner",
+    "powerview",
+    "acl",
+    "dacl",
+    "genericall",
+    "genericwrite",
+    "writedacl",
+    "writeowner"
+  ],
+  "mitre": [
+    "T1069.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC USAGE ===\n  Import-Module PowerView.ps1\n  Invoke-ACLScanner -ResolveGUIDs\n  # Export results:\n  Invoke-ACLScanner -ResolveGUIDs | Export-Csv acl_scan.csv -NoTypeInformation\n\n=== FILTER BY RIGHTS ===\n  # Only GenericAll:\n  Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll\"}\n  # Only WriteDACL:\n  Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"WriteDacl\"}\n  # Only WriteOwner:\n  Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"WriteOwner\"}\n\n=== CHECK SPECIFIC OBJECT ===\n  Get-ObjectAcl -SamAccountName <target_user> -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll|GenericWrite|WriteDacl|WriteOwner\"}\n\n=== EXPLOITABLE PERMISSIONS ===\n  GenericAll:    Full control - reset password, add to group, modify\n  GenericWrite:  Modify attributes - Kerberoast, Shadow Creds, logon script\n  WriteDACL:     Modify permissions - grant yourself GenericAll\n  WriteOwner:    Take ownership - then grant yourself full control\n  ForceChangePassword: Reset password without knowing current\n  AddMember:     Add yourself to a group\n\n=== FROM LINUX (alternative) ===\n  # dacledit (impacket):\n  dacledit.py <domain>/<user>:<pass> -dc-ip <dc_ip> -target <target_dn> -action read\n  # BloodHound with SharpHound:\n  SharpHound.exe -c ACL",
+  "examples": [
+    {
+      "label": "Scan all dangerous ACLs",
+      "command": "Invoke-ACLScanner -ResolveGUIDs | Export-Csv acl_scan.csv -NoTypeInformation"
+    },
+    {
+      "label": "Find GenericAll permissions",
+      "command": "Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll\"}"
+    },
+    {
+      "label": "Check ACLs on specific user",
+      "command": "Get-ObjectAcl -SamAccountName svc_admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll|WriteDacl\"}"
+    }
+  ],
+  "references": [
+    {
+      "title": "PowerView",
+      "url": "https://github.com/PowerShellMafia/PowerSploit/tree/master/Recon"
+    },
+    {
+      "title": "MITRE T1069.002",
+      "url": "https://attack.mitre.org/techniques/T1069/002/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Exploit GenericWrite found by ACLScanner.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-writeowner-abuse",
+      "note": "Exploit WriteOwner found by ACLScanner.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "BloodHound provides visual ACL attack path mapping.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "AD object ACLs are readable by any authenticated user. Invoke-ACLScanner enumerates all ACEs and highlights those that grant dangerous rights to non-privileged principals.",
+    "prerequisites": "Domain user credentials; PowerView loaded.",
+    "impact": "Identifies all ACL-based attack paths: password resets, group membership changes, delegation abuse.",
+    "detection": "[MITRE T1069.002] Bulk LDAP ACL queries; PowerView script execution; large LDAP result sets.",
+    "artifacts": "PowerShell script block logs with Invoke-ACLScanner; LDAP queries for nTSecurityDescriptor.",
+    "splunk_spl": "index=windows sourcetype=WinEventLog:Microsoft-Windows-PowerShell/Operational EventCode=4104 ScriptBlockText=\"*Invoke-ACLScanner*\"\n| table _time, ComputerName, ScriptBlockText",
+    "elastic_kql": "powershell.file.script_block_text:*Invoke-ACLScanner*",
+    "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where AdditionalFields has_any (\"Invoke-ACLScanner\", \"Get-ObjectAcl\")\n| project Timestamp, DeviceName, AccountName, AdditionalFields",
+    "sigma_rules": "win_powershell_acl_enumeration",
+    "prevention": "Audit and minimize dangerous ACL entries; use AdminSDHolder for protected groups; monitor ACL enumeration; implement least-privilege ACLs.",
+    "sources": [
+      "CRTP ACL module",
+      "https://attack.mitre.org/techniques/T1069/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "ACL enumeration via PowerView",
+        "logic": "DeviceProcessEvents\n| where FileName == \"powershell.exe\"\n| where ProcessCommandLine has_any (\"Invoke-ACLScanner\", \"Get-ObjectAcl\", \"Get-DomainObjectAcl\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1069.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Security audit teams running authorized AD assessments",
+        "tuning": "Also detect by LDAP query patterns reading nTSecurityDescriptor on many objects"
+      }
+    ]
+  }
+}

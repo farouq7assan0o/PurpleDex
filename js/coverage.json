@@ -6381,6 +6381,13 @@
           "data_source": "windows-security"
         },
         {
+          "card_id": "ad-invoke-aclscanner",
+          "name": "ACL enumeration via PowerView",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "ad-ldapdomaindump",
           "name": "ldapdomaindump - AD Dump via LDAP (HTML/JSON/greppable) - Sentinel",
           "platform": "sentinel",
@@ -34390,6 +34397,71 @@
       ],
       "best_fidelity": "behavioral"
     },
+    "T1615": {
+      "detections": [
+        {
+          "card_id": "ad-grouper2",
+          "name": "GPO enumeration and audit tool execution",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
+          "card_id": "crtp-ou-gpo-enum",
+          "name": "OU & GPO Enumeration (PowerView) - Sentinel",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-ou-gpo-enum",
+          "name": "OU & GPO Enumeration (PowerView) (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-ou-gpo-enum",
+          "name": "OU & GPO Enumeration (PowerView) (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "crtp-ou-gpo-enum",
+          "name": "posh_ps_powerview_gpo_enum",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-ou-gpo-enum",
+          "name": "win_security_ldap_recon",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "crtp-ou-gpo-enum",
+          "name": "OU  GPO Enumeration (PowerView) - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        }
+      ],
+      "platforms": [
+        "sentinel",
+        "splunk",
+        "sigma",
+        "elastic"
+      ],
+      "data_sources": [
+        "defender-endpoint",
+        "windows-security",
+        "powershell"
+      ],
+      "best_fidelity": "behavioral"
+    },
     "T1071.001": {
       "detections": [
         {
@@ -37428,63 +37500,6 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1615": {
-      "detections": [
-        {
-          "card_id": "crtp-ou-gpo-enum",
-          "name": "OU & GPO Enumeration (PowerView) - Sentinel",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-ou-gpo-enum",
-          "name": "OU & GPO Enumeration (PowerView) (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-ou-gpo-enum",
-          "name": "OU & GPO Enumeration (PowerView) (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "crtp-ou-gpo-enum",
-          "name": "posh_ps_powerview_gpo_enum",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-ou-gpo-enum",
-          "name": "win_security_ldap_recon",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "crtp-ou-gpo-enum",
-          "name": "OU  GPO Enumeration (PowerView) - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        }
-      ],
-      "platforms": [
-        "sentinel",
-        "splunk",
-        "sigma",
-        "elastic"
-      ],
-      "data_sources": [
-        "windows-security",
-        "powershell"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1574.007": {
       "detections": [
         {
@@ -39869,6 +39884,7 @@
       "T1090",
       "T1134.001",
       "T1484.001",
+      "T1615",
       "T1558.003",
       "T1557.001",
       "T1071.001",
@@ -40457,6 +40473,6 @@
       "T1110.001"
     ]
   },
-  "cards_with_detections": 870,
-  "total_detections": 3784
+  "cards_with_detections": 872,
+  "total_detections": 3786
 }

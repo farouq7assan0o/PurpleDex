@@ -1,0 +1,98 @@
+{
+  "id": "ad-grouper2",
+  "name": "Grouper2 - GPO Security Misconfiguration Scanner",
+  "command": ".\\Grouper2.exe -f <gpo_report_path>",
+  "description": "Grouper2 audits Group Policy Objects for security misconfigurations: passwords in GPP (MS14-025), scheduled tasks with credentials, startup scripts, registry settings, software installation, and other policy weaknesses. Analyzes offline GPO reports or live AD. Essential for finding GPO-based privilege escalation paths.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CPTS",
+    "CRTP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "l0ss/Grouper2; CPTS AD enumeration module",
+  "tags": [
+    "grouper2",
+    "gpo",
+    "group-policy",
+    "gpp",
+    "misconfiguration",
+    "audit",
+    "ms14-025"
+  ],
+  "mitre": [
+    "T1615"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== GENERATE GPO REPORT ===\n  gpresult /H gpo_report.html\n  # Or with Group Policy Management Console export\n\n=== SCAN GPO REPORT ===\n  .\\Grouper2.exe -f gpo_report.html\n  # Or scan live AD:\n  .\\Grouper2.exe\n\n=== WHAT IT FINDS ===\n  # HIGH SEVERITY:\n  - Passwords in Group Policy Preferences (GPP/MS14-025)\n  - Scheduled tasks with embedded credentials\n  - Startup/logon scripts with credentials\n  - Software installation with admin privileges\n  # MEDIUM SEVERITY:\n  - Weak file/registry permissions in GPO\n  - Unrestricted script execution policies\n  - Mapped drives with credentials\n  - Printer configurations\n  # LOW SEVERITY:\n  - Informational policy settings\n  - Security baselines not met\n\n=== GPP PASSWORD DECRYPTION ===\n  # If Grouper2 finds GPP passwords, they can be decrypted:\n  # Microsoft published the AES key (MS14-025)\n  gpp-decrypt <cpassword_value>\n  # Or with CrackMapExec:\n  crackmapexec smb <dc_ip> -u <user> -p <pass> -M gpp_autologin\n  crackmapexec smb <dc_ip> -u <user> -p <pass> -M gpp_password\n\n=== ALTERNATIVES ===\n  # SharpGPOAbuse: Exploit writable GPOs (different purpose)\n  # PowerView: Get-DomainGPO for GPO enumeration\n  # BloodHound: GPO abuse edges",
+  "examples": [
+    {
+      "label": "Scan GPO report",
+      "command": ".\\Grouper2.exe -f gpo_report.html"
+    },
+    {
+      "label": "Live AD scan",
+      "command": ".\\Grouper2.exe"
+    },
+    {
+      "label": "Decrypt GPP password",
+      "command": "gpp-decrypt \"+bBe4LGHKq1WDADIg+jUhSiGdRo3y2EaxWFyXiF10wQ\""
+    }
+  ],
+  "references": [
+    {
+      "title": "Grouper2",
+      "url": "https://github.com/l0ss/Grouper2"
+    },
+    {
+      "title": "MITRE T1615 - Group Policy Discovery",
+      "url": "https://attack.mitre.org/techniques/T1615/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-gpp-autologin",
+      "note": "CrackMapExec GPP password extraction.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-sharpgpoabuse",
+      "note": "SharpGPOAbuse for exploiting writable GPOs (Grouper2 finds them).",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "GPOs are accessible to all domain users. Grouper2 parses GPO configurations to find embedded credentials, weak permissions, and other misconfigurations that attackers can exploit.",
+    "prerequisites": "Domain user access; Grouper2 binary or GPO report.",
+    "impact": "Discovery of GPP passwords, privilege escalation via GPO misconfigurations.",
+    "detection": "[MITRE T1615] GPO enumeration queries; SYSVOL access patterns; Grouper2 process execution.",
+    "artifacts": "Access to SYSVOL/Policies; Grouper2 binary execution; GPO report generation.",
+    "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*Grouper2*\" OR NewProcessName=\"*gpresult*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+    "elastic_kql": "process.name:(*Grouper2* OR *gpresult*)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has_any (\"Grouper2\", \"gpresult\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_process_creation_gpo_enumeration",
+    "prevention": "Remove GPP passwords (MS14-025 patch); audit GPO permissions; restrict SYSVOL access; use LAPS instead of GPP for local admin passwords.",
+    "sources": [
+      "CPTS AD module",
+      "https://attack.mitre.org/techniques/T1615/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "GPO enumeration and audit tool execution",
+        "logic": "DeviceProcessEvents\n| where FileName has_any (\"Grouper2\", \"SharpGPOAbuse\")\n  or (FileName == \"gpresult.exe\" and ProcessCommandLine has \"/H\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1615"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legitimate GPO auditing by security teams",
+        "tuning": "Alert on non-admin users running GPO audit tools"
+      }
+    ]
+  }
+}

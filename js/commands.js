@@ -857,6 +857,16 @@ const COMMAND_DATA = {
           "id": "ad-admodule-getaddomain",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -1273,6 +1283,16 @@ const COMMAND_DATA = {
           "id": "ad-admodule-spn",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-ldeep",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -1822,6 +1842,16 @@ const COMMAND_DATA = {
           "id": "ad-lotl-enum",
           "rel": "next",
           "note": "If tools are blocked, switch to LOTL techniques using built-in Windows commands"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adpeas",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
         }
       ],
       "explain": "Enumerates host defenses after landing on a Windows box:\n  Get-MpComputerStatus   report Windows Defender real-time/AV state\nTells you what you are up against before dropping tools; the card also checks PowerShell language mode ($ExecutionContext.SessionState.LanguageMode - Constrained vs Full) and AppLocker rules (Get-AppLockerPolicy)."
@@ -2114,6 +2144,16 @@ const COMMAND_DATA = {
           "id": "ad-writedacl-linux",
           "note": "WriteDACL over the domain -> DCSync.",
           "rel": "next"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "AD attack path visualization and analysis.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-bloodhound-cypher",
+          "note": "AD attack path visualization and analysis.",
+          "rel": "alternative"
         }
       ],
       "tools": [
@@ -4815,6 +4855,16 @@ const COMMAND_DATA = {
           "id": "ad-esc1-certipy-linux",
           "note": "ESC1 is template misconfiguration; ESC13 targets policy-to-group linking.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc10-weak-mapping",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc11-rpc-relay",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -5022,6 +5072,16 @@ const COMMAND_DATA = {
           "id": "ad-forgecert",
           "note": "SubCA ESC2 certificates can sign other certs, similar to ForgeCert.",
           "rel": "next"
+        },
+        {
+          "id": "ad-adcs-esc10-weak-mapping",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc11-rpc-relay",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -5121,6 +5181,16 @@ const COMMAND_DATA = {
         {
           "id": "ad-esc15-ekuwu",
           "note": "ESC15 is another template-based ADCS attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "Related ACL abuse technique.",
           "rel": "alternative"
         }
       ],
@@ -5347,7 +5417,19 @@ const COMMAND_DATA = {
             "tuning": "Exclude known service account patterns; focus on admin-level SAN values"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "ad-adcs-esc10-weak-mapping",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc11-rpc-relay",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        }
+      ]
     },
     {
       "id": "ad-adcs-esc7-ca-officer",
@@ -5511,6 +5593,16 @@ const COMMAND_DATA = {
         {
           "id": "ad-esc15-ekuwu",
           "note": "ESC15 also targets certificate mapping but via different flags.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc10-weak-mapping",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc11-rpc-relay",
+          "note": "Related ADCS attack technique.",
           "rel": "alternative"
         }
       ],
@@ -6115,6 +6207,16 @@ const COMMAND_DATA = {
         {
           "id": "ad-sharpview",
           "note": "SharpView for manual enumeration; adPEAS automates the common checks.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-finddelegation",
+          "note": "Related delegation abuse technique.",
           "rel": "alternative"
         }
       ],
@@ -8174,6 +8276,16 @@ const COMMAND_DATA = {
           "id": "aquatone",
           "note": "Alternative screenshotting/report tool from the same nmap XML.",
           "rel": "next"
+        },
+        {
+          "id": "ad-nmap-host-list",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
+        },
+        {
+          "id": "msf-db-nmap",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
         }
       ],
       "id": "app-discovery-nmap",
@@ -10227,6 +10339,16 @@ const COMMAND_DATA = {
           "id": "crtp-silver-ticket",
           "note": "DC machine hash also enables silver tickets for its services",
           "rel": "next"
+        },
+        {
+          "id": "ad-coercer-multi",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-dfscoerce",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -10981,6 +11103,26 @@ const COMMAND_DATA = {
           "id": "msf-autoroute",
           "rel": "alternative",
           "note": "post/multi/manage/autoroute automates route adding; same exam rules apply."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "docker-socket-exposed",
+          "note": "Related container escape/abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "group-docker",
+          "note": "Related container escape/abuse technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "moderate",
@@ -11205,6 +11347,16 @@ const COMMAND_DATA = {
           "id": "aws-iam-scope-permissions",
           "rel": "next",
           "note": "Scope permissions of stolen credentials before escalating."
+        },
+        {
+          "id": "docker-socket-exposed",
+          "note": "Related container escape/abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "group-docker",
+          "note": "Related container escape/abuse technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "quiet",
@@ -15812,7 +15964,14 @@ const COMMAND_DATA = {
           "CTF methodology",
           "https://attack.mitre.org/techniques/T1005/"
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "cdsa-m10-static-analysis-linux",
+          "note": "Static analysis including strings and FLOSS.",
+          "rel": "alternative"
+        }
+      ]
     },
     {
       "id": "crtp-bloodhound",
@@ -16202,6 +16361,16 @@ const COMMAND_DATA = {
         {
           "id": "ad-neo4j-bloodhound",
           "note": "Legacy BloodHound with Neo4j for custom Cypher queries.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
           "rel": "alternative"
         }
       ],
@@ -16768,6 +16937,16 @@ const COMMAND_DATA = {
           "id": "xxe-wav-wordpress-cve-2021-29447",
           "note": "After getting WP admin via BookingPress SQLi, use the XXE WAV upload to read wp-config.php and extract DB/FTP credentials.",
           "rel": "next"
+        },
+        {
+          "id": "upload-filename-injection",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "graphql-sqli",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -19974,6 +20153,26 @@ const COMMAND_DATA = {
           "id": "ad-esc1-certipy-linux",
           "note": "Different ADCS attack vector (SAN abuse vs machine impersonation).",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc10-weak-mapping",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc11-rpc-relay",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-dcshadow",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -20076,6 +20275,16 @@ const COMMAND_DATA = {
           "id": "ad-pkinit-getnthash",
           "note": "PKINITtools getnthash is what certipy auto calls internally.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc10-weak-mapping",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc11-rpc-relay",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -20177,6 +20386,16 @@ const COMMAND_DATA = {
           "id": "ad-esc16-upn-manipulation",
           "note": "ESC16 UPN spoof to Domain Admin.",
           "rel": "next"
+        },
+        {
+          "id": "ad-adcs-esc10-weak-mapping",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc11-rpc-relay",
+          "note": "Related ADCS attack technique.",
+          "rel": "alternative"
         }
       ],
       "tools": [
@@ -20429,6 +20648,16 @@ const COMMAND_DATA = {
           "id": "ad-domainpasswordspray",
           "rel": "next",
           "note": "Reuse any recovered credentials."
+        },
+        {
+          "id": "ad-coercer-multi",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-dfscoerce",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -21842,6 +22071,26 @@ const COMMAND_DATA = {
           "id": "cdsa-m06-dcsync",
           "rel": "next",
           "note": "After injecting DC TGT, perform DCSync to dump all hashes."
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adpeas",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -24960,6 +25209,16 @@ const COMMAND_DATA = {
           "id": "crtp-dcsync",
           "note": "DCSync after gaining DA access",
           "rel": "next"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adpeas",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
         }
       ],
       "notes": "/altservice allows protocol transition: even if only HTTP is in the allowed list, you can get CIFS/HOST/LDAP tickets.",
@@ -26422,6 +26681,16 @@ const COMMAND_DATA = {
           "id": "ad-domainpasswordspray",
           "rel": "next",
           "note": "Reuse any recovered credentials."
+        },
+        {
+          "id": "ad-cme-groups",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-loggedon",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -26608,6 +26877,16 @@ const COMMAND_DATA = {
           "id": "ad-cme-groups",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -26987,6 +27266,16 @@ const COMMAND_DATA = {
           "id": "ad-evil-winrm",
           "rel": "next",
           "note": "Use the recovered creds."
+        },
+        {
+          "id": "ad-cme-groups",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-loggedon",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -27195,6 +27484,16 @@ const COMMAND_DATA = {
           "id": "ad-bloodhound-python",
           "note": "Once credentials land, run BloodHound.",
           "rel": "next"
+        },
+        {
+          "id": "ad-cme-groups",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-loggedon",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -28094,6 +28393,16 @@ const COMMAND_DATA = {
           "id": "ref-hash-identifiers",
           "note": "Identify any hashes you recover before cracking.",
           "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "id": "cred-hunting",
@@ -28272,6 +28581,16 @@ const COMMAND_DATA = {
         {
           "id": "lazagne-all",
           "note": "LaZagne also targets password managers.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-asreproasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-kerberoasting",
+          "note": "Related password cracking workflow.",
           "rel": "alternative"
         }
       ],
@@ -29676,6 +29995,16 @@ const COMMAND_DATA = {
           "id": "powershell-clixml-decrypt",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "upload-filename-injection",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "graphql-sqli",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
         }
       ],
       "id": "stickynotes-sqlite",
@@ -31598,7 +31927,39 @@ const COMMAND_DATA = {
             "tuning": "Whitelist known legitimate SSP DLLs; alert on unsigned DLLs"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-dcshadow",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-internal-monologue",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-lsass-dump-detection",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "crtp-skeleton-key",
+          "note": "Skeleton Key is another LSASS-injected persistence technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sedebug-lsass-dump",
+          "note": "LSASS dump for credential extraction.",
+          "rel": "next"
+        }
+      ]
     },
     {
       "type": "command",
@@ -32375,6 +32736,16 @@ const COMMAND_DATA = {
           "id": "pth-impacket",
           "note": "Pass-the-hash with other Impacket tools.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dacledit",
+          "note": "Alternative Impacket remote execution method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-owneredit",
+          "note": "Alternative Impacket remote execution method.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -32466,6 +32837,16 @@ const COMMAND_DATA = {
         {
           "id": "crtp-adminsdholder",
           "note": "AdminSDHolder is another stealthy persistence technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
           "rel": "alternative"
         }
       ],
@@ -32590,6 +32971,16 @@ const COMMAND_DATA = {
           "id": "crtp-child-to-parent",
           "note": "Use child krbtgt for cross-domain escalation",
           "rel": "next"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "notes": "Requires DA, Domain Replicator, or Replicating Directory Changes + All. Logged on DC as DS-Replication-Get-Changes event.",
@@ -33292,6 +33683,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m08-tunneling-detection",
           "rel": "prereq",
           "note": "Network tunneling/covert channel detection - DNS and HTTP exfiltration techniques covered in that card."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "explain": "An SPL query that detects C2 beaconing from Zeek HTTP logs by timing regularity:\n  sourcetype=\"bro:http:json\"       Zeek HTTP records\n  streamstats ... last(_time) ... eval timedelta   time between consecutive connections per src/dest\n  eventstats avg(timedelta) ... eval upper/lower = avg +/-10%   a tolerance band around the mean interval\n  where timedelta in band | eval prcnt=(count/total)*100 | where prcnt>90 AND total>10   keep beacons that are >90% regular\nFlags callbacks that fire at a near-constant interval; the card also covers RDP/Kerberos brute force, Nmap scans, Zerologon, and ransomware over Zeek logs.",
@@ -33417,6 +33818,26 @@ const COMMAND_DATA = {
           "id": "cdsa-m14-network-attack-detection",
           "rel": "next",
           "note": "Network-layer detection of the same AD attacks using Zeek/Bro logs in Splunk."
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "AD attack path visualization and analysis.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "AD attack path visualization and analysis.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "explain": "An SPL query detecting the network logon that credential theft leaves on a DC:\n  source=\"WinEventLog:Security\" EventCode=4624   successful logons\n  Logon_Type=9                                   NewCredentials logon (runas /netonly - overpass-the-hash pattern)\n  Logon_Process=seclogo                          the secondary logon service\n  | table _time, ComputerName, user, Network_Account_Name, ...   surface who/where\nCatches pass-the-hash/overpass-the-hash tradecraft; the card bundles SPL for domain recon, password spraying, Kerberoasting, DCSync, and golden-ticket patterns.",
@@ -36705,6 +37126,16 @@ const COMMAND_DATA = {
           "id": "dig-record-query",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "dns-zone-transfer-web",
@@ -36900,6 +37331,16 @@ const COMMAND_DATA = {
           "id": "subbrute-bruteforce",
           "note": "Actively brute forces subdomains against a chosen resolver (-r), letting you point queries at the target's own DNS server to find interna...",
           "rel": "next"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "code-download-oneliners",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -37868,6 +38309,16 @@ const COMMAND_DATA = {
         {
           "id": "k8s-privileged-pod",
           "note": "Kubernetes privileged pod escape for K8s environments.",
+          "rel": "alternative"
+        },
+        {
+          "id": "docker-socket-exposed",
+          "note": "Related container escape/abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "group-docker",
+          "note": "Related container escape/abuse technique.",
           "rel": "alternative"
         }
       ],
@@ -40282,6 +40733,16 @@ const COMMAND_DATA = {
           "id": "gs-privesc-enum",
           "rel": "next",
           "note": "Foothold on the Linux host - start privesc enumeration"
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "id": "drupalgeddon3-msf",
@@ -41069,6 +41530,16 @@ const COMMAND_DATA = {
           "id": "cdsa-sysmon-event-ids",
           "rel": "prereq",
           "note": "Event IDs 1, 3, 11, 13, 22 used throughout these queries."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "explain": "A KQL hunt for lateral tool transfer staged in a world-writable path:\n  event.code:11              Sysmon FileCreate events\n  AND file.path:*Users\\\\Public*   files written under C:\\Users\\Public (a common drop location)\nSurfaces tools an attacker copied between hosts; the card pairs it with hunts for Run-key persistence (event.code:13, *\\Run*) and PowerShell-remoting lateral movement (wsmprovhost.exe, logon type 3 to 5985)."
@@ -42145,6 +42616,16 @@ const COMMAND_DATA = {
           "id": "windows-cred-locations",
           "rel": "next",
           "note": "Hunt credentials on the accessed host."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -42789,6 +43270,16 @@ const COMMAND_DATA = {
           "id": "ad-admodule-spn",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-enum4linux-ng",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-smbmap-recurse",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -43006,6 +43497,16 @@ const COMMAND_DATA = {
           "id": "ad-admodule-spn",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-enum4linux",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-smbmap-recurse",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -45185,6 +45686,16 @@ const COMMAND_DATA = {
           "id": "nmap-firewall-scan-types",
           "rel": "next",
           "note": "Map the ruleset once through."
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-ldeep",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
         }
       ],
       "id": "nmap-source-port",
@@ -45428,6 +45939,16 @@ const COMMAND_DATA = {
           "id": "crtp-golden-ticket",
           "note": "evasive-dcsync krbtgt feeds the golden ticket",
           "rel": "next"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "examples": [
@@ -45672,6 +46193,16 @@ const COMMAND_DATA = {
           "id": "windows-cred-locations",
           "rel": "next",
           "note": "Hunt further creds on the box."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -45884,6 +46415,16 @@ const COMMAND_DATA = {
           "id": "windows-cred-locations",
           "rel": "next",
           "note": "Hunt further creds on the host."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -47966,6 +48507,16 @@ const COMMAND_DATA = {
           "id": "gs-privesc-enum",
           "rel": "next",
           "note": "Run the enum script you transferred."
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "gs-file-transfer",
@@ -50211,6 +50762,16 @@ const COMMAND_DATA = {
           "id": "nmap-full-version-scan",
           "note": "Scans every TCP port with version detection, giving a complete service inventory of the host.",
           "rel": "next"
+        },
+        {
+          "id": "cdsa-m08-ssl-dns-anomalies",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m08-tunneling-detection",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -52818,6 +53379,16 @@ const COMMAND_DATA = {
           "id": "ad-secretsdump-dcsync",
           "rel": "next",
           "note": "DCSync once elevated."
+        },
+        {
+          "id": "ad-coercer-multi",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-dfscoerce",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -53024,6 +53595,16 @@ const COMMAND_DATA = {
           "id": "ad-secretsdump-kerberos",
           "note": "DCSync using the DC TGT (-k -no-pass).",
           "rel": "next"
+        },
+        {
+          "id": "ad-coercer-multi",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-dfscoerce",
+          "note": "Related authentication coercion technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -53212,6 +53793,16 @@ const COMMAND_DATA = {
           "id": "ad-kerberoast-crack",
           "rel": "next",
           "note": "Crack the cross-forest TGS."
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-ldeep",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -56855,6 +57446,104 @@ const COMMAND_DATA = {
       "explain": "Audits GPOs for misconfigurations and secrets:\n  group3r.exe   walk every GPO the current user can read\n  -f <output_log>   write findings to this log file\nFlags writable GPO links, weak script paths, insecure scheduled tasks, and credentials in GPP; run as a domain user and grep the log for HIGH/CRITICAL, or -s to target a specific DC."
     },
     {
+      "id": "ad-grouper2",
+      "name": "Grouper2 - GPO Security Misconfiguration Scanner",
+      "command": ".\\Grouper2.exe -f <gpo_report_path>",
+      "description": "Grouper2 audits Group Policy Objects for security misconfigurations: passwords in GPP (MS14-025), scheduled tasks with credentials, startup scripts, registry settings, software installation, and other policy weaknesses. Analyzes offline GPO reports or live AD. Essential for finding GPO-based privilege escalation paths.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CPTS",
+        "CRTP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "l0ss/Grouper2; CPTS AD enumeration module",
+      "tags": [
+        "grouper2",
+        "gpo",
+        "group-policy",
+        "gpp",
+        "misconfiguration",
+        "audit",
+        "ms14-025"
+      ],
+      "mitre": [
+        "T1615"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== GENERATE GPO REPORT ===\n  gpresult /H gpo_report.html\n  # Or with Group Policy Management Console export\n\n=== SCAN GPO REPORT ===\n  .\\Grouper2.exe -f gpo_report.html\n  # Or scan live AD:\n  .\\Grouper2.exe\n\n=== WHAT IT FINDS ===\n  # HIGH SEVERITY:\n  - Passwords in Group Policy Preferences (GPP/MS14-025)\n  - Scheduled tasks with embedded credentials\n  - Startup/logon scripts with credentials\n  - Software installation with admin privileges\n  # MEDIUM SEVERITY:\n  - Weak file/registry permissions in GPO\n  - Unrestricted script execution policies\n  - Mapped drives with credentials\n  - Printer configurations\n  # LOW SEVERITY:\n  - Informational policy settings\n  - Security baselines not met\n\n=== GPP PASSWORD DECRYPTION ===\n  # If Grouper2 finds GPP passwords, they can be decrypted:\n  # Microsoft published the AES key (MS14-025)\n  gpp-decrypt <cpassword_value>\n  # Or with CrackMapExec:\n  crackmapexec smb <dc_ip> -u <user> -p <pass> -M gpp_autologin\n  crackmapexec smb <dc_ip> -u <user> -p <pass> -M gpp_password\n\n=== ALTERNATIVES ===\n  # SharpGPOAbuse: Exploit writable GPOs (different purpose)\n  # PowerView: Get-DomainGPO for GPO enumeration\n  # BloodHound: GPO abuse edges",
+      "examples": [
+        {
+          "label": "Scan GPO report",
+          "command": ".\\Grouper2.exe -f gpo_report.html"
+        },
+        {
+          "label": "Live AD scan",
+          "command": ".\\Grouper2.exe"
+        },
+        {
+          "label": "Decrypt GPP password",
+          "command": "gpp-decrypt \"+bBe4LGHKq1WDADIg+jUhSiGdRo3y2EaxWFyXiF10wQ\""
+        }
+      ],
+      "references": [
+        {
+          "title": "Grouper2",
+          "url": "https://github.com/l0ss/Grouper2"
+        },
+        {
+          "title": "MITRE T1615 - Group Policy Discovery",
+          "url": "https://attack.mitre.org/techniques/T1615/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-gpp-autologin",
+          "note": "CrackMapExec GPP password extraction.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sharpgpoabuse",
+          "note": "SharpGPOAbuse for exploiting writable GPOs (Grouper2 finds them).",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "GPOs are accessible to all domain users. Grouper2 parses GPO configurations to find embedded credentials, weak permissions, and other misconfigurations that attackers can exploit.",
+        "prerequisites": "Domain user access; Grouper2 binary or GPO report.",
+        "impact": "Discovery of GPP passwords, privilege escalation via GPO misconfigurations.",
+        "detection": "[MITRE T1615] GPO enumeration queries; SYSVOL access patterns; Grouper2 process execution.",
+        "artifacts": "Access to SYSVOL/Policies; Grouper2 binary execution; GPO report generation.",
+        "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*Grouper2*\" OR NewProcessName=\"*gpresult*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.name:(*Grouper2* OR *gpresult*)",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName has_any (\"Grouper2\", \"gpresult\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_process_creation_gpo_enumeration",
+        "prevention": "Remove GPP passwords (MS14-025 patch); audit GPO permissions; restrict SYSVOL access; use LAPS instead of GPP for local admin passwords.",
+        "sources": [
+          "CPTS AD module",
+          "https://attack.mitre.org/techniques/T1615/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "GPO enumeration and audit tool execution",
+            "logic": "DeviceProcessEvents\n| where FileName has_any (\"Grouper2\", \"SharpGPOAbuse\")\n  or (FileName == \"gpresult.exe\" and ProcessCommandLine has \"/H\")\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1615"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate GPO auditing by security teams",
+            "tuning": "Alert on non-admin users running GPO audit tools"
+          }
+        ]
+      }
+    },
+    {
       "id": "hashcat-attack-modes-masks",
       "name": "Hashcat - Attack Modes and Mask Charsets",
       "type": "cheatsheet",
@@ -57091,6 +57780,16 @@ const COMMAND_DATA = {
           "id": "ad-domainpasswordspray",
           "rel": "next",
           "note": "Reuse/spray the cracked password."
+        },
+        {
+          "id": "cdsa-m06-asreproasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-kerberoasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -57298,6 +57997,26 @@ const COMMAND_DATA = {
           "id": "ad-evil-winrm",
           "rel": "next",
           "note": "Use the cracked service creds."
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-asreproasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-kerberoasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -57496,6 +58215,16 @@ const COMMAND_DATA = {
           "id": "ad-evil-winrm",
           "rel": "next",
           "note": "Use the recovered creds."
+        },
+        {
+          "id": "cdsa-m06-asreproasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-kerberoasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -57672,6 +58401,16 @@ const COMMAND_DATA = {
           "id": "pth-impacket",
           "note": "Executes commands on a remote host by authenticating with an NT hash (-hashes LM:NT, LM left blank).",
           "rel": "next"
+        },
+        {
+          "id": "cdsa-m06-asreproasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m06-kerberoasting",
+          "note": "Related password cracking workflow.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -58808,7 +59547,19 @@ const COMMAND_DATA = {
             "tuning": "Analyze jitter patterns; compare against known-good beaconing (Windows Update, AV updates)"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m09-suricata-rule-examples",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        }
+      ]
     },
     {
       "type": "command",
@@ -63236,6 +63987,16 @@ const COMMAND_DATA = {
           "id": "hashcat-windows-hashes",
           "rel": "next",
           "note": "Crack the dumped NT hashes after DCSync."
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -64485,6 +65246,16 @@ const COMMAND_DATA = {
           "id": "tty-shell-upgrade",
           "note": "Turn a non-interactive reverse shell into a fully interactive TTY so you get tab-completion, arrow keys, job control (Ctrl+C/Ctrl+Z) and...",
           "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -64715,6 +65486,16 @@ const COMMAND_DATA = {
           "id": "secretsdump-offline",
           "rel": "next",
           "note": "Dump more hashes once you land."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "examples": [
@@ -65476,6 +66257,16 @@ const COMMAND_DATA = {
           "id": "ad-shadow-credentials",
           "note": "Shadow Credentials is the cleanest pivot once you have GenericAll.",
           "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dacledit",
+          "note": "Alternative Impacket remote execution method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative Impacket remote execution method.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -66673,6 +67464,16 @@ const COMMAND_DATA = {
           "id": "ad-inveigh-ps",
           "note": "Inveigh captures hashes via network poisoning; Internal Monologue via local SSPI.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-lsass-dump-detection",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -67363,6 +68164,110 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Launches a PowerShell session with AMSI, Script Block Logging, and Module Logging disabled - no admin needed - via a COR_PROFILER COM hijack under HKCU:\n  RunWithRegistryNonAdmin.bat   registers the InprocServer32 CLSID in HKCU, then starts powershell so the CLR loads InShellProf.dll as a profiler that neuters logging/AMSI\nUse the non-admin .bat (registry-based) as a low-priv user, or RunWithPathAsAdmin.bat when elevated. Then dot-source PowerView/Mimikatz quietly in that cloaked shell."
+    },
+    {
+      "id": "ad-invoke-aclscanner",
+      "name": "Invoke-ACLScanner - Find Dangerous AD ACL Entries",
+      "command": "Invoke-ACLScanner -ResolveGUIDs | Export-Csv acl_scan.csv",
+      "description": "Invoke-ACLScanner from PowerView finds dangerous ACL entries in Active Directory: GenericAll, GenericWrite, WriteDACL, WriteOwner, and other exploitable permissions over users, groups, computers, and GPOs. Reveals attack paths that BloodHound maps visually but this tool finds via direct LDAP queries.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "PowerSploit/PowerView; CRTP ACL abuse module",
+      "tags": [
+        "invoke-aclscanner",
+        "powerview",
+        "acl",
+        "dacl",
+        "genericall",
+        "genericwrite",
+        "writedacl",
+        "writeowner"
+      ],
+      "mitre": [
+        "T1069.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC USAGE ===\n  Import-Module PowerView.ps1\n  Invoke-ACLScanner -ResolveGUIDs\n  # Export results:\n  Invoke-ACLScanner -ResolveGUIDs | Export-Csv acl_scan.csv -NoTypeInformation\n\n=== FILTER BY RIGHTS ===\n  # Only GenericAll:\n  Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll\"}\n  # Only WriteDACL:\n  Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"WriteDacl\"}\n  # Only WriteOwner:\n  Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"WriteOwner\"}\n\n=== CHECK SPECIFIC OBJECT ===\n  Get-ObjectAcl -SamAccountName <target_user> -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll|GenericWrite|WriteDacl|WriteOwner\"}\n\n=== EXPLOITABLE PERMISSIONS ===\n  GenericAll:    Full control - reset password, add to group, modify\n  GenericWrite:  Modify attributes - Kerberoast, Shadow Creds, logon script\n  WriteDACL:     Modify permissions - grant yourself GenericAll\n  WriteOwner:    Take ownership - then grant yourself full control\n  ForceChangePassword: Reset password without knowing current\n  AddMember:     Add yourself to a group\n\n=== FROM LINUX (alternative) ===\n  # dacledit (impacket):\n  dacledit.py <domain>/<user>:<pass> -dc-ip <dc_ip> -target <target_dn> -action read\n  # BloodHound with SharpHound:\n  SharpHound.exe -c ACL",
+      "examples": [
+        {
+          "label": "Scan all dangerous ACLs",
+          "command": "Invoke-ACLScanner -ResolveGUIDs | Export-Csv acl_scan.csv -NoTypeInformation"
+        },
+        {
+          "label": "Find GenericAll permissions",
+          "command": "Invoke-ACLScanner -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll\"}"
+        },
+        {
+          "label": "Check ACLs on specific user",
+          "command": "Get-ObjectAcl -SamAccountName svc_admin -ResolveGUIDs | Where-Object {$_.ActiveDirectoryRights -match \"GenericAll|WriteDacl\"}"
+        }
+      ],
+      "references": [
+        {
+          "title": "PowerView",
+          "url": "https://github.com/PowerShellMafia/PowerSploit/tree/master/Recon"
+        },
+        {
+          "title": "MITRE T1069.002",
+          "url": "https://attack.mitre.org/techniques/T1069/002/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Exploit GenericWrite found by ACLScanner.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-writeowner-abuse",
+          "note": "Exploit WriteOwner found by ACLScanner.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "BloodHound provides visual ACL attack path mapping.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "AD object ACLs are readable by any authenticated user. Invoke-ACLScanner enumerates all ACEs and highlights those that grant dangerous rights to non-privileged principals.",
+        "prerequisites": "Domain user credentials; PowerView loaded.",
+        "impact": "Identifies all ACL-based attack paths: password resets, group membership changes, delegation abuse.",
+        "detection": "[MITRE T1069.002] Bulk LDAP ACL queries; PowerView script execution; large LDAP result sets.",
+        "artifacts": "PowerShell script block logs with Invoke-ACLScanner; LDAP queries for nTSecurityDescriptor.",
+        "splunk_spl": "index=windows sourcetype=WinEventLog:Microsoft-Windows-PowerShell/Operational EventCode=4104 ScriptBlockText=\"*Invoke-ACLScanner*\"\n| table _time, ComputerName, ScriptBlockText",
+        "elastic_kql": "powershell.file.script_block_text:*Invoke-ACLScanner*",
+        "sentinel_kql": "DeviceEvents\n| where ActionType == \"PowerShellCommand\"\n| where AdditionalFields has_any (\"Invoke-ACLScanner\", \"Get-ObjectAcl\")\n| project Timestamp, DeviceName, AccountName, AdditionalFields",
+        "sigma_rules": "win_powershell_acl_enumeration",
+        "prevention": "Audit and minimize dangerous ACL entries; use AdminSDHolder for protected groups; monitor ACL enumeration; implement least-privilege ACLs.",
+        "sources": [
+          "CRTP ACL module",
+          "https://attack.mitre.org/techniques/T1069/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "ACL enumeration via PowerView",
+            "logic": "DeviceProcessEvents\n| where FileName == \"powershell.exe\"\n| where ProcessCommandLine has_any (\"Invoke-ACLScanner\", \"Get-ObjectAcl\", \"Get-DomainObjectAcl\")\n| project Timestamp, DeviceName, AccountName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1069.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Security audit teams running authorized AD assessments",
+            "tuning": "Also detect by LDAP query patterns reading nTSecurityDescriptor on many objects"
+          }
+        ]
+      }
     },
     {
       "type": "command",
@@ -70536,6 +71441,16 @@ const COMMAND_DATA = {
           "id": "hashcat-dictionary",
           "note": "Runs a straight dictionary attack (-a 0): each wordlist entry is hashed and compared to the target.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -73313,6 +74228,16 @@ const COMMAND_DATA = {
           "id": "ad-shadowcoerce",
           "note": "Another coercion method to trigger TGT forwarding.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adpeas",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -75854,6 +76779,16 @@ const COMMAND_DATA = {
         {
           "id": "ad-adpeas",
           "note": "adPEAS is Windows PowerShell; ldeep is Linux Python. Both enumerate AD.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sid-history-persistence",
+          "note": "Related domain/forest trust attack.",
           "rel": "alternative"
         }
       ],
@@ -81071,6 +82006,16 @@ const COMMAND_DATA = {
           "id": "linux-cred-hunt",
           "rel": "next",
           "note": "Hunt secrets in what you pulled."
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "nix-scp",
@@ -81783,6 +82728,16 @@ const COMMAND_DATA = {
           "id": "windows-cred-locations",
           "rel": "next",
           "note": "Now hunt Windows creds."
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "lolbins-transfer",
@@ -82849,6 +83804,26 @@ const COMMAND_DATA = {
           "id": "cdsa-dll-hijack-detection",
           "rel": "next",
           "note": "Similar Sysmon-based detection methodology."
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-internal-monologue",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-splunk-intrusion-detection",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
         }
       ],
       "explain": "Detect credential dumping from LSASS memory using Sysmon Event ID 10 (ProcessAccess).\nTools like Mimikatz open a handle to lsass.exe with specific access rights - Sysmon captures this handle request and records the calling process, enabling detection."
@@ -82916,6 +83891,16 @@ const COMMAND_DATA = {
         {
           "id": "sedebug-lsass-dump",
           "note": "Manual LSASS dump methods.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-groups",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-loggedon",
+          "note": "Related CrackMapExec/NetExec operation.",
           "rel": "alternative"
         }
       ],
@@ -84053,6 +85038,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m13-disk-forensics",
           "rel": "next",
           "note": "Disk forensics: Autopsy, MFTECmd, EvtxECmd, Registry Explorer, Timeline Explorer."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "explain": "Analyzes a memory dump with Volatility 3:\n  python vol.py       run Volatility 3\n  -q                  quiet (suppress progress noise)\n  -f PhysicalMemory.raw   the memory image to analyze\n  windows.malfind     plugin that finds PAGE_EXECUTE_READWRITE regions - a code-injection indicator\nFlags injected/hidden code; swap the plugin for pslist, pstree, psscan, cmdline, netscan, etc. to build the full picture of the captured system.",
@@ -84120,6 +85115,16 @@ const COMMAND_DATA = {
           "id": "msfvenom-encoded-exe",
           "rel": "next",
           "note": "Encode to lower detection."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -84502,6 +85507,16 @@ const COMMAND_DATA = {
           "id": "gs-privesc-enum",
           "rel": "next",
           "note": "Enumerate for privesc after foothold."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "id": "gs-metasploit-basics",
@@ -84694,6 +85709,16 @@ const COMMAND_DATA = {
           "id": "meterpreter-hashdump",
           "rel": "prereq",
           "note": "Harvest creds first."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -84991,6 +86016,16 @@ const COMMAND_DATA = {
           "id": "msf-hosts-services",
           "note": "Review the imported hosts and services.",
           "rel": "next"
+        },
+        {
+          "id": "ad-nmap-host-list",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
+        },
+        {
+          "id": "app-discovery-nmap",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -86043,6 +87078,16 @@ const COMMAND_DATA = {
           "id": "gs-privesc-enum",
           "rel": "next",
           "note": "Enumerate for privesc."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "id": "msf-linux-webapp",
@@ -86678,6 +87723,16 @@ const COMMAND_DATA = {
           "id": "meterpreter-getsystem",
           "note": "Attempt built-in privilege escalation.",
           "rel": "next"
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -86887,6 +87942,16 @@ const COMMAND_DATA = {
           "id": "meterpreter-core",
           "note": "Enumerate the host once you re-enter a session.",
           "rel": "next"
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -87404,6 +88469,16 @@ const COMMAND_DATA = {
           "id": "windows-cred-locations",
           "rel": "next",
           "note": "Hunt more creds once SYSTEM."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "id": "msf-psexec-delivery",
@@ -88659,6 +89734,16 @@ const COMMAND_DATA = {
           "id": "pth-impacket",
           "rel": "next",
           "note": "Use validated creds for exec."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -88855,6 +89940,16 @@ const COMMAND_DATA = {
           "id": "nc-listener",
           "rel": "next",
           "note": "Or catch a manual payload."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "id": "msf-windows-smb",
@@ -92254,6 +93349,26 @@ const COMMAND_DATA = {
           "id": "ad-mimikatz-dcsync",
           "note": "DCSync the parent domain with the forged ticket.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-ldeep",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sid-history-persistence",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -92476,6 +93591,16 @@ const COMMAND_DATA = {
           "id": "secretsdump-offline",
           "rel": "next",
           "note": "Dump more hashes from the new host."
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -92724,6 +93849,16 @@ const COMMAND_DATA = {
           "id": "ptc-dcsync",
           "rel": "next",
           "note": "DCSync once you have a privileged ticket."
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -93518,6 +94653,16 @@ const COMMAND_DATA = {
           "id": "dnsadmins-dll",
           "note": "Use it to deliver a payload DLL/binary.",
           "rel": "next"
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "certutil-transfer",
@@ -94648,6 +95793,16 @@ const COMMAND_DATA = {
           "id": "smb-ntlm-relay",
           "note": "ntlmrelayx handles the relay side of the attack.",
           "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-elastic-hunt-techniques",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -94740,6 +95895,16 @@ const COMMAND_DATA = {
           "id": "missing-patch-enum",
           "note": "Confirms the missing patch.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "id": "ms10-092-schelevator",
@@ -96158,6 +97323,16 @@ const COMMAND_DATA = {
           "id": "mssql-xp-cmdshell",
           "note": "Runs operating-system commands through SQL Server via the xp_cmdshell extended procedure, giving code execution as the SQL service account.",
           "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -98142,6 +99317,16 @@ const COMMAND_DATA = {
           "id": "mssql-xp-cmdshell",
           "rel": "next",
           "note": "RCE via xp_cmdshell."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -98730,6 +99915,88 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Logs into MySQL and enumerates its databases:\n  mysql   the client\n  -u root   username\n  -pP4SSw0rd   password (no space after -p)\n  -h <ip>      the server\nOnce connected, 'show databases;', 'use <db>;', 'show tables;', and 'select version();' map the data and version; scan first with nmap --script mysql* to fingerprint and try empty/default creds."
+    },
+    {
+      "id": "crack-name-that-hash",
+      "name": "Name-That-Hash - Modern Hash Type Identifier",
+      "command": "nth -t \"<hash>\"",
+      "description": "Name-That-Hash identifies hash types and provides the corresponding hashcat mode and John format. More accurate and actively maintained than hashid. Supports all common hash types including NTLM, Kerberoast, AS-REP, bcrypt, and application-specific hashes. Essential before cracking unknown hashes.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Password Attacks",
+      "subcategory": "Hash Identification",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "HashPals/Name-That-Hash",
+      "tags": [
+        "name-that-hash",
+        "nth",
+        "hash-identification",
+        "hashcat",
+        "john",
+        "hash-type"
+      ],
+      "mitre": [
+        "T1110"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip install name-that-hash\n  # Or: pip3 install name-that-hash\n\n=== IDENTIFY SINGLE HASH ===\n  nth -t \"5f4dcc3b5aa765d61d8327deb882cf99\"\n  # Output: MD5 (hashcat: 0, john: raw-md5)\n\n  nth -t \"$krb5tgs$23$*user$domain$...\"\n  # Output: Kerberos 5 TGS-REP (hashcat: 13100)\n\n  nth -t \"aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0\"\n  # Output: NTLM (hashcat: 1000)\n\n=== IDENTIFY FROM FILE ===\n  nth -f hashes.txt\n  # Identifies each hash in the file\n\n=== COMMON HASH TYPES ===\n  MD5:         32 hex chars          hashcat -m 0\n  SHA1:        40 hex chars          hashcat -m 100\n  SHA256:      64 hex chars          hashcat -m 1400\n  NTLM:        32 hex chars          hashcat -m 1000\n  NTLMv2:      includes ::           hashcat -m 5600\n  Kerberoast:  $krb5tgs$23$          hashcat -m 13100\n  AS-REP:      $krb5asrep$23$        hashcat -m 18200\n  bcrypt:      $2a$ or $2b$          hashcat -m 3200\n  DCC2:        $DCC2$                hashcat -m 2100\n  NetNTLMv1:   includes :::          hashcat -m 5500\n\n=== VS hashid ===\n  nth: More accurate, shows hashcat mode AND john format\n  hashid: Older, sometimes misidentifies, no hashcat modes",
+      "examples": [
+        {
+          "label": "Identify single hash",
+          "command": "nth -t \"5f4dcc3b5aa765d61d8327deb882cf99\""
+        },
+        {
+          "label": "Identify from file",
+          "command": "nth -f hashes.txt"
+        },
+        {
+          "label": "Identify Kerberoast hash",
+          "command": "nth -t \"$krb5tgs$23$*svc_sql$corp.local$...\""
+        }
+      ],
+      "references": [
+        {
+          "title": "Name-That-Hash",
+          "url": "https://github.com/HashPals/Name-That-Hash"
+        },
+        {
+          "title": "Hashcat modes reference",
+          "url": "https://hashcat.net/wiki/doku.php?id=example_hashes"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "hashid-identify",
+          "note": "hashid is the older alternative; nth is more accurate.",
+          "rel": "alternative"
+        },
+        {
+          "id": "hashcat-dictionary",
+          "note": "After identifying the hash type, crack with hashcat.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Hash identification is a passive, offline operation. It analyzes the format and structure of hash strings to determine the algorithm used.",
+        "prerequisites": "Hash string to identify; name-that-hash installed.",
+        "impact": "Identifies hash algorithms enabling targeted cracking attacks.",
+        "detection": "Offline tool - no target-side detection.",
+        "artifacts": "name-that-hash in process list on attacker machine only.",
+        "splunk_spl": "N/A - offline attacker-side tool",
+        "elastic_kql": "N/A - offline attacker-side tool",
+        "sentinel_kql": "N/A - offline attacker-side tool",
+        "sigma_rules": "N/A",
+        "prevention": "Use strong hashing algorithms (bcrypt, scrypt, Argon2); salt all hashes; enforce strong passwords.",
+        "sources": [
+          "HashPals",
+          "https://attack.mitre.org/techniques/T1110/"
+        ]
+      }
     },
     {
       "type": "command",
@@ -101061,6 +102328,16 @@ const COMMAND_DATA = {
           "id": "secretsdump-offline",
           "rel": "prereq",
           "note": "Needs NT hash from offline SAM/NTDS dump."
+        },
+        {
+          "id": "ad-cme-groups",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-loggedon",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -101631,6 +102908,16 @@ const COMMAND_DATA = {
           "id": "secretsdump-offline",
           "note": "Decrypts saved SAM/SECURITY/SYSTEM hives offline to output local NT hashes and, from SECURITY, LSA secrets and cached domain credentials...",
           "rel": "next"
+        },
+        {
+          "id": "ad-cme-groups",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-loggedon",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -102045,6 +103332,16 @@ const COMMAND_DATA = {
           "id": "crtp-powerview-domain",
           "note": "Domain enum once inside",
           "rel": "next"
+        },
+        {
+          "id": "ad-nmap-host-list",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
+        },
+        {
+          "id": "app-discovery-nmap",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
         }
       ],
       "notes": "Ports 88 (Kerberos), 389/636 (LDAP), 445 (SMB) confirm DC role.",
@@ -103766,6 +105063,16 @@ const COMMAND_DATA = {
           "id": "ad-fping-sweep",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "app-discovery-nmap",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
+        },
+        {
+          "id": "msf-db-nmap",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -103980,6 +105287,16 @@ const COMMAND_DATA = {
           "id": "gs-searchsploit",
           "rel": "next",
           "note": "Look up exploits for the versions found."
+        },
+        {
+          "id": "ad-nmap-host-list",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
+        },
+        {
+          "id": "app-discovery-nmap",
+          "note": "Alternative/complementary network scanner.",
+          "rel": "alternative"
         }
       ],
       "id": "gs-nmap-service-scan",
@@ -106402,7 +107719,19 @@ const COMMAND_DATA = {
             "tuning": "Exclude known legitimate ADS users; focus on ADS in user-writable directories"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "smb-rce-psexec",
+          "note": "After discovering ADS, use for lateral movement.",
+          "rel": "next"
+        },
+        {
+          "id": "lolbins-transfer",
+          "note": "LOLBins can read/write ADS for evasion.",
+          "rel": "alternative"
+        }
+      ]
     },
     {
       "id": "nuclei-vuln-scan",
@@ -106548,6 +107877,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m06-gpo-permissions",
           "rel": "next",
           "note": "GPO ACL abuse - specific ACL misconfiguration for Group Policy objects."
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "AD attack path visualization and analysis.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "AD attack path visualization and analysis.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -109660,6 +110999,26 @@ const COMMAND_DATA = {
           "id": "pth-mimikatz",
           "rel": "alternative",
           "note": "PTH with mimikatz sekurlsa::pth to spawn a process on Windows"
+        },
+        {
+          "id": "ad-enum4linux-ng",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-enum4linux",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -110327,7 +111686,19 @@ const COMMAND_DATA = {
             "tuning": "Correlate with parent process being SUID; filter known good processes"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "find-suid-sgid",
+          "note": "SUID binaries are common path hijack targets.",
+          "rel": "prereq"
+        },
+        {
+          "id": "path-abuse",
+          "note": "Related PATH abuse technique.",
+          "rel": "alternative"
+        }
+      ]
     },
     {
       "id": "pcredz-pcap",
@@ -112427,6 +113798,16 @@ const COMMAND_DATA = {
           "id": "crtp-credential-dumping",
           "note": "Run SafetyKatz on the deep host via the proxy",
           "rel": "next"
+        },
+        {
+          "id": "cdsa-m08-ssl-dns-anomalies",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m08-tunneling-detection",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -115362,6 +116743,16 @@ const COMMAND_DATA = {
           "id": "ad-evil-winrm",
           "rel": "next",
           "note": "Log in as the reset account."
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -115596,6 +116987,16 @@ const COMMAND_DATA = {
           "id": "ad-secretsdump-dcsync",
           "rel": "next",
           "note": "If added to a DCSync-capable group, dump the domain."
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -115832,6 +117233,16 @@ const COMMAND_DATA = {
           "id": "ad-find-interesting-acl",
           "rel": "prereq",
           "note": "Identify the abusable right first."
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -116078,6 +117489,16 @@ const COMMAND_DATA = {
           "id": "ad-domainpasswordspray",
           "rel": "next",
           "note": "Reuse any recovered credentials."
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -117134,6 +118555,16 @@ const COMMAND_DATA = {
           "id": "ad-powerview-test-adminaccess",
           "rel": "next",
           "note": "Find machines where current user has local admin."
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -117740,6 +119171,16 @@ const COMMAND_DATA = {
           "id": "ad-powerview-spn",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-ldeep",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -119534,6 +120975,16 @@ const COMMAND_DATA = {
         {
           "id": "ad-snaffler",
           "note": "Snaffler - faster automated equivalent",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
           "rel": "alternative"
         }
       ],
@@ -122287,6 +123738,16 @@ const COMMAND_DATA = {
           "id": "gs-ssh",
           "rel": "next",
           "note": "SSH in with the recovered key."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "id": "gs-ssh-key-abuse",
@@ -123766,6 +125227,16 @@ const COMMAND_DATA = {
           "id": "evade-user-agent",
           "rel": "alternative",
           "note": "Blend the request in too."
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "protected-transfer",
@@ -124008,7 +125479,19 @@ const COMMAND_DATA = {
             "tuning": "Correlate with server-side errors or auth state changes"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "web-ssti",
+          "note": "SSTI is another server-side injection leading to RCE.",
+          "rel": "alternative"
+        },
+        {
+          "id": "upload-svg-xss",
+          "note": "Prototype pollution can escalate to XSS.",
+          "rel": "next"
+        }
+      ]
     },
     {
       "id": "cloud-prowler-audit",
@@ -124584,6 +126067,16 @@ const COMMAND_DATA = {
           "id": "ad-golden-ticket-mimikatz",
           "rel": "next",
           "note": "Leverage trust data for cross-domain forging."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -124911,6 +126404,16 @@ const COMMAND_DATA = {
           "id": "keepass2john-crack",
           "note": "KeePass database may contain the NTLM hash needed for PTH.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -125268,6 +126771,16 @@ const COMMAND_DATA = {
           "id": "pth-impacket",
           "note": "Executes commands on a remote host by authenticating with an NT hash (-hashes LM:NT, LM left blank).",
           "rel": "next"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-internal-monologue",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "moderate",
@@ -125680,6 +127193,16 @@ const COMMAND_DATA = {
           "id": "rsync-enum",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-ldeep",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
         }
       ],
       "id": "rservices-enum",
@@ -126303,6 +127826,26 @@ const COMMAND_DATA = {
           "id": "pth-freerdp",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "id": "rdp-drive-mount",
@@ -126704,6 +128247,16 @@ const COMMAND_DATA = {
           "id": "windows-cred-locations",
           "rel": "next",
           "note": "Loot the hijacked SYSTEM session."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -127410,6 +128963,16 @@ const COMMAND_DATA = {
         {
           "id": "nosql-injection-bypass",
           "note": "MongoDB NoSQL injection for another NoSQL attack vector.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
           "rel": "alternative"
         }
       ],
@@ -129415,6 +130978,16 @@ const COMMAND_DATA = {
           "id": "evade-user-agent",
           "rel": "next",
           "note": "Evade the indicators listed here."
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "ref-transfer-detection",
@@ -130176,6 +131749,26 @@ const COMMAND_DATA = {
           "id": "ad-shadow-credentials",
           "note": "Shadow Credentials is an alternative when you have write over the target.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dacledit",
+          "note": "Alternative Impacket remote execution method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative Impacket remote execution method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adpeas",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -130415,6 +132008,16 @@ const COMMAND_DATA = {
           "id": "crtp-credential-dumping",
           "note": "Dump creds from compromised machine",
           "rel": "next"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adpeas",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
         }
       ],
       "notes": "Requires: GenericWrite on target, machine account quota > 0, computer account you own. Machine accounts end with $.",
@@ -133242,6 +134845,16 @@ const COMMAND_DATA = {
           "id": "ad-asrep-crack",
           "rel": "next",
           "note": "Crack the AS-REP hashes."
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -133954,6 +135567,16 @@ const COMMAND_DATA = {
           "id": "ad-kerberoast-crack",
           "rel": "next",
           "note": "Crack the roasted hashes."
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -134394,6 +136017,16 @@ const COMMAND_DATA = {
           "id": "ad-golden-ticket-mimikatz",
           "rel": "next",
           "note": "Forge a golden ticket."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -134613,7 +136246,19 @@ const COMMAND_DATA = {
             "tuning": "Correlate with logon events (4624) and parent process"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        }
+      ]
     },
     {
       "id": "recon-rustscan",
@@ -134865,6 +136510,16 @@ const COMMAND_DATA = {
           "id": "ad-impacket-rbcd",
           "note": "Set up RBCD delegation before using S4U to impersonate.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -135064,6 +136719,16 @@ const COMMAND_DATA = {
           "id": "ad-secretsdump-dcsync",
           "note": "DCSync provides the krbtgt key needed for Sapphire Tickets.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-addcomputer",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adpeas",
+          "note": "Related delegation abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -135297,6 +136962,16 @@ const COMMAND_DATA = {
           "id": "powerhuntshares",
           "rel": "prereq",
           "note": "Enumerate share ACLs before spidering content."
+        },
+        {
+          "id": "ad-cme-groups",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-cme-loggedon",
+          "note": "Related CrackMapExec/NetExec operation.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -135692,6 +137367,16 @@ const COMMAND_DATA = {
           "id": "ad-kerberoast-crack",
           "note": "Crack recovered NT hashes offline.",
           "rel": "next"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -136252,6 +137937,26 @@ const COMMAND_DATA = {
           "id": "winpe-user-group-enum",
           "note": "Confirms SeDebugPrivilege is held.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-internal-monologue",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-lsass-dump-detection",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
         }
       ],
       "id": "sedebug-lsass-dump",
@@ -137892,6 +139597,16 @@ const COMMAND_DATA = {
           "id": "winpe-user-group-enum",
           "note": "Confirms SeTakeOwnershipPrivilege is held.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
         }
       ],
       "id": "setakeownership",
@@ -139079,6 +140794,16 @@ const COMMAND_DATA = {
           "id": "ad-sharpview",
           "note": "Enumerate GPO ACLs to find writable GPOs.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -140082,6 +141807,16 @@ const COMMAND_DATA = {
           "id": "crtp-golden-ticket",
           "note": "Golden Tickets can include extra SIDs for cross-domain access.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-ldeep",
+          "note": "Related domain/forest trust attack.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -140212,6 +141947,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m12-sigma-conversion",
           "rel": "next",
           "note": "Converting and applying Sigma rules with sigmac, Chainsaw, and Splunk."
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-internal-monologue",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
         }
       ],
       "tools": [
@@ -140522,6 +142267,16 @@ const COMMAND_DATA = {
           "id": "ad-mimikatz-dcsync",
           "rel": "escalation",
           "note": "Silver ticket for LDAP service grants DCSync rights - forge /service:ldap then run dcsync."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "moderate",
@@ -140962,6 +142717,16 @@ const COMMAND_DATA = {
           "id": "crtp-silver-ticket",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-internal-monologue",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
         }
       ],
       "notes": "Does NOT survive a DC reboot. Requires DA and SYSTEM on DC. Detectable by LSA protection monitoring. Use in labs only.",
@@ -142510,6 +144275,16 @@ const COMMAND_DATA = {
           "id": "ad-cme-shares",
           "note": "CrackMapExec share enumeration with credentials.",
           "rel": "next"
+        },
+        {
+          "id": "ad-enum4linux-ng",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-enum4linux",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -142975,6 +144750,16 @@ const COMMAND_DATA = {
           "id": "findstr-hunt",
           "note": "Recursively (/S) and case-insensitively (/I) searches common config and script file types for a keyword such as password.",
           "rel": "next"
+        },
+        {
+          "id": "ad-enum4linux-ng",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-enum4linux",
+          "note": "Related SMB enumeration technique.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -146205,6 +147990,26 @@ const COMMAND_DATA = {
           "id": "cdsa-splunk-analytics-detection",
           "rel": "next",
           "note": "Statistics-based anomaly detection to complement signature-based hunting."
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-internal-monologue",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-lsass-dump-detection",
+          "note": "Related LSASS credential dumping technique.",
+          "rel": "alternative"
         }
       ],
       "explain": "An SPL detection for suspicious shell spawns via parent/child process chains:\n  EventCode=1                             Sysmon process-creation events\n  (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")   only shells being launched\n  | stats count by ParentImage, Image    group by who spawned what\nReveals odd parents (e.g. notepad.exe launching powershell.exe) that indicate injection or macro execution; the card extends this to DCSync (4662), LSASS access (EID 10), and CallTrace UNKNOWN shellcode."
@@ -148924,6 +150729,16 @@ const COMMAND_DATA = {
           "id": "reverse-shell-oneliners",
           "note": "Collection of reverse shell one-liners across common interpreters.",
           "rel": "next"
+        },
+        {
+          "id": "upload-filename-injection",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "graphql-sqli",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -150057,6 +151872,16 @@ const COMMAND_DATA = {
         {
           "id": "hashid-identify",
           "note": "Identifies the likely algorithm behind an unknown hash and, with -m, prints the matching Hashcat mode number so you can pass it to -m."
+        },
+        {
+          "id": "upload-filename-injection",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "graphql-sqli",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "moderate",
@@ -151907,6 +153732,16 @@ const COMMAND_DATA = {
           "id": "reverse-shell",
           "rel": "next",
           "note": "Upgrade the sqlmap shell."
+        },
+        {
+          "id": "upload-filename-injection",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "graphql-sqli",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "loud",
@@ -154756,6 +156591,16 @@ const COMMAND_DATA = {
           "id": "proxychains-run",
           "note": "Send nmap/xfreerdp/msf through the SOCKS proxy.",
           "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "quiet",
@@ -154951,6 +156796,16 @@ const COMMAND_DATA = {
           "id": "rservices-enum",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "id": "ssh-enum",
@@ -155161,6 +157016,16 @@ const COMMAND_DATA = {
           "id": "proxychains-run",
           "note": "Route tooling through the forwarded port.",
           "rel": "next"
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "opsec": "quiet",
@@ -156389,6 +158254,16 @@ const COMMAND_DATA = {
           "id": "ssrf-blind",
           "rel": "alternative",
           "note": "No response body returned? Switch to blind SSRF."
+        },
+        {
+          "id": "cdsa-m08-ssl-dns-anomalies",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m08-tunneling-detection",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
         }
       ],
       "references": [
@@ -159462,6 +161337,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m09-snort-fundamentals",
           "rel": "next",
           "note": "Snort fundamentals — similar rule structure, different deployment model."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "lint_ignore": [
@@ -160594,6 +162479,16 @@ const COMMAND_DATA = {
         {
           "id": "ad-shadow-credentials",
           "note": "If the hash will not crack, Shadow Credentials takes the account outright.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
           "rel": "alternative"
         }
       ],
@@ -161929,6 +163824,16 @@ const COMMAND_DATA = {
           "id": "ad-psexec-ticket",
           "note": "Use the forged ticket to get a SYSTEM shell on the parent DC.",
           "rel": "next"
+        },
+        {
+          "id": "ad-custom-forest-trust",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-genericwrite-abuse",
+          "note": "Related Kerberos attack technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -162939,6 +164844,16 @@ const COMMAND_DATA = {
           "id": "tomcat-msfvenom-war",
           "note": "Deploy a msfvenom reverse-shell WAR instead.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "id": "tomcat-mgr-bruteforce",
@@ -163619,6 +165534,16 @@ const COMMAND_DATA = {
         {
           "id": "crtp-amsi-sbl-bypass",
           "note": "Pair obfuscation with runtime AMSI/logging bypass",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
           "rel": "alternative"
         }
       ],
@@ -164412,6 +166337,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m08-http-anomalies",
           "rel": "next",
           "note": "HTTP anomaly detection - web server fuzzing, strange headers, XSS via traffic."
+        },
+        {
+          "id": "cdsa-m08-ssl-dns-anomalies",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ftp-bounce",
+          "note": "Related tunneling/pivoting technique.",
+          "rel": "alternative"
         }
       ],
       "explain": "Attackers tunnel data inside legitimate-looking protocols to exfiltrate data or establish C2 while evading network controls.\nCommon tunnel protocols: ICMP (data in payload > 48 bytes), DNS (data in TXT records or long queries), Telnet on non-standard ports, UDP, and IPv6 Telnet.\n=== ICMP TUNNELING ===\nHow it works:\n   Attacker appends data to ICMP echo request payload\n   Data hidden in common, often-allowed protocol\n   May be encoded (base64) or encrypted for evasion\n  ..."
@@ -166100,6 +168035,16 @@ const COMMAND_DATA = {
           "id": "upload-client-side-bypass",
           "note": "Confirm upload endpoint is reachable (bypass client-side filters) before probing filename injection.",
           "rel": "prereq"
+        },
+        {
+          "id": "graphql-sqli",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "sqli-auth-bypass",
+          "note": "Related SQL injection technique.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -169757,6 +171702,16 @@ const COMMAND_DATA = {
           "id": "weak-service-binary",
           "note": "Overwrite the binary if you can't change config.",
           "rel": "alternative"
+        },
+        {
+          "id": "ad-acl-decision-tree",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-adcs-esc4-template-acl",
+          "note": "Related ACL abuse technique.",
+          "rel": "alternative"
         }
       ],
       "id": "weak-service-acl-binpath",
@@ -172772,6 +174727,16 @@ const COMMAND_DATA = {
           "id": "ffuf-directory",
           "rel": "next",
           "note": "Fuzz through the proxy to log requests."
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "variations": [
@@ -173374,6 +175339,16 @@ const COMMAND_DATA = {
           "id": "library-ms-webdav-attack",
           "rel": "next",
           "note": "Continue enumeration/technique in this area"
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "webdav-transfer",
@@ -176878,6 +178853,16 @@ const COMMAND_DATA = {
           "id": "findstr-hunt",
           "rel": "next",
           "note": "Search the box for secrets."
+        },
+        {
+          "id": "dns-zone-transfer-fierce",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
+        },
+        {
+          "id": "base64-transfer",
+          "note": "Alternative file transfer method.",
+          "rel": "alternative"
         }
       ],
       "id": "win-smb-transfer",
@@ -180383,6 +182368,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m07-nta-workflow",
           "rel": "next",
           "note": "Full NTA analysis workflow - when to use each technique in investigation."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "explain": "A Wireshark display filter isolating FTP control and data channels:\n  ftp        the FTP command/response channel (USER, PASS, RETR, ...)\n  ||         logical OR\n  ftp-data   the separate channel carrying the actual file bytes\nShows both halves of an FTP session so you can reconstruct transferred files; the card also covers Follow TCP Stream, HTTP object export, and RDP decryption with an imported RSA key."
@@ -180549,6 +182544,16 @@ const COMMAND_DATA = {
           "id": "gs-privesc-enum",
           "rel": "next",
           "note": "Foothold on the Linux web host - start privesc enumeration"
+        },
+        {
+          "id": "ad-havoc-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-sliver-c2",
+          "note": "Related C2/post-exploitation framework.",
+          "rel": "alternative"
         }
       ],
       "id": "wp-admin-shell-msf",
@@ -182241,7 +184246,19 @@ const COMMAND_DATA = {
             "tuning": "Exclude changes by known user management tools via audit key filtering"
           }
         ]
-      }
+      },
+      "recommended": [
+        {
+          "id": "passwd-write-lpe",
+          "note": "Related /etc/passwd write technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "find-suid-sgid",
+          "note": "SUID enumeration often reveals writable file paths.",
+          "rel": "prereq"
+        }
+      ]
     },
     {
       "id": "ad-writedacl-linux",
@@ -182306,6 +184323,16 @@ const COMMAND_DATA = {
           "id": "ad-genericall-group",
           "note": "WriteDACL is often reached via GenericAll/Owns on the domain object.",
           "rel": "prereq"
+        },
+        {
+          "id": "ad-certifried",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-custom-ssp",
+          "note": "Related credential extraction technique.",
+          "rel": "alternative"
         }
       ],
       "defense": {
@@ -187218,6 +189245,16 @@ const COMMAND_DATA = {
           "id": "cdsa-m09-suricata-rule-examples",
           "rel": "prereq",
           "note": "Suricata C2 rules — Suricata alerts same C2 PCAPs via signature matching."
+        },
+        {
+          "id": "ad-impacket-dcomexec",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "Alternative lateral movement technique.",
+          "rel": "alternative"
         }
       ],
       "lint_ignore": [
@@ -187433,8 +189470,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1052,
-  "buildDate": "2026-11-10T15:35:43.299Z",
+  "totalCommands": 1055,
+  "buildDate": "2026-11-11T04:58:19.843Z",
   "certifications": [
     "CDSA",
     "CPTS",

@@ -50803,6 +50803,79 @@ const COMMAND_DATA = {
       "explain": "Resets a target user's password without knowing the current one, using the User-Force-Change-Password right (or GenericAll):\n  --host <dc_ip>            the Domain Controller\n  -d <domain>              the domain\n  -u <user> -p <password>  authenticate as the account that holds the right\n  set password <target_account> '<new_password>'   force the new password on the victim\nYou now own <target_account> - but this locks the real owner out and is loud, so prefer Shadow Credentials when you have write access."
     },
     {
+      "id": "cdsa-m13-foremost",
+      "name": "foremost - File Carving / Data Recovery",
+      "command": "foremost -i <file> -o <output_dir>",
+      "description": "foremost recovers files from disk images, memory dumps, or raw media by carving on file headers/footers and internal structure, independent of the filesystem. Used in forensics and CTF to extract deleted or embedded files (images, documents, archives, executables) from unallocated space or arbitrary blobs.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Digital Forensics",
+      "subcategory": "Data Recovery",
+      "certifications": [
+        "CDSA",
+        "OSCP"
+      ],
+      "primary_cert": "CDSA",
+      "source": "foremost",
+      "tags": [
+        "foremost",
+        "file-carving",
+        "forensics",
+        "data-recovery",
+        "steganography",
+        "disk-image"
+      ],
+      "mitre": [
+        "T1005"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC ===\n  foremost -i <file> -o <output_dir>\n  # output_dir must NOT already exist; results sorted into subfolders by type\n\n=== SELECT FILE TYPES ===\n  foremost -t jpg,pdf,zip,png -i <file> -o out\n  foremost -t all -i disk.img -o out\n\n=== OPTIONS ===\n  -v        verbose\n  -q        quick mode (header-only on block boundaries)\n  -a        write all headers, even partial\n  -T        timestamped output dir\n  # audit.txt in output lists what was carved and offsets\n\n=== FORENSIC / CTF USE ===\n  # extract embedded files from a suspicious image or stego carrier\n  foremost -i suspicious.png -o carved ; ls carved\n\n=== ALTERNATIVES ===\n  binwalk -e        # extract embedded files/firmware\n  scalpel           # foremost fork, config-driven\n  photorec          # interactive recovery\n  bulk_extractor    # feature extraction",
+      "examples": [
+        {
+          "label": "Carve everything from an image",
+          "command": "foremost -t all -i disk.img -o out"
+        },
+        {
+          "label": "Carve specific types",
+          "command": "foremost -t jpg,pdf,zip -i <file> -o out"
+        },
+        {
+          "label": "Extract embedded files from a PNG",
+          "command": "foremost -i suspicious.png -o carved"
+        }
+      ],
+      "references": [
+        {
+          "title": "foremost man page",
+          "url": "https://manpages.ubuntu.com/manpages/jammy/man8/foremost.8.html"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "linux-binwalk-firmware",
+          "note": "binwalk for embedded-file/firmware extraction.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m13-disk-forensics",
+          "note": "Broader disk-forensics workflow context.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "File carving ignores filesystem metadata and reconstructs files purely from signature patterns, so 'deleted' files remain recoverable until their blocks are overwritten. The same technique extracts files appended to or embedded within carriers.",
+        "prerequisites": "Access to the raw image/media/blob to carve (for forensics, legitimate evidence acquisition).",
+        "impact": "Recovery of deleted/hidden data - evidence for defenders, or data exposure if media is not securely wiped before disposal.",
+        "detection": "Not a target-side activity (offline analysis of acquired media). This is primarily a defensive/forensic capability.",
+        "artifacts": "None on a live system; produces audit.txt and carved files in the analyst's output directory.",
+        "prevention": "Securely wipe media before reuse/disposal (cryptographic erase, overwrite, or physical destruction); full-disk encryption so discarded media carves to ciphertext; avoid embedding sensitive files in shared carriers.",
+        "sources": [
+          "https://manpages.ubuntu.com/manpages/jammy/man8/foremost.8.html"
+        ]
+      }
+    },
+    {
       "id": "cdsa-m13-evidence-acquisition",
       "name": "Forensic Evidence Acquisition - KAPE, Velociraptor & Memory Tools",
       "command": "kape.exe --tsource D: --tdest C:\\investigation --target !SANS_Triage",
@@ -54967,6 +55040,85 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Kerberoasts a trusted foreign forest using your local-forest credentials:\n  GetUserSPNs.py           request TGS tickets for SPN accounts\n  -request                 actually request the tickets (not just list)\n  -target-domain <foreign_domain>   the trusted domain whose service accounts you roast\n  <domain>/<user>:<password>   your local-forest credentials\nWith a bidirectional trust the foreign DC issues TGS tickets encrypted with the foreign account's key; crack them offline (hashcat -m 13100)."
+    },
+    {
+      "id": "re-ghidra",
+      "name": "Ghidra - Software Reverse Engineering Suite",
+      "command": "ghidraRun",
+      "description": "Ghidra is the NSA's open-source reverse-engineering suite: a multi-architecture disassembler and decompiler with scripting, cross-references, data-type management, and version tracking. Used to understand closed-source binaries, find vulnerabilities, recover algorithms/keys, and triage malware without executing it.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Reverse Engineering",
+      "subcategory": "Disassembly",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "NationalSecurityAgency/ghidra",
+      "tags": [
+        "ghidra",
+        "reverse-engineering",
+        "decompiler",
+        "disassembler",
+        "malware-analysis",
+        "exploit-dev"
+      ],
+      "mitre": [
+        "T1587.001",
+        "T1480.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== LAUNCH ===\n  ghidraRun            # GUI (needs JDK 17+)\n\n=== WORKFLOW ===\n  1. Create a project -> import the target binary (auto-detects arch/format)\n  2. Let auto-analysis run (functions, xrefs, strings, data types)\n  3. CodeBrowser: use the Decompiler (right pane) for C-like pseudocode\n  4. 'g' to goto address; 'x' for cross-references; L to rename; ; to comment\n  5. Window > Defined Strings / Symbol Tree / Function Graph\n\n=== FIND VULNS / SECRETS ===\n  - Search > For Strings; look for format strings, system(), strcpy, memcpy\n  - Decompiler for logic around input parsing / auth checks\n  - Symbol Tree -> imports (dangerous APIs)\n\n=== HEADLESS / SCRIPTING ===\n  analyzeHeadless <proj_dir> <proj> -import <file> -postScript <script.py>\n  # Python (Jython) or Java scripts; GhidraScript API\n\n=== ALTERNATIVES ===\n  IDA Pro / IDA Free    # industry standard disassembler\n  radare2 / rizin       # CLI RE framework\n  Binary Ninja          # commercial\n  x64dbg / gdb          # dynamic debugging",
+      "examples": [
+        {
+          "label": "Launch the GUI",
+          "command": "ghidraRun"
+        },
+        {
+          "label": "Headless auto-analysis + script",
+          "command": "analyzeHeadless ./proj MyProj -import ./target.bin -postScript extract.py"
+        }
+      ],
+      "references": [
+        {
+          "title": "Ghidra",
+          "url": "https://ghidra-sre.org/"
+        },
+        {
+          "title": "Ghidra GitHub",
+          "url": "https://github.com/NationalSecurityAgency/ghidra"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "cdsa-m10-code-analysis-ida",
+          "note": "IDA-based code analysis as an alternative disassembler.",
+          "rel": "alternative"
+        },
+        {
+          "id": "re-radare2",
+          "note": "radare2 for CLI-driven RE and scripting.",
+          "rel": "alternative"
+        },
+        {
+          "id": "cdsa-m10-static-analysis-linux",
+          "note": "Static triage workflow for Linux binaries.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Compiled binaries retain enough structure (imports, strings, control flow) for a decompiler to recover high-level logic. Without obfuscation or anti-analysis, secrets, algorithms, and vulnerable patterns are fully recoverable from a shipped binary.",
+        "prerequisites": "A copy of the target binary. No execution required; analysis is fully offline on the analyst's machine.",
+        "impact": "Recovery of proprietary logic, hardcoded keys/credentials, license checks, and discovery of exploitable bugs - all without source code.",
+        "detection": "Not detectable on the defender side (offline analysis of a distributed binary). Defense is anti-RE hardening of the binary itself, not telemetry.",
+        "artifacts": "None on the target environment; the analysis happens on the attacker's workstation.",
+        "prevention": "Do not embed secrets in binaries (use runtime secret retrieval); strip symbols; apply obfuscation/packing and anti-debug/anti-tamper for sensitive code; server-side enforcement of license/auth logic so client reversing yields nothing of value; code signing to detect tampering.",
+        "sources": [
+          "NationalSecurityAgency/ghidra",
+          "https://ghidra-sre.org/"
+        ]
+      }
     },
     {
       "id": "git-dumper-exposed-git",
@@ -110836,6 +110988,75 @@ const COMMAND_DATA = {
       "explain": "Dumps LSASS on the target and parses it offline, so Mimikatz never runs on the victim (evades on-host EDR):\n  mimikatz.exe              runs on YOUR box, not the target\n  \"sekurlsa::minidump <dump_file>\"   load the exfiltrated LSASS dump instead of live memory\n  \"sekurlsa::ekeys\"         extract Kerberos AES/RC4 keys from it\n  \"exit\"                    quit\nCreate the dump on the target with a managed minidump tool, exfil it (repair with Reverse.exe if byte-reversed), then parse locally."
     },
     {
+      "id": "re-one-gadget",
+      "name": "one_gadget - libc One-Shot RCE Gadgets",
+      "command": "one_gadget <file>",
+      "description": "one_gadget finds 'magic' addresses in a libc build that spawn a shell (execve('/bin/sh',...)) in a single jump, provided certain register/memory constraints hold. Invaluable when you can overwrite one pointer (GOT entry, return address, __malloc_hook) and want instant RCE without a full ROP chain.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Reverse Engineering",
+      "subcategory": "Exploit Development",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "david942j/one_gadget",
+      "tags": [
+        "one-gadget",
+        "libc",
+        "exploit-dev",
+        "rce",
+        "rop",
+        "binary-exploitation"
+      ],
+      "mitre": [
+        "T1587.004",
+        "T1203"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  gem install one_gadget\n\n=== FIND GADGETS ===\n  one_gadget <libc.so.6>\n  # prints offsets + the constraints each requires, e.g.:\n  #   0xe3b2e execve(\"/bin/sh\", r15, r12)\n  #   constraints: [r15]==NULL || r15==NULL , [r12]==NULL || r12==NULL\n\n=== USAGE ===\n  # add the chosen offset to the leaked libc base:\n  #   one_gadget_addr = libc_base + 0xe3b2e\n  # overwrite a hook / return address with it when its constraints are satisfiable\n\n=== RAW / LEVEL ===\n  one_gadget <libc.so.6> -l 2     # more (looser) candidates\n  one_gadget -b <build_id>        # fetch by libc build id\n\n=== ALTERNATIVES ===\n  manual system('/bin/sh') ROP chain (ROPgadget + pwntools)\n  __free_hook / __malloc_hook overwrite techniques",
+      "examples": [
+        {
+          "label": "List one-shot gadgets",
+          "command": "one_gadget <libc.so.6>"
+        },
+        {
+          "label": "More candidates (level 2)",
+          "command": "one_gadget <libc.so.6> -l 2"
+        }
+      ],
+      "references": [
+        {
+          "title": "one_gadget",
+          "url": "https://github.com/david942j/one_gadget"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "re-pwntools",
+          "note": "Resolve libc base in pwntools, then jump to the gadget.",
+          "rel": "prereq"
+        },
+        {
+          "id": "re-ropgadget",
+          "note": "ROPgadget for a full chain when constraints fail.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "glibc contains code paths that call execve('/bin/sh') under specific register states. If an attacker can redirect execution to such an address with the right constraints, one pointer overwrite yields a shell.",
+        "prerequisites": "A libc leak (to defeat ASLR) and a single write/control primitive (hook, GOT, saved return address).",
+        "impact": "Immediate shell from a single controlled jump, bypassing the need for a multi-gadget ROP chain.",
+        "detection": "Not detectable as a tool; exploitation surfaces as an unexpected shell child of a service and EDR alerts at runtime.",
+        "artifacts": "None from the tool; on the target, an execve('/bin/sh') from a daemon is the signal.",
+        "prevention": "Full ASLR/PIE so libc addresses are unpredictable; FORTIFY and hook-hardening (modern glibc removed __malloc_hook/__free_hook); pointer encryption (PTR_MANGLE); seccomp to forbid execve in services; patch the memory bug that grants the write primitive.",
+        "sources": [
+          "david942j/one_gadget"
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -129325,6 +129546,109 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "re-pwntools",
+      "name": "pwntools - CTF / Exploit Development Framework",
+      "command": "python3 -c 'from pwn import *; io=process(\"./vuln\"); io.interactive()'",
+      "description": "pwntools is a Python library for exploit development and CTF binary exploitation. It streamlines connecting to local/remote targets, packing addresses, building ROP chains, crafting shellcode, handling I/O, and leaking/overwriting memory - turning a crash into a working exploit quickly.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Reverse Engineering",
+      "subcategory": "Exploit Development",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "Gallopsled/pwntools",
+      "tags": [
+        "pwntools",
+        "exploit-dev",
+        "rop",
+        "shellcode",
+        "ctf",
+        "buffer-overflow",
+        "binary-exploitation"
+      ],
+      "mitre": [
+        "T1203",
+        "T1587.004"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  pip install pwntools\n\n=== SKELETON ===\n  from pwn import *\n  context.binary = elf = ELF('./vuln')     # sets arch/bits/endian\n  context.log_level = 'debug'\n  # io = process('./vuln')                 # local\n  io = remote('<ip>', <port>)              # remote\n\n=== BUILD THE PAYLOAD ===\n  offset = 72\n  payload  = b'A'*offset\n  payload += p64(elf.sym['win'])           # pack address (64-bit)\n  io.sendline(payload)\n  io.interactive()\n\n=== ROP ===\n  rop = ROP(elf)\n  rop.call('system', [next(elf.search(b'/bin/sh'))])\n  payload = flat({offset: rop.chain()})\n\n=== LEAKS / FORMAT STRING ===\n  leak = u64(io.recvline().strip().ljust(8, b'\\x00'))\n  libc = ELF('./libc.so.6'); libc.address = leak - libc.sym['puts']\n\n=== HELPERS ===\n  cyclic(200) / cyclic_find(0x6161616c)    # find EIP/RIP offset\n  shellcraft.sh() ; asm(shellcraft.sh())\n  checksec ./vuln                          # (pwntools CLI) show mitigations\n\n=== ALTERNATIVES ===\n  ROPgadget / ropper   # gadget finding\n  one_gadget           # libc one-shot RCE gadgets\n  gdb + pwndbg/gef     # dynamic analysis",
+      "examples": [
+        {
+          "label": "Find offset with cyclic pattern",
+          "command": "python3 -c 'from pwn import *; print(cyclic(200))'"
+        },
+        {
+          "label": "Remote ret2win skeleton",
+          "command": "python3 -c 'from pwn import *; e=ELF(\"./vuln\"); io=remote(\"<ip>\",<port>); io.sendline(b\"A\"*72+p64(e.sym[\"win\"])); io.interactive()'"
+        },
+        {
+          "label": "Show mitigations",
+          "command": "checksec ./vuln"
+        }
+      ],
+      "references": [
+        {
+          "title": "pwntools docs",
+          "url": "https://docs.pwntools.com/"
+        },
+        {
+          "title": "pwntools GitHub",
+          "url": "https://github.com/Gallopsled/pwntools"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "re-ropgadget",
+          "note": "ROPgadget to source gadgets for pwntools ROP chains.",
+          "rel": "next"
+        },
+        {
+          "id": "re-one-gadget",
+          "note": "one_gadget for a libc single-shot RCE.",
+          "rel": "next"
+        },
+        {
+          "id": "app-service-gdb",
+          "note": "gdb/pwndbg for dynamic analysis of the crash.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Memory-corruption bugs (overflows, use-after-free, format strings) let an attacker control execution flow. pwntools automates the mechanics (offset finding, address packing, ROP, leaks) so exploitation of a vulnerable, under-hardened binary is fast and reliable.",
+        "prerequisites": "A memory-corruption vulnerability in the target binary; network/local access to trigger it.",
+        "impact": "Reliable remote/local code execution or privilege escalation by exploiting the vulnerable process.",
+        "detection": "[MITRE T1203] On the target: repeated process crashes/segfaults preceding success, EDR memory-protection alerts (ROP/stack-pivot), WER/core-dump bursts, and anomalous child processes (shell) from a service.",
+        "artifacts": "Core dumps and segfault logs (dmesg, /var/log), EDR exploit-guard events, unexpected /bin/sh child of a network service, crash-loop telemetry.",
+        "splunk_spl": "index=linux sourcetype=linux:syslog (segfault OR \"general protection\" OR core_dumped)\n| stats count by host, process\n| where count > 3",
+        "elastic_kql": "message:(segfault or core_dumped) or process.parent.name:(nginx or apache2 or custom-service) and process.name:(sh or bash or dash)",
+        "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"segfault\",\"core dumped\",\"general protection\")\n| summarize Count=count() by HostName, ProcessName, bin(TimeGenerated, 5m)\n| where Count > 3",
+        "sigma_rules": "linux_service_crashloop_then_shell",
+        "prevention": "Build with all mitigations (NX/DEP, ASLR/PIE, stack canaries, RELRO, CFG/CET); fuzz and fix memory bugs; use memory-safe languages for new code; sandbox/seccomp network services; EDR exploit protection; restart-on-crash with alerting so crash-looping is visible.",
+        "sources": [
+          "Gallopsled/pwntools",
+          "https://attack.mitre.org/techniques/T1203/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Service crash-loop followed by shell (exploitation)",
+            "logic": "Syslog\n| where SyslogMessage has_any (\"segfault\",\"core dumped\",\"general protection\")\n| summarize Count=count() by HostName, ProcessName, bin(TimeGenerated, 5m)\n| where Count > 3",
+            "data_source": "linux-syslog",
+            "attack": [
+              "T1203"
+            ],
+            "fidelity": "telemetry",
+            "confidence": "medium",
+            "false_positives": "Buggy software crashing legitimately",
+            "tuning": "Correlate crash bursts with a new child shell or outbound connection"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-pygpoabuse",
       "name": "pyGPOAbuse - Linux-side GPO Abuse",
       "command": "pygpoabuse.py <domain>/<user>:<password> -gpo-id <guid> -command '<cmd>'",
@@ -130062,6 +130386,89 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Enumerates legacy r-services (rlogin/rsh/rexec):\n  sudo nmap -sV   version-detect\n  -p 512,513,514  the r-services ports\n  <ip>            target\nThese trust hosts listed in .rhosts/hosts.equiv; a wildcard '+ +' entry lets anyone authenticate with no password - 'rusers -al' lists users, and rlogin gets you in."
+    },
+    {
+      "id": "re-radare2",
+      "name": "radare2 - CLI Reverse Engineering Framework",
+      "command": "r2 -A <binary>",
+      "description": "radare2 (and its fork rizin) is a command-line reverse-engineering framework: disassembler, hex editor, debugger, binary diffing, and scripting. Fast for triage, automation, and exploitation work - analyzing binaries, patching, finding gadgets, and debugging crashes from a terminal or over SSH.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Reverse Engineering",
+      "subcategory": "Disassembly",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "radareorg/radare2",
+      "tags": [
+        "radare2",
+        "r2",
+        "rizin",
+        "reverse-engineering",
+        "disassembler",
+        "debugger",
+        "exploit-dev"
+      ],
+      "mitre": [
+        "T1587.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== OPEN + ANALYZE ===\n  r2 -A <binary>         # open and run analysis (aaa)\n  r2 -d <binary>         # open in debug mode\n\n=== CORE COMMANDS (inside r2) ===\n  aaa            # analyze all\n  afl            # list functions\n  s main ; pdf   # seek to main, print disassembly of function\n  iz / izz       # strings in data / whole binary\n  ii             # imports\n  iI             # binary info (arch, bits, NX, PIC, canary)\n  axt <addr>     # xrefs to\n  V / VV         # visual / graph mode (p to cycle panes)\n\n=== DEBUG ===\n  r2 -d ./prog ; db <addr> (breakpoint) ; dc (continue) ; dr (registers)\n\n=== EXPLOIT HELPERS ===\n  /R pop rdi     # search ROP gadgets\n  pxw @ <addr>   # examine memory\n  woa / wx       # write/patch bytes\n\n=== ONE-LINERS ===\n  rabin2 -I <binary>     # security features (canary/nx/pic/relro)\n  rabin2 -z <binary>     # strings\n\n=== ALTERNATIVES ===\n  Ghidra        # GUI + decompiler\n  gdb + pwndbg  # dynamic exploit dev\n  objdump/readelf # quick static views",
+      "examples": [
+        {
+          "label": "Open and auto-analyze",
+          "command": "r2 -A <binary>"
+        },
+        {
+          "label": "Show binary security features",
+          "command": "rabin2 -I <binary>"
+        },
+        {
+          "label": "Search ROP gadgets in r2",
+          "command": "/R pop rdi"
+        }
+      ],
+      "references": [
+        {
+          "title": "radare2",
+          "url": "https://github.com/radareorg/radare2"
+        },
+        {
+          "title": "radare2 book",
+          "url": "https://book.rada.re/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "re-ghidra",
+          "note": "Ghidra for GUI decompilation of the same binary.",
+          "rel": "alternative"
+        },
+        {
+          "id": "re-ropgadget",
+          "note": "ROPgadget for dedicated gadget enumeration.",
+          "rel": "next"
+        },
+        {
+          "id": "app-service-gdb",
+          "note": "gdb for dynamic debugging of the target.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "radare2 parses standard executable formats and recovers disassembly, strings, imports, and control flow. Any shipped binary without hardening or obfuscation is fully analyzable offline.",
+        "prerequisites": "A copy of the target binary; optional execution for the debugger.",
+        "impact": "Fast triage of logic and vulnerabilities, gadget discovery for ROP chains, and binary patching.",
+        "detection": "Not detectable on the defender side (offline static/dynamic analysis). Hardening the binary is the mitigation.",
+        "artifacts": "None in the target environment.",
+        "prevention": "Compile with full mitigations (NX, PIE, RELRO, stack canaries, FORTIFY_SOURCE); strip symbols; obfuscate sensitive routines; keep security decisions server-side; monitor for exploit attempts (crashes/EDR) rather than the analysis itself.",
+        "sources": [
+          "radareorg/radare2",
+          "https://book.rada.re/"
+        ]
+      }
     },
     {
       "id": "ad-raisechild",
@@ -136766,6 +137173,89 @@ const COMMAND_DATA = {
         "sources": [
           "dirkjanm/ROADtools",
           "https://attack.mitre.org/techniques/T1087/004/"
+        ]
+      }
+    },
+    {
+      "id": "re-ropgadget",
+      "name": "ROPgadget - ROP/JOP Gadget Finder",
+      "command": "ROPgadget --binary <binary>",
+      "description": "ROPgadget scans a binary for Return/Jump-Oriented-Programming gadgets - short instruction sequences ending in ret/jmp/call - used to build ROP chains that bypass non-executable stack (NX/DEP). It can also auto-generate a ropchain for simple cases and filter gadgets by pattern.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "silent",
+      "category": "Reverse Engineering",
+      "subcategory": "Exploit Development",
+      "certifications": [
+        "OSCP"
+      ],
+      "primary_cert": "OSCP",
+      "source": "JonathanSalwan/ROPgadget",
+      "tags": [
+        "ropgadget",
+        "rop",
+        "exploit-dev",
+        "nx-bypass",
+        "gadgets",
+        "binary-exploitation"
+      ],
+      "mitre": [
+        "T1587.004",
+        "T1203"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC ===\n  ROPgadget --binary <binary>\n  ROPgadget --binary <binary> | wc -l     # count gadgets\n\n=== FILTER ===\n  ROPgadget --binary <binary> --only 'pop|ret'\n  ROPgadget --binary <binary> --re 'pop rdi'      # find 'pop rdi; ret'\n  ROPgadget --binary <binary> --string '/bin/sh'  # find string address\n  ROPgadget --binary <binary> --memstr '/bin/sh'  # build string from bytes\n\n=== AUTO CHAIN ===\n  ROPgadget --binary <binary> --ropchain    # attempt to auto-build execve chain\n\n=== TYPICAL x86-64 PRIMITIVES ===\n  pop rdi; ret     # 1st arg\n  pop rsi; ret / pop rsi; pop r15; ret\n  pop rdx; ret\n  syscall; ret\n\n=== ALTERNATIVES ===\n  ropper              # similar, supports more filters/formats\n  pwntools ROP()      # programmatic chain building\n  radare2 /R          # in-RE gadget search",
+      "examples": [
+        {
+          "label": "List all gadgets",
+          "command": "ROPgadget --binary <binary>"
+        },
+        {
+          "label": "Find 'pop rdi; ret'",
+          "command": "ROPgadget --binary <binary> --re 'pop rdi'"
+        },
+        {
+          "label": "Auto-build a ropchain",
+          "command": "ROPgadget --binary <binary> --ropchain"
+        }
+      ],
+      "references": [
+        {
+          "title": "ROPgadget",
+          "url": "https://github.com/JonathanSalwan/ROPgadget"
+        },
+        {
+          "title": "MITRE T1203 - Exploitation for Client Execution",
+          "url": "https://attack.mitre.org/techniques/T1203/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "re-pwntools",
+          "note": "Feed gadgets into pwntools ROP chains.",
+          "rel": "next"
+        },
+        {
+          "id": "re-one-gadget",
+          "note": "one_gadget as a simpler single-shot alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "re-radare2",
+          "note": "radare2 can also search gadgets inline.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When the stack is non-executable (NX/DEP), attackers reuse existing executable code. ROPgadget enumerates reusable instruction sequences so a chain can call functions/syscalls without injecting shellcode.",
+        "prerequisites": "A control-flow-hijack primitive (e.g. stack overflow) plus a binary/libc to source gadgets from.",
+        "impact": "NX/DEP bypass enabling arbitrary code execution via return-oriented programming.",
+        "detection": "Not detectable as a tool (offline gadget search). On the target, ROP execution may trip EDR control-flow/stack-pivot heuristics at exploit time.",
+        "artifacts": "None from the tool itself; exploitation shows as EDR CFG/stack-pivot alerts or crashes on the target.",
+        "prevention": "Enable PIE+full ASLR (randomizes gadget addresses), RELRO, and especially hardware CFI (Intel CET shadow stack / ARM PAC) and compiler CFG to break ROP chains; keep binaries small/stripped of useful gadgets; patch the underlying memory bug.",
+        "sources": [
+          "JonathanSalwan/ROPgadget",
+          "https://attack.mitre.org/techniques/T1203/"
         ]
       }
     },
@@ -193648,8 +194138,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1098,
-  "buildDate": "2026-11-11T12:25:52.678Z",
+  "totalCommands": 1104,
+  "buildDate": "2026-11-11T12:29:34.276Z",
   "certifications": [
     "CDSA",
     "CPTS",

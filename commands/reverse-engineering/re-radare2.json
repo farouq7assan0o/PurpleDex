@@ -1,0 +1,83 @@
+{
+  "id": "re-radare2",
+  "name": "radare2 - CLI Reverse Engineering Framework",
+  "command": "r2 -A <binary>",
+  "description": "radare2 (and its fork rizin) is a command-line reverse-engineering framework: disassembler, hex editor, debugger, binary diffing, and scripting. Fast for triage, automation, and exploitation work - analyzing binaries, patching, finding gadgets, and debugging crashes from a terminal or over SSH.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Reverse Engineering",
+  "subcategory": "Disassembly",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "radareorg/radare2",
+  "tags": [
+    "radare2",
+    "r2",
+    "rizin",
+    "reverse-engineering",
+    "disassembler",
+    "debugger",
+    "exploit-dev"
+  ],
+  "mitre": [
+    "T1587.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== OPEN + ANALYZE ===\n  r2 -A <binary>         # open and run analysis (aaa)\n  r2 -d <binary>         # open in debug mode\n\n=== CORE COMMANDS (inside r2) ===\n  aaa            # analyze all\n  afl            # list functions\n  s main ; pdf   # seek to main, print disassembly of function\n  iz / izz       # strings in data / whole binary\n  ii             # imports\n  iI             # binary info (arch, bits, NX, PIC, canary)\n  axt <addr>     # xrefs to\n  V / VV         # visual / graph mode (p to cycle panes)\n\n=== DEBUG ===\n  r2 -d ./prog ; db <addr> (breakpoint) ; dc (continue) ; dr (registers)\n\n=== EXPLOIT HELPERS ===\n  /R pop rdi     # search ROP gadgets\n  pxw @ <addr>   # examine memory\n  woa / wx       # write/patch bytes\n\n=== ONE-LINERS ===\n  rabin2 -I <binary>     # security features (canary/nx/pic/relro)\n  rabin2 -z <binary>     # strings\n\n=== ALTERNATIVES ===\n  Ghidra        # GUI + decompiler\n  gdb + pwndbg  # dynamic exploit dev\n  objdump/readelf # quick static views",
+  "examples": [
+    {
+      "label": "Open and auto-analyze",
+      "command": "r2 -A <binary>"
+    },
+    {
+      "label": "Show binary security features",
+      "command": "rabin2 -I <binary>"
+    },
+    {
+      "label": "Search ROP gadgets in r2",
+      "command": "/R pop rdi"
+    }
+  ],
+  "references": [
+    {
+      "title": "radare2",
+      "url": "https://github.com/radareorg/radare2"
+    },
+    {
+      "title": "radare2 book",
+      "url": "https://book.rada.re/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "re-ghidra",
+      "note": "Ghidra for GUI decompilation of the same binary.",
+      "rel": "alternative"
+    },
+    {
+      "id": "re-ropgadget",
+      "note": "ROPgadget for dedicated gadget enumeration.",
+      "rel": "next"
+    },
+    {
+      "id": "app-service-gdb",
+      "note": "gdb for dynamic debugging of the target.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "radare2 parses standard executable formats and recovers disassembly, strings, imports, and control flow. Any shipped binary without hardening or obfuscation is fully analyzable offline.",
+    "prerequisites": "A copy of the target binary; optional execution for the debugger.",
+    "impact": "Fast triage of logic and vulnerabilities, gadget discovery for ROP chains, and binary patching.",
+    "detection": "Not detectable on the defender side (offline static/dynamic analysis). Hardening the binary is the mitigation.",
+    "artifacts": "None in the target environment.",
+    "prevention": "Compile with full mitigations (NX, PIE, RELRO, stack canaries, FORTIFY_SOURCE); strip symbols; obfuscate sensitive routines; keep security decisions server-side; monitor for exploit attempts (crashes/EDR) rather than the analysis itself.",
+    "sources": [
+      "radareorg/radare2",
+      "https://book.rada.re/"
+    ]
+  }
+}

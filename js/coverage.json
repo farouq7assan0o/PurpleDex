@@ -33791,6 +33791,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "re-pwntools",
+          "name": "Service crash-loop followed by shell (exploitation)",
+          "platform": "sentinel",
+          "fidelity": "telemetry",
+          "data_source": "linux-syslog"
         }
       ],
       "platforms": [
@@ -33801,7 +33808,8 @@
       ],
       "data_sources": [
         "windows-security",
-        "edr"
+        "edr",
+        "linux-syslog"
       ],
       "best_fidelity": "behavioral"
     },
@@ -40869,6 +40877,7 @@
     ],
     "linux-syslog": [
       "T1068",
+      "T1203",
       "T1190",
       "T1505.003"
     ],
@@ -40887,6 +40896,6 @@
       "T1190"
     ]
   },
-  "cards_with_detections": 898,
-  "total_detections": 3813
+  "cards_with_detections": 899,
+  "total_detections": 3814
 }

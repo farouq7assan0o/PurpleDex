@@ -1,0 +1,79 @@
+{
+  "id": "re-ghidra",
+  "name": "Ghidra - Software Reverse Engineering Suite",
+  "command": "ghidraRun",
+  "description": "Ghidra is the NSA's open-source reverse-engineering suite: a multi-architecture disassembler and decompiler with scripting, cross-references, data-type management, and version tracking. Used to understand closed-source binaries, find vulnerabilities, recover algorithms/keys, and triage malware without executing it.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Reverse Engineering",
+  "subcategory": "Disassembly",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "NationalSecurityAgency/ghidra",
+  "tags": [
+    "ghidra",
+    "reverse-engineering",
+    "decompiler",
+    "disassembler",
+    "malware-analysis",
+    "exploit-dev"
+  ],
+  "mitre": [
+    "T1587.001",
+    "T1480.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== LAUNCH ===\n  ghidraRun            # GUI (needs JDK 17+)\n\n=== WORKFLOW ===\n  1. Create a project -> import the target binary (auto-detects arch/format)\n  2. Let auto-analysis run (functions, xrefs, strings, data types)\n  3. CodeBrowser: use the Decompiler (right pane) for C-like pseudocode\n  4. 'g' to goto address; 'x' for cross-references; L to rename; ; to comment\n  5. Window > Defined Strings / Symbol Tree / Function Graph\n\n=== FIND VULNS / SECRETS ===\n  - Search > For Strings; look for format strings, system(), strcpy, memcpy\n  - Decompiler for logic around input parsing / auth checks\n  - Symbol Tree -> imports (dangerous APIs)\n\n=== HEADLESS / SCRIPTING ===\n  analyzeHeadless <proj_dir> <proj> -import <file> -postScript <script.py>\n  # Python (Jython) or Java scripts; GhidraScript API\n\n=== ALTERNATIVES ===\n  IDA Pro / IDA Free    # industry standard disassembler\n  radare2 / rizin       # CLI RE framework\n  Binary Ninja          # commercial\n  x64dbg / gdb          # dynamic debugging",
+  "examples": [
+    {
+      "label": "Launch the GUI",
+      "command": "ghidraRun"
+    },
+    {
+      "label": "Headless auto-analysis + script",
+      "command": "analyzeHeadless ./proj MyProj -import ./target.bin -postScript extract.py"
+    }
+  ],
+  "references": [
+    {
+      "title": "Ghidra",
+      "url": "https://ghidra-sre.org/"
+    },
+    {
+      "title": "Ghidra GitHub",
+      "url": "https://github.com/NationalSecurityAgency/ghidra"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "cdsa-m10-code-analysis-ida",
+      "note": "IDA-based code analysis as an alternative disassembler.",
+      "rel": "alternative"
+    },
+    {
+      "id": "re-radare2",
+      "note": "radare2 for CLI-driven RE and scripting.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m10-static-analysis-linux",
+      "note": "Static triage workflow for Linux binaries.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Compiled binaries retain enough structure (imports, strings, control flow) for a decompiler to recover high-level logic. Without obfuscation or anti-analysis, secrets, algorithms, and vulnerable patterns are fully recoverable from a shipped binary.",
+    "prerequisites": "A copy of the target binary. No execution required; analysis is fully offline on the analyst's machine.",
+    "impact": "Recovery of proprietary logic, hardcoded keys/credentials, license checks, and discovery of exploitable bugs - all without source code.",
+    "detection": "Not detectable on the defender side (offline analysis of a distributed binary). Defense is anti-RE hardening of the binary itself, not telemetry.",
+    "artifacts": "None on the target environment; the analysis happens on the attacker's workstation.",
+    "prevention": "Do not embed secrets in binaries (use runtime secret retrieval); strip symbols; apply obfuscation/packing and anti-debug/anti-tamper for sensitive code; server-side enforcement of license/auth logic so client reversing yields nothing of value; code signing to detect tampering.",
+    "sources": [
+      "NationalSecurityAgency/ghidra",
+      "https://ghidra-sre.org/"
+    ]
+  }
+}

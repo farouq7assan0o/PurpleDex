@@ -1,0 +1,69 @@
+{
+  "id": "re-one-gadget",
+  "name": "one_gadget - libc One-Shot RCE Gadgets",
+  "command": "one_gadget <file>",
+  "description": "one_gadget finds 'magic' addresses in a libc build that spawn a shell (execve('/bin/sh',...)) in a single jump, provided certain register/memory constraints hold. Invaluable when you can overwrite one pointer (GOT entry, return address, __malloc_hook) and want instant RCE without a full ROP chain.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Reverse Engineering",
+  "subcategory": "Exploit Development",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "david942j/one_gadget",
+  "tags": [
+    "one-gadget",
+    "libc",
+    "exploit-dev",
+    "rce",
+    "rop",
+    "binary-exploitation"
+  ],
+  "mitre": [
+    "T1587.004",
+    "T1203"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  gem install one_gadget\n\n=== FIND GADGETS ===\n  one_gadget <libc.so.6>\n  # prints offsets + the constraints each requires, e.g.:\n  #   0xe3b2e execve(\"/bin/sh\", r15, r12)\n  #   constraints: [r15]==NULL || r15==NULL , [r12]==NULL || r12==NULL\n\n=== USAGE ===\n  # add the chosen offset to the leaked libc base:\n  #   one_gadget_addr = libc_base + 0xe3b2e\n  # overwrite a hook / return address with it when its constraints are satisfiable\n\n=== RAW / LEVEL ===\n  one_gadget <libc.so.6> -l 2     # more (looser) candidates\n  one_gadget -b <build_id>        # fetch by libc build id\n\n=== ALTERNATIVES ===\n  manual system('/bin/sh') ROP chain (ROPgadget + pwntools)\n  __free_hook / __malloc_hook overwrite techniques",
+  "examples": [
+    {
+      "label": "List one-shot gadgets",
+      "command": "one_gadget <libc.so.6>"
+    },
+    {
+      "label": "More candidates (level 2)",
+      "command": "one_gadget <libc.so.6> -l 2"
+    }
+  ],
+  "references": [
+    {
+      "title": "one_gadget",
+      "url": "https://github.com/david942j/one_gadget"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "re-pwntools",
+      "note": "Resolve libc base in pwntools, then jump to the gadget.",
+      "rel": "prereq"
+    },
+    {
+      "id": "re-ropgadget",
+      "note": "ROPgadget for a full chain when constraints fail.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "glibc contains code paths that call execve('/bin/sh') under specific register states. If an attacker can redirect execution to such an address with the right constraints, one pointer overwrite yields a shell.",
+    "prerequisites": "A libc leak (to defeat ASLR) and a single write/control primitive (hook, GOT, saved return address).",
+    "impact": "Immediate shell from a single controlled jump, bypassing the need for a multi-gadget ROP chain.",
+    "detection": "Not detectable as a tool; exploitation surfaces as an unexpected shell child of a service and EDR alerts at runtime.",
+    "artifacts": "None from the tool; on the target, an execve('/bin/sh') from a daemon is the signal.",
+    "prevention": "Full ASLR/PIE so libc addresses are unpredictable; FORTIFY and hook-hardening (modern glibc removed __malloc_hook/__free_hook); pointer encryption (PTR_MANGLE); seccomp to forbid execve in services; patch the memory bug that grants the write primitive.",
+    "sources": [
+      "david942j/one_gadget"
+    ]
+  }
+}

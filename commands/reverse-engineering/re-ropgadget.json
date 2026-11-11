@@ -1,0 +1,83 @@
+{
+  "id": "re-ropgadget",
+  "name": "ROPgadget - ROP/JOP Gadget Finder",
+  "command": "ROPgadget --binary <binary>",
+  "description": "ROPgadget scans a binary for Return/Jump-Oriented-Programming gadgets - short instruction sequences ending in ret/jmp/call - used to build ROP chains that bypass non-executable stack (NX/DEP). It can also auto-generate a ropchain for simple cases and filter gadgets by pattern.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Reverse Engineering",
+  "subcategory": "Exploit Development",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "JonathanSalwan/ROPgadget",
+  "tags": [
+    "ropgadget",
+    "rop",
+    "exploit-dev",
+    "nx-bypass",
+    "gadgets",
+    "binary-exploitation"
+  ],
+  "mitre": [
+    "T1587.004",
+    "T1203"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC ===\n  ROPgadget --binary <binary>\n  ROPgadget --binary <binary> | wc -l     # count gadgets\n\n=== FILTER ===\n  ROPgadget --binary <binary> --only 'pop|ret'\n  ROPgadget --binary <binary> --re 'pop rdi'      # find 'pop rdi; ret'\n  ROPgadget --binary <binary> --string '/bin/sh'  # find string address\n  ROPgadget --binary <binary> --memstr '/bin/sh'  # build string from bytes\n\n=== AUTO CHAIN ===\n  ROPgadget --binary <binary> --ropchain    # attempt to auto-build execve chain\n\n=== TYPICAL x86-64 PRIMITIVES ===\n  pop rdi; ret     # 1st arg\n  pop rsi; ret / pop rsi; pop r15; ret\n  pop rdx; ret\n  syscall; ret\n\n=== ALTERNATIVES ===\n  ropper              # similar, supports more filters/formats\n  pwntools ROP()      # programmatic chain building\n  radare2 /R          # in-RE gadget search",
+  "examples": [
+    {
+      "label": "List all gadgets",
+      "command": "ROPgadget --binary <binary>"
+    },
+    {
+      "label": "Find 'pop rdi; ret'",
+      "command": "ROPgadget --binary <binary> --re 'pop rdi'"
+    },
+    {
+      "label": "Auto-build a ropchain",
+      "command": "ROPgadget --binary <binary> --ropchain"
+    }
+  ],
+  "references": [
+    {
+      "title": "ROPgadget",
+      "url": "https://github.com/JonathanSalwan/ROPgadget"
+    },
+    {
+      "title": "MITRE T1203 - Exploitation for Client Execution",
+      "url": "https://attack.mitre.org/techniques/T1203/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "re-pwntools",
+      "note": "Feed gadgets into pwntools ROP chains.",
+      "rel": "next"
+    },
+    {
+      "id": "re-one-gadget",
+      "note": "one_gadget as a simpler single-shot alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "re-radare2",
+      "note": "radare2 can also search gadgets inline.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "When the stack is non-executable (NX/DEP), attackers reuse existing executable code. ROPgadget enumerates reusable instruction sequences so a chain can call functions/syscalls without injecting shellcode.",
+    "prerequisites": "A control-flow-hijack primitive (e.g. stack overflow) plus a binary/libc to source gadgets from.",
+    "impact": "NX/DEP bypass enabling arbitrary code execution via return-oriented programming.",
+    "detection": "Not detectable as a tool (offline gadget search). On the target, ROP execution may trip EDR control-flow/stack-pivot heuristics at exploit time.",
+    "artifacts": "None from the tool itself; exploitation shows as EDR CFG/stack-pivot alerts or crashes on the target.",
+    "prevention": "Enable PIE+full ASLR (randomizes gadget addresses), RELRO, and especially hardware CFI (Intel CET shadow stack / ARM PAC) and compiler CFG to break ROP chains; keep binaries small/stripped of useful gadgets; patch the underlying memory bug.",
+    "sources": [
+      "JonathanSalwan/ROPgadget",
+      "https://attack.mitre.org/techniques/T1203/"
+    ]
+  }
+}

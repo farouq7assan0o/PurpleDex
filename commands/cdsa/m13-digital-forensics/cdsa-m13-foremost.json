@@ -1,0 +1,73 @@
+{
+  "id": "cdsa-m13-foremost",
+  "name": "foremost - File Carving / Data Recovery",
+  "command": "foremost -i <file> -o <output_dir>",
+  "description": "foremost recovers files from disk images, memory dumps, or raw media by carving on file headers/footers and internal structure, independent of the filesystem. Used in forensics and CTF to extract deleted or embedded files (images, documents, archives, executables) from unallocated space or arbitrary blobs.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "silent",
+  "category": "Digital Forensics",
+  "subcategory": "Data Recovery",
+  "certifications": [
+    "CDSA",
+    "OSCP"
+  ],
+  "primary_cert": "CDSA",
+  "source": "foremost",
+  "tags": [
+    "foremost",
+    "file-carving",
+    "forensics",
+    "data-recovery",
+    "steganography",
+    "disk-image"
+  ],
+  "mitre": [
+    "T1005"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC ===\n  foremost -i <file> -o <output_dir>\n  # output_dir must NOT already exist; results sorted into subfolders by type\n\n=== SELECT FILE TYPES ===\n  foremost -t jpg,pdf,zip,png -i <file> -o out\n  foremost -t all -i disk.img -o out\n\n=== OPTIONS ===\n  -v        verbose\n  -q        quick mode (header-only on block boundaries)\n  -a        write all headers, even partial\n  -T        timestamped output dir\n  # audit.txt in output lists what was carved and offsets\n\n=== FORENSIC / CTF USE ===\n  # extract embedded files from a suspicious image or stego carrier\n  foremost -i suspicious.png -o carved ; ls carved\n\n=== ALTERNATIVES ===\n  binwalk -e        # extract embedded files/firmware\n  scalpel           # foremost fork, config-driven\n  photorec          # interactive recovery\n  bulk_extractor    # feature extraction",
+  "examples": [
+    {
+      "label": "Carve everything from an image",
+      "command": "foremost -t all -i disk.img -o out"
+    },
+    {
+      "label": "Carve specific types",
+      "command": "foremost -t jpg,pdf,zip -i <file> -o out"
+    },
+    {
+      "label": "Extract embedded files from a PNG",
+      "command": "foremost -i suspicious.png -o carved"
+    }
+  ],
+  "references": [
+    {
+      "title": "foremost man page",
+      "url": "https://manpages.ubuntu.com/manpages/jammy/man8/foremost.8.html"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "linux-binwalk-firmware",
+      "note": "binwalk for embedded-file/firmware extraction.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m13-disk-forensics",
+      "note": "Broader disk-forensics workflow context.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "File carving ignores filesystem metadata and reconstructs files purely from signature patterns, so 'deleted' files remain recoverable until their blocks are overwritten. The same technique extracts files appended to or embedded within carriers.",
+    "prerequisites": "Access to the raw image/media/blob to carve (for forensics, legitimate evidence acquisition).",
+    "impact": "Recovery of deleted/hidden data - evidence for defenders, or data exposure if media is not securely wiped before disposal.",
+    "detection": "Not a target-side activity (offline analysis of acquired media). This is primarily a defensive/forensic capability.",
+    "artifacts": "None on a live system; produces audit.txt and carved files in the analyst's output directory.",
+    "prevention": "Securely wipe media before reuse/disposal (cryptographic erase, overwrite, or physical destruction); full-disk encryption so discarded media carves to ciphertext; avoid embedding sensitive files in shared carriers.",
+    "sources": [
+      "https://manpages.ubuntu.com/manpages/jammy/man8/foremost.8.html"
+    ]
+  }
+}

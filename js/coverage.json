@@ -1737,6 +1737,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "ad-adexplorer-snapshot",
+          "name": "AD Explorer snapshot collection",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "crtp-ad-module-enum",
           "name": "AD Module Enumeration (Microsoft ActiveDirectory Module) - Sentinel",
           "platform": "sentinel",
@@ -6187,60 +6194,15 @@
       ],
       "best_fidelity": "behavioral"
     },
-    "T1021.003": {
-      "detections": [
-        {
-          "card_id": "ad-dcom-exec",
-          "name": "AD Lateral Movement - DCOM Execution via MMC20.Application (1) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-dcom-exec",
-          "name": "AD Lateral Movement - DCOM Execution via MMC20.Application (2) - Splunk",
-          "platform": "splunk",
-          "fidelity": "behavioral",
-          "data_source": "windows-security"
-        },
-        {
-          "card_id": "ad-dcom-exec",
-          "name": "proc_creation_win_dcom_lateral_movement",
-          "platform": "sigma",
-          "fidelity": "behavioral",
-          "data_source": "sysmon"
-        },
-        {
-          "card_id": "ad-dcom-exec",
-          "name": "AD Lateral Movement - DCOM Execution via MMC20Application - Elastic KQL",
-          "platform": "elastic",
-          "fidelity": "behavioral",
-          "data_source": "powershell"
-        },
-        {
-          "card_id": "ad-impacket-dcomexec",
-          "name": "DCOM lateral movement - DcomLaunch child process",
-          "platform": "sentinel",
-          "fidelity": "behavioral",
-          "data_source": "defender-endpoint"
-        }
-      ],
-      "platforms": [
-        "splunk",
-        "sigma",
-        "elastic",
-        "sentinel"
-      ],
-      "data_sources": [
-        "sysmon",
-        "windows-security",
-        "powershell",
-        "defender-endpoint"
-      ],
-      "best_fidelity": "behavioral"
-    },
     "T1069.002": {
       "detections": [
+        {
+          "card_id": "ad-adexplorer-snapshot",
+          "name": "AD Explorer snapshot collection",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "defender-endpoint"
+        },
         {
           "card_id": "crtp-ad-module-enum",
           "name": "AD Module Enumeration (Microsoft ActiveDirectory Module) - Sentinel",
@@ -6725,12 +6687,64 @@
         "elastic"
       ],
       "data_sources": [
+        "defender-endpoint",
         "powershell",
         "windows-security",
-        "defender-endpoint",
         "network-flow",
         "sysmon",
         "edr"
+      ],
+      "best_fidelity": "behavioral"
+    },
+    "T1021.003": {
+      "detections": [
+        {
+          "card_id": "ad-dcom-exec",
+          "name": "AD Lateral Movement - DCOM Execution via MMC20.Application (1) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-dcom-exec",
+          "name": "AD Lateral Movement - DCOM Execution via MMC20.Application (2) - Splunk",
+          "platform": "splunk",
+          "fidelity": "behavioral",
+          "data_source": "windows-security"
+        },
+        {
+          "card_id": "ad-dcom-exec",
+          "name": "proc_creation_win_dcom_lateral_movement",
+          "platform": "sigma",
+          "fidelity": "behavioral",
+          "data_source": "sysmon"
+        },
+        {
+          "card_id": "ad-dcom-exec",
+          "name": "AD Lateral Movement - DCOM Execution via MMC20Application - Elastic KQL",
+          "platform": "elastic",
+          "fidelity": "behavioral",
+          "data_source": "powershell"
+        },
+        {
+          "card_id": "ad-impacket-dcomexec",
+          "name": "DCOM lateral movement - DcomLaunch child process",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        }
+      ],
+      "platforms": [
+        "splunk",
+        "sigma",
+        "elastic",
+        "sentinel"
+      ],
+      "data_sources": [
+        "sysmon",
+        "windows-security",
+        "powershell",
+        "defender-endpoint"
       ],
       "best_fidelity": "behavioral"
     },
@@ -27301,6 +27315,13 @@
           "data_source": "edr"
         },
         {
+          "card_id": "ad-pretender",
+          "name": "Name-resolution poisoning (pretender/Responder/mitm6)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "defender-endpoint"
+        },
+        {
           "card_id": "cdsa-m06-print-spooler-ntlm-relay",
           "name": "Print Spooler Bug + NTLM Relay (DCSync via PrinterBug) - Sentinel",
           "platform": "sentinel",
@@ -39940,6 +39961,7 @@
       "T1016",
       "T1059.001",
       "T1049",
+      "T1069.002",
       "T1548",
       "T1046",
       "T1003.002",
@@ -39950,7 +39972,6 @@
       "T1027",
       "T1059.004",
       "T1059",
-      "T1069.002",
       "T1110.002",
       "T1572",
       "T1090.001",
@@ -40575,6 +40596,6 @@
       "T1110.001"
     ]
   },
-  "cards_with_detections": 880,
-  "total_detections": 3794
+  "cards_with_detections": 882,
+  "total_detections": 3796
 }

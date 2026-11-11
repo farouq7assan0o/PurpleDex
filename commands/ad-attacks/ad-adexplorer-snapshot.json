@@ -1,0 +1,105 @@
+{
+  "id": "ad-adexplorer-snapshot",
+  "name": "AD Explorer Snapshot - Offline AD Enumeration & BloodHound",
+  "command": "ADExplorer.exe -snapshot \"\" snapshot.dat /accepteula",
+  "description": "Sysinternals AD Explorer takes a point-in-time snapshot of the entire Active Directory database to a single file. The snapshot can be browsed offline (no further DC contact) and converted with ADExplorerSnapshot.py into BloodHound-ingestible JSON. A stealthy collection option: one legitimate-looking signed Sysinternals tool pulls everything, and all analysis happens offline.",
+  "platform": "windows",
+  "type": "command",
+  "opsec": "quiet",
+  "category": "Active Directory",
+  "subcategory": "Enumeration",
+  "certifications": [
+    "CRTP",
+    "CPTS"
+  ],
+  "primary_cert": "CRTP",
+  "source": "Sysinternals AD Explorer; c3c/ADExplorerSnapshot.py",
+  "tags": [
+    "adexplorer",
+    "sysinternals",
+    "snapshot",
+    "bloodhound",
+    "offline",
+    "ldap",
+    "enumeration"
+  ],
+  "mitre": [
+    "T1087.002",
+    "T1069.002"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== TAKE A SNAPSHOT (GUI or CLI) ===\n  # GUI: File > Create Snapshot, or CLI:\n  ADExplorer.exe -snapshot \"\" C:\\Windows\\Temp\\snapshot.dat /accepteula\n  # Connect to a specific DC:\n  ADExplorer.exe -snapshot \"<dc_host>\" snapshot.dat /accepteula\n\n=== WHY IT IS STEALTHY ===\n  # - Signed Microsoft Sysinternals binary (often allowlisted)\n  # - One LDAP pull instead of SharpHound bursts\n  # - All graph analysis happens OFFLINE from the .dat file\n\n=== BROWSE OFFLINE ===\n  # Reopen the .dat in AD Explorer with no DC connection to inspect objects/ACLs/attributes\n\n=== CONVERT FOR BLOODHOUND ===\n  pip install adexplorersnapshot\n  ADExplorerSnapshot.py snapshot.dat -o bloodhound_out/\n  # Produces users/groups/computers/etc JSON -> import into BloodHound\n  # Objects-only (no ACL/edge processing) for huge DBs:\n  ADExplorerSnapshot.py snapshot.dat -o out/ -m Objects\n\n=== THEN ANALYZE ===\n  # Import JSON into BloodHound CE, run PlumHound for reports\n\n=== ALTERNATIVES ===\n  SharpHound / bloodhound-python   # direct collection (noisier)\n  ldapsearch / ldeep               # targeted offline-able queries",
+  "examples": [
+    {
+      "label": "Take an AD snapshot",
+      "command": "ADExplorer.exe -snapshot \"\" C:\\Windows\\Temp\\snapshot.dat /accepteula"
+    },
+    {
+      "label": "Convert snapshot to BloodHound JSON",
+      "command": "ADExplorerSnapshot.py snapshot.dat -o bloodhound_out/"
+    },
+    {
+      "label": "Objects-only mode for large DBs",
+      "command": "ADExplorerSnapshot.py snapshot.dat -o out/ -m Objects"
+    }
+  ],
+  "references": [
+    {
+      "title": "AD Explorer (Sysinternals)",
+      "url": "https://learn.microsoft.com/en-us/sysinternals/downloads/adexplorer"
+    },
+    {
+      "title": "ADExplorerSnapshot.py",
+      "url": "https://github.com/c3c/ADExplorerSnapshot.py"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ad-sharphound",
+      "note": "SharpHound is the direct (noisier) collection alternative.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "Import the converted snapshot into BloodHound.",
+      "rel": "next"
+    },
+    {
+      "id": "ad-plumhound",
+      "note": "Generate reports from the ingested graph.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Any authenticated user can read most AD objects and attributes via LDAP. AD Explorer performs one broad, legitimate-looking LDAP read to a snapshot file; the heavy analysis then happens offline, out of reach of DC-side monitoring.",
+    "prerequisites": "Any domain user credentials; AD Explorer binary; network access to a DC.",
+    "impact": "Complete offline copy of the directory (users, groups, computers, ACLs, attributes) enabling full attack-path analysis without repeated DC queries.",
+    "detection": "[MITRE T1087.002/T1069.002] A single very large LDAP result set / full-subtree query from one host; AD Explorer process execution; 1644 (LDAP search) events showing a bulk directory read.",
+    "artifacts": "ADExplorer.exe on disk; a large .dat snapshot file; a single bulk LDAP query rather than SharpHound-style bursts.",
+    "splunk_spl": "index=windows EventCode=4688 (NewProcessName=\"*ADExplorer*\")\n| table _time, SubjectUserName, NewProcessName, CommandLine",
+    "elastic_kql": "process.name:*ADExplorer* or process.command_line:*-snapshot*",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName has \"ADExplorer\" or ProcessCommandLine has \"-snapshot\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+    "sigma_rules": "win_adexplorer_snapshot_collection",
+    "prevention": "Monitor for bulk/full-subtree LDAP queries (enable 1644 with thresholds); restrict who can read sensitive attributes; application allowlisting that flags Sysinternals misuse; reduce ACL attack surface so a full copy yields fewer paths.",
+    "sources": [
+      "Sysinternals docs",
+      "https://attack.mitre.org/techniques/T1087/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "AD Explorer snapshot collection",
+        "logic": "DeviceProcessEvents\n| where FileName has \"ADExplorer\" or ProcessCommandLine has \"-snapshot\"\n| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine",
+        "data_source": "defender-endpoint",
+        "attack": [
+          "T1087.002",
+          "T1069.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "false_positives": "Legitimate AD administration/auditing with AD Explorer",
+        "tuning": "Correlate with a bulk LDAP read (1644) from the same host; alert on non-admin usage"
+      }
+    ]
+  }
+}

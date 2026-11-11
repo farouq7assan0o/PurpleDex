@@ -90,6 +90,16 @@
       "id": "cdsa-m12-sigma-conversion",
       "rel": "next",
       "note": "Converting and applying Sigma rules with sigmac, Chainsaw, and Splunk."
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-internal-monologue",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
     }
   ],
   "tools": [

@@ -42,6 +42,16 @@
       "id": "evade-user-agent",
       "rel": "next",
       "note": "Evade the indicators listed here."
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
     }
   ],
   "id": "ref-transfer-detection",

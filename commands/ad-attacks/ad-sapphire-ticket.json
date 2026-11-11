@@ -62,6 +62,16 @@
       "id": "ad-secretsdump-dcsync",
       "note": "DCSync provides the krbtgt key needed for Sapphire Tickets.",
       "rel": "prereq"
+    },
+    {
+      "id": "ad-addcomputer",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adpeas",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

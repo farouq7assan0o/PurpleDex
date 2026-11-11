@@ -51,6 +51,26 @@
       "id": "pth-freerdp",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "id": "rdp-drive-mount",

@@ -77,6 +77,26 @@
       "id": "ad-mimikatz-dcsync",
       "note": "DCSync the parent domain with the forged ticket.",
       "rel": "prereq"
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-ldeep",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-sid-history-persistence",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
     }
   ],
   "defense": {

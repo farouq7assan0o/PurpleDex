@@ -80,6 +80,16 @@
       "id": "gs-searchsploit",
       "rel": "next",
       "note": "Look up exploits for the versions found."
+    },
+    {
+      "id": "ad-nmap-host-list",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
+    },
+    {
+      "id": "app-discovery-nmap",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
     }
   ],
   "id": "gs-nmap-service-scan",

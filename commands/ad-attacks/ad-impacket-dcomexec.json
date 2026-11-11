@@ -61,6 +61,16 @@
       "id": "pth-impacket",
       "note": "Pass-the-hash with other Impacket tools.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dacledit",
+      "note": "Alternative Impacket remote execution method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-owneredit",
+      "note": "Alternative Impacket remote execution method.",
+      "rel": "alternative"
     }
   ],
   "defense": {

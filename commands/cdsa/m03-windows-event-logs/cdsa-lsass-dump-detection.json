@@ -71,6 +71,26 @@
       "id": "cdsa-dll-hijack-detection",
       "rel": "next",
       "note": "Similar Sysmon-based detection methodology."
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-internal-monologue",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-splunk-intrusion-detection",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
     }
   ],
   "explain": "Detect credential dumping from LSASS memory using Sysmon Event ID 10 (ProcessAccess).\nTools like Mimikatz open a handle to lsass.exe with specific access rights - Sysmon captures this handle request and records the calling process, enabling detection."

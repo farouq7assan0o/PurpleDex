@@ -51,6 +51,16 @@
       "id": "evade-user-agent",
       "rel": "alternative",
       "note": "Blend the request in too."
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
     }
   ],
   "id": "protected-transfer",

@@ -72,6 +72,16 @@
       "id": "ad-secretsdump-dcsync",
       "rel": "next",
       "note": "If added to a DCSync-capable group, dump the domain."
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc4-template-acl",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

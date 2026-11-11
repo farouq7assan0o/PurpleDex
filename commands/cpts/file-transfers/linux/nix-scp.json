@@ -51,6 +51,16 @@
       "id": "linux-cred-hunt",
       "rel": "next",
       "note": "Hunt secrets in what you pulled."
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
     }
   ],
   "id": "nix-scp",

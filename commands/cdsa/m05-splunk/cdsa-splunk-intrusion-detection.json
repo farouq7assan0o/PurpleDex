@@ -92,6 +92,26 @@
       "id": "cdsa-splunk-analytics-detection",
       "rel": "next",
       "note": "Statistics-based anomaly detection to complement signature-based hunting."
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-internal-monologue",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-lsass-dump-detection",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
     }
   ],
   "explain": "An SPL detection for suspicious shell spawns via parent/child process chains:\n  EventCode=1                             Sysmon process-creation events\n  (Image=\"*cmd.exe\" OR Image=\"*powershell.exe\")   only shells being launched\n  | stats count by ParentImage, Image    group by who spawned what\nReveals odd parents (e.g. notepad.exe launching powershell.exe) that indicate injection or macro execution; the card extends this to DCSync (4662), LSASS access (EID 10), and CallTrace UNKNOWN shellcode."

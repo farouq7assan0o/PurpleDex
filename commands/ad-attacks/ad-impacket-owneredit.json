@@ -61,6 +61,16 @@
       "id": "ad-shadow-credentials",
       "note": "Shadow Credentials is the cleanest pivot once you have GenericAll.",
       "rel": "next"
+    },
+    {
+      "id": "ad-impacket-dacledit",
+      "note": "Alternative Impacket remote execution method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative Impacket remote execution method.",
+      "rel": "alternative"
     }
   ],
   "defense": {

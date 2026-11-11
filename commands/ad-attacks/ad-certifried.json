@@ -63,6 +63,26 @@
       "id": "ad-esc1-certipy-linux",
       "note": "Different ADCS attack vector (SAN abuse vs machine impersonation).",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc10-weak-mapping",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc11-rpc-relay",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-dcshadow",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

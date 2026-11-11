@@ -66,5 +66,12 @@
       "CTF methodology",
       "https://attack.mitre.org/techniques/T1005/"
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "cdsa-m10-static-analysis-linux",
+      "note": "Static analysis including strings and FLOSS.",
+      "rel": "alternative"
+    }
+  ]
 }

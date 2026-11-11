@@ -49,6 +49,16 @@
       "id": "crtp-powerview-domain",
       "note": "Domain enum once inside",
       "rel": "next"
+    },
+    {
+      "id": "ad-nmap-host-list",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
+    },
+    {
+      "id": "app-discovery-nmap",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
     }
   ],
   "notes": "Ports 88 (Kerberos), 389/636 (LDAP), 445 (SMB) confirm DC role.",

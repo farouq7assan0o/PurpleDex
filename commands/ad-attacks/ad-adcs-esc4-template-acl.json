@@ -61,6 +61,16 @@
       "id": "ad-esc15-ekuwu",
       "note": "ESC15 is another template-based ADCS attack.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

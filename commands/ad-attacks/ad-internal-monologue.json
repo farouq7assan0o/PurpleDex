@@ -57,6 +57,16 @@
       "id": "ad-inveigh-ps",
       "note": "Inveigh captures hashes via network poisoning; Internal Monologue via local SSPI.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-lsass-dump-detection",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

@@ -88,5 +88,17 @@
         "tuning": "Exclude known legitimate ADS users; focus on ADS in user-writable directories"
       }
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "smb-rce-psexec",
+      "note": "After discovering ADS, use for lateral movement.",
+      "rel": "next"
+    },
+    {
+      "id": "lolbins-transfer",
+      "note": "LOLBins can read/write ADS for evasion.",
+      "rel": "alternative"
+    }
+  ]
 }

@@ -52,6 +52,16 @@
       "id": "keepass2john-crack",
       "note": "KeePass database may contain the NTLM hash needed for PTH.",
       "rel": "prereq"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

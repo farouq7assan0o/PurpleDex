@@ -96,6 +96,16 @@
       "id": "crtp-credential-dumping",
       "note": "Run SafetyKatz on the deep host via the proxy",
       "rel": "next"
+    },
+    {
+      "id": "cdsa-m08-ssl-dns-anomalies",
+      "note": "Related tunneling/pivoting technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m08-tunneling-detection",
+      "note": "Related tunneling/pivoting technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

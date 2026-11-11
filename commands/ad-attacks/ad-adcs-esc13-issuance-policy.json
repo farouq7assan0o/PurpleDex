@@ -55,6 +55,16 @@
       "id": "ad-esc1-certipy-linux",
       "note": "ESC1 is template misconfiguration; ESC13 targets policy-to-group linking.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc10-weak-mapping",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc11-rpc-relay",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

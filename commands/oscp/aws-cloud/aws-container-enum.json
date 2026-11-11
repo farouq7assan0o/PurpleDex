@@ -102,6 +102,16 @@
       "id": "aws-iam-scope-permissions",
       "rel": "next",
       "note": "Scope permissions of stolen credentials before escalating."
+    },
+    {
+      "id": "docker-socket-exposed",
+      "note": "Related container escape/abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "group-docker",
+      "note": "Related container escape/abuse technique.",
+      "rel": "alternative"
     }
   ],
   "opsec": "quiet",

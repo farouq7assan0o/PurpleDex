@@ -104,6 +104,26 @@
       "id": "msf-autoroute",
       "rel": "alternative",
       "note": "post/multi/manage/autoroute automates route adding; same exam rules apply."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "docker-socket-exposed",
+      "note": "Related container escape/abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "group-docker",
+      "note": "Related container escape/abuse technique.",
+      "rel": "alternative"
     }
   ],
   "opsec": "moderate",

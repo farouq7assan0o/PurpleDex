@@ -92,6 +92,16 @@
       "id": "cdsa-m07-nta-workflow",
       "rel": "next",
       "note": "Full NTA analysis workflow - when to use each technique in investigation."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "explain": "A Wireshark display filter isolating FTP control and data channels:\n  ftp        the FTP command/response channel (USER, PASS, RETR, ...)\n  ||         logical OR\n  ftp-data   the separate channel carrying the actual file bytes\nShows both halves of an FTP session so you can reconstruct transferred files; the card also covers Follow TCP Stream, HTTP object export, and RDP decryption with an imported RSA key."

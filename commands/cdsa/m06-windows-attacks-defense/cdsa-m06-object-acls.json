@@ -62,6 +62,16 @@
       "id": "cdsa-m06-gpo-permissions",
       "rel": "next",
       "note": "GPO ACL abuse - specific ACL misconfiguration for Group Policy objects."
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "AD attack path visualization and analysis.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "AD attack path visualization and analysis.",
+      "rel": "alternative"
     }
   ],
   "defense": {

@@ -60,6 +60,16 @@
       "id": "ad-esc15-ekuwu",
       "note": "ESC15 also targets certificate mapping but via different flags.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc10-weak-mapping",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc11-rpc-relay",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

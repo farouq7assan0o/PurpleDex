@@ -52,6 +52,16 @@
       "id": "ad-secretsdump-dcsync",
       "rel": "next",
       "note": "DCSync once elevated."
+    },
+    {
+      "id": "ad-coercer-multi",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-dfscoerce",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

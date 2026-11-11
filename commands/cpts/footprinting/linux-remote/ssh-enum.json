@@ -61,6 +61,16 @@
       "id": "rservices-enum",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "id": "ssh-enum",

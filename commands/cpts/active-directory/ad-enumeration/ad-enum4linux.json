@@ -56,6 +56,16 @@
       "id": "ad-admodule-spn",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "ad-enum4linux-ng",
+      "note": "Related SMB enumeration technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-smbmap-recurse",
+      "note": "Related SMB enumeration technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

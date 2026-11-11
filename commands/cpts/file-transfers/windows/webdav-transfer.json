@@ -49,6 +49,16 @@
       "id": "library-ms-webdav-attack",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
     }
   ],
   "id": "webdav-transfer",

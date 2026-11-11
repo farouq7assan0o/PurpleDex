@@ -50,6 +50,16 @@
       "id": "gs-privesc-enum",
       "rel": "next",
       "note": "Run the enum script you transferred."
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
     }
   ],
   "id": "gs-file-transfer",

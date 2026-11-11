@@ -66,6 +66,26 @@
       "id": "winpe-user-group-enum",
       "note": "Confirms SeDebugPrivilege is held.",
       "rel": "prereq"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-internal-monologue",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-lsass-dump-detection",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
     }
   ],
   "id": "sedebug-lsass-dump",

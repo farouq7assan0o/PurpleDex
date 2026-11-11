@@ -97,6 +97,16 @@
       "id": "cdsa-m08-http-anomalies",
       "rel": "next",
       "note": "HTTP anomaly detection - web server fuzzing, strange headers, XSS via traffic."
+    },
+    {
+      "id": "cdsa-m08-ssl-dns-anomalies",
+      "note": "Related tunneling/pivoting technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ftp-bounce",
+      "note": "Related tunneling/pivoting technique.",
+      "rel": "alternative"
     }
   ],
   "explain": "Attackers tunnel data inside legitimate-looking protocols to exfiltrate data or establish C2 while evading network controls.\nCommon tunnel protocols: ICMP (data in payload > 48 bytes), DNS (data in TXT records or long queries), Telnet on non-standard ports, UDP, and IPv6 Telnet.\n=== ICMP TUNNELING ===\nHow it works:\n   Attacker appends data to ICMP echo request payload\n   Data hidden in common, often-allowed protocol\n   May be encoded (base64) or encrypted for evasion\n  ..."

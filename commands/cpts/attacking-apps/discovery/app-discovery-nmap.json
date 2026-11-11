@@ -59,6 +59,16 @@
       "id": "aquatone",
       "note": "Alternative screenshotting/report tool from the same nmap XML.",
       "rel": "next"
+    },
+    {
+      "id": "ad-nmap-host-list",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
+    },
+    {
+      "id": "msf-db-nmap",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
     }
   ],
   "id": "app-discovery-nmap",

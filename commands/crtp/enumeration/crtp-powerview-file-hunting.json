@@ -96,6 +96,16 @@
       "id": "ad-snaffler",
       "note": "Snaffler - faster automated equivalent",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc4-template-acl",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
     }
   ],
   "notes": "Find-InterestingFile / Find-InterestingDomainShareFile need read access to the target path; full coverage of admin-only shares (C$, ADMIN$) requires local admin. Get-PathAcl needs local admin only when reading ACLs on a remote machine's filesystem. Common finds: unattend.xml, web.config, sysprep.inf, .kdbx, .ps1 scripts with hardcoded creds, Groups.xml (GPP cpassword).",

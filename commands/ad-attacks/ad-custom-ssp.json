@@ -85,5 +85,37 @@
         "tuning": "Whitelist known legitimate SSP DLLs; alert on unsigned DLLs"
       }
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-dcshadow",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-internal-monologue",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-lsass-dump-detection",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "crtp-skeleton-key",
+      "note": "Skeleton Key is another LSASS-injected persistence technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "sedebug-lsass-dump",
+      "note": "LSASS dump for credential extraction.",
+      "rel": "next"
+    }
+  ]
 }

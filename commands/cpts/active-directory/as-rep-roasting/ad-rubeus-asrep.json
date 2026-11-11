@@ -64,6 +64,16 @@
       "id": "ad-asrep-crack",
       "rel": "next",
       "note": "Crack the AS-REP hashes."
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

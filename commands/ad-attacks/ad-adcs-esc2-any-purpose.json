@@ -61,6 +61,16 @@
       "id": "ad-forgecert",
       "note": "SubCA ESC2 certificates can sign other certs, similar to ForgeCert.",
       "rel": "next"
+    },
+    {
+      "id": "ad-adcs-esc10-weak-mapping",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc11-rpc-relay",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

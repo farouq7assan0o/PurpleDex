@@ -57,6 +57,16 @@
       "id": "ad-writedacl-linux",
       "note": "WriteDACL over the domain -> DCSync.",
       "rel": "next"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "AD attack path visualization and analysis.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-bloodhound-cypher",
+      "note": "AD attack path visualization and analysis.",
+      "rel": "alternative"
     }
   ],
   "tools": [

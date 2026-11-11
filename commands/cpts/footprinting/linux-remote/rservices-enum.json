@@ -60,6 +60,16 @@
       "id": "rsync-enum",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-ldeep",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
     }
   ],
   "id": "rservices-enum",

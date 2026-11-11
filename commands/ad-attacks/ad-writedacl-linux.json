@@ -61,6 +61,16 @@
       "id": "ad-genericall-group",
       "note": "WriteDACL is often reached via GenericAll/Owns on the domain object.",
       "rel": "prereq"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

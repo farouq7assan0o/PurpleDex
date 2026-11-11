@@ -67,6 +67,16 @@
       "id": "ad-powerview-test-adminaccess",
       "rel": "next",
       "note": "Find machines where current user has local admin."
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

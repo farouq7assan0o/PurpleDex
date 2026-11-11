@@ -52,6 +52,16 @@
       "id": "ad-sharpview",
       "note": "SharpView for manual enumeration; adPEAS automates the common checks.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-addcomputer",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-finddelegation",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

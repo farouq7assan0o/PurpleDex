@@ -74,6 +74,16 @@
       "id": "ptc-dcsync",
       "rel": "next",
       "note": "DCSync once you have a privileged ticket."
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
     }
   ],
   "variations": [

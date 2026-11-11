@@ -68,6 +68,16 @@
       "id": "pth-impacket",
       "rel": "next",
       "note": "Use validated creds for exec."
+    },
+    {
+      "id": "ad-havoc-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-sliver-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
     }
   ],
   "opsec": "loud",

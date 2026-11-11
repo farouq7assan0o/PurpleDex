@@ -71,6 +71,16 @@
       "id": "ad-bloodhound-python",
       "note": "Once credentials land, run BloodHound.",
       "rel": "next"
+    },
+    {
+      "id": "ad-cme-groups",
+      "note": "Related CrackMapExec/NetExec operation.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-cme-loggedon",
+      "note": "Related CrackMapExec/NetExec operation.",
+      "rel": "alternative"
     }
   ],
   "defense": {

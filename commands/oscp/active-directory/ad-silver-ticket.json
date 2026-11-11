@@ -83,6 +83,16 @@
       "id": "ad-mimikatz-dcsync",
       "rel": "escalation",
       "note": "Silver ticket for LDAP service grants DCSync rights - forge /service:ldap then run dcsync."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "opsec": "moderate",

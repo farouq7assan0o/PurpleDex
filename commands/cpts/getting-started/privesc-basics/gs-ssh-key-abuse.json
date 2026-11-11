@@ -46,6 +46,16 @@
       "id": "gs-ssh",
       "rel": "next",
       "note": "SSH in with the recovered key."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "id": "gs-ssh-key-abuse",

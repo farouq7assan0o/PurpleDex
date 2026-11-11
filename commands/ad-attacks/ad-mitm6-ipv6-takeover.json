@@ -63,6 +63,16 @@
       "id": "smb-ntlm-relay",
       "note": "ntlmrelayx handles the relay side of the attack.",
       "rel": "next"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-elastic-hunt-techniques",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

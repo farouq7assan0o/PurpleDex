@@ -65,6 +65,16 @@
       "id": "lazagne-all",
       "note": "LaZagne also targets password managers.",
       "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m06-asreproasting",
+      "note": "Related password cracking workflow.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m06-kerberoasting",
+      "note": "Related password cracking workflow.",
+      "rel": "alternative"
     }
   ],
   "id": "keepass2john-crack",

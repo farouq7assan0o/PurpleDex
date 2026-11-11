@@ -61,6 +61,16 @@
       "id": "windows-cred-locations",
       "rel": "next",
       "note": "Now hunt Windows creds."
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
     }
   ],
   "id": "lolbins-transfer",

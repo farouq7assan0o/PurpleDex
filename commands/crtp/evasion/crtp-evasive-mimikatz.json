@@ -110,6 +110,16 @@
       "id": "crtp-golden-ticket",
       "note": "evasive-dcsync krbtgt feeds the golden ticket",
       "rel": "next"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "examples": [

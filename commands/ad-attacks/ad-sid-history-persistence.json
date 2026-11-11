@@ -61,6 +61,16 @@
       "id": "crtp-golden-ticket",
       "note": "Golden Tickets can include extra SIDs for cross-domain access.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-ldeep",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
     }
   ],
   "defense": {

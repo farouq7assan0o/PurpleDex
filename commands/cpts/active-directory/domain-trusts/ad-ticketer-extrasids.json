@@ -62,6 +62,16 @@
       "id": "ad-psexec-ticket",
       "note": "Use the forged ticket to get a SYSTEM shell on the parent DC.",
       "rel": "next"
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

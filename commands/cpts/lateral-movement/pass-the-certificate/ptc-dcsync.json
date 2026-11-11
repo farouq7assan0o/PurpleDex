@@ -63,6 +63,16 @@
       "id": "hashcat-windows-hashes",
       "rel": "next",
       "note": "Crack the dumped NT hashes after DCSync."
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "opsec": "loud",

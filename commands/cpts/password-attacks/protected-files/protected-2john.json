@@ -84,6 +84,16 @@
       "id": "hashcat-dictionary",
       "note": "Runs a straight dictionary attack (-a 0): each wordlist entry is hashed and compared to the target.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "variations": [

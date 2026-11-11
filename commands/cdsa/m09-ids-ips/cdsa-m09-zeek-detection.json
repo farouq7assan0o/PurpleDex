@@ -106,6 +106,16 @@
       "id": "cdsa-m09-suricata-rule-examples",
       "rel": "prereq",
       "note": "Suricata C2 rules — Suricata alerts same C2 PCAPs via signature matching."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "lint_ignore": [

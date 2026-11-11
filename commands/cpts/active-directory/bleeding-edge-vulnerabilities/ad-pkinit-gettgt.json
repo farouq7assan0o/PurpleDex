@@ -55,6 +55,16 @@
       "id": "ad-secretsdump-kerberos",
       "note": "DCSync using the DC TGT (-k -no-pass).",
       "rel": "next"
+    },
+    {
+      "id": "ad-coercer-multi",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-dfscoerce",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

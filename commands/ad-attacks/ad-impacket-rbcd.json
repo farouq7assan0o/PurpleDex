@@ -66,6 +66,26 @@
       "id": "ad-shadow-credentials",
       "note": "Shadow Credentials is an alternative when you have write over the target.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dacledit",
+      "note": "Alternative Impacket remote execution method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative Impacket remote execution method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-addcomputer",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adpeas",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

@@ -76,6 +76,16 @@
       "id": "gs-privesc-enum",
       "rel": "next",
       "note": "Foothold on the Linux web host - start privesc enumeration"
+    },
+    {
+      "id": "ad-havoc-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-sliver-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
     }
   ],
   "id": "wp-admin-shell-msf",

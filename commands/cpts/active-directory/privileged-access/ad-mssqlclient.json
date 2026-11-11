@@ -63,6 +63,16 @@
       "id": "mssql-xp-cmdshell",
       "rel": "next",
       "note": "RCE via xp_cmdshell."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

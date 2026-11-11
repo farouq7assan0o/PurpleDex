@@ -89,6 +89,16 @@
       "id": "crtp-dcsync",
       "note": "DCSync after gaining DA access",
       "rel": "next"
+    },
+    {
+      "id": "ad-addcomputer",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adpeas",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
     }
   ],
   "notes": "/altservice allows protocol transition: even if only HTTP is in the allowed list, you can get CIFS/HOST/LDAP tickets.",

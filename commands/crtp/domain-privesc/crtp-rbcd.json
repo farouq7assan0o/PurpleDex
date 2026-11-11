@@ -73,6 +73,16 @@
       "id": "crtp-credential-dumping",
       "note": "Dump creds from compromised machine",
       "rel": "next"
+    },
+    {
+      "id": "ad-addcomputer",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adpeas",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
     }
   ],
   "notes": "Requires: GenericWrite on target, machine account quota > 0, computer account you own. Machine accounts end with $.",

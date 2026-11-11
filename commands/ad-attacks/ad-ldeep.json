@@ -53,6 +53,16 @@
       "id": "ad-adpeas",
       "note": "adPEAS is Windows PowerShell; ldeep is Linux Python. Both enumerate AD.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-sid-history-persistence",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
     }
   ],
   "defense": {

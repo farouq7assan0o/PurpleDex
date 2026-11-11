@@ -54,6 +54,16 @@
       "id": "nmap-firewall-scan-types",
       "rel": "next",
       "note": "Map the ruleset once through."
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-ldeep",
+      "note": "Related domain/forest trust attack.",
+      "rel": "alternative"
     }
   ],
   "id": "nmap-source-port",

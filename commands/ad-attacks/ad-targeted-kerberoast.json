@@ -61,6 +61,16 @@
       "id": "ad-shadow-credentials",
       "note": "If the hash will not crack, Shadow Credentials takes the account outright.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

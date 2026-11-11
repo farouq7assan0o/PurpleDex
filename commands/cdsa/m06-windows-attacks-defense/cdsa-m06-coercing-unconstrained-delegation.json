@@ -58,6 +58,26 @@
       "id": "cdsa-m06-dcsync",
       "rel": "next",
       "note": "After injecting DC TGT, perform DCSync to dump all hashes."
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-addcomputer",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adpeas",
+      "note": "Related delegation abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

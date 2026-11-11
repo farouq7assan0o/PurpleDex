@@ -84,5 +84,17 @@
         "tuning": "Correlate with logon events (4624) and parent process"
       }
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    }
+  ]
 }

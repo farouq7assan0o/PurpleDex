@@ -81,5 +81,17 @@
         "tuning": "Correlate with parent process being SUID; filter known good processes"
       }
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "find-suid-sgid",
+      "note": "SUID binaries are common path hijack targets.",
+      "rel": "prereq"
+    },
+    {
+      "id": "path-abuse",
+      "note": "Related PATH abuse technique.",
+      "rel": "alternative"
+    }
+  ]
 }

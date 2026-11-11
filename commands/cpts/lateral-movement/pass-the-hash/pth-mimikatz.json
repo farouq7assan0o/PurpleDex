@@ -56,6 +56,16 @@
       "id": "secretsdump-offline",
       "rel": "next",
       "note": "Dump more hashes from the new host."
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "opsec": "loud",

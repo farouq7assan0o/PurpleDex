@@ -58,6 +58,16 @@
       "id": "ad-fping-sweep",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "app-discovery-nmap",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
+    },
+    {
+      "id": "msf-db-nmap",
+      "note": "Alternative/complementary network scanner.",
+      "rel": "alternative"
     }
   ],
   "defense": {

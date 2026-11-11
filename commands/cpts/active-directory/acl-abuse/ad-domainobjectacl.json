@@ -66,6 +66,16 @@
       "id": "ad-find-interesting-acl",
       "rel": "prereq",
       "note": "Identify the abusable right first."
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

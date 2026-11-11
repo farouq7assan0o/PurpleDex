@@ -61,6 +61,16 @@
       "id": "ad-esc16-upn-manipulation",
       "note": "ESC16 UPN spoof to Domain Admin.",
       "rel": "next"
+    },
+    {
+      "id": "ad-adcs-esc10-weak-mapping",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc11-rpc-relay",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
     }
   ],
   "tools": [

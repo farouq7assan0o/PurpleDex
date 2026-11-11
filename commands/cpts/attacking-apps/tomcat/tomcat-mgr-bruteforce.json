@@ -75,6 +75,16 @@
       "id": "tomcat-msfvenom-war",
       "note": "Deploy a msfvenom reverse-shell WAR instead.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-havoc-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-sliver-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
     }
   ],
   "id": "tomcat-mgr-bruteforce",

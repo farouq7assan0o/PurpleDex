@@ -69,6 +69,16 @@
       "id": "ref-hash-identifiers",
       "note": "Identify any hashes you recover before cracking.",
       "rel": "next"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "id": "cred-hunting",

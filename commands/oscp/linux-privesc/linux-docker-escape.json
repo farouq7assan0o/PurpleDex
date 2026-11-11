@@ -57,6 +57,16 @@
       "id": "k8s-privileged-pod",
       "note": "Kubernetes privileged pod escape for K8s environments.",
       "rel": "alternative"
+    },
+    {
+      "id": "docker-socket-exposed",
+      "note": "Related container escape/abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "group-docker",
+      "note": "Related container escape/abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

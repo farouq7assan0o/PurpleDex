@@ -58,6 +58,16 @@
       "id": "ad-domainpasswordspray",
       "rel": "next",
       "note": "Reuse any recovered credentials."
+    },
+    {
+      "id": "ad-coercer-multi",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-dfscoerce",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

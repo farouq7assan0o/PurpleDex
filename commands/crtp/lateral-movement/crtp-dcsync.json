@@ -84,6 +84,16 @@
       "id": "crtp-child-to-parent",
       "note": "Use child krbtgt for cross-domain escalation",
       "rel": "next"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "notes": "Requires DA, Domain Replicator, or Replicating Directory Changes + All. Logged on DC as DS-Replication-Get-Changes event.",

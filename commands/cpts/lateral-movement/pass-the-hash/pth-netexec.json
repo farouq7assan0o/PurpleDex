@@ -60,6 +60,16 @@
       "id": "secretsdump-offline",
       "rel": "prereq",
       "note": "Needs NT hash from offline SAM/NTDS dump."
+    },
+    {
+      "id": "ad-cme-groups",
+      "note": "Related CrackMapExec/NetExec operation.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-cme-loggedon",
+      "note": "Related CrackMapExec/NetExec operation.",
+      "rel": "alternative"
     }
   ],
   "variations": [

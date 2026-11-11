@@ -64,6 +64,16 @@
       "id": "ad-kerberoast-crack",
       "rel": "next",
       "note": "Crack the roasted hashes."
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc4-template-acl",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

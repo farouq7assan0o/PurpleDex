@@ -81,5 +81,17 @@
         "tuning": "Exclude changes by known user management tools via audit key filtering"
       }
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "passwd-write-lpe",
+      "note": "Related /etc/passwd write technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "find-suid-sgid",
+      "note": "SUID enumeration often reveals writable file paths.",
+      "rel": "prereq"
+    }
+  ]
 }

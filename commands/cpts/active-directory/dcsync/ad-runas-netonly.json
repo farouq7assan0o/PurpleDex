@@ -60,6 +60,16 @@
       "id": "ad-golden-ticket-mimikatz",
       "rel": "next",
       "note": "Forge a golden ticket."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

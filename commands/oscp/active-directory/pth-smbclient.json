@@ -104,6 +104,26 @@
       "id": "pth-mimikatz",
       "rel": "alternative",
       "note": "PTH with mimikatz sekurlsa::pth to spawn a process on Windows"
+    },
+    {
+      "id": "ad-enum4linux-ng",
+      "note": "Related SMB enumeration technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-enum4linux",
+      "note": "Related SMB enumeration technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

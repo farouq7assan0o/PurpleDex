@@ -101,6 +101,16 @@
       "id": "cdsa-m09-snort-fundamentals",
       "rel": "next",
       "note": "Snort fundamentals — similar rule structure, different deployment model."
+    },
+    {
+      "id": "ad-havoc-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-sliver-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
     }
   ],
   "lint_ignore": [

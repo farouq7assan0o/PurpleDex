@@ -55,6 +55,16 @@
       "id": "dnsadmins-dll",
       "note": "Use it to deliver a payload DLL/binary.",
       "rel": "next"
+    },
+    {
+      "id": "dns-zone-transfer-fierce",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
+    },
+    {
+      "id": "base64-transfer",
+      "note": "Alternative file transfer method.",
+      "rel": "alternative"
     }
   ],
   "id": "certutil-transfer",

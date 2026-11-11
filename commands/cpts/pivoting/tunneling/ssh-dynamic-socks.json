@@ -65,6 +65,16 @@
       "id": "proxychains-run",
       "note": "Send nmap/xfreerdp/msf through the SOCKS proxy.",
       "rel": "next"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "opsec": "quiet",

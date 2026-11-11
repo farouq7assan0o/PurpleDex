@@ -115,6 +115,26 @@
       "id": "cdsa-m14-network-attack-detection",
       "rel": "next",
       "note": "Network-layer detection of the same AD attacks using Zeek/Bro logs in Splunk."
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "AD attack path visualization and analysis.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-bloodhound-ce",
+      "note": "AD attack path visualization and analysis.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "explain": "An SPL query detecting the network logon that credential theft leaves on a DC:\n  source=\"WinEventLog:Security\" EventCode=4624   successful logons\n  Logon_Type=9                                   NewCredentials logon (runas /netonly - overpass-the-hash pattern)\n  Logon_Process=seclogo                          the secondary logon service\n  | table _time, ComputerName, user, Network_Account_Name, ...   surface who/where\nCatches pass-the-hash/overpass-the-hash tradecraft; the card bundles SPL for domain recon, password spraying, Kerberoasting, DCSync, and golden-ticket patterns.",

@@ -80,6 +80,26 @@
       "id": "ad-evil-winrm",
       "rel": "next",
       "note": "Use the cracked service creds."
+    },
+    {
+      "id": "ad-custom-forest-trust",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-genericwrite-abuse",
+      "note": "Related Kerberos attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m06-asreproasting",
+      "note": "Related password cracking workflow.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m06-kerberoasting",
+      "note": "Related password cracking workflow.",
+      "rel": "alternative"
     }
   ],
   "defense": {

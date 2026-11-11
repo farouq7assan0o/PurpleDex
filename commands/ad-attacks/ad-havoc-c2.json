@@ -82,5 +82,17 @@
         "tuning": "Analyze jitter patterns; compare against known-good beaconing (Windows Update, AV updates)"
       }
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "ad-sliver-c2",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m09-suricata-rule-examples",
+      "note": "Related C2/post-exploitation framework.",
+      "rel": "alternative"
+    }
+  ]
 }

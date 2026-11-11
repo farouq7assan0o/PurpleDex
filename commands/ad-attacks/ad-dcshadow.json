@@ -56,6 +56,16 @@
       "id": "crtp-adminsdholder",
       "note": "AdminSDHolder is another stealthy persistence technique.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-certifried",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related credential extraction technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

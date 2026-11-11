@@ -99,6 +99,16 @@
       "id": "crtp-silver-ticket",
       "note": "DC machine hash also enables silver tickets for its services",
       "rel": "next"
+    },
+    {
+      "id": "ad-coercer-multi",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-dfscoerce",
+      "note": "Related authentication coercion technique.",
+      "rel": "alternative"
     }
   ],
   "defense": {

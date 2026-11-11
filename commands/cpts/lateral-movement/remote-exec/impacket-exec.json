@@ -95,6 +95,16 @@
       "id": "secretsdump-offline",
       "rel": "next",
       "note": "Dump more hashes once you land."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "examples": [

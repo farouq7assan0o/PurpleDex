@@ -65,6 +65,16 @@
       "id": "weak-service-binary",
       "note": "Overwrite the binary if you can't change config.",
       "rel": "alternative"
+    },
+    {
+      "id": "ad-acl-decision-tree",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc4-template-acl",
+      "note": "Related ACL abuse technique.",
+      "rel": "alternative"
     }
   ],
   "id": "weak-service-acl-binpath",

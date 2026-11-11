@@ -90,6 +90,16 @@
       "id": "cdsa-sysmon-event-ids",
       "rel": "prereq",
       "note": "Event IDs 1, 3, 11, 13, 22 used throughout these queries."
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "explain": "A KQL hunt for lateral tool transfer staged in a world-writable path:\n  event.code:11              Sysmon FileCreate events\n  AND file.path:*Users\\\\Public*   files written under C:\\Users\\Public (a common drop location)\nSurfaces tools an attacker copied between hosts; the card pairs it with hunts for Run-key persistence (event.code:13, *\\Run*) and PowerShell-remoting lateral movement (wsmprovhost.exe, logon type 3 to 5985)."

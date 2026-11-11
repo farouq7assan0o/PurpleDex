@@ -62,6 +62,16 @@
       "id": "powershell-clixml-decrypt",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "upload-filename-injection",
+      "note": "Related SQL injection technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "graphql-sqli",
+      "note": "Related SQL injection technique.",
+      "rel": "alternative"
     }
   ],
   "id": "stickynotes-sqlite",

@@ -65,6 +65,16 @@
       "id": "crtp-silver-ticket",
       "rel": "next",
       "note": "Continue enumeration/technique in this area"
+    },
+    {
+      "id": "ad-custom-ssp",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-internal-monologue",
+      "note": "Related LSASS credential dumping technique.",
+      "rel": "alternative"
     }
   ],
   "notes": "Does NOT survive a DC reboot. Requires DA and SYSTEM on DC. Detectable by LSA protection monitoring. Use in labs only.",

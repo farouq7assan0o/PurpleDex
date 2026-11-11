@@ -64,6 +64,16 @@
       "id": "ad-domainpasswordspray",
       "rel": "next",
       "note": "Reuse/spray the cracked password."
+    },
+    {
+      "id": "cdsa-m06-asreproasting",
+      "note": "Related password cracking workflow.",
+      "rel": "alternative"
+    },
+    {
+      "id": "cdsa-m06-kerberoasting",
+      "note": "Related password cracking workflow.",
+      "rel": "alternative"
     }
   ],
   "defense": {

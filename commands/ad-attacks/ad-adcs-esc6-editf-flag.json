@@ -85,5 +85,17 @@
         "tuning": "Exclude known service account patterns; focus on admin-level SAN values"
       }
     ]
-  }
+  },
+  "recommended": [
+    {
+      "id": "ad-adcs-esc10-weak-mapping",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-adcs-esc11-rpc-relay",
+      "note": "Related ADCS attack technique.",
+      "rel": "alternative"
+    }
+  ]
 }

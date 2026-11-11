@@ -56,6 +56,16 @@
       "id": "proxychains-run",
       "note": "Route tooling through the forwarded port.",
       "rel": "next"
+    },
+    {
+      "id": "ad-impacket-dcomexec",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ad-mitm6-ipv6-takeover",
+      "note": "Alternative lateral movement technique.",
+      "rel": "alternative"
     }
   ],
   "opsec": "quiet",

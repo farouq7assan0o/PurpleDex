@@ -1,0 +1,100 @@
+{
+  "id": "recon-kiterunner",
+  "name": "kiterunner - API Content Discovery",
+  "command": "kr scan <url> -w routes-large.kite",
+  "description": "kiterunner (kr) is a content-discovery tool built for modern APIs. Unlike directory brute-forcers it replays full request templates (method, path, headers, body) mined from thousands of real Swagger/OpenAPI specs, so it finds REST/GraphQL routes that only respond to the right verb and content type.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Reconnaissance",
+  "subcategory": "Web Recon",
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "assetnote/kiterunner",
+  "tags": [
+    "kiterunner",
+    "api",
+    "content-discovery",
+    "recon",
+    "swagger",
+    "openapi",
+    "web"
+  ],
+  "mitre": [
+    "T1595.003",
+    "T1592"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== GET WORDLISTS ===\n  # download routes-large.kite / routes-small.kite + apiroutes txt from assetnote\n\n=== SCAN ===\n  kr scan <url> -w routes-large.kite\n  kr scan <url> -A=apiroutes-220628 -x 10 -j 100     # assetnote bundle, concurrency\n  kr scan hosts.txt -w routes-large.kite             # many hosts\n\n=== BRUTE (classic path style) ===\n  kr brute <url> -w wordlist.txt\n\n=== TUNE ===\n  kr scan <url> -w routes.kite \\\n    -H 'Authorization: Bearer <token>' \\\n    --fail-status-codes 400,401,404 \\\n    --max-connection-per-host 10\n\n=== REPLAY A HIT (kr prints a kb id) ===\n  kr kb replay --kitebuilder-api routes.kite \"<flagged-id>\"\n\n=== ALTERNATIVES ===\n  ffuf / feroxbuster     # path brute (no method/body templates)\n  arjun                  # parameter discovery\n  Swagger/OpenAPI parsing if a spec is exposed",
+  "examples": [
+    {
+      "label": "Scan with the large route DB",
+      "command": "kr scan <url> -w routes-large.kite"
+    },
+    {
+      "label": "Scan with an auth header",
+      "command": "kr scan <url> -w routes.kite -H 'Authorization: Bearer <token>'"
+    },
+    {
+      "label": "Replay a flagged route",
+      "command": "kr kb replay --kitebuilder-api routes.kite '<flagged-id>'"
+    }
+  ],
+  "references": [
+    {
+      "title": "kiterunner",
+      "url": "https://github.com/assetnote/kiterunner"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "ffuf-directory",
+      "note": "ffuf for classic path brute-forcing.",
+      "rel": "alternative"
+    },
+    {
+      "id": "api-enum-abuse",
+      "note": "Enumerate and abuse the API endpoints found.",
+      "rel": "next"
+    },
+    {
+      "id": "recon-arjun-param-discovery",
+      "note": "arjun to discover parameters on found endpoints.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "APIs often expose routes that only answer specific method+content-type combinations and are absent from the UI. kiterunner replays real-world request templates, so it finds hidden/undocumented endpoints a path-only scanner misses.",
+    "prerequisites": "A reachable API base URL (and optionally a token for authenticated route discovery).",
+    "impact": "Discovery of undocumented/legacy API endpoints that expand the attack surface (BOLA, mass assignment, auth gaps).",
+    "detection": "[MITRE T1595.003] High volume of varied-method requests (GET/POST/PUT/DELETE) to many non-existent paths from one source; elevated 404/401/400 rate; unusual content-types; bursty API gateway traffic.",
+    "artifacts": "API gateway / web logs with many distinct methods+paths and high error ratio from one client, WAF anomaly scores.",
+    "splunk_spl": "index=web\n| stats dc(uri_path) as paths count values(http_method) as methods by src_ip, bin(_time,1m)\n| where paths > 100 AND count > 300",
+    "elastic_kql": "http.request.method:(PUT or DELETE or PATCH) and http.response.status_code:(404 or 401 or 400)",
+    "sentinel_kql": "W3CIISLog\n| summarize Paths=dcount(csUriStem), Methods=make_set(csMethod), Errors=countif(scStatus >= 400) by cIP, bin(TimeGenerated, 1m)\n| where Paths > 100",
+    "sigma_rules": "api_content_discovery_kiterunner",
+    "prevention": "Rate limiting and anomaly detection at the API gateway; remove/retire undocumented and legacy routes; require auth on all endpoints; schema enforcement (reject unknown routes/methods); WAF bot controls.",
+    "sources": [
+      "assetnote/kiterunner",
+      "https://attack.mitre.org/techniques/T1595/003/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "API route brute-force with varied methods (kiterunner)",
+        "logic": "W3CIISLog\n| summarize Paths=dcount(csUriStem), Methods=dcount(csMethod), Errors=countif(scStatus >= 400) by cIP, bin(TimeGenerated, 1m)\n| where Paths > 100 and Methods > 2",
+        "data_source": "iis",
+        "attack": [
+          "T1595.003"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Legitimate API clients, automated test suites",
+        "tuning": "Allowlist known clients; weight on error ratio and method diversity"
+      }
+    ]
+  }
+}

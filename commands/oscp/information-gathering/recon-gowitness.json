@@ -1,0 +1,99 @@
+{
+  "id": "recon-gowitness",
+  "name": "gowitness - Web Screenshot at Scale",
+  "command": "gowitness scan file -f <file>",
+  "description": "gowitness uses a headless Chrome to screenshot web services at scale and store the results (and page metadata/headers) in a searchable report/DB. During recon it turns a large host/URL list into a visual triage board so you quickly spot login portals, default pages, dashboards, and interesting apps.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "moderate",
+  "category": "Reconnaissance",
+  "subcategory": "Web Recon",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "sensepost/gowitness",
+  "tags": [
+    "gowitness",
+    "screenshot",
+    "recon",
+    "web",
+    "triage",
+    "headless-chrome"
+  ],
+  "mitre": [
+    "T1595.002",
+    "T1592"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  go install github.com/sensepost/gowitness@latest    # needs Chrome/Chromium\n\n=== SCAN A LIST (v3 syntax) ===\n  gowitness scan file -f <file>            # one URL/host per line\n  gowitness scan single -u <url>\n  gowitness scan cidr --cidr <cidr>\n\n=== FROM NMAP/MASSCAN XML ===\n  gowitness scan nmap -f scan.xml --service-contains http\n\n=== REPORT ===\n  gowitness report server                  # browse results at http://localhost:7171\n  # screenshots + headers + technologies stored in gowitness.sqlite3\n\n=== LEGACY v2 (if installed) ===\n  gowitness file -f urls.txt ; gowitness report serve\n\n=== ALTERNATIVES ===\n  aquatone        # screenshot + clustering\n  EyeWitness      # screenshots + categorization\n  httpx -screenshot",
+  "examples": [
+    {
+      "label": "Screenshot a URL list",
+      "command": "gowitness scan file -f <file>"
+    },
+    {
+      "label": "Screenshot from an nmap XML",
+      "command": "gowitness scan nmap -f scan.xml --service-contains http"
+    },
+    {
+      "label": "Browse the report",
+      "command": "gowitness report server"
+    }
+  ],
+  "references": [
+    {
+      "title": "gowitness",
+      "url": "https://github.com/sensepost/gowitness"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "aquatone",
+      "note": "aquatone clusters similar pages from the same input.",
+      "rel": "alternative"
+    },
+    {
+      "id": "eyewitness",
+      "note": "EyeWitness is a comparable screenshot/triage tool.",
+      "rel": "alternative"
+    },
+    {
+      "id": "recon-httprobe",
+      "note": "httprobe to build the live-URL list to screenshot.",
+      "rel": "prereq"
+    }
+  ],
+  "defense": {
+    "why_it_works": "gowitness just loads each URL in a browser and captures the response, which is indistinguishable from a normal client visit except for volume and a predictable user-agent/timing pattern across many hosts from one source.",
+    "prerequisites": "A list of reachable web hosts/URLs (from subdomain/port enumeration).",
+    "impact": "Rapid visual mapping of the external web estate, surfacing forgotten portals, default installs, and admin panels for targeting.",
+    "detection": "[MITRE T1595.002] Many short-lived HTTP sessions to diverse hosts from one source in a short window; headless-Chrome user-agent; single GET per host with no asset follow-up variance; WAF/CDN bot signatures.",
+    "artifacts": "Web/proxy/CDN access logs showing a burst of single-page loads across many vhosts from one IP, HeadlessChrome UA, uniform timing.",
+    "splunk_spl": "index=web (http_user_agent=*HeadlessChrome* OR http_user_agent=*gowitness*)\n| stats dc(host) as hosts count by src_ip\n| where hosts > 20",
+    "elastic_kql": "user_agent.original:(*HeadlessChrome* or *gowitness*)",
+    "sentinel_kql": "let win = 10m;\nW3CIISLog\n| where csUserAgent has \"HeadlessChrome\" or csUserAgent has \"gowitness\"\n| summarize Hosts=dcount(csHost), Count=count() by cIP, bin(TimeGenerated, win)\n| where Hosts > 20",
+    "sigma_rules": "web_mass_screenshot_headless_recon",
+    "prevention": "Bot management / rate limiting at the WAF/CDN; reduce external attack surface (decommission forgotten apps); require auth on admin portals and hide them from the internet; alert on headless-browser UAs sweeping many vhosts.",
+    "sources": [
+      "sensepost/gowitness",
+      "https://attack.mitre.org/techniques/T1595/002/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Headless-browser mass web recon (gowitness/aquatone)",
+        "logic": "W3CIISLog\n| where csUserAgent has \"HeadlessChrome\" or csUserAgent has \"gowitness\"\n| summarize Hosts=dcount(csHost), Count=count() by cIP, bin(TimeGenerated, 10m)\n| where Hosts > 20",
+        "data_source": "iis",
+        "attack": [
+          "T1595.002"
+        ],
+        "fidelity": "signature",
+        "confidence": "medium",
+        "false_positives": "Internal uptime/screenshot monitors",
+        "tuning": "Allowlist known monitoring sources; weight on external IPs and vhost breadth"
+      }
+    ]
+  }
+}

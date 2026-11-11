@@ -1,0 +1,99 @@
+{
+  "id": "recon-naabu",
+  "name": "naabu - Fast Port Scanner (ProjectDiscovery)",
+  "command": "naabu -host <target> -top-ports 1000",
+  "description": "naabu is a fast SYN/CONNECT port scanner from ProjectDiscovery, built for large host lists and automation. It quickly finds open ports, integrates with the PD toolchain (subfinder -> naabu -> httpx -> nuclei), and can hand results straight to nmap for service/version detail.",
+  "platform": "multi",
+  "type": "command",
+  "opsec": "loud",
+  "category": "Reconnaissance",
+  "subcategory": "Port Scanning",
+  "certifications": [
+    "OSCP",
+    "CPTS"
+  ],
+  "primary_cert": "OSCP",
+  "source": "projectdiscovery/naabu",
+  "tags": [
+    "naabu",
+    "port-scan",
+    "recon",
+    "projectdiscovery",
+    "network"
+  ],
+  "mitre": [
+    "T1046",
+    "T1595.001"
+  ],
+  "exam": "exam-ok",
+  "notes": "=== INSTALL ===\n  go install github.com/projectdiscovery/naabu/v2/cmd/naabu@latest    # needs libpcap for SYN\n\n=== SCAN ===\n  naabu -host <target>                    # top 100 by default\n  naabu -host <target> -top-ports 1000\n  naabu -host <target> -p -               # all 65535 ports\n  naabu -host <target> -p 80,443,8080,8443\n\n=== LISTS / RANGES ===\n  naabu -list <file>\n  naabu -host <cidr>\n\n=== SCAN TYPE / SPEED ===\n  naabu -host <target> -s s               # SYN (needs root)\n  naabu -host <target> -s c               # CONNECT\n  naabu -host <target> -rate 1000\n\n=== PIPE TO NMAP FOR SERVICE DETAIL ===\n  naabu -host <target> -top-ports 1000 -nmap-cli 'nmap -sV -sC'\n\n=== CHAIN ===\n  subfinder -d <domain> -silent | naabu -silent | httpx -silent\n\n=== ALTERNATIVES ===\n  nmap            # richer service/script detection\n  masscan         # highest raw speed\n  rustscan        # fast + nmap handoff",
+  "examples": [
+    {
+      "label": "Top 1000 ports",
+      "command": "naabu -host <target> -top-ports 1000"
+    },
+    {
+      "label": "All ports",
+      "command": "naabu -host <target> -p -"
+    },
+    {
+      "label": "Hand off open ports to nmap",
+      "command": "naabu -host <target> -nmap-cli 'nmap -sV -sC'"
+    }
+  ],
+  "references": [
+    {
+      "title": "naabu",
+      "url": "https://github.com/projectdiscovery/naabu"
+    }
+  ],
+  "recommended": [
+    {
+      "id": "recon-masscan",
+      "note": "masscan for maximum raw scan speed.",
+      "rel": "alternative"
+    },
+    {
+      "id": "recon-rustscan",
+      "note": "rustscan is a similar fast scanner with nmap handoff.",
+      "rel": "alternative"
+    },
+    {
+      "id": "nmap-top-ports",
+      "note": "Follow up open ports with nmap service detection.",
+      "rel": "next"
+    }
+  ],
+  "defense": {
+    "why_it_works": "Port scanning probes TCP/UDP ports to find listening services. naabu optimizes for speed and volume, so it completes enumeration quickly but generates a recognizable burst of connection attempts.",
+    "prerequisites": "Network reachability to the target(s).",
+    "impact": "Rapid discovery of the open-service attack surface across many hosts.",
+    "detection": "[MITRE T1046] High count of distinct destination ports from one source in a short window; many SYNs without completed handshakes (SYN scan); firewall/IDS scan signatures; connection attempts to closed ports.",
+    "artifacts": "Firewall/flow logs (many dports/one src), IDS portscan alerts, half-open SYN counts, connection-refused spikes.",
+    "splunk_spl": "index=firewall action=allowed OR action=blocked\n| stats dc(dest_port) as ports count by src_ip, dest_ip, bin(_time,1m)\n| where ports > 100",
+    "elastic_kql": "event.category:network and destination.port:* and source.ip:*",
+    "sentinel_kql": "CommonSecurityLog\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIP, DestinationIP, bin(TimeGenerated, 1m)\n| where Ports > 100",
+    "sigma_rules": "network_fast_portscan_naabu_masscan",
+    "prevention": "Restrict exposed ports (least surface, allowlist ingress); IDS/IPS port-scan detection and rate limiting; deny-by-default firewalling; honeypots/canary ports to catch scanning; monitor for high-fanout connection sources.",
+    "sources": [
+      "projectdiscovery/naabu",
+      "https://attack.mitre.org/techniques/T1046/"
+    ],
+    "detections": [
+      {
+        "platform": "sentinel",
+        "name": "Fast multi-port scan from single source (naabu/masscan)",
+        "logic": "CommonSecurityLog\n| summarize Ports=dcount(DestinationPort), Count=count() by SourceIP, DestinationIP, bin(TimeGenerated, 1m)\n| where Ports > 100",
+        "data_source": "firewall",
+        "attack": [
+          "T1046",
+          "T1595.001"
+        ],
+        "fidelity": "behavioral",
+        "confidence": "medium",
+        "false_positives": "Vulnerability scanners, asset inventory tools",
+        "tuning": "Allowlist sanctioned scanners; alert on external sources"
+      }
+    ]
+  }
+}

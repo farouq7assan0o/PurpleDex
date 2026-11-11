@@ -13977,6 +13977,13 @@
           "data_source": "powershell"
         },
         {
+          "card_id": "web-tplmap",
+          "name": "SSTI template meta-characters in web parameters",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "iis"
+        },
+        {
           "card_id": "upload-blacklist-bypass",
           "name": "Upload - Blacklist Extension Bypass - Sentinel",
           "platform": "sentinel",
@@ -15323,6 +15330,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "edr"
+        },
+        {
+          "card_id": "recon-naabu",
+          "name": "Fast multi-port scan from single source (naabu/masscan)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "firewall"
         },
         {
           "card_id": "nbtscan-netbios",
@@ -17372,6 +17386,13 @@
           "platform": "elastic",
           "fidelity": "telemetry",
           "data_source": "ndr"
+        },
+        {
+          "card_id": "recon-gowitness",
+          "name": "Headless-browser mass web recon (gowitness/aquatone)",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "iis"
         },
         {
           "card_id": "recon-httpx-probe",
@@ -25957,6 +25978,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "recon-kiterunner",
+          "name": "API route brute-force with varied methods (kiterunner)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "iis"
+        },
+        {
           "card_id": "lfi-fuzz-params",
           "name": "LFI - Fuzz Exposed Parameters (ffuf) - Sentinel",
           "platform": "sentinel",
@@ -28339,6 +28367,13 @@
           "data_source": "dns"
         },
         {
+          "card_id": "frp-reverse-proxy",
+          "name": "frp tunneling client/server binary execution",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "edr"
+        },
+        {
           "card_id": "plink-dynamic",
           "name": "Plink - Dynamic Port Forward (Windows) - Sentinel",
           "platform": "sentinel",
@@ -28495,8 +28530,8 @@
       "data_sources": [
         "defender-endpoint",
         "dns",
-        "sysmon",
         "edr",
+        "sysmon",
         "windows-security",
         "network-flow",
         "linux-audit"
@@ -33666,6 +33701,13 @@
           "data_source": "proxy"
         },
         {
+          "card_id": "recon-naabu",
+          "name": "Fast multi-port scan from single source (naabu/masscan)",
+          "platform": "sentinel",
+          "fidelity": "behavioral",
+          "data_source": "firewall"
+        },
+        {
           "card_id": "nmap-custom-nse",
           "name": "Nmap - Deploy and Run Custom NSE Script - Sentinel",
           "platform": "sentinel",
@@ -33711,6 +33753,7 @@
         "iis",
         "windows-security",
         "proxy",
+        "firewall",
         "defender-endpoint",
         "network-flow",
         "ndr"
@@ -33842,6 +33885,13 @@
     "T1090": {
       "detections": [
         {
+          "card_id": "frp-reverse-proxy",
+          "name": "frp tunneling client/server binary execution",
+          "platform": "sentinel",
+          "fidelity": "signature",
+          "data_source": "edr"
+        },
+        {
           "card_id": "ftp-bounce",
           "name": "FTP - Bounce Attack Scan - Sentinel",
           "platform": "sentinel",
@@ -33912,14 +33962,14 @@
         "elastic"
       ],
       "data_sources": [
+        "edr",
         "defender-endpoint",
         "network-flow",
         "linux-audit",
         "windows-security",
         "ndr",
         "iis",
-        "proxy",
-        "edr"
+        "proxy"
       ],
       "best_fidelity": "behavioral"
     },
@@ -40511,6 +40561,8 @@
       "T1105",
       "T1203",
       "T1190",
+      "T1572",
+      "T1090",
       "T1046",
       "T1078.004",
       "T1530",
@@ -40562,7 +40614,6 @@
       "T1574.007",
       "T1539",
       "T1003.006",
-      "T1572",
       "T1552.004",
       "T1548.003",
       "T1563.002",
@@ -40586,7 +40637,6 @@
       "T1562.001",
       "T1685",
       "T1557",
-      "T1090",
       "T1596.002",
       "T1566.001",
       "T1204.002",
@@ -40843,7 +40893,8 @@
       "T1078.003"
     ],
     "firewall": [
-      "T1046"
+      "T1046",
+      "T1595.001"
     ],
     "cloud-trail": [
       "T1087.004",
@@ -40896,6 +40947,6 @@
       "T1190"
     ]
   },
-  "cards_with_detections": 899,
-  "total_detections": 3814
+  "cards_with_detections": 904,
+  "total_detections": 3819
 }
